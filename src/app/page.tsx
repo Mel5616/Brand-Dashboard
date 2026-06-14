@@ -8,7 +8,8 @@ export default async function Dashboard() {
   const {
     brands, summaries, monthly, weekly, products,
     tradeshows, tradeshowBrands, tradeshowSales,
-    weekLabels, lastSync, googleAds, metaAds, metaAdsPlatform, instagramOrganic,
+    weekLabels, lastSync, googleAds, metaAds, metaAdsPlatform,
+    instagramOrganic, targets, klaviyo, ga4,
   } = await getDashboardData();
 
   const liveBrands = brands.filter(b => b.live);
@@ -57,6 +58,9 @@ export default async function Dashboard() {
         metaAds={metaAds}
         metaAdsPlatform={metaAdsPlatform}
         instagramOrganic={instagramOrganic}
+        targets={targets}
+        klaviyo={klaviyo}
+        ga4={ga4}
         kpis={kpis}
       />
     </div>

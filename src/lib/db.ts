@@ -114,6 +114,34 @@ export type InstagramOrganicRow = {
   accounts_engaged: number;
 };
 
+export type BrandTarget = {
+  brand_id: number;
+  month_key: string;
+  revenue_target: number;
+  google_spend_target: number;
+  meta_spend_target: number;
+};
+
+export type KlaviyoRow = {
+  brand_id: number;
+  month_key: string;
+  list_size: number;
+  emails_sent: number;
+  open_rate: number;
+  click_rate: number;
+  revenue: number;
+  unsubscribes: number;
+};
+
+export type GA4Row = {
+  brand_id: number;
+  month_key: string;
+  sessions: number;
+  organic_sessions: number;
+  new_users: number;
+  engagement_rate: number;
+};
+
 export async function getDashboardData() {
   const db = await createClient();
 
@@ -132,6 +160,9 @@ export async function getDashboardData() {
     { data: metaAds },
     { data: metaAdsPlatform },
     { data: instagramOrganic },
+    { data: targets },
+    { data: klaviyo },
+    { data: ga4 },
   ] = await Promise.all([
     db.from("brands").select("*").order("id"),
     db.from("brand_summary").select("*"),
@@ -147,6 +178,9 @@ export async function getDashboardData() {
     db.from("meta_ads").select("*").order("month_key"),
     db.from("meta_ads_platform").select("brand_id,month_key,platform,spend,impressions,clicks,purchases,revenue,reach").order("month_key"),
     db.from("instagram_organic").select("brand_id,month_key,followers,reach,profile_views,accounts_engaged").order("month_key"),
+    db.from("brand_targets").select("*").order("month_key"),
+    db.from("klaviyo_metrics").select("*").order("month_key"),
+    db.from("ga4_metrics").select("*").order("month_key"),
   ]);
 
   return {
@@ -164,5 +198,8 @@ export async function getDashboardData() {
     metaAds: (metaAds ?? []) as MetaAdsRow[],
     metaAdsPlatform: (metaAdsPlatform ?? []) as MetaAdsPlatformRow[],
     instagramOrganic: (instagramOrganic ?? []) as InstagramOrganicRow[],
+    targets: (targets ?? []) as BrandTarget[],
+    klaviyo: (klaviyo ?? []) as KlaviyoRow[],
+    ga4: (ga4 ?? []) as GA4Row[],
   };
 }

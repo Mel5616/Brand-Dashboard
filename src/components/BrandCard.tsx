@@ -1,6 +1,6 @@
 "use client";
 import { fmt, fmtPct } from "@/lib/format";
-import type { Brand, BrandSummary } from "@/lib/db";
+import type { Brand, BrandSummary, BrandTarget } from "@/lib/db";
 
 export const BRAND_LOGOS: Record<number, string> = {
   0:  "/logos/Nanit_Logo Lockup_Midnight Mist.svg",
@@ -24,25 +24,37 @@ interface Props {
   hasMeta?: boolean;
   hasInstagram?: boolean;
   igFollowers?: number;
+  target?: BrandTarget;
+  roasAlert?: boolean;
 }
 
-export function BrandCard({ brand, summary, onClick, hasGoogle, hasMeta, hasInstagram, igFollowers }: Props) {
+export function BrandCard({ brand, summary, onClick, hasGoogle, hasMeta, hasInstagram, igFollowers, target, roasAlert }: Props) {
   const logo = BRAND_LOGOS[brand.id];
   const momPos = (summary?.mom_growth ?? 0) >= 0;
+  const revenuePct = target && target.revenue_target > 0 && summary
+    ? Math.min((summary.last_month_rev / target.revenue_target) * 100, 100)
+    : null;
+  const onTrack = revenuePct !== null && revenuePct >= 80;
+  const momAlert = (summary?.mom_growth ?? 0) < -20;
 
   return (
     <div
       onClick={onClick}
-      className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden flex flex-col"
+      className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden flex flex-col relative"
       style={{ borderBottom: `3px solid ${brand.color}` }}
     >
+      {/* Alert badge */}
+      {(roasAlert || momAlert) && (
+        <div className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-amber-400 ring-2 ring-white" title="Performance alert" />
+      )}
+
       {/* Logo area */}
       <div className="flex items-center justify-center px-6 pt-7 pb-4 h-28">
         {logo ? (
           <img
             src={logo}
             alt={brand.name}
-            className="max-h-16 max-w-full object-contain"
+            className="w-32 h-14 object-contain"
             onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
           />
         ) : (
@@ -67,6 +79,27 @@ export function BrandCard({ brand, summary, onClick, hasGoogle, hasMeta, hasInst
             <p className="text-2xl font-light text-slate-800">{fmt(summary.fy_revenue)}</p>
             <p className="text-[10px] text-gray-400 mt-0.5 mb-3">FY 2025–26 revenue</p>
 
+            {/* Revenue pacing bar */}
+            {revenuePct !== null && (
+              <div className="mb-3">
+                <div className="flex justify-between text-[10px] mb-1">
+                  <span className="text-gray-400">May target</span>
+                  <span className={onTrack ? "text-emerald-500 font-semibold" : "text-amber-500 font-semibold"}>
+                    {revenuePct.toFixed(0)}%
+                  </span>
+                </div>
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{
+                      width: `${revenuePct}%`,
+                      background: onTrack ? "#2dc8a5" : "#f59e0b",
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[10px] text-gray-400">{summary.last_month_label}</p>
@@ -81,13 +114,15 @@ export function BrandCard({ brand, summary, onClick, hasGoogle, hasMeta, hasInst
             </div>
 
             {/* Channel dots */}
-            <div className="flex gap-1.5 mt-3">
+            <div className="flex gap-1.5 mt-3 flex-wrap">
               <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-600">SHOP</span>
               {hasGoogle    && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-50 text-blue-600">GADS</span>}
               {hasMeta      && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-50 text-indigo-600">META</span>}
-              {hasInstagram && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-pink-50 text-pink-600">
-                {igFollowers && igFollowers >= 1000 ? `${(igFollowers / 1000).toFixed(1)}K` : igFollowers?.toLocaleString() ?? "IG"}
-              </span>}
+              {hasInstagram && (
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-pink-50 text-pink-600">
+                  {igFollowers && igFollowers >= 1000 ? `${(igFollowers / 1000).toFixed(1)}K` : igFollowers?.toLocaleString() ?? "IG"}
+                </span>
+              )}
             </div>
           </>
         ) : (

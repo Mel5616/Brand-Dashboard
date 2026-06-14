@@ -7,7 +7,11 @@ import {
 } from "chart.js";
 import { Line, Bar } from "react-chartjs-2";
 import { fmt, fmtFull } from "@/lib/format";
-import type { Brand, BrandSummary, BrandMonthly, BrandWeekly, BrandProduct, GoogleAdsRow, MetaAdsRow, MetaAdsPlatformRow, InstagramOrganicRow, WeekLabel } from "@/lib/db";
+import type {
+  Brand, BrandSummary, BrandMonthly, BrandWeekly, BrandProduct,
+  GoogleAdsRow, MetaAdsRow, MetaAdsPlatformRow, InstagramOrganicRow,
+  WeekLabel, BrandTarget, KlaviyoRow, GA4Row,
+} from "@/lib/db";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Filler, Tooltip, Legend);
 
@@ -74,9 +78,10 @@ interface KpiProps {
   yearPct?: number | null;
   hero?: boolean;
   heroColor?: string;
+  color?: string;
 }
 
-function KpiCard({ label, value, spark, prevPct = null, yearPct = null, hero = false, heroColor }: KpiProps) {
+function KpiCard({ label, value, spark, prevPct = null, yearPct = null, hero = false, heroColor, color }: KpiProps) {
   if (hero) {
     return (
       <div className="p-6 flex flex-col justify-between" style={{ background: heroColor ?? TEAL, minHeight: 180 }}>
@@ -90,7 +95,7 @@ function KpiCard({ label, value, spark, prevPct = null, yearPct = null, hero = f
       <p className="text-gray-400 text-[10px] uppercase tracking-[0.15em]">{label}</p>
       <p className="text-slate-800 text-3xl font-light mt-1.5 mb-3">{value}</p>
       <div className="h-14">
-        <Sparkline values={spark} />
+        <Sparkline values={spark} color={color} />
       </div>
       <div className="flex justify-between mt-3">
         <PeriodDelta value={prevPct ?? null} label="Previous period" />
@@ -130,6 +135,28 @@ function PeriodToggle({ period, onChange }: { period: Period; onChange: (p: Peri
   );
 }
 
+function PacingBar({ current, target, label }: { current: number; target: number; label: string }) {
+  const pct = target > 0 ? Math.min((current / target) * 100, 110) : 0;
+  const onTrack = pct >= 80;
+  const over = pct > 100;
+  return (
+    <div>
+      <div className="flex justify-between text-[10px] mb-1.5">
+        <span className="text-white/60">{label}</span>
+        <span className={`font-semibold ${over ? "text-[#2dc8a5]" : onTrack ? "text-[#2dc8a5]" : "text-amber-400"}`}>
+          {fmtFull(current)} / {fmtFull(target)} ({pct.toFixed(0)}%)
+        </span>
+      </div>
+      <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all"
+          style={{ width: `${Math.min(pct, 100)}%`, background: onTrack ? "#2dc8a5" : "#f59e0b" }}
+        />
+      </div>
+    </div>
+  );
+}
+
 // ── Main component ──────────────────────────────────────────────────────────
 
 interface Props {
@@ -143,9 +170,16 @@ interface Props {
   metaAds: MetaAdsRow[];
   metaAdsPlatform: MetaAdsPlatformRow[];
   instagramOrganic: InstagramOrganicRow[];
+  targets: BrandTarget[];
+  klaviyo: KlaviyoRow[];
+  ga4: GA4Row[];
 }
 
-export function BrandPage({ brand, summary, monthly, weekly, weekLabels, products, googleAds, metaAds, metaAdsPlatform, instagramOrganic }: Props) {
+export function BrandPage({
+  brand, summary, monthly, weekly, weekLabels, products,
+  googleAds, metaAds, metaAdsPlatform, instagramOrganic,
+  targets, klaviyo, ga4,
+}: Props) {
   const [period, setPeriod] = useState<Period>("monthly");
 
   const monthlyRows = monthly.filter(m => m.brand_id === brand.id);
@@ -160,8 +194,8 @@ export function BrandPage({ brand, summary, monthly, weekly, weekLabels, product
     const m = monthlyRows.find(r => r.month_key === mk);
     return m && m.orders > 0 ? m.revenue / m.orders : 0;
   });
-  const mayOrds  = monthlyRows.find(m => m.month_key === LATEST)?.orders  ?? 0;
-  const aprOrds  = monthlyRows.find(m => m.month_key === PREV_MO)?.orders ?? 0;
+  const mayOrds   = monthlyRows.find(m => m.month_key === LATEST)?.orders  ?? 0;
+  const aprOrds   = monthlyRows.find(m => m.month_key === PREV_MO)?.orders ?? 0;
   const may25Ords = monthlyRows.find(m => m.month_key === PREV_YR)?.orders ?? 0;
 
   // ── Weekly data ─────────────────────────────────────────────────────────
@@ -178,22 +212,22 @@ export function BrandPage({ brand, summary, monthly, weekly, weekLabels, product
   const prevWkD   = weeklyRows.find(w => w.week_start === prevWk?.week_start);
 
   // ── Period-switched values ──────────────────────────────────────────────
-  const isWeekly     = period === "weekly";
-  const revSpark     = isWeekly ? revWeekly : revMonthly;
-  const ordSpark     = isWeekly ? ordWeekly : ordMonthly;
-  const aovSpark     = isWeekly ? aovWeekly : aovMonthly;
-  const chartLabels  = isWeekly ? sortedWeeks.map(w => w.label) : MONTH_LABELS;
+  const isWeekly    = period === "weekly";
+  const revSpark    = isWeekly ? revWeekly : revMonthly;
+  const ordSpark    = isWeekly ? ordWeekly : ordMonthly;
+  const aovSpark    = isWeekly ? aovWeekly : aovMonthly;
+  const chartLabels = isWeekly ? sortedWeeks.map(w => w.label) : MONTH_LABELS;
 
-  const currentRev     = isWeekly ? (latestWkD?.revenue ?? 0) : (summary?.last_month_rev ?? 0);
-  const currentRevPrev = isWeekly ? pctOf(latestWkD?.revenue ?? 0, prevWkD?.revenue ?? 0) : (summary?.mom_growth ?? null);
-  const currentRevYear = isWeekly ? null : (summary?.yoy_growth ?? null);
-  const currentOrds    = isWeekly ? (latestWkD?.orders ?? 0) : (summary?.last_month_orders ?? 0);
+  const currentRev      = isWeekly ? (latestWkD?.revenue ?? 0) : (summary?.last_month_rev ?? 0);
+  const currentRevPrev  = isWeekly ? pctOf(latestWkD?.revenue ?? 0, prevWkD?.revenue ?? 0) : (summary?.mom_growth ?? null);
+  const currentRevYear  = isWeekly ? null : (summary?.yoy_growth ?? null);
+  const currentOrds     = isWeekly ? (latestWkD?.orders ?? 0) : (summary?.last_month_orders ?? 0);
   const currentOrdsPrev = isWeekly ? pctOf(latestWkD?.orders ?? 0, prevWkD?.orders ?? 0) : pctOf(mayOrds, aprOrds);
   const currentOrdsYear = isWeekly ? null : pctOf(mayOrds, may25Ords);
-  const currentAov     = isWeekly
+  const currentAov      = isWeekly
     ? (latestWkD && latestWkD.orders > 0 ? latestWkD.revenue / latestWkD.orders : 0)
     : (summary?.aov ?? 0);
-  const periodLabel    = isWeekly ? `Wk ${lastWk?.label ?? ""}` : (summary?.last_month_label ?? "Last Month");
+  const periodLabel = isWeekly ? `Wk ${lastWk?.label ?? ""}` : (summary?.last_month_label ?? "Last Month");
 
   // ── Bar chart ───────────────────────────────────────────────────────────
   const barData = {
@@ -224,41 +258,53 @@ export function BrandPage({ brand, summary, monthly, weekly, weekLabels, product
     },
   };
 
-  // ── Google Ads (always monthly) ──────────────────────────────────────────
-  const spendSpark   = MONTH_KEYS.map(mk => adsRows.find(d => d.month_key === mk)?.spend       ?? 0);
-  const roasSpark    = MONTH_KEYS.map(mk => adsRows.find(d => d.month_key === mk)?.roas        ?? 0);
-  const clicksSpark  = MONTH_KEYS.map(mk => adsRows.find(d => d.month_key === mk)?.clicks      ?? 0);
-  const imprSpark    = MONTH_KEYS.map(mk => adsRows.find(d => d.month_key === mk)?.impressions ?? 0);
-  const gRevSpark    = MONTH_KEYS.map(mk => { const r = adsRows.find(d => d.month_key === mk); return r ? r.roas * r.spend : 0; });
-  const latestAds    = adsRows.find(d => d.month_key === LATEST);
-  const prevAds      = adsRows.find(d => d.month_key === PREV_MO);
-  const hasAds       = adsRows.length > 0;
-  const latestGRev   = (latestAds?.roas ?? 0) * (latestAds?.spend ?? 0);
-  const prevGRev     = (prevAds?.roas ?? 0) * (prevAds?.spend ?? 0);
+  // ── Google Ads ──────────────────────────────────────────────────────────
+  const spendSpark  = MONTH_KEYS.map(mk => adsRows.find(d => d.month_key === mk)?.spend       ?? 0);
+  const roasSpark   = MONTH_KEYS.map(mk => adsRows.find(d => d.month_key === mk)?.roas        ?? 0);
+  const clicksSpark = MONTH_KEYS.map(mk => adsRows.find(d => d.month_key === mk)?.clicks      ?? 0);
+  const imprSpark   = MONTH_KEYS.map(mk => adsRows.find(d => d.month_key === mk)?.impressions ?? 0);
+  const gRevSpark   = MONTH_KEYS.map(mk => { const r = adsRows.find(d => d.month_key === mk); return r ? r.roas * r.spend : 0; });
+  const latestAds   = adsRows.find(d => d.month_key === LATEST);
+  const prevAds     = adsRows.find(d => d.month_key === PREV_MO);
+  const hasAds      = adsRows.length > 0;
+  const latestGRev  = (latestAds?.roas ?? 0) * (latestAds?.spend ?? 0);
+  const prevGRev    = (prevAds?.roas  ?? 0) * (prevAds?.spend  ?? 0);
 
-  // ── Meta Ads (always monthly) ────────────────────────────────────────────
-  const metaRows      = metaAds.filter(d => d.brand_id === brand.id);
-  const hasMeta       = metaRows.length > 0;
-  const metaSpendSp   = MONTH_KEYS.map(mk => metaRows.find(d => d.month_key === mk)?.spend     ?? 0);
-  const metaClicksSp  = MONTH_KEYS.map(mk => metaRows.find(d => d.month_key === mk)?.clicks    ?? 0);
-  const metaPurchSp   = MONTH_KEYS.map(mk => metaRows.find(d => d.month_key === mk)?.purchases ?? 0);
-  const metaRevSp     = MONTH_KEYS.map(mk => metaRows.find(d => d.month_key === mk)?.revenue   ?? 0);
-  const latestMeta    = metaRows.find(d => d.month_key === LATEST);
-  const prevMeta      = metaRows.find(d => d.month_key === PREV_MO);
-  const metaRoasSp    = MONTH_KEYS.map(mk => {
+  // ── Meta Ads ─────────────────────────────────────────────────────────────
+  const metaRows     = metaAds.filter(d => d.brand_id === brand.id);
+  const hasMeta      = metaRows.length > 0;
+  const metaSpendSp  = MONTH_KEYS.map(mk => metaRows.find(d => d.month_key === mk)?.spend     ?? 0);
+  const metaClicksSp = MONTH_KEYS.map(mk => metaRows.find(d => d.month_key === mk)?.clicks    ?? 0);
+  const metaPurchSp  = MONTH_KEYS.map(mk => metaRows.find(d => d.month_key === mk)?.purchases ?? 0);
+  const metaRevSp    = MONTH_KEYS.map(mk => metaRows.find(d => d.month_key === mk)?.revenue   ?? 0);
+  const latestMeta   = metaRows.find(d => d.month_key === LATEST);
+  const prevMeta     = metaRows.find(d => d.month_key === PREV_MO);
+  const metaRoasSp   = MONTH_KEYS.map(mk => {
     const r = metaRows.find(d => d.month_key === mk);
     return r && r.spend > 0 ? r.revenue / r.spend : 0;
   });
   const latestMetaRoas = latestMeta && latestMeta.spend > 0 ? latestMeta.revenue / latestMeta.spend : 0;
   const prevMetaRoas   = prevMeta   && prevMeta.spend   > 0 ? prevMeta.revenue   / prevMeta.spend   : 0;
 
-  // ── Meta Ads Platform Breakdown ──────────────────────────────────────────
+  // ── Blended ROAS ────────────────────────────────────────────────────────
+  const blendedSpendSp = MONTH_KEYS.map((mk, i) => spendSpark[i] + metaSpendSp[i]);
+  const blendedRevSp   = MONTH_KEYS.map((mk, i) => gRevSpark[i]  + metaRevSp[i]);
+  const blendedRoasSp  = blendedSpendSp.map((spend, i) => spend > 0 ? blendedRevSp[i] / spend : 0);
+  const blendedSpend   = (latestAds?.spend ?? 0) + (latestMeta?.spend ?? 0);
+  const blendedRev     = latestGRev + (latestMeta?.revenue ?? 0);
+  const blendedRoas    = blendedSpend > 0 ? blendedRev / blendedSpend : 0;
+  const prevBlendSpend = (prevAds?.spend ?? 0) + (prevMeta?.spend ?? 0);
+  const prevBlendRev   = prevGRev + (prevMeta?.revenue ?? 0);
+  const prevBlendRoas  = prevBlendSpend > 0 ? prevBlendRev / prevBlendSpend : 0;
+  const hasBlended     = hasAds || hasMeta;
+
+  // ── Meta Platform Breakdown ──────────────────────────────────────────────
   const platRows    = metaAdsPlatform.filter(d => d.brand_id === brand.id);
   const hasPlatform = platRows.length > 0;
   const PLATFORMS: { id: string; label: string; icon: string }[] = [
-    { id: "facebook",         label: "Facebook",         icon: "f" },
+    { id: "facebook",         label: "Facebook",         icon: "f"  },
     { id: "instagram",        label: "Instagram",        icon: "ig" },
-    { id: "messenger",        label: "Messenger",        icon: "m" },
+    { id: "messenger",        label: "Messenger",        icon: "m"  },
     { id: "audience_network", label: "Audience Network", icon: "an" },
   ];
   const latestPlatRows = platRows.filter(d => d.month_key === LATEST);
@@ -272,6 +318,29 @@ export function BrandPage({ brand, summary, monthly, weekly, weekLabels, product
   const igReachSpark = MONTH_KEYS.map(mk => igRows.find(d => d.month_key === mk)?.reach            ?? 0);
   const igPvSpark    = MONTH_KEYS.map(mk => igRows.find(d => d.month_key === mk)?.profile_views    ?? 0);
   const igEngSpark   = MONTH_KEYS.map(mk => igRows.find(d => d.month_key === mk)?.accounts_engaged ?? 0);
+
+  // ── Targets & Pacing ─────────────────────────────────────────────────────
+  const latestTarget = targets.find(t => t.brand_id === brand.id && t.month_key === LATEST);
+
+  // ── Klaviyo ──────────────────────────────────────────────────────────────
+  const klaviyoRows  = klaviyo.filter(d => d.brand_id === brand.id);
+  const hasKlaviyo   = klaviyoRows.length > 0;
+  const latestKl     = klaviyoRows.find(d => d.month_key === LATEST);
+  const prevKl       = klaviyoRows.find(d => d.month_key === PREV_MO);
+  const klListSpark  = MONTH_KEYS.map(mk => klaviyoRows.find(d => d.month_key === mk)?.list_size  ?? 0);
+  const klOpenSpark  = MONTH_KEYS.map(mk => klaviyoRows.find(d => d.month_key === mk)?.open_rate  ?? 0);
+  const klClickSpark = MONTH_KEYS.map(mk => klaviyoRows.find(d => d.month_key === mk)?.click_rate ?? 0);
+  const klRevSpark   = MONTH_KEYS.map(mk => klaviyoRows.find(d => d.month_key === mk)?.revenue    ?? 0);
+
+  // ── GA4 ──────────────────────────────────────────────────────────────────
+  const ga4Rows        = ga4.filter(d => d.brand_id === brand.id);
+  const hasGA4         = ga4Rows.length > 0;
+  const latestGA4      = ga4Rows.find(d => d.month_key === LATEST);
+  const prevGA4        = ga4Rows.find(d => d.month_key === PREV_MO);
+  const ga4SessSpark   = MONTH_KEYS.map(mk => ga4Rows.find(d => d.month_key === mk)?.sessions        ?? 0);
+  const ga4OrgSpark    = MONTH_KEYS.map(mk => ga4Rows.find(d => d.month_key === mk)?.organic_sessions ?? 0);
+  const ga4UsersSpark  = MONTH_KEYS.map(mk => ga4Rows.find(d => d.month_key === mk)?.new_users        ?? 0);
+  const ga4EngSpark    = MONTH_KEYS.map(mk => ga4Rows.find(d => d.month_key === mk)?.engagement_rate  ?? 0);
 
   return (
     <div className="bg-gray-50 min-h-screen pb-16">
@@ -311,6 +380,24 @@ export function BrandPage({ brand, summary, monthly, weekly, weekLabels, product
           />
         </div>
 
+        {/* ── TARGETS & PACING ─────────────────────────────────────────────── */}
+        {latestTarget && (
+          <div className="px-6 py-5 border-b border-gray-100" style={{ background: HEADER_BG }}>
+            <p className="text-white/60 text-[10px] uppercase tracking-[0.2em] mb-3">May 2026 · Targets & Pacing</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {latestTarget.revenue_target > 0 && (
+                <PacingBar current={summary?.last_month_rev ?? 0} target={latestTarget.revenue_target} label="Revenue" />
+              )}
+              {latestTarget.google_spend_target > 0 && (
+                <PacingBar current={latestAds?.spend ?? 0} target={latestTarget.google_spend_target} label="Google Spend" />
+              )}
+              {latestTarget.meta_spend_target > 0 && (
+                <PacingBar current={latestMeta?.spend ?? 0} target={latestTarget.meta_spend_target} label="Meta Spend" />
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Revenue + Orders chart | Top Products */}
         <div className="grid grid-cols-5 divide-x divide-gray-100 border-b border-gray-100">
           <div className="col-span-3 bg-white p-6">
@@ -346,41 +433,70 @@ export function BrandPage({ brand, summary, monthly, weekly, weekLabels, product
           </div>
         </div>
 
+        {/* ── BLENDED PAID MEDIA ───────────────────────────────────────────── */}
+        {hasBlended && (
+          <>
+            <SectionHeader title={`${brand.name}  ·  Blended Paid Media  ·  Google + Meta`} />
+            <div className="grid grid-cols-4 divide-x divide-gray-100 border-b border-gray-100 shadow-sm">
+              <KpiCard
+                label="Blended Spend (May 26)"
+                value={fmtFull(blendedSpend)}
+                spark={blendedSpendSp}
+                prevPct={pctOf(blendedSpend, prevBlendSpend)}
+                color="#6366f1"
+              />
+              <KpiCard
+                label="Blended Revenue (May 26)"
+                value={fmtFull(blendedRev)}
+                spark={blendedRevSp}
+                prevPct={pctOf(blendedRev, prevBlendRev)}
+                color="#6366f1"
+              />
+              <KpiCard
+                label="Blended ROAS"
+                value={blendedRoas.toFixed(2) + "×"}
+                spark={blendedRoasSp}
+                prevPct={pctOf(blendedRoas, prevBlendRoas)}
+                color="#6366f1"
+              />
+              <div className="bg-white p-5">
+                <p className="text-gray-400 text-[10px] uppercase tracking-[0.15em] mb-4">Channel split (May)</p>
+                {[
+                  { label: "Google",  spend: latestAds?.spend ?? 0, rev: latestGRev,          roas: latestAds?.roas ?? 0, color: "#4285F4" },
+                  { label: "Meta",    spend: latestMeta?.spend ?? 0, rev: latestMeta?.revenue ?? 0, roas: latestMetaRoas, color: "#1877F2" },
+                ].map(ch => (
+                  <div key={ch.label} className="mb-3">
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="font-medium text-slate-700">{ch.label}</span>
+                      <span className="text-gray-500">{ch.spend > 0 ? `${ch.roas.toFixed(1)}× ROAS` : "—"}</span>
+                    </div>
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: blendedSpend > 0 ? `${(ch.spend / blendedSpend) * 100}%` : "0%",
+                          background: ch.color,
+                        }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-gray-400 mt-0.5">{fmtFull(ch.spend)} spend · {fmtFull(ch.rev)} rev</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
         {/* ── GOOGLE ADS ───────────────────────────────────────────────────── */}
         {hasAds && (
           <>
             <SectionHeader title={`${brand.name}  ·  Google Ads  ·  Monthly`} />
             <div className="grid grid-cols-5 divide-x divide-gray-100 border-b border-gray-100 shadow-sm">
-              <KpiCard
-                label="Spend (May 26)"
-                value={fmtFull(latestAds?.spend ?? 0)}
-                spark={spendSpark}
-                prevPct={pctOf(latestAds?.spend ?? 0, prevAds?.spend ?? 0)}
-              />
-              <KpiCard
-                label="Revenue (May 26)"
-                value={fmtFull(latestGRev)}
-                spark={gRevSpark}
-                prevPct={pctOf(latestGRev, prevGRev)}
-              />
-              <KpiCard
-                label="ROAS"
-                value={(latestAds?.roas ?? 0).toFixed(2) + "×"}
-                spark={roasSpark}
-                prevPct={pctOf(latestAds?.roas ?? 0, prevAds?.roas ?? 0)}
-              />
-              <KpiCard
-                label="Clicks"
-                value={(latestAds?.clicks ?? 0).toLocaleString()}
-                spark={clicksSpark}
-                prevPct={pctOf(latestAds?.clicks ?? 0, prevAds?.clicks ?? 0)}
-              />
-              <KpiCard
-                label="Impressions"
-                value={((latestAds?.impressions ?? 0) / 1000).toFixed(0) + "K"}
-                spark={imprSpark}
-                prevPct={pctOf(latestAds?.impressions ?? 0, prevAds?.impressions ?? 0)}
-              />
+              <KpiCard label="Spend (May 26)"       value={fmtFull(latestAds?.spend ?? 0)}             spark={spendSpark}  prevPct={pctOf(latestAds?.spend ?? 0, prevAds?.spend ?? 0)} />
+              <KpiCard label="Revenue (May 26)"     value={fmtFull(latestGRev)}                        spark={gRevSpark}   prevPct={pctOf(latestGRev, prevGRev)} />
+              <KpiCard label="ROAS"                 value={(latestAds?.roas ?? 0).toFixed(2) + "×"}   spark={roasSpark}   prevPct={pctOf(latestAds?.roas ?? 0, prevAds?.roas ?? 0)} />
+              <KpiCard label="Clicks"               value={(latestAds?.clicks ?? 0).toLocaleString()}  spark={clicksSpark} prevPct={pctOf(latestAds?.clicks ?? 0, prevAds?.clicks ?? 0)} />
+              <KpiCard label="Impressions"          value={((latestAds?.impressions ?? 0) / 1000).toFixed(0) + "K"} spark={imprSpark} prevPct={pctOf(latestAds?.impressions ?? 0, prevAds?.impressions ?? 0)} />
             </div>
           </>
         )}
@@ -389,48 +505,20 @@ export function BrandPage({ brand, summary, monthly, weekly, weekLabels, product
         <SectionHeader title={`${brand.name}  ·  Meta Ads  ·  Monthly`} />
         {hasMeta ? (
           <div className="grid grid-cols-5 divide-x divide-gray-100 border-b border-gray-100 shadow-sm">
-            <KpiCard
-              label="Spend (May 26)"
-              value={fmtFull(latestMeta?.spend ?? 0)}
-              spark={metaSpendSp}
-              prevPct={pctOf(latestMeta?.spend ?? 0, prevMeta?.spend ?? 0)}
-            />
-            <KpiCard
-              label="Revenue (May 26)"
-              value={fmtFull(latestMeta?.revenue ?? 0)}
-              spark={metaRevSp}
-              prevPct={pctOf(latestMeta?.revenue ?? 0, prevMeta?.revenue ?? 0)}
-            />
-            <KpiCard
-              label="ROAS"
-              value={latestMetaRoas.toFixed(2) + "×"}
-              spark={metaRoasSp}
-              prevPct={pctOf(latestMetaRoas, prevMetaRoas)}
-            />
-            <KpiCard
-              label="Purchases"
-              value={(latestMeta?.purchases ?? 0).toLocaleString()}
-              spark={metaPurchSp}
-              prevPct={pctOf(latestMeta?.purchases ?? 0, prevMeta?.purchases ?? 0)}
-            />
-            <KpiCard
-              label="Clicks"
-              value={(latestMeta?.clicks ?? 0).toLocaleString()}
-              spark={metaClicksSp}
-              prevPct={pctOf(latestMeta?.clicks ?? 0, prevMeta?.clicks ?? 0)}
-            />
+            <KpiCard label="Spend (May 26)"    value={fmtFull(latestMeta?.spend ?? 0)}       spark={metaSpendSp}  prevPct={pctOf(latestMeta?.spend ?? 0, prevMeta?.spend ?? 0)} />
+            <KpiCard label="Revenue (May 26)"  value={fmtFull(latestMeta?.revenue ?? 0)}     spark={metaRevSp}    prevPct={pctOf(latestMeta?.revenue ?? 0, prevMeta?.revenue ?? 0)} />
+            <KpiCard label="ROAS"              value={latestMetaRoas.toFixed(2) + "×"}       spark={metaRoasSp}   prevPct={pctOf(latestMetaRoas, prevMetaRoas)} />
+            <KpiCard label="Purchases"         value={(latestMeta?.purchases ?? 0).toLocaleString()} spark={metaPurchSp}  prevPct={pctOf(latestMeta?.purchases ?? 0, prevMeta?.purchases ?? 0)} />
+            <KpiCard label="Clicks"            value={(latestMeta?.clicks ?? 0).toLocaleString()}    spark={metaClicksSp} prevPct={pctOf(latestMeta?.clicks ?? 0, prevMeta?.clicks ?? 0)} />
           </div>
         ) : (
           <div className="bg-white border-b border-gray-100 p-10 text-center">
             <p className="text-sm text-gray-400 font-medium">Meta Ads not yet connected for {brand.name}</p>
-            <p className="text-xs text-gray-300 mt-1.5">
-              Add <code className="bg-gray-100 px-1 rounded">metaAdAccountId</code> to this brand in stores.config.json,
-              then run <code className="bg-gray-100 px-1 rounded">python3 scripts/sync_meta.py</code>
-            </p>
+            <p className="text-xs text-gray-300 mt-1.5">Add <code className="bg-gray-100 px-1 rounded">metaAdAccountId</code> to stores.config.json, then run <code className="bg-gray-100 px-1 rounded">python3 scripts/sync_meta.py</code></p>
           </div>
         )}
 
-        {/* ── META PLATFORM BREAKDOWN ───────────────────────────────────── */}
+        {/* ── META PLATFORM BREAKDOWN ───────────────────────────────────────── */}
         {hasPlatform && latestPlatRows.length > 0 && (
           <>
             <SectionHeader title={`${brand.name}  ·  Meta Ads  ·  Platform Breakdown  ·  May 26`} />
@@ -438,31 +526,20 @@ export function BrandPage({ brand, summary, monthly, weekly, weekLabels, product
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ background: "#f8fafc" }}>
-                    <th className="text-left px-6 py-3 text-[10px] uppercase tracking-[0.15em] text-gray-400 font-semibold">Platform</th>
-                    <th className="text-right px-6 py-3 text-[10px] uppercase tracking-[0.15em] text-gray-400 font-semibold">Spend</th>
-                    <th className="text-right px-6 py-3 text-[10px] uppercase tracking-[0.15em] text-gray-400 font-semibold">Revenue</th>
-                    <th className="text-right px-6 py-3 text-[10px] uppercase tracking-[0.15em] text-gray-400 font-semibold">ROAS</th>
-                    <th className="text-right px-6 py-3 text-[10px] uppercase tracking-[0.15em] text-gray-400 font-semibold">Purchases</th>
-                    <th className="text-right px-6 py-3 text-[10px] uppercase tracking-[0.15em] text-gray-400 font-semibold">Clicks</th>
-                    <th className="text-right px-6 py-3 text-[10px] uppercase tracking-[0.15em] text-gray-400 font-semibold">Impressions</th>
+                    {["Platform","Spend","Revenue","ROAS","Purchases","Clicks","Impressions"].map(h => (
+                      <th key={h} className={`${h === "Platform" ? "text-left" : "text-right"} px-6 py-3 text-[10px] uppercase tracking-[0.15em] text-gray-400 font-semibold`}>{h}</th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {PLATFORMS.filter(p => latestPlatRows.some(r => r.platform === p.id)).map(p => {
                     const r = latestPlatRows.find(row => row.platform === p.id)!;
                     const roas = r.spend > 0 ? r.revenue / r.spend : 0;
-                    const ICON_BG: Record<string, string> = {
-                      facebook: "#1877F2", instagram: "#E1306C", messenger: "#0084FF", audience_network: "#6366f1",
-                    };
+                    const ICON_BG: Record<string, string> = { facebook: "#1877F2", instagram: "#E1306C", messenger: "#0084FF", audience_network: "#6366f1" };
                     return (
                       <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="px-6 py-3 flex items-center gap-2.5">
-                          <span
-                            className="w-6 h-6 rounded text-white text-[9px] font-bold flex items-center justify-center shrink-0"
-                            style={{ background: ICON_BG[p.id] ?? "#888" }}
-                          >
-                            {p.icon.toUpperCase()}
-                          </span>
+                          <span className="w-6 h-6 rounded text-white text-[9px] font-bold flex items-center justify-center shrink-0" style={{ background: ICON_BG[p.id] ?? "#888" }}>{p.icon.toUpperCase()}</span>
                           <span className="font-medium text-slate-700">{p.label}</span>
                         </td>
                         <td className="px-6 py-3 text-right text-slate-600">{fmtFull(r.spend)}</td>
@@ -480,41 +557,51 @@ export function BrandPage({ brand, summary, monthly, weekly, weekLabels, product
           </>
         )}
 
-        {/* ── INSTAGRAM ORGANIC ─────────────────────────────────────────── */}
+        {/* ── INSTAGRAM ORGANIC ─────────────────────────────────────────────── */}
         <SectionHeader title={`${brand.name}  ·  Instagram  ·  Organic`} />
         {hasIg ? (
           <div className="grid grid-cols-4 divide-x divide-gray-100 border-b border-gray-100 shadow-sm">
-            <KpiCard
-              label="Followers"
-              value={(latestIg?.followers ?? 0).toLocaleString()}
-              spark={igFollSpark}
-            />
-            <KpiCard
-              label="Reach (May 26)"
-              value={(latestIg?.reach ?? 0).toLocaleString()}
-              spark={igReachSpark}
-              prevPct={pctOf(latestIg?.reach ?? 0, prevIg?.reach ?? 0)}
-            />
-            <KpiCard
-              label="Profile Views (May 26)"
-              value={(latestIg?.profile_views ?? 0).toLocaleString()}
-              spark={igPvSpark}
-              prevPct={pctOf(latestIg?.profile_views ?? 0, prevIg?.profile_views ?? 0)}
-            />
-            <KpiCard
-              label="Accounts Engaged (May 26)"
-              value={(latestIg?.accounts_engaged ?? 0).toLocaleString()}
-              spark={igEngSpark}
-              prevPct={pctOf(latestIg?.accounts_engaged ?? 0, prevIg?.accounts_engaged ?? 0)}
-            />
+            <KpiCard label="Followers"                value={(latestIg?.followers ?? 0).toLocaleString()}       spark={igFollSpark}  color="#E1306C" />
+            <KpiCard label="Reach (May 26)"           value={(latestIg?.reach ?? 0).toLocaleString()}           spark={igReachSpark} prevPct={pctOf(latestIg?.reach ?? 0, prevIg?.reach ?? 0)} color="#E1306C" />
+            <KpiCard label="Profile Views (May 26)"   value={(latestIg?.profile_views ?? 0).toLocaleString()}   spark={igPvSpark}    prevPct={pctOf(latestIg?.profile_views ?? 0, prevIg?.profile_views ?? 0)} color="#E1306C" />
+            <KpiCard label="Accounts Engaged (May 26)" value={(latestIg?.accounts_engaged ?? 0).toLocaleString()} spark={igEngSpark}  prevPct={pctOf(latestIg?.accounts_engaged ?? 0, prevIg?.accounts_engaged ?? 0)} color="#E1306C" />
           </div>
         ) : (
           <div className="bg-white border-b border-gray-100 p-10 text-center">
             <p className="text-sm text-gray-400 font-medium">Instagram organic not yet connected for {brand.name}</p>
-            <p className="text-xs text-gray-300 mt-1.5">
-              Add <code className="bg-gray-100 px-1 rounded">instagramAccountId</code> to this brand in stores.config.json,
-              then run <code className="bg-gray-100 px-1 rounded">python3 scripts/sync_instagram.py</code>
-            </p>
+            <p className="text-xs text-gray-300 mt-1.5">Add <code className="bg-gray-100 px-1 rounded">instagramAccountId</code> to stores.config.json, then run <code className="bg-gray-100 px-1 rounded">python3 scripts/sync_instagram.py</code></p>
+          </div>
+        )}
+
+        {/* ── KLAVIYO ──────────────────────────────────────────────────────── */}
+        <SectionHeader title={`${brand.name}  ·  Klaviyo  ·  Email Marketing`} />
+        {hasKlaviyo ? (
+          <div className="grid grid-cols-4 divide-x divide-gray-100 border-b border-gray-100 shadow-sm">
+            <KpiCard label="Subscribers"       value={(latestKl?.list_size ?? 0).toLocaleString()}          spark={klListSpark}  color="#7c3aed" />
+            <KpiCard label="Open Rate (May 26)" value={`${(latestKl?.open_rate ?? 0).toFixed(1)}%`}         spark={klOpenSpark}  prevPct={pctOf(latestKl?.open_rate ?? 0, prevKl?.open_rate ?? 0)} color="#7c3aed" />
+            <KpiCard label="Click Rate (May 26)" value={`${(latestKl?.click_rate ?? 0).toFixed(1)}%`}       spark={klClickSpark} prevPct={pctOf(latestKl?.click_rate ?? 0, prevKl?.click_rate ?? 0)} color="#7c3aed" />
+            <KpiCard label="Revenue (May 26)"  value={fmtFull(latestKl?.revenue ?? 0)}                      spark={klRevSpark}   prevPct={pctOf(latestKl?.revenue ?? 0, prevKl?.revenue ?? 0)} color="#7c3aed" />
+          </div>
+        ) : (
+          <div className="bg-white border-b border-gray-100 p-10 text-center">
+            <p className="text-sm text-gray-400 font-medium">Klaviyo not yet connected for {brand.name}</p>
+            <p className="text-xs text-gray-300 mt-1.5">Add <code className="bg-gray-100 px-1 rounded">klaviyoApiKey</code> + <code className="bg-gray-100 px-1 rounded">klaviyoListId</code> to stores.config.json, then run <code className="bg-gray-100 px-1 rounded">python3 scripts/sync_klaviyo.py</code></p>
+          </div>
+        )}
+
+        {/* ── GA4 ORGANIC ──────────────────────────────────────────────────── */}
+        <SectionHeader title={`${brand.name}  ·  GA4  ·  Organic Traffic`} />
+        {hasGA4 ? (
+          <div className="grid grid-cols-4 divide-x divide-gray-100 border-b border-gray-100 shadow-sm">
+            <KpiCard label="Sessions (May 26)"         value={(latestGA4?.sessions ?? 0).toLocaleString()}         spark={ga4SessSpark}  prevPct={pctOf(latestGA4?.sessions ?? 0, prevGA4?.sessions ?? 0)} color="#34a853" />
+            <KpiCard label="Organic Sessions (May 26)" value={(latestGA4?.organic_sessions ?? 0).toLocaleString()}  spark={ga4OrgSpark}   prevPct={pctOf(latestGA4?.organic_sessions ?? 0, prevGA4?.organic_sessions ?? 0)} color="#34a853" />
+            <KpiCard label="New Users (May 26)"        value={(latestGA4?.new_users ?? 0).toLocaleString()}         spark={ga4UsersSpark} prevPct={pctOf(latestGA4?.new_users ?? 0, prevGA4?.new_users ?? 0)} color="#34a853" />
+            <KpiCard label="Engagement Rate (May 26)"  value={`${((latestGA4?.engagement_rate ?? 0) * 100).toFixed(1)}%`} spark={ga4EngSpark.map(v => v * 100)} prevPct={pctOf(latestGA4?.engagement_rate ?? 0, prevGA4?.engagement_rate ?? 0)} color="#34a853" />
+          </div>
+        ) : (
+          <div className="bg-white border-b border-gray-100 p-10 text-center">
+            <p className="text-sm text-gray-400 font-medium">GA4 not yet connected for {brand.name}</p>
+            <p className="text-xs text-gray-300 mt-1.5">Add <code className="bg-gray-100 px-1 rounded">ga4PropertyId</code> to each brand in stores.config.json + set up service account credentials, then run <code className="bg-gray-100 px-1 rounded">python3 scripts/sync_ga4.py</code></p>
           </div>
         )}
 

@@ -9,13 +9,14 @@ import { TradeshowAccordion } from "./TradeshowAccordion";
 import { BrandCard } from "./BrandCard";
 import { Leaderboard } from "./Leaderboard";
 import { BrandPage } from "./BrandPage";
+import { fmt } from "@/lib/format";
 
 const TABS = [
-  { id: "brands",      label: "Brands" },
-  { id: "shopify",     label: "Shopify" },
-  { id: "google-ads",  label: "Google Ads" },
-  { id: "meta-ads",    label: "Meta Ads" },
-  { id: "tradeshows",  label: "Tradeshows" },
+  { id: "brands",     label: "Brands" },
+  { id: "shopify",    label: "Shopify" },
+  { id: "google-ads", label: "Google Ads" },
+  { id: "meta-ads",   label: "Meta Ads" },
+  { id: "tradeshows", label: "Tradeshows" },
 ] as const;
 
 type TabId = typeof TABS[number]["id"];
@@ -36,13 +37,17 @@ interface Props {
   metaAds: any[];
   metaAdsPlatform: any[];
   instagramOrganic: any[];
+  targets: any[];
+  klaviyo: any[];
+  ga4: any[];
   kpis: { label: string; value: string; sub: string }[];
 }
 
 export function DashboardTabs({
   brands, summaries, monthly, weekly, products,
   tradeshows, tradeshowBrands, tradeshowSales,
-  weekLabels, googleAds, metaAds, metaAdsPlatform, instagramOrganic, kpis,
+  weekLabels, googleAds, metaAds, metaAdsPlatform,
+  instagramOrganic, targets, klaviyo, ga4, kpis,
 }: Props) {
   const [active, setActive] = useState<TabId>("brands");
   const [brandFilter, setBrandFilter] = useState<number | "all">("all");
@@ -58,9 +63,12 @@ export function DashboardTabs({
   const filteredAds      = brandFilter === "all" ? googleAds : googleAds.filter((d: any) => d.brand_id === brandFilter);
   const filteredMeta     = brandFilter === "all" ? metaAds  : metaAds.filter((d: any) => d.brand_id === brandFilter);
 
-  function openBrand(id: number) {
-    setBrandFilter(id);
-  }
+  function openBrand(id: number) { setBrandFilter(id); }
+
+  // Top products across all brands
+  const topProducts = [...products]
+    .sort((a: any, b: any) => b.gross_sales - a.gross_sales)
+    .slice(0, 10);
 
   // ── Brand page view ────────────────────────────────────────────────────────
   if (selectedBrand) {
@@ -103,6 +111,9 @@ export function DashboardTabs({
           metaAds={metaAds}
           metaAdsPlatform={metaAdsPlatform}
           instagramOrganic={instagramOrganic}
+          targets={targets}
+          klaviyo={klaviyo}
+          ga4={ga4}
         />
       </>
     );
@@ -111,7 +122,6 @@ export function DashboardTabs({
   // ── All-brands tab view ────────────────────────────────────────────────────
   return (
     <>
-      {/* Tab bar */}
       <div className="border-b border-gray-200 bg-white sticky top-[57px] z-10">
         <div className="max-w-screen-2xl mx-auto px-6 flex items-end">
           <nav className="flex gap-1 -mb-px flex-1">
@@ -132,7 +142,6 @@ export function DashboardTabs({
         </div>
       </div>
 
-      {/* Tab content */}
       <main className="max-w-screen-2xl mx-auto px-6 py-8 space-y-8">
 
         {/* ── Brands home ── */}
@@ -155,6 +164,11 @@ export function DashboardTabs({
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                 {brands.filter((b: any) => b.live).map((brand: any) => {
                   const latestIg = instagramOrganic.find((d: any) => d.brand_id === brand.id && d.month_key === LATEST);
+                  const latestG  = googleAds.find((d: any) => d.brand_id === brand.id && d.month_key === LATEST);
+                  const latestM  = metaAds.find((d: any) => d.brand_id === brand.id && d.month_key === LATEST);
+                  const target   = targets.find((t: any) => t.brand_id === brand.id && t.month_key === LATEST);
+                  const gRoas = latestG?.roas ?? 0;
+                  const mRoas = latestM && latestM.spend > 0 ? latestM.revenue / latestM.spend : 0;
                   return (
                     <BrandCard
                       key={brand.id}
@@ -165,16 +179,57 @@ export function DashboardTabs({
                       hasMeta={metaAds.some((d: any) => d.brand_id === brand.id)}
                       hasInstagram={instagramOrganic.some((d: any) => d.brand_id === brand.id)}
                       igFollowers={latestIg?.followers}
+                      target={target}
+                      roasAlert={(gRoas > 0 && gRoas < 1.5) || (mRoas > 0 && mRoas < 1.5)}
                     />
                   );
                 })}
               </div>
             </div>
 
+            {/* Top products cross-brand */}
+            {topProducts.length > 0 && (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                <h2 className="font-semibold text-gray-800 mb-1">Top Products Portfolio-Wide</h2>
+                <p className="text-xs text-gray-400 mb-4">FY 2025–26 gross sales across all brands</p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr style={{ background: "#f8fafc" }}>
+                        <th className="text-left px-4 py-2.5 text-[10px] uppercase tracking-wider text-gray-400 font-semibold w-8">#</th>
+                        <th className="text-left px-4 py-2.5 text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Product</th>
+                        <th className="text-left px-4 py-2.5 text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Brand</th>
+                        <th className="text-right px-4 py-2.5 text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Revenue</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {topProducts.map((p: any, i: number) => {
+                        const brand = brands.find((b: any) => b.id === p.brand_id);
+                        return (
+                          <tr key={i} className="hover:bg-gray-50/60 cursor-pointer transition-colors" onClick={() => openBrand(p.brand_id)}>
+                            <td className="px-4 py-2.5 text-xs text-gray-400 font-medium">{i + 1}</td>
+                            <td className="px-4 py-2.5 text-slate-700 font-medium">{p.title}</td>
+                            <td className="px-4 py-2.5">
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-2 rounded-full shrink-0" style={{ background: brand?.color ?? "#ccc" }} />
+                                <span className="text-xs text-gray-500">{brand?.name ?? "—"}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-2.5 text-right font-semibold text-slate-800">{fmt(p.gross_sales)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
             {/* Leaderboard */}
             <Leaderboard
               brands={brands}
               summaries={summaries}
+              monthly={monthly}
               googleAds={googleAds}
               metaAds={metaAds}
               instagramOrganic={instagramOrganic}
