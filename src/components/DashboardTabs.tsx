@@ -6,6 +6,7 @@ import { GoogleAdsChart } from "./GoogleAdsChart";
 import { ProductsTable } from "./ProductsTable";
 import { TradeshowAccordion } from "./TradeshowAccordion";
 import { BrandCard } from "./BrandCard";
+import { BrandPage } from "./BrandPage";
 
 const TABS = [
   { id: "overview",   label: "Overview" },
@@ -39,13 +40,67 @@ export function DashboardTabs({
   const [brandFilter, setBrandFilter] = useState<number | "all">("all");
   const summaryMap = Object.fromEntries(summaries.map((s: any) => [s.brand_id, s]));
 
+  const selectedBrand   = brandFilter !== "all" ? brands.find((b: any) => b.id === brandFilter) : null;
+  const selectedSummary = brandFilter !== "all" ? summaries.find((s: any) => s.brand_id === brandFilter) : null;
+
   const filteredBrands   = brandFilter === "all" ? brands   : brands.filter((b: any) => b.id === brandFilter);
   const filteredMonthly  = brandFilter === "all" ? monthly  : monthly.filter((m: any) => m.brand_id === brandFilter);
   const filteredWeekly   = brandFilter === "all" ? weekly   : weekly.filter((w: any) => w.brand_id === brandFilter);
   const filteredProducts = brandFilter === "all" ? products : products.filter((p: any) => p.brand_id === brandFilter);
   const filteredAds      = brandFilter === "all" ? googleAds : googleAds.filter((d: any) => d.brand_id === brandFilter);
-  const filteredSummaries = brandFilter === "all" ? summaries : summaries.filter((s: any) => s.brand_id === brandFilter);
 
+  const brandDropdown = (
+    <div className="pb-2 flex items-center gap-2">
+      {selectedBrand && (
+        <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: selectedBrand.color }} />
+      )}
+      <select
+        value={brandFilter === "all" ? "all" : String(brandFilter)}
+        onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
+        className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+      >
+        <option value="all">All Brands</option>
+        {brands.map((b: any) => (
+          <option key={b.id} value={String(b.id)}>{b.name}</option>
+        ))}
+      </select>
+    </div>
+  );
+
+  // ── Brand page view ─────────────────────────────────────────────────────
+  if (selectedBrand) {
+    return (
+      <>
+        <div className="border-b border-gray-200 bg-white sticky top-[57px] z-10">
+          <div className="max-w-screen-2xl mx-auto px-6 flex items-center justify-between py-2.5">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setBrandFilter("all")}
+                className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 transition-colors"
+              >
+                ← All Brands
+              </button>
+              <span className="text-gray-200 text-sm">|</span>
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full" style={{ background: selectedBrand.color }} />
+                <span className="text-sm font-medium text-gray-700">{selectedBrand.name}</span>
+              </div>
+            </div>
+            {brandDropdown}
+          </div>
+        </div>
+        <BrandPage
+          brand={selectedBrand}
+          summary={selectedSummary ?? undefined}
+          monthly={monthly}
+          products={products}
+          googleAds={googleAds}
+        />
+      </>
+    );
+  }
+
+  // ── All-brands tab view ─────────────────────────────────────────────────
   return (
     <>
       {/* Tab bar + brand filter */}
@@ -66,24 +121,7 @@ export function DashboardTabs({
               </button>
             ))}
           </nav>
-          <div className="pb-2 flex items-center gap-2">
-            {brandFilter !== "all" && (
-              <div
-                className="w-2.5 h-2.5 rounded-full shrink-0"
-                style={{ background: brands.find((b: any) => b.id === brandFilter)?.color ?? "#6366f1" }}
-              />
-            )}
-            <select
-              value={brandFilter === "all" ? "all" : String(brandFilter)}
-              onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
-              className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-            >
-              <option value="all">All Brands</option>
-              {brands.map((b: any) => (
-                <option key={b.id} value={String(b.id)}>{b.name}</option>
-              ))}
-            </select>
-          </div>
+          {brandDropdown}
         </div>
       </div>
 
