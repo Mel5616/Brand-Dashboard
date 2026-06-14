@@ -33,6 +33,10 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# Google Ads credentials (contains secrets)
+google_ads_creds.json
+stores.config.json
+
 # vercel
 .vercel
 

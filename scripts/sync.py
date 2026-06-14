@@ -405,29 +405,39 @@ def fetch_google_ads_metrics(customer_id, creds):
     access_token = _google_access_token(creds)
     cid = customer_id.replace('-', '')
 
-    query = '''
-    SELECT
-      segments.month,
-      metrics.cost_micros,
-      metrics.impressions,
-      metrics.clicks,
-      metrics.conversions_value
+    query_full = '''
+    SELECT segments.month, metrics.cost_micros, metrics.impressions,
+           metrics.clicks, metrics.conversions_value
     FROM campaign
-    WHERE segments.date >= '2024-07-01'
-      AND segments.date <= '2026-05-31'
+    WHERE segments.date >= '2024-07-01' AND segments.date <= '2026-05-31'
+      AND campaign.status != 'REMOVED'
+    '''
+    query_no_conv = '''
+    SELECT segments.month, metrics.cost_micros, metrics.impressions, metrics.clicks
+    FROM campaign
+    WHERE segments.date >= '2024-07-01' AND segments.date <= '2026-05-31'
       AND campaign.status != 'REMOVED'
     '''
 
     url = f'https://googleads.googleapis.com/v20/customers/{cid}/googleAds:search'
-    req = urllib.request.Request(url, data=json.dumps({'query': query}).encode(), method='POST')
-    req.add_header('Authorization', f'Bearer {access_token}')
-    req.add_header('developer-token', creds['developerToken'])
-    req.add_header('Content-Type', 'application/json')
-    req.add_header('login-customer-id', '8923727576')  # MCC ID
     ctx = ssl.create_default_context()
 
-    with urllib.request.urlopen(req, context=ctx, timeout=30) as r:
-        data = json.loads(r.read().decode())
+    def _fetch(q):
+        req = urllib.request.Request(url, data=json.dumps({'query': q}).encode(), method='POST')
+        req.add_header('Authorization', f'Bearer {access_token}')
+        req.add_header('developer-token', creds['developerToken'])
+        req.add_header('Content-Type', 'application/json')
+        req.add_header('login-customer-id', '8923727576')  # MCC ID
+        with urllib.request.urlopen(req, context=ctx, timeout=30) as r:
+            return json.loads(r.read().decode())
+
+    try:
+        data = _fetch(query_full)
+    except urllib.error.HTTPError as e:
+        if e.code == 400:
+            data = _fetch(query_no_conv)  # account has no conversion tracking
+        else:
+            raise
 
     # Aggregate by month
     monthly = defaultdict(lambda: {'spend': 0.0, 'impressions': 0, 'clicks': 0, 'conv_value': 0.0})
