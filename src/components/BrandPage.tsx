@@ -7,7 +7,7 @@ import {
 } from "chart.js";
 import { Line, Bar } from "react-chartjs-2";
 import { fmt, fmtFull } from "@/lib/format";
-import type { Brand, BrandSummary, BrandMonthly, BrandWeekly, BrandProduct, GoogleAdsRow, MetaAdsRow, WeekLabel } from "@/lib/db";
+import type { Brand, BrandSummary, BrandMonthly, BrandWeekly, BrandProduct, GoogleAdsRow, MetaAdsRow, MetaAdsPlatformRow, InstagramOrganicRow, WeekLabel } from "@/lib/db";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Filler, Tooltip, Legend);
 
@@ -141,9 +141,11 @@ interface Props {
   products: BrandProduct[];
   googleAds: GoogleAdsRow[];
   metaAds: MetaAdsRow[];
+  metaAdsPlatform: MetaAdsPlatformRow[];
+  instagramOrganic: InstagramOrganicRow[];
 }
 
-export function BrandPage({ brand, summary, monthly, weekly, weekLabels, products, googleAds, metaAds }: Props) {
+export function BrandPage({ brand, summary, monthly, weekly, weekLabels, products, googleAds, metaAds, metaAdsPlatform, instagramOrganic }: Props) {
   const [period, setPeriod] = useState<Period>("monthly");
 
   const monthlyRows = monthly.filter(m => m.brand_id === brand.id);
@@ -223,29 +225,53 @@ export function BrandPage({ brand, summary, monthly, weekly, weekLabels, product
   };
 
   // ── Google Ads (always monthly) ──────────────────────────────────────────
-  const spendSpark  = MONTH_KEYS.map(mk => adsRows.find(d => d.month_key === mk)?.spend       ?? 0);
-  const roasSpark   = MONTH_KEYS.map(mk => adsRows.find(d => d.month_key === mk)?.roas        ?? 0);
-  const clicksSpark = MONTH_KEYS.map(mk => adsRows.find(d => d.month_key === mk)?.clicks      ?? 0);
-  const imprSpark   = MONTH_KEYS.map(mk => adsRows.find(d => d.month_key === mk)?.impressions ?? 0);
-  const latestAds   = adsRows.find(d => d.month_key === LATEST);
-  const prevAds     = adsRows.find(d => d.month_key === PREV_MO);
-  const hasAds      = adsRows.length > 0;
+  const spendSpark   = MONTH_KEYS.map(mk => adsRows.find(d => d.month_key === mk)?.spend       ?? 0);
+  const roasSpark    = MONTH_KEYS.map(mk => adsRows.find(d => d.month_key === mk)?.roas        ?? 0);
+  const clicksSpark  = MONTH_KEYS.map(mk => adsRows.find(d => d.month_key === mk)?.clicks      ?? 0);
+  const imprSpark    = MONTH_KEYS.map(mk => adsRows.find(d => d.month_key === mk)?.impressions ?? 0);
+  const gRevSpark    = MONTH_KEYS.map(mk => { const r = adsRows.find(d => d.month_key === mk); return r ? r.roas * r.spend : 0; });
+  const latestAds    = adsRows.find(d => d.month_key === LATEST);
+  const prevAds      = adsRows.find(d => d.month_key === PREV_MO);
+  const hasAds       = adsRows.length > 0;
+  const latestGRev   = (latestAds?.roas ?? 0) * (latestAds?.spend ?? 0);
+  const prevGRev     = (prevAds?.roas ?? 0) * (prevAds?.spend ?? 0);
 
   // ── Meta Ads (always monthly) ────────────────────────────────────────────
-  const metaRows     = metaAds.filter(d => d.brand_id === brand.id);
-  const hasMeta      = metaRows.length > 0;
-  const metaSpendSp  = MONTH_KEYS.map(mk => metaRows.find(d => d.month_key === mk)?.spend       ?? 0);
-  const metaClicksSp = MONTH_KEYS.map(mk => metaRows.find(d => d.month_key === mk)?.clicks      ?? 0);
-  const metaImprSp   = MONTH_KEYS.map(mk => metaRows.find(d => d.month_key === mk)?.impressions ?? 0);
-  const metaPurchSp  = MONTH_KEYS.map(mk => metaRows.find(d => d.month_key === mk)?.purchases   ?? 0);
-  const latestMeta   = metaRows.find(d => d.month_key === LATEST);
-  const prevMeta     = metaRows.find(d => d.month_key === PREV_MO);
-  const metaRoasSp   = MONTH_KEYS.map(mk => {
+  const metaRows      = metaAds.filter(d => d.brand_id === brand.id);
+  const hasMeta       = metaRows.length > 0;
+  const metaSpendSp   = MONTH_KEYS.map(mk => metaRows.find(d => d.month_key === mk)?.spend     ?? 0);
+  const metaClicksSp  = MONTH_KEYS.map(mk => metaRows.find(d => d.month_key === mk)?.clicks    ?? 0);
+  const metaPurchSp   = MONTH_KEYS.map(mk => metaRows.find(d => d.month_key === mk)?.purchases ?? 0);
+  const metaRevSp     = MONTH_KEYS.map(mk => metaRows.find(d => d.month_key === mk)?.revenue   ?? 0);
+  const latestMeta    = metaRows.find(d => d.month_key === LATEST);
+  const prevMeta      = metaRows.find(d => d.month_key === PREV_MO);
+  const metaRoasSp    = MONTH_KEYS.map(mk => {
     const r = metaRows.find(d => d.month_key === mk);
     return r && r.spend > 0 ? r.revenue / r.spend : 0;
   });
   const latestMetaRoas = latestMeta && latestMeta.spend > 0 ? latestMeta.revenue / latestMeta.spend : 0;
   const prevMetaRoas   = prevMeta   && prevMeta.spend   > 0 ? prevMeta.revenue   / prevMeta.spend   : 0;
+
+  // ── Meta Ads Platform Breakdown ──────────────────────────────────────────
+  const platRows    = metaAdsPlatform.filter(d => d.brand_id === brand.id);
+  const hasPlatform = platRows.length > 0;
+  const PLATFORMS: { id: string; label: string; icon: string }[] = [
+    { id: "facebook",         label: "Facebook",         icon: "f" },
+    { id: "instagram",        label: "Instagram",        icon: "ig" },
+    { id: "messenger",        label: "Messenger",        icon: "m" },
+    { id: "audience_network", label: "Audience Network", icon: "an" },
+  ];
+  const latestPlatRows = platRows.filter(d => d.month_key === LATEST);
+
+  // ── Instagram Organic ────────────────────────────────────────────────────
+  const igRows       = instagramOrganic.filter(d => d.brand_id === brand.id);
+  const hasIg        = igRows.length > 0;
+  const latestIg     = igRows.find(d => d.month_key === LATEST);
+  const prevIg       = igRows.find(d => d.month_key === PREV_MO);
+  const igFollSpark  = MONTH_KEYS.map(mk => igRows.find(d => d.month_key === mk)?.followers        ?? 0);
+  const igReachSpark = MONTH_KEYS.map(mk => igRows.find(d => d.month_key === mk)?.reach            ?? 0);
+  const igPvSpark    = MONTH_KEYS.map(mk => igRows.find(d => d.month_key === mk)?.profile_views    ?? 0);
+  const igEngSpark   = MONTH_KEYS.map(mk => igRows.find(d => d.month_key === mk)?.accounts_engaged ?? 0);
 
   return (
     <div className="bg-gray-50 min-h-screen pb-16">
@@ -324,12 +350,18 @@ export function BrandPage({ brand, summary, monthly, weekly, weekLabels, product
         {hasAds && (
           <>
             <SectionHeader title={`${brand.name}  ·  Google Ads  ·  Monthly`} />
-            <div className="grid grid-cols-4 divide-x divide-gray-100 border-b border-gray-100 shadow-sm">
+            <div className="grid grid-cols-5 divide-x divide-gray-100 border-b border-gray-100 shadow-sm">
               <KpiCard
                 label="Spend (May 26)"
                 value={fmtFull(latestAds?.spend ?? 0)}
                 spark={spendSpark}
                 prevPct={pctOf(latestAds?.spend ?? 0, prevAds?.spend ?? 0)}
+              />
+              <KpiCard
+                label="Revenue (May 26)"
+                value={fmtFull(latestGRev)}
+                spark={gRevSpark}
+                prevPct={pctOf(latestGRev, prevGRev)}
               />
               <KpiCard
                 label="ROAS"
@@ -356,12 +388,18 @@ export function BrandPage({ brand, summary, monthly, weekly, weekLabels, product
         {/* ── META ADS ─────────────────────────────────────────────────────── */}
         <SectionHeader title={`${brand.name}  ·  Meta Ads  ·  Monthly`} />
         {hasMeta ? (
-          <div className="grid grid-cols-4 divide-x divide-gray-100 border-b border-gray-100 shadow-sm">
+          <div className="grid grid-cols-5 divide-x divide-gray-100 border-b border-gray-100 shadow-sm">
             <KpiCard
               label="Spend (May 26)"
               value={fmtFull(latestMeta?.spend ?? 0)}
               spark={metaSpendSp}
               prevPct={pctOf(latestMeta?.spend ?? 0, prevMeta?.spend ?? 0)}
+            />
+            <KpiCard
+              label="Revenue (May 26)"
+              value={fmtFull(latestMeta?.revenue ?? 0)}
+              spark={metaRevSp}
+              prevPct={pctOf(latestMeta?.revenue ?? 0, prevMeta?.revenue ?? 0)}
             />
             <KpiCard
               label="ROAS"
@@ -370,16 +408,16 @@ export function BrandPage({ brand, summary, monthly, weekly, weekLabels, product
               prevPct={pctOf(latestMetaRoas, prevMetaRoas)}
             />
             <KpiCard
-              label="Clicks"
-              value={(latestMeta?.clicks ?? 0).toLocaleString()}
-              spark={metaClicksSp}
-              prevPct={pctOf(latestMeta?.clicks ?? 0, prevMeta?.clicks ?? 0)}
-            />
-            <KpiCard
               label="Purchases"
               value={(latestMeta?.purchases ?? 0).toLocaleString()}
               spark={metaPurchSp}
               prevPct={pctOf(latestMeta?.purchases ?? 0, prevMeta?.purchases ?? 0)}
+            />
+            <KpiCard
+              label="Clicks"
+              value={(latestMeta?.clicks ?? 0).toLocaleString()}
+              spark={metaClicksSp}
+              prevPct={pctOf(latestMeta?.clicks ?? 0, prevMeta?.clicks ?? 0)}
             />
           </div>
         ) : (
@@ -388,6 +426,94 @@ export function BrandPage({ brand, summary, monthly, weekly, weekLabels, product
             <p className="text-xs text-gray-300 mt-1.5">
               Add <code className="bg-gray-100 px-1 rounded">metaAdAccountId</code> to this brand in stores.config.json,
               then run <code className="bg-gray-100 px-1 rounded">python3 scripts/sync_meta.py</code>
+            </p>
+          </div>
+        )}
+
+        {/* ── META PLATFORM BREAKDOWN ───────────────────────────────────── */}
+        {hasPlatform && latestPlatRows.length > 0 && (
+          <>
+            <SectionHeader title={`${brand.name}  ·  Meta Ads  ·  Platform Breakdown  ·  May 26`} />
+            <div className="bg-white border-b border-gray-100 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr style={{ background: "#f8fafc" }}>
+                    <th className="text-left px-6 py-3 text-[10px] uppercase tracking-[0.15em] text-gray-400 font-semibold">Platform</th>
+                    <th className="text-right px-6 py-3 text-[10px] uppercase tracking-[0.15em] text-gray-400 font-semibold">Spend</th>
+                    <th className="text-right px-6 py-3 text-[10px] uppercase tracking-[0.15em] text-gray-400 font-semibold">Revenue</th>
+                    <th className="text-right px-6 py-3 text-[10px] uppercase tracking-[0.15em] text-gray-400 font-semibold">ROAS</th>
+                    <th className="text-right px-6 py-3 text-[10px] uppercase tracking-[0.15em] text-gray-400 font-semibold">Purchases</th>
+                    <th className="text-right px-6 py-3 text-[10px] uppercase tracking-[0.15em] text-gray-400 font-semibold">Clicks</th>
+                    <th className="text-right px-6 py-3 text-[10px] uppercase tracking-[0.15em] text-gray-400 font-semibold">Impressions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {PLATFORMS.filter(p => latestPlatRows.some(r => r.platform === p.id)).map(p => {
+                    const r = latestPlatRows.find(row => row.platform === p.id)!;
+                    const roas = r.spend > 0 ? r.revenue / r.spend : 0;
+                    const ICON_BG: Record<string, string> = {
+                      facebook: "#1877F2", instagram: "#E1306C", messenger: "#0084FF", audience_network: "#6366f1",
+                    };
+                    return (
+                      <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="px-6 py-3 flex items-center gap-2.5">
+                          <span
+                            className="w-6 h-6 rounded text-white text-[9px] font-bold flex items-center justify-center shrink-0"
+                            style={{ background: ICON_BG[p.id] ?? "#888" }}
+                          >
+                            {p.icon.toUpperCase()}
+                          </span>
+                          <span className="font-medium text-slate-700">{p.label}</span>
+                        </td>
+                        <td className="px-6 py-3 text-right text-slate-600">{fmtFull(r.spend)}</td>
+                        <td className="px-6 py-3 text-right font-semibold text-slate-800">{fmtFull(r.revenue)}</td>
+                        <td className="px-6 py-3 text-right text-slate-600">{roas.toFixed(2)}×</td>
+                        <td className="px-6 py-3 text-right text-slate-600">{r.purchases.toLocaleString()}</td>
+                        <td className="px-6 py-3 text-right text-slate-600">{r.clicks.toLocaleString()}</td>
+                        <td className="px-6 py-3 text-right text-slate-600">{(r.impressions / 1000).toFixed(0)}K</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {/* ── INSTAGRAM ORGANIC ─────────────────────────────────────────── */}
+        <SectionHeader title={`${brand.name}  ·  Instagram  ·  Organic`} />
+        {hasIg ? (
+          <div className="grid grid-cols-4 divide-x divide-gray-100 border-b border-gray-100 shadow-sm">
+            <KpiCard
+              label="Followers"
+              value={(latestIg?.followers ?? 0).toLocaleString()}
+              spark={igFollSpark}
+            />
+            <KpiCard
+              label="Reach (May 26)"
+              value={(latestIg?.reach ?? 0).toLocaleString()}
+              spark={igReachSpark}
+              prevPct={pctOf(latestIg?.reach ?? 0, prevIg?.reach ?? 0)}
+            />
+            <KpiCard
+              label="Profile Views (May 26)"
+              value={(latestIg?.profile_views ?? 0).toLocaleString()}
+              spark={igPvSpark}
+              prevPct={pctOf(latestIg?.profile_views ?? 0, prevIg?.profile_views ?? 0)}
+            />
+            <KpiCard
+              label="Accounts Engaged (May 26)"
+              value={(latestIg?.accounts_engaged ?? 0).toLocaleString()}
+              spark={igEngSpark}
+              prevPct={pctOf(latestIg?.accounts_engaged ?? 0, prevIg?.accounts_engaged ?? 0)}
+            />
+          </div>
+        ) : (
+          <div className="bg-white border-b border-gray-100 p-10 text-center">
+            <p className="text-sm text-gray-400 font-medium">Instagram organic not yet connected for {brand.name}</p>
+            <p className="text-xs text-gray-300 mt-1.5">
+              Add <code className="bg-gray-100 px-1 rounded">instagramAccountId</code> to this brand in stores.config.json,
+              then run <code className="bg-gray-100 px-1 rounded">python3 scripts/sync_instagram.py</code>
             </p>
           </div>
         )}

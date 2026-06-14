@@ -94,6 +94,26 @@ export type MetaAdsRow = {
   revenue: number;
 };
 
+export type MetaAdsPlatformRow = {
+  brand_id: number;
+  month_key: string;
+  platform: string;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  purchases: number;
+  revenue: number;
+};
+
+export type InstagramOrganicRow = {
+  brand_id: number;
+  month_key: string;
+  followers: number;
+  reach: number;
+  profile_views: number;
+  accounts_engaged: number;
+};
+
 export async function getDashboardData() {
   const db = await createClient();
 
@@ -110,6 +130,8 @@ export async function getDashboardData() {
     { data: syncLog },
     { data: googleAds },
     { data: metaAds },
+    { data: metaAdsPlatform },
+    { data: instagramOrganic },
   ] = await Promise.all([
     db.from("brands").select("*").order("id"),
     db.from("brand_summary").select("*"),
@@ -123,6 +145,8 @@ export async function getDashboardData() {
     db.from("sync_log").select("*").order("started_at", { ascending: false }).limit(1),
     db.from("google_ads").select("*").order("month_key"),
     db.from("meta_ads").select("*").order("month_key"),
+    db.from("meta_ads_platform").select("brand_id,month_key,platform,spend,impressions,clicks,purchases,revenue,reach").order("month_key"),
+    db.from("instagram_organic").select("brand_id,month_key,followers,reach,profile_views,accounts_engaged").order("month_key"),
   ]);
 
   return {
@@ -138,5 +162,7 @@ export async function getDashboardData() {
     lastSync: syncLog?.[0] ?? null,
     googleAds: (googleAds ?? []) as GoogleAdsRow[],
     metaAds: (metaAds ?? []) as MetaAdsRow[],
+    metaAdsPlatform: (metaAdsPlatform ?? []) as MetaAdsPlatformRow[],
+    instagramOrganic: (instagramOrganic ?? []) as InstagramOrganicRow[],
   };
 }

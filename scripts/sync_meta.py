@@ -70,7 +70,7 @@ def meta_get(url):
     with urllib.request.urlopen(req, context=ctx, timeout=30) as r:
         return json.loads(r.read().decode())
 
-def fetch_insights(account_id, access_token):
+def fetch_insights(account_id, access_token, breakdowns=None):
     """Fetch monthly account-level insights, auto-paginate."""
     params = {
         "fields":         "spend,impressions,clicks,reach,actions,action_values",
@@ -80,6 +80,8 @@ def fetch_insights(account_id, access_token):
         "access_token":   access_token,
         "limit":          100,
     }
+    if breakdowns:
+        params["breakdowns"] = breakdowns
     url  = f"https://graph.facebook.com/{API_VERSION}/{account_id}/insights?{urllib.parse.urlencode(params)}"
     data = []
     while url:
@@ -98,6 +100,21 @@ def pick_action(items, *types):
                 return float(item.get("value", 0))
     return 0.0
 
+def parse_row(row):
+    """Extract common fields from an insights row."""
+    actions = row.get("actions", [])
+    values  = row.get("action_values", [])
+    purchases = int(pick_action(actions, "purchase", "omni_purchase", "offsite_conversion.fb_pixel_purchase"))
+    revenue   = pick_action(values,  "purchase", "omni_purchase", "offsite_conversion.fb_pixel_purchase")
+    return {
+        "spend":       round(float(row.get("spend", 0)), 2),
+        "impressions": int(float(row.get("impressions", 0))),
+        "clicks":      int(float(row.get("clicks", 0))),
+        "reach":       int(float(row.get("reach", 0))),
+        "purchases":   purchases,
+        "revenue":     round(revenue, 2),
+    }
+
 def sync_brand(brand_id, name, account_id, access_token):
     print(f"  {name} ({account_id}) ...", end=" ", flush=True)
     try:
@@ -106,34 +123,44 @@ def sync_brand(brand_id, name, account_id, access_token):
         print(f"✗  {e}")
         return
 
+    # Total (account-level) upserts
     upserts = []
     for row in rows:
         date_str = row.get("date_start", "")
         if len(date_str) < 7:
             continue
         month_key = date_str[:7]
-
-        actions = row.get("actions", [])
-        values  = row.get("action_values", [])
-
-        # Purchase conversions — Meta uses different names depending on pixel setup
-        purchases = int(pick_action(actions, "purchase", "omni_purchase", "offsite_conversion.fb_pixel_purchase"))
-        revenue   = pick_action(values,  "purchase", "omni_purchase", "offsite_conversion.fb_pixel_purchase")
-
-        upserts.append({
-            "brand_id":    brand_id,
-            "month_key":   month_key,
-            "spend":       round(float(row.get("spend", 0)),      2),
-            "impressions": int(float(row.get("impressions", 0))),
-            "clicks":      int(float(row.get("clicks", 0))),
-            "reach":       int(float(row.get("reach", 0))),
-            "purchases":   purchases,
-            "revenue":     round(revenue, 2),
-        })
+        upserts.append({"brand_id": brand_id, "month_key": month_key, **parse_row(row)})
 
     if upserts:
         sb_upsert("meta_ads", upserts, on_conflict="brand_id,month_key")
-        print(f"✓  {len(upserts)} months")
+
+    # Platform breakdown
+    try:
+        platform_rows = fetch_insights(account_id, access_token, breakdowns="publisher_platform")
+    except (urllib.error.HTTPError, RuntimeError):
+        platform_rows = []
+
+    plat_upserts = []
+    for row in platform_rows:
+        date_str = row.get("date_start", "")
+        if len(date_str) < 7:
+            continue
+        platform = row.get("publisher_platform", "unknown")
+        if platform not in ("facebook", "instagram", "messenger", "audience_network"):
+            continue
+        plat_upserts.append({
+            "brand_id": brand_id,
+            "month_key": date_str[:7],
+            "platform": platform,
+            **parse_row(row),
+        })
+
+    if plat_upserts:
+        sb_upsert("meta_ads_platform", plat_upserts, on_conflict="brand_id,month_key,platform")
+
+    if upserts or plat_upserts:
+        print(f"✓  {len(upserts)} months, {len(plat_upserts)} platform rows")
     else:
         print("—  no data")
 
