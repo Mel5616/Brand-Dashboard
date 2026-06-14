@@ -93,6 +93,8 @@ export function DashboardTabs({
           brand={selectedBrand}
           summary={selectedSummary ?? undefined}
           monthly={monthly}
+          weekly={weekly}
+          weekLabels={weekLabels}
           products={products}
           googleAds={googleAds}
         />
