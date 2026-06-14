@@ -185,19 +185,21 @@ export function SalesChart({
         </div>
       </div>
 
-      {/* Brand toggles */}
-      <div className="flex flex-wrap gap-1.5 mb-4">
-        {liveBrands.map(b => (
-          <button
-            key={b.id}
-            onClick={() => toggleBrand(b.id)}
-            className={`px-2 py-0.5 rounded-full text-xs font-medium border transition ${selectedBrands.has(b.id) ? "text-white border-transparent" : "bg-transparent border-gray-200 text-gray-400"}`}
-            style={selectedBrands.has(b.id) ? { background: b.color, borderColor: b.color } : {}}
-          >
-            {b.init}
-          </button>
-        ))}
-      </div>
+      {/* Brand toggles — hidden when only one brand is shown */}
+      {liveBrands.length > 1 && (
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {liveBrands.map(b => (
+            <button
+              key={b.id}
+              onClick={() => toggleBrand(b.id)}
+              className={`px-2 py-0.5 rounded-full text-xs font-medium border transition ${selectedBrands.has(b.id) ? "text-white border-transparent" : "bg-transparent border-gray-200 text-gray-400"}`}
+              style={selectedBrands.has(b.id) ? { background: b.color, borderColor: b.color } : {}}
+            >
+              {b.init}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="h-64">
         {view === "monthly" && monthlyChart()}

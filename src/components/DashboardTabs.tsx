@@ -36,13 +36,21 @@ export function DashboardTabs({
   weekLabels, googleAds, kpis,
 }: Props) {
   const [active, setActive] = useState<TabId>("overview");
+  const [brandFilter, setBrandFilter] = useState<number | "all">("all");
   const summaryMap = Object.fromEntries(summaries.map((s: any) => [s.brand_id, s]));
+
+  const filteredBrands   = brandFilter === "all" ? brands   : brands.filter((b: any) => b.id === brandFilter);
+  const filteredMonthly  = brandFilter === "all" ? monthly  : monthly.filter((m: any) => m.brand_id === brandFilter);
+  const filteredWeekly   = brandFilter === "all" ? weekly   : weekly.filter((w: any) => w.brand_id === brandFilter);
+  const filteredProducts = brandFilter === "all" ? products : products.filter((p: any) => p.brand_id === brandFilter);
+  const filteredAds      = brandFilter === "all" ? googleAds : googleAds.filter((d: any) => d.brand_id === brandFilter);
+  const filteredSummaries = brandFilter === "all" ? summaries : summaries.filter((s: any) => s.brand_id === brandFilter);
 
   return (
     <>
-      {/* Tab bar */}
+      {/* Tab bar + brand filter */}
       <div className="border-b border-gray-200 bg-white sticky top-[57px] z-10">
-        <div className="max-w-screen-2xl mx-auto px-6">
+        <div className="max-w-screen-2xl mx-auto px-6 flex items-end justify-between">
           <nav className="flex gap-1 -mb-px">
             {TABS.map(tab => (
               <button
@@ -58,6 +66,24 @@ export function DashboardTabs({
               </button>
             ))}
           </nav>
+          <div className="pb-2 flex items-center gap-2">
+            {brandFilter !== "all" && (
+              <div
+                className="w-2.5 h-2.5 rounded-full shrink-0"
+                style={{ background: brands.find((b: any) => b.id === brandFilter)?.color ?? "#6366f1" }}
+              />
+            )}
+            <select
+              value={brandFilter === "all" ? "all" : String(brandFilter)}
+              onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
+              className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+            >
+              <option value="all">All Brands</option>
+              {brands.map((b: any) => (
+                <option key={b.id} value={String(b.id)}>{b.name}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -78,7 +104,7 @@ export function DashboardTabs({
             <div>
               <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Brands</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-                {brands.map((brand: any) => (
+                {filteredBrands.map((brand: any) => (
                   <BrandCard key={brand.id} brand={brand} summary={summaryMap[brand.id]} />
                 ))}
               </div>
@@ -88,13 +114,13 @@ export function DashboardTabs({
 
         {active === "shopify" && (
           <>
-            <SalesChart brands={brands} monthly={monthly} weekly={weekly} weekLabels={weekLabels} />
-            <ProductsTable brands={brands} products={products} />
+            <SalesChart key={String(brandFilter)} brands={filteredBrands} monthly={filteredMonthly} weekly={filteredWeekly} weekLabels={weekLabels} />
+            <ProductsTable brands={filteredBrands} products={filteredProducts} />
           </>
         )}
 
         {active === "google-ads" && (
-          <GoogleAdsChart brands={brands} data={googleAds} />
+          <GoogleAdsChart brands={filteredBrands} data={filteredAds} />
         )}
 
         {active === "tradeshows" && (
@@ -102,7 +128,7 @@ export function DashboardTabs({
             tradeshows={tradeshows}
             tradeshowBrands={tradeshowBrands}
             tradeshowSales={tradeshowSales}
-            brands={brands}
+            brands={filteredBrands}
           />
         )}
 
