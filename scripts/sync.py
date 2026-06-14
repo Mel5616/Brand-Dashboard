@@ -384,6 +384,104 @@ def sync_tradeshows(config, all_brands):
             except Exception as e:
                 print(f'       ✗ {br["name"]}: {e}')
 
+# ── Google Ads sync ──────────────────────────────────────────────────────────
+
+GOOGLE_ADS_CREDS_PATH = os.path.join(BASE_DIR, 'google_ads_creds.json')
+
+def _google_access_token(creds):
+    data = urllib.parse.urlencode({
+        'refresh_token': creds['refreshToken'],
+        'client_id':     creds['clientId'],
+        'client_secret': creds['clientSecret'],
+        'grant_type':    'refresh_token',
+    }).encode()
+    req = urllib.request.Request('https://oauth2.googleapis.com/token', data=data, method='POST')
+    ctx = ssl.create_default_context()
+    with urllib.request.urlopen(req, context=ctx, timeout=15) as r:
+        return json.loads(r.read().decode())['access_token']
+
+def fetch_google_ads_metrics(customer_id, creds):
+    """Fetch monthly spend, impressions, clicks, conversions_value for a customer."""
+    access_token = _google_access_token(creds)
+    cid = customer_id.replace('-', '')
+
+    query = '''
+    SELECT
+      segments.month,
+      metrics.cost_micros,
+      metrics.impressions,
+      metrics.clicks,
+      metrics.conversions_value
+    FROM campaign
+    WHERE segments.date >= '2024-07-01'
+      AND segments.date <= '2026-05-31'
+      AND campaign.status != 'REMOVED'
+    '''
+
+    url = f'https://googleads.googleapis.com/v17/customers/{cid}/googleAds:search'
+    req = urllib.request.Request(url, data=json.dumps({'query': query}).encode(), method='POST')
+    req.add_header('Authorization', f'Bearer {access_token}')
+    req.add_header('developer-token', creds['developerToken'])
+    req.add_header('Content-Type', 'application/json')
+    ctx = ssl.create_default_context()
+
+    with urllib.request.urlopen(req, context=ctx, timeout=30) as r:
+        data = json.loads(r.read().decode())
+
+    # Aggregate by month
+    monthly = defaultdict(lambda: {'spend': 0.0, 'impressions': 0, 'clicks': 0, 'conv_value': 0.0})
+    for row in data.get('results', []):
+        ym  = (row.get('segments', {}).get('month') or '')[:7]   # '2025-07'
+        met = row.get('metrics', {})
+        if not ym:
+            continue
+        monthly[ym]['spend']       += float(met.get('costMicros', 0)) / 1_000_000
+        monthly[ym]['impressions'] += int(met.get('impressions', 0))
+        monthly[ym]['clicks']      += int(met.get('clicks', 0))
+        monthly[ym]['conv_value']  += float(met.get('conversionsValue', 0))
+
+    rows = []
+    for mk in MONTH_KEYS:
+        m    = monthly.get(mk, {})
+        spend = round(m.get('spend', 0), 2)
+        conv  = m.get('conv_value', 0)
+        roas  = round(conv / spend, 2) if spend > 0 else 0
+        rows.append({
+            'month_key':   mk,
+            'spend':       spend,
+            'impressions': m.get('impressions', 0),
+            'clicks':      m.get('clicks', 0),
+            'roas':        roas,
+        })
+    return rows
+
+def sync_google_ads(config):
+    if not os.path.exists(GOOGLE_ADS_CREDS_PATH):
+        return
+    creds = json.loads(open(GOOGLE_ADS_CREDS_PATH).read())
+    if not creds.get('refreshToken'):
+        return
+
+    now = datetime.utcnow().isoformat() + 'Z'
+    synced = 0
+    for brand in config['brands']:
+        cid = brand.get('googleAdsCustomerId', '')
+        if not cid:
+            continue
+        name = brand['name']
+        print(f'  ⟳  Google Ads: {name} ({cid})')
+        try:
+            rows = fetch_google_ads_metrics(cid, creds)
+            db_rows = [{'brand_id': brand['id'], 'month_key': r['month_key'], 'spend': r['spend'],
+                        'impressions': r['impressions'], 'clicks': r['clicks'], 'roas': r['roas']} for r in rows]
+            sb_upsert('google_ads', db_rows, on_conflict='brand_id,month_key')
+            may = next((r for r in rows if r['month_key'] == '2026-05'), {})
+            print(f'       May spend: ${may.get("spend",0):,.2f} | ROAS: {may.get("roas",0):.2f} | Clicks: {may.get("clicks",0):,}')
+            synced += 1
+        except Exception as e:
+            print(f'       ✗ {name}: {e}')
+    print(f'  Google Ads: {synced} brand(s) synced')
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
@@ -419,6 +517,13 @@ def main():
         sync_tradeshows(config, brands)
     except Exception as e:
         print(f'  ✗ Tradeshow sync failed: {e}')
+
+    if os.path.exists(GOOGLE_ADS_CREDS_PATH):
+        print('\n  ⟳  Syncing Google Ads data...')
+        try:
+            sync_google_ads(config)
+        except Exception as e:
+            print(f'  ✗ Google Ads sync failed: {e}')
 
     # Update sync log with completion (insert a new completion row)
     finished = datetime.utcnow().isoformat() + 'Z'

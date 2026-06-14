@@ -4,6 +4,7 @@ import { SalesChart } from "@/components/SalesChart";
 import { TradeshowAccordion } from "@/components/TradeshowAccordion";
 import { ProductsTable } from "@/components/ProductsTable";
 import { SyncStatus } from "@/components/SyncStatus";
+import { GoogleAdsChart } from "@/components/GoogleAdsChart";
 
 export const revalidate = 0;
 
@@ -11,7 +12,7 @@ export default async function Dashboard() {
   const {
     brands, summaries, monthly, weekly, products,
     tradeshows, tradeshowBrands, tradeshowSales,
-    weekLabels, lastSync,
+    weekLabels, lastSync, googleAds,
   } = await getDashboardData();
 
   const summaryMap = Object.fromEntries(summaries.map(s => [s.brand_id, s]));
@@ -67,6 +68,8 @@ export default async function Dashboard() {
         </div>
 
         <SalesChart brands={brands} monthly={monthly} weekly={weekly} weekLabels={weekLabels} />
+
+        <GoogleAdsChart brands={brands} data={googleAds} />
 
         <ProductsTable brands={brands} products={products} />
 

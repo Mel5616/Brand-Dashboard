@@ -74,6 +74,15 @@ export type SyncLogEntry = {
   triggered_by: string;
 };
 
+export type GoogleAdsRow = {
+  brand_id: number;
+  month_key: string;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  roas: number;
+};
+
 export async function getDashboardData() {
   const db = await createClient();
 
@@ -88,6 +97,7 @@ export async function getDashboardData() {
     { data: tradeshowSales },
     { data: weekLabels },
     { data: syncLog },
+    { data: googleAds },
   ] = await Promise.all([
     db.from("brands").select("*").order("id"),
     db.from("brand_summary").select("*"),
@@ -99,6 +109,7 @@ export async function getDashboardData() {
     db.from("tradeshow_sales").select("*"),
     db.from("week_labels").select("*").order("week_start"),
     db.from("sync_log").select("*").order("started_at", { ascending: false }).limit(1),
+    db.from("google_ads").select("*").order("month_key"),
   ]);
 
   return {
@@ -112,5 +123,6 @@ export async function getDashboardData() {
     tradeshowSales: (tradeshowSales ?? []) as TradeshowSale[],
     weekLabels: (weekLabels ?? []) as WeekLabel[],
     lastSync: syncLog?.[0] ?? null,
+    googleAds: (googleAds ?? []) as GoogleAdsRow[],
   };
 }
