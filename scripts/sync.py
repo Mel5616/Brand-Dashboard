@@ -418,11 +418,12 @@ def fetch_google_ads_metrics(customer_id, creds):
       AND campaign.status != 'REMOVED'
     '''
 
-    url = f'https://googleads.googleapis.com/v17/customers/{cid}/googleAds:search'
+    url = f'https://googleads.googleapis.com/v20/customers/{cid}/googleAds:search'
     req = urllib.request.Request(url, data=json.dumps({'query': query}).encode(), method='POST')
     req.add_header('Authorization', f'Bearer {access_token}')
     req.add_header('developer-token', creds['developerToken'])
     req.add_header('Content-Type', 'application/json')
+    req.add_header('login-customer-id', '8923727576')  # MCC ID
     ctx = ssl.create_default_context()
 
     with urllib.request.urlopen(req, context=ctx, timeout=30) as r:

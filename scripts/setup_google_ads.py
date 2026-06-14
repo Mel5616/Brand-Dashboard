@@ -74,20 +74,27 @@ def test_customer(customer_id, developer_token, refresh_token, client_id, client
     # Clean customer ID (remove dashes)
     cid = customer_id.replace('-', '').replace(' ', '')
     query = json.dumps({'query': 'SELECT customer.id, customer.descriptive_name FROM customer LIMIT 1'})
-    url = f'https://googleads.googleapis.com/v17/customers/{cid}/googleAds:search'
+    url = f'https://googleads.googleapis.com/v20/customers/{cid}/googleAds:search'
     req = urllib.request.Request(url, data=query.encode(), method='POST')
     req.add_header('Authorization', f'Bearer {access_token}')
     req.add_header('developer-token', developer_token)
     req.add_header('Content-Type', 'application/json')
+    req.add_header('login-customer-id', '8923727576')  # MCC ID
     try:
         with urllib.request.urlopen(req, context=ctx, timeout=15) as r:
             result = json.loads(r.read().decode())
         name = result.get('results', [{}])[0].get('customer', {}).get('descriptiveName', 'Unknown')
         return True, name
     except urllib.error.HTTPError as e:
-        err = json.loads(e.read().decode())
-        msg = err.get('error', {}).get('message', str(e))
+        body = e.read().decode()
+        try:
+            err = json.loads(body)
+            msg = err.get('error', {}).get('message', str(e))
+        except Exception:
+            msg = f'HTTP {e.code}: {body[:200] or str(e)}'
         return False, msg
+    except Exception as e:
+        return False, str(e)
 
 def main():
     print('\n⚡ Brand Dashboard — Google Ads Setup\n')
