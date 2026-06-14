@@ -7,7 +7,7 @@ import {
 } from "chart.js";
 import { Line, Bar } from "react-chartjs-2";
 import { fmt, fmtFull } from "@/lib/format";
-import type { Brand, BrandSummary, BrandMonthly, BrandWeekly, BrandProduct, GoogleAdsRow, WeekLabel } from "@/lib/db";
+import type { Brand, BrandSummary, BrandMonthly, BrandWeekly, BrandProduct, GoogleAdsRow, MetaAdsRow, WeekLabel } from "@/lib/db";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Filler, Tooltip, Legend);
 
@@ -140,9 +140,10 @@ interface Props {
   weekLabels: WeekLabel[];
   products: BrandProduct[];
   googleAds: GoogleAdsRow[];
+  metaAds: MetaAdsRow[];
 }
 
-export function BrandPage({ brand, summary, monthly, weekly, weekLabels, products, googleAds }: Props) {
+export function BrandPage({ brand, summary, monthly, weekly, weekLabels, products, googleAds, metaAds }: Props) {
   const [period, setPeriod] = useState<Period>("monthly");
 
   const monthlyRows = monthly.filter(m => m.brand_id === brand.id);
@@ -229,6 +230,22 @@ export function BrandPage({ brand, summary, monthly, weekly, weekLabels, product
   const latestAds   = adsRows.find(d => d.month_key === LATEST);
   const prevAds     = adsRows.find(d => d.month_key === PREV_MO);
   const hasAds      = adsRows.length > 0;
+
+  // ── Meta Ads (always monthly) ────────────────────────────────────────────
+  const metaRows     = metaAds.filter(d => d.brand_id === brand.id);
+  const hasMeta      = metaRows.length > 0;
+  const metaSpendSp  = MONTH_KEYS.map(mk => metaRows.find(d => d.month_key === mk)?.spend       ?? 0);
+  const metaClicksSp = MONTH_KEYS.map(mk => metaRows.find(d => d.month_key === mk)?.clicks      ?? 0);
+  const metaImprSp   = MONTH_KEYS.map(mk => metaRows.find(d => d.month_key === mk)?.impressions ?? 0);
+  const metaPurchSp  = MONTH_KEYS.map(mk => metaRows.find(d => d.month_key === mk)?.purchases   ?? 0);
+  const latestMeta   = metaRows.find(d => d.month_key === LATEST);
+  const prevMeta     = metaRows.find(d => d.month_key === PREV_MO);
+  const metaRoasSp   = MONTH_KEYS.map(mk => {
+    const r = metaRows.find(d => d.month_key === mk);
+    return r && r.spend > 0 ? r.revenue / r.spend : 0;
+  });
+  const latestMetaRoas = latestMeta && latestMeta.spend > 0 ? latestMeta.revenue / latestMeta.spend : 0;
+  const prevMetaRoas   = prevMeta   && prevMeta.spend   > 0 ? prevMeta.revenue   / prevMeta.spend   : 0;
 
   return (
     <div className="bg-gray-50 min-h-screen pb-16">
@@ -336,12 +353,44 @@ export function BrandPage({ brand, summary, monthly, weekly, weekLabels, product
           </>
         )}
 
-        {/* ── META ADS placeholder ─────────────────────────────────────────── */}
-        <SectionHeader title={`${brand.name}  ·  Meta Ads`} />
-        <div className="bg-white border-b border-gray-100 p-10 text-center">
-          <p className="text-sm text-gray-400">Meta Ads not yet connected</p>
-          <p className="text-xs text-gray-300 mt-1">Add your Ad Account ID and access token to stores.config.json to enable</p>
-        </div>
+        {/* ── META ADS ─────────────────────────────────────────────────────── */}
+        <SectionHeader title={`${brand.name}  ·  Meta Ads  ·  Monthly`} />
+        {hasMeta ? (
+          <div className="grid grid-cols-4 divide-x divide-gray-100 border-b border-gray-100 shadow-sm">
+            <KpiCard
+              label="Spend (May 26)"
+              value={fmtFull(latestMeta?.spend ?? 0)}
+              spark={metaSpendSp}
+              prevPct={pctOf(latestMeta?.spend ?? 0, prevMeta?.spend ?? 0)}
+            />
+            <KpiCard
+              label="ROAS"
+              value={latestMetaRoas.toFixed(2) + "×"}
+              spark={metaRoasSp}
+              prevPct={pctOf(latestMetaRoas, prevMetaRoas)}
+            />
+            <KpiCard
+              label="Clicks"
+              value={(latestMeta?.clicks ?? 0).toLocaleString()}
+              spark={metaClicksSp}
+              prevPct={pctOf(latestMeta?.clicks ?? 0, prevMeta?.clicks ?? 0)}
+            />
+            <KpiCard
+              label="Purchases"
+              value={(latestMeta?.purchases ?? 0).toLocaleString()}
+              spark={metaPurchSp}
+              prevPct={pctOf(latestMeta?.purchases ?? 0, prevMeta?.purchases ?? 0)}
+            />
+          </div>
+        ) : (
+          <div className="bg-white border-b border-gray-100 p-10 text-center">
+            <p className="text-sm text-gray-400 font-medium">Meta Ads not yet connected for {brand.name}</p>
+            <p className="text-xs text-gray-300 mt-1.5">
+              Add <code className="bg-gray-100 px-1 rounded">metaAdAccountId</code> to this brand in stores.config.json,
+              then run <code className="bg-gray-100 px-1 rounded">python3 scripts/sync_meta.py</code>
+            </p>
+          </div>
+        )}
 
       </div>
     </div>

@@ -28,13 +28,14 @@ interface Props {
   tradeshowSales: any[];
   weekLabels: any[];
   googleAds: any[];
+  metaAds: any[];
   kpis: { label: string; value: string; sub: string }[];
 }
 
 export function DashboardTabs({
   brands, summaries, monthly, weekly, products,
   tradeshows, tradeshowBrands, tradeshowSales,
-  weekLabels, googleAds, kpis,
+  weekLabels, googleAds, metaAds, kpis,
 }: Props) {
   const [active, setActive] = useState<TabId>("overview");
   const [brandFilter, setBrandFilter] = useState<number | "all">("all");
@@ -97,6 +98,7 @@ export function DashboardTabs({
           weekLabels={weekLabels}
           products={products}
           googleAds={googleAds}
+          metaAds={metaAds}
         />
       </>
     );
