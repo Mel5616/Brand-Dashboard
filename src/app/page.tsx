@@ -1,4 +1,5 @@
 import { getDashboardData } from "@/lib/db";
+import { getBoothFunnel } from "@/lib/booth";
 import { SyncStatus } from "@/components/SyncStatus";
 import { DashboardTabs } from "@/components/DashboardTabs";
 import { NotificationCenter } from "@/components/NotificationCenter";
@@ -13,6 +14,8 @@ export default async function Dashboard() {
     weekLabels, lastSync, googleAds, metaAds, metaAdsPlatform,
     instagramOrganic, targets, klaviyo, ga4, marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, aiInsight,
   } = await getDashboardData();
+
+  const boothFunnel = await getBoothFunnel();
 
   const liveBrands = brands.filter(b => b.live);
   const totalFY = summaries.reduce((s: number, b: any) => s + (b.fy_revenue ?? 0), 0);
@@ -79,6 +82,7 @@ export default async function Dashboard() {
         marketingActuals={marketingActuals}
         googleAdsCampaigns={googleAdsCampaigns}
         calendarEvents={calendarEvents}
+        boothFunnel={boothFunnel}
         kpis={kpis}
       />
     </div>

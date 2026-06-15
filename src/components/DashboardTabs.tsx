@@ -11,6 +11,7 @@ import { Leaderboard } from "./Leaderboard";
 import { BrandPage } from "./BrandPage";
 import { MarketingBudgetTab } from "./MarketingBudgetTab";
 import { MarketingCalendar } from "./MarketingCalendar";
+import { BoothFunnel } from "./BoothFunnel";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
@@ -86,6 +87,7 @@ interface Props {
   marketingActuals: any[];
   googleAdsCampaigns: any[];
   calendarEvents: any[];
+  boothFunnel: any;
   kpis: { label: string; value: string; sub: string }[];
 }
 
@@ -94,7 +96,7 @@ export function DashboardTabs({
   tradeshows, tradeshowBrands, tradeshowSales,
   weekLabels, googleAds, metaAds, metaAdsPlatform,
   instagramOrganic, targets, klaviyo, ga4,
-  marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, kpis,
+  marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, boothFunnel, kpis,
 }: Props) {
   const [active, setActive] = useState<TabId>("brands");
   const [brandFilter, setBrandFilter] = useState<number | "all">("all");
@@ -742,12 +744,15 @@ export function DashboardTabs({
 
           {/* ── Tradeshows ── */}
           {active === "tradeshows" && (
-            <TradeshowAccordion
-              tradeshows={tradeshows}
-              tradeshowBrands={tradeshowBrands}
-              tradeshowSales={tradeshowSales}
-              brands={brands}
-            />
+            <div className="space-y-8">
+              <BoothFunnel data={boothFunnel} />
+              <TradeshowAccordion
+                tradeshows={tradeshows}
+                tradeshowBrands={tradeshowBrands}
+                tradeshowSales={tradeshowSales}
+                brands={brands}
+              />
+            </div>
           )}
 
           {/* ── Budget ── */}
