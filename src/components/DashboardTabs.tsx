@@ -40,6 +40,7 @@ interface Props {
   targets: any[];
   klaviyo: any[];
   ga4: any[];
+  marketingBudgets: any[];
   kpis: { label: string; value: string; sub: string }[];
 }
 
@@ -47,7 +48,7 @@ export function DashboardTabs({
   brands, summaries, monthly, weekly, products,
   tradeshows, tradeshowBrands, tradeshowSales,
   weekLabels, googleAds, metaAds, metaAdsPlatform,
-  instagramOrganic, targets, klaviyo, ga4, kpis,
+  instagramOrganic, targets, klaviyo, ga4, marketingBudgets, kpis,
 }: Props) {
   const [active, setActive] = useState<TabId>("brands");
   const [brandFilter, setBrandFilter] = useState<number | "all">("all");
@@ -114,6 +115,7 @@ export function DashboardTabs({
           targets={targets}
           klaviyo={klaviyo}
           ga4={ga4}
+          marketingBudgets={marketingBudgets}
         />
       </>
     );

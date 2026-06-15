@@ -10,7 +10,7 @@ import { fmt, fmtFull } from "@/lib/format";
 import type {
   Brand, BrandSummary, BrandMonthly, BrandWeekly, BrandProduct,
   GoogleAdsRow, MetaAdsRow, MetaAdsPlatformRow, InstagramOrganicRow,
-  WeekLabel, BrandTarget, KlaviyoRow, GA4Row,
+  WeekLabel, BrandTarget, KlaviyoRow, GA4Row, MarketingBudget,
 } from "@/lib/db";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Filler, Tooltip, Legend);
@@ -173,12 +173,13 @@ interface Props {
   targets: BrandTarget[];
   klaviyo: KlaviyoRow[];
   ga4: GA4Row[];
+  marketingBudgets: MarketingBudget[];
 }
 
 export function BrandPage({
   brand, summary, monthly, weekly, weekLabels, products,
   googleAds, metaAds, metaAdsPlatform, instagramOrganic,
-  targets, klaviyo, ga4,
+  targets, klaviyo, ga4, marketingBudgets,
 }: Props) {
   const [period, setPeriod] = useState<Period>("monthly");
 
@@ -331,6 +332,22 @@ export function BrandPage({
   const klOpenSpark  = MONTH_KEYS.map(mk => klaviyoRows.find(d => d.month_key === mk)?.open_rate  ?? 0);
   const klClickSpark = MONTH_KEYS.map(mk => klaviyoRows.find(d => d.month_key === mk)?.click_rate ?? 0);
   const klRevSpark   = MONTH_KEYS.map(mk => klaviyoRows.find(d => d.month_key === mk)?.revenue    ?? 0);
+
+  // ── Marketing Budgets ────────────────────────────────────────────────────
+  const budgets     = marketingBudgets.filter(b => b.brand_id === brand.id);
+  const hasBudgets  = budgets.length > 0;
+  const fyGoogleBudget = budgets.find(b => b.channel === "Google Advertising")?.annual_budget ?? 0;
+  const fyMetaBudget   = budgets.find(b => b.channel === "Social Media (Meta)")?.annual_budget  ?? 0;
+  const fyGoogleActual = adsRows.reduce((s, r) => s + r.spend, 0);
+  const fyMetaActual   = metaRows.reduce((s, r) => s + r.spend, 0);
+  const CHANNEL_COLORS: Record<string, string> = {
+    "Google Advertising":   "#4285F4",
+    "Social Media (Meta)":  "#1877F2",
+    "Klaviyo":              "#7c3aed",
+    "Influencer Marketing": "#f59e0b",
+    "Photography":          "#ec4899",
+    "Shopify":              "#96bf48",
+  };
 
   // ── GA4 ──────────────────────────────────────────────────────────────────
   const ga4Rows        = ga4.filter(d => d.brand_id === brand.id);
@@ -586,6 +603,98 @@ export function BrandPage({
           <div className="bg-white border-b border-gray-100 p-10 text-center">
             <p className="text-sm text-gray-400 font-medium">Klaviyo not yet connected for {brand.name}</p>
             <p className="text-xs text-gray-300 mt-1.5">Add <code className="bg-gray-100 px-1 rounded">klaviyoApiKey</code> + <code className="bg-gray-100 px-1 rounded">klaviyoListId</code> to stores.config.json, then run <code className="bg-gray-100 px-1 rounded">python3 scripts/sync_klaviyo.py</code></p>
+          </div>
+        )}
+
+        {/* ── MARKETING BUDGET ─────────────────────────────────────────────── */}
+        <SectionHeader title={`${brand.name}  ·  Marketing Budget  ·  FY 2025–26`} />
+        {hasBudgets ? (
+          <div className="bg-white border-b border-gray-100 p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Budget by channel table */}
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.15em] text-gray-400 mb-3">Annual budget by channel</p>
+                <table className="w-full text-sm">
+                  <tbody className="divide-y divide-gray-50">
+                    {budgets.sort((a, b) => b.annual_budget - a.annual_budget).map(b => {
+                      const color = CHANNEL_COLORS[b.channel] ?? "#94a3b8";
+                      const totalBudget = budgets.reduce((s, x) => s + x.annual_budget, 0);
+                      const pct = totalBudget > 0 ? (b.annual_budget / totalBudget) * 100 : 0;
+                      const isLive = b.channel === "Google Advertising" || b.channel === "Social Media (Meta)";
+                      const actual = b.channel === "Google Advertising" ? fyGoogleActual : b.channel === "Social Media (Meta)" ? fyMetaActual : null;
+                      const utilPct = actual !== null && b.annual_budget > 0 ? Math.min((actual / b.annual_budget) * 100, 110) : null;
+                      return (
+                        <tr key={b.channel}>
+                          <td className="py-2 pr-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color }} />
+                              <span className="text-slate-700 font-medium">{b.channel}</span>
+                              {isLive && <span className="text-[9px] bg-emerald-50 text-emerald-600 px-1 rounded font-bold">LIVE</span>}
+                            </div>
+                          </td>
+                          <td className="py-2 text-right text-slate-600 whitespace-nowrap pr-3">{fmtFull(b.annual_budget)}</td>
+                          <td className="py-2 w-24">
+                            {utilPct !== null ? (
+                              <div>
+                                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                  <div className="h-full rounded-full" style={{ width: `${Math.min(utilPct, 100)}%`, background: utilPct > 90 ? "#ef4444" : color }} />
+                                </div>
+                                <p className="text-[9px] text-gray-400 mt-0.5 text-right">{fmtFull(actual!)} actual</p>
+                              </div>
+                            ) : (
+                              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="h-full rounded-full opacity-30" style={{ width: `${pct}%`, background: color }} />
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t border-gray-200">
+                      <td className="pt-2 text-xs font-semibold text-gray-500">Total</td>
+                      <td className="pt-2 text-right font-bold text-slate-800 pr-3">{fmtFull(budgets.reduce((s, b) => s + b.annual_budget, 0))}</td>
+                      <td />
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+              {/* Donut-style budget split visual */}
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.15em] text-gray-400 mb-3">Budget split</p>
+                <div className="space-y-2">
+                  {budgets.sort((a, b) => b.annual_budget - a.annual_budget).map(b => {
+                    const color = CHANNEL_COLORS[b.channel] ?? "#94a3b8";
+                    const total = budgets.reduce((s, x) => s + x.annual_budget, 0);
+                    const pct   = total > 0 ? (b.annual_budget / total) * 100 : 0;
+                    return (
+                      <div key={b.channel}>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-slate-600">{b.channel}</span>
+                          <span className="text-gray-400 font-medium">{pct.toFixed(1)}%</span>
+                        </div>
+                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] text-gray-400 mt-4">
+                  LIVE channels (Google, Meta) show actual FY spend vs budget. Other channels show planned budget only.
+                  Run <code className="bg-gray-100 px-1 rounded">python3 scripts/sync_marketing_budget.py</code> to refresh.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white border-b border-gray-100 p-10 text-center">
+            <p className="text-sm text-gray-400 font-medium">Marketing budgets not yet synced</p>
+            <p className="text-xs text-gray-300 mt-1.5">
+              Add <code className="bg-gray-100 px-1 rounded">marketingBudgetGid</code> to stores.config.json, then run{" "}
+              <code className="bg-gray-100 px-1 rounded">python3 scripts/sync_marketing_budget.py</code>
+            </p>
           </div>
         )}
 

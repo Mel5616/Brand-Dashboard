@@ -142,6 +142,13 @@ export type GA4Row = {
   engagement_rate: number;
 };
 
+export type MarketingBudget = {
+  brand_id: number;
+  channel: string;
+  annual_budget: number;
+  fy: string;
+};
+
 export async function getDashboardData() {
   const db = await createClient();
 
@@ -163,6 +170,7 @@ export async function getDashboardData() {
     { data: targets },
     { data: klaviyo },
     { data: ga4 },
+    { data: marketingBudgets },
   ] = await Promise.all([
     db.from("brands").select("*").order("id"),
     db.from("brand_summary").select("*"),
@@ -181,6 +189,7 @@ export async function getDashboardData() {
     db.from("brand_targets").select("*").order("month_key"),
     db.from("klaviyo_metrics").select("*").order("month_key"),
     db.from("ga4_metrics").select("*").order("month_key"),
+    db.from("marketing_budgets").select("*"),
   ]);
 
   return {
@@ -201,5 +210,6 @@ export async function getDashboardData() {
     targets: (targets ?? []) as BrandTarget[],
     klaviyo: (klaviyo ?? []) as KlaviyoRow[],
     ga4: (ga4 ?? []) as GA4Row[],
+    marketingBudgets: (marketingBudgets ?? []) as MarketingBudget[],
   };
 }
