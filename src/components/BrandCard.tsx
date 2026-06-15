@@ -14,6 +14,13 @@ export const BRAND_LOGOS: Record<number, string> = {
   8:  "/logos/Frida_logo_main.png",
   9:  "/logos/Coolkidz Logo.png",
   10: "/logos/Matchstick Monkey Logo.jpg",
+  11: "/logos/Primary Logo - Red.png",
+};
+
+// Per-brand logo size overrides (default is "w-28 h-12"). Use for logos that
+// render visually larger/smaller than the others at the same box size.
+const LOGO_SIZE: Record<number, string> = {
+  8:  "w-24 h-10", // Frida — slightly smaller
 };
 
 export type BrandPeriod = "monthly" | "weekly" | "fy";
@@ -68,7 +75,7 @@ export function BrandCard({ brand, summary, onClick, hasGoogle, hasMeta, hasInst
           <img
             src={logo}
             alt={brand.name}
-            className="w-28 h-12 object-contain"
+            className={`${LOGO_SIZE[brand.id] ?? "w-28 h-12"} object-contain`}
             onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
           />
         ) : (
