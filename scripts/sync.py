@@ -393,6 +393,10 @@ def fetch_state_orders(domain, token, state, date_start, date_end):
     return round(total_rev), total_count
 
 def fetch_state_orders_by_brand(domain, token, state, date_start, date_end):
+    # The Coolkidz website is the booth till — every order placed during the show
+    # dates is a direct show order, so we DON'T filter by shipping province here
+    # (booth/pickup orders often have no shipping address at all). `state` is kept
+    # in the signature for call-site compatibility but is intentionally unused.
     brand_rev = defaultdict(float); brand_count = defaultdict(int); cursor = None
     while True:
         after = f', after: "{cursor}"' if cursor else ''
@@ -401,7 +405,6 @@ def fetch_state_orders_by_brand(domain, token, state, date_start, date_end):
             query: "financial_status:paid created_at:>={date_start} created_at:<={date_end}",
             sortKey: CREATED_AT) {{
             edges {{ cursor node {{
-              shippingAddress {{ province }}
               lineItems(first: 20) {{ edges {{ node {{
                 title
                 originalTotalSet {{ shopMoney {{ amount }} }}
@@ -415,8 +418,6 @@ def fetch_state_orders_by_brand(domain, token, state, date_start, date_end):
         data = res.get('data', {}).get('orders', {})
         for e in data.get('edges', []):
             node = e['node']
-            if (node.get('shippingAddress') or {}).get('province', '').lower() != state.lower():
-                continue
             for li in node.get('lineItems', {}).get('edges', []):
                 item  = li['node']
                 title = item.get('title', '')
