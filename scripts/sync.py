@@ -48,6 +48,16 @@ MONTH_KEYS   = ['2025-07','2025-08','2025-09','2025-10','2025-11','2025-12','202
 MONTHS_PREV  = ['Jul 24','Aug 24','Sep 24','Oct 24','Nov 24','Dec 24','Jan 25','Feb 25','Mar 25','Apr 25','May 25','Jun 25']
 MONTH_KEYS_PREV = ['2024-07','2024-08','2024-09','2024-10','2024-11','2024-12','2025-01','2025-02','2025-03','2025-04','2025-05','2025-06']
 
+# The Coolkidz store tags every brand's products with a vendor name and a
+# `Brand_<Name>` tag (e.g. vendor "Mamave" / tag "Brand_Mamave"). That is the
+# canonical brand signal — match on it first. Keyword matching on the product
+# title is only a fallback for bundles vendored as "Coolkidz Australia".
+COOLKIDZ_VENDOR_TO_ID = {
+    'nanit': 0, 'magic': 1, 'hannie': 2, 'gaia baby': 3, 'wonderfold': 4,
+    'uppababy': 5, 'zazu': 6, 'miamily': 7, 'frida': 8,
+    'matchstick monkey': 10, 'mamave': 11,
+}
+
 COOLKIDZ_BRAND_KEYWORDS = {
     0:  ['pro camera', 'floor stand', 'sound + light', 'breathing wear', 'flex stand', 'travel case', 'nanit'],
     1:  ['heka', 'thoth', 'majestic', 'magic bin bag', 'magic bag'],
@@ -55,10 +65,23 @@ COOLKIDZ_BRAND_KEYWORDS = {
     5:  ['uppababy', 'minu', 'vista', 'mesa', 'piggyback'],
     7:  ['miamily', 'carry on'],
     10: ['matchstick monkey'],
-    11: ["mumma's", "bubba's", 'mamave'],
+    11: ["mumma", "bubba", 'mamave'],
 }
 
-def coolkidz_brand_id(title):
+def coolkidz_brand_id(title, vendor='', tags=None):
+    tags = tags or []
+    # 1. Brand_<Name> product tag (canonical)
+    for t in tags:
+        if t.lower().startswith('brand_'):
+            key = t[6:].replace(' ', '').lower()
+            for name, bid in COOLKIDZ_VENDOR_TO_ID.items():
+                if name.replace(' ', '') == key:
+                    return bid
+    # 2. Vendor field
+    v = (vendor or '').strip().lower()
+    if v in COOLKIDZ_VENDOR_TO_ID:
+        return COOLKIDZ_VENDOR_TO_ID[v]
+    # 3. Title keyword fallback (bundles vendored as Coolkidz Australia)
     tl = title.lower()
     for brand_id, keywords in COOLKIDZ_BRAND_KEYWORDS.items():
         if any(kw in tl for kw in keywords):
@@ -382,6 +405,7 @@ def fetch_state_orders_by_brand(domain, token, state, date_start, date_end):
               lineItems(first: 20) {{ edges {{ node {{
                 title
                 originalTotalSet {{ shopMoney {{ amount }} }}
+                product {{ vendor tags }}
               }} }} }}
             }} }}
             pageInfo {{ hasNextPage }}
@@ -396,8 +420,9 @@ def fetch_state_orders_by_brand(domain, token, state, date_start, date_end):
             for li in node.get('lineItems', {}).get('edges', []):
                 item  = li['node']
                 title = item.get('title', '')
+                prod  = item.get('product') or {}
                 amt   = round(float(item.get('originalTotalSet', {}).get('shopMoney', {}).get('amount', 0)) / 1.1, 2)
-                bid   = coolkidz_brand_id(title)
+                bid   = coolkidz_brand_id(title, prod.get('vendor', ''), prod.get('tags', []))
                 if bid is not None:
                     brand_rev[bid] += amt; brand_count[bid] += 1
         if not data.get('pageInfo', {}).get('hasNextPage') or not data.get('edges'):
