@@ -1,11 +1,14 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement,
   LineElement, PointElement, Tooltip, Legend,
 } from "chart.js";
 import { Bar } from "react-chartjs-2";
 import type { BoothFunnel as BoothFunnelData } from "@/lib/booth";
+
+type PosLive = { ok: boolean; orders: number; revenue: number; daily: { date: string; revenue: number; orders: number }[] };
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Tooltip, Legend);
 
@@ -20,7 +23,19 @@ function fmtDay(d: string) {
 export function BoothFunnel({ data }: { data: BoothFunnelData }) {
   const { totals, shows, daily, hasRows } = data;
 
-  if (!hasRows) {
+  // Live UPPAbaby Shopify POS — fetched on demand when this tab opens
+  const [pos, setPos] = useState<PosLive | null>(null);
+  const [posLoading, setPosLoading] = useState(true);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/booth-pos")
+      .then(r => r.json())
+      .then((d: PosLive) => { if (alive) { setPos(d); setPosLoading(false); } })
+      .catch(() => { if (alive) setPosLoading(false); });
+    return () => { alive = false; };
+  }, []);
+
+  if (!hasRows && !(pos && pos.orders > 0)) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">
         <div className="text-4xl mb-3">📲</div>
@@ -47,14 +62,40 @@ export function BoothFunnel({ data }: { data: BoothFunnelData }) {
         <p className="text-xs text-gray-400 mt-0.5">Live QR booth data — scan → checkout → paid order</p>
       </div>
 
-      {/* KPI row */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        {kpis.map(k => (
-          <div key={k.label} className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3">
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">{k.label}</p>
-            <p className="text-xl font-bold mt-1" style={{ color: k.color }}>{k.value}</p>
+      {/* KPI row — QR funnel */}
+      <div>
+        <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-[0.18em] mb-1.5 px-0.5">QR Booth Funnel</p>
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          {kpis.map(k => (
+            <div key={k.label} className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3">
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">{k.label}</p>
+              <p className="text-xl font-bold mt-1" style={{ color: k.color }}>{k.value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Live POS + combined total */}
+      <div>
+        <div className="flex items-center gap-2 mb-1.5 px-0.5">
+          <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-[0.18em]">Shopify POS (UPPAbaby · live)</p>
+          {!posLoading && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" title="Live" />}
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3">
+            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">POS Orders</p>
+            <p className="text-xl font-bold mt-1 text-slate-700">{posLoading ? "…" : num(pos?.orders ?? 0)}</p>
           </div>
-        ))}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3">
+            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">POS Revenue</p>
+            <p className="text-xl font-bold mt-1 text-slate-700">{posLoading ? "…" : aud(pos?.revenue ?? 0)}</p>
+          </div>
+          <div className="rounded-xl border border-indigo-100 shadow-sm px-4 py-3 bg-gradient-to-br from-indigo-50/70 to-white">
+            <p className="text-[10px] font-semibold text-indigo-400 uppercase tracking-widest">Total Booth Revenue</p>
+            <p className="text-xl font-bold mt-1 text-indigo-600">{posLoading ? "…" : aud(totals.revenue + (pos?.revenue ?? 0))}</p>
+            <p className="text-[10px] text-gray-400">QR + POS</p>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
