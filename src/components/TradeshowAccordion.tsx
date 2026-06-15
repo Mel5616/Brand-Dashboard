@@ -15,6 +15,30 @@ function showStatus(ts: Tradeshow): "live" | "upcoming" | "past" {
 
 const MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
 
+// Compact currency for chart/map labels
+function fmtK(n: number) {
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `$${Math.round(n / 1000)}K`;
+  return `$${Math.round(n)}`;
+}
+
+// Australia tile-grid cartogram: each state placed in its rough relative
+// position (1-indexed CSS grid col/row). Names match the Shopify province strings.
+const AU_TILES = [
+  { code: "NT",  name: "Northern Territory",            col: 2, row: 1 },
+  { code: "QLD", name: "Queensland",                    col: 3, row: 1 },
+  { code: "WA",  name: "Western Australia",             col: 1, row: 2 },
+  { code: "SA",  name: "South Australia",               col: 2, row: 2 },
+  { code: "NSW", name: "New South Wales",               col: 3, row: 2 },
+  { code: "ACT", name: "Australian Capital Territory",  col: 4, row: 2 },
+  { code: "VIC", name: "Victoria",                      col: 3, row: 3 },
+  { code: "TAS", name: "Tasmania",                      col: 3, row: 4 },
+];
+
+function stateLabel(fullName: string) {
+  return AU_TILES.find(t => t.name === fullName)?.code ?? fullName;
+}
+
 export function TradeshowAccordion({
   tradeshows, tradeshowBrands, tradeshowSales, brands,
 }: {
@@ -46,6 +70,25 @@ export function TradeshowAccordion({
   // ── Summary ──────────────────────────────────────────────────────────
   const totalRevAll = tradeshowSales.reduce((s, r) => s + (r.revenue ?? 0), 0);
   const liveCount   = sorted.filter(t => showStatus(t) === "live").length;
+
+  // Revenue per show, then aggregate by state and by brand
+  const revByShow = new Map<string, number>();
+  tradeshowSales.forEach(s => revByShow.set(s.tradeshow_id, (revByShow.get(s.tradeshow_id) ?? 0) + (s.revenue ?? 0)));
+
+  const stateTotals: Record<string, number> = {};
+  tradeshows.forEach(ts => { stateTotals[ts.state] = (stateTotals[ts.state] ?? 0) + (revByShow.get(ts.id) ?? 0); });
+  const maxState = Math.max(1, ...Object.values(stateTotals));
+
+  const brandTotalsMap: Record<number, number> = {};
+  tradeshowSales.forEach(s => { brandTotalsMap[s.brand_id] = (brandTotalsMap[s.brand_id] ?? 0) + (s.revenue ?? 0); });
+  const brandRows = Object.entries(brandTotalsMap)
+    .map(([bid, rev]) => ({ brand: brands.find(b => b.id === Number(bid)), rev }))
+    .filter(r => r.brand && r.rev > 0)
+    .sort((a, b) => b.rev - a.rev) as { brand: Brand; rev: number }[];
+  const maxBrand = Math.max(1, ...brandRows.map(r => r.rev));
+
+  const topStateEntry = Object.entries(stateTotals).sort((a, b) => b[1] - a[1])[0];
+  const hasVisuals = totalRevAll > 0;
 
   function dateRange(ts: Tradeshow) {
     const s = new Date(ts.date_start + "T00:00:00");
@@ -162,19 +205,67 @@ export function TradeshowAccordion({
   return (
     <div className="space-y-4">
       {/* Summary strip */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { label: "Upcoming", value: upcoming.length.toString(), sub: liveCount > 0 ? `${liveCount} live now` : "shows scheduled" },
-          { label: "Completed", value: past.length.toString(), sub: "this FY" },
           { label: "Tradeshow Revenue", value: fmtFull(totalRevAll), sub: "ex-GST, all shows" },
+          { label: "Top State", value: topStateEntry ? stateLabel(topStateEntry[0]) : "—", sub: topStateEntry ? fmtK(topStateEntry[1]) : "no sales yet" },
+          { label: "Top Brand", value: brandRows[0]?.brand.name ?? "—", sub: brandRows[0] ? fmtK(brandRows[0].rev) : "no sales yet" },
         ].map(s => (
           <div key={s.label} className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3">
             <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">{s.label}</p>
-            <p className="text-xl font-bold text-slate-800 mt-1">{s.value}</p>
+            <p className="text-xl font-bold text-slate-800 mt-1 truncate">{s.value}</p>
             <p className="text-[11px] text-gray-400">{s.sub}</p>
           </div>
         ))}
       </div>
+
+      {/* Visuals: sales-by-state map + top brands */}
+      {hasVisuals && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Australia sales map */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <h3 className="text-sm font-semibold text-slate-700">Sales by State</h3>
+            <p className="text-xs text-gray-400 mb-4">Total tradeshow revenue by location</p>
+            <div className="grid gap-1.5 max-w-[280px] mx-auto" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+              {AU_TILES.map(t => {
+                const val = stateTotals[t.name] ?? 0;
+                const intensity = val / maxState;
+                const active = val > 0;
+                const light = active && intensity > 0.5;
+                return (
+                  <div
+                    key={t.code}
+                    title={`${t.name}: ${fmtFull(val)}`}
+                    className="rounded-lg flex flex-col items-center justify-center aspect-square"
+                    style={{ gridColumn: t.col, gridRow: t.row, background: active ? `rgba(99,102,241,${0.18 + 0.82 * intensity})` : "#f1f5f9" }}
+                  >
+                    <span className={`text-[11px] font-bold ${light ? "text-white" : "text-slate-500"}`}>{t.code}</span>
+                    <span className={`text-[9px] ${light ? "text-white/90" : "text-gray-400"}`}>{active ? fmtK(val) : "—"}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Top brands */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <h3 className="text-sm font-semibold text-slate-700">Top Brands at Shows</h3>
+            <p className="text-xs text-gray-400 mb-4">Total revenue across all tradeshows</p>
+            <div className="space-y-2.5">
+              {brandRows.slice(0, 8).map(r => (
+                <div key={r.brand.id} className="flex items-center gap-3">
+                  <span className="text-xs text-slate-600 w-24 truncate flex-shrink-0">{r.brand.name}</span>
+                  <div className="flex-1 h-5 bg-gray-50 rounded overflow-hidden">
+                    <div className="h-full rounded transition-all" style={{ width: `${Math.max(4, (r.rev / maxBrand) * 100)}%`, background: r.brand.color }} />
+                  </div>
+                  <span className="text-xs font-semibold text-slate-700 w-12 text-right flex-shrink-0">{fmtK(r.rev)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {upcoming.length > 0 && (
         <div>
