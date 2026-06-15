@@ -10,9 +10,10 @@ import { BrandCard, type BrandPeriod } from "./BrandCard";
 import { Leaderboard } from "./Leaderboard";
 import { BrandPage } from "./BrandPage";
 import { MarketingBudgetTab } from "./MarketingBudgetTab";
+import { MarketingCalendar } from "./MarketingCalendar";
 import { fmt } from "@/lib/format";
 
-type TabId = "brands" | "shopify" | "google-ads" | "meta-ads" | "tradeshows" | "budget";
+type TabId = "brands" | "shopify" | "google-ads" | "meta-ads" | "tradeshows" | "budget" | "calendar";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -38,6 +39,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
     id: "budget", label: "Budget",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  },
+  {
+    id: "calendar", label: "Calendar",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
   },
 ];
 
@@ -80,6 +85,7 @@ interface Props {
   marketingBudgets: any[];
   marketingActuals: any[];
   googleAdsCampaigns: any[];
+  calendarEvents: any[];
   kpis: { label: string; value: string; sub: string }[];
 }
 
@@ -88,7 +94,7 @@ export function DashboardTabs({
   tradeshows, tradeshowBrands, tradeshowSales,
   weekLabels, googleAds, metaAds, metaAdsPlatform,
   instagramOrganic, targets, klaviyo, ga4,
-  marketingBudgets, marketingActuals, googleAdsCampaigns, kpis,
+  marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, kpis,
 }: Props) {
   const [active, setActive] = useState<TabId>("brands");
   const [brandFilter, setBrandFilter] = useState<number | "all">("all");
@@ -615,6 +621,11 @@ export function DashboardTabs({
               metaAds={metaAds}
               monthly={monthly}
             />
+          )}
+
+          {/* ── Calendar ── */}
+          {active === "calendar" && (
+            <MarketingCalendar events={calendarEvents} brands={brands} />
           )}
 
           <p className="text-center text-xs text-gray-300 pb-4">

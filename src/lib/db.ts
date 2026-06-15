@@ -172,6 +172,17 @@ export type MarketingActual = {
   note: string;
 };
 
+export type CalendarEvent = {
+  uid: string;
+  title: string;
+  description: string;
+  location: string;
+  start_date: string;
+  end_date: string | null;
+  all_day: boolean;
+  brand_id: number | null;
+};
+
 export async function getDashboardData() {
   const db = await createClient();
 
@@ -196,6 +207,7 @@ export async function getDashboardData() {
     { data: marketingBudgets },
     { data: marketingActuals },
     { data: googleAdsCampaigns },
+    { data: calendarEvents },
   ] = await Promise.all([
     db.from("brands").select("*").order("id"),
     db.from("brand_summary").select("*"),
@@ -217,6 +229,7 @@ export async function getDashboardData() {
     db.from("marketing_budgets").select("*"),
     db.from("marketing_actuals").select("*").order("month_key"),
     db.from("google_ads_campaigns").select("*").order("month_key"),
+    db.from("calendar_events").select("*").order("start_date"),
   ]);
 
   return {
@@ -240,5 +253,6 @@ export async function getDashboardData() {
     marketingBudgets: (marketingBudgets ?? []) as MarketingBudget[],
     marketingActuals: (marketingActuals ?? []) as MarketingActual[],
     googleAdsCampaigns: (googleAdsCampaigns ?? []) as GoogleAdsCampaignRow[],
+    calendarEvents: (calendarEvents ?? []) as CalendarEvent[],
   };
 }
