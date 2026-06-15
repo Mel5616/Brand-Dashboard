@@ -1,6 +1,7 @@
 import { getDashboardData } from "@/lib/db";
 import { SyncStatus } from "@/components/SyncStatus";
 import { DashboardTabs } from "@/components/DashboardTabs";
+import { NotificationCenter } from "@/components/NotificationCenter";
 
 export const revalidate = 0;
 
@@ -40,7 +41,18 @@ export default async function Dashboard() {
               <p className="text-xs text-gray-400">Coolkidz Australia · {liveBrands.length} brands</p>
             </div>
           </div>
-          <SyncStatus lastSync={lastSync} />
+          <div className="flex items-center gap-2">
+            <NotificationCenter
+              brands={brands}
+              summaries={summaries}
+              googleAds={googleAds}
+              metaAds={metaAds}
+              targets={targets}
+              marketingBudgets={marketingBudgets}
+              marketingActuals={marketingActuals}
+            />
+            <SyncStatus lastSync={lastSync} />
+          </div>
         </div>
       </header>
 
