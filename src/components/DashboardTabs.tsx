@@ -255,9 +255,9 @@ export function DashboardTabs({
                   return tiers.map(({ label, ids }) => (
                     <div key={label} className={label ? "mb-6" : ""}>
                       {label && (
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</span>
-                          <div className="flex-1 h-px bg-gray-100" />
+                        <div className="flex items-center gap-3 mb-4">
+                          <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">{label}</span>
+                          <div className="flex-1 h-px bg-gray-200" />
                         </div>
                       )}
                       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">

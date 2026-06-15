@@ -56,21 +56,24 @@ export function BrandCard({ brand, summary, onClick, hasGoogle, hasMeta, hasInst
     >
       {/* Alert badge */}
       {(roasAlert || momAlert) && (
-        <div className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-amber-400 ring-2 ring-white" title="Performance alert" />
+        <div className="absolute top-3 right-3 flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5" title="Performance alert">
+          <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+          <span className="text-[9px] font-bold text-amber-600 uppercase tracking-wide">Alert</span>
+        </div>
       )}
 
-      {/* Logo area */}
-      <div className="flex items-center justify-center px-6 pt-7 pb-4 h-28">
+      {/* Logo area — compact */}
+      <div className="flex items-center justify-center px-6 pt-5 pb-3 h-20">
         {logo ? (
           <img
             src={logo}
             alt={brand.name}
-            className="w-32 h-14 object-contain"
+            className="w-28 h-12 object-contain"
             onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
           />
         ) : (
           <div
-            className="w-14 h-14 rounded-xl flex items-center justify-center text-white text-xl font-bold"
+            className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-lg font-bold"
             style={{ background: brand.color }}
           >
             {brand.init}
@@ -80,54 +83,48 @@ export function BrandCard({ brand, summary, onClick, hasGoogle, hasMeta, hasInst
 
       {/* Brand name */}
       <div className="px-5 pb-1">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider truncate">{brand.name}</p>
+        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest truncate">{brand.name}</p>
       </div>
 
       {/* Metrics */}
-      <div className="px-5 pb-5 mt-1 flex-1">
+      <div className="px-5 pb-4 mt-1 flex-1">
         {summary ? (
           <>
-            <p className="text-2xl font-light text-slate-800">{fmt(displayRevenue)}</p>
-            <p className="text-[10px] text-gray-400 mt-0.5 mb-3">{displayLabel}</p>
-
             {/* Revenue pacing bar (monthly only) */}
             {revenuePct !== null && (
-              <div className="mb-3">
+              <div className="mb-2.5">
                 <div className="flex justify-between text-[10px] mb-1">
-                  <span className="text-gray-400">May target</span>
+                  <span className="text-gray-400">vs target</span>
                   <span className={onTrack ? "text-emerald-500 font-semibold" : "text-amber-500 font-semibold"}>
                     {revenuePct.toFixed(0)}%
                   </span>
                 </div>
-                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
                   <div className="h-full rounded-full transition-all" style={{ width: `${revenuePct}%`, background: onTrack ? "#2dc8a5" : "#f59e0b" }} />
                 </div>
               </div>
             )}
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-end justify-between">
               <div>
-                <p className="text-[10px] text-gray-400">{period === "fy" ? "FY total" : displayLabel}</p>
-                <p className="text-sm font-semibold text-slate-700">{fmt(displayRevenue)}</p>
+                <p className="text-2xl font-light text-slate-800 leading-none">{fmt(displayRevenue)}</p>
+                <p className="text-[10px] text-gray-400 mt-1">{displayLabel}</p>
               </div>
               {displayGrowth !== null && (
-                <div className="text-right">
-                  <p className="text-[10px] text-gray-400">{period === "weekly" ? "WoW" : period === "fy" ? "YoY" : "MoM"}</p>
-                  <p className={`text-sm font-bold ${growthPos ? "text-emerald-500" : "text-red-500"}`}>
-                    {fmtPct(displayGrowth)}
-                  </p>
-                </div>
+                <p className={`text-sm font-bold mb-0.5 ${growthPos ? "text-emerald-500" : "text-red-500"}`}>
+                  {fmtPct(displayGrowth)}
+                </p>
               )}
             </div>
 
-            {/* Channel dots */}
+            {/* Channel tags */}
             <div className="flex gap-1.5 mt-3 flex-wrap">
-              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-600">SHOP</span>
-              {hasGoogle    && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-50 text-blue-600">GADS</span>}
-              {hasMeta      && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-50 text-indigo-600">META</span>}
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-600">Shopify</span>
+              {hasGoogle    && <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-600">G Ads</span>}
+              {hasMeta      && <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-violet-50 text-violet-600">Meta</span>}
               {hasInstagram && (
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-pink-50 text-pink-600">
-                  {igFollowers && igFollowers >= 1000 ? `${(igFollowers / 1000).toFixed(1)}K` : igFollowers?.toLocaleString() ?? "IG"}
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-pink-50 text-pink-600">
+                  {igFollowers && igFollowers >= 1000 ? `${(igFollowers / 1000).toFixed(1)}K IG` : "IG"}
                 </span>
               )}
             </div>
