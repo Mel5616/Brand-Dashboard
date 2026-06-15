@@ -447,6 +447,12 @@ def sync_tradeshows(config, all_brands):
     if tb_rows:
         sb_upsert('tradeshow_brands', tb_rows, on_conflict='tradeshow_id,brand_id')
 
+    # The booth till is the Coolkidz website — tradeshow sales = orders placed on
+    # the Coolkidz store during the show dates, split per brand by product
+    # vendor / Brand_<Name> tag. No shipping province needed (booth/pickup orders
+    # often have none), and we do NOT add brands' own-store online sales.
+    coolkidz = next((b for b in all_brands if b['name'] == 'Coolkidz Australia'), None)
+
     for show in shows:
         name       = show['name']
         state      = show['state']
@@ -455,29 +461,22 @@ def sync_tradeshows(config, all_brands):
         brand_ids  = show.get('brandIds', [b['id'] for b in all_brands])
         print(f'  ⟳  {name} ({state})')
 
-        d_start        = _date.fromisoformat(date_start)
-        baseline_end   = (d_start - _td(days=1)).isoformat()
-        baseline_start = (d_start - _td(days=28)).isoformat()
+        if not coolkidz or not coolkidz.get('token') or not coolkidz.get('domain'):
+            print('       ✗ Coolkidz store not configured — skipping')
+            continue
 
-        ck_show = {}; ck_base = {}
-        ordered = sorted([b for b in all_brands if b['id'] in brand_ids], key=lambda b: 0 if b['name'] == 'Coolkidz Australia' else 1)
+        try:
+            ck_show = fetch_state_orders_by_brand(coolkidz['domain'], coolkidz['token'], state, date_start, date_end)
+        except Exception as e:
+            print(f'       ✗ Coolkidz fetch failed: {e}')
+            continue
 
-        for br in ordered:
-            if not br.get('token') or not br.get('domain'):
-                continue
-            try:
-                if br['name'] == 'Coolkidz Australia':
-                    ck_show = fetch_state_orders_by_brand(br['domain'], br['token'], state, date_start, date_end)
-                    ck_base = fetch_state_orders_by_brand(br['domain'], br['token'], state, baseline_start, baseline_end)
-                else:
-                    show_rev, show_orders = fetch_state_orders(br['domain'], br['token'], state, date_start, date_end)
-                    ck_r, ck_o = ck_show.get(br['id'], (0, 0))
-                    total_rev    = show_rev + ck_r
-                    total_orders = show_orders + ck_o
-                    sb_upsert('tradeshow_sales', [{'tradeshow_id': show['id'], 'brand_id': br['id'], 'revenue': total_rev, 'orders': total_orders, 'synced_at': now}], on_conflict='tradeshow_id,brand_id')
-                    print(f'       {br["name"]}: ${total_rev:,} ({total_orders} orders)')
-            except Exception as e:
-                print(f'       ✗ {br["name"]}: {e}')
+        for bid in brand_ids:
+            rev, orders = ck_show.get(bid, (0, 0))
+            sb_upsert('tradeshow_sales', [{'tradeshow_id': show['id'], 'brand_id': bid, 'revenue': rev, 'orders': orders, 'synced_at': now}], on_conflict='tradeshow_id,brand_id')
+            if rev > 0:
+                bname = next((b['name'] for b in all_brands if b['id'] == bid), f'Brand {bid}')
+                print(f'       {bname}: ${rev:,} ({orders} orders)')
 
 # ── Google Ads sync ──────────────────────────────────────────────────────────
 
