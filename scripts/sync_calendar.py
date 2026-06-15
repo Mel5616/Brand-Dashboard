@@ -48,7 +48,9 @@ except ImportError:
 
 CONFIG_PATH = os.path.join(BASE_DIR, "stores.config.json")
 
-# Map brand-name keywords (lowercase) → brand_id. Longest match wins.
+# Map brand-name keywords (lowercase) → brand_id. Matched on whole words only
+# (so "frida" won't match inside "Friday"). Longest keyword wins.
+# Includes the abbreviations used in campaign titles (UB, MG, WF, CK, MSM…).
 BRAND_MAP = {
     "matchstick monkey": 10,
     "gaia baby":         3,
@@ -63,6 +65,13 @@ BRAND_MAP = {
     "hannie":            2,
     "frida":             8,
     "zazu":              6,
+    # abbreviations
+    "ub":   5,
+    "mg":   1,
+    "wf":   4,
+    "ck":   9,
+    "msm":  10,
+    "gaia": 3,
 }
 
 
@@ -107,11 +116,18 @@ def parse_dt(value):
 
 def match_brand(text):
     low = text.lower()
-    # longest keyword first so "gaia baby" wins over a stray "baby"
-    for kw in sorted(BRAND_MAP, key=len, reverse=True):
-        if kw in low:
-            return BRAND_MAP[kw]
-    return None
+    # Find every brand keyword present, matched on whole words so
+    # "frida" ≠ "Friday" and "ub" ≠ "club". The brand mentioned earliest
+    # is treated as the campaign owner (e.g. "CK - … (WonderFold, …)" → CK);
+    # a longer name wins ties at the same position ("gaia baby" > "gaia").
+    best = None  # (position, -length, brand_id)
+    for kw, bid in BRAND_MAP.items():
+        m = re.search(r"\b" + re.escape(kw) + r"\b", low)
+        if m:
+            cand = (m.start(), -len(kw), bid)
+            if best is None or cand < best:
+                best = cand
+    return best[2] if best else None
 
 
 def parse_events(lines):
@@ -153,22 +169,32 @@ def main():
     with open(CONFIG_PATH) as f:
         config = json.load(f)
 
-    url = config.get("marketingCalendarUrl")
-    if not url:
-        print("No marketingCalendarUrl in stores.config.json.")
+    # Accept a single URL or a list of URLs
+    urls = config.get("marketingCalendarUrls") or config.get("marketingCalendarUrl")
+    if isinstance(urls, str):
+        urls = [urls]
+    if not urls:
+        print("No marketingCalendarUrl(s) in stores.config.json.")
         print("In Apple Calendar: right-click calendar → Share → Public Calendar,")
         print("copy the webcal:// URL, then add:")
-        print('  "marketingCalendarUrl": "webcal://..."')
+        print('  "marketingCalendarUrls": ["webcal://...", "webcal://..."]')
         sys.exit(1)
 
     sb_url = os.environ["NEXT_PUBLIC_SUPABASE_URL"]
     sb_key = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
     db = create_client(sb_url, sb_key)
 
-    print(f"Fetching calendar feed...")
-    raw = fetch_ics(url)
-    events = parse_events(unfold(raw))
-    print(f"  Found {len(events)} events")
+    events = []
+    for i, url in enumerate(urls, 1):
+        print(f"Fetching calendar feed {i}/{len(urls)}...")
+        try:
+            raw = fetch_ics(url)
+        except Exception as e:
+            print(f"  ⚠ Could not fetch feed {i}: {e} — skipping")
+            continue
+        cal_events = parse_events(unfold(raw))
+        print(f"  Found {len(cal_events)} events")
+        events.extend(cal_events)
 
     upserted = skipped = 0
     for ev in events:
@@ -176,7 +202,10 @@ def main():
             skipped += 1
             continue
 
-        brand_id = match_brand(ev["title"] + " " + ev.get("description", ""))
+        # Prefer a brand named in the title (the campaign owner); fall back to description
+        brand_id = match_brand(ev["title"])
+        if brand_id is None:
+            brand_id = match_brand(ev.get("description", ""))
 
         db.table("calendar_events").upsert({
             "uid":         ev["uid"],
