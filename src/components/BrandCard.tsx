@@ -20,7 +20,7 @@ export const BRAND_LOGOS: Record<number, string> = {
 // Per-brand logo size overrides (default is "w-28 h-12"). Use for logos that
 // render visually larger/smaller than the others at the same box size.
 const LOGO_SIZE: Record<number, string> = {
-  8:  "w-24 h-10", // Frida — slightly smaller
+  8:  "w-16 h-8", // Frida — noticeably smaller (logo has little built-in padding)
 };
 
 export type BrandPeriod = "monthly" | "weekly" | "fy";
