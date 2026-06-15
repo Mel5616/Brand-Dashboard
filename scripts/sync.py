@@ -370,6 +370,7 @@ def fetch_state_orders(domain, token, state, date_start, date_end):
             query: "financial_status:paid created_at:>={date_start} created_at:<={date_end}",
             sortKey: CREATED_AT) {{
             edges {{ cursor node {{
+              sourceName
               shippingAddress {{ province }}
               totalPriceSet {{ shopMoney {{ amount }} }}
               totalTaxSet   {{ shopMoney {{ amount }} }}
@@ -381,7 +382,11 @@ def fetch_state_orders(domain, token, state, date_start, date_end):
         data = res.get('data', {}).get('orders', {})
         for e in data.get('edges', []):
             node = e['node']
-            if (node.get('shippingAddress') or {}).get('province', '').lower() != state.lower():
+            is_pos    = (node.get('sourceName') or '').lower() == 'pos'
+            province  = (node.get('shippingAddress') or {}).get('province', '')
+            # POS orders are in-person booth sales — always count during show dates.
+            # Web orders count only if shipping to the show's state (online proxy).
+            if not is_pos and province.lower() != state.lower():
                 continue
             gross = float(node['totalPriceSet']['shopMoney']['amount'])
             tax   = float(node.get('totalTaxSet', {}).get('shopMoney', {}).get('amount', 0))
