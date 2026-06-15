@@ -12,6 +12,7 @@ import { BrandPage } from "./BrandPage";
 import { MarketingBudgetTab } from "./MarketingBudgetTab";
 import { MarketingCalendar } from "./MarketingCalendar";
 import { fmt } from "@/lib/format";
+import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
 type TabId = "brands" | "shopify" | "google-ads" | "meta-ads" | "tradeshows" | "budget" | "calendar";
 
@@ -46,7 +47,6 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   },
 ];
 
-const LATEST = "2026-05";
 
 // ── Brand tiers ──────────────────────────────────────────────────────────────
 const BRAND_TIERS: Record<number, "A" | "B" | "C"> = {
@@ -99,6 +99,31 @@ export function DashboardTabs({
   const [active, setActive] = useState<TabId>("brands");
   const [brandFilter, setBrandFilter] = useState<number | "all">("all");
   const [brandPeriod, setBrandPeriod] = useState<BrandPeriod>("monthly");
+  const [fy, setFy] = useState<FY>(currentFY());
+
+  // FY-derived month range + headline month, shared with every page
+  const monthKeys   = fyMonthKeys(fy);
+  const monthLabels = fyMonthLabels(fy);
+  const presentKeys = monthly.map((m: any) => m.month_key);
+  const LATEST      = fyLatestMonth(fy, presentKeys);
+  const PREV_MO     = fyPrevMonth(fy, LATEST);
+  const fyLabel     = FY_LABEL[fy];
+  const latestLabel = monthLabel(LATEST);
+  const prevLabel   = monthLabel(PREV_MO);
+
+  // Restrict month-keyed datasets to the selected FY before anything renders
+  const inFy = (rows: any[]) => rows.filter((r: any) => monthKeys.includes(r.month_key));
+  monthly          = inFy(monthly);
+  googleAds        = inFy(googleAds);
+  metaAds          = inFy(metaAds);
+  metaAdsPlatform  = inFy(metaAdsPlatform);
+  instagramOrganic = inFy(instagramOrganic);
+  targets          = inFy(targets);
+  klaviyo          = inFy(klaviyo);
+  ga4              = inFy(ga4);
+  marketingActuals = inFy(marketingActuals);
+  googleAdsCampaigns = inFy(googleAdsCampaigns);
+  marketingBudgets = marketingBudgets.filter((b: any) => (b.fy ?? "2025-26") === fy);
 
   const summaryMap      = Object.fromEntries(summaries.map((s: any) => [s.brand_id, s]));
   const selectedBrand   = brandFilter !== "all" ? brands.find((b: any) => b.id === brandFilter) : null;
@@ -113,12 +138,34 @@ export function DashboardTabs({
 
   const topProducts = [...products].sort((a: any, b: any) => b.gross_sales - a.gross_sales).slice(0, 10);
 
+  // FY-aware headline KPIs (recomputed from the filtered data so they track the toggle)
+  const fyRevenue   = monthly.reduce((s: number, m: any) => s + (m.revenue ?? 0), 0);
+  const latestOrders = monthly.filter((m: any) => m.month_key === LATEST).reduce((s: number, m: any) => s + (m.orders ?? 0), 0);
+  const liveCount    = brands.filter((b: any) => b.live).length;
+  const fyKpis = [
+    { label: `${fyLabel} Revenue`, value: fmt(fyRevenue), sub: "ex-GST, all brands" },
+    { label: "Active Brands",      value: String(liveCount), sub: `of ${brands.length} total` },
+    { label: `${latestLabel} Orders`, value: latestOrders.toLocaleString(), sub: fyLabel },
+    { label: "Tradeshows",         value: String(tradeshows.length), sub: `${tradeshows.filter((t: any) => new Date() < new Date(t.date_start)).length} upcoming` },
+  ];
+
   function openBrand(id: number) { setBrandFilter(id); setActive("brands"); }
   function goHome() { setBrandFilter("all"); }
 
   // ── Sidebar ──────────────────────────────────────────────────────────────────
   const Sidebar = () => (
     <aside className="fixed top-[57px] left-0 w-[200px] h-[calc(100vh-57px)] bg-white border-r border-gray-200 flex flex-col z-10 overflow-y-auto">
+      {/* Financial year selector — global across all pages */}
+      <div className="px-4 py-3 border-b border-gray-100">
+        <label className="text-[9px] font-semibold text-gray-300 uppercase tracking-[0.18em]">Financial Year</label>
+        <select
+          value={fy}
+          onChange={e => setFy(e.target.value as FY)}
+          className="w-full mt-1 text-xs font-medium border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+        >
+          {FY_LIST.map(f => <option key={f} value={f}>{FY_LABEL[f]}</option>)}
+        </select>
+      </div>
       {selectedBrand && (
         <div className="px-4 py-3 border-b border-gray-100">
           <button
@@ -195,6 +242,11 @@ export function DashboardTabs({
             marketingBudgets={marketingBudgets}
             marketingActuals={marketingActuals}
             googleAdsCampaigns={googleAdsCampaigns}
+            monthKeys={monthKeys}
+            monthLabels={monthLabels}
+            latest={LATEST}
+            prevMonth={PREV_MO}
+            fyLabel={fyLabel}
           />
         </div>
       </>
@@ -212,7 +264,7 @@ export function DashboardTabs({
           {active === "brands" && (
             <>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {kpis.map(kpi => (
+                {fyKpis.map(kpi => (
                   <div key={kpi.label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
                     <p className="text-xs text-gray-400">{kpi.label}</p>
                     <p className="text-2xl font-bold text-gray-900 mt-1">{kpi.value}</p>
@@ -291,7 +343,7 @@ export function DashboardTabs({
                           } else if (brandPeriod === "fy") {
                             periodRevenue = sum?.fy_revenue ?? 0;
                             periodGrowth  = sum?.yoy_growth ?? null;
-                            periodLabel   = "FY 2025–26";
+                            periodLabel   = fyLabel;
                           }
 
                           return (
@@ -322,7 +374,7 @@ export function DashboardTabs({
               {topProducts.length > 0 && (
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                   <h2 className="font-semibold text-gray-800 mb-1">Top Products Portfolio-Wide</h2>
-                  <p className="text-xs text-gray-400 mb-4">FY 2025–26 gross sales across all brands</p>
+                  <p className="text-xs text-gray-400 mb-4">{fyLabel} gross sales across all brands</p>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
@@ -364,6 +416,8 @@ export function DashboardTabs({
                 metaAds={metaAds}
                 instagramOrganic={instagramOrganic}
                 onBrandClick={openBrand}
+                monthKeys={monthKeys}
+                latest={LATEST}
               />
             </>
           )}
@@ -381,11 +435,11 @@ export function DashboardTabs({
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
                 </select>
               </div>
-              <SalesChart key={String(brandFilter)} brands={filteredBrands} monthly={filteredMonthly} weekly={filteredWeekly} weekLabels={weekLabels} />
+              <SalesChart key={String(brandFilter) + fy} brands={filteredBrands} monthly={filteredMonthly} weekly={filteredWeekly} weekLabels={weekLabels} monthKeys={monthKeys} monthLabels={monthLabels} fyLabel={fyLabel} />
 
               {/* Shopify brand breakdown cards */}
               {brandFilter === "all" && (() => {
-                const MK_ALL = ["2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05"];
+                const MK_ALL = monthKeys;
 
                 function Spark({ values, color }: { values: number[]; color: string }) {
                   const max = Math.max(...values, 0.001);
@@ -436,7 +490,7 @@ export function DashboardTabs({
 
                 return (
                   <div className="mt-4 space-y-3">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-1">Brand Breakdown — May 2026</p>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-1">Brand Breakdown — {latestLabel}</p>
                     {rows.map((r: any) => (
                       <div key={r.brand.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                         <div className="flex items-center gap-2 px-5 py-2.5 border-b border-gray-50" style={{ borderLeft: `3px solid ${r.brand.color}` }}>
@@ -461,7 +515,7 @@ export function DashboardTabs({
                                 <Spark values={col.spark} color={r.brand.color} />
                               </div>
                               <p className="text-[10px] text-gray-400">
-                                {col.chg !== null ? <>vs Apr <Chg pct={col.chg} /></> : "FY 2025–26"}
+                                {col.chg !== null ? <>vs {prevLabel} <Chg pct={col.chg} /></> : fyLabel}
                               </p>
                             </div>
                           ))}
@@ -488,12 +542,12 @@ export function DashboardTabs({
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
                 </select>
               </div>
-              <GoogleAdsChart brands={filteredBrands} data={filteredAds} />
+              <GoogleAdsChart key={fy} brands={filteredBrands} data={filteredAds} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} />
 
               {/* Brand KPI cards — only when all brands shown */}
               {brandFilter === "all" && (() => {
-                const PREV    = "2026-04";
-                const MK_ALL  = ["2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05"];
+                const PREV = PREV_MO;
+                const MK_ALL = monthKeys;
 
                 function Spark({ values, color }: { values: number[]; color: string }) {
                   const max = Math.max(...values, 0.001);
@@ -556,7 +610,7 @@ export function DashboardTabs({
 
                 return (
                   <div className="mt-4 space-y-3">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-1">Brand Breakdown — May 2026</p>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-1">Brand Breakdown — {latestLabel}</p>
                     {rows.map((r: any) => (
                       <div key={r.brand.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                         {/* Brand header bar */}
@@ -572,7 +626,7 @@ export function DashboardTabs({
                               <div className="my-1.5">
                                 <Spark values={col.getSpark(r)} color={r.brand.color} />
                               </div>
-                              <p className="text-[10px] text-gray-400">vs Apr <Chg pct={col.getChg(r)} /></p>
+                              <p className="text-[10px] text-gray-400">vs {prevLabel} <Chg pct={col.getChg(r)} /></p>
                             </div>
                           ))}
                         </div>
@@ -597,11 +651,11 @@ export function DashboardTabs({
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
                 </select>
               </div>
-              <MetaAdsChart brands={filteredBrands} data={filteredMeta} />
+              <MetaAdsChart key={fy} brands={filteredBrands} data={filteredMeta} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} />
 
               {/* Brand KPI cards — only when all brands shown */}
               {brandFilter === "all" && (() => {
-                const MK_ALL = ["2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05"];
+                const MK_ALL = monthKeys;
 
                 function Spark({ values, color }: { values: number[]; color: string }) {
                   const max = Math.max(...values, 0.001);
@@ -660,7 +714,7 @@ export function DashboardTabs({
 
                 return (
                   <div className="mt-4 space-y-3">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-1">Brand Breakdown — May 2026</p>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-1">Brand Breakdown — {latestLabel}</p>
                     {rows.map((r: any) => (
                       <div key={r.brand.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                         <div className="flex items-center gap-2 px-5 py-2.5 border-b border-gray-50" style={{ borderLeft: `3px solid ${r.brand.color}` }}>
@@ -674,7 +728,7 @@ export function DashboardTabs({
                               <div className="my-1.5">
                                 <Spark values={col.getSpark(r)} color={r.brand.color} />
                               </div>
-                              <p className="text-[10px] text-gray-400">vs Apr <Chg pct={col.getChg(r)} /></p>
+                              <p className="text-[10px] text-gray-400">vs {prevLabel} <Chg pct={col.getChg(r)} /></p>
                             </div>
                           ))}
                         </div>
@@ -705,6 +759,9 @@ export function DashboardTabs({
               googleAds={googleAds}
               metaAds={metaAds}
               monthly={monthly}
+              fyLabel={fyLabel}
+              monthKeys={monthKeys}
+              monthLabels={monthLabels}
             />
           )}
 

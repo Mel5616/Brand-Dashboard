@@ -10,8 +10,8 @@ import type { Brand } from "@/lib/db";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Tooltip, Legend);
 
-const MONTH_KEYS   = ["2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05"];
-const MONTH_LABELS = ["Jul 25","Aug 25","Sep 25","Oct 25","Nov 25","Dec 25","Jan 26","Feb 26","Mar 26","Apr 26","May 26"];
+const DEFAULT_MONTH_KEYS   = ["2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06"];
+const DEFAULT_MONTH_LABELS = ["Jul 25","Aug 25","Sep 25","Oct 25","Nov 25","Dec 25","Jan 26","Feb 26","Mar 26","Apr 26","May 26","Jun 26"];
 
 export type GoogleAdsRow = {
   brand_id: number;
@@ -24,7 +24,9 @@ export type GoogleAdsRow = {
 
 type Metric = "spend" | "revenue" | "clicks" | "impressions" | "roas";
 
-export function GoogleAdsChart({ brands, data }: { brands: Brand[]; data: GoogleAdsRow[] }) {
+export function GoogleAdsChart({ brands, data, monthKeys = DEFAULT_MONTH_KEYS, monthLabels = DEFAULT_MONTH_LABELS, latest }: { brands: Brand[]; data: GoogleAdsRow[]; monthKeys?: string[]; monthLabels?: string[]; latest?: string }) {
+  const MONTH_KEYS = monthKeys;
+  const MONTH_LABELS = monthLabels;
   const [metric, setMetric] = React.useState<Metric>("spend");
 
   const activeBrands = brands.filter(b => data.some(d => d.brand_id === b.id));
@@ -55,7 +57,8 @@ export function GoogleAdsChart({ brands, data }: { brands: Brand[]; data: Google
   });
 
   // Summary KPIs for latest month
-  const latestKey = "2026-05";
+  const latestKey = latest ?? MONTH_KEYS[MONTH_KEYS.length - 1];
+  const latestLbl = (() => { const [y, m] = latestKey.split("-"); return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("en-AU", { month: "short" }); })();
   const latestRows   = data.filter(d => d.month_key === latestKey);
   const totalSpend   = latestRows.reduce((s, d) => s + d.spend, 0);
   const totalRevenue = latestRows.reduce((s, d) => s + d.roas * d.spend, 0);
@@ -66,8 +69,8 @@ export function GoogleAdsChart({ brands, data }: { brands: Brand[]; data: Google
     : 0;
 
   const kpis = [
-    { label: "May Spend",   value: fmtFull(totalSpend) },
-    { label: "May Revenue", value: fmtFull(totalRevenue) },
+    { label: `${latestLbl} Spend`, value: fmtFull(totalSpend) },
+    { label: `${latestLbl} Revenue`, value: fmtFull(totalRevenue) },
     { label: "Avg ROAS",    value: avgRoas.toFixed(2) + "x" },
     { label: "Clicks",      value: totalClicks.toLocaleString() },
     { label: "Impressions", value: (totalImpr / 1000).toFixed(0) + "K" },

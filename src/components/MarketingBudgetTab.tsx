@@ -10,8 +10,8 @@ import type { MarketingBudget, MarketingActual, GoogleAdsRow, MetaAdsRow, BrandM
 
 ChartJS.register(ArcElement, CategoryScale, LinearScale, LineElement, PointElement, Filler, Tooltip, Legend);
 
-const MONTH_KEYS   = ["2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05"];
-const MONTH_LABELS = ["Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr","May"];
+const DEFAULT_MONTH_KEYS   = ["2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06"];
+const DEFAULT_MONTH_LABELS = ["Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr","May","Jun"];
 
 const CHANNEL_COLORS: Record<string, string> = {
   "Google Advertising":   "#4285F4",
@@ -30,6 +30,9 @@ interface Props {
   googleAds:        GoogleAdsRow[];
   metaAds:          MetaAdsRow[];
   monthly:          BrandMonthly[];
+  fyLabel?:         string;
+  monthKeys?:       string[];
+  monthLabels?:     string[];
 }
 
 function PacingBar({ pct, color }: { pct: number; color: string }) {
@@ -59,7 +62,9 @@ const DONUT_OPTS: any = {
   },
 };
 
-export function MarketingBudgetTab({ brands, marketingBudgets, marketingActuals, googleAds, metaAds, monthly }: Props) {
+export function MarketingBudgetTab({ brands, marketingBudgets, marketingActuals, googleAds, metaAds, monthly, fyLabel = "FY 2025–26", monthKeys = DEFAULT_MONTH_KEYS, monthLabels = DEFAULT_MONTH_LABELS }: Props) {
+  const MONTH_KEYS = monthKeys;
+  const MONTH_LABELS = monthLabels;
 
   function getActual(brandId: number, channel: string): number {
     if (channel === "Google Advertising")  return googleAds.filter(r => r.brand_id === brandId).reduce((s, r) => s + r.spend, 0);
@@ -239,7 +244,7 @@ export function MarketingBudgetTab({ brands, marketingBudgets, marketingActuals,
 
         <div className="col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <h2 className="font-semibold text-gray-800 mb-0.5">Budget vs spend</h2>
-          <p className="text-xs text-gray-400 mb-4">FY2025/26 marketing budget utilisation</p>
+          <p className="text-xs text-gray-400 mb-4">{fyLabel} marketing budget utilisation</p>
           <div className="flex items-center gap-6">
             <div className="relative shrink-0" style={{ width: 140, height: 140 }}>
               <Doughnut data={utilisationDonut} options={DONUT_OPTS} />
@@ -276,8 +281,8 @@ export function MarketingBudgetTab({ brands, marketingBudgets, marketingActuals,
       {/* Channel donuts */}
       <div className="grid grid-cols-2 gap-6">
         {[
-          { title: "Marketing budget by channel", sub: "Planned FY2025/26 budget across channels", data: budgetDonutData, total: totalBudget, totals: channelTotals.map(c => c.budget) },
-          { title: "Spend by channel",             sub: "Actual FY2025/26 spend across channels",  data: actualDonutData, total: totalActual, totals: channelTotals.map(c => c.actual) },
+          { title: "Marketing budget by channel", sub: `Planned ${fyLabel} budget across channels`, data: budgetDonutData, total: totalBudget, totals: channelTotals.map(c => c.budget) },
+          { title: "Spend by channel",             sub: `Actual ${fyLabel} spend across channels`,  data: actualDonutData, total: totalActual, totals: channelTotals.map(c => c.actual) },
         ].map(({ title, sub, data, total, totals }) => (
           <div key={title} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <h2 className="font-semibold text-gray-800 mb-0.5">{title}</h2>
@@ -315,7 +320,7 @@ export function MarketingBudgetTab({ brands, marketingBudgets, marketingActuals,
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100">
           <h2 className="font-semibold text-gray-800">Budget by brand</h2>
-          <p className="text-xs text-gray-400 mt-0.5">FY 2025–26 total marketing budget vs actual spend</p>
+          <p className="text-xs text-gray-400 mt-0.5">{fyLabel} total marketing budget vs actual spend</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

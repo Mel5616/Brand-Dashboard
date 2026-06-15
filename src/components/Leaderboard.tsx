@@ -7,8 +7,7 @@ import type { Brand, BrandSummary, BrandMonthly, GoogleAdsRow, MetaAdsRow, Insta
 
 type SortKey = "fy_revenue" | "last_month_rev" | "mom_growth" | "google_roas" | "meta_roas" | "ig_followers";
 
-const LATEST = "2026-05";
-const MONTH_KEYS = ["2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05"];
+const DEFAULT_MONTH_KEYS = ["2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06"];
 
 function MiniSparkline({ data, color }: { data: number[]; color: string }) {
   const nonZero = data.filter(v => v > 0);
@@ -38,9 +37,13 @@ interface Props {
   metaAds: MetaAdsRow[];
   instagramOrganic: InstagramOrganicRow[];
   onBrandClick: (id: number) => void;
+  monthKeys?: string[];
+  latest?: string;
 }
 
-export function Leaderboard({ brands, summaries, monthly, googleAds, metaAds, instagramOrganic, onBrandClick }: Props) {
+export function Leaderboard({ brands, summaries, monthly, googleAds, metaAds, instagramOrganic, onBrandClick, monthKeys = DEFAULT_MONTH_KEYS, latest }: Props) {
+  const LATEST = latest ?? monthKeys[monthKeys.length - 1];
+  const MONTH_KEYS = monthKeys;
   const [sortKey, setSortKey] = useState<SortKey>("fy_revenue");
   const [asc, setAsc] = useState(false);
 

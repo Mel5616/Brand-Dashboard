@@ -12,13 +12,16 @@ import type { MetaAdsRow } from "@/lib/db";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Tooltip, Legend);
 
-const MONTH_KEYS   = ["2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05"];
-const MONTH_LABELS = ["Jul 25","Aug 25","Sep 25","Oct 25","Nov 25","Dec 25","Jan 26","Feb 26","Mar 26","Apr 26","May 26"];
-const LATEST = "2026-05";
+const DEFAULT_MONTH_KEYS   = ["2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06"];
+const DEFAULT_MONTH_LABELS = ["Jul 25","Aug 25","Sep 25","Oct 25","Nov 25","Dec 25","Jan 26","Feb 26","Mar 26","Apr 26","May 26","Jun 26"];
 
 type Metric = "spend" | "revenue" | "roas" | "purchases" | "clicks";
 
-export function MetaAdsChart({ brands, data }: { brands: Brand[]; data: MetaAdsRow[] }) {
+export function MetaAdsChart({ brands, data, monthKeys = DEFAULT_MONTH_KEYS, monthLabels = DEFAULT_MONTH_LABELS, latest }: { brands: Brand[]; data: MetaAdsRow[]; monthKeys?: string[]; monthLabels?: string[]; latest?: string }) {
+  const MONTH_KEYS = monthKeys;
+  const MONTH_LABELS = monthLabels;
+  const LATEST = latest ?? MONTH_KEYS[MONTH_KEYS.length - 1];
+  const latestLbl = (() => { const [y, m] = LATEST.split("-"); return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("en-AU", { month: "short" }); })();
   const [metric, setMetric] = React.useState<Metric>("spend");
 
   const activeBrands = brands.filter(b => data.some(d => d.brand_id === b.id));
@@ -54,8 +57,8 @@ export function MetaAdsChart({ brands, data }: { brands: Brand[]; data: MetaAdsR
   const avgRoas     = totalSpend > 0 ? totalRev / totalSpend : 0;
 
   const kpis = [
-    { label: "May Spend",     value: fmtFull(totalSpend) },
-    { label: "May Revenue",   value: fmtFull(totalRev) },
+    { label: `${latestLbl} Spend`, value: fmtFull(totalSpend) },
+    { label: `${latestLbl} Revenue`, value: fmtFull(totalRev) },
     { label: "Avg ROAS",      value: avgRoas.toFixed(2) + "×" },
     { label: "Purchases",     value: totalPurch.toLocaleString() },
     { label: "Clicks",        value: totalClicks.toLocaleString() },

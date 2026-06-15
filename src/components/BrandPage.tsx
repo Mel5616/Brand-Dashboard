@@ -15,13 +15,16 @@ import type {
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Filler, Tooltip, Legend);
 
-const MONTH_KEYS   = ["2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05"];
-const MONTH_LABELS = ["Jul 25","Aug 25","Sep 25","Oct 25","Nov 25","Dec 25","Jan 26","Feb 26","Mar 26","Apr 26","May 26"];
+const DEFAULT_MONTH_KEYS   = ["2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06"];
+const DEFAULT_MONTH_LABELS = ["Jul 25","Aug 25","Sep 25","Oct 25","Nov 25","Dec 25","Jan 26","Feb 26","Mar 26","Apr 26","May 26","Jun 26"];
 const TEAL      = "#2dc8a5";
 const HEADER_BG = "#2e4057";
-const LATEST    = "2026-05";
-const PREV_MO   = "2026-04";
-const PREV_YR   = "2025-05";
+
+// month_key one calendar year before the given key (for YoY)
+function yoyKey(key: string) {
+  const [y, m] = key.split("-");
+  return `${Number(y) - 1}-${m}`;
+}
 
 type Period = "monthly" | "weekly";
 
@@ -176,13 +179,26 @@ interface Props {
   marketingBudgets: MarketingBudget[];
   marketingActuals: MarketingActual[];
   googleAdsCampaigns: GoogleAdsCampaignRow[];
+  monthKeys?: string[];
+  monthLabels?: string[];
+  latest?: string;
+  prevMonth?: string;
+  fyLabel?: string;
 }
 
 export function BrandPage({
   brand, summary, monthly, weekly, weekLabels, products,
   googleAds, metaAds, metaAdsPlatform, instagramOrganic,
   targets, klaviyo, ga4, marketingBudgets, marketingActuals, googleAdsCampaigns,
+  monthKeys = DEFAULT_MONTH_KEYS, monthLabels = DEFAULT_MONTH_LABELS,
+  latest, prevMonth, fyLabel = "FY 2025–26",
 }: Props) {
+  const MONTH_KEYS   = monthKeys;
+  const MONTH_LABELS = monthLabels;
+  const LATEST       = latest ?? monthKeys[monthKeys.length - 1];
+  const PREV_MO      = prevMonth ?? monthKeys[monthKeys.length - 2];
+  const PREV_YR      = yoyKey(LATEST);
+  const latestLbl    = MONTH_LABELS[MONTH_KEYS.indexOf(LATEST)] ?? MONTH_LABELS[MONTH_LABELS.length - 1];
   const [period, setPeriod] = useState<Period>("monthly");
 
   const monthlyRows = monthly.filter(m => m.brand_id === brand.id);
@@ -556,7 +572,7 @@ export function BrandPage({
 
         <div className="grid grid-cols-4 divide-x divide-gray-100 border-b border-gray-100 shadow-sm">
           <KpiCard
-            label="FY 2025–26 Revenue"
+            label={`${fyLabel} Revenue`}
             value={fmt(summary?.fy_revenue ?? 0)}
             spark={revMonthly}
             hero
@@ -588,8 +604,8 @@ export function BrandPage({
           <div className="grid grid-cols-4 divide-x divide-gray-100 border-b border-gray-100 shadow-sm">
             <KpiCard label="FY Returns" value={fmt(fyRefunds)} spark={[]} color="#ef4444" />
             <KpiCard label="Return Rate (FY)" value={`${returnRateFy.toFixed(1)}%`} spark={[]} color="#ef4444" />
-            <KpiCard label="Returns (May 26)" value={lastMonthRefunds > 0 ? fmtFull(lastMonthRefunds) : "—"} spark={[]} color="#ef4444" />
-            <KpiCard label="Return Rate (May 26)" value={returnRateMonth > 0 ? `${returnRateMonth.toFixed(1)}%` : "—"} spark={[]} color="#ef4444" />
+            <KpiCard label={`Returns (${latestLbl})`} value={lastMonthRefunds > 0 ? fmtFull(lastMonthRefunds) : "—"} spark={[]} color="#ef4444" />
+            <KpiCard label={`Return Rate (${latestLbl})`} value={returnRateMonth > 0 ? `${returnRateMonth.toFixed(1)}%` : "—"} spark={[]} color="#ef4444" />
           </div>
         )}
 
@@ -606,7 +622,7 @@ export function BrandPage({
         {/* ── TARGETS & PACING ─────────────────────────────────────────────── */}
         {latestTarget && (
           <div className="px-6 py-5 border-b border-gray-100" style={{ background: HEADER_BG }}>
-            <p className="text-white/60 text-[10px] uppercase tracking-[0.2em] mb-3">May 2026 · Targets & Pacing</p>
+            <p className="text-white/60 text-[10px] uppercase tracking-[0.2em] mb-3">{latestLbl} · Targets &amp; Pacing</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {latestTarget.revenue_target > 0 && (
                 <PacingBar current={summary?.last_month_rev ?? 0} target={latestTarget.revenue_target} label="Revenue" />
@@ -625,7 +641,7 @@ export function BrandPage({
         <div className="grid grid-cols-5 divide-x divide-gray-100 border-b border-gray-100">
           <div className="col-span-3 bg-white p-6">
             <p className="text-[10px] uppercase tracking-[0.18em] text-gray-400 mb-5">
-              Revenue &amp; Orders — {isWeekly ? "Weekly (Rolling 13 Weeks)" : "Monthly (FY 2025–26)"}
+              Revenue &amp; Orders — {isWeekly ? "Weekly (Rolling 13 Weeks)" : "Monthly (${fyLabel})"}
             </p>
             <div className="h-52">
               <Bar data={barData} options={barOptions} />
@@ -712,14 +728,14 @@ export function BrandPage({
             <SectionHeader title={`${brand.name}  ·  Blended Paid Media  ·  Google + Meta`} />
             <div className="grid grid-cols-4 divide-x divide-gray-100 border-b border-gray-100 shadow-sm">
               <KpiCard
-                label="Blended Spend (May 26)"
+                label={`Blended Spend (${latestLbl})`}
                 value={fmtFull(blendedSpend)}
                 spark={blendedSpendSp}
                 prevPct={pctOf(blendedSpend, prevBlendSpend)}
                 color="#6366f1"
               />
               <KpiCard
-                label="Blended Revenue (May 26)"
+                label={`Blended Revenue (${latestLbl})`}
                 value={fmtFull(blendedRev)}
                 spark={blendedRevSp}
                 prevPct={pctOf(blendedRev, prevBlendRev)}
@@ -813,8 +829,8 @@ export function BrandPage({
           <>
             <SectionHeader title={`${brand.name}  ·  Google Ads  ·  Monthly`} />
             <div className="grid grid-cols-5 divide-x divide-gray-100 border-b border-gray-100 shadow-sm">
-              <KpiCard label="Spend (May 26)"       value={fmtFull(latestAds?.spend ?? 0)}             spark={spendSpark}  prevPct={pctOf(latestAds?.spend ?? 0, prevAds?.spend ?? 0)} />
-              <KpiCard label="Revenue (May 26)"     value={fmtFull(latestGRev)}                        spark={gRevSpark}   prevPct={pctOf(latestGRev, prevGRev)} />
+              <KpiCard label={`Spend (${latestLbl})`}       value={fmtFull(latestAds?.spend ?? 0)}             spark={spendSpark}  prevPct={pctOf(latestAds?.spend ?? 0, prevAds?.spend ?? 0)} />
+              <KpiCard label={`Revenue (${latestLbl})`}     value={fmtFull(latestGRev)}                        spark={gRevSpark}   prevPct={pctOf(latestGRev, prevGRev)} />
               <KpiCard label="ROAS"                 value={(latestAds?.roas ?? 0).toFixed(2) + "×"}   spark={roasSpark}   prevPct={pctOf(latestAds?.roas ?? 0, prevAds?.roas ?? 0)} />
               <KpiCard label="Clicks"               value={(latestAds?.clicks ?? 0).toLocaleString()}  spark={clicksSpark} prevPct={pctOf(latestAds?.clicks ?? 0, prevAds?.clicks ?? 0)} />
               <KpiCard label="Impressions"          value={((latestAds?.impressions ?? 0) / 1000).toFixed(0) + "K"} spark={imprSpark} prevPct={pctOf(latestAds?.impressions ?? 0, prevAds?.impressions ?? 0)} />
@@ -825,7 +841,7 @@ export function BrandPage({
         {/* ── GOOGLE ADS CAMPAIGNS ─────────────────────────────────────────── */}
         {hasCampaigns && (
           <>
-            <SectionHeader title={`${brand.name}  ·  Google Ads  ·  Campaigns  ·  May 26`} />
+            <SectionHeader title={`${brand.name}  ·  Google Ads  ·  Campaigns  ·  ${latestLbl}`} />
             <div className="bg-white border-b border-gray-100 overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -889,8 +905,8 @@ export function BrandPage({
         <SectionHeader title={`${brand.name}  ·  Meta Ads  ·  Monthly`} />
         {hasMeta ? (
           <div className="grid grid-cols-5 divide-x divide-gray-100 border-b border-gray-100 shadow-sm">
-            <KpiCard label="Spend (May 26)"    value={fmtFull(latestMeta?.spend ?? 0)}       spark={metaSpendSp}  prevPct={pctOf(latestMeta?.spend ?? 0, prevMeta?.spend ?? 0)} />
-            <KpiCard label="Revenue (May 26)"  value={fmtFull(latestMeta?.revenue ?? 0)}     spark={metaRevSp}    prevPct={pctOf(latestMeta?.revenue ?? 0, prevMeta?.revenue ?? 0)} />
+            <KpiCard label={`Spend (${latestLbl})`}    value={fmtFull(latestMeta?.spend ?? 0)}       spark={metaSpendSp}  prevPct={pctOf(latestMeta?.spend ?? 0, prevMeta?.spend ?? 0)} />
+            <KpiCard label={`Revenue (${latestLbl})`}  value={fmtFull(latestMeta?.revenue ?? 0)}     spark={metaRevSp}    prevPct={pctOf(latestMeta?.revenue ?? 0, prevMeta?.revenue ?? 0)} />
             <KpiCard label="ROAS"              value={latestMetaRoas.toFixed(2) + "×"}       spark={metaRoasSp}   prevPct={pctOf(latestMetaRoas, prevMetaRoas)} />
             <KpiCard label="Purchases"         value={(latestMeta?.purchases ?? 0).toLocaleString()} spark={metaPurchSp}  prevPct={pctOf(latestMeta?.purchases ?? 0, prevMeta?.purchases ?? 0)} />
             <KpiCard label="Clicks"            value={(latestMeta?.clicks ?? 0).toLocaleString()}    spark={metaClicksSp} prevPct={pctOf(latestMeta?.clicks ?? 0, prevMeta?.clicks ?? 0)} />
@@ -905,7 +921,7 @@ export function BrandPage({
         {/* ── META PLATFORM BREAKDOWN ───────────────────────────────────────── */}
         {hasPlatform && latestPlatRows.length > 0 && (
           <>
-            <SectionHeader title={`${brand.name}  ·  Meta Ads  ·  Platform Breakdown  ·  May 26`} />
+            <SectionHeader title={`${brand.name}  ·  Meta Ads  ·  Platform Breakdown  ·  ${latestLbl}`} />
             <div className="bg-white border-b border-gray-100 overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -946,9 +962,9 @@ export function BrandPage({
         {hasIg ? (
           <div className="grid grid-cols-4 divide-x divide-gray-100 border-b border-gray-100 shadow-sm">
             <KpiCard label="Followers"                value={(latestIg?.followers ?? 0).toLocaleString()}       spark={igFollSpark}  color="#E1306C" />
-            <KpiCard label="Reach (May 26)"           value={(latestIg?.reach ?? 0).toLocaleString()}           spark={igReachSpark} prevPct={pctOf(latestIg?.reach ?? 0, prevIg?.reach ?? 0)} color="#E1306C" />
-            <KpiCard label="Profile Views (May 26)"   value={(latestIg?.profile_views ?? 0).toLocaleString()}   spark={igPvSpark}    prevPct={pctOf(latestIg?.profile_views ?? 0, prevIg?.profile_views ?? 0)} color="#E1306C" />
-            <KpiCard label="Accounts Engaged (May 26)" value={(latestIg?.accounts_engaged ?? 0).toLocaleString()} spark={igEngSpark}  prevPct={pctOf(latestIg?.accounts_engaged ?? 0, prevIg?.accounts_engaged ?? 0)} color="#E1306C" />
+            <KpiCard label={`Reach (${latestLbl})`}           value={(latestIg?.reach ?? 0).toLocaleString()}           spark={igReachSpark} prevPct={pctOf(latestIg?.reach ?? 0, prevIg?.reach ?? 0)} color="#E1306C" />
+            <KpiCard label={`Profile Views (${latestLbl})`}   value={(latestIg?.profile_views ?? 0).toLocaleString()}   spark={igPvSpark}    prevPct={pctOf(latestIg?.profile_views ?? 0, prevIg?.profile_views ?? 0)} color="#E1306C" />
+            <KpiCard label={`Accounts Engaged (${latestLbl})`} value={(latestIg?.accounts_engaged ?? 0).toLocaleString()} spark={igEngSpark}  prevPct={pctOf(latestIg?.accounts_engaged ?? 0, prevIg?.accounts_engaged ?? 0)} color="#E1306C" />
           </div>
         ) : (
           <div className="bg-white border-b border-gray-100 p-10 text-center">
@@ -962,9 +978,9 @@ export function BrandPage({
         {hasKlaviyo ? (
           <div className="grid grid-cols-4 divide-x divide-gray-100 border-b border-gray-100 shadow-sm">
             <KpiCard label="Subscribers"       value={(latestKl?.list_size ?? 0).toLocaleString()}          spark={klListSpark}  color="#7c3aed" />
-            <KpiCard label="Open Rate (May 26)" value={`${(latestKl?.open_rate ?? 0).toFixed(1)}%`}         spark={klOpenSpark}  prevPct={pctOf(latestKl?.open_rate ?? 0, prevKl?.open_rate ?? 0)} color="#7c3aed" />
-            <KpiCard label="Click Rate (May 26)" value={`${(latestKl?.click_rate ?? 0).toFixed(1)}%`}       spark={klClickSpark} prevPct={pctOf(latestKl?.click_rate ?? 0, prevKl?.click_rate ?? 0)} color="#7c3aed" />
-            <KpiCard label="Revenue (May 26)"  value={fmtFull(latestKl?.revenue ?? 0)}                      spark={klRevSpark}   prevPct={pctOf(latestKl?.revenue ?? 0, prevKl?.revenue ?? 0)} color="#7c3aed" />
+            <KpiCard label={`Open Rate (${latestLbl})`} value={`${(latestKl?.open_rate ?? 0).toFixed(1)}%`}         spark={klOpenSpark}  prevPct={pctOf(latestKl?.open_rate ?? 0, prevKl?.open_rate ?? 0)} color="#7c3aed" />
+            <KpiCard label={`Click Rate (${latestLbl})`} value={`${(latestKl?.click_rate ?? 0).toFixed(1)}%`}       spark={klClickSpark} prevPct={pctOf(latestKl?.click_rate ?? 0, prevKl?.click_rate ?? 0)} color="#7c3aed" />
+            <KpiCard label={`Revenue (${latestLbl})`}  value={fmtFull(latestKl?.revenue ?? 0)}                      spark={klRevSpark}   prevPct={pctOf(latestKl?.revenue ?? 0, prevKl?.revenue ?? 0)} color="#7c3aed" />
           </div>
         ) : (
           <div className="bg-white border-b border-gray-100 p-10 text-center">
@@ -974,7 +990,7 @@ export function BrandPage({
         )}
 
         {/* ── MARKETING BUDGET ─────────────────────────────────────────────── */}
-        <SectionHeader title={`${brand.name}  ·  Marketing Budget  ·  FY 2025–26`} />
+        <SectionHeader title={`${brand.name}  ·  Marketing Budget  ·  ${fyLabel}`} />
         {hasBudgets ? (
           <div className="bg-white border-b border-gray-100 p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -1078,10 +1094,10 @@ export function BrandPage({
         <SectionHeader title={`${brand.name}  ·  GA4  ·  Organic Traffic`} />
         {hasGA4 ? (
           <div className="grid grid-cols-4 divide-x divide-gray-100 border-b border-gray-100 shadow-sm">
-            <KpiCard label="Sessions (May 26)"         value={(latestGA4?.sessions ?? 0).toLocaleString()}         spark={ga4SessSpark}  prevPct={pctOf(latestGA4?.sessions ?? 0, prevGA4?.sessions ?? 0)} color="#34a853" />
-            <KpiCard label="Organic Sessions (May 26)" value={(latestGA4?.organic_sessions ?? 0).toLocaleString()}  spark={ga4OrgSpark}   prevPct={pctOf(latestGA4?.organic_sessions ?? 0, prevGA4?.organic_sessions ?? 0)} color="#34a853" />
-            <KpiCard label="New Users (May 26)"        value={(latestGA4?.new_users ?? 0).toLocaleString()}         spark={ga4UsersSpark} prevPct={pctOf(latestGA4?.new_users ?? 0, prevGA4?.new_users ?? 0)} color="#34a853" />
-            <KpiCard label="Engagement Rate (May 26)"  value={`${((latestGA4?.engagement_rate ?? 0) * 100).toFixed(1)}%`} spark={ga4EngSpark.map(v => v * 100)} prevPct={pctOf(latestGA4?.engagement_rate ?? 0, prevGA4?.engagement_rate ?? 0)} color="#34a853" />
+            <KpiCard label={`Sessions (${latestLbl})`}         value={(latestGA4?.sessions ?? 0).toLocaleString()}         spark={ga4SessSpark}  prevPct={pctOf(latestGA4?.sessions ?? 0, prevGA4?.sessions ?? 0)} color="#34a853" />
+            <KpiCard label={`Organic Sessions (${latestLbl})`} value={(latestGA4?.organic_sessions ?? 0).toLocaleString()}  spark={ga4OrgSpark}   prevPct={pctOf(latestGA4?.organic_sessions ?? 0, prevGA4?.organic_sessions ?? 0)} color="#34a853" />
+            <KpiCard label={`New Users (${latestLbl})`}        value={(latestGA4?.new_users ?? 0).toLocaleString()}         spark={ga4UsersSpark} prevPct={pctOf(latestGA4?.new_users ?? 0, prevGA4?.new_users ?? 0)} color="#34a853" />
+            <KpiCard label={`Engagement Rate (${latestLbl})`}  value={`${((latestGA4?.engagement_rate ?? 0) * 100).toFixed(1)}%`} spark={ga4EngSpark.map(v => v * 100)} prevPct={pctOf(latestGA4?.engagement_rate ?? 0, prevGA4?.engagement_rate ?? 0)} color="#34a853" />
           </div>
         ) : (
           <div className="bg-white border-b border-gray-100 p-10 text-center">

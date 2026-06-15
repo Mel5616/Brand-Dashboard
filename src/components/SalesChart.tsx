@@ -12,19 +12,25 @@ import type { Brand, BrandMonthly, BrandWeekly, WeekLabel } from "@/lib/db";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, ArcElement, Tooltip, Legend, Filler);
 
-const MONTH_KEYS = ["2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05"];
-const MONTH_LABELS = ["Jul 25","Aug 25","Sep 25","Oct 25","Nov 25","Dec 25","Jan 26","Feb 26","Mar 26","Apr 26","May 26"];
+const DEFAULT_MONTH_KEYS = ["2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06"];
+const DEFAULT_MONTH_LABELS = ["Jul 25","Aug 25","Sep 25","Oct 25","Nov 25","Dec 25","Jan 26","Feb 26","Mar 26","Apr 26","May 26","Jun 26"];
 
 type View = "monthly" | "year" | "weekly";
 
 export function SalesChart({
   brands, monthly, weekly, weekLabels,
+  monthKeys = DEFAULT_MONTH_KEYS, monthLabels = DEFAULT_MONTH_LABELS, fyLabel = "FY 2025–26",
 }: {
   brands: Brand[];
   monthly: BrandMonthly[];
   weekly: BrandWeekly[];
   weekLabels: WeekLabel[];
+  monthKeys?: string[];
+  monthLabels?: string[];
+  fyLabel?: string;
 }) {
+  const MONTH_KEYS = monthKeys;
+  const MONTH_LABELS = monthLabels;
   const [view, setView] = useState<View>("monthly");
   const [selectedBrands, setSelectedBrands] = useState<Set<number>>(new Set(brands.map(b => b.id)));
 
@@ -167,7 +173,7 @@ export function SalesChart({
         <div>
           <h2 className="font-semibold text-gray-800">
             {view === "monthly" && "Monthly Revenue"}
-            {view === "year" && "FY 2025–26 Sales Share by Brand"}
+            {view === "year" && `${fyLabel} Sales Share by Brand`}
             {view === "weekly" && "Weekly Revenue (Rolling 13 Weeks)"}
           </h2>
           <p className="text-xs text-green-600 mt-0.5">All figures ex-GST</p>

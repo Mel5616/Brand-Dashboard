@@ -47,7 +47,7 @@ except ImportError:
 CONFIG_PATH = os.path.join(BASE_DIR, "stores.config.json")
 
 SHEET_ID = "1GjvL7SVJEPTI6utLlhGVGn_z1FL9OEBs6ZE00p9uPTc"
-FY       = "2025-26"
+DEFAULT_FY = "2025-26"
 
 # Map sheet brand names → brand_id in Supabase
 BRAND_MAP = {
@@ -108,47 +108,28 @@ def fetch_csv(sheet_id, gid=None):
                     return r2.read().decode("utf-8")
         raise
 
-def main():
-    with open(CONFIG_PATH) as f:
-        config = json.load(f)
-
-    gid = config.get("marketingBudgetGid")
-    if not gid:
-        print("No marketingBudgetGid in stores.config.json.")
-        print("1. Open the Google Sheet")
-        print("2. Click the Budget tab")
-        print("3. Copy the URL — the gid is the number after #gid=")
-        print("4. Add to stores.config.json: \"marketingBudgetGid\": \"1234567890\"")
-        sys.exit(1)
-
-    url = os.environ["NEXT_PUBLIC_SUPABASE_URL"]
-    key = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
-    db  = create_client(url, key)
-
-    print(f"Fetching budget sheet (gid={gid})...")
+def sync_tab(db, gid, fy):
+    print(f"\nFetching budget sheet for FY {fy} (gid={gid})...")
     try:
         raw = fetch_csv(SHEET_ID, gid)
     except Exception as e:
-        print(f"Failed to fetch sheet: {e}")
-        sys.exit(1)
+        print(f"  Failed to fetch sheet: {e}")
+        return 0, 0
 
     rows = list(csv.reader(raw.splitlines()))
     if not rows:
-        print("Empty CSV"); sys.exit(1)
+        print("  Empty CSV"); return 0, 0
 
-    # Find header row
     header = [h.strip().lower() for h in rows[0]]
     try:
         brand_col   = header.index("brand")
         channel_col = header.index("channel")
         budget_col  = next(i for i, h in enumerate(header) if "budget" in h)
     except (ValueError, StopIteration):
-        print(f"Could not find expected columns in: {rows[0]}")
-        sys.exit(1)
+        print(f"  Could not find expected columns in: {rows[0]}")
+        return 0, 0
 
-    print(f"Columns: {rows[0]}")
     upserted = skipped = 0
-
     for row in rows[1:]:
         if len(row) <= max(brand_col, channel_col, budget_col):
             continue
@@ -166,18 +147,43 @@ def main():
             continue
 
         channel = CHANNEL_MAP.get(channel_raw.lower(), channel_raw)
-
-        record = {
+        db.table("marketing_budgets").upsert({
             "brand_id":      brand_id,
             "channel":       channel,
             "annual_budget": budget,
-            "fy":            FY,
-        }
-        db.table("marketing_budgets").upsert(record, on_conflict="brand_id,channel,fy").execute()
+            "fy":            fy,
+        }, on_conflict="brand_id,channel,fy").execute()
         print(f"  ✓ {brand_name} · {channel}: ${budget:,.0f}")
         upserted += 1
 
-    print(f"\nDone — {upserted} rows upserted, {skipped} skipped.")
+    return upserted, skipped
+
+def main():
+    with open(CONFIG_PATH) as f:
+        config = json.load(f)
+
+    # Per-FY budget tabs: { "2025-26": "<gid>", "2026-27": "<gid>" }.
+    # Falls back to the legacy single marketingBudgetGid (tagged DEFAULT_FY).
+    tabs = config.get("marketingBudgetTabs")
+    if not tabs:
+        gid = config.get("marketingBudgetGid")
+        if not gid:
+            print("No marketingBudgetTabs or marketingBudgetGid in stores.config.json.")
+            print('Add: "marketingBudgetTabs": {"2025-26": "<gid>", "2026-27": "<gid>"}')
+            print("(Find each gid by opening that tab — it's the number after #gid= in the URL)")
+            sys.exit(1)
+        tabs = {DEFAULT_FY: gid}
+
+    url = os.environ["NEXT_PUBLIC_SUPABASE_URL"]
+    key = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
+    db  = create_client(url, key)
+
+    total_up = total_skip = 0
+    for fy, gid in tabs.items():
+        up, sk = sync_tab(db, gid, fy)
+        total_up += up; total_skip += sk
+
+    print(f"\nDone — {total_up} rows upserted, {total_skip} skipped across {len(tabs)} FY tab(s).")
     print("\nTo update brand_targets with sales targets from the summary tab:")
     print("  python3 scripts/sync_sales_targets.py")
 
