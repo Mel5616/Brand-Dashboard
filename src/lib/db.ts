@@ -183,6 +183,14 @@ export type CalendarEvent = {
   brand_id: number | null;
 };
 
+export type AiInsight = {
+  id: number;
+  generated_at: string;
+  period_label: string | null;
+  content: string;
+  model: string | null;
+};
+
 export async function getDashboardData() {
   const db = await createClient();
 
@@ -208,6 +216,7 @@ export async function getDashboardData() {
     { data: marketingActuals },
     { data: googleAdsCampaigns },
     { data: calendarEvents },
+    { data: aiInsights },
   ] = await Promise.all([
     db.from("brands").select("*").order("id"),
     db.from("brand_summary").select("*"),
@@ -230,6 +239,7 @@ export async function getDashboardData() {
     db.from("marketing_actuals").select("*").order("month_key"),
     db.from("google_ads_campaigns").select("*").order("month_key"),
     db.from("calendar_events").select("*").order("start_date"),
+    db.from("ai_insights").select("*").order("generated_at", { ascending: false }).limit(1),
   ]);
 
   return {
@@ -254,5 +264,6 @@ export async function getDashboardData() {
     marketingActuals: (marketingActuals ?? []) as MarketingActual[],
     googleAdsCampaigns: (googleAdsCampaigns ?? []) as GoogleAdsCampaignRow[],
     calendarEvents: (calendarEvents ?? []) as CalendarEvent[],
+    aiInsight: (aiInsights?.[0] ?? null) as AiInsight | null,
   };
 }

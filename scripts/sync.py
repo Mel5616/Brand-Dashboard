@@ -733,6 +733,14 @@ def main():
     except Exception as e:
         print(f'  ✗ Calendar sync failed: {e}')
 
+    if os.environ.get('ANTHROPIC_API_KEY'):
+        print('\n  ⟳  Generating AI insights brief...')
+        try:
+            import sync_insights as insights
+            insights.main()
+        except Exception as e:
+            print(f'  ✗ AI insights failed: {e}')
+
     # Update sync log with completion (insert a new completion row)
     finished = datetime.utcnow().isoformat() + 'Z'
     sb_upsert('sync_log', [{'finished_at': finished, 'brands_ok': ok, 'brands_err': err, 'triggered_by': 'manual'}])
