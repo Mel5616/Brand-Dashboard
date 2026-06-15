@@ -394,6 +394,90 @@ export function DashboardTabs({
                 </select>
               </div>
               <GoogleAdsChart brands={filteredBrands} data={filteredAds} />
+
+              {/* Brand breakdown table — only when all brands shown */}
+              {brandFilter === "all" && (() => {
+                const PREV = "2026-04";
+                const rows = brands
+                  .filter((b: any) => b.live)
+                  .map((b: any) => {
+                    const cur  = googleAds.find((d: any) => d.brand_id === b.id && d.month_key === LATEST);
+                    const prev = googleAds.find((d: any) => d.brand_id === b.id && d.month_key === PREV);
+                    return { brand: b, cur, prev };
+                  })
+                  .filter(r => r.cur)
+                  .sort((a, b) => (b.cur?.spend ?? 0) - (a.cur?.spend ?? 0));
+
+                if (!rows.length) return null;
+
+                return (
+                  <div className="mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div className="px-5 py-3 border-b border-gray-100">
+                      <h3 className="text-sm font-semibold text-gray-700">Brand Breakdown — May 2026</h3>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr style={{ background: "#f8fafc" }}>
+                            {["Brand", "Spend", "vs Apr", "Revenue", "ROAS", "Clicks", "Impressions"].map(h => (
+                              <th key={h} className={`${h === "Brand" ? "text-left" : "text-right"} px-5 py-3 text-[10px] uppercase tracking-[0.15em] text-gray-400 font-semibold`}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                          {rows.map(({ brand: b, cur, prev }) => {
+                            const spendChg = prev && prev.spend > 0 ? ((cur.spend - prev.spend) / prev.spend) * 100 : null;
+                            const roasOk   = cur.roas === 0 ? null : cur.roas >= 2 ? "good" : cur.roas >= 1.5 ? "ok" : "bad";
+                            return (
+                              <tr key={b.id} className="hover:bg-gray-50/50 transition-colors">
+                                <td className="px-5 py-3">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: b.color }} />
+                                    <span className="font-medium text-slate-700">{b.name}</span>
+                                  </div>
+                                </td>
+                                <td className="px-5 py-3 text-right text-slate-600 whitespace-nowrap font-medium">{fmt(cur.spend)}</td>
+                                <td className="px-5 py-3 text-right whitespace-nowrap">
+                                  {spendChg !== null
+                                    ? <span className={`text-xs font-semibold ${spendChg >= 0 ? "text-emerald-500" : "text-red-500"}`}>{spendChg >= 0 ? "+" : ""}{spendChg.toFixed(1)}%</span>
+                                    : <span className="text-gray-300 text-xs">—</span>}
+                                </td>
+                                <td className="px-5 py-3 text-right text-slate-600 whitespace-nowrap">{cur.roas > 0 ? fmt(cur.spend * cur.roas) : "—"}</td>
+                                <td className="px-5 py-3 text-right whitespace-nowrap">
+                                  {roasOk === null
+                                    ? <span className="text-gray-300 text-xs">—</span>
+                                    : <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold ${roasOk === "good" ? "bg-emerald-50 text-emerald-600" : roasOk === "ok" ? "bg-amber-50 text-amber-600" : "bg-red-50 text-red-500"}`}>{cur.roas.toFixed(2)}×</span>
+                                  }
+                                </td>
+                                <td className="px-5 py-3 text-right text-slate-600">{cur.clicks.toLocaleString()}</td>
+                                <td className="px-5 py-3 text-right text-slate-600">{cur.impressions >= 1000 ? `${(cur.impressions / 1000).toFixed(0)}K` : cur.impressions.toLocaleString()}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                        <tfoot>
+                          <tr className="border-t-2 border-gray-200">
+                            <td className="px-5 pt-2 pb-3 text-xs font-semibold text-gray-500">Total</td>
+                            <td className="px-5 pt-2 pb-3 text-right font-bold text-slate-800 whitespace-nowrap">{fmt(rows.reduce((s, r) => s + (r.cur?.spend ?? 0), 0))}</td>
+                            <td />
+                            <td className="px-5 pt-2 pb-3 text-right font-bold text-slate-800 whitespace-nowrap">{fmt(rows.reduce((s, r) => s + (r.cur ? r.cur.spend * r.cur.roas : 0), 0))}</td>
+                            <td className="px-5 pt-2 pb-3 text-right">
+                              {(() => {
+                                const totalSpend = rows.reduce((s, r) => s + (r.cur?.spend ?? 0), 0);
+                                const totalRev   = rows.reduce((s, r) => s + (r.cur ? r.cur.spend * r.cur.roas : 0), 0);
+                                const blended    = totalSpend > 0 ? totalRev / totalSpend : 0;
+                                return <span className="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-600">{blended.toFixed(2)}×</span>;
+                              })()}
+                            </td>
+                            <td className="px-5 pt-2 pb-3 text-right font-bold text-slate-800">{rows.reduce((s, r) => s + (r.cur?.clicks ?? 0), 0).toLocaleString()}</td>
+                            <td className="px-5 pt-2 pb-3 text-right font-bold text-slate-800">{(() => { const t = rows.reduce((s, r) => s + (r.cur?.impressions ?? 0), 0); return t >= 1000 ? `${(t/1000).toFixed(0)}K` : t.toLocaleString(); })()}</td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })()}
             </>
           )}
 
