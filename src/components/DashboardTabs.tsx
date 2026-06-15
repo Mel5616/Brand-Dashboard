@@ -376,7 +376,6 @@ export function DashboardTabs({
                 </select>
               </div>
               <SalesChart key={String(brandFilter)} brands={filteredBrands} monthly={filteredMonthly} weekly={filteredWeekly} weekLabels={weekLabels} />
-              <ProductsTable brands={filteredBrands} products={filteredProducts} />
 
               {/* Shopify brand breakdown cards */}
               {brandFilter === "all" && (() => {
@@ -466,6 +465,7 @@ export function DashboardTabs({
                   </div>
                 );
               })()}
+              <ProductsTable brands={filteredBrands} products={filteredProducts} />
             </>
           )}
 
