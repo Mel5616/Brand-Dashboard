@@ -395,86 +395,94 @@ export function DashboardTabs({
               </div>
               <GoogleAdsChart brands={filteredBrands} data={filteredAds} />
 
-              {/* Brand breakdown table — only when all brands shown */}
+              {/* Brand KPI cards — only when all brands shown */}
               {brandFilter === "all" && (() => {
-                const PREV = "2026-04";
+                const PREV    = "2026-04";
+                const MK_ALL  = ["2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05"];
+
+                function Spark({ values, color }: { values: number[]; color: string }) {
+                  const max = Math.max(...values, 0.001);
+                  const W = 80, H = 28;
+                  const pts = values.map((v, i) => `${(i / (values.length - 1)) * W},${H - (v / max) * H}`).join(" ");
+                  return (
+                    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="overflow-visible">
+                      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7" />
+                    </svg>
+                  );
+                }
+
+                function Chg({ pct }: { pct: number | null }) {
+                  if (pct === null) return <span className="text-[10px] text-gray-300">—</span>;
+                  return <span className={`text-[10px] font-semibold ${pct >= 0 ? "text-emerald-500" : "text-red-500"}`}>{pct >= 0 ? "+" : ""}{pct.toFixed(1)}%</span>;
+                }
+
                 const rows = brands
                   .filter((b: any) => b.live)
                   .map((b: any) => {
-                    const cur  = googleAds.find((d: any) => d.brand_id === b.id && d.month_key === LATEST);
-                    const prev = googleAds.find((d: any) => d.brand_id === b.id && d.month_key === PREV);
-                    return { brand: b, cur, prev };
+                    const history = MK_ALL.map(mk => googleAds.find((d: any) => d.brand_id === b.id && d.month_key === mk));
+                    const cur  = history[history.length - 1];
+                    const prev = history[history.length - 2];
+                    if (!cur) return null;
+                    const revenue = cur.spend * cur.roas;
+                    const prevRev = prev ? prev.spend * prev.roas : 0;
+                    return {
+                      brand: b, cur, prev,
+                      revenue,
+                      spendSpark:  history.map(r => r?.spend ?? 0),
+                      revSpark:    history.map(r => r ? r.spend * r.roas : 0),
+                      roasSpark:   history.map(r => r?.roas ?? 0),
+                      clicksSpark: history.map(r => r?.clicks ?? 0),
+                      imprSpark:   history.map(r => r?.impressions ?? 0),
+                      spendChg:  prev && prev.spend > 0   ? ((cur.spend - prev.spend) / prev.spend) * 100 : null,
+                      revChg:    prev && prevRev > 0       ? ((revenue - prevRev) / prevRev) * 100 : null,
+                      roasChg:   prev && prev.roas > 0     ? ((cur.roas - prev.roas) / prev.roas) * 100 : null,
+                      clicksChg: prev && prev.clicks > 0   ? ((cur.clicks - prev.clicks) / prev.clicks) * 100 : null,
+                      imprChg:   prev && prev.impressions > 0 ? ((cur.impressions - prev.impressions) / prev.impressions) * 100 : null,
+                    };
                   })
-                  .filter(r => r.cur)
-                  .sort((a, b) => (b.cur?.spend ?? 0) - (a.cur?.spend ?? 0));
+                  .filter(Boolean)
+                  .sort((a: any, b: any) => (b.cur.spend ?? 0) - (a.cur.spend ?? 0));
 
                 if (!rows.length) return null;
 
+                const roasBadge = (roas: number) => {
+                  if (roas === 0) return <span className="text-gray-300 text-xs">—</span>;
+                  const cls = roas >= 2 ? "bg-emerald-50 text-emerald-600" : roas >= 1.5 ? "bg-amber-50 text-amber-600" : "bg-red-50 text-red-500";
+                  return <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold ${cls}`}>{roas.toFixed(2)}×</span>;
+                };
+
+                const cols = [
+                  { label: "Spend",       getValue: (r: any) => fmt(r.cur.spend),                    getSpark: (r: any) => r.spendSpark,  getChg: (r: any) => r.spendChg,  extra: null },
+                  { label: "Revenue",     getValue: (r: any) => fmt(r.revenue),                       getSpark: (r: any) => r.revSpark,    getChg: (r: any) => r.revChg,    extra: null },
+                  { label: "ROAS",        getValue: (r: any) => roasBadge(r.cur.roas),                getSpark: (r: any) => r.roasSpark,   getChg: (r: any) => r.roasChg,   extra: null },
+                  { label: "Clicks",      getValue: (r: any) => r.cur.clicks.toLocaleString(),        getSpark: (r: any) => r.clicksSpark, getChg: (r: any) => r.clicksChg, extra: null },
+                  { label: "Impressions", getValue: (r: any) => `${(r.cur.impressions/1000).toFixed(0)}K`, getSpark: (r: any) => r.imprSpark, getChg: (r: any) => r.imprChg, extra: null },
+                ];
+
                 return (
-                  <div className="mt-4 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                    <div className="px-5 py-3 border-b border-gray-100">
-                      <h3 className="text-sm font-semibold text-gray-700">Brand Breakdown — May 2026</h3>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr style={{ background: "#f8fafc" }}>
-                            {["Brand", "Spend", "vs Apr", "Revenue", "ROAS", "Clicks", "Impressions"].map(h => (
-                              <th key={h} className={`${h === "Brand" ? "text-left" : "text-right"} px-5 py-3 text-[10px] uppercase tracking-[0.15em] text-gray-400 font-semibold`}>{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
-                          {rows.map(({ brand: b, cur, prev }) => {
-                            const spendChg = prev && prev.spend > 0 ? ((cur.spend - prev.spend) / prev.spend) * 100 : null;
-                            const roasOk   = cur.roas === 0 ? null : cur.roas >= 2 ? "good" : cur.roas >= 1.5 ? "ok" : "bad";
-                            return (
-                              <tr key={b.id} className="hover:bg-gray-50/50 transition-colors">
-                                <td className="px-5 py-3">
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: b.color }} />
-                                    <span className="font-medium text-slate-700">{b.name}</span>
-                                  </div>
-                                </td>
-                                <td className="px-5 py-3 text-right text-slate-600 whitespace-nowrap font-medium">{fmt(cur.spend)}</td>
-                                <td className="px-5 py-3 text-right whitespace-nowrap">
-                                  {spendChg !== null
-                                    ? <span className={`text-xs font-semibold ${spendChg >= 0 ? "text-emerald-500" : "text-red-500"}`}>{spendChg >= 0 ? "+" : ""}{spendChg.toFixed(1)}%</span>
-                                    : <span className="text-gray-300 text-xs">—</span>}
-                                </td>
-                                <td className="px-5 py-3 text-right text-slate-600 whitespace-nowrap">{cur.roas > 0 ? fmt(cur.spend * cur.roas) : "—"}</td>
-                                <td className="px-5 py-3 text-right whitespace-nowrap">
-                                  {roasOk === null
-                                    ? <span className="text-gray-300 text-xs">—</span>
-                                    : <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold ${roasOk === "good" ? "bg-emerald-50 text-emerald-600" : roasOk === "ok" ? "bg-amber-50 text-amber-600" : "bg-red-50 text-red-500"}`}>{cur.roas.toFixed(2)}×</span>
-                                  }
-                                </td>
-                                <td className="px-5 py-3 text-right text-slate-600">{cur.clicks.toLocaleString()}</td>
-                                <td className="px-5 py-3 text-right text-slate-600">{cur.impressions >= 1000 ? `${(cur.impressions / 1000).toFixed(0)}K` : cur.impressions.toLocaleString()}</td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                        <tfoot>
-                          <tr className="border-t-2 border-gray-200">
-                            <td className="px-5 pt-2 pb-3 text-xs font-semibold text-gray-500">Total</td>
-                            <td className="px-5 pt-2 pb-3 text-right font-bold text-slate-800 whitespace-nowrap">{fmt(rows.reduce((s, r) => s + (r.cur?.spend ?? 0), 0))}</td>
-                            <td />
-                            <td className="px-5 pt-2 pb-3 text-right font-bold text-slate-800 whitespace-nowrap">{fmt(rows.reduce((s, r) => s + (r.cur ? r.cur.spend * r.cur.roas : 0), 0))}</td>
-                            <td className="px-5 pt-2 pb-3 text-right">
-                              {(() => {
-                                const totalSpend = rows.reduce((s, r) => s + (r.cur?.spend ?? 0), 0);
-                                const totalRev   = rows.reduce((s, r) => s + (r.cur ? r.cur.spend * r.cur.roas : 0), 0);
-                                const blended    = totalSpend > 0 ? totalRev / totalSpend : 0;
-                                return <span className="inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-600">{blended.toFixed(2)}×</span>;
-                              })()}
-                            </td>
-                            <td className="px-5 pt-2 pb-3 text-right font-bold text-slate-800">{rows.reduce((s, r) => s + (r.cur?.clicks ?? 0), 0).toLocaleString()}</td>
-                            <td className="px-5 pt-2 pb-3 text-right font-bold text-slate-800">{(() => { const t = rows.reduce((s, r) => s + (r.cur?.impressions ?? 0), 0); return t >= 1000 ? `${(t/1000).toFixed(0)}K` : t.toLocaleString(); })()}</td>
-                          </tr>
-                        </tfoot>
-                      </table>
-                    </div>
+                  <div className="mt-4 space-y-3">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-1">Brand Breakdown — May 2026</p>
+                    {rows.map((r: any) => (
+                      <div key={r.brand.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                        {/* Brand header bar */}
+                        <div className="flex items-center gap-2 px-5 py-2.5 border-b border-gray-50" style={{ borderLeft: `3px solid ${r.brand.color}` }}>
+                          <span className="text-sm font-bold text-slate-700">{r.brand.name}</span>
+                        </div>
+                        {/* KPI columns */}
+                        <div className="grid grid-cols-5 divide-x divide-gray-50">
+                          {cols.map(col => (
+                            <div key={col.label} className="px-5 py-3">
+                              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">{col.label}</p>
+                              <p className="text-lg font-semibold text-slate-800 leading-none">{col.getValue(r)}</p>
+                              <div className="my-1.5">
+                                <Spark values={col.getSpark(r)} color={r.brand.color} />
+                              </div>
+                              <p className="text-[10px] text-gray-400">vs Apr <Chg pct={col.getChg(r)} /></p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 );
               })()}
