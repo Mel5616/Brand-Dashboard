@@ -745,13 +745,13 @@ export function DashboardTabs({
           {/* ── Tradeshows ── */}
           {active === "tradeshows" && (
             <div className="space-y-8">
-              <BoothFunnel data={boothFunnel} />
               <TradeshowAccordion
                 tradeshows={tradeshows}
                 tradeshowBrands={tradeshowBrands}
                 tradeshowSales={tradeshowSales}
                 brands={brands}
               />
+              <BoothFunnel data={boothFunnel} />
             </div>
           )}
 
