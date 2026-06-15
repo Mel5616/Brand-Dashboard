@@ -643,6 +643,49 @@ def sync_google_ads(config):
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
+def sync_calendar_events(config):
+    """Fetch public Apple Calendar iCal feeds and upsert campaign events."""
+    import sync_calendar as cal  # reuse parsing + brand-matching helpers
+
+    urls = config.get('marketingCalendarUrls') or config.get('marketingCalendarUrl')
+    if isinstance(urls, str):
+        urls = [urls]
+    if not urls:
+        print('  ↷ No marketingCalendarUrls configured, skipping')
+        return
+
+    events = []
+    for i, url in enumerate(urls, 1):
+        try:
+            raw = cal.fetch_ics(url)
+        except Exception as e:
+            print(f'  ⚠ Could not fetch calendar feed {i}: {e} — skipping')
+            continue
+        events.extend(cal.parse_events(cal.unfold(raw)))
+
+    rows = []
+    for ev in events:
+        if not ev.get('uid') or not ev.get('title') or not ev.get('start_date'):
+            continue
+        brand_id = cal.match_brand(ev['title'])
+        if brand_id is None:
+            brand_id = cal.match_brand(ev.get('description', ''))
+        rows.append({
+            'uid':         ev['uid'],
+            'title':       ev['title'],
+            'description': ev.get('description', ''),
+            'location':    ev.get('location', ''),
+            'start_date':  ev['start_date'].isoformat(),
+            'end_date':    ev['end_date'].isoformat() if ev.get('end_date') else None,
+            'all_day':     ev.get('all_day', True),
+            'brand_id':    brand_id,
+        })
+
+    if rows:
+        sb_upsert('calendar_events', rows, on_conflict='uid')
+    print(f'  Calendar: {len(rows)} events synced')
+
+
 def main():
     print('\n⚡ Brand Dashboard — Shopify Sync → Supabase\n')
 
@@ -683,6 +726,12 @@ def main():
             sync_google_ads(config)
         except Exception as e:
             print(f'  ✗ Google Ads sync failed: {e}')
+
+    print('\n  ⟳  Syncing marketing calendar...')
+    try:
+        sync_calendar_events(config)
+    except Exception as e:
+        print(f'  ✗ Calendar sync failed: {e}')
 
     # Update sync log with completion (insert a new completion row)
     finished = datetime.utcnow().isoformat() + 'Z'
