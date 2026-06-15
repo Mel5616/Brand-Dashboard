@@ -78,7 +78,7 @@ export function BoothFunnel({ data }: { data: BoothFunnelData }) {
       {/* Live POS + combined total */}
       <div>
         <div className="flex items-center gap-2 mb-1.5 px-0.5">
-          <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-[0.18em]">Shopify POS (UPPAbaby · live)</p>
+          <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-[0.18em]">Shopify POS (UPPAbaby · live · last 180 days)</p>
           {!posLoading && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" title="Live" />}
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">

@@ -17,25 +17,38 @@ export async function GET() {
   }
 
   const since = new Date(Date.now() - WINDOW_DAYS * 86400000).toISOString().slice(0, 10);
-  // source_name:pos filters server-side so web orders never crowd out POS
-  const query = `{
-    orders(first: 250, query: "financial_status:paid source_name:pos created_at:>=${since}", sortKey: CREATED_AT, reverse: true) {
-      edges { node { sourceName createdAt totalPriceSet { shopMoney { amount } } } }
+
+  // Paginate so high-volume POS isn't truncated at the 250 page cap.
+  // source_name:pos filters server-side so web orders never crowd out POS.
+  async function fetchAllPos(): Promise<any[]> {
+    const out: any[] = [];
+    let cursor: string | null = null;
+    for (let page = 0; page < 8; page++) {
+      const after: string = cursor ? `, after: "${cursor}"` : "";
+      const query = `{
+        orders(first: 250${after}, query: "financial_status:paid source_name:pos created_at:>=${since}", sortKey: CREATED_AT, reverse: true) {
+          edges { cursor node { sourceName createdAt totalPriceSet { shopMoney { amount } } } }
+          pageInfo { hasNextPage }
+        }
+      }`;
+      const res = await fetch(`https://${domain}/admin/api/${API_VERSION}/graphql.json`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Shopify-Access-Token": token! },
+        body: JSON.stringify({ query }),
+        cache: "no-store",
+      });
+      const json = await res.json();
+      const orders = json?.data?.orders;
+      const edges = orders?.edges ?? [];
+      for (const e of edges) out.push(e.node);
+      if (!orders?.pageInfo?.hasNextPage || edges.length === 0) break;
+      cursor = edges[edges.length - 1].cursor;
     }
-  }`;
+    return out;
+  }
 
   try {
-    const res = await fetch(`https://${domain}/admin/api/${API_VERSION}/graphql.json`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Shopify-Access-Token": token },
-      body: JSON.stringify({ query }),
-      cache: "no-store",
-    });
-    const json = await res.json();
-    const edges = json?.data?.orders?.edges ?? [];
-    const pos = edges
-      .map((e: any) => e.node)
-      .filter((n: any) => (n.sourceName || "").toLowerCase() === "pos");
+    const pos = (await fetchAllPos()).filter((n: any) => (n.sourceName || "").toLowerCase() === "pos");
 
     let revenue = 0;
     const byDay = new Map<string, { date: string; revenue: number; orders: number }>();
