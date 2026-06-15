@@ -16,6 +16,8 @@ export const BRAND_LOGOS: Record<number, string> = {
   10: "/logos/Matchstick Monkey Logo.jpg",
 };
 
+export type BrandPeriod = "monthly" | "weekly" | "fy";
+
 interface Props {
   brand: Brand;
   summary: BrandSummary | undefined;
@@ -26,16 +28,25 @@ interface Props {
   igFollowers?: number;
   target?: BrandTarget;
   roasAlert?: boolean;
+  period?: BrandPeriod;
+  periodRevenue?: number;
+  periodGrowth?: number | null;
+  periodLabel?: string;
 }
 
-export function BrandCard({ brand, summary, onClick, hasGoogle, hasMeta, hasInstagram, igFollowers, target, roasAlert }: Props) {
+export function BrandCard({ brand, summary, onClick, hasGoogle, hasMeta, hasInstagram, igFollowers, target, roasAlert, period = "monthly", periodRevenue, periodGrowth, periodLabel }: Props) {
   const logo = BRAND_LOGOS[brand.id];
-  const momPos = (summary?.mom_growth ?? 0) >= 0;
-  const revenuePct = target && target.revenue_target > 0 && summary
+
+  const displayRevenue = periodRevenue ?? (period === "fy" ? (summary?.fy_revenue ?? 0) : (summary?.last_month_rev ?? 0));
+  const displayGrowth  = periodGrowth  ?? (period === "monthly" ? (summary?.mom_growth ?? null) : null);
+  const displayLabel   = periodLabel   ?? (period === "fy" ? "FY 2025–26" : period === "weekly" ? "Last week" : (summary?.last_month_label ?? "Last month"));
+
+  const growthPos  = (displayGrowth ?? 0) >= 0;
+  const momAlert   = (summary?.mom_growth ?? 0) < -20;
+  const revenuePct = period === "monthly" && target && target.revenue_target > 0 && summary
     ? Math.min((summary.last_month_rev / target.revenue_target) * 100, 100)
     : null;
   const onTrack = revenuePct !== null && revenuePct >= 80;
-  const momAlert = (summary?.mom_growth ?? 0) < -20;
 
   return (
     <div
@@ -76,10 +87,10 @@ export function BrandCard({ brand, summary, onClick, hasGoogle, hasMeta, hasInst
       <div className="px-5 pb-5 mt-1 flex-1">
         {summary ? (
           <>
-            <p className="text-2xl font-light text-slate-800">{fmt(summary.fy_revenue)}</p>
-            <p className="text-[10px] text-gray-400 mt-0.5 mb-3">FY 2025–26 revenue</p>
+            <p className="text-2xl font-light text-slate-800">{fmt(displayRevenue)}</p>
+            <p className="text-[10px] text-gray-400 mt-0.5 mb-3">{displayLabel}</p>
 
-            {/* Revenue pacing bar */}
+            {/* Revenue pacing bar (monthly only) */}
             {revenuePct !== null && (
               <div className="mb-3">
                 <div className="flex justify-between text-[10px] mb-1">
@@ -89,28 +100,24 @@ export function BrandCard({ brand, summary, onClick, hasGoogle, hasMeta, hasInst
                   </span>
                 </div>
                 <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all"
-                    style={{
-                      width: `${revenuePct}%`,
-                      background: onTrack ? "#2dc8a5" : "#f59e0b",
-                    }}
-                  />
+                  <div className="h-full rounded-full transition-all" style={{ width: `${revenuePct}%`, background: onTrack ? "#2dc8a5" : "#f59e0b" }} />
                 </div>
               </div>
             )}
 
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[10px] text-gray-400">{summary.last_month_label}</p>
-                <p className="text-sm font-semibold text-slate-700">{fmt(summary.last_month_rev)}</p>
+                <p className="text-[10px] text-gray-400">{period === "fy" ? "FY total" : displayLabel}</p>
+                <p className="text-sm font-semibold text-slate-700">{fmt(displayRevenue)}</p>
               </div>
-              <div className="text-right">
-                <p className="text-[10px] text-gray-400">MoM</p>
-                <p className={`text-sm font-bold ${momPos ? "text-emerald-500" : "text-red-500"}`}>
-                  {fmtPct(summary.mom_growth)}
-                </p>
-              </div>
+              {displayGrowth !== null && (
+                <div className="text-right">
+                  <p className="text-[10px] text-gray-400">{period === "weekly" ? "WoW" : period === "fy" ? "YoY" : "MoM"}</p>
+                  <p className={`text-sm font-bold ${growthPos ? "text-emerald-500" : "text-red-500"}`}>
+                    {fmtPct(displayGrowth)}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Channel dots */}

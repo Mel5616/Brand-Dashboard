@@ -128,8 +128,10 @@ def fetch_all_orders(domain, token):
               cursor
               node {{
                 createdAt
-                totalPriceSet {{ shopMoney {{ amount currencyCode }} }}
-                totalTaxSet   {{ shopMoney {{ amount }} }}
+                totalPriceSet      {{ shopMoney {{ amount currencyCode }} }}
+                totalTaxSet        {{ shopMoney {{ amount }} }}
+                totalRefundedSet   {{ shopMoney {{ amount }} }}
+                customer           {{ id }}
                 lineItems(first: 5) {{
                   edges {{ node {{
                     title
@@ -150,14 +152,47 @@ def fetch_all_orders(domain, token):
         cursor = edges[-1]['cursor']
     return all_orders
 
+def fetch_refunded_orders(domain, token):
+    """Fetch fully-refunded orders (separate from partial refunds on paid orders)."""
+    all_orders = []
+    cursor = None
+    while True:
+        after = f', after: "{cursor}"' if cursor else ''
+        q = f'''{{
+          orders(first: 250{after},
+            query: "financial_status:refunded created_at:>=2024-07-01 created_at:<=2026-05-31",
+            sortKey: CREATED_AT) {{
+            edges {{
+              cursor
+              node {{
+                createdAt
+                totalPriceSet {{ shopMoney {{ amount }} }}
+                totalTaxSet   {{ shopMoney {{ amount }} }}
+              }}
+            }}
+            pageInfo {{ hasNextPage }}
+          }}
+        }}'''
+        res   = gql(domain, token, q)
+        data  = res.get('data', {}).get('orders', {})
+        edges = data.get('edges', [])
+        all_orders.extend(edges)
+        if not data.get('pageInfo', {}).get('hasNextPage') or not edges:
+            break
+        cursor = edges[-1]['cursor']
+    return all_orders
+
 # ── Compute metrics ───────────────────────────────────────────────────────────
 
-def compute_metrics(orders):
-    monthly_rev   = defaultdict(float)
-    monthly_count = defaultdict(int)
-    weekly_rev    = defaultdict(float)
-    weekly_count  = defaultdict(int)
-    product_rev   = defaultdict(float)
+def compute_metrics(orders, refunded_orders=None):
+    monthly_rev     = defaultdict(float)
+    monthly_count   = defaultdict(int)
+    weekly_rev      = defaultdict(float)
+    weekly_count    = defaultdict(int)
+    product_rev     = defaultdict(float)
+    monthly_refunds = defaultdict(float)
+    unique_customers = set()
+    fy_orders_count = 0
 
     for edge in orders:
         node  = edge['node']
@@ -182,6 +217,28 @@ def compute_metrics(orders):
             if title:
                 product_rev[title] += li_amt
 
+        # Partial refunds on paid orders
+        refunded_amt = float(node.get('totalRefundedSet', {}).get('shopMoney', {}).get('amount', 0))
+        if refunded_amt > 0 and ym in MONTH_KEYS:
+            monthly_refunds[ym] += refunded_amt
+
+        # Unique customers (FY only)
+        if ym in MONTH_KEYS:
+            customer = node.get('customer')
+            if customer and customer.get('id'):
+                unique_customers.add(customer['id'])
+            fy_orders_count += 1
+
+    # Fully-refunded orders (separate query)
+    for edge in (refunded_orders or []):
+        node  = edge['node']
+        ym    = node['createdAt'][:7]
+        if ym not in MONTH_KEYS:
+            continue
+        gross = float(node['totalPriceSet']['shopMoney']['amount'])
+        tax   = float(node.get('totalTaxSet', {}).get('shopMoney', {}).get('amount', 0))
+        monthly_refunds[ym] += (gross - tax) if tax > 0 else round(gross / 1.1, 2)
+
     revenue      = [round(monthly_rev.get(ym, 0)) for ym in MONTH_KEYS]
     revenue_prev = [round(monthly_rev.get(ym, 0)) for ym in MONTH_KEYS_PREV]
     orders_m     = [monthly_count.get(ym, 0)      for ym in MONTH_KEYS]
@@ -198,6 +255,9 @@ def compute_metrics(orders):
     fy_prev     = sum(revenue_prev)
     yoy         = round((fy_revenue - fy_prev) / fy_prev * 100, 1) if fy_prev else 0
 
+    fy_refunds         = round(sum(monthly_refunds.get(mk, 0) for mk in MONTH_KEYS))
+    last_month_refunds = round(monthly_refunds.get(MONTH_KEYS[10], 0))  # May 26
+
     currency = 'AUD'
     if orders:
         currency = orders[0]['node']['totalPriceSet']['shopMoney'].get('currencyCode', 'AUD')
@@ -209,6 +269,10 @@ def compute_metrics(orders):
         'last_rev': last_rev, 'last_orders': last_orders,
         'mom': mom, 'aov': aov, 'fy_revenue': fy_revenue, 'yoy': yoy,
         'currency': currency,
+        'fy_refunds': fy_refunds,
+        'last_month_refunds': last_month_refunds,
+        'unique_customers_fy': len(unique_customers),
+        'fy_orders': fy_orders_count,
     }
 
 # ── Sync one brand to Supabase ────────────────────────────────────────────────
@@ -226,8 +290,9 @@ def sync_brand(brand):
 
     print(f'  ⟳  {name} ({domain})')
     try:
-        orders = fetch_all_orders(domain, token)
-        m      = compute_metrics(orders)
+        orders          = fetch_all_orders(domain, token)
+        refunded_orders = fetch_refunded_orders(domain, token)
+        m               = compute_metrics(orders, refunded_orders)
 
         now = datetime.utcnow().isoformat() + 'Z'
 
@@ -257,6 +322,10 @@ def sync_brand(brand):
             'yoy_growth': m['yoy'], 'last_month_orders': m['last_orders'],
             'aov': m['aov'], 'fy_revenue': m['fy_revenue'],
             'currency': m['currency'], 'synced_at': now,
+            'fy_orders': m['fy_orders'],
+            'unique_customers_fy': m['unique_customers_fy'],
+            'fy_refunds': m['fy_refunds'],
+            'last_month_refunds': m['last_month_refunds'],
         }], on_conflict='brand_id')
 
         print(f'       May: ${m["last_rev"]:,} | MoM: {m["mom"]:+.1f}% | Orders: {m["last_orders"]} | FY: ${m["fy_revenue"]:,}')
@@ -466,6 +535,77 @@ def fetch_google_ads_metrics(customer_id, creds):
         })
     return rows
 
+def fetch_google_ads_campaigns(customer_id, creds):
+    """Fetch monthly spend/clicks/conversions broken down by campaign."""
+    access_token = _google_access_token(creds)
+    cid = customer_id.replace('-', '')
+
+    query_full = '''
+    SELECT campaign.name, segments.month,
+           metrics.cost_micros, metrics.impressions, metrics.clicks,
+           metrics.conversions, metrics.conversions_value
+    FROM campaign
+    WHERE segments.date >= '2024-07-01' AND segments.date <= '2026-05-31'
+      AND campaign.status != 'REMOVED'
+    '''
+    query_no_conv = '''
+    SELECT campaign.name, segments.month,
+           metrics.cost_micros, metrics.impressions, metrics.clicks
+    FROM campaign
+    WHERE segments.date >= '2024-07-01' AND segments.date <= '2026-05-31'
+      AND campaign.status != 'REMOVED'
+    '''
+
+    url = f'https://googleads.googleapis.com/v20/customers/{cid}/googleAds:search'
+    ctx = ssl.create_default_context()
+
+    def _fetch(q):
+        req = urllib.request.Request(url, data=json.dumps({'query': q}).encode(), method='POST')
+        req.add_header('Authorization', f'Bearer {access_token}')
+        req.add_header('developer-token', creds['developerToken'])
+        req.add_header('Content-Type', 'application/json')
+        req.add_header('login-customer-id', '8923727576')
+        with urllib.request.urlopen(req, context=ctx, timeout=30) as r:
+            return json.loads(r.read().decode())
+
+    try:
+        data = _fetch(query_full)
+    except urllib.error.HTTPError as e:
+        if e.code == 400:
+            data = _fetch(query_no_conv)
+        else:
+            raise
+
+    # Aggregate by campaign + month
+    campaign_month = defaultdict(lambda: {'spend': 0.0, 'impressions': 0, 'clicks': 0, 'conversions': 0.0, 'conv_value': 0.0})
+    for row in data.get('results', []):
+        ym   = (row.get('segments', {}).get('month') or '')[:7]
+        name = row.get('campaign', {}).get('name', 'Unknown')
+        met  = row.get('metrics', {})
+        if not ym:
+            continue
+        key = (name, ym)
+        campaign_month[key]['spend']       += float(met.get('costMicros', 0)) / 1_000_000
+        campaign_month[key]['impressions'] += int(met.get('impressions', 0))
+        campaign_month[key]['clicks']      += int(met.get('clicks', 0))
+        campaign_month[key]['conversions'] += float(met.get('conversions', 0))
+        campaign_month[key]['conv_value']  += float(met.get('conversionsValue', 0))
+
+    rows = []
+    for (camp_name, mk), m in campaign_month.items():
+        if mk not in MONTH_KEYS:
+            continue
+        rows.append({
+            'month_key':     mk,
+            'campaign_name': camp_name,
+            'spend':         round(m['spend'], 2),
+            'impressions':   m['impressions'],
+            'clicks':        m['clicks'],
+            'conversions':   round(m['conversions'], 2),
+            'conv_value':    round(m['conv_value'], 2),
+        })
+    return rows
+
 def sync_google_ads(config):
     if not os.path.exists(GOOGLE_ADS_CREDS_PATH):
         return
@@ -480,12 +620,20 @@ def sync_google_ads(config):
         if not cid:
             continue
         name = brand['name']
+        bid  = brand['id']
         print(f'  ⟳  Google Ads: {name} ({cid})')
         try:
             rows = fetch_google_ads_metrics(cid, creds)
-            db_rows = [{'brand_id': brand['id'], 'month_key': r['month_key'], 'spend': r['spend'],
+            db_rows = [{'brand_id': bid, 'month_key': r['month_key'], 'spend': r['spend'],
                         'impressions': r['impressions'], 'clicks': r['clicks'], 'roas': r['roas']} for r in rows]
             sb_upsert('google_ads', db_rows, on_conflict='brand_id,month_key')
+
+            camp_rows = fetch_google_ads_campaigns(cid, creds)
+            camp_db   = [{'brand_id': bid, **r} for r in camp_rows]
+            if camp_db:
+                sb_upsert('google_ads_campaigns', camp_db, on_conflict='brand_id,month_key,campaign_name')
+                print(f'       {len(set(r["campaign_name"] for r in camp_db))} campaigns synced')
+
             may = next((r for r in rows if r['month_key'] == '2026-05'), {})
             print(f'       May spend: ${may.get("spend",0):,.2f} | ROAS: {may.get("roas",0):.2f} | Clicks: {may.get("clicks",0):,}')
             synced += 1

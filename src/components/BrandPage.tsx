@@ -9,8 +9,8 @@ import { Line, Bar } from "react-chartjs-2";
 import { fmt, fmtFull } from "@/lib/format";
 import type {
   Brand, BrandSummary, BrandMonthly, BrandWeekly, BrandProduct,
-  GoogleAdsRow, MetaAdsRow, MetaAdsPlatformRow, InstagramOrganicRow,
-  WeekLabel, BrandTarget, KlaviyoRow, GA4Row, MarketingBudget,
+  GoogleAdsRow, GoogleAdsCampaignRow, MetaAdsRow, MetaAdsPlatformRow, InstagramOrganicRow,
+  WeekLabel, BrandTarget, KlaviyoRow, GA4Row, MarketingBudget, MarketingActual,
 } from "@/lib/db";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Filler, Tooltip, Legend);
@@ -174,12 +174,14 @@ interface Props {
   klaviyo: KlaviyoRow[];
   ga4: GA4Row[];
   marketingBudgets: MarketingBudget[];
+  marketingActuals: MarketingActual[];
+  googleAdsCampaigns: GoogleAdsCampaignRow[];
 }
 
 export function BrandPage({
   brand, summary, monthly, weekly, weekLabels, products,
   googleAds, metaAds, metaAdsPlatform, instagramOrganic,
-  targets, klaviyo, ga4, marketingBudgets,
+  targets, klaviyo, ga4, marketingBudgets, marketingActuals, googleAdsCampaigns,
 }: Props) {
   const [period, setPeriod] = useState<Period>("monthly");
 
@@ -271,6 +273,12 @@ export function BrandPage({
   const latestGRev  = (latestAds?.roas ?? 0) * (latestAds?.spend ?? 0);
   const prevGRev    = (prevAds?.roas  ?? 0) * (prevAds?.spend  ?? 0);
 
+  // ── Google Ads Campaigns ─────────────────────────────────────────────────
+  const campRows     = googleAdsCampaigns.filter(c => c.brand_id === brand.id);
+  const campLatest   = campRows.filter(c => c.month_key === LATEST).sort((a, b) => b.spend - a.spend);
+  const campPrev     = campRows.filter(c => c.month_key === PREV_MO);
+  const hasCampaigns = campLatest.length > 0;
+
   // ── Meta Ads ─────────────────────────────────────────────────────────────
   const metaRows     = metaAds.filter(d => d.brand_id === brand.id);
   const hasMeta      = metaRows.length > 0;
@@ -320,8 +328,101 @@ export function BrandPage({
   const igPvSpark    = MONTH_KEYS.map(mk => igRows.find(d => d.month_key === mk)?.profile_views    ?? 0);
   const igEngSpark   = MONTH_KEYS.map(mk => igRows.find(d => d.month_key === mk)?.accounts_engaged ?? 0);
 
+  // ── Marketing Budgets & Actuals (needed for summary KPIs) ────────────────
+  const budgets        = marketingBudgets.filter(b => b.brand_id === brand.id);
+  const hasBudgets     = budgets.length > 0;
+  const actualsRows    = marketingActuals.filter(a => a.brand_id === brand.id);
+  const fyGoogleActual = adsRows.reduce((s, r) => s + r.spend, 0);
+  const fyMetaActual   = metaRows.reduce((s, r) => s + r.spend, 0);
+
+  function getActual(channel: string): number {
+    if (channel === "Google Advertising") return fyGoogleActual;
+    if (channel === "Social Media (Meta)") return fyMetaActual;
+    return actualsRows.filter(a => a.channel === channel).reduce((s, a) => s + a.spend, 0);
+  }
+
+  const CHANNEL_COLORS: Record<string, string> = {
+    "Google Advertising":   "#4285F4",
+    "Social Media (Meta)":  "#1877F2",
+    "Klaviyo":              "#7c3aed",
+    "Influencer Marketing": "#f59e0b",
+    "Photography":          "#ec4899",
+    "Shopify":              "#96bf48",
+  };
+
   // ── Targets & Pacing ─────────────────────────────────────────────────────
-  const latestTarget = targets.find(t => t.brand_id === brand.id && t.month_key === LATEST);
+  const latestTarget  = targets.find(t => t.brand_id === brand.id && t.month_key === LATEST);
+  const brandTargets  = targets.filter(t => t.brand_id === brand.id);
+  const fyRevTarget   = brandTargets.reduce((s, t) => s + (t.revenue_target ?? 0), 0);
+
+  // ── Brand-level summary KPIs ──────────────────────────────────────────────
+  const fyRevenue          = summary?.fy_revenue ?? 0;
+  const fyTotalOtherActual = actualsRows?.reduce((s, a) => s + a.spend, 0) ?? 0;
+  const fyTotalSpend       = (fyGoogleActual ?? 0) + (fyMetaActual ?? 0) + fyTotalOtherActual;
+  const fyBudget           = budgets.reduce((s, b) => s + b.annual_budget, 0);
+  const fyBlendedRoas      = fyTotalSpend > 0 ? fyRevenue / fyTotalSpend : 0;
+  const mktgPctOfSales     = fyRevenue > 0 ? (fyTotalSpend / fyRevenue) * 100 : 0;
+  const portfolioFyRev     = monthly.filter(m => MONTH_KEYS.includes(m.month_key)).reduce((s, m) => s + m.revenue, 0);
+  const shareOfPortfolio   = portfolioFyRev > 0 ? (fyRevenue / portfolioFyRev) * 100 : 0;
+  const monthsWithData     = monthlyRows.filter(m => m.revenue > 0).length;
+  const forecastFullYear   = monthsWithData > 0 ? (fyRevenue / monthsWithData) * 12 : 0;
+  const paceVsTarget       = fyRevTarget > 0 ? (forecastFullYear / fyRevTarget) * 100 : null;
+  const targetVsActual     = fyRevTarget > 0 ? (fyRevenue / fyRevTarget) * 100 : null;
+  const budgetUtilPct      = fyBudget > 0 ? (fyTotalSpend / fyBudget) * 100 : null;
+  const hasSummaryKpis     = fyRevenue > 0 || fyTotalSpend > 0 || fyRevTarget > 0;
+
+  // ── Returns Rate ─────────────────────────────────────────────────────────
+  const fyRefunds        = summary?.fy_refunds ?? 0;
+  const lastMonthRefunds = summary?.last_month_refunds ?? 0;
+  const returnRateFy     = (summary?.fy_revenue ?? 0) > 0 ? (fyRefunds / (summary?.fy_revenue ?? 1)) * 100 : 0;
+  const returnRateMonth  = (summary?.last_month_rev ?? 0) > 0 ? (lastMonthRefunds / (summary?.last_month_rev ?? 1)) * 100 : 0;
+  const hasRefunds       = fyRefunds > 0;
+
+  // ── Customer LTV ─────────────────────────────────────────────────────────
+  const fyOrders         = summary?.fy_orders ?? 0;
+  const uniqueCustomers  = summary?.unique_customers_fy ?? 0;
+  const purchaseFreq     = uniqueCustomers > 0 ? fyOrders / uniqueCustomers : 0;
+  const ltv              = (summary?.aov ?? 0) * purchaseFreq;
+  const hasLtv           = uniqueCustomers > 0;
+
+  // ── Seasonal Index ────────────────────────────────────────────────────────
+  const totalFyRev      = revMonthly.reduce((s, v) => s + v, 0);
+  const seasonalIndex   = revMonthly.map(v => totalFyRev > 0 ? (v / totalFyRev) * 100 : 0);
+  const activeMonths    = revMonthly.filter(v => v > 0).length;
+  const avgSeasonalPct  = activeMonths > 0 ? 100 / activeMonths : 0;
+  const hasSeasonalData = activeMonths >= 3;
+
+  // ── CAC by Channel ────────────────────────────────────────────────────────
+  const googleCac = (latestAds?.roas ?? 0) > 0 && (summary?.aov ?? 0) > 0
+    ? (summary?.aov ?? 0) / latestAds!.roas : 0;
+  const metaCac = (latestMeta?.purchases ?? 0) > 0
+    ? (latestMeta?.spend ?? 0) / latestMeta!.purchases : 0;
+  const prevMetaCac = (prevMeta?.purchases ?? 0) > 0
+    ? (prevMeta?.spend ?? 0) / prevMeta!.purchases : 0;
+  const googleCacSpark = MONTH_KEYS.map((mk, i) => {
+    const roas = adsRows.find(d => d.month_key === mk)?.roas ?? 0;
+    return roas > 0 && aovMonthly[i] > 0 ? aovMonthly[i] / roas : 0;
+  });
+  const metaCacSpark = MONTH_KEYS.map(mk => {
+    const r = metaRows.find(d => d.month_key === mk);
+    return r && r.purchases > 0 ? r.spend / r.purchases : 0;
+  });
+  const blendedCacSpark = MONTH_KEYS.map((mk, i) => {
+    const totalSpend = spendSpark[i] + metaSpendSp[i];
+    const gRoas = adsRows.find(d => d.month_key === mk)?.roas ?? 0;
+    const gOrds = gRoas > 0 && aovMonthly[i] > 0 ? gRevSpark[i] / aovMonthly[i] : 0;
+    const mOrds = metaRows.find(d => d.month_key === mk)?.purchases ?? 0;
+    const totalOrds = gOrds + mOrds;
+    return totalOrds > 0 ? totalSpend / totalOrds : 0;
+  });
+  const blendedCac = (() => {
+    const totalSpend = (latestAds?.spend ?? 0) + (latestMeta?.spend ?? 0);
+    const gOrds = (latestAds?.roas ?? 0) > 0 && (summary?.aov ?? 0) > 0
+      ? latestGRev / (summary?.aov ?? 1) : 0;
+    const mOrds = latestMeta?.purchases ?? 0;
+    const totalOrds = gOrds + mOrds;
+    return totalOrds > 0 ? totalSpend / totalOrds : 0;
+  })();
 
   // ── Klaviyo ──────────────────────────────────────────────────────────────
   const klaviyoRows  = klaviyo.filter(d => d.brand_id === brand.id);
@@ -333,21 +434,6 @@ export function BrandPage({
   const klClickSpark = MONTH_KEYS.map(mk => klaviyoRows.find(d => d.month_key === mk)?.click_rate ?? 0);
   const klRevSpark   = MONTH_KEYS.map(mk => klaviyoRows.find(d => d.month_key === mk)?.revenue    ?? 0);
 
-  // ── Marketing Budgets ────────────────────────────────────────────────────
-  const budgets     = marketingBudgets.filter(b => b.brand_id === brand.id);
-  const hasBudgets  = budgets.length > 0;
-  const fyGoogleBudget = budgets.find(b => b.channel === "Google Advertising")?.annual_budget ?? 0;
-  const fyMetaBudget   = budgets.find(b => b.channel === "Social Media (Meta)")?.annual_budget  ?? 0;
-  const fyGoogleActual = adsRows.reduce((s, r) => s + r.spend, 0);
-  const fyMetaActual   = metaRows.reduce((s, r) => s + r.spend, 0);
-  const CHANNEL_COLORS: Record<string, string> = {
-    "Google Advertising":   "#4285F4",
-    "Social Media (Meta)":  "#1877F2",
-    "Klaviyo":              "#7c3aed",
-    "Influencer Marketing": "#f59e0b",
-    "Photography":          "#ec4899",
-    "Shopify":              "#96bf48",
-  };
 
   // ── GA4 ──────────────────────────────────────────────────────────────────
   const ga4Rows        = ga4.filter(d => d.brand_id === brand.id);
@@ -362,6 +448,106 @@ export function BrandPage({
   return (
     <div className="bg-gray-50 min-h-screen pb-16">
       <div className="max-w-screen-2xl mx-auto">
+
+        {/* ── BRAND SUMMARY KPIs ───────────────────────────────────────────── */}
+        {hasSummaryKpis && (
+          <div className="bg-white border-b border-gray-100 px-6 py-5">
+            {/* Row 1 — hero metrics */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+              {/* Blended ROAS */}
+              <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <div className="w-2 h-2 rounded-full" style={{ background: brand.color }} />
+                  <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">ROAS</span>
+                </div>
+                <p className="text-2xl font-bold text-slate-800">{fyBlendedRoas > 0 ? `${fyBlendedRoas.toFixed(1)}×` : "—"}</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">sales per $1 marketing</p>
+              </div>
+              {/* Full-year forecast */}
+              <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                  <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Forecast (full year)</span>
+                </div>
+                <p className="text-2xl font-bold text-slate-800">{forecastFullYear > 0 ? fmt(forecastFullYear) : "—"}</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">
+                  {paceVsTarget !== null ? `${paceVsTarget.toFixed(1)}% of target at current pace` : "based on YTD run rate"}
+                </p>
+              </div>
+              {/* Share of portfolio */}
+              <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                  <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Share of portfolio</span>
+                </div>
+                <p className="text-2xl font-bold text-slate-800">{shareOfPortfolio > 0 ? `${shareOfPortfolio.toFixed(1)}%` : "—"}</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">of total company sales</p>
+              </div>
+              {/* Momentum */}
+              <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <div className="w-2 h-2 rounded-full bg-amber-400" />
+                  <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Momentum</span>
+                </div>
+                {summary?.mom_growth != null ? (
+                  <>
+                    <p className={`text-2xl font-bold ${summary.mom_growth >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                      {summary.mom_growth >= 0 ? "▲" : "▼"} {Math.abs(summary.mom_growth).toFixed(0)}%
+                    </p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">MoM · May</p>
+                  </>
+                ) : (
+                  <p className="text-2xl font-bold text-slate-400">—</p>
+                )}
+              </div>
+            </div>
+
+            {/* Row 2 — targets strip */}
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              {[
+                {
+                  dot: "bg-emerald-400",
+                  label: "Sales target FY",
+                  value: fyRevTarget > 0 ? fmt(fyRevTarget) : "—",
+                  sub: null,
+                },
+                {
+                  dot: "bg-emerald-400",
+                  label: "Actual sales YTD",
+                  value: fmt(fyRevenue),
+                  sub: targetVsActual !== null ? `${targetVsActual.toFixed(1)}% to target` : null,
+                },
+                {
+                  dot: "bg-slate-600",
+                  label: "Marketing budget FY",
+                  value: fyBudget > 0 ? fmt(fyBudget) : "—",
+                  sub: null,
+                },
+                {
+                  dot: "bg-slate-600",
+                  label: "Spend YTD",
+                  value: fyTotalSpend > 0 ? fmt(fyTotalSpend) : "—",
+                  sub: budgetUtilPct !== null ? `${budgetUtilPct.toFixed(1)}% of budget used` : null,
+                },
+                {
+                  dot: "bg-slate-600",
+                  label: "Mktg % of sales",
+                  value: fyTotalSpend > 0 && fyRevenue > 0 ? `${mktgPctOfSales.toFixed(1)}%` : "—",
+                  sub: null,
+                },
+              ].map(kpi => (
+                <div key={kpi.label} className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <div className={`w-2 h-2 rounded-full ${kpi.dot}`} />
+                    <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">{kpi.label}</span>
+                  </div>
+                  <p className="text-xl font-bold text-slate-800">{kpi.value}</p>
+                  {kpi.sub && <p className="text-[10px] text-gray-400 mt-0.5">{kpi.sub}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── SHOPIFY ──────────────────────────────────────────────────────── */}
         <SectionHeader title={`${brand.name}  ·  Shopify Performance`}>
@@ -396,6 +582,26 @@ export function BrandPage({
             spark={aovSpark}
           />
         </div>
+
+        {/* ── RETURNS RATE ─────────────────────────────────────────────────── */}
+        {hasRefunds && (
+          <div className="grid grid-cols-4 divide-x divide-gray-100 border-b border-gray-100 shadow-sm">
+            <KpiCard label="FY Returns" value={fmt(fyRefunds)} spark={[]} color="#ef4444" />
+            <KpiCard label="Return Rate (FY)" value={`${returnRateFy.toFixed(1)}%`} spark={[]} color="#ef4444" />
+            <KpiCard label="Returns (May 26)" value={lastMonthRefunds > 0 ? fmtFull(lastMonthRefunds) : "—"} spark={[]} color="#ef4444" />
+            <KpiCard label="Return Rate (May 26)" value={returnRateMonth > 0 ? `${returnRateMonth.toFixed(1)}%` : "—"} spark={[]} color="#ef4444" />
+          </div>
+        )}
+
+        {/* ── CUSTOMER LTV ──────────────────────────────────────────────────── */}
+        {hasLtv && (
+          <div className="grid grid-cols-4 divide-x divide-gray-100 border-b border-gray-100 shadow-sm">
+            <KpiCard label="Unique Customers (FY)" value={uniqueCustomers.toLocaleString()} spark={[]} />
+            <KpiCard label="FY Orders" value={fyOrders.toLocaleString()} spark={[]} />
+            <KpiCard label="Avg Orders / Customer" value={purchaseFreq.toFixed(2)} spark={[]} />
+            <KpiCard label="Est. Customer LTV" value={ltv > 0 ? fmtFull(ltv) : "—"} spark={aovSpark} />
+          </div>
+        )}
 
         {/* ── TARGETS & PACING ─────────────────────────────────────────────── */}
         {latestTarget && (
@@ -449,6 +655,56 @@ export function BrandPage({
             )}
           </div>
         </div>
+
+        {/* ── SEASONAL INDEX ────────────────────────────────────────────────── */}
+        {hasSeasonalData && (
+          <>
+            <SectionHeader title={`${brand.name}  ·  Seasonal Index  ·  Revenue Pattern`} />
+            <div className="bg-white border-b border-gray-100 p-6">
+              <p className="text-[10px] uppercase tracking-[0.18em] text-gray-400 mb-4">
+                Monthly share of annual revenue · above-average months highlighted · use to guide budget timing
+              </p>
+              <div className="h-44">
+                <Bar
+                  data={{
+                    labels: MONTH_LABELS,
+                    datasets: [{
+                      label: "% of annual revenue",
+                      data: seasonalIndex,
+                      backgroundColor: seasonalIndex.map(v =>
+                        v >= avgSeasonalPct ? brand.color + "cc" : "#e2e8f0"
+                      ),
+                      borderRadius: 3,
+                    }],
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false as any,
+                    plugins: {
+                      legend: { display: false },
+                      tooltip: { callbacks: { label: (ctx: any) => ` ${ctx.parsed.y.toFixed(1)}% of annual revenue` } },
+                    },
+                    scales: {
+                      x: { grid: { display: false }, ticks: { font: { size: 10 }, color: "#9ca3af", maxRotation: 45 } },
+                      y: { ticks: { callback: (v: any) => `${Number(v).toFixed(0)}%`, font: { size: 10 }, color: "#9ca3af" }, grid: { color: "#f3f4f6" } },
+                    },
+                  }}
+                />
+              </div>
+              <div className="flex gap-5 mt-3 flex-wrap">
+                {MONTH_KEYS.map((mk, i) => seasonalIndex[i] >= avgSeasonalPct * 1.15 ? (
+                  <div key={mk} className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded-full" style={{ background: brand.color }} />
+                    <span className="text-[11px] font-semibold text-slate-700">{MONTH_LABELS[i]}</span>
+                    <span className="text-[11px] text-gray-400">{seasonalIndex[i].toFixed(1)}%</span>
+                  </div>
+                ) : null)}
+                <span className="text-[10px] text-gray-300 self-center">avg {avgSeasonalPct.toFixed(1)}% / month</span>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* ── BLENDED PAID MEDIA ───────────────────────────────────────────── */}
         {hasBlended && (
@@ -504,6 +760,54 @@ export function BrandPage({
           </>
         )}
 
+        {/* ── CAC BY CHANNEL ───────────────────────────────────────────────── */}
+        {hasBlended && (
+          <>
+            <SectionHeader title={`${brand.name}  ·  CAC by Channel  ·  Cost per Acquisition`} />
+            <div className="grid grid-cols-4 divide-x divide-gray-100 border-b border-gray-100 shadow-sm">
+              <KpiCard
+                label="Google CAC (approx)"
+                value={hasAds && googleCac > 0 ? fmtFull(googleCac) : "—"}
+                spark={googleCacSpark}
+                color="#4285F4"
+              />
+              <KpiCard
+                label="Meta CAC (exact)"
+                value={hasMeta && metaCac > 0 ? fmtFull(metaCac) : "—"}
+                spark={metaCacSpark}
+                prevPct={hasMeta ? pctOf(metaCac, prevMetaCac) : null}
+                color="#1877F2"
+              />
+              <KpiCard
+                label="Blended CAC"
+                value={blendedCac > 0 ? fmtFull(blendedCac) : "—"}
+                spark={blendedCacSpark}
+                color="#6366f1"
+              />
+              <div className="bg-white p-5">
+                <p className="text-gray-400 text-[10px] uppercase tracking-[0.15em] mb-3">Method</p>
+                <div className="space-y-2.5 text-xs text-slate-600">
+                  {hasMeta && (
+                    <p>
+                      <span className="font-semibold text-slate-800">Meta:</span>{" "}
+                      spend ÷ purchases <span className="text-emerald-500 text-[10px] font-bold ml-1">exact</span>
+                    </p>
+                  )}
+                  {hasAds && (
+                    <p>
+                      <span className="font-semibold text-slate-800">Google:</span>{" "}
+                      AOV ÷ ROAS <span className="text-amber-500 text-[10px] font-bold ml-1">approx</span>
+                    </p>
+                  )}
+                  <p className="text-gray-400 text-[10px] pt-1 border-t border-gray-50">
+                    Lower CAC = more efficient acquisition. Compare channels to optimise budget split.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
         {/* ── GOOGLE ADS ───────────────────────────────────────────────────── */}
         {hasAds && (
           <>
@@ -514,6 +818,69 @@ export function BrandPage({
               <KpiCard label="ROAS"                 value={(latestAds?.roas ?? 0).toFixed(2) + "×"}   spark={roasSpark}   prevPct={pctOf(latestAds?.roas ?? 0, prevAds?.roas ?? 0)} />
               <KpiCard label="Clicks"               value={(latestAds?.clicks ?? 0).toLocaleString()}  spark={clicksSpark} prevPct={pctOf(latestAds?.clicks ?? 0, prevAds?.clicks ?? 0)} />
               <KpiCard label="Impressions"          value={((latestAds?.impressions ?? 0) / 1000).toFixed(0) + "K"} spark={imprSpark} prevPct={pctOf(latestAds?.impressions ?? 0, prevAds?.impressions ?? 0)} />
+            </div>
+          </>
+        )}
+
+        {/* ── GOOGLE ADS CAMPAIGNS ─────────────────────────────────────────── */}
+        {hasCampaigns && (
+          <>
+            <SectionHeader title={`${brand.name}  ·  Google Ads  ·  Campaigns  ·  May 26`} />
+            <div className="bg-white border-b border-gray-100 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr style={{ background: "#f8fafc" }}>
+                    {["Campaign", "Spend", "vs Apr", "Clicks", "Conversions", "Conv Value", "ROAS"].map(h => (
+                      <th key={h} className={`${h === "Campaign" ? "text-left" : "text-right"} px-5 py-3 text-[10px] uppercase tracking-[0.15em] text-gray-400 font-semibold`}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {campLatest.map(c => {
+                    const prev     = campPrev.find(p => p.campaign_name === c.campaign_name);
+                    const spendChg = prev && prev.spend > 0 ? ((c.spend - prev.spend) / prev.spend) * 100 : null;
+                    const roas     = c.spend > 0 ? c.conv_value / c.spend : 0;
+                    return (
+                      <tr key={c.campaign_name} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="px-5 py-2.5 text-slate-700 font-medium max-w-xs truncate">{c.campaign_name}</td>
+                        <td className="px-5 py-2.5 text-right text-slate-600 whitespace-nowrap">{fmtFull(c.spend)}</td>
+                        <td className="px-5 py-2.5 text-right whitespace-nowrap">
+                          {spendChg !== null ? (
+                            <span className={`text-xs font-semibold ${spendChg >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                              {spendChg >= 0 ? "+" : ""}{spendChg.toFixed(1)}%
+                            </span>
+                          ) : <span className="text-gray-300 text-xs">—</span>}
+                        </td>
+                        <td className="px-5 py-2.5 text-right text-slate-600">{c.clicks.toLocaleString()}</td>
+                        <td className="px-5 py-2.5 text-right text-slate-600">{c.conversions > 0 ? c.conversions.toFixed(1) : "—"}</td>
+                        <td className="px-5 py-2.5 text-right text-slate-600 whitespace-nowrap">{c.conv_value > 0 ? fmtFull(c.conv_value) : "—"}</td>
+                        <td className="px-5 py-2.5 text-right font-semibold text-slate-700">{roas > 0 ? `${roas.toFixed(1)}×` : "—"}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2 border-gray-200">
+                    <td className="px-5 pt-2 pb-3 text-xs font-semibold text-gray-500">Total</td>
+                    <td className="px-5 pt-2 pb-3 text-right font-bold text-slate-800 whitespace-nowrap">
+                      {fmtFull(campLatest.reduce((s, c) => s + c.spend, 0))}
+                    </td>
+                    <td />
+                    <td className="px-5 pt-2 pb-3 text-right font-bold text-slate-800">
+                      {campLatest.reduce((s, c) => s + c.clicks, 0).toLocaleString()}
+                    </td>
+                    <td className="px-5 pt-2 pb-3 text-right font-bold text-slate-800">
+                      {campLatest.reduce((s, c) => s + c.conversions, 0).toFixed(1)}
+                    </td>
+                    <td className="px-5 pt-2 pb-3 text-right font-bold text-slate-800 whitespace-nowrap">
+                      {fmtFull(campLatest.reduce((s, c) => s + c.conv_value, 0))}
+                    </td>
+                    <td className="px-5 pt-2 pb-3 text-right font-bold text-slate-800">
+                      {(() => { const s = campLatest.reduce((a, c) => a + c.spend, 0); const v = campLatest.reduce((a, c) => a + c.conv_value, 0); return s > 0 ? `${(v/s).toFixed(1)}×` : "—"; })()}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
           </>
         )}
@@ -615,14 +982,21 @@ export function BrandPage({
               <div>
                 <p className="text-[10px] uppercase tracking-[0.15em] text-gray-400 mb-3">Annual budget by channel</p>
                 <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      <th className="text-left pb-2 text-[10px] uppercase tracking-wider text-gray-400 font-semibold pr-3">Channel</th>
+                      <th className="text-right pb-2 text-[10px] uppercase tracking-wider text-gray-400 font-semibold pr-3">Budget</th>
+                      <th className="text-right pb-2 text-[10px] uppercase tracking-wider text-gray-400 font-semibold pr-3">Actual</th>
+                      <th className="text-right pb-2 text-[10px] uppercase tracking-wider text-gray-400 font-semibold w-28">Pacing</th>
+                    </tr>
+                  </thead>
                   <tbody className="divide-y divide-gray-50">
                     {budgets.sort((a, b) => b.annual_budget - a.annual_budget).map(b => {
-                      const color = CHANNEL_COLORS[b.channel] ?? "#94a3b8";
-                      const totalBudget = budgets.reduce((s, x) => s + x.annual_budget, 0);
-                      const pct = totalBudget > 0 ? (b.annual_budget / totalBudget) * 100 : 0;
-                      const isLive = b.channel === "Google Advertising" || b.channel === "Social Media (Meta)";
-                      const actual = b.channel === "Google Advertising" ? fyGoogleActual : b.channel === "Social Media (Meta)" ? fyMetaActual : null;
-                      const utilPct = actual !== null && b.annual_budget > 0 ? Math.min((actual / b.annual_budget) * 100, 110) : null;
+                      const color    = CHANNEL_COLORS[b.channel] ?? "#94a3b8";
+                      const isLive   = b.channel === "Google Advertising" || b.channel === "Social Media (Meta)";
+                      const actual   = getActual(b.channel);
+                      const hasActual = actual > 0;
+                      const utilPct  = b.annual_budget > 0 ? Math.min((actual / b.annual_budget) * 100, 110) : 0;
                       return (
                         <tr key={b.channel}>
                           <td className="py-2 pr-3">
@@ -633,18 +1007,19 @@ export function BrandPage({
                             </div>
                           </td>
                           <td className="py-2 text-right text-slate-600 whitespace-nowrap pr-3">{fmtFull(b.annual_budget)}</td>
-                          <td className="py-2 w-24">
-                            {utilPct !== null ? (
+                          <td className="py-2 text-right text-slate-600 whitespace-nowrap pr-3">
+                            {hasActual ? fmtFull(actual) : <span className="text-gray-300">—</span>}
+                          </td>
+                          <td className="py-2 w-28">
+                            {hasActual ? (
                               <div>
                                 <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                  <div className="h-full rounded-full" style={{ width: `${Math.min(utilPct, 100)}%`, background: utilPct > 90 ? "#ef4444" : color }} />
+                                  <div className="h-full rounded-full" style={{ width: `${Math.min(utilPct, 100)}%`, background: utilPct > 100 ? "#ef4444" : utilPct > 80 ? "#f59e0b" : color }} />
                                 </div>
-                                <p className="text-[9px] text-gray-400 mt-0.5 text-right">{fmtFull(actual!)} actual</p>
+                                <p className="text-[9px] text-gray-400 mt-0.5 text-right">{utilPct.toFixed(0)}% of budget</p>
                               </div>
                             ) : (
-                              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                <div className="h-full rounded-full opacity-30" style={{ width: `${pct}%`, background: color }} />
-                              </div>
+                              <p className="text-[9px] text-gray-300 text-right">no actuals yet</p>
                             )}
                           </td>
                         </tr>
@@ -655,6 +1030,7 @@ export function BrandPage({
                     <tr className="border-t border-gray-200">
                       <td className="pt-2 text-xs font-semibold text-gray-500">Total</td>
                       <td className="pt-2 text-right font-bold text-slate-800 pr-3">{fmtFull(budgets.reduce((s, b) => s + b.annual_budget, 0))}</td>
+                      <td className="pt-2 text-right font-bold text-slate-800 pr-3">{fmtFull(budgets.reduce((s, b) => s + getActual(b.channel), 0))}</td>
                       <td />
                     </tr>
                   </tfoot>
@@ -682,8 +1058,8 @@ export function BrandPage({
                   })}
                 </div>
                 <p className="text-[10px] text-gray-400 mt-4">
-                  LIVE channels (Google, Meta) show actual FY spend vs budget. Other channels show planned budget only.
-                  Run <code className="bg-gray-100 px-1 rounded">python3 scripts/sync_marketing_budget.py</code> to refresh.
+                  Google &amp; Meta actuals are live API data. Other channels sync from the Google Sheet actuals tab.
+                  Run <code className="bg-gray-100 px-1 rounded">python3 scripts/sync_marketing_actuals.py</code> to refresh.
                 </p>
               </div>
             </div>

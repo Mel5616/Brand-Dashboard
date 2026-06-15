@@ -36,13 +36,14 @@ try:
 except ImportError:
     print("Missing supabase. Run: pip3 install supabase"); sys.exit(1)
 
+BASE_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 try:
     from dotenv import load_dotenv
+    load_dotenv(os.path.join(BASE_DIR, ".env.local"))
     load_dotenv()
 except ImportError:
     pass
-
-BASE_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_PATH = os.path.join(BASE_DIR, "stores.config.json")
 
 MONTH_KEYS = [
@@ -122,8 +123,8 @@ def get_metric_aggregate(api_key, metric_id, year, month, measurement):
 
 def sync_brand(db, api_key, brand, brand_id):
     list_id = brand.get("klaviyoListId")
-    if not list_id:
-        print(f"  ↷ {brand['name']}: no klaviyoListId, skipping")
+    if not api_key or not list_id:
+        print(f"  ↷ {brand['name']}: no klaviyoApiKey or klaviyoListId, skipping")
         return
 
     print(f"  → {brand['name']} (list {list_id})")
@@ -167,11 +168,6 @@ def sync_brand(db, api_key, brand, brand_id):
 
 def main():
     config = load_config()
-    api_key = config.get("klaviyoApiKey")
-    if not api_key:
-        print("No klaviyoApiKey found in stores.config.json")
-        print("Add: \"klaviyoApiKey\": \"pk_your_private_key_here\"")
-        sys.exit(1)
 
     url = os.environ["NEXT_PUBLIC_SUPABASE_URL"]
     key = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
@@ -179,7 +175,10 @@ def main():
 
     brands = config.get("brands", [])
     for i, brand in enumerate(brands):
-        if not brand.get("klaviyoListId"):
+        # Per-brand key takes priority; fall back to global key if set
+        api_key = brand.get("klaviyoApiKey") or config.get("klaviyoApiKey")
+        if not api_key or not brand.get("klaviyoListId"):
+            print(f"  ↷ {brand.get('name')}: missing klaviyoApiKey or klaviyoListId, skipping")
             continue
         try:
             sync_brand(db, api_key, brand, i)

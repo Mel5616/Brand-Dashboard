@@ -50,13 +50,14 @@ try:
 except ImportError:
     print("Missing supabase. Run: pip3 install supabase"); sys.exit(1)
 
+BASE_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 try:
     from dotenv import load_dotenv
+    load_dotenv(os.path.join(BASE_DIR, ".env.local"))
     load_dotenv()
 except ImportError:
     pass
-
-BASE_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_PATH = os.path.join(BASE_DIR, "stores.config.json")
 
 MONTH_KEYS = [

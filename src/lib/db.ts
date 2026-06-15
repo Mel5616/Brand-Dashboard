@@ -20,6 +20,10 @@ export type BrandSummary = {
   fy_revenue: number;
   currency: string;
   synced_at: string | null;
+  fy_orders: number | null;
+  unique_customers_fy: number | null;
+  fy_refunds: number | null;
+  last_month_refunds: number | null;
 };
 
 export type BrandMonthly = {
@@ -142,11 +146,30 @@ export type GA4Row = {
   engagement_rate: number;
 };
 
+export type GoogleAdsCampaignRow = {
+  brand_id: number;
+  month_key: string;
+  campaign_name: string;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  conversions: number;
+  conv_value: number;
+};
+
 export type MarketingBudget = {
   brand_id: number;
   channel: string;
   annual_budget: number;
   fy: string;
+};
+
+export type MarketingActual = {
+  brand_id: number;
+  month_key: string;
+  channel: string;
+  spend: number;
+  note: string;
 };
 
 export async function getDashboardData() {
@@ -171,6 +194,8 @@ export async function getDashboardData() {
     { data: klaviyo },
     { data: ga4 },
     { data: marketingBudgets },
+    { data: marketingActuals },
+    { data: googleAdsCampaigns },
   ] = await Promise.all([
     db.from("brands").select("*").order("id"),
     db.from("brand_summary").select("*"),
@@ -190,6 +215,8 @@ export async function getDashboardData() {
     db.from("klaviyo_metrics").select("*").order("month_key"),
     db.from("ga4_metrics").select("*").order("month_key"),
     db.from("marketing_budgets").select("*"),
+    db.from("marketing_actuals").select("*").order("month_key"),
+    db.from("google_ads_campaigns").select("*").order("month_key"),
   ]);
 
   return {
@@ -211,5 +238,7 @@ export async function getDashboardData() {
     klaviyo: (klaviyo ?? []) as KlaviyoRow[],
     ga4: (ga4 ?? []) as GA4Row[],
     marketingBudgets: (marketingBudgets ?? []) as MarketingBudget[],
+    marketingActuals: (marketingActuals ?? []) as MarketingActual[],
+    googleAdsCampaigns: (googleAdsCampaigns ?? []) as GoogleAdsCampaignRow[],
   };
 }

@@ -31,6 +31,8 @@ Environment:
 
 import sys, os, json, csv, re, urllib.request, urllib.error, ssl
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 try:
     from supabase import create_client
 except ImportError:
@@ -38,11 +40,10 @@ except ImportError:
 
 try:
     from dotenv import load_dotenv
+    load_dotenv(os.path.join(BASE_DIR, ".env.local"))
     load_dotenv()
 except ImportError:
     pass
-
-BASE_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_PATH = os.path.join(BASE_DIR, "stores.config.json")
 
 SHEET_ID = "1GjvL7SVJEPTI6utLlhGVGn_z1FL9OEBs6ZE00p9uPTc"
