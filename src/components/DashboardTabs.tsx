@@ -598,6 +598,91 @@ export function DashboardTabs({
                 </select>
               </div>
               <MetaAdsChart brands={filteredBrands} data={filteredMeta} />
+
+              {/* Brand KPI cards — only when all brands shown */}
+              {brandFilter === "all" && (() => {
+                const MK_ALL = ["2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05"];
+
+                function Spark({ values, color }: { values: number[]; color: string }) {
+                  const max = Math.max(...values, 0.001);
+                  const W = 80, H = 28;
+                  const pts = values.map((v, i) => `${(i / (values.length - 1)) * W},${H - (v / max) * H}`).join(" ");
+                  return (
+                    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="overflow-visible">
+                      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7" />
+                    </svg>
+                  );
+                }
+
+                function Chg({ pct }: { pct: number | null }) {
+                  if (pct === null) return <span className="text-[10px] text-gray-300">—</span>;
+                  return <span className={`text-[10px] font-semibold ${pct >= 0 ? "text-emerald-500" : "text-red-500"}`}>{pct >= 0 ? "+" : ""}{pct.toFixed(1)}%</span>;
+                }
+
+                const roasBadge = (roas: number) => {
+                  if (roas === 0) return <span className="text-gray-300 text-xs">—</span>;
+                  const cls = roas >= 2 ? "bg-emerald-50 text-emerald-600" : roas >= 1.5 ? "bg-amber-50 text-amber-600" : "bg-red-50 text-red-500";
+                  return <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold ${cls}`}>{roas.toFixed(2)}×</span>;
+                };
+
+                const rows = brands
+                  .filter((b: any) => b.live)
+                  .map((b: any) => {
+                    const history = MK_ALL.map(mk => metaAds.find((d: any) => d.brand_id === b.id && d.month_key === mk));
+                    const cur  = history[history.length - 1];
+                    const prev = history[history.length - 2];
+                    if (!cur || cur.spend === 0) return null;
+                    const roas     = cur.spend > 0 ? cur.revenue / cur.spend : 0;
+                    const prevRoas = prev && prev.spend > 0 ? prev.revenue / prev.spend : 0;
+                    return {
+                      brand: b, cur, roas,
+                      spendSpark:    history.map((r: any) => r?.spend ?? 0),
+                      revSpark:      history.map((r: any) => r?.revenue ?? 0),
+                      roasSpark:     history.map((r: any) => r && r.spend > 0 ? r.revenue / r.spend : 0),
+                      purchSpark:    history.map((r: any) => r?.purchases ?? 0),
+                      spendChg:  prev && prev.spend > 0     ? ((cur.spend - prev.spend) / prev.spend) * 100 : null,
+                      revChg:    prev && prev.revenue > 0   ? ((cur.revenue - prev.revenue) / prev.revenue) * 100 : null,
+                      roasChg:   prevRoas > 0               ? ((roas - prevRoas) / prevRoas) * 100 : null,
+                      purchChg:  prev && prev.purchases > 0 ? ((cur.purchases - prev.purchases) / prev.purchases) * 100 : null,
+                    };
+                  })
+                  .filter(Boolean)
+                  .sort((a: any, b: any) => (b.cur.spend ?? 0) - (a.cur.spend ?? 0));
+
+                if (!rows.length) return null;
+
+                const cols = [
+                  { label: "Spend",     getValue: (r: any) => fmt(r.cur.spend),                        getSpark: (r: any) => r.spendSpark, getChg: (r: any) => r.spendChg },
+                  { label: "Revenue",   getValue: (r: any) => fmt(r.cur.revenue),                       getSpark: (r: any) => r.revSpark,   getChg: (r: any) => r.revChg },
+                  { label: "ROAS",      getValue: (r: any) => roasBadge(r.roas),                        getSpark: (r: any) => r.roasSpark,  getChg: (r: any) => r.roasChg },
+                  { label: "Purchases", getValue: (r: any) => (r.cur.purchases ?? 0).toLocaleString(),  getSpark: (r: any) => r.purchSpark, getChg: (r: any) => r.purchChg },
+                ];
+
+                return (
+                  <div className="mt-4 space-y-3">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-1">Brand Breakdown — May 2026</p>
+                    {rows.map((r: any) => (
+                      <div key={r.brand.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                        <div className="flex items-center gap-2 px-5 py-2.5 border-b border-gray-50" style={{ borderLeft: `3px solid ${r.brand.color}` }}>
+                          <span className="text-sm font-bold text-slate-700">{r.brand.name}</span>
+                        </div>
+                        <div className="grid grid-cols-4 divide-x divide-gray-50">
+                          {cols.map(col => (
+                            <div key={col.label} className="px-5 py-3">
+                              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">{col.label}</p>
+                              <p className="text-lg font-semibold text-slate-800 leading-none">{col.getValue(r)}</p>
+                              <div className="my-1.5">
+                                <Spark values={col.getSpark(r)} color={r.brand.color} />
+                              </div>
+                              <p className="text-[10px] text-gray-400">vs Apr <Chg pct={col.getChg(r)} /></p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </>
           )}
 
