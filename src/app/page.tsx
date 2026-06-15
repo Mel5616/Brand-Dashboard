@@ -2,6 +2,7 @@ import { getDashboardData } from "@/lib/db";
 import { SyncStatus } from "@/components/SyncStatus";
 import { DashboardTabs } from "@/components/DashboardTabs";
 import { NotificationCenter } from "@/components/NotificationCenter";
+import { AiInsightsPanel } from "@/components/AiInsightsPanel";
 
 export const revalidate = 0;
 
@@ -42,6 +43,7 @@ export default async function Dashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <AiInsightsPanel insight={aiInsight} />
             <NotificationCenter
               brands={brands}
               summaries={summaries}
@@ -77,7 +79,6 @@ export default async function Dashboard() {
         marketingActuals={marketingActuals}
         googleAdsCampaigns={googleAdsCampaigns}
         calendarEvents={calendarEvents}
-        aiInsight={aiInsight}
         kpis={kpis}
       />
     </div>

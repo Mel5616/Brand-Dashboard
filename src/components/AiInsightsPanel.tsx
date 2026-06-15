@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { AiInsight } from "@/lib/db";
 
 interface Props {
@@ -66,45 +66,57 @@ function renderMarkdown(md: string) {
 }
 
 export function AiInsightsPanel({ insight }: Props) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
-  if (!insight) {
-    return (
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-5">
-        <div className="flex items-center gap-2">
-          <SparkIcon />
-          <h3 className="text-sm font-semibold text-slate-700">Weekly AI Brief</h3>
-        </div>
-        <p className="text-sm text-gray-400 mt-2">
-          No brief generated yet. Run <code className="bg-gray-100 px-1 rounded">python3 scripts/sync_insights.py</code> to create one.
-        </p>
-      </div>
-    );
-  }
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
-  const when = new Date(insight.generated_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+  const when = insight
+    ? new Date(insight.generated_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })
+    : "";
 
   return (
-    <div className="bg-gradient-to-br from-indigo-50/60 to-white rounded-2xl border border-indigo-100 shadow-sm mb-5 overflow-hidden">
+    <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-indigo-50/40 transition-colors"
+        className="flex items-center gap-1.5 h-9 px-2.5 rounded-lg hover:bg-gray-100 transition-colors"
+        title="Weekly AI Brief"
       >
-        <div className="flex items-center gap-2">
-          <SparkIcon />
-          <h3 className="text-sm font-semibold text-slate-700">Weekly AI Brief</h3>
-          <span className="text-[11px] text-gray-400">· {insight.period_label ?? when}</span>
-        </div>
-        <svg className={`w-4 h-4 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        <SparkIcon />
+        <span className="text-xs font-medium text-gray-600 hidden sm:inline">Brief</span>
       </button>
+
       {open && (
-        <div className="px-5 pb-5 pt-1">
-          <div className="border-t border-indigo-100/70 pt-4">
-            {renderMarkdown(insight.content)}
+        <div className="absolute right-0 top-11 w-[26rem] max-w-[90vw] bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden">
+          <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2 bg-gradient-to-r from-indigo-50/70 to-white">
+            <SparkIcon />
+            <h3 className="text-sm font-semibold text-slate-700">Weekly AI Brief</h3>
+            {insight && <span className="text-[11px] text-gray-400 ml-auto">{insight.period_label ?? when}</span>}
           </div>
-          <p className="text-[10px] text-gray-300 mt-3">Generated {when}{insight.model ? ` · ${insight.model}` : ""} · review before sharing</p>
+
+          {insight ? (
+            <>
+              <div className="px-5 py-4 max-h-[70vh] overflow-y-auto">
+                {renderMarkdown(insight.content)}
+              </div>
+              <p className="px-5 py-2.5 text-[10px] text-gray-300 border-t border-gray-50">
+                Generated {when}{insight.model ? ` · ${insight.model}` : ""} · review before sharing
+              </p>
+            </>
+          ) : (
+            <div className="px-5 py-8 text-center">
+              <p className="text-sm text-gray-500">No brief generated yet.</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Run <code className="bg-gray-100 px-1 rounded">python3 scripts/sync_insights.py</code> to create one.
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>

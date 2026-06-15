@@ -11,7 +11,6 @@ import { Leaderboard } from "./Leaderboard";
 import { BrandPage } from "./BrandPage";
 import { MarketingBudgetTab } from "./MarketingBudgetTab";
 import { MarketingCalendar } from "./MarketingCalendar";
-import { AiInsightsPanel } from "./AiInsightsPanel";
 import { fmt } from "@/lib/format";
 
 type TabId = "brands" | "shopify" | "google-ads" | "meta-ads" | "tradeshows" | "budget" | "calendar";
@@ -87,7 +86,6 @@ interface Props {
   marketingActuals: any[];
   googleAdsCampaigns: any[];
   calendarEvents: any[];
-  aiInsight: any;
   kpis: { label: string; value: string; sub: string }[];
 }
 
@@ -96,7 +94,7 @@ export function DashboardTabs({
   tradeshows, tradeshowBrands, tradeshowSales,
   weekLabels, googleAds, metaAds, metaAdsPlatform,
   instagramOrganic, targets, klaviyo, ga4,
-  marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, aiInsight, kpis,
+  marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, kpis,
 }: Props) {
   const [active, setActive] = useState<TabId>("brands");
   const [brandFilter, setBrandFilter] = useState<number | "all">("all");
@@ -222,8 +220,6 @@ export function DashboardTabs({
                   </div>
                 ))}
               </div>
-
-              <AiInsightsPanel insight={aiInsight} />
 
               <div>
                 {/* Period toggle + heading */}
