@@ -377,6 +377,95 @@ export function DashboardTabs({
               </div>
               <SalesChart key={String(brandFilter)} brands={filteredBrands} monthly={filteredMonthly} weekly={filteredWeekly} weekLabels={weekLabels} />
               <ProductsTable brands={filteredBrands} products={filteredProducts} />
+
+              {/* Shopify brand breakdown cards */}
+              {brandFilter === "all" && (() => {
+                const MK_ALL = ["2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05"];
+
+                function Spark({ values, color }: { values: number[]; color: string }) {
+                  const max = Math.max(...values, 0.001);
+                  const W = 80, H = 28;
+                  const pts = values.map((v, i) => `${(i / (values.length - 1)) * W},${H - (v / max) * H}`).join(" ");
+                  return (
+                    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="overflow-visible">
+                      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7" />
+                    </svg>
+                  );
+                }
+
+                function Chg({ pct }: { pct: number | null }) {
+                  if (pct === null) return <span className="text-[10px] text-gray-300">—</span>;
+                  return <span className={`text-[10px] font-semibold ${pct >= 0 ? "text-emerald-500" : "text-red-500"}`}>{pct >= 0 ? "+" : ""}{pct.toFixed(1)}%</span>;
+                }
+
+                const rows = brands
+                  .filter((b: any) => b.live)
+                  .map((b: any) => {
+                    const history = MK_ALL.map(mk => monthly.find((d: any) => d.brand_id === b.id && d.month_key === mk));
+                    const cur  = history[history.length - 1];
+                    const prev = history[history.length - 2];
+                    const sum  = summaries.find((s: any) => s.brand_id === b.id);
+                    if (!cur) return null;
+                    const aov     = cur.orders > 0 ? cur.revenue / cur.orders : 0;
+                    const prevAov = prev && prev.orders > 0 ? prev.revenue / prev.orders : 0;
+                    return {
+                      brand: b, cur, prev, sum,
+                      aov,
+                      revSpark:    history.map((r: any) => r?.revenue ?? 0),
+                      ordersSpark: history.map((r: any) => r?.orders ?? 0),
+                      aovSpark:    history.map((r: any) => r && r.orders > 0 ? r.revenue / r.orders : 0),
+                      fySpark:     history.map((_: any, i: number) => {
+                        // cumulative FY revenue up to each month
+                        return history.slice(0, i + 1).reduce((s: number, r: any) => s + (r?.revenue ?? 0), 0);
+                      }),
+                      revChg:    prev && prev.revenue > 0   ? ((cur.revenue - prev.revenue) / prev.revenue) * 100 : null,
+                      ordersChg: prev && prev.orders > 0    ? ((cur.orders - prev.orders) / prev.orders) * 100 : null,
+                      aovChg:    prev && prevAov > 0        ? ((aov - prevAov) / prevAov) * 100 : null,
+                      momGrowth: sum?.mom_growth ?? null,
+                    };
+                  })
+                  .filter(Boolean)
+                  .sort((a: any, b: any) => (b.cur?.revenue ?? 0) - (a.cur?.revenue ?? 0));
+
+                if (!rows.length) return null;
+
+                return (
+                  <div className="mt-4 space-y-3">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-1">Brand Breakdown — May 2026</p>
+                    {rows.map((r: any) => (
+                      <div key={r.brand.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                        <div className="flex items-center gap-2 px-5 py-2.5 border-b border-gray-50" style={{ borderLeft: `3px solid ${r.brand.color}` }}>
+                          <span className="text-sm font-bold text-slate-700">{r.brand.name}</span>
+                          {r.momGrowth !== null && (
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ml-1 ${(r.momGrowth ?? 0) >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"}`}>
+                              {(r.momGrowth ?? 0) >= 0 ? "+" : ""}{(r.momGrowth ?? 0).toFixed(1)}% MoM
+                            </span>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-4 divide-x divide-gray-50">
+                          {[
+                            { label: "Revenue (May)", value: fmt(r.cur.revenue),           spark: r.revSpark,    chg: r.revChg },
+                            { label: "Orders (May)",  value: r.cur.orders.toLocaleString(), spark: r.ordersSpark, chg: r.ordersChg },
+                            { label: "AOV",           value: fmt(r.aov),                   spark: r.aovSpark,    chg: r.aovChg },
+                            { label: "FY Revenue",    value: fmt(r.sum?.fy_revenue ?? 0),  spark: r.fySpark,     chg: null },
+                          ].map(col => (
+                            <div key={col.label} className="px-5 py-3">
+                              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">{col.label}</p>
+                              <p className="text-lg font-semibold text-slate-800 leading-none">{col.value}</p>
+                              <div className="my-1.5">
+                                <Spark values={col.spark} color={r.brand.color} />
+                              </div>
+                              <p className="text-[10px] text-gray-400">
+                                {col.chg !== null ? <>vs Apr <Chg pct={col.chg} /></> : "FY 2025–26"}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </>
           )}
 
