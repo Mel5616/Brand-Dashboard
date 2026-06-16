@@ -6,7 +6,7 @@ export const BRAND_LOGOS: Record<number, string> = {
   0:  "/logos/Nanit_Logo Lockup_Midnight Mist.svg",
   1:  "/logos/MCC_logo_MAGIC_black_c.png",
   2:  "/logos/hannie.jpg",
-  3:  "/logos/GaiaBaby-Logo-Portrait-Colour.jpg",
+  3:  "/logos/gaia-baby-logo.avif",
   4:  "/logos/220420 Logo.jpg",
   5:  "/logos/UPPAbaby Logo.jpg",
   6:  "/logos/ZAZU logo_HR.jpg",
