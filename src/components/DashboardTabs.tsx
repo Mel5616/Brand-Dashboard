@@ -211,18 +211,18 @@ export function DashboardTabs({
           </div>
         </div>
       )}
-      <nav className="flex-1 py-3">
-        <p className="px-4 text-[9px] font-semibold text-gray-300 uppercase tracking-[0.18em] mb-1">Navigation</p>
+      <nav className="flex-1 py-3 px-2 space-y-0.5">
+        <p className="px-2 text-[9px] font-semibold text-gray-300 uppercase tracking-[0.18em] mb-1.5">Navigation</p>
         {TABS.map(tab => {
           const isActive = active === tab.id && !selectedBrand;
           return (
             <button
               key={tab.id}
               onClick={() => { setActive(tab.id); setBrandFilter("all"); }}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${
                 isActive
-                  ? "bg-indigo-50 text-indigo-600 border-r-2 border-indigo-600 font-medium"
-                  : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
+                  ? "bg-indigo-50 text-indigo-600 font-semibold shadow-sm ring-1 ring-indigo-100"
+                  : "text-gray-500 hover:bg-gray-100/70 hover:text-gray-700"
               }`}
             >
               {tab.icon}
