@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SalesChart } from "./SalesChart";
 import { GoogleAdsChart } from "./GoogleAdsChart";
 import { MetaAdsChart } from "./MetaAdsChart";
@@ -109,8 +109,18 @@ export function DashboardTabs({
   const monthKeys   = fyMonthKeys(fy);
   const monthLabels = fyMonthLabels(fy);
   const presentKeys = monthly.map((m: any) => m.month_key);
-  const LATEST      = fyLatestMonth(fy, presentKeys);
+  const fyLatest    = fyLatestMonth(fy, presentKeys);
+  const fyLatestIdx = Math.max(0, monthKeys.indexOf(fyLatest));
+  // Months you can step back to (up to the latest with data)
+  const monthOptions = monthKeys.slice(0, fyLatestIdx + 1);
+
+  // Chosen "current month" — defaults to the latest, resets when FY changes
+  const [monthSel, setMonthSel] = useState<string>(fyLatest);
+  useEffect(() => { setMonthSel(fyLatestMonth(fy, monthly.map((m: any) => m.month_key))); }, [fy]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const LATEST      = monthOptions.includes(monthSel) ? monthSel : fyLatest;
   const PREV_MO     = fyPrevMonth(fy, LATEST);
+  const latestI     = monthKeys.indexOf(LATEST); // index of selected month within the FY
   const fyLabel     = FY_LABEL[fy];
   const latestLabel = monthLabel(LATEST);
   const prevLabel   = monthLabel(PREV_MO);
@@ -159,16 +169,30 @@ export function DashboardTabs({
   // ── Sidebar ──────────────────────────────────────────────────────────────────
   const Sidebar = () => (
     <aside className="fixed top-[57px] left-0 w-[200px] h-[calc(100vh-57px)] bg-white border-r border-gray-200 flex flex-col z-10 overflow-y-auto">
-      {/* Financial year selector — global across all pages */}
-      <div className="px-4 py-3 border-b border-gray-100">
-        <label className="text-[9px] font-semibold text-gray-300 uppercase tracking-[0.18em]">Financial Year</label>
-        <select
-          value={fy}
-          onChange={e => setFy(e.target.value as FY)}
-          className="w-full mt-1 text-xs font-medium border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-        >
-          {FY_LIST.map(f => <option key={f} value={f}>{FY_LABEL[f]}</option>)}
-        </select>
+      {/* Financial year + month selectors — global across all pages */}
+      <div className="px-4 py-3 border-b border-gray-100 space-y-2.5">
+        <div>
+          <label className="text-[9px] font-semibold text-gray-300 uppercase tracking-[0.18em]">Financial Year</label>
+          <select
+            value={fy}
+            onChange={e => setFy(e.target.value as FY)}
+            className="w-full mt-1 text-xs font-medium border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+          >
+            {FY_LIST.map(f => <option key={f} value={f}>{FY_LABEL[f]}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="text-[9px] font-semibold text-gray-300 uppercase tracking-[0.18em]">Month</label>
+          <select
+            value={LATEST}
+            onChange={e => setMonthSel(e.target.value)}
+            className="w-full mt-1 text-xs font-medium border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+          >
+            {[...monthOptions].reverse().map(mk => (
+              <option key={mk} value={mk}>{monthLabels[monthKeys.indexOf(mk)]}{mk === fyLatest ? " (latest)" : ""}</option>
+            ))}
+          </select>
+        </div>
       </div>
       {selectedBrand && (
         <div className="px-4 py-3 border-b border-gray-100">
@@ -348,6 +372,13 @@ export function DashboardTabs({
                             periodRevenue = sum?.fy_revenue ?? 0;
                             periodGrowth  = sum?.yoy_growth ?? null;
                             periodLabel   = fyLabel;
+                          } else {
+                            // monthly — reflect the selected month
+                            const moRev   = monthly.find((m: any) => m.brand_id === id && m.month_key === LATEST)?.revenue ?? 0;
+                            const prevRev = monthly.find((m: any) => m.brand_id === id && m.month_key === PREV_MO)?.revenue ?? 0;
+                            periodRevenue = moRev;
+                            periodGrowth  = prevRev > 0 ? ((moRev - prevRev) / prevRev) * 100 : null;
+                            periodLabel   = latestLabel;
                           }
 
                           return (
@@ -469,8 +500,8 @@ export function DashboardTabs({
                   .filter((b: any) => b.live)
                   .map((b: any) => {
                     const history = MK_ALL.map(mk => monthly.find((d: any) => d.brand_id === b.id && d.month_key === mk));
-                    const cur  = history[history.length - 1];
-                    const prev = history[history.length - 2];
+                    const cur  = history[latestI];
+                    const prev = history[latestI - 1];
                     const sum  = summaries.find((s: any) => s.brand_id === b.id);
                     if (!cur) return null;
                     const aov     = cur.orders > 0 ? cur.revenue / cur.orders : 0;
@@ -577,8 +608,8 @@ export function DashboardTabs({
                   .filter((b: any) => b.live)
                   .map((b: any) => {
                     const history = MK_ALL.map(mk => googleAds.find((d: any) => d.brand_id === b.id && d.month_key === mk));
-                    const cur  = history[history.length - 1];
-                    const prev = history[history.length - 2];
+                    const cur  = history[latestI];
+                    const prev = history[latestI - 1];
                     if (!cur) return null;
                     const revenue = cur.spend * cur.roas;
                     const prevRev = prev ? prev.spend * prev.roas : 0;
@@ -691,8 +722,8 @@ export function DashboardTabs({
                   .filter((b: any) => b.live)
                   .map((b: any) => {
                     const history = MK_ALL.map(mk => metaAds.find((d: any) => d.brand_id === b.id && d.month_key === mk));
-                    const cur  = history[history.length - 1];
-                    const prev = history[history.length - 2];
+                    const cur  = history[latestI];
+                    const prev = history[latestI - 1];
                     if (!cur || cur.spend === 0) return null;
                     const roas     = cur.spend > 0 ? cur.revenue / cur.spend : 0;
                     const prevRoas = prev && prev.spend > 0 ? prev.revenue / prev.spend : 0;
