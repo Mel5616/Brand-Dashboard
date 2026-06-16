@@ -7,7 +7,7 @@ import {
 } from "chart.js";
 import { Bar } from "react-chartjs-2";
 import { fmt, fmtFull } from "@/lib/format";
-import type { MarketingBudget, MarketingActual, GoogleAdsRow, MetaAdsRow } from "@/lib/db";
+import type { MarketingBudget, MarketingActual, GoogleAdsRow, MetaAdsRow, BrandTarget, BrandMonthly } from "@/lib/db";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Tooltip, Legend);
 
@@ -27,6 +27,8 @@ interface Props {
   marketingActuals: MarketingActual[];
   googleAds: GoogleAdsRow[];
   metaAds: MetaAdsRow[];
+  targets: BrandTarget[];
+  monthlySales: BrandMonthly[];
   monthKeys: string[];
   monthLabels: string[];
   fyLabel: string;
@@ -34,11 +36,18 @@ interface Props {
 }
 
 export function BrandBudgetOverview({
-  brand, marketingBudgets, marketingActuals, googleAds, metaAds,
+  brand, marketingBudgets, marketingActuals, googleAds, metaAds, targets, monthlySales,
   monthKeys, monthLabels, fyLabel, latest,
 }: Props) {
   const bid = brand.id;
   const rows = marketingBudgets.filter(b => b.brand_id === bid && b.annual_budget > 0);
+
+  // Sales target vs actual (revenue_target is monthly; sum across the FY = annual)
+  const salesTarget = targets.filter(t => t.brand_id === bid && monthKeys.includes(t.month_key))
+    .reduce((s, t) => s + (t.revenue_target ?? 0), 0);
+  const actualSales = monthlySales.filter(m => m.brand_id === bid && monthKeys.includes(m.month_key))
+    .reduce((s, m) => s + (m.revenue ?? 0), 0);
+  const salesPct = salesTarget > 0 ? (actualSales / salesTarget) * 100 : 0;
 
   // default month = latest if it's in this FY, else the last month
   const defaultMonth = monthKeys.includes(latest) ? latest : monthKeys[monthKeys.length - 1];
@@ -113,6 +122,26 @@ export function BrandBudgetOverview({
           </div>
         ))}
       </div>
+
+      {/* Sales target vs actual */}
+      {salesTarget > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+            <h3 className="text-sm font-semibold text-slate-700">Sales Target — {fyLabel}</h3>
+            <span className="text-xs text-gray-400">Mktg budget = {salesTarget > 0 ? `${((fyBudget / salesTarget) * 100).toFixed(1)}%` : "—"} of target</span>
+          </div>
+          <div className="flex items-end justify-between mb-2">
+            <div>
+              <p className="text-2xl font-bold text-slate-800">{fmtFull(actualSales)}</p>
+              <p className="text-[11px] text-gray-400">actual sales of {fmtFull(salesTarget)} target</p>
+            </div>
+            <p className={`text-lg font-bold ${salesPct >= 100 ? "text-emerald-500" : salesPct >= 70 ? "text-amber-500" : "text-slate-500"}`}>{salesPct.toFixed(0)}%</p>
+          </div>
+          <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(salesPct, 100)}%`, background: salesPct >= 100 ? "#10b981" : salesPct >= 70 ? "#f59e0b" : brand.color }} />
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Selected-month channel table */}

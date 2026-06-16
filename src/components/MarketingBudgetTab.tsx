@@ -32,6 +32,7 @@ interface Props {
   googleAds:        GoogleAdsRow[];
   metaAds:          MetaAdsRow[];
   monthly:          BrandMonthly[];
+  targets?:         any[];
   fyLabel?:         string;
   monthKeys?:       string[];
   monthLabels?:     string[];
@@ -65,7 +66,7 @@ const DONUT_OPTS: any = {
   },
 };
 
-export function MarketingBudgetTab({ brands, marketingBudgets, marketingActuals, googleAds, metaAds, monthly, fyLabel = "FY 2025–26", monthKeys = DEFAULT_MONTH_KEYS, monthLabels = DEFAULT_MONTH_LABELS, latest = DEFAULT_MONTH_KEYS[DEFAULT_MONTH_KEYS.length - 1] }: Props) {
+export function MarketingBudgetTab({ brands, marketingBudgets, marketingActuals, googleAds, metaAds, monthly, targets = [], fyLabel = "FY 2025–26", monthKeys = DEFAULT_MONTH_KEYS, monthLabels = DEFAULT_MONTH_LABELS, latest = DEFAULT_MONTH_KEYS[DEFAULT_MONTH_KEYS.length - 1] }: Props) {
   const MONTH_KEYS = monthKeys;
   const MONTH_LABELS = monthLabels;
   const [budgetBrand, setBudgetBrand] = useState<number | "all">("all");
@@ -243,6 +244,8 @@ export function MarketingBudgetTab({ brands, marketingBudgets, marketingActuals,
           marketingActuals={marketingActuals}
           googleAds={googleAds}
           metaAds={metaAds}
+          targets={targets}
+          monthlySales={monthly}
           monthKeys={MONTH_KEYS}
           monthLabels={MONTH_LABELS}
           fyLabel={fyLabel}

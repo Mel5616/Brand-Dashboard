@@ -69,6 +69,10 @@ def fetch_csv(sheet_id, gid=None):
     with urllib.request.urlopen(req, context=ctx, timeout=15) as r:
         return r.read().decode("utf-8")
 
+def fy_months(start_year):
+    """12 month_keys (YYYY-MM) for a FY starting July of start_year."""
+    return [f"{start_year}-{m:02d}" for m in range(7, 13)] + [f"{start_year + 1}-{m:02d}" for m in range(1, 7)]
+
 def main():
     url = os.environ["NEXT_PUBLIC_SUPABASE_URL"]
     key = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
@@ -78,41 +82,55 @@ def main():
     raw  = fetch_csv(SHEET_ID)  # default tab = summary
     rows = list(csv.reader(raw.splitlines()))
 
-    # Header: Brand, Tier, FY26/27 Sales Target ($), ...
-    header = [h.strip().lower() for h in rows[0]]
+    header = [h.strip() for h in rows[0]]
     try:
-        brand_col  = header.index("brand")
-        target_col = next(i for i, h in enumerate(header) if "target" in h and "sales" in h)
-    except (ValueError, StopIteration):
-        print(f"Headers: {rows[0]}"); sys.exit(1)
+        brand_col = next(i for i, h in enumerate(header) if h.lower() == "brand")
+    except StopIteration:
+        print(f"No 'Brand' column. Headers: {rows[0]}"); sys.exit(1)
 
-    monthly_targets = {}  # brand_id → monthly target
-    for row in rows[1:]:
-        if len(row) <= max(brand_col, target_col): continue
-        brand_name = row[brand_col].strip()
-        if brand_name.upper() in ("TOTAL", "TOTAL PORTFOLIO") or not brand_name:
+    # Detect every "FY<yy>/<yy> Sales Target" column → its FY start year + month range
+    target_cols = []  # (col_index, start_year, label)
+    for i, h in enumerate(header):
+        hl = h.lower()
+        if "sales target" not in hl:
             continue
-        brand_id = BRAND_MAP.get(brand_name.lower())
-        if brand_id is None:
-            print(f"  ⚠ Unknown brand: '{brand_name}'")
+        m = re.search(r"fy\s*(\d{2})\s*/\s*(\d{2})", hl)
+        if not m:
             continue
-        annual = parse_money(row[target_col])
-        monthly = round(annual / 12, 2)
-        monthly_targets[brand_id] = (brand_name, annual, monthly)
+        start_year = 2000 + int(m.group(1))
+        target_cols.append((i, start_year, h))
 
-    print(f"Found targets for {len(monthly_targets)} brands")
+    if not target_cols:
+        print(f"No 'FY../.. Sales Target' columns found. Headers: {rows[0]}"); sys.exit(1)
+    print("Target columns:", [f"{lbl} (FY{sy}-{sy+1})" for _, sy, lbl in target_cols])
 
-    for brand_id, (brand_name, annual, monthly) in monthly_targets.items():
-        print(f"  {brand_name}: ${annual:,.0f}/yr → ${monthly:,.0f}/mo")
-        for mk in MONTH_KEYS:
-            db.table("brand_targets").upsert({
-                "brand_id":       brand_id,
-                "month_key":      mk,
-                "revenue_target": monthly,
-            }, on_conflict="brand_id,month_key").execute()
+    total = 0
+    for col, start_year, label in target_cols:
+        months = fy_months(start_year)
+        for row in rows[1:]:
+            if len(row) <= max(brand_col, col):
+                continue
+            brand_name = row[brand_col].strip()
+            if brand_name.upper() in ("TOTAL", "TOTAL PORTFOLIO") or not brand_name:
+                continue
+            brand_id = BRAND_MAP.get(brand_name.lower())
+            if brand_id is None:
+                continue
+            annual = parse_money(row[col])
+            if annual <= 0:
+                continue
+            monthly = round(annual / 12, 2)
+            for mk in months:
+                db.table("brand_targets").upsert({
+                    "brand_id":       brand_id,
+                    "month_key":      mk,
+                    "revenue_target": monthly,
+                }, on_conflict="brand_id,month_key").execute()
+            total += 1
+            print(f"  {label}: {brand_name} ${annual:,.0f}/yr → ${monthly:,.0f}/mo")
 
-    print("\nSales targets synced to brand_targets table.")
-    print("The pacing bars on each brand card + brand page will now show progress.")
+    print(f"\n{total} brand-FY targets synced to brand_targets.")
+    print("Pacing bars + the Budget tab's sales-target view now reflect these.")
 
 if __name__ == "__main__":
     main()

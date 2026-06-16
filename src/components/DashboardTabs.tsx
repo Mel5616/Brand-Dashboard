@@ -765,6 +765,7 @@ export function DashboardTabs({
               googleAds={googleAds}
               metaAds={metaAds}
               monthly={monthly}
+              targets={targets}
               fyLabel={fyLabel}
               monthKeys={monthKeys}
               monthLabels={monthLabels}
