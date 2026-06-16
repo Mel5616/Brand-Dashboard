@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { fmtFull } from "@/lib/format";
+import { AustraliaMap } from "./AustraliaMap";
 import type { Tradeshow, TradeshowSale, Brand } from "@/lib/db";
 
 function showStatus(ts: Tradeshow): "live" | "upcoming" | "past" {
@@ -228,29 +229,11 @@ export function TradeshowAccordion({
       {/* Visuals: sales-by-state map + top brands */}
       {hasVisuals && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Australia sales map */}
+          {/* Australia sales heat map */}
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
             <h3 className="text-sm font-semibold text-slate-700">Sales by State</h3>
-            <p className="text-xs text-gray-400 mb-4">Total tradeshow revenue by location</p>
-            <div className="grid gap-1.5 max-w-[280px] mx-auto" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
-              {AU_TILES.map(t => {
-                const val = stateTotals[t.name] ?? 0;
-                const intensity = val / maxState;
-                const active = val > 0;
-                const light = active && intensity > 0.5;
-                return (
-                  <div
-                    key={t.code}
-                    title={`${t.name}: ${fmtFull(val)}`}
-                    className="rounded-lg flex flex-col items-center justify-center aspect-square"
-                    style={{ gridColumn: t.col, gridRow: t.row, background: active ? `rgba(99,102,241,${0.18 + 0.82 * intensity})` : "#f1f5f9" }}
-                  >
-                    <span className={`text-[11px] font-bold ${light ? "text-white" : "text-slate-500"}`}>{t.code}</span>
-                    <span className={`text-[9px] ${light ? "text-white/90" : "text-gray-400"}`}>{active ? fmtK(val) : "—"}</span>
-                  </div>
-                );
-              })}
-            </div>
+            <p className="text-xs text-gray-400 mb-2">Total tradeshow revenue by location</p>
+            <AustraliaMap valueByState={stateTotals} max={maxState} fmt={fmtK} />
           </div>
 
           {/* Top brands */}
