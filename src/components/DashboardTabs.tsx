@@ -13,6 +13,7 @@ import { MarketingBudgetTab } from "./MarketingBudgetTab";
 import { MarketingCalendar } from "./MarketingCalendar";
 import { BoothFunnel } from "./BoothFunnel";
 import { SalesTargetTracker } from "./SalesTargetTracker";
+import { ShopifyInsights } from "./ShopifyInsights";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
@@ -441,6 +442,8 @@ export function DashboardTabs({
               <SalesTargetTracker brands={filteredBrands} monthly={filteredMonthly} targets={targets} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} fyLabel={fyLabel} />
 
               <SalesChart key={String(brandFilter) + fy} brands={filteredBrands} monthly={filteredMonthly} weekly={filteredWeekly} weekLabels={weekLabels} monthKeys={monthKeys} monthLabels={monthLabels} fyLabel={fyLabel} />
+
+              <ShopifyInsights brands={filteredBrands} monthly={filteredMonthly} summaries={summaries} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} fyLabel={fyLabel} />
 
               {/* Shopify brand breakdown cards */}
               {brandFilter === "all" && (() => {
