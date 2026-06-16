@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { BrandBudgetOverview } from "./BrandBudgetOverview";
 import {
   Chart as ChartJS, ArcElement, CategoryScale, LinearScale,
   LineElement, PointElement, Filler, Tooltip, Legend,
@@ -33,6 +35,7 @@ interface Props {
   fyLabel?:         string;
   monthKeys?:       string[];
   monthLabels?:     string[];
+  latest?:          string;
 }
 
 function PacingBar({ pct, color }: { pct: number; color: string }) {
@@ -62,9 +65,11 @@ const DONUT_OPTS: any = {
   },
 };
 
-export function MarketingBudgetTab({ brands, marketingBudgets, marketingActuals, googleAds, metaAds, monthly, fyLabel = "FY 2025–26", monthKeys = DEFAULT_MONTH_KEYS, monthLabels = DEFAULT_MONTH_LABELS }: Props) {
+export function MarketingBudgetTab({ brands, marketingBudgets, marketingActuals, googleAds, metaAds, monthly, fyLabel = "FY 2025–26", monthKeys = DEFAULT_MONTH_KEYS, monthLabels = DEFAULT_MONTH_LABELS, latest = DEFAULT_MONTH_KEYS[DEFAULT_MONTH_KEYS.length - 1] }: Props) {
   const MONTH_KEYS = monthKeys;
   const MONTH_LABELS = monthLabels;
+  const [budgetBrand, setBudgetBrand] = useState<number | "all">("all");
+  const budgetBrandList = brands.filter((b: any) => b.live && marketingBudgets.some(mb => mb.brand_id === b.id));
 
   function getActual(brandId: number, channel: string): number {
     if (channel === "Google Advertising")  return googleAds.filter(r => r.brand_id === brandId).reduce((s, r) => s + r.spend, 0);
@@ -213,9 +218,38 @@ export function MarketingBudgetTab({ brands, marketingBudgets, marketingActuals,
     );
   }
 
+  const selectedBudgetBrand = budgetBrand !== "all" ? brands.find((b: any) => b.id === budgetBrand) : null;
+
   return (
     <div className="max-w-screen-2xl mx-auto px-6 py-8 space-y-6">
 
+      {/* Brand selector — drill into a single brand's budget */}
+      <div className="flex items-center gap-2">
+        <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">View</label>
+        <select
+          value={budgetBrand === "all" ? "all" : String(budgetBrand)}
+          onChange={e => setBudgetBrand(e.target.value === "all" ? "all" : Number(e.target.value))}
+          className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+        >
+          <option value="all">All Brands (portfolio)</option>
+          {budgetBrandList.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
+        </select>
+      </div>
+
+      {selectedBudgetBrand ? (
+        <BrandBudgetOverview
+          brand={selectedBudgetBrand}
+          marketingBudgets={marketingBudgets}
+          marketingActuals={marketingActuals}
+          googleAds={googleAds}
+          metaAds={metaAds}
+          monthKeys={MONTH_KEYS}
+          monthLabels={MONTH_LABELS}
+          fyLabel={fyLabel}
+          latest={latest}
+        />
+      ) : (
+      <>
       {/* KPI strip */}
       <div className="grid grid-cols-4 gap-4">
         {[
@@ -407,6 +441,8 @@ export function MarketingBudgetTab({ brands, marketingBudgets, marketingActuals,
       <p className="text-center text-xs text-gray-300 pb-4">
         Google &amp; Meta actuals are live API data · Other channels synced from Google Sheet
       </p>
+      </>
+      )}
     </div>
   );
 }

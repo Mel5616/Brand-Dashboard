@@ -750,6 +750,7 @@ export function DashboardTabs({
                 tradeshowBrands={tradeshowBrands}
                 tradeshowSales={tradeshowSales}
                 brands={brands}
+                monthKeys={monthKeys}
               />
               <BoothFunnel data={boothFunnel} />
             </div>
@@ -767,6 +768,7 @@ export function DashboardTabs({
               fyLabel={fyLabel}
               monthKeys={monthKeys}
               monthLabels={monthLabels}
+              latest={LATEST}
             />
           )}
 

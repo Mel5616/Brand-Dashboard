@@ -40,14 +40,17 @@ function stateLabel(fullName: string) {
 }
 
 export function TradeshowAccordion({
-  tradeshows, tradeshowBrands, tradeshowSales, brands,
+  tradeshows, tradeshowBrands, tradeshowSales, brands, monthKeys,
 }: {
   tradeshows: Tradeshow[];
   tradeshowBrands: { tradeshow_id: string; brand_id: number }[];
   tradeshowSales: TradeshowSale[];
   brands: Brand[];
+  monthKeys?: string[]; // restrict to shows whose start month is in the selected FY
 }) {
-  const sorted = [...tradeshows].sort((a, b) => a.date_start.localeCompare(b.date_start));
+  // Keep only shows that fall within the selected financial year
+  const fyShows = monthKeys ? tradeshows.filter(t => monthKeys.includes(t.date_start.slice(0, 7))) : tradeshows;
+  const sorted = [...fyShows].sort((a, b) => a.date_start.localeCompare(b.date_start));
 
   const upcoming = sorted.filter(t => showStatus(t) !== "past");          // live + upcoming, soonest first
   const past     = sorted.filter(t => showStatus(t) === "past").reverse(); // most recent first
@@ -67,20 +70,22 @@ export function TradeshowAccordion({
     });
   }
 
-  // ── Summary ──────────────────────────────────────────────────────────
-  const totalRevAll = tradeshowSales.reduce((s, r) => s + (r.revenue ?? 0), 0);
+  // ── Summary (scoped to the selected FY's shows) ───────────────────────
+  const fyShowIds = new Set(fyShows.map(t => t.id));
+  const fySales   = tradeshowSales.filter(s => fyShowIds.has(s.tradeshow_id));
+  const totalRevAll = fySales.reduce((s, r) => s + (r.revenue ?? 0), 0);
   const liveCount   = sorted.filter(t => showStatus(t) === "live").length;
 
   // Revenue per show, then aggregate by state and by brand
   const revByShow = new Map<string, number>();
-  tradeshowSales.forEach(s => revByShow.set(s.tradeshow_id, (revByShow.get(s.tradeshow_id) ?? 0) + (s.revenue ?? 0)));
+  fySales.forEach(s => revByShow.set(s.tradeshow_id, (revByShow.get(s.tradeshow_id) ?? 0) + (s.revenue ?? 0)));
 
   const stateTotals: Record<string, number> = {};
-  tradeshows.forEach(ts => { stateTotals[ts.state] = (stateTotals[ts.state] ?? 0) + (revByShow.get(ts.id) ?? 0); });
+  fyShows.forEach(ts => { stateTotals[ts.state] = (stateTotals[ts.state] ?? 0) + (revByShow.get(ts.id) ?? 0); });
   const maxState = Math.max(1, ...Object.values(stateTotals));
 
   const brandTotalsMap: Record<number, number> = {};
-  tradeshowSales.forEach(s => { brandTotalsMap[s.brand_id] = (brandTotalsMap[s.brand_id] ?? 0) + (s.revenue ?? 0); });
+  fySales.forEach(s => { brandTotalsMap[s.brand_id] = (brandTotalsMap[s.brand_id] ?? 0) + (s.revenue ?? 0); });
   const brandRows = Object.entries(brandTotalsMap)
     .map(([bid, rev]) => ({ brand: brands.find(b => b.id === Number(bid)), rev }))
     .filter(r => r.brand && r.rev > 0)
