@@ -49,8 +49,10 @@ export function ShopifyInsights({ brands, monthly, summaries, monthKeys, monthLa
     .filter(x => x.s && (x.s.last_month_rev ?? 0) > 0 && x.s.mom_growth != null)
     .map(x => ({ brand: x.brand, mom: x.s!.mom_growth, rev: x.s!.last_month_rev }))
     .sort((a, b) => b.mom - a.mom);
-  const gainers = movers.slice(0, 3);
-  const decliners = movers.slice(-3).reverse().filter(d => !gainers.includes(d));
+  // Top 3 genuine gainers (up) and up to 3 genuine decliners (down) — never
+  // pad the decliner slots with brands that actually grew.
+  const gainers = movers.filter(m => m.mom > 0).slice(0, 3);
+  const decliners = movers.filter(m => m.mom < 0).slice(-3).reverse();
 
   return (
     <div className="space-y-4">
