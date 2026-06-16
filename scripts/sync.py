@@ -155,9 +155,10 @@ def fetch_all_orders(domain, token):
                 totalTaxSet        {{ shopMoney {{ amount }} }}
                 totalRefundedSet   {{ shopMoney {{ amount }} }}
                 customer           {{ id }}
-                lineItems(first: 5) {{
+                lineItems(first: 10) {{
                   edges {{ node {{
                     title
+                    sku
                     originalTotalSet {{ shopMoney {{ amount }} }}
                   }} }}
                 }}
@@ -212,7 +213,8 @@ def compute_metrics(orders, refunded_orders=None):
     monthly_count   = defaultdict(int)
     weekly_rev      = defaultdict(float)
     weekly_count    = defaultdict(int)
-    product_rev     = defaultdict(float)
+    product_rev     = defaultdict(float)               # key (sku or title) -> revenue
+    product_titles  = defaultdict(lambda: defaultdict(float))  # key -> {title: revenue}
     monthly_refunds = defaultdict(float)
     unique_customers = set()
     fy_orders_count = 0
@@ -235,10 +237,15 @@ def compute_metrics(orders, refunded_orders=None):
         for li in node.get('lineItems', {}).get('edges', []):
             item     = li['node']
             title    = item.get('title', '').strip()
+            sku      = (item.get('sku') or '').strip()
             li_gross = float(item.get('originalTotalSet', {}).get('shopMoney', {}).get('amount', 0))
             li_amt   = round(li_gross / 1.1, 2)
-            if title:
-                product_rev[title] += li_amt
+            if title or sku:
+                # Group by SKU so differently-titled listings of the same item merge;
+                # fall back to title when a line has no SKU.
+                key = sku if sku else f'T::{title}'
+                product_rev[key]          += li_amt
+                product_titles[key][title] += li_amt
 
         # Partial refunds on paid orders
         refunded_amt = float(node.get('totalRefundedSet', {}).get('shopMoney', {}).get('amount', 0))
@@ -267,7 +274,9 @@ def compute_metrics(orders, refunded_orders=None):
     orders_m     = [monthly_count.get(ym, 0)      for ym in MONTH_KEYS]
     weekly_revenue = [round(weekly_rev.get(w, 0)) for w in WEEK_STARTS]
     weekly_orders  = [weekly_count.get(w, 0)       for w in WEEK_STARTS]
-    top_products   = sorted(product_rev.items(), key=lambda x: x[1], reverse=True)[:5]
+    # Top products grouped by SKU; show the title that earned the most under each SKU
+    top_keys     = sorted(product_rev.items(), key=lambda x: x[1], reverse=True)[:5]
+    top_products = [(max(product_titles[k].items(), key=lambda t: t[1])[0], v) for k, v in top_keys]
 
     last_rev    = revenue[10]     # May 26
     prev_rev    = revenue[9]      # Apr 26
