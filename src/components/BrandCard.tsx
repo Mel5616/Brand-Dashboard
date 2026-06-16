@@ -39,9 +39,10 @@ interface Props {
   periodRevenue?: number;
   periodGrowth?: number | null;
   periodLabel?: string;
+  pacePct?: number | null;
 }
 
-export function BrandCard({ brand, summary, onClick, hasGoogle, hasMeta, hasInstagram, igFollowers, target, roasAlert, period = "monthly", periodRevenue, periodGrowth, periodLabel }: Props) {
+export function BrandCard({ brand, summary, onClick, hasGoogle, hasMeta, hasInstagram, igFollowers, target, roasAlert, period = "monthly", periodRevenue, periodGrowth, periodLabel, pacePct }: Props) {
   const logo = BRAND_LOGOS[brand.id];
 
   const displayRevenue = periodRevenue ?? (period === "fy" ? (summary?.fy_revenue ?? 0) : (summary?.last_month_rev ?? 0));
@@ -50,9 +51,11 @@ export function BrandCard({ brand, summary, onClick, hasGoogle, hasMeta, hasInst
 
   const growthPos  = (displayGrowth ?? 0) >= 0;
   const momAlert   = (summary?.mom_growth ?? 0) < -20;
-  const revenuePct = period === "monthly" && target && target.revenue_target > 0 && summary
-    ? Math.min((summary.last_month_rev / target.revenue_target) * 100, 100)
-    : null;
+  const revenuePct = pacePct !== undefined
+    ? pacePct
+    : (period === "monthly" && target && target.revenue_target > 0 && summary
+        ? Math.min((summary.last_month_rev / target.revenue_target) * 100, 100)
+        : null);
   const onTrack = revenuePct !== null && revenuePct >= 80;
 
   return (

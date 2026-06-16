@@ -362,27 +362,34 @@ export function DashboardTabs({
                           const mRoas    = latestM && latestM.spend > 0 ? latestM.revenue / latestM.spend : 0;
                           const sum      = summaryMap[id];
 
-                          // Period-specific revenue + growth
+                          // Period-specific revenue + growth + pacing
                           let periodRevenue: number | undefined;
                           let periodGrowth: number | null | undefined;
                           let periodLabel: string | undefined;
+                          let pacePct: number | null = null;
                           if (brandPeriod === "weekly") {
                             const wkRev  = weekly.find((w: any) => w.brand_id === id && w.week_start === lastWkStart)?.revenue ?? 0;
                             const prevRev = weekly.find((w: any) => w.brand_id === id && w.week_start === prevWkStart)?.revenue ?? 0;
                             periodRevenue = wkRev;
                             periodGrowth  = prevRev > 0 ? ((wkRev - prevRev) / prevRev) * 100 : null;
                             periodLabel   = sortedWeeks[0] ? `Wk ${new Date(lastWkStart).toLocaleDateString("en-AU", { day:"numeric", month:"short" })}` : "Last week";
-                          } else if (brandPeriod === "fy") {
-                            periodRevenue = sum?.fy_revenue ?? 0;
+                          } else if (brandPeriod === "fy" || wholeYear) {
+                            // Full year — whole-FY revenue vs whole-FY target
+                            const fyRev    = monthly.filter((m: any) => m.brand_id === id).reduce((s: number, m: any) => s + (m.revenue ?? 0), 0);
+                            const fyTarget = targets.filter((t: any) => t.brand_id === id).reduce((s: number, t: any) => s + (t.revenue_target ?? 0), 0);
+                            periodRevenue = fyRev;
                             periodGrowth  = sum?.yoy_growth ?? null;
                             periodLabel   = fyLabel;
+                            pacePct       = fyTarget > 0 ? Math.min((fyRev / fyTarget) * 100, 100) : null;
                           } else {
                             // monthly — reflect the selected month
-                            const moRev   = monthly.find((m: any) => m.brand_id === id && m.month_key === LATEST)?.revenue ?? 0;
-                            const prevRev = monthly.find((m: any) => m.brand_id === id && m.month_key === PREV_MO)?.revenue ?? 0;
+                            const moRev    = monthly.find((m: any) => m.brand_id === id && m.month_key === LATEST)?.revenue ?? 0;
+                            const prevRev  = monthly.find((m: any) => m.brand_id === id && m.month_key === PREV_MO)?.revenue ?? 0;
+                            const moTarget = target?.revenue_target ?? 0;
                             periodRevenue = moRev;
                             periodGrowth  = prevRev > 0 ? ((moRev - prevRev) / prevRev) * 100 : null;
                             periodLabel   = latestLabel;
+                            pacePct       = moTarget > 0 ? Math.min((moRev / moTarget) * 100, 100) : null;
                           }
 
                           return (
@@ -401,6 +408,7 @@ export function DashboardTabs({
                               periodRevenue={periodRevenue}
                               periodGrowth={periodGrowth}
                               periodLabel={periodLabel}
+                              pacePct={pacePct}
                             />
                           );
                         })}
