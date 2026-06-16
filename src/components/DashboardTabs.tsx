@@ -118,12 +118,14 @@ export function DashboardTabs({
   const [monthSel, setMonthSel] = useState<string>(fyLatest);
   useEffect(() => { setMonthSel(fyLatestMonth(fy, monthly.map((m: any) => m.month_key))); }, [fy]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const LATEST      = monthOptions.includes(monthSel) ? monthSel : fyLatest;
+  const wholeYear   = monthSel === "all"; // "Full Year" — aggregate the whole FY
+  const LATEST      = (!wholeYear && monthOptions.includes(monthSel)) ? monthSel : fyLatest;
   const PREV_MO     = fyPrevMonth(fy, LATEST);
   const latestI     = monthKeys.indexOf(LATEST); // index of selected month within the FY
   const fyLabel     = FY_LABEL[fy];
   const latestLabel = monthLabel(LATEST);
   const prevLabel   = monthLabel(PREV_MO);
+  const fySum       = (arr: number[]) => arr.reduce((s, v) => s + (v ?? 0), 0);
 
   // Restrict month-keyed datasets to the selected FY before anything renders
   const inFy = (rows: any[]) => rows.filter((r: any) => monthKeys.includes(r.month_key));
@@ -154,12 +156,13 @@ export function DashboardTabs({
 
   // FY-aware headline KPIs (recomputed from the filtered data so they track the toggle)
   const fyRevenue   = monthly.reduce((s: number, m: any) => s + (m.revenue ?? 0), 0);
-  const latestOrders = monthly.filter((m: any) => m.month_key === LATEST).reduce((s: number, m: any) => s + (m.orders ?? 0), 0);
+  const orderRows   = wholeYear ? monthly : monthly.filter((m: any) => m.month_key === LATEST);
+  const ordersVal   = orderRows.reduce((s: number, m: any) => s + (m.orders ?? 0), 0);
   const liveCount    = brands.filter((b: any) => b.live).length;
   const fyKpis = [
     { label: `${fyLabel} Revenue`, value: fmt(fyRevenue), sub: "ex-GST, all brands" },
     { label: "Active Brands",      value: String(liveCount), sub: `of ${brands.length} total` },
-    { label: `${latestLabel} Orders`, value: latestOrders.toLocaleString(), sub: fyLabel },
+    { label: `${wholeYear ? fyLabel : latestLabel} Orders`, value: ordersVal.toLocaleString(), sub: wholeYear ? "all months" : fyLabel },
     { label: "Tradeshows",         value: String(tradeshows.length), sub: `${tradeshows.filter((t: any) => new Date() < new Date(t.date_start)).length} upcoming` },
   ];
 
@@ -184,10 +187,11 @@ export function DashboardTabs({
         <div>
           <label className="text-[9px] font-semibold text-gray-300 uppercase tracking-[0.18em]">Month</label>
           <select
-            value={LATEST}
+            value={wholeYear ? "all" : LATEST}
             onChange={e => setMonthSel(e.target.value)}
             className="w-full mt-1 text-xs font-medium border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
           >
+            <option value="all">Full Year</option>
             {[...monthOptions].reverse().map(mk => (
               <option key={mk} value={mk}>{monthLabels[monthKeys.indexOf(mk)]}{mk === fyLatest ? " (latest)" : ""}</option>
             ))}
@@ -500,26 +504,26 @@ export function DashboardTabs({
                   .filter((b: any) => b.live)
                   .map((b: any) => {
                     const history = MK_ALL.map(mk => monthly.find((d: any) => d.brand_id === b.id && d.month_key === mk));
-                    const cur  = history[latestI];
-                    const prev = history[latestI - 1];
+                    const revSpark    = history.map((r: any) => r?.revenue ?? 0);
+                    const ordersSpark = history.map((r: any) => r?.orders ?? 0);
+                    const monthCur = history[latestI];
+                    const prev     = wholeYear ? null : history[latestI - 1];
+                    if (!wholeYear && !monthCur) return null;
+                    const cur = wholeYear ? { revenue: fySum(revSpark), orders: fySum(ordersSpark) } : monthCur;
+                    if (wholeYear && cur.revenue === 0) return null;
                     const sum  = summaries.find((s: any) => s.brand_id === b.id);
-                    if (!cur) return null;
                     const aov     = cur.orders > 0 ? cur.revenue / cur.orders : 0;
                     const prevAov = prev && prev.orders > 0 ? prev.revenue / prev.orders : 0;
                     return {
                       brand: b, cur, prev, sum,
                       aov,
-                      revSpark:    history.map((r: any) => r?.revenue ?? 0),
-                      ordersSpark: history.map((r: any) => r?.orders ?? 0),
+                      revSpark, ordersSpark,
                       aovSpark:    history.map((r: any) => r && r.orders > 0 ? r.revenue / r.orders : 0),
-                      fySpark:     history.map((_: any, i: number) => {
-                        // cumulative FY revenue up to each month
-                        return history.slice(0, i + 1).reduce((s: number, r: any) => s + (r?.revenue ?? 0), 0);
-                      }),
-                      revChg:    prev && prev.revenue > 0   ? ((cur.revenue - prev.revenue) / prev.revenue) * 100 : null,
-                      ordersChg: prev && prev.orders > 0    ? ((cur.orders - prev.orders) / prev.orders) * 100 : null,
-                      aovChg:    prev && prevAov > 0        ? ((aov - prevAov) / prevAov) * 100 : null,
-                      momGrowth: sum?.mom_growth ?? null,
+                      fySpark:     history.map((_: any, i: number) => history.slice(0, i + 1).reduce((s: number, r: any) => s + (r?.revenue ?? 0), 0)),
+                      revChg:    wholeYear ? null : (prev && prev.revenue > 0   ? ((cur.revenue - prev.revenue) / prev.revenue) * 100 : null),
+                      ordersChg: wholeYear ? null : (prev && prev.orders > 0    ? ((cur.orders - prev.orders) / prev.orders) * 100 : null),
+                      aovChg:    wholeYear ? null : (prev && prevAov > 0        ? ((aov - prevAov) / prevAov) * 100 : null),
+                      momGrowth: wholeYear ? null : (sum?.mom_growth ?? null),
                     };
                   })
                   .filter(Boolean)
@@ -529,7 +533,7 @@ export function DashboardTabs({
 
                 return (
                   <div className="mt-4 space-y-3">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-1">Brand Breakdown — {latestLabel}</p>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-1">Brand Breakdown — {wholeYear ? fyLabel : latestLabel}</p>
                     {rows.map((r: any) => (
                       <div key={r.brand.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                         <div className="flex items-center gap-2 px-5 py-2.5 border-b border-gray-50" style={{ borderLeft: `3px solid ${r.brand.color}` }}>
@@ -581,7 +585,7 @@ export function DashboardTabs({
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
                 </select>
               </div>
-              <GoogleAdsChart key={fy} brands={filteredBrands} data={filteredAds} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} />
+              <GoogleAdsChart key={fy} brands={filteredBrands} data={filteredAds} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} wholeYear={wholeYear} />
 
               {/* Brand KPI cards — only when all brands shown */}
               {brandFilter === "all" && (() => {
@@ -608,24 +612,29 @@ export function DashboardTabs({
                   .filter((b: any) => b.live)
                   .map((b: any) => {
                     const history = MK_ALL.map(mk => googleAds.find((d: any) => d.brand_id === b.id && d.month_key === mk));
-                    const cur  = history[latestI];
-                    const prev = history[latestI - 1];
-                    if (!cur) return null;
-                    const revenue = cur.spend * cur.roas;
+                    const spendSpark  = history.map(r => r?.spend ?? 0);
+                    const revSpark    = history.map(r => r ? r.spend * r.roas : 0);
+                    const roasSpark   = history.map(r => r?.roas ?? 0);
+                    const clicksSpark = history.map(r => r?.clicks ?? 0);
+                    const imprSpark   = history.map(r => r?.impressions ?? 0);
+                    const monthCur = history[latestI];
+                    const prev     = wholeYear ? null : history[latestI - 1];
+                    if (!wholeYear && !monthCur) return null;
+                    const fySpend = fySum(spendSpark);
+                    const cur = wholeYear
+                      ? { spend: fySpend, clicks: fySum(clicksSpark), impressions: fySum(imprSpark), roas: fySpend > 0 ? fySum(revSpark) / fySpend : 0 }
+                      : monthCur;
+                    if (wholeYear && cur.spend === 0) return null;
+                    const revenue = wholeYear ? fySum(revSpark) : monthCur.spend * monthCur.roas;
                     const prevRev = prev ? prev.spend * prev.roas : 0;
                     return {
-                      brand: b, cur, prev,
-                      revenue,
-                      spendSpark:  history.map(r => r?.spend ?? 0),
-                      revSpark:    history.map(r => r ? r.spend * r.roas : 0),
-                      roasSpark:   history.map(r => r?.roas ?? 0),
-                      clicksSpark: history.map(r => r?.clicks ?? 0),
-                      imprSpark:   history.map(r => r?.impressions ?? 0),
-                      spendChg:  prev && prev.spend > 0   ? ((cur.spend - prev.spend) / prev.spend) * 100 : null,
-                      revChg:    prev && prevRev > 0       ? ((revenue - prevRev) / prevRev) * 100 : null,
-                      roasChg:   prev && prev.roas > 0     ? ((cur.roas - prev.roas) / prev.roas) * 100 : null,
-                      clicksChg: prev && prev.clicks > 0   ? ((cur.clicks - prev.clicks) / prev.clicks) * 100 : null,
-                      imprChg:   prev && prev.impressions > 0 ? ((cur.impressions - prev.impressions) / prev.impressions) * 100 : null,
+                      brand: b, cur, prev, revenue,
+                      spendSpark, revSpark, roasSpark, clicksSpark, imprSpark,
+                      spendChg:  wholeYear ? null : (prev && prev.spend > 0   ? ((cur.spend - prev.spend) / prev.spend) * 100 : null),
+                      revChg:    wholeYear ? null : (prev && prevRev > 0       ? ((revenue - prevRev) / prevRev) * 100 : null),
+                      roasChg:   wholeYear ? null : (prev && prev.roas > 0     ? ((cur.roas - prev.roas) / prev.roas) * 100 : null),
+                      clicksChg: wholeYear ? null : (prev && prev.clicks > 0   ? ((cur.clicks - prev.clicks) / prev.clicks) * 100 : null),
+                      imprChg:   wholeYear ? null : (prev && prev.impressions > 0 ? ((cur.impressions - prev.impressions) / prev.impressions) * 100 : null),
                     };
                   })
                   .filter(Boolean)
@@ -649,7 +658,7 @@ export function DashboardTabs({
 
                 return (
                   <div className="mt-4 space-y-3">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-1">Brand Breakdown — {latestLabel}</p>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-1">Brand Breakdown — {wholeYear ? fyLabel : latestLabel}</p>
                     {rows.map((r: any) => (
                       <div key={r.brand.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                         {/* Brand header bar */}
@@ -690,7 +699,7 @@ export function DashboardTabs({
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
                 </select>
               </div>
-              <MetaAdsChart key={fy} brands={filteredBrands} data={filteredMeta} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} />
+              <MetaAdsChart key={fy} brands={filteredBrands} data={filteredMeta} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} wholeYear={wholeYear} />
 
               {/* Brand KPI cards — only when all brands shown */}
               {brandFilter === "all" && (() => {
@@ -722,21 +731,28 @@ export function DashboardTabs({
                   .filter((b: any) => b.live)
                   .map((b: any) => {
                     const history = MK_ALL.map(mk => metaAds.find((d: any) => d.brand_id === b.id && d.month_key === mk));
-                    const cur  = history[latestI];
-                    const prev = history[latestI - 1];
-                    if (!cur || cur.spend === 0) return null;
+                    const spendSpark = history.map((r: any) => r?.spend ?? 0);
+                    const revSpark   = history.map((r: any) => r?.revenue ?? 0);
+                    const purchSpark = history.map((r: any) => r?.purchases ?? 0);
+                    const monthCur = history[latestI];
+                    const prev     = wholeYear ? null : history[latestI - 1];
+                    if (!wholeYear && (!monthCur || monthCur.spend === 0)) return null;
+                    const fySpend = fySum(spendSpark);
+                    const cur = wholeYear
+                      ? { spend: fySpend, revenue: fySum(revSpark), purchases: fySum(purchSpark) }
+                      : monthCur;
+                    if (wholeYear && cur.spend === 0) return null;
                     const roas     = cur.spend > 0 ? cur.revenue / cur.spend : 0;
                     const prevRoas = prev && prev.spend > 0 ? prev.revenue / prev.spend : 0;
                     return {
                       brand: b, cur, roas,
-                      spendSpark:    history.map((r: any) => r?.spend ?? 0),
-                      revSpark:      history.map((r: any) => r?.revenue ?? 0),
+                      spendSpark, revSpark,
                       roasSpark:     history.map((r: any) => r && r.spend > 0 ? r.revenue / r.spend : 0),
-                      purchSpark:    history.map((r: any) => r?.purchases ?? 0),
-                      spendChg:  prev && prev.spend > 0     ? ((cur.spend - prev.spend) / prev.spend) * 100 : null,
-                      revChg:    prev && prev.revenue > 0   ? ((cur.revenue - prev.revenue) / prev.revenue) * 100 : null,
-                      roasChg:   prevRoas > 0               ? ((roas - prevRoas) / prevRoas) * 100 : null,
-                      purchChg:  prev && prev.purchases > 0 ? ((cur.purchases - prev.purchases) / prev.purchases) * 100 : null,
+                      purchSpark,
+                      spendChg:  wholeYear ? null : (prev && prev.spend > 0     ? ((cur.spend - prev.spend) / prev.spend) * 100 : null),
+                      revChg:    wholeYear ? null : (prev && prev.revenue > 0   ? ((cur.revenue - prev.revenue) / prev.revenue) * 100 : null),
+                      roasChg:   wholeYear ? null : (prevRoas > 0               ? ((roas - prevRoas) / prevRoas) * 100 : null),
+                      purchChg:  wholeYear ? null : (prev && prev.purchases > 0 ? ((cur.purchases - prev.purchases) / prev.purchases) * 100 : null),
                     };
                   })
                   .filter(Boolean)
@@ -753,7 +769,7 @@ export function DashboardTabs({
 
                 return (
                   <div className="mt-4 space-y-3">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-1">Brand Breakdown — {latestLabel}</p>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-1">Brand Breakdown — {wholeYear ? fyLabel : latestLabel}</p>
                     {rows.map((r: any) => (
                       <div key={r.brand.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                         <div className="flex items-center gap-2 px-5 py-2.5 border-b border-gray-50" style={{ borderLeft: `3px solid ${r.brand.color}` }}>

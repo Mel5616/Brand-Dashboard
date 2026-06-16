@@ -17,11 +17,11 @@ const DEFAULT_MONTH_LABELS = ["Jul 25","Aug 25","Sep 25","Oct 25","Nov 25","Dec 
 
 type Metric = "spend" | "revenue" | "roas" | "purchases" | "clicks";
 
-export function MetaAdsChart({ brands, data, monthKeys = DEFAULT_MONTH_KEYS, monthLabels = DEFAULT_MONTH_LABELS, latest }: { brands: Brand[]; data: MetaAdsRow[]; monthKeys?: string[]; monthLabels?: string[]; latest?: string }) {
+export function MetaAdsChart({ brands, data, monthKeys = DEFAULT_MONTH_KEYS, monthLabels = DEFAULT_MONTH_LABELS, latest, wholeYear = false }: { brands: Brand[]; data: MetaAdsRow[]; monthKeys?: string[]; monthLabels?: string[]; latest?: string; wholeYear?: boolean }) {
   const MONTH_KEYS = monthKeys;
   const MONTH_LABELS = monthLabels;
   const LATEST = latest ?? MONTH_KEYS[MONTH_KEYS.length - 1];
-  const latestLbl = (() => { const [y, m] = LATEST.split("-"); return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("en-AU", { month: "short" }); })();
+  const latestLbl = wholeYear ? "FY" : (() => { const [y, m] = LATEST.split("-"); return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("en-AU", { month: "short" }); })();
   const [metric, setMetric] = React.useState<Metric>("spend");
 
   const activeBrands = brands.filter(b => data.some(d => d.brand_id === b.id));
@@ -49,7 +49,7 @@ export function MetaAdsChart({ brands, data, monthKeys = DEFAULT_MONTH_KEYS, mon
     return { label: brand.name, data: values, backgroundColor: brand.color, stack: metric === "roas" ? undefined : "s" };
   });
 
-  const latestRows  = data.filter(d => d.month_key === LATEST);
+  const latestRows  = wholeYear ? data : data.filter(d => d.month_key === LATEST);
   const totalSpend  = latestRows.reduce((s, d) => s + d.spend, 0);
   const totalRev    = latestRows.reduce((s, d) => s + d.revenue, 0);
   const totalPurch  = latestRows.reduce((s, d) => s + d.purchases, 0);

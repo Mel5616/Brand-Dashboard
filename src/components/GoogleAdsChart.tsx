@@ -24,7 +24,7 @@ export type GoogleAdsRow = {
 
 type Metric = "spend" | "revenue" | "clicks" | "impressions" | "roas";
 
-export function GoogleAdsChart({ brands, data, monthKeys = DEFAULT_MONTH_KEYS, monthLabels = DEFAULT_MONTH_LABELS, latest }: { brands: Brand[]; data: GoogleAdsRow[]; monthKeys?: string[]; monthLabels?: string[]; latest?: string }) {
+export function GoogleAdsChart({ brands, data, monthKeys = DEFAULT_MONTH_KEYS, monthLabels = DEFAULT_MONTH_LABELS, latest, wholeYear = false }: { brands: Brand[]; data: GoogleAdsRow[]; monthKeys?: string[]; monthLabels?: string[]; latest?: string; wholeYear?: boolean }) {
   const MONTH_KEYS = monthKeys;
   const MONTH_LABELS = monthLabels;
   const [metric, setMetric] = React.useState<Metric>("spend");
@@ -58,8 +58,8 @@ export function GoogleAdsChart({ brands, data, monthKeys = DEFAULT_MONTH_KEYS, m
 
   // Summary KPIs for latest month
   const latestKey = latest ?? MONTH_KEYS[MONTH_KEYS.length - 1];
-  const latestLbl = (() => { const [y, m] = latestKey.split("-"); return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("en-AU", { month: "short" }); })();
-  const latestRows   = data.filter(d => d.month_key === latestKey);
+  const latestLbl = wholeYear ? "FY" : (() => { const [y, m] = latestKey.split("-"); return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("en-AU", { month: "short" }); })();
+  const latestRows   = wholeYear ? data : data.filter(d => d.month_key === latestKey);
   const totalSpend   = latestRows.reduce((s, d) => s + d.spend, 0);
   const totalRevenue = latestRows.reduce((s, d) => s + d.roas * d.spend, 0);
   const totalClicks  = latestRows.reduce((s, d) => s + d.clicks, 0);
