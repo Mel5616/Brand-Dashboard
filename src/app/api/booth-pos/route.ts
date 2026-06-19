@@ -7,7 +7,9 @@ import { NextResponse } from "next/server";
 export const revalidate = 0;
 
 const API_VERSION = "2024-01";
-const WINDOW_DAYS = 180;
+// Booth POS go-live date — only count orders on/after this so historical
+// test POS orders are excluded. Real booth sales start here.
+const POS_GO_LIVE = "2026-06-20";
 
 export async function GET() {
   const domain = process.env.UPPABABY_SHOPIFY_DOMAIN;
@@ -16,7 +18,7 @@ export async function GET() {
     return NextResponse.json({ ok: false, orders: 0, revenue: 0, daily: [] });
   }
 
-  const since = new Date(Date.now() - WINDOW_DAYS * 86400000).toISOString().slice(0, 10);
+  const since = POS_GO_LIVE;
 
   // Paginate so high-volume POS isn't truncated at the 250 page cap.
   // source_name:pos filters server-side so web orders never crowd out POS.

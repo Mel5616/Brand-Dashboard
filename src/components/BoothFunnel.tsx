@@ -20,9 +20,9 @@ function fmtDay(d: string) {
   return dt.toLocaleDateString("en-AU", { day: "numeric", month: "short" });
 }
 
-// The current UPPAbaby POS orders are test data, not confirmed booth sales —
-// the feed stays visible but is clearly labelled. Set to false once real.
-const POS_IS_TEST = true;
+// Test POS orders are excluded via the go-live cutoff in /api/booth-pos
+// (2026-06-20), so the live feed shows only real booth sales from then.
+const POS_IS_TEST = false;
 
 export function BoothFunnel({ data }: { data: BoothFunnelData }) {
   const { totals, shows, daily, hasRows } = data;
@@ -82,7 +82,7 @@ export function BoothFunnel({ data }: { data: BoothFunnelData }) {
       {/* Live POS + combined total */}
       <div>
         <div className="flex items-center gap-2 mb-1.5 px-0.5 flex-wrap">
-          <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-[0.18em]">Shopify POS (UPPAbaby · live · last 180 days)</p>
+          <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-[0.18em]">Shopify POS (UPPAbaby · live)</p>
           {!posLoading && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" title="Live" />}
           {POS_IS_TEST && (
             <span className="text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">⚠ Test data — not real sales</span>
