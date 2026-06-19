@@ -160,6 +160,7 @@ def fetch_all_orders(domain, token):
                     title
                     sku
                     originalTotalSet {{ shopMoney {{ amount }} }}
+                    product {{ vendor tags }}
                   }} }}
                 }}
               }}
@@ -305,11 +306,81 @@ def compute_metrics(orders, refunded_orders=None):
         'last_month_refunds': last_month_refunds,
         'unique_customers_fy': len(unique_customers),
         'fy_orders': fy_orders_count,
+        'product_rev': dict(product_rev),
+        'product_titles': {k: dict(v) for k, v in product_titles.items()},
     }
+
+# ── Coolkidz store split: attribute its line items to the real brands ─────────
+
+def compute_coolkidz_split(ck_orders):
+    """Split the Coolkidz multi-brand store's sales per brand (by vendor/Brand_ tag)
+    so they can be folded into each brand's own totals. Unmapped house/bundle items
+    are dropped. Returns { brand_id: { monthly_rev, weekly_rev, mo_orders, wk_orders,
+    product_rev, product_titles } }."""
+    split = {}
+    for idx, edge in enumerate(ck_orders):
+        node = edge['node']
+        ym   = node['createdAt'][:7]
+        d    = _date.fromisoformat(node['createdAt'][:10])
+        ws   = (d - _td(days=d.weekday())).isoformat()
+        for li in node.get('lineItems', {}).get('edges', []):
+            item  = li['node']
+            title = (item.get('title') or '').strip()
+            sku   = (item.get('sku') or '').strip()
+            prod  = item.get('product') or {}
+            bid   = coolkidz_brand_id(title, prod.get('vendor', ''), prod.get('tags', []))
+            if bid is None:
+                continue
+            amt = round(float(item.get('originalTotalSet', {}).get('shopMoney', {}).get('amount', 0)) / 1.1, 2)
+            s = split.setdefault(bid, {
+                'monthly_rev': defaultdict(float), 'weekly_rev': defaultdict(float),
+                'mo_orders': defaultdict(set), 'wk_orders': defaultdict(set),
+                'product_rev': defaultdict(float), 'product_titles': defaultdict(lambda: defaultdict(float)),
+            })
+            s['monthly_rev'][ym] += amt
+            s['weekly_rev'][ws]  += amt
+            s['mo_orders'][ym].add(idx)
+            s['wk_orders'][ws].add(idx)
+            key = sku if sku else f'T::{title}'
+            s['product_rev'][key]          += amt
+            s['product_titles'][key][title] += amt
+    return split
+
+def merge_coolkidz(m, cs):
+    """Fold a brand's Coolkidz-store split (cs) into its own-store metrics (m)."""
+    for i, mk in enumerate(MONTH_KEYS):
+        m['revenue'][i]  += round(cs['monthly_rev'].get(mk, 0))
+        m['orders_m'][i] += len(cs['mo_orders'].get(mk, set()))
+    for i, mk in enumerate(MONTH_KEYS_PREV):
+        m['revenue_prev'][i] += round(cs['monthly_rev'].get(mk, 0))
+    for i, ws in enumerate(WEEK_STARTS):
+        m['weekly_revenue'][i] += round(cs['weekly_rev'].get(ws, 0))
+        m['weekly_orders'][i]  += len(cs['wk_orders'].get(ws, set()))
+    # merge products + re-rank top 5
+    pr, pt = m['product_rev'], m['product_titles']
+    for k, v in cs['product_rev'].items():
+        pr[k] = pr.get(k, 0) + v
+    for k, td in cs['product_titles'].items():
+        d = pt.setdefault(k, {})
+        for t, vv in td.items():
+            d[t] = d.get(t, 0) + vv
+    top_keys = sorted(pr.items(), key=lambda x: x[1], reverse=True)[:5]
+    m['top_products'] = [(max(pt[k].items(), key=lambda t: t[1])[0], v) for k, v in top_keys]
+    # recompute headline summary
+    m['revenue']     = [round(x) for x in m['revenue']]
+    m['last_rev']    = m['revenue'][10]
+    prev_rev         = m['revenue'][9]
+    m['last_orders'] = m['orders_m'][10]
+    m['mom']         = round((m['last_rev'] - prev_rev) / prev_rev * 100, 1) if prev_rev else 0
+    m['aov']         = round(m['last_rev'] / m['last_orders']) if m['last_orders'] else 0
+    m['fy_revenue']  = sum(m['revenue'])
+    fy_prev          = sum(m['revenue_prev'])
+    m['yoy']         = round((m['fy_revenue'] - fy_prev) / fy_prev * 100, 1) if fy_prev else 0
+    return m
 
 # ── Sync one brand to Supabase ────────────────────────────────────────────────
 
-def sync_brand(brand):
+def sync_brand(brand, ck_split=None):
     name   = brand['name']
     domain = brand.get('domain', '')
     token  = brand.get('token', '')
@@ -320,11 +391,22 @@ def sync_brand(brand):
         print(f'  ⏭  {name} — skipped')
         return False
 
+    # Coolkidz is the multi-brand store — its sales are folded into each brand
+    # (see compute_coolkidz_split), so it's not shown as a standalone brand.
+    if name == 'Coolkidz Australia':
+        sb_upsert('brands', [{'id': bid, 'name': name, 'color': brand.get('color','#666'), 'init': brand.get('init','?'), 'live': False, 'synced_at': datetime.utcnow().isoformat() + 'Z'}], on_conflict='id')
+        for tbl in ('brand_monthly', 'brand_weekly', 'brand_products', 'brand_summary'):
+            sb_delete_where(tbl, 'brand_id', bid)
+        print(f'  ⏭  {name} — folded into individual brands')
+        return False
+
     print(f'  ⟳  {name} ({domain})')
     try:
         orders          = fetch_all_orders(domain, token)
         refunded_orders = fetch_refunded_orders(domain, token)
         m               = compute_metrics(orders, refunded_orders)
+        if ck_split and bid in ck_split:
+            m = merge_coolkidz(m, ck_split[bid])
 
         now = datetime.utcnow().isoformat() + 'Z'
 
@@ -757,9 +839,20 @@ def main():
     wl_rows = [{'week_start': WEEK_STARTS[i], 'label': WEEK_LABELS[i]} for i in range(13)]
     sb_upsert('week_labels', wl_rows, on_conflict='week_start')
 
+    # Build the Coolkidz-store split once, then fold it into each brand
+    ck_split = {}
+    coolkidz = next((b for b in brands if b['name'] == 'Coolkidz Australia'), None)
+    if coolkidz and coolkidz.get('token') and coolkidz.get('domain'):
+        print('  ⟳  Splitting Coolkidz store sales by brand...')
+        try:
+            ck_split = compute_coolkidz_split(fetch_all_orders(coolkidz['domain'], coolkidz['token']))
+            print(f'       mapped to {len(ck_split)} brands')
+        except Exception as e:
+            print(f'  ✗ Coolkidz split failed: {e}')
+
     ok = 0; err = 0
     for brand in brands:
-        if sync_brand(brand):
+        if sync_brand(brand, ck_split):
             ok += 1
         else:
             err += 1
