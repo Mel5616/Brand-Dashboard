@@ -20,6 +20,10 @@ function fmtDay(d: string) {
   return dt.toLocaleDateString("en-AU", { day: "numeric", month: "short" });
 }
 
+// The current UPPAbaby POS orders are test data, not confirmed booth sales —
+// the feed stays visible but is clearly labelled. Set to false once real.
+const POS_IS_TEST = true;
+
 export function BoothFunnel({ data }: { data: BoothFunnelData }) {
   const { totals, shows, daily, hasRows } = data;
 
@@ -77,23 +81,29 @@ export function BoothFunnel({ data }: { data: BoothFunnelData }) {
 
       {/* Live POS + combined total */}
       <div>
-        <div className="flex items-center gap-2 mb-1.5 px-0.5">
+        <div className="flex items-center gap-2 mb-1.5 px-0.5 flex-wrap">
           <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-[0.18em]">Shopify POS (UPPAbaby · live · last 180 days)</p>
           {!posLoading && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" title="Live" />}
+          {POS_IS_TEST && (
+            <span className="text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">⚠ Test data — not real sales</span>
+          )}
         </div>
+        {POS_IS_TEST && (
+          <p className="text-[11px] text-amber-600 mb-2 px-0.5">These POS figures are sample/test orders, not confirmed booth sales. They’re excluded from real revenue until live.</p>
+        )}
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3">
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">POS Orders</p>
+          <div className={`rounded-xl border shadow-sm px-4 py-3 ${POS_IS_TEST ? "border-amber-200 bg-amber-50/40" : "bg-white border-gray-100"}`}>
+            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">POS Orders {POS_IS_TEST && <span className="text-amber-500">· test</span>}</p>
             <p className="text-xl font-bold mt-1 text-slate-700">{posLoading ? "…" : num(pos?.orders ?? 0)}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3">
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">POS Revenue</p>
+          <div className={`rounded-xl border shadow-sm px-4 py-3 ${POS_IS_TEST ? "border-amber-200 bg-amber-50/40" : "bg-white border-gray-100"}`}>
+            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">POS Revenue {POS_IS_TEST && <span className="text-amber-500">· test</span>}</p>
             <p className="text-xl font-bold mt-1 text-slate-700">{posLoading ? "…" : aud(pos?.revenue ?? 0)}</p>
           </div>
           <div className="rounded-xl border border-indigo-100 shadow-sm px-4 py-3 bg-gradient-to-br from-indigo-50/70 to-white">
             <p className="text-[10px] font-semibold text-indigo-400 uppercase tracking-widest">Total Booth Revenue</p>
             <p className="text-xl font-bold mt-1 text-indigo-600">{posLoading ? "…" : aud(totals.revenue + (pos?.revenue ?? 0))}</p>
-            <p className="text-[10px] text-gray-400">QR + POS</p>
+            <p className="text-[10px] text-gray-400">QR + POS{POS_IS_TEST ? " (incl. test)" : ""}</p>
           </div>
         </div>
       </div>
