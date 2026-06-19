@@ -209,7 +209,7 @@ def fetch_refunded_orders(domain, token):
 
 # ── Compute metrics ───────────────────────────────────────────────────────────
 
-def compute_metrics(orders, refunded_orders=None):
+def compute_metrics(orders, refunded_orders=None, sales_start=None):
     monthly_rev     = defaultdict(float)
     monthly_count   = defaultdict(int)
     weekly_rev      = defaultdict(float)
@@ -222,6 +222,8 @@ def compute_metrics(orders, refunded_orders=None):
 
     for edge in orders:
         node  = edge['node']
+        if sales_start and node['createdAt'][:10] < sales_start:
+            continue  # brand only started selling on/after this date
         ym    = node['createdAt'][:7]
         gross = float(node['totalPriceSet']['shopMoney']['amount'])
         tax   = float(node.get('totalTaxSet', {}).get('shopMoney', {}).get('amount', 0))
@@ -263,6 +265,8 @@ def compute_metrics(orders, refunded_orders=None):
     # Fully-refunded orders (separate query)
     for edge in (refunded_orders or []):
         node  = edge['node']
+        if sales_start and node['createdAt'][:10] < sales_start:
+            continue
         ym    = node['createdAt'][:7]
         if ym not in MONTH_KEYS:
             continue
@@ -286,7 +290,7 @@ def compute_metrics(orders, refunded_orders=None):
     aov         = round(last_rev / last_orders) if last_orders else 0
     fy_revenue  = sum(revenue)
     fy_prev     = sum(revenue_prev)
-    yoy         = round((fy_revenue - fy_prev) / fy_prev * 100, 1) if fy_prev else 0
+    yoy         = round((fy_revenue - fy_prev) / fy_prev * 100, 1) if fy_prev else None  # None = no prior-year baseline
 
     fy_refunds         = round(sum(monthly_refunds.get(mk, 0) for mk in MONTH_KEYS))
     last_month_refunds = round(monthly_refunds.get(MONTH_KEYS[10], 0))  # May 26
@@ -312,16 +316,18 @@ def compute_metrics(orders, refunded_orders=None):
 
 # ── Coolkidz store split: attribute its line items to the real brands ─────────
 
-def compute_coolkidz_split(ck_orders):
+def compute_coolkidz_split(ck_orders, start_dates=None):
     """Split the Coolkidz multi-brand store's sales per brand (by vendor/Brand_ tag)
     so they can be folded into each brand's own totals. Unmapped house/bundle items
     are dropped. Returns { brand_id: { monthly_rev, weekly_rev, mo_orders, wk_orders,
     product_rev, product_titles } }."""
+    start_dates = start_dates or {}
     split = {}
     for idx, edge in enumerate(ck_orders):
         node = edge['node']
+        day  = node['createdAt'][:10]
         ym   = node['createdAt'][:7]
-        d    = _date.fromisoformat(node['createdAt'][:10])
+        d    = _date.fromisoformat(day)
         ws   = (d - _td(days=d.weekday())).isoformat()
         for li in node.get('lineItems', {}).get('edges', []):
             item  = li['node']
@@ -331,6 +337,8 @@ def compute_coolkidz_split(ck_orders):
             bid   = coolkidz_brand_id(title, prod.get('vendor', ''), prod.get('tags', []))
             if bid is None:
                 continue
+            if bid in start_dates and day < start_dates[bid]:
+                continue  # brand only started selling on/after this date
             amt = round(float(item.get('originalTotalSet', {}).get('shopMoney', {}).get('amount', 0)) / 1.1, 2)
             s = split.setdefault(bid, {
                 'monthly_rev': defaultdict(float), 'weekly_rev': defaultdict(float),
@@ -375,7 +383,7 @@ def merge_coolkidz(m, cs):
     m['aov']         = round(m['last_rev'] / m['last_orders']) if m['last_orders'] else 0
     m['fy_revenue']  = sum(m['revenue'])
     fy_prev          = sum(m['revenue_prev'])
-    m['yoy']         = round((m['fy_revenue'] - fy_prev) / fy_prev * 100, 1) if fy_prev else 0
+    m['yoy']         = round((m['fy_revenue'] - fy_prev) / fy_prev * 100, 1) if fy_prev else None
     return m
 
 # ── Sync one brand to Supabase ────────────────────────────────────────────────
@@ -404,7 +412,7 @@ def sync_brand(brand, ck_split=None):
     try:
         orders          = fetch_all_orders(domain, token)
         refunded_orders = fetch_refunded_orders(domain, token)
-        m               = compute_metrics(orders, refunded_orders)
+        m               = compute_metrics(orders, refunded_orders, brand.get('salesStart'))
         if ck_split and bid in ck_split:
             m = merge_coolkidz(m, ck_split[bid])
 
@@ -845,7 +853,8 @@ def main():
     if coolkidz and coolkidz.get('token') and coolkidz.get('domain'):
         print('  ⟳  Splitting Coolkidz store sales by brand...')
         try:
-            ck_split = compute_coolkidz_split(fetch_all_orders(coolkidz['domain'], coolkidz['token']))
+            start_dates = {b['id']: b['salesStart'] for b in brands if b.get('salesStart')}
+            ck_split = compute_coolkidz_split(fetch_all_orders(coolkidz['domain'], coolkidz['token']), start_dates)
             print(f'       mapped to {len(ck_split)} brands')
         except Exception as e:
             print(f'  ✗ Coolkidz split failed: {e}')
