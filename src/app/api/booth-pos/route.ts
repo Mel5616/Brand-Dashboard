@@ -57,7 +57,9 @@ export async function GET() {
     for (const n of pos) {
       const amt = Number(n.totalPriceSet?.shopMoney?.amount ?? 0);
       revenue += amt;
-      const date = String(n.createdAt).slice(0, 10);
+      // Bucket by AEST date (+10h) — Shopify's created_at is UTC, so early-morning
+      // AEST show-day orders would otherwise fall into the previous calendar day.
+      const date = new Date(new Date(n.createdAt).getTime() + 10 * 3600 * 1000).toISOString().slice(0, 10);
       const d = byDay.get(date) ?? { date, revenue: 0, orders: 0 };
       d.revenue += amt;
       d.orders += 1;
