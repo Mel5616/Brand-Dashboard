@@ -44,7 +44,7 @@ export function BoothFunnel({ data }: { data: BoothFunnelData }) {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">
         <div className="text-4xl mb-3">📲</div>
         <p className="text-gray-600 font-medium">No expo activity yet.</p>
-        <p className="text-sm text-gray-400 mt-1">QR scans and orders will appear here once the booth goes live.</p>
+        <p className="text-sm text-gray-400 mt-1">QR scans and orders will appear here once the expo stand goes live.</p>
       </div>
     );
   }
@@ -74,13 +74,13 @@ export function BoothFunnel({ data }: { data: BoothFunnelData }) {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="font-semibold text-gray-800">Expo Booth Funnel</h2>
-        <p className="text-xs text-gray-400 mt-0.5">Live QR booth data — scan → checkout → paid order</p>
+        <h2 className="font-semibold text-gray-800">Expo Stand Funnel</h2>
+        <p className="text-xs text-gray-400 mt-0.5">Live QR expo stand data — scan → checkout → paid order</p>
       </div>
 
       {/* KPI row — QR funnel */}
       <div>
-        <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-[0.18em] mb-1.5 px-0.5">QR Booth Funnel</p>
+        <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-[0.18em] mb-1.5 px-0.5">QR Expo Stand Funnel</p>
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
           {kpis.map(k => (
             <div key={k.label} className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3">
@@ -113,7 +113,7 @@ export function BoothFunnel({ data }: { data: BoothFunnelData }) {
             <p className="text-xl font-bold mt-1 text-slate-700">{posLoading ? "…" : aud(pos?.revenue ?? 0)}</p>
           </div>
           <div className="rounded-xl border border-indigo-100 shadow-sm px-4 py-3 bg-gradient-to-br from-indigo-50/70 to-white">
-            <p className="text-[10px] font-semibold text-indigo-400 uppercase tracking-widest">Total Booth Revenue</p>
+            <p className="text-[10px] font-semibold text-indigo-400 uppercase tracking-widest">Total Expo Stand Revenue</p>
             <p className="text-xl font-bold mt-1 text-indigo-600">{posLoading ? "…" : aud(totals.revenue + (pos?.revenue ?? 0))}</p>
             <p className="text-[10px] text-gray-400">QR + POS{POS_IS_TEST ? " (incl. test)" : ""}</p>
           </div>

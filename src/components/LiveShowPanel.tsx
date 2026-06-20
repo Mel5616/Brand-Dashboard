@@ -5,9 +5,9 @@ import type { Brand } from "@/lib/db";
 
 type Row = { brand_id: number; name: string; boothRevenue: number; boothOrders: number; onlineRevenue: number; onlineOrders: number };
 type Prod = { title: string; brand_id: number; revenue: number; qty: number };
-type Compare = { name: string; date_start: string; boothTotal: number; showTotal: number; samePoint?: boolean; atFraction?: number };
+type Compare = { name: string; date_start: string; boothTotal: number; showTotal: number; onlineTotal: number; samePoint?: boolean; atFraction?: number };
 type LiveData = {
-  live: boolean; boothTotal: number; boothOrders: number; showTotal: number; showOrders: number;
+  live: boolean; boothTotal: number; boothOrders: number; showTotal: number; showOrders: number; onlineTotal: number; onlineOrders: number;
   rows: Row[]; updatedAt: string; topProducts?: Prod[]; byHour?: number[]; compare?: Compare | null; target?: number | null;
   show?: { name?: string; state?: string; date_start?: string; date_end?: string };
 };
@@ -152,8 +152,8 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
     // ── SVG: this show vs previous (grouped horizontal bars) ──
     const cmpChart = compare ? (() => {
       const metrics = [
-        { name: "Booth", a: booth, b: compare.boothTotal },
-        { name: "Show-window", a: data.showTotal, b: compare.showTotal },
+        { name: "Expo Stand", a: booth, b: compare.boothTotal },
+        { name: "Online Expo Sales", a: data.onlineTotal, b: compare.onlineTotal },
       ];
       const max = Math.max(1, ...metrics.flatMap(m => [m.a, m.b]));
       const W = 540, barH = 15, gap = 6, groupGap = 16, x0 = 92, barMax = W - x0 - 70;
@@ -189,17 +189,17 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
       return `<svg viewBox="0 0 ${W} ${y}" width="100%" style="max-width:540px">${body}</svg>`;
     })() : "";
 
-    const showCmpDelta = compare && compare.showTotal > 0 ? ((data.showTotal - compare.showTotal) / compare.showTotal) * 100 : null;
+    const onlineCmpDelta = compare && compare.onlineTotal > 0 ? ((data.onlineTotal - compare.onlineTotal) / compare.onlineTotal) * 100 : null;
     const arrow = (d: number) => d >= 0 ? "▲" : "▼";
     const rowsHtml = data.rows.map(r => `<tr><td>${esc(r.name)}</td><td class="r">${aud(r.boothRevenue)}</td><td class="r">${r.boothOrders}</td><td class="r">${r.onlineRevenue > 0 ? "+" + aud(r.onlineRevenue) : "—"}</td></tr>`).join("");
-    const pacingHtml = target ? `<p><b>Booth target:</b> ${aud(target)} — ${pct.toFixed(0)}% achieved${finished ? (booth >= target ? " ✓ hit" : ` (${aud(target - booth)} short)`) : ""}</p>` : "";
+    const pacingHtml = target ? `<p><b>Expo Stand target:</b> ${aud(target)} — ${pct.toFixed(0)}% achieved${finished ? (booth >= target ? " ✓ hit" : ` (${aud(target - booth)} short)`) : ""}</p>` : "";
     const peakHtml = peakHour != null ? `<p><b>Peak hour:</b> ${hourLabel(peakHour)}–${hourLabel(peakHour + 1)} (${aud(byHour[peakHour])})</p>` : "";
 
     const cmpSection = compare ? `
       <h2>vs ${esc(compare.name)} · ${fmtDate(compare.date_start)}${compare.samePoint ? " (same point in the show)" : ""}</h2>
       <table style="margin-bottom:6px"><thead><tr><th>Metric</th><th class="r">This show</th><th class="r">${esc(trunc(compare.name.replace(/Baby Expo/i, "").trim(), 16))}</th><th class="r">Change</th></tr></thead><tbody>
-        <tr><td>Booth sales</td><td class="r">${aud(booth)}</td><td class="r">${aud(compare.boothTotal)}</td><td class="r" style="color:${(cmpDelta ?? 0) >= 0 ? "#059669" : "#e11d48"}">${cmpDelta != null ? arrow(cmpDelta) + " " + Math.abs(cmpDelta).toFixed(0) + "%" : "—"}</td></tr>
-        <tr><td>Show-window total</td><td class="r">${aud(data.showTotal)}</td><td class="r">${aud(compare.showTotal)}</td><td class="r" style="color:${(showCmpDelta ?? 0) >= 0 ? "#059669" : "#e11d48"}">${showCmpDelta != null ? arrow(showCmpDelta) + " " + Math.abs(showCmpDelta).toFixed(0) + "%" : "—"}</td></tr>
+        <tr><td>Expo Stand</td><td class="r">${aud(booth)}</td><td class="r">${aud(compare.boothTotal)}</td><td class="r" style="color:${(cmpDelta ?? 0) >= 0 ? "#059669" : "#e11d48"}">${cmpDelta != null ? arrow(cmpDelta) + " " + Math.abs(cmpDelta).toFixed(0) + "%" : "—"}</td></tr>
+        <tr><td>Online Expo Sales</td><td class="r">${aud(data.onlineTotal)}</td><td class="r">${aud(compare.onlineTotal)}</td><td class="r" style="color:${(onlineCmpDelta ?? 0) >= 0 ? "#059669" : "#e11d48"}">${onlineCmpDelta != null ? arrow(onlineCmpDelta) + " " + Math.abs(onlineCmpDelta).toFixed(0) + "%" : "—"}</td></tr>
       </tbody></table>
       ${cmpChart}` : "";
 
@@ -220,16 +220,16 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
       <h1>${esc(s.name ?? "Show")}</h1>
       <p class="sub">${fmtDate(s.date_start)}${s.date_end && s.date_end !== s.date_start ? " – " + fmtDate(s.date_end) : ""}${s.state ? " · " + s.state : ""}</p>
       <div class="cards">
-        <div><p class="big">${aud(booth)}</p><p class="lbl">Booth sales · ${data.boothOrders} orders</p></div>
-        <div><p class="big">${aud(data.showTotal)}</p><p class="lbl">Show-window total · ${data.showOrders} orders</p></div>
+        <div><p class="big">${aud(booth)}</p><p class="lbl">Expo Stand · ${data.boothOrders} orders</p></div>
+        <div><p class="big">${aud(data.onlineTotal)}</p><p class="lbl">Online Expo Sales · ${data.onlineOrders} orders</p></div>
       </div>
       ${pacingHtml}${peakHtml}
       ${cmpSection}
-      ${hourChart ? `<h2>Sales by hour · booth</h2>${hourChart}` : ""}
-      ${topChart ? `<h2>Top 5 sellers · booth</h2>${topChart}` : ""}
+      ${hourChart ? `<h2>Sales by hour · expo stand</h2>${hourChart}` : ""}
+      ${topChart ? `<h2>Top 5 sellers · expo stand</h2>${topChart}` : ""}
       <h2>By Brand</h2>
-      <table><thead><tr><th>Brand</th><th class="r">Booth</th><th class="r">Orders</th><th class="r">Online to state</th></tr></thead><tbody>${rowsHtml}</tbody></table>
-      <p class="meta">Booth = POS + Coolkidz till + QR scans · ex-GST. Generated ${new Date().toLocaleString("en-AU")} from Brand Command.</p>
+      <table><thead><tr><th>Brand</th><th class="r">Expo Stand</th><th class="r">Orders</th><th class="r">Online to state</th></tr></thead><tbody>${rowsHtml}</tbody></table>
+      <p class="meta">Expo Stand = POS + Coolkidz till + QR scans · ex-GST. Generated ${new Date().toLocaleString("en-AU")} from Brand Command.</p>
       <script>window.onload=function(){window.print();}</script>
       </body></html>`;
     const w = window.open("", "_blank");
@@ -262,19 +262,19 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
                 </span>
               )}
             </div>
-            <p className="text-xs text-white/85">Booth sales · {data?.boothOrders ?? 0} orders</p>
+            <p className="text-xs text-white/85">Expo Stand · {data?.boothOrders ?? 0} orders</p>
             <p className="text-[10px] text-white/65">POS + Coolkidz till + QR</p>
           </div>
           <div className="opacity-90">
-            <p className="text-2xl font-semibold tabular-nums">{loading ? "…" : aud(data?.showTotal ?? 0)}</p>
-            <p className="text-xs text-white/85">Show-window total · {data?.showOrders ?? 0} orders</p>
-            <p className="text-[10px] text-white/65">booth + online orders to {data?.show?.state ?? "state"}</p>
+            <p className="text-2xl font-semibold tabular-nums">{loading ? "…" : aud(data?.onlineTotal ?? 0)}</p>
+            <p className="text-xs text-white/85">Online Expo Sales · {data?.onlineOrders ?? 0} orders</p>
+            <p className="text-[10px] text-white/65">website orders to {data?.show?.state ?? "state"} during the show</p>
           </div>
         </div>
         {cmpDelta != null && (
           <p className="text-[10px] text-white/70 mt-2">
             vs {compare!.name}, {new Date(compare!.date_start + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
-            {compare!.samePoint ? " at the same point" : ""} — booth {aud(compare!.boothTotal)}
+            {compare!.samePoint ? " at the same point" : ""} — expo stand {aud(compare!.boothTotal)}
           </p>
         )}
       </div>
@@ -283,7 +283,7 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
       <div className="bg-white border-b border-gray-100 px-5 py-3">
         {editing ? (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500">Booth target $</span>
+            <span className="text-xs text-gray-500">Expo Stand target $</span>
             <input
               autoFocus value={draft} onChange={e => setDraft(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") saveTarget(); if (e.key === "Escape") setEditing(false); }}
@@ -297,7 +297,7 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
           <div>
             <div className="flex items-baseline justify-between mb-1.5">
               <span className="text-xs font-semibold text-gray-500">
-                Booth target · {aud(booth)} of {aud(target)}
+                Expo Stand target · {aud(booth)} of {aud(target)}
                 <button onClick={() => { setDraft(String(target)); setEditing(true); }} className="ml-2 text-[10px] text-emerald-600 hover:underline">edit</button>
               </span>
               <span className={`text-[11px] font-bold ${finished ? (booth >= target ? "text-emerald-600" : "text-gray-400") : onPace ? "text-emerald-600" : "text-amber-600"}`}>
@@ -314,7 +314,7 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
           </div>
         ) : (
           <button onClick={() => { setDraft(""); setEditing(true); }} className="text-xs text-gray-400 hover:text-emerald-600">
-            + Set a booth revenue target for this show
+            + Set an Expo Stand revenue target for this show
           </button>
         )}
       </div>
@@ -330,7 +330,7 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
             <div className="flex items-center gap-3 pb-1">
               <span className="w-28 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Brand</span>
               <span className="flex-1" />
-              <span className="w-16 text-right text-[10px] font-semibold uppercase tracking-wide text-gray-400">Booth</span>
+              <span className="w-16 text-right text-[10px] font-semibold uppercase tracking-wide text-gray-400">Expo Stand</span>
               <span className="w-20 text-right text-[10px] font-semibold uppercase tracking-wide text-gray-400">Online {data?.show?.state ? `→ ${stateAbbr(data.show.state)}` : ""}</span>
             </div>
             {data.rows.map(r => (
@@ -351,14 +351,14 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
             ))}
           </div>
         )}
-        <p className="text-[10px] text-gray-400 mt-3">Solid = booth (POS + till + QR) · faded = online orders shipping to {data?.show?.state ?? "the state"} during the show.</p>
+        <p className="text-[10px] text-gray-400 mt-3">Solid = expo stand (POS + till + QR) · faded = online orders shipping to {data?.show?.state ?? "the state"} during the show.</p>
       </div>
 
       {/* Sales by hour */}
       {hourSpan.length > 0 && (
         <div className="bg-white border-t border-gray-100 px-5 py-4">
           <div className="flex items-baseline justify-between mb-3">
-            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Sales by Hour · booth</h3>
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Sales by Hour · expo stand</h3>
             {peakHour != null && <span className="text-[10px] text-gray-400">peak {hourLabel(peakHour)}–{hourLabel(peakHour + 1)}</span>}
           </div>
           <div className="flex items-end gap-1.5 h-28">
@@ -382,7 +382,7 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
       {data?.topProducts && data.topProducts.length > 0 && (
         <div className="bg-white border-t border-gray-100 px-5 py-4">
           <div className="flex items-baseline justify-between mb-3">
-            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Top Sellers · booth</h3>
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Top Sellers · expo stand</h3>
             <span className="text-[10px] text-gray-400">by revenue · ex-GST</span>
           </div>
           <div className="space-y-1.5">

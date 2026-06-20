@@ -170,7 +170,7 @@ async function computeShow(
       const qrRows = (qr || []).filter((e: any) => !past(e.created_at));
       const qrRev = qrRows.reduce((s: number, e: any) => s + Number(e.value ?? 0), 0);
       if (detail) for (const e of qrRows) bucket(e.created_at, Number(e.value ?? 0));
-      if (qrRev > 0) rows.push({ brand_id: -1, name: "QR Booth (scanned)", boothRevenue: round(qrRev), boothOrders: qrRows.length, onlineRevenue: 0, onlineOrders: 0 });
+      if (qrRev > 0) rows.push({ brand_id: -1, name: "QR Expo Stand (scanned)", boothRevenue: round(qrRev), boothOrders: qrRows.length, onlineRevenue: 0, onlineOrders: 0 });
     } catch { /* booth project unavailable — skip QR */ }
   }
 
@@ -225,7 +225,7 @@ export async function GET(req: Request) {
   const nowFrac = showFraction(new Date().toISOString(), show.date_start, show.date_end);
 
   // Previous comparable show (same name, earlier date) — for a vs-last-time badge
-  let compare: { name: string; date_start: string; boothTotal: number; showTotal: number; samePoint: boolean; atFraction: number } | null = null;
+  let compare: { name: string; date_start: string; boothTotal: number; showTotal: number; onlineTotal: number; samePoint: boolean; atFraction: number } | null = null;
   if (wantCompare) {
     const prevShows = await sb(`tradeshows?name=eq.${encodeURIComponent(show.name)}&date_start=lt.${show.date_start}&order=date_start.desc&limit=1&select=id,name,date_start,date_end,state`);
     const prev = prevShows?.[0];
@@ -233,7 +233,7 @@ export async function GET(req: Request) {
       const prevBrands = await sb(`tradeshow_brands?tradeshow_id=eq.${prev.id}&select=brand_id`);
       const prevIds: number[] = (prevBrands || []).map((r: any) => r.brand_id);
       const prevData = await computeShow(prev, prevIds, storeById, boothCreds, false, nowFrac);
-      compare = { name: prev.name, date_start: prev.date_start, boothTotal: prevData.boothTotal, showTotal: prevData.showTotal, samePoint: nowFrac < 1, atFraction: nowFrac };
+      compare = { name: prev.name, date_start: prev.date_start, boothTotal: prevData.boothTotal, showTotal: prevData.showTotal, onlineTotal: prevData.onlineTotal, samePoint: nowFrac < 1, atFraction: nowFrac };
     }
   }
 
