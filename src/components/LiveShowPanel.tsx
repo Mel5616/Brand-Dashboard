@@ -5,10 +5,10 @@ import type { Brand } from "@/lib/db";
 
 type Row = { brand_id: number; name: string; boothRevenue: number; boothOrders: number; onlineRevenue: number; onlineOrders: number };
 type Prod = { title: string; brand_id: number; revenue: number; qty: number };
-type Compare = { name: string; date_start: string; boothTotal: number; showTotal: number };
+type Compare = { name: string; date_start: string; boothTotal: number; showTotal: number; samePoint?: boolean; atFraction?: number };
 type LiveData = {
   live: boolean; boothTotal: number; boothOrders: number; showTotal: number; showOrders: number;
-  rows: Row[]; updatedAt: string; topProducts?: Prod[]; byHour?: number[]; compare?: Compare | null;
+  rows: Row[]; updatedAt: string; topProducts?: Prod[]; byHour?: number[]; compare?: Compare | null; target?: number | null;
   show?: { name?: string; state?: string; date_start?: string; date_end?: string };
 };
 
@@ -59,7 +59,7 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
   const [compare, setCompare] = useState<Compare | null>(null);
   const [loading, setLoading] = useState(true);
   const [ago, setAgo] = useState(0);
-  const [target, setTarget] = useState<number | null>(null);
+  const [localTarget, setLocalTarget] = useState<number | null>(null);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const compareFetched = useRef(false);
@@ -67,8 +67,11 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
 
   useEffect(() => {
     const v = typeof window !== "undefined" ? window.localStorage.getItem(`showTarget:${showId}`) : null;
-    setTarget(v ? Number(v) : null);
+    setLocalTarget(v ? Number(v) : null);
   }, [showId]);
+
+  // Server target (shared) wins; localStorage is the offline/pre-migration fallback
+  const target = data?.target ?? localTarget;
 
   useEffect(() => {
     let alive = true;
@@ -92,8 +95,15 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
 
   const saveTarget = () => {
     const n = Number(draft.replace(/[^0-9.]/g, ""));
-    if (n > 0) { setTarget(n); window.localStorage.setItem(`showTarget:${showId}`, String(n)); }
-    else { setTarget(null); window.localStorage.removeItem(`showTarget:${showId}`); }
+    const val = n > 0 ? n : null;
+    setLocalTarget(val);
+    if (val) window.localStorage.setItem(`showTarget:${showId}`, String(val));
+    else window.localStorage.removeItem(`showTarget:${showId}`);
+    // persist to Supabase (shared across devices); ignore failure (falls back to local)
+    fetch("/api/live-show", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ showId, target: val }),
+    }).then(r => r.json()).then(j => { if (j?.ok) setData(d => d ? { ...d, target: val } : d); }).catch(() => {});
     setEditing(false);
   };
 
@@ -126,7 +136,7 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
     const rowsHtml = data.rows.map(r => `<tr><td>${r.name}</td><td class="r">${aud(r.boothRevenue)}</td><td class="r">${r.boothOrders}</td><td class="r">${r.onlineRevenue > 0 ? "+" + aud(r.onlineRevenue) : "—"}</td></tr>`).join("");
     const prodHtml = (data.topProducts ?? []).map((p, i) => `<tr><td>${i + 1}</td><td>${p.title}</td><td class="r">×${p.qty}</td><td class="r">${aud(p.revenue)}</td></tr>`).join("");
     const pacingHtml = target ? `<p><b>Booth target:</b> ${aud(target)} — ${pct.toFixed(0)}% achieved${finished ? (booth >= target ? " ✓ hit" : ` (${aud(target - booth)} short)`) : ""}</p>` : "";
-    const cmpHtml = cmpDelta != null ? `<p><b>vs ${compare!.name} (${fmtDate(compare!.date_start)}):</b> ${cmpDelta >= 0 ? "▲" : "▼"} ${Math.abs(cmpDelta).toFixed(0)}% &nbsp; (${aud(compare!.boothTotal)} → ${aud(booth)})</p>` : "";
+    const cmpHtml = cmpDelta != null ? `<p><b>vs ${compare!.name} (${fmtDate(compare!.date_start)})${compare!.samePoint ? ", same point" : ""}:</b> ${cmpDelta >= 0 ? "▲" : "▼"} ${Math.abs(cmpDelta).toFixed(0)}% &nbsp; (${aud(compare!.boothTotal)} → ${aud(booth)})</p>` : "";
     const peakHtml = peakHour != null ? `<p><b>Peak hour:</b> ${hourLabel(peakHour)}–${hourLabel(peakHour + 1)} (${aud(byHour[peakHour])})</p>` : "";
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>${s.name ?? "Show"} — Report</title>
       <style>
@@ -194,7 +204,10 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
           </div>
         </div>
         {cmpDelta != null && (
-          <p className="text-[10px] text-white/70 mt-2">vs {compare!.name}, {new Date(compare!.date_start + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" })} — booth {aud(compare!.boothTotal)}</p>
+          <p className="text-[10px] text-white/70 mt-2">
+            vs {compare!.name}, {new Date(compare!.date_start + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
+            {compare!.samePoint ? " at the same point" : ""} — booth {aud(compare!.boothTotal)}
+          </p>
         )}
       </div>
 

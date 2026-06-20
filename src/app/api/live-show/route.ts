@@ -10,6 +10,26 @@ import { NextResponse } from "next/server";
 export const revalidate = 0;
 const API_VERSION = "2024-01";
 const AEST_OFFSET = 10; // hours; QLD has no DST, good enough for hour-of-day buckets
+const OPEN = 9, CLOSE = 17; // assumed show open hours (AEST) for "same point" pacing
+
+// Fraction of a show's selling hours elapsed at a given instant (0..1).
+function showFraction(iso: string, start: string, end: string): number {
+  const aest = new Date(new Date(iso).getTime() + AEST_OFFSET * 3600 * 1000);
+  const dateStr = aest.toISOString().slice(0, 10);
+  const hour = aest.getUTCHours() + aest.getUTCMinutes() / 60;
+  const perDay = CLOSE - OPEN;
+  const days: string[] = [];
+  for (let d = new Date(start + "T00:00:00Z"); d <= new Date(end + "T00:00:00Z"); d = new Date(d.getTime() + 86400000)) {
+    days.push(d.toISOString().slice(0, 10));
+  }
+  let elapsed = 0;
+  for (const day of days) {
+    if (day < dateStr) elapsed += perDay;
+    else if (day === dateStr) elapsed += Math.min(perDay, Math.max(0, hour - OPEN));
+  }
+  const total = days.length * perDay;
+  return total > 0 ? Math.min(1, elapsed / total) : 1;
+}
 
 // vendor / Brand_<Name> → brand_id (mirrors scripts/sync.py coolkidz_brand_id)
 const VENDOR_TO_ID: Record<string, number> = {
@@ -54,10 +74,13 @@ async function computeShow(
   storeById: Map<number, Store>,
   boothCreds: { url?: string; key?: string },
   detail: boolean,
+  cutoff = 1, // only count booth orders up to this fraction of the show (for fair "same point" compares)
 ) {
   const since = new Date(new Date(show.date_start + "T00:00:00Z").getTime() - 86400000).toISOString().slice(0, 10);
   const until = show.date_end;
   const state = (show.state || "").toLowerCase();
+  // booth orders after this point in the show are excluded (cutoff < 1 only)
+  const past = (iso?: string) => cutoff < 1 && (!iso || showFraction(iso, show.date_start, show.date_end) > cutoff);
 
   type Prod = { title: string; brand_id: number; revenue: number; qty: number };
   const productMap = new Map<string, Prod>();
@@ -84,6 +107,7 @@ async function computeShow(
     for (const e of j?.data?.orders?.edges ?? []) {
       const seen = new Set<number>();
       const createdAt = e.node.createdAt;
+      if (past(createdAt)) continue;
       for (const li of e.node.lineItems.edges) {
         const it = li.node; const p = it.product || {};
         const bid = coolkidzBrandId(it.title || "", p.vendor || "", p.tags || []);
@@ -112,6 +136,7 @@ async function computeShow(
         const n = e.node;
         const rev = exGst(Number(n.totalPriceSet?.shopMoney?.amount ?? 0), Number(n.totalTaxSet?.shopMoney?.amount ?? 0));
         if ((n.sourceName || "").toLowerCase() === "pos") {
+          if (past(n.createdAt)) continue;
           posRev += rev; posOrders += 1;
           if (detail) {
             bucket(n.createdAt, rev);
@@ -142,9 +167,10 @@ async function computeShow(
         `${boothCreds.url}/rest/v1/booth_events?event_type=eq.order&created_at=gte.${since}T00:00:00Z&created_at=lte.${until}T23:59:59Z&select=value,created_at`,
         { headers: { apikey: boothCreds.key, Authorization: `Bearer ${boothCreds.key}` }, cache: "no-store" },
       ).then(r => r.json());
-      const qrRev = (qr || []).reduce((s: number, e: any) => s + Number(e.value ?? 0), 0);
-      if (detail) for (const e of qr || []) bucket(e.created_at, Number(e.value ?? 0));
-      if (qrRev > 0) rows.push({ brand_id: -1, name: "QR Booth (scanned)", boothRevenue: round(qrRev), boothOrders: (qr || []).length, onlineRevenue: 0, onlineOrders: 0 });
+      const qrRows = (qr || []).filter((e: any) => !past(e.created_at));
+      const qrRev = qrRows.reduce((s: number, e: any) => s + Number(e.value ?? 0), 0);
+      if (detail) for (const e of qrRows) bucket(e.created_at, Number(e.value ?? 0));
+      if (qrRev > 0) rows.push({ brand_id: -1, name: "QR Booth (scanned)", boothRevenue: round(qrRev), boothOrders: qrRows.length, onlineRevenue: 0, onlineOrders: 0 });
     } catch { /* booth project unavailable — skip QR */ }
   }
 
@@ -178,8 +204,9 @@ export async function GET(req: Request) {
   const sb = (path: string) =>
     fetch(`${sbUrl}/rest/v1/${path}`, { headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}` }, cache: "no-store" }).then(r => r.json());
 
+  // select=* so the optional revenue_target column is picked up if it exists
   const [shows, tbRows] = await Promise.all([
-    sb(`tradeshows?id=eq.${showId}&select=id,name,date_start,date_end,state`),
+    sb(`tradeshows?id=eq.${showId}&select=*`),
     sb(`tradeshow_brands?tradeshow_id=eq.${showId}&select=brand_id`),
   ]);
   const show = shows?.[0];
@@ -192,24 +219,49 @@ export async function GET(req: Request) {
 
   const data = await computeShow(show, brandIds, storeById, boothCreds, true);
 
+  // How far into this show we are right now (1 once it's over) — used to compare
+  // the previous show only up to the same point, so a live show isn't unfairly
+  // measured against a completed one.
+  const nowFrac = showFraction(new Date().toISOString(), show.date_start, show.date_end);
+
   // Previous comparable show (same name, earlier date) — for a vs-last-time badge
-  let compare: { name: string; date_start: string; boothTotal: number; showTotal: number } | null = null;
+  let compare: { name: string; date_start: string; boothTotal: number; showTotal: number; samePoint: boolean; atFraction: number } | null = null;
   if (wantCompare) {
     const prevShows = await sb(`tradeshows?name=eq.${encodeURIComponent(show.name)}&date_start=lt.${show.date_start}&order=date_start.desc&limit=1&select=id,name,date_start,date_end,state`);
     const prev = prevShows?.[0];
     if (prev) {
       const prevBrands = await sb(`tradeshow_brands?tradeshow_id=eq.${prev.id}&select=brand_id`);
       const prevIds: number[] = (prevBrands || []).map((r: any) => r.brand_id);
-      const prevData = await computeShow(prev, prevIds, storeById, boothCreds, false);
-      compare = { name: prev.name, date_start: prev.date_start, boothTotal: prevData.boothTotal, showTotal: prevData.showTotal };
+      const prevData = await computeShow(prev, prevIds, storeById, boothCreds, false, nowFrac);
+      compare = { name: prev.name, date_start: prev.date_start, boothTotal: prevData.boothTotal, showTotal: prevData.showTotal, samePoint: nowFrac < 1, atFraction: nowFrac };
     }
   }
+
+  const target = show.revenue_target != null ? Number(show.revenue_target) : null;
 
   return NextResponse.json({
     live: true,
     show: { id: show.id, name: show.name, date_start: show.date_start, date_end: show.date_end, state: show.state },
     ...data,
+    target,
     compare,
     updatedAt: new Date().toISOString(),
   });
+}
+
+// Save a per-show booth revenue target (shared across devices).
+export async function POST(req: Request) {
+  const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
+  let body: any;
+  try { body = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
+  const { showId, target } = body || {};
+  if (!showId) return NextResponse.json({ ok: false }, { status: 400 });
+  const res = await fetch(`${sbUrl}/rest/v1/tradeshows?id=eq.${showId}`, {
+    method: "PATCH",
+    headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify({ revenue_target: target != null && target > 0 ? target : null }),
+  });
+  return NextResponse.json({ ok: res.ok }, { status: res.ok ? 200 : 500 });
 }
