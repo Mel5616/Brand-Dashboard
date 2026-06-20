@@ -163,7 +163,10 @@ function Card({ it, colorOf, brandOf, onClick, onStatus }: { it: Item; colorOf: 
           <span className="ml-auto text-[9px] font-semibold text-gray-400 uppercase">{it.channel}</span>
         </div>
         <p className="text-xs text-slate-700 font-medium leading-snug">{it.title}</p>
-        {it.scheduled_date && <p className="text-[10px] text-gray-400 mt-1">{new Date(it.scheduled_date + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" })}</p>}
+        <div className="flex items-center gap-1.5 mt-1">
+          {it.scheduled_date && <span className="text-[10px] text-gray-400">{new Date(it.scheduled_date + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" })}</span>}
+          {it.draft && <span className="text-[9px] text-indigo-500" title="Has AI draft">✨ draft</span>}
+        </div>
       </button>
       <select value={it.status} onChange={e => onStatus(it, e.target.value)} onClick={e => e.stopPropagation()}
         className="mt-2 w-full text-[10px] text-gray-500 bg-gray-50 border border-gray-100 rounded px-1.5 py-1 focus:outline-none">
@@ -216,8 +219,23 @@ function CalendarGrid({ monthKey, items, colorOf, onAdd, onOpen }: { monthKey: s
 
 function EditModal({ item, brands, onClose, onSave, onDelete }: { item: Partial<Item>; brands: Brand[]; onClose: () => void; onSave: (it: Partial<Item>) => void; onDelete: (id: number) => void }) {
   const [f, setF] = useState<Partial<Item>>(item);
+  const [drafting, setDrafting] = useState(false);
+  const [draftErr, setDraftErr] = useState("");
   const set = (k: keyof Item, v: any) => setF(p => ({ ...p, [k]: v }));
   const valid = f.title && f.brand_id != null;
+
+  async function generate() {
+    if (!f.title || f.brand_id == null) return;
+    setDrafting(true); setDraftErr("");
+    const brand_name = brands.find(b => b.id === f.brand_id)?.name;
+    const res = await fetch("/api/content/draft", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ brand_name, channel: f.channel, title: f.title, notes: f.notes }),
+    }).then(r => r.json()).catch(() => null);
+    setDrafting(false);
+    if (res?.ok) set("draft", res.draft);
+    else setDraftErr("Couldn't generate — try again.");
+  }
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-5" onClick={e => e.stopPropagation()}>
@@ -256,6 +274,19 @@ function EditModal({ item, brands, onClose, onSave, onDelete }: { item: Partial<
             <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Notes</label>
             <textarea value={f.notes ?? ""} onChange={e => set("notes", e.target.value)} rows={2} placeholder="brief, angle, links…"
               className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-400 resize-none" />
+          </div>
+          <div>
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Draft copy</label>
+              <button onClick={generate} disabled={!valid || drafting}
+                className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 disabled:opacity-40 flex items-center gap-1">
+                {drafting ? "✨ Writing…" : f.draft ? "✨ Regenerate" : "✨ Draft copy"}
+              </button>
+            </div>
+            <textarea value={f.draft ?? ""} onChange={e => set("draft", e.target.value)} rows={f.draft ? 6 : 2}
+              placeholder="Click ‘Draft copy’ to generate on-brand copy for this channel — then edit freely."
+              className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-400 resize-none" />
+            {draftErr && <p className="text-[11px] text-rose-500 mt-1">{draftErr}</p>}
           </div>
         </div>
         <div className="flex items-center gap-2 mt-5">

@@ -36,6 +36,7 @@ export async function POST(req: Request) {
   const row = {
     brand_id: b.brand_id, channel: b.channel || "Instagram", title: b.title,
     scheduled_date: b.scheduled_date || null, status: b.status || "idea", notes: b.notes || null,
+    draft: b.draft || null,
   };
   const res = await fetch(`${sbUrl}/rest/v1/content_items`, { method: "POST", headers: headers({ Prefer: "return=representation" }), body: JSON.stringify(row) });
   const text = await res.text();
