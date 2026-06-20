@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { fmtFull } from "@/lib/format";
 import { AustraliaMap } from "./AustraliaMap";
+import { LiveShowPanel } from "./LiveShowPanel";
 import type { Tradeshow, TradeshowSale, Brand } from "@/lib/db";
 
 function showStatus(ts: Tradeshow): "live" | "upcoming" | "past" {
@@ -166,9 +167,13 @@ export function TradeshowAccordion({
         </button>
 
         {isOpen && (
-          <div className="border-t border-gray-100 px-4 py-3 bg-gray-50/60">
+          <div className="border-t border-gray-100 px-4 py-3 bg-gray-50/60 space-y-3">
+            {status === "live" && <LiveShowPanel showId={ts.id} brands={brands} />}
+            {status === "live" && (
+              <p className="text-[10px] text-gray-400 px-0.5">Live figures query Shopify in real time. The table below is the last synced snapshot.</p>
+            )}
             {sales.length === 0 ? (
-              <p className="text-xs text-gray-400 py-2 text-center">No sales data synced yet.</p>
+              status !== "live" ? <p className="text-xs text-gray-400 py-2 text-center">No sales data synced yet.</p> : null
             ) : (
               <table className="w-full text-xs">
                 <thead>
