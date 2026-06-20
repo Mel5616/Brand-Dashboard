@@ -11,13 +11,14 @@ import { Leaderboard } from "./Leaderboard";
 import { BrandPage } from "./BrandPage";
 import { MarketingBudgetTab } from "./MarketingBudgetTab";
 import { MarketingCalendar } from "./MarketingCalendar";
+import { ContentPlanner } from "./ContentPlanner";
 import { BoothFunnel } from "./BoothFunnel";
 import { SalesTargetTracker } from "./SalesTargetTracker";
 import { ShopifyInsights } from "./ShopifyInsights";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "brands" | "shopify" | "google-ads" | "meta-ads" | "tradeshows" | "budget" | "calendar";
+type TabId = "brands" | "shopify" | "google-ads" | "meta-ads" | "tradeshows" | "budget" | "calendar" | "content";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -47,6 +48,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
     id: "calendar", label: "Calendar",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+  },
+  {
+    id: "content", label: "Content",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>,
   },
 ];
 
@@ -862,6 +867,11 @@ export function DashboardTabs({
               monthLabels={monthLabels}
               latest={LATEST}
             />
+          )}
+
+          {/* ── Content planner ── */}
+          {active === "content" && (
+            <ContentPlanner brands={brands} brandFilter={brandFilter} monthKey={LATEST} />
           )}
 
           {/* ── Calendar ── */}
