@@ -43,10 +43,17 @@ _cws       = _today - _td(days=_today.weekday())
 WEEK_STARTS = [(_cws - _td(weeks=i)).isoformat() for i in range(12, -1, -1)]
 WEEK_LABELS = [_date.fromisoformat(w).strftime('%-d %b') for w in WEEK_STARTS]
 
-MONTHS       = ['Jul 25','Aug 25','Sep 25','Oct 25','Nov 25','Dec 25','Jan 26','Feb 26','Mar 26','Apr 26','May 26']
-MONTH_KEYS   = ['2025-07','2025-08','2025-09','2025-10','2025-11','2025-12','2026-01','2026-02','2026-03','2026-04','2026-05']
+MONTHS       = ['Jul 25','Aug 25','Sep 25','Oct 25','Nov 25','Dec 25','Jan 26','Feb 26','Mar 26','Apr 26','May 26','Jun 26']
+MONTH_KEYS   = ['2025-07','2025-08','2025-09','2025-10','2025-11','2025-12','2026-01','2026-02','2026-03','2026-04','2026-05','2026-06']
 MONTHS_PREV  = ['Jul 24','Aug 24','Sep 24','Oct 24','Nov 24','Dec 24','Jan 25','Feb 25','Mar 25','Apr 25','May 25','Jun 25']
 MONTH_KEYS_PREV = ['2024-07','2024-08','2024-09','2024-10','2024-11','2024-12','2025-01','2025-02','2025-03','2025-04','2025-05','2025-06']
+
+# Window end = end of the FY's last month, or today if the FY is still in progress.
+RANGE_END = '2026-06-30'
+# Index of the current/last reportable month within the FY (latest month_key <= today).
+# Lets the "last month" KPIs roll forward as the FY progresses instead of being pinned to May.
+_cur_key  = _today.strftime('%Y-%m')
+LAST_IDX  = max((i for i, k in enumerate(MONTH_KEYS) if k <= _cur_key), default=len(MONTH_KEYS) - 1)
 
 # The Coolkidz store tags every brand's products with a vendor name and a
 # `Brand_<Name>` tag (e.g. vendor "Mamave" / tag "Brand_Mamave"). That is the
@@ -145,7 +152,7 @@ def fetch_all_orders(domain, token):
         after = f', after: "{cursor}"' if cursor else ''
         q = f'''{{
           orders(first: 250{after},
-            query: "financial_status:paid created_at:>=2024-07-01 created_at:<=2026-05-31",
+            query: "financial_status:paid created_at:>=2024-07-01 created_at:<={RANGE_END}",
             sortKey: CREATED_AT) {{
             edges {{
               cursor
@@ -185,7 +192,7 @@ def fetch_refunded_orders(domain, token):
         after = f', after: "{cursor}"' if cursor else ''
         q = f'''{{
           orders(first: 250{after},
-            query: "financial_status:refunded created_at:>=2024-07-01 created_at:<=2026-05-31",
+            query: "financial_status:refunded created_at:>=2024-07-01 created_at:<={RANGE_END}",
             sortKey: CREATED_AT) {{
             edges {{
               cursor
@@ -283,9 +290,9 @@ def compute_metrics(orders, refunded_orders=None, sales_start=None):
     top_keys     = sorted(product_rev.items(), key=lambda x: x[1], reverse=True)[:5]
     top_products = [(max(product_titles[k].items(), key=lambda t: t[1])[0], v) for k, v in top_keys]
 
-    last_rev    = revenue[10]     # May 26
-    prev_rev    = revenue[9]      # Apr 26
-    last_orders = orders_m[10]
+    last_rev    = revenue[LAST_IDX]            # current/last reportable month
+    prev_rev    = revenue[LAST_IDX - 1] if LAST_IDX > 0 else 0
+    last_orders = orders_m[LAST_IDX]
     mom         = round((last_rev - prev_rev) / prev_rev * 100, 1) if prev_rev else 0
     aov         = round(last_rev / last_orders) if last_orders else 0
     fy_revenue  = sum(revenue)
@@ -293,7 +300,7 @@ def compute_metrics(orders, refunded_orders=None, sales_start=None):
     yoy         = round((fy_revenue - fy_prev) / fy_prev * 100, 1) if fy_prev else None  # None = no prior-year baseline
 
     fy_refunds         = round(sum(monthly_refunds.get(mk, 0) for mk in MONTH_KEYS))
-    last_month_refunds = round(monthly_refunds.get(MONTH_KEYS[10], 0))  # May 26
+    last_month_refunds = round(monthly_refunds.get(MONTH_KEYS[LAST_IDX], 0))
 
     currency = 'AUD'
     if orders:
@@ -376,9 +383,9 @@ def merge_coolkidz(m, cs):
     m['top_products'] = [(max(pt[k].items(), key=lambda t: t[1])[0], v) for k, v in top_keys]
     # recompute headline summary
     m['revenue']     = [round(x) for x in m['revenue']]
-    m['last_rev']    = m['revenue'][10]
-    prev_rev         = m['revenue'][9]
-    m['last_orders'] = m['orders_m'][10]
+    m['last_rev']    = m['revenue'][LAST_IDX]
+    prev_rev         = m['revenue'][LAST_IDX - 1] if LAST_IDX > 0 else 0
+    m['last_orders'] = m['orders_m'][LAST_IDX]
     m['mom']         = round((m['last_rev'] - prev_rev) / prev_rev * 100, 1) if prev_rev else 0
     m['aov']         = round(m['last_rev'] / m['last_orders']) if m['last_orders'] else 0
     m['fy_revenue']  = sum(m['revenue'])
@@ -439,7 +446,7 @@ def sync_brand(brand, ck_split=None):
 
         # Upsert summary
         sb_upsert('brand_summary', [{
-            'brand_id': bid, 'last_month_label': 'May 26',
+            'brand_id': bid, 'last_month_label': MONTHS[LAST_IDX],
             'last_month_rev': m['last_rev'], 'mom_growth': m['mom'],
             'yoy_growth': m['yoy'], 'last_month_orders': m['last_orders'],
             'aov': m['aov'], 'fy_revenue': m['fy_revenue'],
