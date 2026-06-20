@@ -117,7 +117,9 @@ export async function GET(req: Request) {
     };
   }));
 
-  const rows = results.filter(r => r.boothRevenue > 0 || r.onlineRevenue > 0 || r.boothOrders > 0);
+  // keep every participating brand visible, even at $0, so the booth roster is
+  // complete (e.g. confirming a brand genuinely had no sales)
+  const rows = [...results];
 
   // QR-scanned booth orders (booth_events Supabase) within the show window
   const boothUrl = process.env.BOOTH_SUPABASE_URL;
