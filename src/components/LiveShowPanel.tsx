@@ -133,34 +133,102 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
     if (!data) return;
     const s = data.show ?? {};
     const fmtDate = (d?: string) => d ? new Date(d + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "";
-    const rowsHtml = data.rows.map(r => `<tr><td>${r.name}</td><td class="r">${aud(r.boothRevenue)}</td><td class="r">${r.boothOrders}</td><td class="r">${r.onlineRevenue > 0 ? "+" + aud(r.onlineRevenue) : "—"}</td></tr>`).join("");
-    const prodHtml = (data.topProducts ?? []).map((p, i) => `<tr><td>${i + 1}</td><td>${p.title}</td><td class="r">×${p.qty}</td><td class="r">${aud(p.revenue)}</td></tr>`).join("");
+    const esc = (t: string) => (t || "").replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]!));
+    const trunc = (t: string, n: number) => t.length > n ? t.slice(0, n - 1) + "…" : t;
+
+    // ── SVG: sales by hour (vertical bars, peak highlighted) ──
+    const hourChart = hourSpan.length ? (() => {
+      const W = 540, H = 150, padX = 10, padB = 22, padT = 12, n = hourSpan.length, bw = (W - padX * 2) / n;
+      const body = hourSpan.map((h, i) => {
+        const v = byHour[h];
+        const bh = Math.max(1, (v / hourMax) * (H - padB - padT));
+        const x = padX + i * bw + bw * 0.18, y = H - padB - bh;
+        return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw * 0.64).toFixed(1)}" height="${bh.toFixed(1)}" rx="2" fill="${h === peakHour ? "#059669" : "#6ee7b7"}"/>` +
+          `<text x="${(padX + i * bw + bw / 2).toFixed(1)}" y="${H - 7}" font-size="8" fill="#94a3b8" text-anchor="middle">${hourLabel(h)}</text>`;
+      }).join("");
+      return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:540px">${body}</svg>`;
+    })() : "";
+
+    // ── SVG: this show vs previous (grouped horizontal bars) ──
+    const cmpChart = compare ? (() => {
+      const metrics = [
+        { name: "Booth", a: booth, b: compare.boothTotal },
+        { name: "Show-window", a: data.showTotal, b: compare.showTotal },
+      ];
+      const max = Math.max(1, ...metrics.flatMap(m => [m.a, m.b]));
+      const W = 540, barH = 15, gap = 6, groupGap = 16, x0 = 92, barMax = W - x0 - 70;
+      let y = 0, body = "";
+      const prevLab = trunc(`${compare.name.replace(/Baby Expo/i, "").trim()} ${fmtDate(compare.date_start)}`, 22);
+      metrics.forEach(m => {
+        body += `<text x="0" y="${y + 10}" font-size="10" fill="#334155" font-weight="700">${m.name}</text>`;
+        y += 15;
+        ([["This show", m.a, "#6366f1"], [prevLab, m.b, "#cbd5e1"]] as [string, number, string][]).forEach(([lab, val, col]) => {
+          const w = Math.max(2, (val / max) * barMax);
+          body += `<text x="0" y="${y + 11}" font-size="8.5" fill="#94a3b8">${esc(lab)}</text>` +
+            `<rect x="${x0}" y="${y + 2}" width="${w.toFixed(1)}" height="${barH}" rx="3" fill="${col}"/>` +
+            `<text x="${(x0 + w + 5).toFixed(1)}" y="${y + 13}" font-size="9" fill="#475569">${aud(val)}</text>`;
+          y += barH + gap;
+        });
+        y += groupGap;
+      });
+      return `<svg viewBox="0 0 ${W} ${y}" width="100%" style="max-width:540px">${body}</svg>`;
+    })() : "";
+
+    // ── SVG: top 5 sellers (horizontal bars, brand colour) ──
+    const top5 = (data.topProducts ?? []).slice(0, 5);
+    const topChart = top5.length ? (() => {
+      const W = 540, rowH = 34, max = Math.max(1, ...top5.map(p => p.revenue)), barMax = W - 150;
+      let y = 0, body = "";
+      top5.forEach((p, i) => {
+        const w = Math.max(2, (p.revenue / max) * barMax);
+        body += `<text x="0" y="${y + 10}" font-size="9.5" fill="#334155">${i + 1}. ${esc(trunc(p.title, 54))}</text>` +
+          `<rect x="0" y="${y + 15}" width="${w.toFixed(1)}" height="12" rx="3" fill="${colorOf(p.brand_id)}"/>` +
+          `<text x="${(w + 8).toFixed(1)}" y="${y + 25}" font-size="9" fill="#475569">${aud(p.revenue)} · ×${p.qty}</text>`;
+        y += rowH;
+      });
+      return `<svg viewBox="0 0 ${W} ${y}" width="100%" style="max-width:540px">${body}</svg>`;
+    })() : "";
+
+    const showCmpDelta = compare && compare.showTotal > 0 ? ((data.showTotal - compare.showTotal) / compare.showTotal) * 100 : null;
+    const arrow = (d: number) => d >= 0 ? "▲" : "▼";
+    const rowsHtml = data.rows.map(r => `<tr><td>${esc(r.name)}</td><td class="r">${aud(r.boothRevenue)}</td><td class="r">${r.boothOrders}</td><td class="r">${r.onlineRevenue > 0 ? "+" + aud(r.onlineRevenue) : "—"}</td></tr>`).join("");
     const pacingHtml = target ? `<p><b>Booth target:</b> ${aud(target)} — ${pct.toFixed(0)}% achieved${finished ? (booth >= target ? " ✓ hit" : ` (${aud(target - booth)} short)`) : ""}</p>` : "";
-    const cmpHtml = cmpDelta != null ? `<p><b>vs ${compare!.name} (${fmtDate(compare!.date_start)})${compare!.samePoint ? ", same point" : ""}:</b> ${cmpDelta >= 0 ? "▲" : "▼"} ${Math.abs(cmpDelta).toFixed(0)}% &nbsp; (${aud(compare!.boothTotal)} → ${aud(booth)})</p>` : "";
     const peakHtml = peakHour != null ? `<p><b>Peak hour:</b> ${hourLabel(peakHour)}–${hourLabel(peakHour + 1)} (${aud(byHour[peakHour])})</p>` : "";
-    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${s.name ?? "Show"} — Report</title>
+
+    const cmpSection = compare ? `
+      <h2>vs ${esc(compare.name)} · ${fmtDate(compare.date_start)}${compare.samePoint ? " (same point in the show)" : ""}</h2>
+      <table style="margin-bottom:6px"><thead><tr><th>Metric</th><th class="r">This show</th><th class="r">${esc(trunc(compare.name.replace(/Baby Expo/i, "").trim(), 16))}</th><th class="r">Change</th></tr></thead><tbody>
+        <tr><td>Booth sales</td><td class="r">${aud(booth)}</td><td class="r">${aud(compare.boothTotal)}</td><td class="r" style="color:${(cmpDelta ?? 0) >= 0 ? "#059669" : "#e11d48"}">${cmpDelta != null ? arrow(cmpDelta) + " " + Math.abs(cmpDelta).toFixed(0) + "%" : "—"}</td></tr>
+        <tr><td>Show-window total</td><td class="r">${aud(data.showTotal)}</td><td class="r">${aud(compare.showTotal)}</td><td class="r" style="color:${(showCmpDelta ?? 0) >= 0 ? "#059669" : "#e11d48"}">${showCmpDelta != null ? arrow(showCmpDelta) + " " + Math.abs(showCmpDelta).toFixed(0) + "%" : "—"}</td></tr>
+      </tbody></table>
+      ${cmpChart}` : "";
+
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(s.name ?? "Show")} — Report</title>
       <style>
+        *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
         body{font:13px -apple-system,Segoe UI,Roboto,sans-serif;color:#1e293b;margin:32px;}
         h1{font-size:20px;margin:0 0 2px;} .sub{color:#64748b;margin:0 0 16px;}
         .big{font-size:28px;font-weight:700;margin:0;} .lbl{color:#64748b;font-size:12px;}
         .cards{display:flex;gap:32px;margin:12px 0 8px;}
-        table{width:100%;border-collapse:collapse;margin:8px 0 20px;font-size:12px;}
+        table{width:100%;border-collapse:collapse;margin:8px 0 16px;font-size:12px;}
         th{text-align:left;color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #e2e8f0;padding:6px 8px;}
         td{padding:6px 8px;border-bottom:1px solid #f1f5f9;} td.r,th.r{text-align:right;}
-        h2{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:#475569;margin:18px 0 4px;}
+        h2{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:#475569;margin:20px 0 6px;}
         .meta{color:#94a3b8;font-size:11px;margin-top:24px;}
+        p{margin:3px 0;}
       </style></head><body>
-      <h1>${s.name ?? "Show"}</h1>
+      <h1>${esc(s.name ?? "Show")}</h1>
       <p class="sub">${fmtDate(s.date_start)}${s.date_end && s.date_end !== s.date_start ? " – " + fmtDate(s.date_end) : ""}${s.state ? " · " + s.state : ""}</p>
       <div class="cards">
         <div><p class="big">${aud(booth)}</p><p class="lbl">Booth sales · ${data.boothOrders} orders</p></div>
         <div><p class="big">${aud(data.showTotal)}</p><p class="lbl">Show-window total · ${data.showOrders} orders</p></div>
       </div>
-      ${pacingHtml}${cmpHtml}${peakHtml}
+      ${pacingHtml}${peakHtml}
+      ${cmpSection}
+      ${hourChart ? `<h2>Sales by hour · booth</h2>${hourChart}` : ""}
+      ${topChart ? `<h2>Top 5 sellers · booth</h2>${topChart}` : ""}
       <h2>By Brand</h2>
       <table><thead><tr><th>Brand</th><th class="r">Booth</th><th class="r">Orders</th><th class="r">Online to state</th></tr></thead><tbody>${rowsHtml}</tbody></table>
-      <h2>Top Sellers · booth</h2>
-      <table><thead><tr><th>#</th><th>Product</th><th class="r">Qty</th><th class="r">Revenue</th></tr></thead><tbody>${prodHtml}</tbody></table>
       <p class="meta">Booth = POS + Coolkidz till + QR scans · ex-GST. Generated ${new Date().toLocaleString("en-AU")} from Brand Command.</p>
       <script>window.onload=function(){window.print();}</script>
       </body></html>`;
