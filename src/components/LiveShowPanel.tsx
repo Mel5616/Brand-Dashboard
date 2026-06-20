@@ -196,36 +196,39 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
     const peakHtml = peakHour != null ? `<p><b>Peak hour:</b> ${hourLabel(peakHour)}–${hourLabel(peakHour + 1)} (${aud(byHour[peakHour])})</p>` : "";
 
     const cmpSection = compare ? `
+      <div class="sec">
       <h2>vs ${esc(compare.name)} · ${fmtDate(compare.date_start)}${compare.samePoint ? " (same point in the show)" : ""}</h2>
-      <table style="margin-bottom:6px"><thead><tr><th>Metric</th><th class="r">This show</th><th class="r">${esc(trunc(compare.name.replace(/Baby Expo/i, "").trim(), 16))}</th><th class="r">Change</th></tr></thead><tbody>
+      <table style="margin-bottom:10px"><thead><tr><th>Metric</th><th class="r">This show</th><th class="r">${esc(trunc(compare.name.replace(/Baby Expo/i, "").trim(), 16))}</th><th class="r">Change</th></tr></thead><tbody>
         <tr><td>Expo Stand</td><td class="r">${aud(booth)}</td><td class="r">${aud(compare.boothTotal)}</td><td class="r" style="color:${(cmpDelta ?? 0) >= 0 ? "#059669" : "#e11d48"}">${cmpDelta != null ? arrow(cmpDelta) + " " + Math.abs(cmpDelta).toFixed(0) + "%" : "—"}</td></tr>
         <tr><td>Online Expo Sales</td><td class="r">${aud(data.onlineTotal)}</td><td class="r">${aud(compare.onlineTotal)}</td><td class="r" style="color:${(onlineCmpDelta ?? 0) >= 0 ? "#059669" : "#e11d48"}">${onlineCmpDelta != null ? arrow(onlineCmpDelta) + " " + Math.abs(onlineCmpDelta).toFixed(0) + "%" : "—"}</td></tr>
       </tbody></table>
-      ${cmpChart}` : "";
+      ${cmpChart}
+      </div>` : "";
 
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(s.name ?? "Show")} — Report</title>
       <style>
         @page{size:A4 portrait;margin:12mm;}
         *{-webkit-print-color-adjust:exact;print-color-adjust:exact;box-sizing:border-box;}
         body{font:11px -apple-system,Segoe UI,Roboto,sans-serif;color:#1e293b;margin:0;}
-        .head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #eef2f7;padding-bottom:12px;margin-bottom:18px;}
+        .head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #eef2f7;padding-bottom:14px;margin-bottom:22px;}
         h1{font-size:23px;margin:0 0 3px;letter-spacing:-.01em;}
         .sub{color:#64748b;margin:0;font-size:11.5px;}
         .head-r{text-align:right;color:#94a3b8;font-size:9.5px;line-height:1.5;}
         .head-r b{color:#475569;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;}
-        .cards{display:flex;gap:14px;margin:0 0 18px;}
-        .card{flex:1;border:1px solid #e7eaf0;border-radius:11px;padding:13px 16px;background:#fbfcfe;}
+        .cards{display:flex;gap:14px;margin:0 0 8px;}
+        .card{flex:1;border:1px solid #e7eaf0;border-radius:11px;padding:14px 16px;background:#fbfcfe;}
         .card.accent{background:#eef2ff;border-color:#c7d2fe;}
         .big{font-size:23px;font-weight:700;margin:0;line-height:1.05;letter-spacing:-.01em;}
         .card.accent .big{color:#4338ca;}
         .lbl{color:#64748b;font-size:10.5px;margin:4px 0 0;}
-        .pace{color:#475569;font-size:11px;margin:0 0 16px;}
-        table{width:100%;border-collapse:collapse;margin:3px 0 10px;font-size:10.5px;}
-        th{text-align:left;color:#94a3b8;font-size:9px;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e2e8f0;padding:4px 6px;}
-        td{padding:4px 6px;border-bottom:1px solid #f1f5f9;} td.r,th.r{text-align:right;}
-        h2{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#475569;margin:16px 0 5px;}
-        .meta{color:#94a3b8;font-size:9.5px;margin-top:14px;border-top:1px solid #f1f5f9;padding-top:8px;}
-        svg{display:block;}
+        .pace{color:#475569;font-size:11px;margin:14px 2px 0;}
+        .sec{margin-top:22px;}
+        table{width:100%;border-collapse:collapse;margin:2px 0 2px;font-size:10.5px;}
+        th{text-align:left;color:#94a3b8;font-size:9px;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e2e8f0;padding:4px 8px;}
+        td{padding:5px 8px;border-bottom:1px solid #f1f5f9;} td.r,th.r{text-align:right;}
+        h2{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#475569;background:#f1f5f9;border-left:3px solid #818cf8;border-radius:0 5px 5px 0;padding:6px 11px;margin:0 0 10px;}
+        .meta{color:#94a3b8;font-size:9.5px;margin-top:20px;border-top:1px solid #eef2f7;padding-top:9px;}
+        svg{display:block;margin:2px 0;}
       </style></head><body>
       <div class="head">
         <div>
@@ -241,10 +244,12 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
       </div>
       ${(pacingHtml || peakHtml) ? `<p class="pace">${[pacingHtml, peakHtml].filter(Boolean).map(x => x.replace(/<\/?p>/g, "")).join(" &nbsp;·&nbsp; ")}</p>` : ""}
       ${cmpSection}
-      ${hourChart ? `<h2>Sales by hour · expo stand</h2>${hourChart}` : ""}
-      ${topChart ? `<h2>Top 5 sellers · expo stand</h2>${topChart}` : ""}
+      ${hourChart ? `<div class="sec"><h2>Sales by hour · expo stand</h2>${hourChart}</div>` : ""}
+      ${topChart ? `<div class="sec"><h2>Top 5 sellers · expo stand</h2>${topChart}</div>` : ""}
+      <div class="sec">
       <h2>By Brand</h2>
       <table><thead><tr><th>Brand</th><th class="r">Expo Stand</th><th class="r">Orders</th><th class="r">Online to state</th><th class="r">Total</th></tr></thead><tbody>${rowsHtml}</tbody></table>
+      </div>
       <p class="meta">Expo Stand = POS + Coolkidz till + QR scans · Online = website orders shipping to ${esc(s.state ?? "the state")} during the show · all figures ex-GST · Brand Command.</p>
       <script>window.onload=function(){window.print();}</script>
       </body></html>`;
