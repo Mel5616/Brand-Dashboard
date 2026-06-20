@@ -168,7 +168,8 @@ export function TradeshowAccordion({
 
         {isOpen && (
           <div className="border-t border-gray-100 px-4 py-3 bg-gray-50/60 space-y-3">
-            {status === "live" && <LiveShowPanel showId={ts.id} brands={brands} />}
+            {status === "live" && <LiveShowPanel showId={ts.id} brands={brands} live />}
+            {status === "past" && <LiveShowPanel showId={ts.id} brands={brands} live={false} />}
             {status === "live" && (
               <p className="text-[10px] text-gray-400 px-0.5">Live figures query Shopify in real time. The table below is the last synced snapshot.</p>
             )}

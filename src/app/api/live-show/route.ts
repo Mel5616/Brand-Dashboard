@@ -69,12 +69,23 @@ export async function GET(req: Request) {
   const until = show.date_end;
   const state = (show.state || "").toLowerCase();
 
+  // Top-seller tally (booth line items: Coolkidz till + each brand's POS),
+  // keyed by SKU so colour/variant duplicates merge.
+  type Prod = { title: string; brand_id: number; revenue: number; qty: number };
+  const productMap = new Map<string, Prod>();
+  const addProduct = (sku: string | null | undefined, title: string, brandId: number, exRev: number, qty: number) => {
+    const key = sku && sku.trim() ? `sku:${sku.trim()}` : `t:${title}`;
+    const cur = productMap.get(key) ?? { title, brand_id: brandId, revenue: 0, qty: 0 };
+    cur.revenue += exRev; cur.qty += qty;
+    productMap.set(key, cur);
+  };
+
   // Coolkidz booth till — split per brand (date-only)
   const ck = storeById.get(9);
   const ckByBrand = new Map<number, { rev: number; orders: number }>();
   if (ck) {
     const q = `{ orders(first: 250, query: "financial_status:paid created_at:>=${since} created_at:<=${until}", sortKey: CREATED_AT) {
-      edges { node { lineItems(first: 20) { edges { node { title originalTotalSet { shopMoney { amount } } product { vendor tags } } } } } } } }`;
+      edges { node { lineItems(first: 20) { edges { node { title sku quantity originalTotalSet { shopMoney { amount } } product { vendor tags } } } } } } } }`;
     const j = await shopify(ck.domain, ck.token, q);
     for (const e of j?.data?.orders?.edges ?? []) {
       const seen = new Set<number>();
@@ -87,6 +98,7 @@ export async function GET(req: Request) {
         cur.rev += amt;
         if (!seen.has(bid)) { cur.orders += 1; seen.add(bid); }
         ckByBrand.set(bid, cur);
+        addProduct(it.sku, it.title || "Unknown", bid, amt, Number(it.quantity ?? 1));
       }
     }
   }
@@ -100,12 +112,21 @@ export async function GET(req: Request) {
     let posRev = 0, posOrders = 0, webRev = 0, webOrders = 0;
     if (st) {
       const q = `{ orders(first: 250, query: "financial_status:paid created_at:>=${since} created_at:<=${until}", sortKey: CREATED_AT) {
-        edges { node { sourceName shippingAddress { province } totalPriceSet { shopMoney { amount } } totalTaxSet { shopMoney { amount } } } } } }`;
+        edges { node { sourceName shippingAddress { province } totalPriceSet { shopMoney { amount } } totalTaxSet { shopMoney { amount } }
+          lineItems(first: 50) { edges { node { title sku quantity originalTotalSet { shopMoney { amount } } } } } } } } }`;
       const j = await shopify(st.domain, st.token, q);
       for (const e of j?.data?.orders?.edges ?? []) {
         const n = e.node;
         const rev = exGst(Number(n.totalPriceSet?.shopMoney?.amount ?? 0), Number(n.totalTaxSet?.shopMoney?.amount ?? 0));
-        if ((n.sourceName || "").toLowerCase() === "pos") { posRev += rev; posOrders += 1; }
+        if ((n.sourceName || "").toLowerCase() === "pos") {
+          posRev += rev; posOrders += 1;
+          // top-seller line items count for booth (POS) orders only
+          for (const li of n.lineItems?.edges ?? []) {
+            const it = li.node;
+            const amt = Math.round((Number(it.originalTotalSet?.shopMoney?.amount ?? 0) / 1.1) * 100) / 100;
+            addProduct(it.sku, it.title || "Unknown", id, amt, Number(it.quantity ?? 1));
+          }
+        }
         else if ((n.shippingAddress?.province || "").toLowerCase() === state) { webRev += rev; webOrders += 1; }
       }
     }
@@ -141,6 +162,11 @@ export async function GET(req: Request) {
   const onlineTotal = rows.reduce((s, r) => s + r.onlineRevenue, 0);
   const onlineOrders = rows.reduce((s, r) => s + r.onlineOrders, 0);
 
+  const topProducts = [...productMap.values()]
+    .map(p => ({ ...p, revenue: Math.round(p.revenue) }))
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 8);
+
   return NextResponse.json({
     live: true,
     show: { id: show.id, name: show.name, date_start: show.date_start, date_end: show.date_end, state: show.state },
@@ -148,6 +174,7 @@ export async function GET(req: Request) {
     boothTotal, boothOrders,
     showTotal: boothTotal + onlineTotal, showOrders: boothOrders + onlineOrders,
     onlineTotal, onlineOrders,
+    topProducts,
     updatedAt: new Date().toISOString(),
   });
 }
