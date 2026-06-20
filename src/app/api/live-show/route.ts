@@ -67,7 +67,6 @@ export async function GET(req: Request) {
   // window: cover AEST by starting a day early (Shopify created_at is UTC)
   const since = new Date(new Date(show.date_start + "T00:00:00Z").getTime() - 86400000).toISOString().slice(0, 10);
   const until = show.date_end;
-  const state = (show.state || "").toLowerCase();
 
   // Coolkidz booth till — split per brand (date-only)
   const ck = storeById.get(9);
@@ -91,29 +90,44 @@ export async function GET(req: Request) {
     }
   }
 
-  // Each brand's own store (POS or shipping to the show's state), in parallel
+  // Each brand's own store — booth POS only (source_name:pos), in parallel.
+  // The shipping-to-state web proxy is intentionally excluded: those are normal
+  // online QLD customers, not booth sales.
   const results = await Promise.all(brandIds.filter(id => id !== 9).map(async (id) => {
     const st = storeById.get(id);
     const name = st?.name ?? `Brand ${id}`;
-    let ownRev = 0, ownOrders = 0;
+    let posRev = 0, posOrders = 0;
     if (st) {
-      const q = `{ orders(first: 250, query: "financial_status:paid created_at:>=${since} created_at:<=${until}", sortKey: CREATED_AT) {
-        edges { node { sourceName shippingAddress { province } totalPriceSet { shopMoney { amount } } totalTaxSet { shopMoney { amount } } } } } }`;
+      const q = `{ orders(first: 250, query: "financial_status:paid source_name:pos created_at:>=${since} created_at:<=${until}", sortKey: CREATED_AT) {
+        edges { node { totalPriceSet { shopMoney { amount } } totalTaxSet { shopMoney { amount } } } } } }`;
       const j = await shopify(st.domain, st.token, q);
       for (const e of j?.data?.orders?.edges ?? []) {
         const n = e.node;
-        const isPos = (n.sourceName || "").toLowerCase() === "pos";
-        const prov = (n.shippingAddress?.province || "").toLowerCase();
-        if (!isPos && prov !== state) continue;
-        ownRev += exGst(Number(n.totalPriceSet?.shopMoney?.amount ?? 0), Number(n.totalTaxSet?.shopMoney?.amount ?? 0));
-        ownOrders += 1;
+        posRev += exGst(Number(n.totalPriceSet?.shopMoney?.amount ?? 0), Number(n.totalTaxSet?.shopMoney?.amount ?? 0));
+        posOrders += 1;
       }
     }
     const booth = ckByBrand.get(id) ?? { rev: 0, orders: 0 };
-    return { brand_id: id, name, revenue: Math.round(ownRev + booth.rev), orders: ownOrders + booth.orders };
+    return { brand_id: id, name, revenue: Math.round(posRev + booth.rev), orders: posOrders + booth.orders };
   }));
 
-  const rows = results.filter(r => r.revenue > 0 || r.orders > 0).sort((a, b) => b.revenue - a.revenue);
+  const rows = results.filter(r => r.revenue > 0 || r.orders > 0);
+
+  // QR-scanned booth orders (booth_events Supabase) within the show window
+  const boothUrl = process.env.BOOTH_SUPABASE_URL;
+  const boothKey = process.env.BOOTH_SUPABASE_SERVICE_ROLE_KEY;
+  if (boothUrl && boothKey) {
+    try {
+      const qr = await fetch(
+        `${boothUrl}/rest/v1/booth_events?event_type=eq.order&created_at=gte.${since}T00:00:00Z&created_at=lte.${until}T23:59:59Z&select=value`,
+        { headers: { apikey: boothKey, Authorization: `Bearer ${boothKey}` }, cache: "no-store" },
+      ).then(r => r.json());
+      const qrRev = (qr || []).reduce((s: number, e: any) => s + Number(e.value ?? 0), 0);
+      if (qrRev > 0) rows.push({ brand_id: -1, name: "QR Booth (scanned)", revenue: Math.round(qrRev), orders: (qr || []).length });
+    } catch { /* booth project unavailable — skip QR */ }
+  }
+
+  rows.sort((a, b) => b.revenue - a.revenue);
   const total = rows.reduce((s, r) => s + r.revenue, 0);
   const totalOrders = rows.reduce((s, r) => s + r.orders, 0);
 
