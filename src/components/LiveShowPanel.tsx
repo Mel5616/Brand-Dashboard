@@ -9,6 +9,13 @@ type LiveData = { live: boolean; boothTotal: number; boothOrders: number; showTo
 const aud = (n: number) => new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 0 }).format(n);
 const REFRESH_MS = 45000;
 
+const STATE_ABBR: Record<string, string> = {
+  "queensland": "QLD", "new south wales": "NSW", "victoria": "VIC",
+  "south australia": "SA", "western australia": "WA", "tasmania": "TAS",
+  "northern territory": "NT", "australian capital territory": "ACT",
+};
+const stateAbbr = (s?: string) => s ? (STATE_ABBR[s.toLowerCase()] ?? s.slice(0, 3).toUpperCase()) : "";
+
 export function LiveShowPanel({ showId, brands }: { showId: string; brands: Brand[] }) {
   const [data, setData] = useState<LiveData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -66,7 +73,7 @@ export function LiveShowPanel({ showId, brands }: { showId: string; brands: Bran
               <span className="w-28 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Brand</span>
               <span className="flex-1" />
               <span className="w-16 text-right text-[10px] font-semibold uppercase tracking-wide text-gray-400">Booth</span>
-              <span className="w-20 text-right text-[10px] font-semibold uppercase tracking-wide text-gray-400">Online {data?.show?.state ? `→ ${data.show.state.slice(0, 3).toUpperCase()}` : ""}</span>
+              <span className="w-20 text-right text-[10px] font-semibold uppercase tracking-wide text-gray-400">Online {data?.show?.state ? `→ ${stateAbbr(data.show.state)}` : ""}</span>
             </div>
             {data.rows.map(r => (
               <div key={r.brand_id} className="flex items-center gap-3">
