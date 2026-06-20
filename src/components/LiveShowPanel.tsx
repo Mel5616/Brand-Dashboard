@@ -191,7 +191,7 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
 
     const onlineCmpDelta = compare && compare.onlineTotal > 0 ? ((data.onlineTotal - compare.onlineTotal) / compare.onlineTotal) * 100 : null;
     const arrow = (d: number) => d >= 0 ? "▲" : "▼";
-    const rowsHtml = data.rows.map(r => `<tr><td>${esc(r.name)}</td><td class="r">${aud(r.boothRevenue)}</td><td class="r">${r.boothOrders}</td><td class="r">${r.onlineRevenue > 0 ? "+" + aud(r.onlineRevenue) : "—"}</td></tr>`).join("");
+    const rowsHtml = data.rows.map(r => `<tr><td>${esc(r.name)}</td><td class="r">${aud(r.boothRevenue)}</td><td class="r">${r.boothOrders}</td><td class="r">${r.onlineRevenue > 0 ? "+" + aud(r.onlineRevenue) : "—"}</td><td class="r"><b>${aud(r.boothRevenue + r.onlineRevenue)}</b></td></tr>`).join("");
     const pacingHtml = target ? `<p><b>Expo Stand target:</b> ${aud(target)} — ${pct.toFixed(0)}% achieved${finished ? (booth >= target ? " ✓ hit" : ` (${aud(target - booth)} short)`) : ""}</p>` : "";
     const peakHtml = peakHour != null ? `<p><b>Peak hour:</b> ${hourLabel(peakHour)}–${hourLabel(peakHour + 1)} (${aud(byHour[peakHour])})</p>` : "";
 
@@ -222,13 +222,14 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
       <div class="cards">
         <div><p class="big">${aud(booth)}</p><p class="lbl">Expo Stand · ${data.boothOrders} orders</p></div>
         <div><p class="big">${aud(data.onlineTotal)}</p><p class="lbl">Online Expo Sales · ${data.onlineOrders} orders</p></div>
+        <div><p class="big">${aud(data.showTotal)}</p><p class="lbl">Total Sales · ${data.showOrders} orders</p></div>
       </div>
       ${pacingHtml}${peakHtml}
       ${cmpSection}
       ${hourChart ? `<h2>Sales by hour · expo stand</h2>${hourChart}` : ""}
       ${topChart ? `<h2>Top 5 sellers · expo stand</h2>${topChart}` : ""}
       <h2>By Brand</h2>
-      <table><thead><tr><th>Brand</th><th class="r">Expo Stand</th><th class="r">Orders</th><th class="r">Online to state</th></tr></thead><tbody>${rowsHtml}</tbody></table>
+      <table><thead><tr><th>Brand</th><th class="r">Expo Stand</th><th class="r">Orders</th><th class="r">Online to state</th><th class="r">Total</th></tr></thead><tbody>${rowsHtml}</tbody></table>
       <p class="meta">Expo Stand = POS + Coolkidz till + QR scans · ex-GST. Generated ${new Date().toLocaleString("en-AU")} from Brand Command.</p>
       <script>window.onload=function(){window.print();}</script>
       </body></html>`;
@@ -269,6 +270,11 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
             <p className="text-2xl font-semibold tabular-nums">{loading ? "…" : aud(data?.onlineTotal ?? 0)}</p>
             <p className="text-xs text-white/85">Online Expo Sales · {data?.onlineOrders ?? 0} orders</p>
             <p className="text-[10px] text-white/65">website orders to {data?.show?.state ?? "state"} during the show</p>
+          </div>
+          <div className="border-l border-white/25 pl-6">
+            <p className="text-2xl font-bold tabular-nums">{loading ? "…" : aud(data?.showTotal ?? 0)}</p>
+            <p className="text-xs text-white/85">Total Sales · {data?.showOrders ?? 0} orders</p>
+            <p className="text-[10px] text-white/65">expo stand + online, for the day</p>
           </div>
         </div>
         {cmpDelta != null && (
@@ -331,7 +337,8 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
               <span className="w-28 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Brand</span>
               <span className="flex-1" />
               <span className="w-16 text-right text-[10px] font-semibold uppercase tracking-wide text-gray-400">Expo Stand</span>
-              <span className="w-20 text-right text-[10px] font-semibold uppercase tracking-wide text-gray-400">Online {data?.show?.state ? `→ ${stateAbbr(data.show.state)}` : ""}</span>
+              <span className="w-16 text-right text-[10px] font-semibold uppercase tracking-wide text-gray-400">Online {data?.show?.state ? `→ ${stateAbbr(data.show.state)}` : ""}</span>
+              <span className="w-16 text-right text-[10px] font-semibold uppercase tracking-wide text-gray-500">Total</span>
             </div>
             {data.rows.map(r => (
               <div key={r.brand_id} className="flex items-center gap-3">
@@ -345,8 +352,9 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
                     <div className="h-full transition-all duration-700 opacity-40" style={{ width: `${(r.onlineRevenue / maxRev) * 100}%`, background: colorOf(r.brand_id) }} title="Online (to state)" />
                   )}
                 </div>
-                <span className="text-xs font-bold text-slate-700 w-16 text-right tabular-nums">{aud(r.boothRevenue)}</span>
-                <span className="text-[11px] text-gray-400 w-20 text-right">{r.onlineRevenue > 0 ? `+${aud(r.onlineRevenue)}` : ""}</span>
+                <span className="text-xs font-semibold text-slate-600 w-16 text-right tabular-nums">{aud(r.boothRevenue)}</span>
+                <span className="text-[11px] text-gray-400 w-16 text-right tabular-nums">{r.onlineRevenue > 0 ? `+${aud(r.onlineRevenue)}` : "—"}</span>
+                <span className="text-xs font-bold text-slate-800 w-16 text-right tabular-nums">{aud(r.boothRevenue + r.onlineRevenue)}</span>
               </div>
             ))}
           </div>
