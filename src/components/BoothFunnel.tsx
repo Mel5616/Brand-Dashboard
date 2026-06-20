@@ -57,7 +57,19 @@ export function BoothFunnel({ data }: { data: BoothFunnelData }) {
     { label: "Scan → Order",    value: `${totals.conversion}%`, color: "#f59e0b" },
   ];
 
-  const hasRevenue = daily.some(d => d.revenue > 0);
+  // Revenue-by-day must combine QR booth_events (daily) with live Shopify POS
+  // (pos.daily) — POS is the bulk of booth revenue and lives in a separate feed.
+  const mergedDaily = (() => {
+    const map = new Map<string, { date: string; revenue: number; orders: number }>();
+    for (const d of daily) map.set(d.date, { date: d.date, revenue: d.revenue, orders: d.orders });
+    for (const d of pos?.daily ?? []) {
+      const cur = map.get(d.date) ?? { date: d.date, revenue: 0, orders: 0 };
+      cur.revenue += d.revenue; cur.orders += d.orders;
+      map.set(d.date, cur);
+    }
+    return [...map.values()].sort((a, b) => a.date.localeCompare(b.date));
+  })();
+  const hasRevenue = mergedDaily.some(d => d.revenue > 0);
 
   return (
     <div className="space-y-4">
@@ -154,15 +166,15 @@ export function BoothFunnel({ data }: { data: BoothFunnelData }) {
         {/* Revenue by day */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <h3 className="text-sm font-semibold text-slate-700">Revenue by Day</h3>
-          <p className="text-xs text-gray-400 mb-4">Paid order revenue (bars) and order count (line)</p>
+          <p className="text-xs text-gray-400 mb-4">QR + POS paid order revenue (bars) and order count (line)</p>
           {hasRevenue ? (
             <div className="h-56">
               <Bar
                 data={{
-                  labels: daily.map(d => fmtDay(d.date)),
+                  labels: mergedDaily.map(d => fmtDay(d.date)),
                   datasets: [
-                    { type: "bar", label: "Revenue", data: daily.map(d => d.revenue), backgroundColor: "#6366f1", borderRadius: 4, yAxisID: "yRev", order: 2 },
-                    { type: "line", label: "Orders", data: daily.map(d => d.orders), borderColor: "#10b981", backgroundColor: "#10b981", borderWidth: 2, pointRadius: 3, tension: 0.35, yAxisID: "yOrd", order: 1 },
+                    { type: "bar", label: "Revenue", data: mergedDaily.map(d => d.revenue), backgroundColor: "#6366f1", borderRadius: 4, yAxisID: "yRev", order: 2 },
+                    { type: "line", label: "Orders", data: mergedDaily.map(d => d.orders), borderColor: "#10b981", backgroundColor: "#10b981", borderWidth: 2, pointRadius: 3, tension: 0.35, yAxisID: "yOrd", order: 1 },
                   ],
                 } as any}
                 options={{
