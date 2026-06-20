@@ -64,6 +64,10 @@ export function TradeshowAccordion({
   }
   const [open, setOpen] = useState<Set<string>>(liveIds);
 
+  const liveShows    = sorted.filter(t => showStatus(t) === "live");
+  const nextUpcoming = upcoming.find(t => showStatus(t) === "upcoming");
+  const [view, setView] = useState<"live" | "all">(liveShows.length > 0 ? "live" : "all");
+
   function toggle(id: string) {
     setOpen(prev => {
       const next = new Set(prev);
@@ -214,8 +218,81 @@ export function TradeshowAccordion({
     );
   }
 
+  // ── Live Expo header card (name, dates, location, brand dots) ─────────
+  function LiveHeader({ ts }: { ts: Tradeshow }) {
+    const participating = tradeshowBrands
+      .filter(tb => tb.tradeshow_id === ts.id)
+      .map(tb => brands.find(b => b.id === tb.brand_id))
+      .filter(Boolean) as Brand[];
+    return (
+      <div className="flex items-center gap-3 mb-3">
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 flex-shrink-0">● LIVE</span>
+        <div className="min-w-0">
+          <h3 className="font-bold text-slate-800 truncate">{ts.name}</h3>
+          <p className="text-xs text-gray-400 truncate">{dateRange(ts)}{ts.location ? ` · ${ts.location}` : ""}</p>
+        </div>
+        {participating.length > 0 && (
+          <div className="flex items-center gap-1 ml-auto flex-shrink-0">
+            {participating.slice(0, 10).map(b => (
+              <span key={b.id} className="w-2.5 h-2.5 rounded-full" style={{ background: b.color }} title={b.name} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
+      {/* View switch: Live Expo command-centre vs the full show list */}
+      <div className="flex items-center gap-2">
+        <div className="inline-flex bg-gray-100 rounded-lg p-0.5">
+          <button
+            onClick={() => setView("live")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${view === "live" ? "bg-white shadow-sm text-slate-700" : "text-gray-400 hover:text-gray-600"}`}
+          >
+            {liveShows.length > 0 && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+            Live Expo
+          </button>
+          <button
+            onClick={() => setView("all")}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${view === "all" ? "bg-white shadow-sm text-slate-700" : "text-gray-400 hover:text-gray-600"}`}
+          >
+            All Shows
+          </button>
+        </div>
+        {liveShows.length > 0 && view !== "live" && (
+          <span className="text-[11px] text-emerald-600 font-medium">{liveShows.length} show{liveShows.length > 1 ? "s" : ""} live now →</span>
+        )}
+      </div>
+
+      {/* ── LIVE EXPO command centre ──────────────────────────────────── */}
+      {view === "live" && (
+        <div className="space-y-4">
+          {liveShows.length > 0 ? (
+            liveShows.map(ts => (
+              <div key={ts.id} className="bg-white rounded-2xl border border-emerald-200/70 shadow-sm p-4">
+                <LiveHeader ts={ts} />
+                <LiveShowPanel showId={ts.id} brands={brands} live />
+              </div>
+            ))
+          ) : (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
+              <p className="text-sm font-semibold text-slate-700">No expo live right now</p>
+              <p className="text-xs text-gray-400 mt-1">
+                {nextUpcoming
+                  ? <>Next up: <span className="text-slate-600 font-medium">{nextUpcoming.name}</span> · {dateRange(nextUpcoming)}{nextUpcoming.location ? ` · ${nextUpcoming.location}` : ""}</>
+                  : "No upcoming shows scheduled."}
+              </p>
+              <button onClick={() => setView("all")} className="mt-3 text-xs font-semibold text-emerald-600 hover:underline">View all shows →</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── ALL SHOWS (existing list + portfolio visuals) ─────────────── */}
+      {view === "all" && (
+      <div className="space-y-4">
       {/* Summary strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
@@ -279,6 +356,8 @@ export function TradeshowAccordion({
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-10 text-center text-sm text-gray-400">
           No tradeshows configured yet.
         </div>
+      )}
+      </div>
       )}
     </div>
   );
