@@ -138,7 +138,7 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
 
     // ── SVG: sales by hour (vertical bars, peak highlighted) ──
     const hourChart = hourSpan.length ? (() => {
-      const W = 540, H = 150, padX = 10, padB = 22, padT = 12, n = hourSpan.length, bw = (W - padX * 2) / n;
+      const W = 540, H = 104, padX = 10, padB = 18, padT = 8, n = hourSpan.length, bw = (W - padX * 2) / n;
       const body = hourSpan.map((h, i) => {
         const v = byHour[h];
         const bh = Math.max(1, (v / hourMax) * (H - padB - padT));
@@ -156,7 +156,7 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
         { name: "Online Expo Sales", a: data.onlineTotal, b: compare.onlineTotal },
       ];
       const max = Math.max(1, ...metrics.flatMap(m => [m.a, m.b]));
-      const W = 540, barH = 15, gap = 6, groupGap = 16, x0 = 92, barMax = W - x0 - 70;
+      const W = 540, barH = 12, gap = 4, groupGap = 9, x0 = 92, barMax = W - x0 - 70;
       let y = 0, body = "";
       const prevLab = trunc(`${compare.name.replace(/Baby Expo/i, "").trim()} ${fmtDate(compare.date_start)}`, 22);
       metrics.forEach(m => {
@@ -177,13 +177,13 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
     // ── SVG: top 5 sellers (horizontal bars, brand colour) ──
     const top5 = (data.topProducts ?? []).slice(0, 5);
     const topChart = top5.length ? (() => {
-      const W = 540, rowH = 34, max = Math.max(1, ...top5.map(p => p.revenue)), barMax = W - 150;
+      const W = 540, rowH = 25, max = Math.max(1, ...top5.map(p => p.revenue)), barMax = W - 150;
       let y = 0, body = "";
       top5.forEach((p, i) => {
         const w = Math.max(2, (p.revenue / max) * barMax);
-        body += `<text x="0" y="${y + 10}" font-size="9.5" fill="#334155">${i + 1}. ${esc(trunc(p.title, 54))}</text>` +
-          `<rect x="0" y="${y + 15}" width="${w.toFixed(1)}" height="12" rx="3" fill="${colorOf(p.brand_id)}"/>` +
-          `<text x="${(w + 8).toFixed(1)}" y="${y + 25}" font-size="9" fill="#475569">${aud(p.revenue)} · ×${p.qty}</text>`;
+        body += `<text x="0" y="${y + 9}" font-size="9" fill="#334155">${i + 1}. ${esc(trunc(p.title, 54))}</text>` +
+          `<rect x="0" y="${y + 13}" width="${w.toFixed(1)}" height="9" rx="2.5" fill="${colorOf(p.brand_id)}"/>` +
+          `<text x="${(w + 7).toFixed(1)}" y="${y + 21}" font-size="8.5" fill="#475569">${aud(p.revenue)} · ×${p.qty}</text>`;
         y += rowH;
       });
       return `<svg viewBox="0 0 ${W} ${y}" width="100%" style="max-width:540px">${body}</svg>`;
@@ -205,17 +205,21 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
 
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(s.name ?? "Show")} — Report</title>
       <style>
-        *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-        body{font:13px -apple-system,Segoe UI,Roboto,sans-serif;color:#1e293b;margin:32px;}
-        h1{font-size:20px;margin:0 0 2px;} .sub{color:#64748b;margin:0 0 16px;}
-        .big{font-size:28px;font-weight:700;margin:0;} .lbl{color:#64748b;font-size:12px;}
-        .cards{display:flex;gap:32px;margin:12px 0 8px;}
-        table{width:100%;border-collapse:collapse;margin:8px 0 16px;font-size:12px;}
-        th{text-align:left;color:#94a3b8;font-size:10px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #e2e8f0;padding:6px 8px;}
-        td{padding:6px 8px;border-bottom:1px solid #f1f5f9;} td.r,th.r{text-align:right;}
-        h2{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:#475569;margin:20px 0 6px;}
-        .meta{color:#94a3b8;font-size:11px;margin-top:24px;}
-        p{margin:3px 0;}
+        @page{size:A4 portrait;margin:11mm;}
+        *{-webkit-print-color-adjust:exact;print-color-adjust:exact;box-sizing:border-box;}
+        body{font:11px -apple-system,Segoe UI,Roboto,sans-serif;color:#1e293b;margin:0;}
+        h1{font-size:17px;margin:0 0 1px;}
+        .sub{color:#64748b;margin:0 0 8px;font-size:11px;}
+        .big{font-size:21px;font-weight:700;margin:0;line-height:1.1;}
+        .lbl{color:#64748b;font-size:10.5px;}
+        .cards{display:flex;gap:26px;margin:6px 0 4px;}
+        table{width:100%;border-collapse:collapse;margin:3px 0 8px;font-size:10.5px;}
+        th{text-align:left;color:#94a3b8;font-size:9px;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e2e8f0;padding:3px 6px;}
+        td{padding:3px 6px;border-bottom:1px solid #f1f5f9;} td.r,th.r{text-align:right;}
+        h2{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#475569;margin:9px 0 3px;}
+        .meta{color:#94a3b8;font-size:9.5px;margin-top:10px;}
+        p{margin:2px 0;}
+        svg{display:block;}
       </style></head><body>
       <h1>${esc(s.name ?? "Show")}</h1>
       <p class="sub">${fmtDate(s.date_start)}${s.date_end && s.date_end !== s.date_start ? " – " + fmtDate(s.date_end) : ""}${s.state ? " · " + s.state : ""}</p>
