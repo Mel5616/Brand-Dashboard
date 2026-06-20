@@ -62,6 +62,12 @@ export function LiveShowPanel({ showId, brands }: { showId: string; brands: Bran
           </p>
         ) : (
           <div className="space-y-2.5">
+            <div className="flex items-center gap-3 pb-1">
+              <span className="w-28 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Brand</span>
+              <span className="flex-1" />
+              <span className="w-16 text-right text-[10px] font-semibold uppercase tracking-wide text-gray-400">Booth</span>
+              <span className="w-20 text-right text-[10px] font-semibold uppercase tracking-wide text-gray-400">Online {data?.show?.state ? `→ ${data.show.state.slice(0, 3).toUpperCase()}` : ""}</span>
+            </div>
             {data.rows.map(r => (
               <div key={r.brand_id} className="flex items-center gap-3">
                 <span className="text-xs text-slate-600 w-28 truncate flex items-center gap-1.5">
