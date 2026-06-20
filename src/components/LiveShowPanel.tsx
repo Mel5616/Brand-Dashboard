@@ -293,14 +293,16 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
             <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Sales by Hour · booth</h3>
             {peakHour != null && <span className="text-[10px] text-gray-400">peak {hourLabel(peakHour)}–{hourLabel(peakHour + 1)}</span>}
           </div>
-          <div className="flex items-end gap-1.5 h-24">
+          <div className="flex items-end gap-1.5 h-28">
             {hourSpan.map(h => {
               const v = byHour[h];
               return (
-                <div key={h} className="flex-1 flex flex-col items-center justify-end gap-1 group">
-                  <span className="text-[9px] text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity tabular-nums">{v > 0 ? aud(v) : ""}</span>
-                  <div className={`w-full rounded-t transition-all ${h === peakHour ? "bg-emerald-500" : "bg-emerald-300"}`} style={{ height: `${Math.max(2, (v / hourMax) * 100)}%` }} />
-                  <span className="text-[9px] text-gray-400">{hourLabel(h)}</span>
+                <div key={h} className="flex-1 h-full flex flex-col items-center justify-end gap-1 group">
+                  <span className="text-[9px] text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity tabular-nums shrink-0">{v > 0 ? aud(v) : ""}</span>
+                  <div className="w-full flex-1 flex items-end">
+                    <div className={`w-full rounded-t transition-all ${h === peakHour ? "bg-emerald-500" : "bg-emerald-300"}`} style={{ height: `${v > 0 ? Math.max(3, (v / hourMax) * 100) : 0}%` }} />
+                  </div>
+                  <span className="text-[9px] text-gray-400 shrink-0">{hourLabel(h)}</span>
                 </div>
               );
             })}
