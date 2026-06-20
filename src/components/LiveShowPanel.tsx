@@ -149,29 +149,29 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
       return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:540px">${body}</svg>`;
     })() : "";
 
-    // ── SVG: this show vs previous (grouped horizontal bars) ──
+    // ── SVG: this show vs previous — two metrics side by side, each scaled
+    //    to its own max so both groups read clearly on one line ──
     const cmpChart = compare ? (() => {
       const metrics = [
         { name: "Expo Stand", a: booth, b: compare.boothTotal },
         { name: "Online Expo Sales", a: data.onlineTotal, b: compare.onlineTotal },
       ];
-      const max = Math.max(1, ...metrics.flatMap(m => [m.a, m.b]));
-      const W = 540, barH = 12, gap = 4, groupGap = 9, x0 = 92, barMax = W - x0 - 70;
-      let y = 0, body = "";
-      const prevLab = trunc(`${compare.name.replace(/Baby Expo/i, "").trim()} ${fmtDate(compare.date_start)}`, 22);
-      metrics.forEach(m => {
-        body += `<text x="0" y="${y + 10}" font-size="10" fill="#334155" font-weight="700">${m.name}</text>`;
-        y += 15;
-        ([["This show", m.a, "#6366f1"], [prevLab, m.b, "#cbd5e1"]] as [string, number, string][]).forEach(([lab, val, col]) => {
-          const w = Math.max(2, (val / max) * barMax);
-          body += `<text x="0" y="${y + 11}" font-size="8.5" fill="#94a3b8">${esc(lab)}</text>` +
-            `<rect x="${x0}" y="${y + 2}" width="${w.toFixed(1)}" height="${barH}" rx="3" fill="${col}"/>` +
-            `<text x="${(x0 + w + 5).toFixed(1)}" y="${y + 13}" font-size="9" fill="#475569">${aud(val)}</text>`;
-          y += barH + gap;
+      const prevLab = trunc(`${compare.name.replace(/Baby Expo/i, "").trim()} ${fmtDate(compare.date_start)}`, 20);
+      const W = 540, colGap = 28, colW = (W - colGap) / 2, barH = 12, valW = 62, barMax = colW - valW;
+      let body = "";
+      metrics.forEach((m, ci) => {
+        const x = ci * (colW + colGap);
+        const mx = Math.max(1, m.a, m.b);
+        body += `<text x="${x}" y="11" font-size="10.5" fill="#1e293b" font-weight="700">${m.name}</text>`;
+        ([["This show", m.a, "#6366f1"], [prevLab, m.b, "#cbd5e1"]] as [string, number, string][]).forEach(([lab, val, col], ri) => {
+          const ry = 22 + ri * 24;
+          const w = Math.max(2, (val / mx) * barMax);
+          body += `<text x="${x}" y="${ry}" font-size="8.5" fill="#94a3b8">${esc(lab)}</text>` +
+            `<rect x="${x}" y="${ry + 4}" width="${w.toFixed(1)}" height="${barH}" rx="3" fill="${col}"/>` +
+            `<text x="${(x + w + 6).toFixed(1)}" y="${ry + 14}" font-size="9" fill="#475569">${aud(val)}</text>`;
         });
-        y += groupGap;
       });
-      return `<svg viewBox="0 0 ${W} ${y}" width="100%" style="max-width:540px">${body}</svg>`;
+      return `<svg viewBox="0 0 ${W} 76" width="100%" style="max-width:540px">${body}</svg>`;
     })() : "";
 
     // ── SVG: top 5 sellers (horizontal bars, brand colour) ──
@@ -205,36 +205,47 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
 
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(s.name ?? "Show")} — Report</title>
       <style>
-        @page{size:A4 portrait;margin:11mm;}
+        @page{size:A4 portrait;margin:12mm;}
         *{-webkit-print-color-adjust:exact;print-color-adjust:exact;box-sizing:border-box;}
         body{font:11px -apple-system,Segoe UI,Roboto,sans-serif;color:#1e293b;margin:0;}
-        h1{font-size:17px;margin:0 0 1px;}
-        .sub{color:#64748b;margin:0 0 8px;font-size:11px;}
-        .big{font-size:21px;font-weight:700;margin:0;line-height:1.1;}
-        .lbl{color:#64748b;font-size:10.5px;}
-        .cards{display:flex;gap:26px;margin:6px 0 4px;}
-        table{width:100%;border-collapse:collapse;margin:3px 0 8px;font-size:10.5px;}
-        th{text-align:left;color:#94a3b8;font-size:9px;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e2e8f0;padding:3px 6px;}
-        td{padding:3px 6px;border-bottom:1px solid #f1f5f9;} td.r,th.r{text-align:right;}
-        h2{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#475569;margin:9px 0 3px;}
-        .meta{color:#94a3b8;font-size:9.5px;margin-top:10px;}
-        p{margin:2px 0;}
+        .head{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #eef2f7;padding-bottom:12px;margin-bottom:18px;}
+        h1{font-size:23px;margin:0 0 3px;letter-spacing:-.01em;}
+        .sub{color:#64748b;margin:0;font-size:11.5px;}
+        .head-r{text-align:right;color:#94a3b8;font-size:9.5px;line-height:1.5;}
+        .head-r b{color:#475569;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;}
+        .cards{display:flex;gap:14px;margin:0 0 18px;}
+        .card{flex:1;border:1px solid #e7eaf0;border-radius:11px;padding:13px 16px;background:#fbfcfe;}
+        .card.accent{background:#eef2ff;border-color:#c7d2fe;}
+        .big{font-size:23px;font-weight:700;margin:0;line-height:1.05;letter-spacing:-.01em;}
+        .card.accent .big{color:#4338ca;}
+        .lbl{color:#64748b;font-size:10.5px;margin:4px 0 0;}
+        .pace{color:#475569;font-size:11px;margin:0 0 16px;}
+        table{width:100%;border-collapse:collapse;margin:3px 0 10px;font-size:10.5px;}
+        th{text-align:left;color:#94a3b8;font-size:9px;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e2e8f0;padding:4px 6px;}
+        td{padding:4px 6px;border-bottom:1px solid #f1f5f9;} td.r,th.r{text-align:right;}
+        h2{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#475569;margin:16px 0 5px;}
+        .meta{color:#94a3b8;font-size:9.5px;margin-top:14px;border-top:1px solid #f1f5f9;padding-top:8px;}
         svg{display:block;}
       </style></head><body>
-      <h1>${esc(s.name ?? "Show")}</h1>
-      <p class="sub">${fmtDate(s.date_start)}${s.date_end && s.date_end !== s.date_start ? " – " + fmtDate(s.date_end) : ""}${s.state ? " · " + s.state : ""}</p>
-      <div class="cards">
-        <div><p class="big">${aud(booth)}</p><p class="lbl">Expo Stand · ${data.boothOrders} orders</p></div>
-        <div><p class="big">${aud(data.onlineTotal)}</p><p class="lbl">Online Expo Sales · ${data.onlineOrders} orders</p></div>
-        <div><p class="big">${aud(data.showTotal)}</p><p class="lbl">Total Sales · ${data.showOrders} orders</p></div>
+      <div class="head">
+        <div>
+          <h1>${esc(s.name ?? "Show")}</h1>
+          <p class="sub">${fmtDate(s.date_start)}${s.date_end && s.date_end !== s.date_start ? " – " + fmtDate(s.date_end) : ""}${s.state ? " · " + s.state : ""}</p>
+        </div>
+        <div class="head-r"><b>Expo Report</b><br>${new Date().toLocaleString("en-AU", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" })}</div>
       </div>
-      ${pacingHtml}${peakHtml}
+      <div class="cards">
+        <div class="card"><p class="big">${aud(booth)}</p><p class="lbl">Expo Stand · ${data.boothOrders} orders</p></div>
+        <div class="card"><p class="big">${aud(data.onlineTotal)}</p><p class="lbl">Online Expo Sales · ${data.onlineOrders} orders</p></div>
+        <div class="card accent"><p class="big">${aud(data.showTotal)}</p><p class="lbl">Total Sales · ${data.showOrders} orders</p></div>
+      </div>
+      ${(pacingHtml || peakHtml) ? `<p class="pace">${[pacingHtml, peakHtml].filter(Boolean).map(x => x.replace(/<\/?p>/g, "")).join(" &nbsp;·&nbsp; ")}</p>` : ""}
       ${cmpSection}
       ${hourChart ? `<h2>Sales by hour · expo stand</h2>${hourChart}` : ""}
       ${topChart ? `<h2>Top 5 sellers · expo stand</h2>${topChart}` : ""}
       <h2>By Brand</h2>
       <table><thead><tr><th>Brand</th><th class="r">Expo Stand</th><th class="r">Orders</th><th class="r">Online to state</th><th class="r">Total</th></tr></thead><tbody>${rowsHtml}</tbody></table>
-      <p class="meta">Expo Stand = POS + Coolkidz till + QR scans · ex-GST. Generated ${new Date().toLocaleString("en-AU")} from Brand Command.</p>
+      <p class="meta">Expo Stand = POS + Coolkidz till + QR scans · Online = website orders shipping to ${esc(s.state ?? "the state")} during the show · all figures ex-GST · Brand Command.</p>
       <script>window.onload=function(){window.print();}</script>
       </body></html>`;
     const w = window.open("", "_blank");
