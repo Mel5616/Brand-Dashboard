@@ -8,7 +8,7 @@ type Prod = { title: string; brand_id: number; revenue: number; qty: number };
 type Compare = { name: string; date_start: string; boothTotal: number; showTotal: number; onlineTotal: number; samePoint?: boolean; atFraction?: number };
 type LiveData = {
   live: boolean; boothTotal: number; boothOrders: number; showTotal: number; showOrders: number; onlineTotal: number; onlineOrders: number;
-  rows: Row[]; updatedAt: string; topProducts?: Prod[]; byHour?: number[]; byDay?: { date: string; booth: number; boothOrders: number; online: number; onlineOrders: number; total: number; orders: number }[]; compare?: Compare | null; target?: number | null;
+  rows: Row[]; updatedAt: string; topProducts?: Prod[]; byHour?: number[]; byDay?: { date: string; booth: number; boothOrders: number; online: number; onlineOrders: number; total: number; orders: number }[]; perDay?: { date: string; byHour: number[]; topProducts: Prod[] }[]; compare?: Compare | null; target?: number | null;
   show?: { name?: string; state?: string; date_start?: string; date_end?: string };
 };
 
@@ -62,6 +62,7 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
   const [localTarget, setLocalTarget] = useState<number | null>(null);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
+  const [daySel, setDaySel] = useState<string>("all"); // "all" or a show-day date
   const compareFetched = useRef(false);
   const colorOf = (id: number) => brands.find(b => b.id === id)?.color ?? "#6366f1";
 
@@ -128,6 +129,17 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
   const hourSpan = activeHours.length ? Array.from({ length: hMax - hMin + 1 }, (_, i) => hMin + i) : [];
   const hourMax = Math.max(1, ...byHour);
   const peakHour = activeHours.length ? activeHours.reduce((a, b) => (b.v > a.v ? b : a)).h : null;
+
+  // Day-filtered view (Sat/Sun toggle) for the on-screen hour chart + top sellers.
+  // The PDF stays on the aggregate (whole-show) figures above.
+  const dayView = daySel === "all" ? null : data?.perDay?.find(p => p.date === daySel);
+  const vByHour = (dayView ? dayView.byHour : data?.byHour) ?? [];
+  const vActive = vByHour.map((v, h) => ({ v, h })).filter(x => x.v > 0);
+  const vSpan = vActive.length ? Array.from({ length: Math.max(...vActive.map(x => x.h)) - Math.min(...vActive.map(x => x.h)) + 1 }, (_, i) => Math.min(...vActive.map(x => x.h)) + i) : [];
+  const vMax = Math.max(1, ...vByHour);
+  const vPeak = vActive.length ? vActive.reduce((a, b) => (b.v > a.v ? b : a)).h : null;
+  const vTop = (dayView ? dayView.topProducts : data?.topProducts) ?? [];
+  const dayTabs = (data?.byDay?.length ?? 0) > 1 ? data!.byDay! : [];
 
   function downloadPdf() {
     if (!data) return;
@@ -416,21 +428,38 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
         </div>
       )}
 
+      {/* Day filter (multi-day shows) — controls the hour chart + top sellers */}
+      {dayTabs.length > 1 && (
+        <div className="bg-white border-t border-gray-100 px-5 pt-3 flex items-center gap-2 flex-wrap">
+          <div className="inline-flex bg-gray-100 rounded-lg p-0.5">
+            <button onClick={() => setDaySel("all")} className={`px-3 py-1 rounded-md text-[11px] font-semibold transition-all ${daySel === "all" ? "bg-white shadow-sm text-slate-700" : "text-gray-400 hover:text-gray-600"}`}>All days</button>
+            {dayTabs.map(d => (
+              <button key={d.date} onClick={() => setDaySel(d.date)} className={`px-3 py-1 rounded-md text-[11px] font-semibold transition-all ${daySel === d.date ? "bg-white shadow-sm text-slate-700" : "text-gray-400 hover:text-gray-600"}`}>
+                {new Date(d.date + "T00:00:00").toLocaleDateString("en-AU", { weekday: "short" })}
+              </button>
+            ))}
+          </div>
+          <span className="text-[10px] text-gray-400">filters the hour &amp; top-seller views below</span>
+        </div>
+      )}
+
       {/* Sales by hour */}
-      {hourSpan.length > 0 && (
+      {vSpan.length > 0 && (
         <div className="bg-white border-t border-gray-100 px-5 py-4">
           <div className="flex items-baseline justify-between mb-3">
-            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Sales by Hour · expo stand</h3>
-            {peakHour != null && <span className="text-[10px] text-gray-400">peak {hourLabel(peakHour)}–{hourLabel(peakHour + 1)}</span>}
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+              Sales by Hour · expo stand{daySel !== "all" ? ` · ${new Date(daySel + "T00:00:00").toLocaleDateString("en-AU", { weekday: "long" })}` : ""}
+            </h3>
+            {vPeak != null && <span className="text-[10px] text-gray-400">peak {hourLabel(vPeak)}–{hourLabel(vPeak + 1)}</span>}
           </div>
           <div className="flex items-end gap-1.5 h-28">
-            {hourSpan.map(h => {
-              const v = byHour[h];
+            {vSpan.map(h => {
+              const v = vByHour[h];
               return (
                 <div key={h} className="flex-1 h-full flex flex-col items-center justify-end gap-1 group">
                   <span className="text-[9px] text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity tabular-nums shrink-0">{v > 0 ? aud(v) : ""}</span>
                   <div className="w-full flex-1 flex items-end">
-                    <div className={`w-full rounded-t transition-all ${h === peakHour ? "bg-emerald-500" : "bg-emerald-300"}`} style={{ height: `${v > 0 ? Math.max(3, (v / hourMax) * 100) : 0}%` }} />
+                    <div className={`w-full rounded-t transition-all ${h === vPeak ? "bg-emerald-500" : "bg-emerald-300"}`} style={{ height: `${v > 0 ? Math.max(3, (v / vMax) * 100) : 0}%` }} />
                   </div>
                   <span className="text-[9px] text-gray-400 shrink-0">{hourLabel(h)}</span>
                 </div>
@@ -441,14 +470,16 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
       )}
 
       {/* Top sellers at the booth */}
-      {data?.topProducts && data.topProducts.length > 0 && (
+      {vTop.length > 0 && (
         <div className="bg-white border-t border-gray-100 px-5 py-4">
           <div className="flex items-baseline justify-between mb-3">
-            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Top Sellers · expo stand</h3>
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+              Top Sellers · expo stand{daySel !== "all" ? ` · ${new Date(daySel + "T00:00:00").toLocaleDateString("en-AU", { weekday: "long" })}` : ""}
+            </h3>
             <span className="text-[10px] text-gray-400">by revenue · ex-GST</span>
           </div>
           <div className="space-y-1.5">
-            {data.topProducts.map((p, i) => (
+            {vTop.map((p, i) => (
               <div key={i} className="flex items-center gap-3">
                 <span className="text-[11px] font-bold text-gray-300 w-4 shrink-0">{i + 1}</span>
                 <span className="w-2 h-2 rounded-full shrink-0" style={{ background: colorOf(p.brand_id) }} />

@@ -103,23 +103,29 @@ async function computeShow(
   // true only when the order lands on an actual show day (AEST)
   const offShow = (iso?: string) => { if (!iso) return true; const od = new Date(new Date(iso).getTime() + AEST_OFFSET * 3600 * 1000).toISOString().slice(0, 10); return od < show.date_start || od > show.date_end; };
 
+  const aestDate = (iso: string) => new Date(new Date(iso).getTime() + AEST_OFFSET * 3600 * 1000).toISOString().slice(0, 10);
+
   type Prod = { title: string; brand_id: number; revenue: number; qty: number };
   const productMap = new Map<string, Prod>();
+  const productMapByDay = new Map<string, Map<string, Prod>>();
   const byHour = new Array(24).fill(0);
-  const addProduct = (sku: string | null | undefined, title: string, brandId: number, exRev: number, qty: number) => {
+  const byHourByDay = new Map<string, number[]>();
+  const addProduct = (sku: string | null | undefined, title: string, brandId: number, exRev: number, qty: number, iso?: string) => {
     const key = sku && sku.trim() ? `sku:${sku.trim()}` : `t:${title}`;
-    const cur = productMap.get(key) ?? { title, brand_id: brandId, revenue: 0, qty: 0 };
-    cur.revenue += exRev; cur.qty += qty;
-    productMap.set(key, cur);
+    const bump = (m: Map<string, Prod>) => { const cur = m.get(key) ?? { title, brand_id: brandId, revenue: 0, qty: 0 }; cur.revenue += exRev; cur.qty += qty; m.set(key, cur); };
+    bump(productMap);
+    if (iso) { const d = aestDate(iso); let m = productMapByDay.get(d); if (!m) { m = new Map(); productMapByDay.set(d, m); } bump(m); }
   };
   const bucket = (iso: string | undefined, amt: number) => {
     if (!iso) return;
     const h = (new Date(iso).getUTCHours() + AEST_OFFSET) % 24;
     byHour[h] += amt;
+    const d = aestDate(iso);
+    let arr = byHourByDay.get(d); if (!arr) { arr = new Array(24).fill(0); byHourByDay.set(d, arr); }
+    arr[h] += amt;
   };
   // Per-day totals (AEST date), one entry per show day — expo stand vs online
   const byDayMap = new Map<string, { booth: number; boothOrders: number; online: number; onlineOrders: number }>();
-  const aestDate = (iso: string) => new Date(new Date(iso).getTime() + AEST_OFFSET * 3600 * 1000).toISOString().slice(0, 10);
   const dayCur = (iso: string) => {
     const d = aestDate(iso);
     let c = byDayMap.get(d);
@@ -151,7 +157,7 @@ async function computeShow(
         cur.rev += amt;
         if (!seen.has(bid)) { cur.orders += 1; seen.add(bid); }
         ckByBrand.set(bid, cur);
-        if (detail) { addProduct(it.sku, it.title || "Unknown", bid, amt, Number(it.quantity ?? 1)); bucket(createdAt, amt); }
+        if (detail) { addProduct(it.sku, it.title || "Unknown", bid, amt, Number(it.quantity ?? 1), createdAt); bucket(createdAt, amt); }
       }
       if (detail && orderRev > 0) addDayBooth(createdAt, orderRev, 1);
     }
@@ -179,7 +185,7 @@ async function computeShow(
             for (const li of n.lineItems?.edges ?? []) {
               const it = li.node;
               const amt = Math.round((Number(it.originalTotalSet?.shopMoney?.amount ?? 0) / 1.1) * 100) / 100;
-              addProduct(it.sku, it.title || "Unknown", id, amt, Number(it.quantity ?? 1));
+              addProduct(it.sku, it.title || "Unknown", id, amt, Number(it.quantity ?? 1), n.createdAt);
             }
           }
         }
@@ -239,12 +245,19 @@ async function computeShow(
     return { date: d, booth, boothOrders, online, onlineOrders, total: booth + online, orders: boothOrders + onlineOrders };
   }) : [];
 
+  // Per-day hour buckets + top sellers, so the UI can filter by Saturday/Sunday
+  const perDay = detail ? showDays.map(d => ({
+    date: d,
+    byHour: (byHourByDay.get(d) ?? new Array(24).fill(0)).map(round),
+    topProducts: [...(productMapByDay.get(d)?.values() ?? [])].map(p => ({ ...p, revenue: round(p.revenue) })).sort((a, b) => b.revenue - a.revenue).slice(0, 8),
+  })) : [];
+
   return {
     rows, boothTotal, boothOrders, onlineTotal, onlineOrders,
     showTotal: boothTotal + onlineTotal, showOrders: boothOrders + onlineOrders,
     topProducts,
     byHour: detail ? byHour.map(round) : [],
-    byDay,
+    byDay, perDay,
   };
 }
 
