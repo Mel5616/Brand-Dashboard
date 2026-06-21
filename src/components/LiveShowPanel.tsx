@@ -8,7 +8,7 @@ type Prod = { title: string; brand_id: number; revenue: number; qty: number };
 type Compare = { name: string; date_start: string; boothTotal: number; showTotal: number; onlineTotal: number; samePoint?: boolean; atFraction?: number };
 type LiveData = {
   live: boolean; boothTotal: number; boothOrders: number; showTotal: number; showOrders: number; onlineTotal: number; onlineOrders: number;
-  rows: Row[]; updatedAt: string; topProducts?: Prod[]; byHour?: number[]; byDay?: { date: string; revenue: number; orders: number }[]; compare?: Compare | null; target?: number | null;
+  rows: Row[]; updatedAt: string; topProducts?: Prod[]; byHour?: number[]; byDay?: { date: string; booth: number; boothOrders: number; online: number; onlineOrders: number; total: number; orders: number }[]; compare?: Compare | null; target?: number | null;
   show?: { name?: string; state?: string; date_start?: string; date_end?: string };
 };
 
@@ -208,9 +208,9 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
     const pdfByDay = data.byDay ?? [];
     const byDaySection = pdfByDay.length > 1 ? `
       <div class="sec">
-      <h2>Sales by day · expo stand</h2>
-      <table><thead><tr><th>Day</th><th class="r">Expo Stand</th><th class="r">Orders</th></tr></thead><tbody>
-      ${pdfByDay.map(d => `<tr><td>${new Date(d.date + "T00:00:00").toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "short" })}</td><td class="r">${aud(d.revenue)}</td><td class="r">${d.orders}</td></tr>`).join("")}
+      <h2>Sales by day</h2>
+      <table><thead><tr><th>Day</th><th class="r">Expo Stand</th><th class="r">Online to state</th><th class="r">Total</th><th class="r">Orders</th></tr></thead><tbody>
+      ${pdfByDay.map(d => `<tr><td>${new Date(d.date + "T00:00:00").toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "short" })}</td><td class="r">${aud(d.booth)}</td><td class="r">${d.online > 0 ? "+" + aud(d.online) : "—"}</td><td class="r"><b>${aud(d.total)}</b></td><td class="r">${d.orders}</td></tr>`).join("")}
       </tbody></table>
       </div>` : "";
 
@@ -395,7 +395,7 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
       {/* Sales by day (multi-day shows) */}
       {(data?.byDay?.length ?? 0) > 1 && (
         <div className="bg-white border-t border-gray-100 px-5 py-4">
-          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-3">Sales by Day · expo stand</h3>
+          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-3">Sales by Day · stand + online</h3>
           <div className="flex gap-3">
             {data!.byDay!.map(d => {
               const dt = new Date(d.date + "T00:00:00");
@@ -406,8 +406,9 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
                     {dt.toLocaleDateString("en-AU", { weekday: "long" })} <span className="text-gray-400 font-normal">{dt.toLocaleDateString("en-AU", { day: "numeric", month: "short" })}</span>
                     {isToday && <span className="ml-1 text-[9px] font-bold text-emerald-600 uppercase">· today</span>}
                   </p>
-                  <p className="text-lg font-bold text-slate-800 tabular-nums mt-0.5">{aud(d.revenue)}</p>
-                  <p className="text-[10px] text-gray-400">{d.orders} orders</p>
+                  <p className="text-lg font-bold text-slate-800 tabular-nums mt-0.5">{aud(d.total)}</p>
+                  <p className="text-[10px] text-gray-400">{d.orders} orders · total</p>
+                  <p className="text-[10px] text-gray-400 mt-1">Stand {aud(d.booth)} · Online {aud(d.online)}</p>
                 </div>
               );
             })}

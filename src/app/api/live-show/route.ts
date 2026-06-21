@@ -96,16 +96,17 @@ async function computeShow(
     const h = (new Date(iso).getUTCHours() + AEST_OFFSET) % 24;
     byHour[h] += amt;
   };
-  // Per-day expo-stand totals (AEST date), one entry per show day
-  const byDayMap = new Map<string, { revenue: number; orders: number }>();
+  // Per-day totals (AEST date), one entry per show day — expo stand vs online
+  const byDayMap = new Map<string, { booth: number; boothOrders: number; online: number; onlineOrders: number }>();
   const aestDate = (iso: string) => new Date(new Date(iso).getTime() + AEST_OFFSET * 3600 * 1000).toISOString().slice(0, 10);
-  const addDay = (iso: string | undefined, amt: number, orderInc: number) => {
-    if (!iso) return;
+  const dayCur = (iso: string) => {
     const d = aestDate(iso);
-    const cur = byDayMap.get(d) ?? { revenue: 0, orders: 0 };
-    cur.revenue += amt; cur.orders += orderInc;
-    byDayMap.set(d, cur);
+    let c = byDayMap.get(d);
+    if (!c) { c = { booth: 0, boothOrders: 0, online: 0, onlineOrders: 0 }; byDayMap.set(d, c); }
+    return c;
   };
+  const addDayBooth  = (iso: string | undefined, amt: number, o: number) => { if (iso) { const c = dayCur(iso); c.booth += amt; c.boothOrders += o; } };
+  const addDayOnline = (iso: string | undefined, amt: number, o: number) => { if (iso) { const c = dayCur(iso); c.online += amt; c.onlineOrders += o; } };
 
   // Coolkidz booth till — split per brand (date-only)
   const ck = storeById.get(9);
@@ -131,7 +132,7 @@ async function computeShow(
         ckByBrand.set(bid, cur);
         if (detail) { addProduct(it.sku, it.title || "Unknown", bid, amt, Number(it.quantity ?? 1)); bucket(createdAt, amt); }
       }
-      if (detail && orderRev > 0) addDay(createdAt, orderRev, 1);
+      if (detail && orderRev > 0) addDayBooth(createdAt, orderRev, 1);
     }
   }
 
@@ -153,7 +154,7 @@ async function computeShow(
           posRev += rev; posOrders += 1;
           if (detail) {
             bucket(n.createdAt, rev);
-            addDay(n.createdAt, rev, 1);
+            addDayBooth(n.createdAt, rev, 1);
             for (const li of n.lineItems?.edges ?? []) {
               const it = li.node;
               const amt = Math.round((Number(it.originalTotalSet?.shopMoney?.amount ?? 0) / 1.1) * 100) / 100;
@@ -161,7 +162,14 @@ async function computeShow(
             }
           }
         }
-        else if ((n.shippingAddress?.province || "").toLowerCase() === state) { webRev += rev; webOrders += 1; }
+        else if ((n.shippingAddress?.province || "").toLowerCase() === state && n.createdAt) {
+          // only online orders landing on an actual show day (AEST) count as tradeshow orders
+          const od = aestDate(n.createdAt);
+          if (od >= show.date_start && od <= show.date_end) {
+            webRev += rev; webOrders += 1;
+            if (detail) addDayOnline(n.createdAt, rev, 1);
+          }
+        }
       }
     }
     const booth = ckByBrand.get(id) ?? { rev: 0, orders: 0 };
@@ -183,7 +191,7 @@ async function computeShow(
       ).then(r => r.json());
       const qrRows = (qr || []).filter((e: any) => !past(e.created_at));
       const qrRev = qrRows.reduce((s: number, e: any) => s + Number(e.value ?? 0), 0);
-      if (detail) for (const e of qrRows) { bucket(e.created_at, Number(e.value ?? 0)); addDay(e.created_at, Number(e.value ?? 0), 1); }
+      if (detail) for (const e of qrRows) { bucket(e.created_at, Number(e.value ?? 0)); addDayBooth(e.created_at, Number(e.value ?? 0), 1); }
       if (qrRev > 0) rows.push({ brand_id: -1, name: "QR Expo Stand (scanned)", boothRevenue: round(qrRev), boothOrders: qrRows.length, onlineRevenue: 0, onlineOrders: 0 });
     } catch { /* booth project unavailable — skip QR */ }
   }
@@ -203,7 +211,12 @@ async function computeShow(
   for (let d = new Date(show.date_start + "T00:00:00Z"); d <= new Date(show.date_end + "T00:00:00Z"); d = new Date(d.getTime() + 86400000)) {
     showDays.push(d.toISOString().slice(0, 10));
   }
-  const byDay = detail ? showDays.map(d => ({ date: d, revenue: round(byDayMap.get(d)?.revenue ?? 0), orders: byDayMap.get(d)?.orders ?? 0 })) : [];
+  const byDay = detail ? showDays.map(d => {
+    const c = byDayMap.get(d);
+    const booth = round(c?.booth ?? 0), online = round(c?.online ?? 0);
+    const boothOrders = c?.boothOrders ?? 0, onlineOrders = c?.onlineOrders ?? 0;
+    return { date: d, booth, boothOrders, online, onlineOrders, total: booth + online, orders: boothOrders + onlineOrders };
+  }) : [];
 
   return {
     rows, boothTotal, boothOrders, onlineTotal, onlineOrders,
