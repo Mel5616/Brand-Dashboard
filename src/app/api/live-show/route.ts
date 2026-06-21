@@ -63,6 +63,22 @@ async function shopify(domain: string, token: string, query: string) {
   return res.json();
 }
 
+// Paginated order fetch (the 250 page cap truncates high-volume show days)
+async function shopifyOrders(domain: string, token: string, filter: string, nodeFields: string): Promise<any[]> {
+  const out: any[] = [];
+  let cursor: string | null = null;
+  for (let p = 0; p < 8; p++) {
+    const after: string = cursor ? `, after: "${cursor}"` : "";
+    const q = `{ orders(first: 250${after}, query: "${filter}", sortKey: CREATED_AT) { edges { cursor node { ${nodeFields} } } pageInfo { hasNextPage } } }`;
+    const j = await shopify(domain, token, q);
+    const edges = j?.data?.orders?.edges ?? [];
+    for (const e of edges) out.push(e);
+    if (!j?.data?.orders?.pageInfo?.hasNextPage || edges.length === 0) break;
+    cursor = edges[edges.length - 1].cursor;
+  }
+  return out;
+}
+
 const exGst = (gross: number, tax: number) => (tax > 0 ? gross - tax : Math.round((gross / 1.1) * 100) / 100);
 const round = (n: number) => Math.round(n);
 
@@ -76,11 +92,16 @@ async function computeShow(
   detail: boolean,
   cutoff = 1, // only count booth orders up to this fraction of the show (for fair "same point" compares)
 ) {
+  // Fetch a day either side of the show so every AEST show-day order is in the
+  // window regardless of how Shopify interprets the date filter; we then count
+  // only orders whose AEST date is an actual show day (no pre/post leakage).
   const since = new Date(new Date(show.date_start + "T00:00:00Z").getTime() - 86400000).toISOString().slice(0, 10);
-  const until = show.date_end;
+  const until = new Date(new Date(show.date_end + "T00:00:00Z").getTime() + 86400000).toISOString().slice(0, 10);
   const state = (show.state || "").toLowerCase();
   // booth orders after this point in the show are excluded (cutoff < 1 only)
   const past = (iso?: string) => cutoff < 1 && (!iso || showFraction(iso, show.date_start, show.date_end) > cutoff);
+  // true only when the order lands on an actual show day (AEST)
+  const offShow = (iso?: string) => { if (!iso) return true; const od = new Date(new Date(iso).getTime() + AEST_OFFSET * 3600 * 1000).toISOString().slice(0, 10); return od < show.date_start || od > show.date_end; };
 
   type Prod = { title: string; brand_id: number; revenue: number; qty: number };
   const productMap = new Map<string, Prod>();
@@ -112,13 +133,13 @@ async function computeShow(
   const ck = storeById.get(9);
   const ckByBrand = new Map<number, { rev: number; orders: number }>();
   if (ck) {
-    const q = `{ orders(first: 250, query: "financial_status:paid created_at:>=${since} created_at:<=${until}", sortKey: CREATED_AT) {
-      edges { node { createdAt lineItems(first: 20) { edges { node { title sku quantity originalTotalSet { shopMoney { amount } } product { vendor tags } } } } } } } }`;
-    const j = await shopify(ck.domain, ck.token, q);
-    for (const e of j?.data?.orders?.edges ?? []) {
+    const tillEdges = await shopifyOrders(ck.domain, ck.token,
+      `financial_status:paid created_at:>=${since} created_at:<=${until}`,
+      `createdAt lineItems(first: 20) { edges { node { title sku quantity originalTotalSet { shopMoney { amount } } product { vendor tags } } } }`);
+    for (const e of tillEdges) {
       const seen = new Set<number>();
       const createdAt = e.node.createdAt;
-      if (past(createdAt)) continue;
+      if (past(createdAt) || offShow(createdAt)) continue;
       let orderRev = 0;
       for (const li of e.node.lineItems.edges) {
         const it = li.node; const p = it.product || {};
@@ -143,14 +164,14 @@ async function computeShow(
     let posRev = 0, posOrders = 0, webRev = 0, webOrders = 0;
     if (st) {
       const liPart = detail ? "lineItems(first: 50) { edges { node { title sku quantity originalTotalSet { shopMoney { amount } } } } }" : "";
-      const q = `{ orders(first: 250, query: "financial_status:paid created_at:>=${since} created_at:<=${until}", sortKey: CREATED_AT) {
-        edges { node { createdAt sourceName shippingAddress { province } totalPriceSet { shopMoney { amount } } totalTaxSet { shopMoney { amount } } ${liPart} } } } }`;
-      const j = await shopify(st.domain, st.token, q);
-      for (const e of j?.data?.orders?.edges ?? []) {
+      const brandEdges = await shopifyOrders(st.domain, st.token,
+        `financial_status:paid created_at:>=${since} created_at:<=${until}`,
+        `createdAt sourceName shippingAddress { province } totalPriceSet { shopMoney { amount } } totalTaxSet { shopMoney { amount } } ${liPart}`);
+      for (const e of brandEdges) {
         const n = e.node;
         const rev = exGst(Number(n.totalPriceSet?.shopMoney?.amount ?? 0), Number(n.totalTaxSet?.shopMoney?.amount ?? 0));
         if ((n.sourceName || "").toLowerCase() === "pos") {
-          if (past(n.createdAt)) continue;
+          if (past(n.createdAt) || offShow(n.createdAt)) continue;
           posRev += rev; posOrders += 1;
           if (detail) {
             bucket(n.createdAt, rev);
@@ -189,7 +210,7 @@ async function computeShow(
         `${boothCreds.url}/rest/v1/booth_events?event_type=eq.order&created_at=gte.${since}T00:00:00Z&created_at=lte.${until}T23:59:59Z&select=value,created_at`,
         { headers: { apikey: boothCreds.key, Authorization: `Bearer ${boothCreds.key}` }, cache: "no-store" },
       ).then(r => r.json());
-      const qrRows = (qr || []).filter((e: any) => !past(e.created_at));
+      const qrRows = (qr || []).filter((e: any) => !past(e.created_at) && !offShow(e.created_at));
       const qrRev = qrRows.reduce((s: number, e: any) => s + Number(e.value ?? 0), 0);
       if (detail) for (const e of qrRows) { bucket(e.created_at, Number(e.value ?? 0)); addDayBooth(e.created_at, Number(e.value ?? 0), 1); }
       if (qrRev > 0) rows.push({ brand_id: -1, name: "QR Expo Stand (scanned)", boothRevenue: round(qrRev), boothOrders: qrRows.length, onlineRevenue: 0, onlineOrders: 0 });
