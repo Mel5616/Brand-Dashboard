@@ -96,6 +96,16 @@ async function computeShow(
     const h = (new Date(iso).getUTCHours() + AEST_OFFSET) % 24;
     byHour[h] += amt;
   };
+  // Per-day expo-stand totals (AEST date), one entry per show day
+  const byDayMap = new Map<string, { revenue: number; orders: number }>();
+  const aestDate = (iso: string) => new Date(new Date(iso).getTime() + AEST_OFFSET * 3600 * 1000).toISOString().slice(0, 10);
+  const addDay = (iso: string | undefined, amt: number, orderInc: number) => {
+    if (!iso) return;
+    const d = aestDate(iso);
+    const cur = byDayMap.get(d) ?? { revenue: 0, orders: 0 };
+    cur.revenue += amt; cur.orders += orderInc;
+    byDayMap.set(d, cur);
+  };
 
   // Coolkidz booth till — split per brand (date-only)
   const ck = storeById.get(9);
@@ -108,17 +118,20 @@ async function computeShow(
       const seen = new Set<number>();
       const createdAt = e.node.createdAt;
       if (past(createdAt)) continue;
+      let orderRev = 0;
       for (const li of e.node.lineItems.edges) {
         const it = li.node; const p = it.product || {};
         const bid = coolkidzBrandId(it.title || "", p.vendor || "", p.tags || []);
         if (bid == null) continue;
         const amt = Math.round((Number(it.originalTotalSet?.shopMoney?.amount ?? 0) / 1.1) * 100) / 100;
+        orderRev += amt;
         const cur = ckByBrand.get(bid) ?? { rev: 0, orders: 0 };
         cur.rev += amt;
         if (!seen.has(bid)) { cur.orders += 1; seen.add(bid); }
         ckByBrand.set(bid, cur);
         if (detail) { addProduct(it.sku, it.title || "Unknown", bid, amt, Number(it.quantity ?? 1)); bucket(createdAt, amt); }
       }
+      if (detail && orderRev > 0) addDay(createdAt, orderRev, 1);
     }
   }
 
@@ -140,6 +153,7 @@ async function computeShow(
           posRev += rev; posOrders += 1;
           if (detail) {
             bucket(n.createdAt, rev);
+            addDay(n.createdAt, rev, 1);
             for (const li of n.lineItems?.edges ?? []) {
               const it = li.node;
               const amt = Math.round((Number(it.originalTotalSet?.shopMoney?.amount ?? 0) / 1.1) * 100) / 100;
@@ -169,7 +183,7 @@ async function computeShow(
       ).then(r => r.json());
       const qrRows = (qr || []).filter((e: any) => !past(e.created_at));
       const qrRev = qrRows.reduce((s: number, e: any) => s + Number(e.value ?? 0), 0);
-      if (detail) for (const e of qrRows) bucket(e.created_at, Number(e.value ?? 0));
+      if (detail) for (const e of qrRows) { bucket(e.created_at, Number(e.value ?? 0)); addDay(e.created_at, Number(e.value ?? 0), 1); }
       if (qrRev > 0) rows.push({ brand_id: -1, name: "QR Expo Stand (scanned)", boothRevenue: round(qrRev), boothOrders: qrRows.length, onlineRevenue: 0, onlineOrders: 0 });
     } catch { /* booth project unavailable — skip QR */ }
   }
@@ -184,11 +198,19 @@ async function computeShow(
     ? [...productMap.values()].map(p => ({ ...p, revenue: round(p.revenue) })).sort((a, b) => b.revenue - a.revenue).slice(0, 8)
     : [];
 
+  // One entry per show day (AEST), in order — expo-stand revenue + orders
+  const showDays: string[] = [];
+  for (let d = new Date(show.date_start + "T00:00:00Z"); d <= new Date(show.date_end + "T00:00:00Z"); d = new Date(d.getTime() + 86400000)) {
+    showDays.push(d.toISOString().slice(0, 10));
+  }
+  const byDay = detail ? showDays.map(d => ({ date: d, revenue: round(byDayMap.get(d)?.revenue ?? 0), orders: byDayMap.get(d)?.orders ?? 0 })) : [];
+
   return {
     rows, boothTotal, boothOrders, onlineTotal, onlineOrders,
     showTotal: boothTotal + onlineTotal, showOrders: boothOrders + onlineOrders,
     topProducts,
     byHour: detail ? byHour.map(round) : [],
+    byDay,
   };
 }
 
