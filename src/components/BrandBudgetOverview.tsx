@@ -48,10 +48,14 @@ export function BrandBudgetOverview({
   const actualSales = monthlySales.filter(m => m.brand_id === bid && monthKeys.includes(m.month_key))
     .reduce((s, m) => s + (m.revenue ?? 0), 0);
   const salesPct = salesTarget > 0 ? (actualSales / salesTarget) * 100 : 0;
+  // last-year sales (same FY months, prior year) for the vs-LY metric
+  const lastYearSales = monthlySales.filter(m => m.brand_id === bid && monthKeys.includes(m.month_key))
+    .reduce((s, m) => s + ((m as any).prev_revenue ?? 0), 0);
 
   // default month = latest if it's in this FY, else the last month
   const defaultMonth = monthKeys.includes(latest) ? latest : monthKeys[monthKeys.length - 1];
   const [month, setMonth] = useState<string>(defaultMonth);
+  const [chanScope, setChanScope] = useState<"month" | "fy">("month");
 
   const colorFor = (ch: string, i: number) => CHANNEL_COLORS[ch] ?? FALLBACK[i % FALLBACK.length];
 
@@ -68,6 +72,8 @@ export function BrandBudgetOverview({
   const fyBudget = rows.reduce((s, r) => s + r.annual_budget, 0);
   const fyActual = channels.reduce((s, ch) => s + monthKeys.reduce((m, mk) => m + actual(ch, mk), 0), 0);
   const fyPct = fyBudget > 0 ? (fyActual / fyBudget) * 100 : 0;
+  const mktgPctOfSales = salesTarget > 0 ? (fyBudget / salesTarget) * 100 : null;
+  const targetVsLY = lastYearSales > 0 ? ((salesTarget - lastYearSales) / lastYearSales) * 100 : null;
 
   // selected-month rows: monthly budget = annual / 12
   const monthRows = rows.map((r, i) => {
@@ -75,8 +81,15 @@ export function BrandBudgetOverview({
     const spent = actual(r.channel, month);
     return { channel: r.channel, color: colorFor(r.channel, i), budget: monthlyBudget, spent, pct: monthlyBudget > 0 ? (spent / monthlyBudget) * 100 : 0 };
   }).sort((a, b) => b.budget - a.budget);
-  const monthBudgetTotal = monthRows.reduce((s, r) => s + r.budget, 0);
-  const monthActualTotal = monthRows.reduce((s, r) => s + r.spent, 0);
+  // annual (FY) rows: full-year budget per channel vs FY-to-date actual
+  const fyRows = rows.map((r, i) => {
+    const spent = monthKeys.reduce((s, mk) => s + actual(r.channel, mk), 0);
+    return { channel: r.channel, color: colorFor(r.channel, i), budget: r.annual_budget, spent, pct: r.annual_budget > 0 ? (spent / r.annual_budget) * 100 : 0 };
+  }).sort((a, b) => b.budget - a.budget);
+
+  const chanRows = chanScope === "fy" ? fyRows : monthRows;
+  const chanBudgetTotal = chanRows.reduce((s, r) => s + r.budget, 0);
+  const chanActualTotal = chanRows.reduce((s, r) => s + r.spent, 0);
 
   // monthly trend across the FY
   const monthlyBudgetLine = monthKeys.map(() => rows.reduce((s, r) => s + r.annual_budget / 12, 0));
@@ -109,16 +122,19 @@ export function BrandBudgetOverview({
       </div>
 
       {/* FY summary cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { label: `${fyLabel} Budget`, value: fmtFull(fyBudget) },
-          { label: "Actual to date",    value: fmtFull(fyActual) },
-          { label: "Remaining",         value: fmtFull(fyBudget - fyActual) },
-          { label: "Utilisation",       value: `${fyPct.toFixed(0)}%` },
+          { label: `${fyLabel} Budget`, value: fmtFull(fyBudget), sub: "marketing", color: "" },
+          { label: "Actual to date",    value: fmtFull(fyActual), sub: `${fyPct.toFixed(0)}% used`, color: "" },
+          { label: "Remaining",         value: fmtFull(fyBudget - fyActual), sub: "unspent", color: "" },
+          { label: "Mktg % of Sales",   value: mktgPctOfSales != null ? `${mktgPctOfSales.toFixed(1)}%` : "—", sub: "budget ÷ sales target", color: "" },
+          { label: "Sales Target",      value: fmtFull(salesTarget), sub: salesTarget > 0 ? `${salesPct.toFixed(0)}% achieved` : "no target", color: "" },
+          { label: "Target vs Last Yr", value: targetVsLY != null ? `${targetVsLY >= 0 ? "▲" : "▼"} ${Math.abs(targetVsLY).toFixed(0)}%` : "—", sub: lastYearSales > 0 ? `LY ${fmtFull(lastYearSales)}` : "no LY data", color: targetVsLY == null ? "" : targetVsLY >= 0 ? "text-emerald-600" : "text-rose-500" },
         ].map(c => (
           <div key={c.label} className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3">
             <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">{c.label}</p>
-            <p className="text-xl font-bold text-slate-800 mt-1">{c.value}</p>
+            <p className={`text-xl font-bold mt-1 ${c.color || "text-slate-800"}`}>{c.value}</p>
+            {c.sub && <p className="text-[10px] text-gray-400 mt-0.5">{c.sub}</p>}
           </div>
         ))}
       </div>
@@ -146,9 +162,13 @@ export function BrandBudgetOverview({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Selected-month channel table */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-slate-700">{monthLbl} · Budget vs Actual</h3>
-            <span className="text-[11px] text-gray-400">monthly = annual ÷ 12</span>
+          <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-2 flex-wrap">
+            <h3 className="text-sm font-semibold text-slate-700">{chanScope === "fy" ? "Full Year" : monthLbl} · by Channel</h3>
+            <div className="inline-flex bg-gray-100 rounded-lg p-0.5">
+              {(["month", "fy"] as const).map(s => (
+                <button key={s} onClick={() => setChanScope(s)} className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${chanScope === s ? "bg-white shadow-sm text-slate-700" : "text-gray-400 hover:text-gray-600"}`}>{s === "fy" ? "Full Year" : "Monthly"}</button>
+              ))}
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -160,7 +180,7 @@ export function BrandBudgetOverview({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {monthRows.map(r => (
+                {chanRows.map(r => (
                   <tr key={r.channel} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-4 py-2.5">
                       <span className="inline-flex items-center gap-2">
@@ -179,9 +199,9 @@ export function BrandBudgetOverview({
               <tfoot>
                 <tr className="border-t-2 border-gray-200">
                   <td className="px-4 pt-2 pb-3 text-xs font-semibold text-gray-500">Total</td>
-                  <td className="px-4 pt-2 pb-3 text-right font-bold text-slate-800 whitespace-nowrap">{fmtFull(monthBudgetTotal)}</td>
-                  <td className="px-4 pt-2 pb-3 text-right font-bold text-slate-800 whitespace-nowrap">{fmtFull(monthActualTotal)}</td>
-                  <td className="px-4 pt-2 pb-3 text-right font-bold text-slate-800">{monthBudgetTotal > 0 ? `${((monthActualTotal / monthBudgetTotal) * 100).toFixed(0)}%` : "—"}</td>
+                  <td className="px-4 pt-2 pb-3 text-right font-bold text-slate-800 whitespace-nowrap">{fmtFull(chanBudgetTotal)}</td>
+                  <td className="px-4 pt-2 pb-3 text-right font-bold text-slate-800 whitespace-nowrap">{fmtFull(chanActualTotal)}</td>
+                  <td className="px-4 pt-2 pb-3 text-right font-bold text-slate-800">{chanBudgetTotal > 0 ? `${((chanActualTotal / chanBudgetTotal) * 100).toFixed(0)}%` : "—"}</td>
                 </tr>
               </tfoot>
             </table>
