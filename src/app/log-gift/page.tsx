@@ -27,13 +27,26 @@ export default function LogGift() {
   const [oneOff, setOneOff] = useState(false);
   const [search, setSearch] = useState("");
   const [picked, setPicked] = useState<Product | null>(null);
+  const [influencers, setInfluencers] = useState<any[]>([]);
+  const [hFocus, setHFocus] = useState(false);
   const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
 
   useEffect(() => {
     fetch("/api/influencer/products").then(r => r.json()).then(d => {
       setNeedsSetup(!!d.needsSetup); setProducts(d.products ?? []);
     }).catch(() => {});
+    fetch("/api/influencer/roster").then(r => r.json()).then(d => setInfluencers(d.influencers ?? [])).catch(() => {});
   }, []);
+
+  const handleMatches = useMemo(() => {
+    const q = (f.handle || "").trim().toLowerCase();
+    if (!q || !hFocus) return [];
+    return influencers.filter((i: any) => (i.handle || "").toLowerCase().includes(q) || (i.name || "").toLowerCase().includes(q)).slice(0, 6);
+  }, [f.handle, influencers, hFocus]);
+  function pickInfluencer(i: any) {
+    setF((p: any) => ({ ...p, handle: i.handle, name: i.name ?? p.name, platform: i.platform ?? p.platform, followers: i.followers ?? p.followers }));
+    setHFocus(false);
+  }
 
   const matches = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -143,9 +156,25 @@ export default function LogGift() {
             </div>
           </div>
 
-          <div>
-            <label className={label}>Influencer handle</label>
-            <input value={f.handle ?? ""} onChange={e => set("handle", e.target.value)} placeholder="@handle" className={input} />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={label}>Name</label>
+              <input value={f.name ?? ""} onChange={e => set("name", e.target.value)} placeholder="e.g. Sarah Mum" className={input} />
+            </div>
+            <div className="relative">
+              <label className={label}>Handle</label>
+              <input value={f.handle ?? ""} onChange={e => { set("handle", e.target.value); setHFocus(true); }} onFocus={() => setHFocus(true)} onBlur={() => setTimeout(() => setHFocus(false), 150)} placeholder="@handle" className={input} />
+              {handleMatches.length > 0 && (
+                <div className="absolute z-10 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
+                  {handleMatches.map((i: any) => (
+                    <button key={i.handle} onMouseDown={e => { e.preventDefault(); pickInfluencer(i); }} className="w-full text-left px-3 py-2 hover:bg-indigo-50 border-b border-gray-50 last:border-0">
+                      <p className="text-sm text-slate-700">{i.handle}{i.name ? <span className="text-gray-400"> · {i.name}</span> : ""}</p>
+                      {(i.platform || i.followers) && <p className="text-[11px] text-gray-400">{[i.platform, i.followers ? `${Number(i.followers).toLocaleString("en-AU")} followers` : ""].filter(Boolean).join(" · ")}</p>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

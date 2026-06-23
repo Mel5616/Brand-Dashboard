@@ -72,6 +72,16 @@ export async function POST(req: Request) {
   };
   const res = await fetch(`${sbUrl}/rest/v1/influencer_entries`, { method: "POST", headers: headers({ Prefer: "return=minimal" }), body: JSON.stringify(row) });
   if (!res.ok) { const t = await res.text(); return NextResponse.json({ ok: false, needsSetup: missing(res.status, t) }, { status: 500 }); }
+
+  // Keep the influencer roster current — upsert the influencer by handle.
+  if (b.handle) {
+    let handle = String(b.handle).trim(); if (!handle.startsWith("@")) handle = "@" + handle.replace(/^@+/, "");
+    const inf: any = { handle, updated_at: new Date().toISOString() };
+    if (b.name) inf.name = b.name;
+    if (b.platform) inf.platform = b.platform;
+    if (row.followers != null) inf.followers = row.followers;
+    try { await fetch(`${sbUrl}/rest/v1/influencers?on_conflict=handle`, { method: "POST", headers: headers({ Prefer: "resolution=merge-duplicates,return=minimal" }), body: JSON.stringify(inf) }); } catch { /* roster table optional */ }
+  }
   return NextResponse.json({ ok: true }); // no cost returned to the team form
 }
 
