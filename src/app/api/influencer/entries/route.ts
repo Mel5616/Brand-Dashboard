@@ -85,6 +85,20 @@ export async function POST(req: Request) {
   return NextResponse.json({ ok: true }); // no cost returned to the team form
 }
 
+// Update results / status on an existing gift (admin: reach, engagement, sales…)
+export async function PATCH(req: Request) {
+  if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
+  let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
+  if (!b.id) return NextResponse.json({ ok: false }, { status: 400 });
+  const fields: any = {};
+  for (const k of ["status", "content_url"]) if (b[k] !== undefined) fields[k] = b[k] || null;
+  for (const k of ["reach", "engagements", "sales_value"]) if (b[k] !== undefined) fields[k] = b[k] === "" || b[k] == null ? null : Number(b[k]);
+  if (Object.keys(fields).length === 0) return NextResponse.json({ ok: false }, { status: 400 });
+  const res = await fetch(`${sbUrl}/rest/v1/influencer_entries?id=eq.${b.id}`, { method: "PATCH", headers: headers({ Prefer: "return=minimal" }), body: JSON.stringify(fields) });
+  if (!res.ok) { const t = await res.text(); return NextResponse.json({ ok: false, needsSetup: missing(res.status, t) }, { status: 500 }); }
+  return NextResponse.json({ ok: true });
+}
+
 export async function DELETE(req: Request) {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   const id = new URL(req.url).searchParams.get("id");
