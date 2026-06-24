@@ -120,7 +120,12 @@ def sync_brand(brand_id, name, account_id, access_token):
     try:
         rows = fetch_insights(account_id, access_token)
     except (urllib.error.HTTPError, RuntimeError) as e:
-        print(f"✗  {e}")
+        body = ""
+        try:
+            if hasattr(e, "read"): body = e.read().decode()[:400]
+        except Exception:
+            pass
+        print(f"✗  {e} {body}")
         return
 
     # Total (account-level) upserts
