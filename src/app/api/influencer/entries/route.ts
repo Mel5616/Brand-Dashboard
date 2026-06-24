@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAccess } from "@/lib/access";
 
 // Influencer gift entries. POST is called by the team's standalone form — it
 // looks up the product cost SERVER-SIDE, computes gifting cost (exact cost,
@@ -20,6 +21,8 @@ const sb = (path: string) => fetch(`${sbUrl}/rest/v1/${path}`, { headers: header
 
 export async function GET() {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false, entries: [] }, { status: 500 });
+  // cost data — admin only
+  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden", entries: [] }, { status: 403 });
   const res = await sb(`influencer_entries?select=*&order=created_at.desc`);
   const text = await res.text();
   if (!res.ok) return NextResponse.json({ ok: false, needsSetup: missing(res.status, text), entries: [] });
@@ -88,6 +91,7 @@ export async function POST(req: Request) {
 // Update results / status on an existing gift (admin: reach, engagement, sales…)
 export async function PATCH(req: Request) {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
+  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   if (!b.id) return NextResponse.json({ ok: false }, { status: 400 });
   const fields: any = {};
@@ -101,6 +105,7 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
+  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   const id = new URL(req.url).searchParams.get("id");
   if (!id) return NextResponse.json({ ok: false }, { status: 400 });
   const res = await fetch(`${sbUrl}/rest/v1/influencer_entries?id=eq.${id}`, { method: "DELETE", headers: headers({ Prefer: "return=minimal" }) });

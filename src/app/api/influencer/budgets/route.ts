@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAccess } from "@/lib/access";
 
 // Brand × month influencer budgets (cost terms). Admin-only (dashboard).
 
@@ -14,6 +15,7 @@ function missing(status: number, body: string) {
 
 export async function GET() {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false, budgets: [] }, { status: 500 });
+  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden", budgets: [] }, { status: 403 });
   const res = await fetch(`${sbUrl}/rest/v1/influencer_budgets?select=*`, { headers: headers(), cache: "no-store" });
   const text = await res.text();
   if (!res.ok) return NextResponse.json({ ok: false, needsSetup: missing(res.status, text), budgets: [] });
@@ -22,6 +24,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
+  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   if (!b.brand || !b.month_key) return NextResponse.json({ ok: false }, { status: 400 });
   const row = { brand: b.brand, month_key: b.month_key, budget: Number(b.budget) || 0 };
