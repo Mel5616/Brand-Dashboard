@@ -73,7 +73,7 @@ export default async function Dashboard() {
               marketingBudgets={isAdmin ? marketingBudgets : []}
               marketingActuals={isAdmin ? marketingActuals : []}
             />
-            <SyncStatus lastSync={lastSync} />
+            <SyncStatus lastSync={lastSync} isAdmin={isAdmin} />
             <UserMenu email={access.user.email} role={access.role!} />
           </div>
         </div>

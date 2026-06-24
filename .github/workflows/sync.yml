@@ -1,0 +1,46 @@
+name: Sync dashboard data
+
+# Runs the Shopify / tradeshow / calendar / AI-insights sync on GitHub's runners
+# (Vercel has no Python). Twice daily + on demand from the dashboard's Sync Now
+# button (workflow_dispatch via the GitHub API).
+on:
+  schedule:
+    - cron: "0 21 * * *"   # 07:00 AEST
+    - cron: "0 8 * * *"    # 18:00 AEST
+  workflow_dispatch: {}
+
+concurrency:
+  group: dashboard-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install --quiet anthropic
+
+      - name: Write config files (gitignored secrets)
+        env:
+          STORES_CONFIG_JSON: ${{ secrets.STORES_CONFIG_JSON }}
+          GOOGLE_ADS_CREDS_JSON: ${{ secrets.GOOGLE_ADS_CREDS_JSON }}
+        run: |
+          printf '%s' "$STORES_CONFIG_JSON" > stores.config.json
+          if [ -n "$GOOGLE_ADS_CREDS_JSON" ]; then printf '%s' "$GOOGLE_ADS_CREDS_JSON" > google_ads_creds.json; fi
+
+      - name: Run sync
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BRAND_SHOPIFY: ${{ secrets.BRAND_SHOPIFY }}
+          BOOTH_SUPABASE_URL: ${{ secrets.BOOTH_SUPABASE_URL }}
+          BOOTH_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.BOOTH_SUPABASE_SERVICE_ROLE_KEY }}
+          UPPABABY_SHOPIFY_DOMAIN: ${{ secrets.UPPABABY_SHOPIFY_DOMAIN }}
+          UPPABABY_SHOPIFY_TOKEN: ${{ secrets.UPPABABY_SHOPIFY_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python3 scripts/sync.py
