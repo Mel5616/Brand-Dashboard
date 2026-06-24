@@ -625,13 +625,13 @@ def fetch_google_ads_metrics(customer_id, creds):
     SELECT segments.month, metrics.cost_micros, metrics.impressions,
            metrics.clicks, metrics.conversions_value
     FROM campaign
-    WHERE segments.date >= '2024-07-01' AND segments.date <= '2026-05-31'
+    WHERE segments.date >= '2024-07-01' AND segments.date <= '2026-06-30'
       AND campaign.status != 'REMOVED'
     '''
     query_no_conv = '''
     SELECT segments.month, metrics.cost_micros, metrics.impressions, metrics.clicks
     FROM campaign
-    WHERE segments.date >= '2024-07-01' AND segments.date <= '2026-05-31'
+    WHERE segments.date >= '2024-07-01' AND segments.date <= '2026-06-30'
       AND campaign.status != 'REMOVED'
     '''
 
@@ -692,14 +692,14 @@ def fetch_google_ads_campaigns(customer_id, creds):
            metrics.cost_micros, metrics.impressions, metrics.clicks,
            metrics.conversions, metrics.conversions_value
     FROM campaign
-    WHERE segments.date >= '2024-07-01' AND segments.date <= '2026-05-31'
+    WHERE segments.date >= '2024-07-01' AND segments.date <= '2026-06-30'
       AND campaign.status != 'REMOVED'
     '''
     query_no_conv = '''
     SELECT campaign.name, segments.month,
            metrics.cost_micros, metrics.impressions, metrics.clicks
     FROM campaign
-    WHERE segments.date >= '2024-07-01' AND segments.date <= '2026-05-31'
+    WHERE segments.date >= '2024-07-01' AND segments.date <= '2026-06-30'
       AND campaign.status != 'REMOVED'
     '''
 

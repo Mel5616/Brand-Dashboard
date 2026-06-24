@@ -24,7 +24,7 @@ ENV_PATH     = os.path.join(BASE_DIR, '.env.local')
 
 API_VERSION = "v20.0"
 DATE_START  = "2024-07-01"
-DATE_END    = "2026-05-31"
+DATE_END    = "2026-06-30"
 
 def load_env():
     if not os.path.exists(ENV_PATH):
