@@ -785,7 +785,13 @@ def sync_google_ads(config):
             print(f'       May spend: ${may.get("spend",0):,.2f} | ROAS: {may.get("roas",0):.2f} | Clicks: {may.get("clicks",0):,}')
             synced += 1
         except Exception as e:
-            print(f'       ✗ {name}: {e}')
+            body = ""
+            try:
+                if hasattr(e, "read"):
+                    body = e.read().decode()[:400]
+            except Exception:
+                pass
+            print(f'       ✗ {name}: {e} {body}')
     print(f'  Google Ads: {synced} brand(s) synced')
 
 # ── Main ──────────────────────────────────────────────────────────────────────
