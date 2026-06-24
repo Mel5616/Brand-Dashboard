@@ -101,6 +101,8 @@ interface Props {
   calendarEvents: any[];
   boothFunnel: any;
   kpis: { label: string; value: string; sub: string }[];
+  role?: "admin" | "member";
+  allowedTabs?: string[];
 }
 
 export function DashboardTabs({
@@ -109,8 +111,16 @@ export function DashboardTabs({
   weekLabels, googleAds, metaAds, metaAdsPlatform,
   instagramOrganic, targets, klaviyo, ga4,
   marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, boothFunnel, kpis,
+  role = "admin", allowedTabs,
 }: Props) {
-  const [active, setActive] = useState<TabId>("brands");
+  // Financial tabs (cost / margin / budget) are admin-only even if otherwise granted.
+  const FINANCIAL = ["budget", "influencer"];
+  // Tabs this user may open (admin → all). Filter the nav + guard the active tab.
+  const visibleTabs = role === "admin"
+    ? TABS
+    : TABS.filter(t => (allowedTabs ?? []).includes(t.id) && !FINANCIAL.includes(t.id));
+  const firstTab = (visibleTabs[0]?.id ?? "brands") as TabId;
+  const [active, setActive] = useState<TabId>(firstTab);
   const [brandFilter, setBrandFilter] = useState<number | "all">("all");
   const [brandPeriod, setBrandPeriod] = useState<BrandPeriod>("monthly");
   const [fy, setFy] = useState<FY>(currentFY());
@@ -227,7 +237,7 @@ export function DashboardTabs({
       )}
       <nav className="flex-1 py-3 px-2 space-y-0.5">
         <p className="px-2 text-[9px] font-semibold text-gray-300 uppercase tracking-[0.18em] mb-1.5">Navigation</p>
-        {TABS.map(tab => {
+        {visibleTabs.map(tab => {
           const isActive = active === tab.id && !selectedBrand;
           return (
             <button

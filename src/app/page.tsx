@@ -1,13 +1,30 @@
+import { redirect } from "next/navigation";
 import { getDashboardData } from "@/lib/db";
 import { getBoothFunnel } from "@/lib/booth";
+import { getAccess } from "@/lib/access";
 import { SyncStatus } from "@/components/SyncStatus";
 import { DashboardTabs } from "@/components/DashboardTabs";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { AiInsightsPanel } from "@/components/AiInsightsPanel";
+import { UserMenu } from "@/components/UserMenu";
 
 export const revalidate = 0;
 
 export default async function Dashboard() {
+  const access = await getAccess();
+  if (!access.user) redirect("/login");
+  const isAdmin = access.role === "admin";
+  if (access.role === "member" && access.allowedTabs.length === 0) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-md text-center">
+          <p className="text-gray-700 font-medium">No access yet</p>
+          <p className="text-sm text-gray-400 mt-1">Your account ({access.user.email}) is signed in but hasn’t been granted any dashboard sections. Ask an admin to set your access.</p>
+          <UserMenu email={access.user.email} role={access.role} minimal />
+        </div>
+      </div>
+    );
+  }
   const {
     brands, summaries, monthly, weekly, products,
     tradeshows, tradeshowBrands, tradeshowSales,
@@ -53,16 +70,20 @@ export default async function Dashboard() {
               googleAds={googleAds}
               metaAds={metaAds}
               targets={targets}
-              marketingBudgets={marketingBudgets}
-              marketingActuals={marketingActuals}
+              marketingBudgets={isAdmin ? marketingBudgets : []}
+              marketingActuals={isAdmin ? marketingActuals : []}
             />
             <SyncStatus lastSync={lastSync} />
+            <UserMenu email={access.user.email} role={access.role!} />
           </div>
         </div>
       </header>
 
       <DashboardTabs
+        role={access.role!}
+        allowedTabs={access.allowedTabs}
         brands={brands}
+        /* financial data withheld from non-admins (not just hidden — not sent) */
         summaries={summaries}
         monthly={monthly}
         weekly={weekly}
@@ -78,8 +99,8 @@ export default async function Dashboard() {
         targets={targets}
         klaviyo={klaviyo}
         ga4={ga4}
-        marketingBudgets={marketingBudgets}
-        marketingActuals={marketingActuals}
+        marketingBudgets={isAdmin ? marketingBudgets : []}
+        marketingActuals={isAdmin ? marketingActuals : []}
         googleAdsCampaigns={googleAdsCampaigns}
         calendarEvents={calendarEvents}
         boothFunnel={boothFunnel}
