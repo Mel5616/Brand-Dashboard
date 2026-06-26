@@ -173,11 +173,9 @@ def main():
     with open(CONFIG_PATH) as f:
         config = json.load(f)
 
-    token = config.get("metaAccessToken")
-    if not token:
-        print("✗  No metaAccessToken in stores.config.json")
-        print('   Add:  "metaAccessToken": "YOUR_SYSTEM_USER_TOKEN"')
-        return
+    # Per-brand token wins (accounts can live in different Business portfolios);
+    # falls back to the top-level metaAccessToken for brands in the main portfolio.
+    global_token = config.get("metaAccessToken")
 
     brands = [b for b in config.get("brands", []) if b.get("metaAdAccountId")]
     if not brands:
@@ -187,6 +185,10 @@ def main():
 
     print(f"Syncing Meta Ads for {len(brands)} brand(s)...\n")
     for b in brands:
+        token = b.get("metaAccessToken") or global_token
+        if not token:
+            print(f"  {b['name']} ({b['metaAdAccountId']}) ... ↷  no token (set metaAccessToken)")
+            continue
         sync_brand(b["id"], b["name"], b["metaAdAccountId"], token)
     print("\nDone. Run python3 scripts/sync.py to refresh all Shopify data too.")
 
