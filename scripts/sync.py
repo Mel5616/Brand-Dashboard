@@ -635,7 +635,7 @@ def fetch_google_ads_metrics(customer_id, creds):
       AND campaign.status != 'REMOVED'
     '''
 
-    url = f'https://googleads.googleapis.com/v20/customers/{cid}/googleAds:search'
+    url = f'https://googleads.googleapis.com/v24/customers/{cid}/googleAds:search'
     ctx = ssl.create_default_context()
 
     def _fetch(q):
@@ -703,7 +703,7 @@ def fetch_google_ads_campaigns(customer_id, creds):
       AND campaign.status != 'REMOVED'
     '''
 
-    url = f'https://googleads.googleapis.com/v20/customers/{cid}/googleAds:search'
+    url = f'https://googleads.googleapis.com/v24/customers/{cid}/googleAds:search'
     ctx = ssl.create_default_context()
 
     def _fetch(q):
