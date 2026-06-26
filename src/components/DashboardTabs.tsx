@@ -5,6 +5,7 @@ import { SalesChart } from "./SalesChart";
 import { GoogleAdsChart } from "./GoogleAdsChart";
 import { MetaAdsChart } from "./MetaAdsChart";
 import { EmailChart } from "./EmailChart";
+import { EmailBrandDetail } from "./EmailBrandDetail";
 import { BrandReport } from "./BrandReport";
 import { buildReport } from "@/lib/report";
 import { ProductsTable } from "./ProductsTable";
@@ -141,6 +142,9 @@ export function DashboardTabs({
   // Report tab has its own brand selector — using brandFilter would trip the
   // selectedBrand short-circuit and open the brand detail page instead.
   const [reportBrand, setReportBrand] = useState<number | "all">("all");
+  // Email tab also needs its own selector so picking a brand shows the Klaviyo
+  // detail view instead of bouncing to the brand detail page.
+  const [emailBrand, setEmailBrand] = useState<number | "all">("all");
   const [brandPeriod, setBrandPeriod] = useState<BrandPeriod>("monthly");
   const [fy, setFy] = useState<FY>(currentFY());
 
@@ -914,20 +918,30 @@ export function DashboardTabs({
           {/* ── Email (Klaviyo) ── */}
           {active === "email" && (
             <>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center justify-between gap-2 mb-2 no-print">
                 <select
-                  value={brandFilter === "all" ? "all" : String(brandFilter)}
-                  onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
+                  value={emailBrand === "all" ? "all" : String(emailBrand)}
+                  onChange={e => setEmailBrand(e.target.value === "all" ? "all" : Number(e.target.value))}
                   className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
                 >
                   <option value="all">All Brands</option>
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
                 </select>
+                {emailBrand !== "all" && (
+                  <button onClick={() => window.print()} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-3.5 py-1.5 transition">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
+                    Download PDF
+                  </button>
+                )}
               </div>
-              <EmailChart key={fy} brands={filteredBrands} data={filteredKlaviyo} monthly={filteredMonthly} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} wholeYear={wholeYear} />
+              {emailBrand !== "all" ? (
+                <EmailBrandDetail brand={brands.find((b: any) => b.id === emailBrand)!} klaviyo={klaviyo} monthly={monthly} monthKeys={monthKeys} monthLabels={monthLabels} />
+              ) : (
+              <>
+              <EmailChart key={fy} brands={brands} data={klaviyo} monthly={monthly} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} wholeYear={wholeYear} />
 
-              {/* Brand breakdown — only when all brands shown */}
-              {brandFilter === "all" && (() => {
+              {/* Brand breakdown */}
+              {(() => {
                 const MK_ALL = monthKeys;
 
                 function Spark({ values, color }: { values: number[]; color: string }) {
@@ -1047,6 +1061,8 @@ export function DashboardTabs({
                   </div>
                 );
               })()}
+              </>
+              )}
             </>
           )}
 
