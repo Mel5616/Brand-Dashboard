@@ -111,7 +111,33 @@ def sync_brand(key, brand_id, name, domain, mk):
             "organic_keywords": int(float(c.get("Organic Keywords", 0) or 0)),
             "organic_traffic": int(float(c.get("Organic Traffic", 0) or 0))})
     sb_upsert("semrush_competitors", crows, "brand_id,month_key,competitor")
-    print(f"    {metric['organic_keywords']:,} keywords · {metric['organic_traffic']:,} traffic · ${metric['traffic_value']:,.0f} value · {len(crows)} competitors", flush=True)
+
+    # Top organic keywords (with search volume + CPC + ranking URL)
+    kws, _ = semrush(key, {"type": "domain_organic", "domain": domain, "database": DATABASE,
+        "export_columns": "Ph,Po,Nq,Cp,Tr,Ur", "display_limit": "100", "display_sort": "tr_desc"})
+    krows, seen = [], set()
+    for w in (kws or []):
+        ph = w.get("Keyword", "")
+        if not ph or ph in seen:  # dedupe: a phrase can map to several URLs
+            continue
+        seen.add(ph)
+        krows.append({"brand_id": brand_id, "month_key": mk, "phrase": ph,
+            "position": int(float(w.get("Position", 0) or 0)),
+            "search_volume": int(float(w.get("Search Volume", 0) or 0)),
+            "cpc": round(float(w.get("CPC", 0) or 0), 2),
+            "traffic_pct": round(float(w.get("Traffic (%)", 0) or 0), 2),
+            "url": w.get("Url", "")})
+    sb_upsert("semrush_keywords", krows, "brand_id,month_key,phrase")
+
+    # Top pages by organic traffic
+    pgs, _ = semrush(key, {"type": "domain_organic_unique", "domain": domain, "database": DATABASE,
+        "export_columns": "Ur,Pc,Tg", "display_limit": "15"})
+    prows = [{"brand_id": brand_id, "month_key": mk, "url": p.get("Url", ""),
+        "keywords": int(float(p.get("Number of Keywords", 0) or 0)),
+        "traffic": int(float(p.get("Traffic", 0) or 0))} for p in (pgs or []) if p.get("Url")]
+    sb_upsert("semrush_pages", prows, "brand_id,month_key,url")
+
+    print(f"    {metric['organic_keywords']:,} keywords · {metric['organic_traffic']:,} traffic · ${metric['traffic_value']:,.0f} value · {len(crows)} competitors · {len(krows)} kw · {len(prows)} pages", flush=True)
 
 def main():
     with open(CONFIG_PATH) as f:

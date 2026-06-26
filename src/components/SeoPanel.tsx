@@ -6,7 +6,7 @@ import {
   PointElement, Tooltip, Legend,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
-import type { Brand, GscMetricRow, GscQueryRow, GscInsight, SemrushMetricRow, SemrushCompetitorRow } from "@/lib/db";
+import type { Brand, GscMetricRow, GscQueryRow, GscInsight, SemrushMetricRow, SemrushCompetitorRow, SemrushKeywordRow, SemrushPageRow } from "@/lib/db";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Tooltip, Legend);
 
@@ -33,7 +33,7 @@ function Delta({ now, prev, invert = false }: { now: number; prev: number; inver
 const fmtAud = (n: number) => (n >= 1000 ? `$${(n / 1000).toFixed(1)}K` : `$${Math.round(n)}`);
 
 export function SeoPanel({
-  scope, brands, gscMetrics, gscQueries, gscInsights, semrushMetrics, semrushCompetitors, monthKeys, monthLabels,
+  scope, brands, gscMetrics, gscQueries, gscInsights, semrushMetrics, semrushCompetitors, semrushKeywords, semrushPages, monthKeys, monthLabels,
 }: {
   scope: number | "all";
   brands: Brand[];
@@ -42,6 +42,8 @@ export function SeoPanel({
   gscInsights: GscInsight[];
   semrushMetrics: SemrushMetricRow[];
   semrushCompetitors: SemrushCompetitorRow[];
+  semrushKeywords: SemrushKeywordRow[];
+  semrushPages: SemrushPageRow[];
   monthKeys: string[];
   monthLabels: string[];
 }) {
@@ -111,6 +113,11 @@ export function SeoPanel({
   const hasGsc = gscMetrics.some(m => m.brand_id === scope && (m.clicks > 0 || m.impressions > 0));
   const sem = semOf(scope);
   const comps = semrushCompetitors.filter(c => c.brand_id === scope).sort((a, b) => b.relevance - a.relevance).slice(0, 6);
+  const semMonth = sem?.month_key;
+  const kws = semrushKeywords.filter(k => k.brand_id === scope && k.month_key === semMonth);
+  const topKw = [...kws].sort((a, b) => b.traffic_pct - a.traffic_pct).slice(0, 15);
+  const opps = kws.filter(k => k.position >= 11 && k.position <= 20).sort((a, b) => b.search_volume - a.search_volume).slice(0, 10);
+  const pages = semrushPages.filter(p => p.brand_id === scope && p.month_key === semMonth).sort((a, b) => b.traffic - a.traffic).slice(0, 10);
   if (!hasGsc && !sem) {
     return (
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-10 text-center">
@@ -164,6 +171,75 @@ export function SeoPanel({
                       <td>{c.common_keywords.toLocaleString()}</td>
                       <td>{c.organic_keywords.toLocaleString()}</td>
                       <td>{c.organic_traffic.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {opps.length > 0 && (
+            <div className="bg-amber-50/40 rounded-xl border border-amber-100 p-5 overflow-x-auto">
+              <h3 className="font-semibold text-amber-800 mb-0.5">Keyword opportunities</h3>
+              <p className="text-xs text-amber-700/70 mb-3">Ranking on page 2 (positions 11 to 20) with real search volume. Quick wins to push to page 1.</p>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-[11px] text-amber-700/70 uppercase tracking-wide text-right border-b border-amber-100">
+                    <th className="text-left font-medium py-1.5">Keyword</th>
+                    <th className="font-medium">Position</th><th className="font-medium">Search vol.</th><th className="font-medium">CPC</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {opps.map(k => (
+                    <tr key={k.phrase} className="text-right border-b border-amber-100/50 text-slate-700">
+                      <td className="text-left py-1.5 font-medium max-w-[320px] truncate" title={k.phrase}>{k.phrase}</td>
+                      <td>{k.position}</td><td className="font-semibold">{k.search_volume.toLocaleString()}</td><td>${k.cpc.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {topKw.length > 0 && (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 overflow-x-auto">
+              <h3 className="font-semibold text-gray-800 mb-0.5">Top organic keywords</h3>
+              <p className="text-xs text-gray-400 mb-3">What this brand ranks for, by share of organic traffic (SEMrush, AU)</p>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-[11px] text-gray-400 uppercase tracking-wide text-right border-b border-gray-100">
+                    <th className="text-left font-medium py-1.5">Keyword</th>
+                    <th className="font-medium">Position</th><th className="font-medium">Search vol.</th><th className="font-medium">CPC</th><th className="font-medium">Traffic share</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topKw.map(k => (
+                    <tr key={k.phrase} className="text-right border-b border-gray-50 text-slate-700">
+                      <td className="text-left py-1.5 font-medium max-w-[300px] truncate" title={k.phrase}>{k.phrase}</td>
+                      <td>{k.position}</td><td>{k.search_volume.toLocaleString()}</td><td>${k.cpc.toFixed(2)}</td><td className="font-semibold">{k.traffic_pct.toFixed(1)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {pages.length > 0 && (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 overflow-x-auto">
+              <h3 className="font-semibold text-gray-800 mb-0.5">Top pages by organic traffic</h3>
+              <p className="text-xs text-gray-400 mb-3">Which URLs the traffic lands on (SEMrush, AU)</p>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-[11px] text-gray-400 uppercase tracking-wide text-right border-b border-gray-100">
+                    <th className="text-left font-medium py-1.5">Page</th>
+                    <th className="font-medium">Keywords</th><th className="font-medium">Est. traffic</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pages.map(p => (
+                    <tr key={p.url} className="text-right border-b border-gray-50 text-slate-700">
+                      <td className="text-left py-1.5 max-w-[420px] truncate" title={p.url}>{p.url.replace(/^https?:\/\/[^/]+/, "") || "/"}</td>
+                      <td>{p.keywords.toLocaleString()}</td><td className="font-semibold">{p.traffic.toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -132,6 +132,9 @@ interface Props {
   gscInsights: any[];
   semrushMetrics: any[];
   semrushCompetitors: any[];
+  semrushKeywords: any[];
+  semrushPages: any[];
+  brandInsights: any[];
   boothFunnel: any;
   kpis: { label: string; value: string; sub: string }[];
   role?: "admin" | "member";
@@ -145,6 +148,7 @@ export function DashboardTabs({
   instagramOrganic, targets, klaviyo, ga4,
   marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, boothFunnel, kpis,
   gscMetrics, gscQueries, gscInsights, semrushMetrics, semrushCompetitors,
+  semrushKeywords, semrushPages, brandInsights,
   role = "admin", allowedTabs,
 }: Props) {
   // Financial tabs (cost / margin / budget) are admin-only even if otherwise granted.
@@ -329,6 +333,7 @@ export function DashboardTabs({
           </div>
           <BrandPage
             brand={selectedBrand}
+            brandInsight={brandInsights.find((x: any) => x.brand_id === selectedBrand.id)?.content ?? null}
             summary={selectedSummary ?? undefined}
             monthly={monthly}
             weekly={weekly}
@@ -365,6 +370,15 @@ export function DashboardTabs({
           {/* ── Brands ── */}
           {active === "brands" && (
             <>
+              {(() => {
+                const digest = brandInsights.find((x: any) => x.brand_id === -1)?.content;
+                return digest ? (
+                  <div className="bg-indigo-50/60 border border-indigo-100 rounded-2xl px-5 py-4 mb-4">
+                    <h3 className="text-sm font-semibold text-indigo-900 flex items-center gap-1.5 mb-1.5">✨ Portfolio digest <span className="text-[11px] font-normal text-indigo-400">what changed this month, ranked by attention</span></h3>
+                    <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">{digest}</p>
+                  </div>
+                ) : null;
+              })()}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {fyKpis.map(kpi => (
                   <div key={kpi.label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
@@ -1105,7 +1119,7 @@ export function DashboardTabs({
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
                 </select>
               </div>
-              <SeoPanel scope={brandFilter} brands={brands} gscMetrics={gscMetrics} gscQueries={gscQueries} gscInsights={gscInsights} semrushMetrics={semrushMetrics} semrushCompetitors={semrushCompetitors} monthKeys={monthKeys} monthLabels={monthLabels} />
+              <SeoPanel scope={brandFilter} brands={brands} gscMetrics={gscMetrics} gscQueries={gscQueries} gscInsights={gscInsights} semrushMetrics={semrushMetrics} semrushCompetitors={semrushCompetitors} semrushKeywords={semrushKeywords} semrushPages={semrushPages} monthKeys={monthKeys} monthLabels={monthLabels} />
             </>
           )}
 

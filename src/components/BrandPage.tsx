@@ -184,6 +184,7 @@ interface Props {
   latest?: string;
   prevMonth?: string;
   fyLabel?: string;
+  brandInsight?: string | null;
 }
 
 export function BrandPage({
@@ -191,7 +192,7 @@ export function BrandPage({
   googleAds, metaAds, metaAdsPlatform, instagramOrganic,
   targets, klaviyo, ga4, marketingBudgets, marketingActuals, googleAdsCampaigns,
   monthKeys = DEFAULT_MONTH_KEYS, monthLabels = DEFAULT_MONTH_LABELS,
-  latest, prevMonth, fyLabel = "FY 2025–26",
+  latest, prevMonth, fyLabel = "FY 2025–26", brandInsight = null,
 }: Props) {
   const MONTH_KEYS   = monthKeys;
   const MONTH_LABELS = monthLabels;
@@ -464,6 +465,13 @@ export function BrandPage({
   return (
     <div className="bg-gray-50 min-h-screen pb-16">
       <div className="max-w-screen-2xl mx-auto">
+
+        {brandInsight && (
+          <div className="bg-indigo-50/60 border-b border-indigo-100 px-6 py-4">
+            <h3 className="text-sm font-semibold text-indigo-900 flex items-center gap-1.5 mb-1">✨ Brand Health <span className="text-[11px] font-normal text-indigo-400">AI read across sales, paid, email and search</span></h3>
+            <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">{brandInsight}</p>
+          </div>
+        )}
 
         {/* ── BRAND SUMMARY KPIs ───────────────────────────────────────────── */}
         {hasSummaryKpis && (

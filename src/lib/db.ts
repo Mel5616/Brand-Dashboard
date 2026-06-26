@@ -227,6 +227,9 @@ export async function getDashboardData() {
     { data: gscInsights },
     { data: semrushMetrics },
     { data: semrushCompetitors },
+    { data: semrushKeywords },
+    { data: semrushPages },
+    { data: brandInsights },
   ] = await Promise.all([
     db.from("brands").select("*").order("id"),
     db.from("brand_summary").select("*"),
@@ -255,6 +258,9 @@ export async function getDashboardData() {
     db.from("gsc_insights").select("*"),
     db.from("semrush_metrics").select("*").order("month_key"),
     db.from("semrush_competitors").select("*"),
+    db.from("semrush_keywords").select("*"),
+    db.from("semrush_pages").select("*"),
+    db.from("brand_insights").select("*"),
   ]);
 
   return {
@@ -285,8 +291,15 @@ export async function getDashboardData() {
     gscInsights: (gscInsights ?? []) as GscInsight[],
     semrushMetrics: (semrushMetrics ?? []) as SemrushMetricRow[],
     semrushCompetitors: (semrushCompetitors ?? []) as SemrushCompetitorRow[],
+    semrushKeywords: (semrushKeywords ?? []) as SemrushKeywordRow[],
+    semrushPages: (semrushPages ?? []) as SemrushPageRow[],
+    brandInsights: (brandInsights ?? []) as BrandInsightRow[],
   };
 }
+
+export type SemrushKeywordRow = { brand_id: number; month_key: string; phrase: string; position: number; search_volume: number; cpc: number; traffic_pct: number; url: string };
+export type SemrushPageRow = { brand_id: number; month_key: string; url: string; keywords: number; traffic: number };
+export type BrandInsightRow = { brand_id: number; generated_at: string; content: string };
 
 export type GscMetricRow = { brand_id: number; month_key: string; clicks: number; impressions: number; ctr: number; position: number };
 export type GscQueryRow = { brand_id: number; month_key: string; query: string; clicks: number; impressions: number; ctr: number; position: number };
