@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { SalesChart } from "./SalesChart";
 import { GoogleAdsChart } from "./GoogleAdsChart";
 import { MetaAdsChart } from "./MetaAdsChart";
+import { EmailChart } from "./EmailChart";
 import { ProductsTable } from "./ProductsTable";
 import { TradeshowAccordion } from "./TradeshowAccordion";
 import { BrandCard, type BrandPeriod } from "./BrandCard";
@@ -20,7 +21,7 @@ import { ShopifyInsights } from "./ShopifyInsights";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "brands" | "shopify" | "google-ads" | "meta-ads" | "tradeshows" | "budget" | "calendar" | "content" | "influencer" | "team";
+type TabId = "brands" | "shopify" | "google-ads" | "meta-ads" | "email" | "tradeshows" | "budget" | "calendar" | "content" | "influencer" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -38,6 +39,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
     id: "meta-ads", label: "Meta Ads",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905a3.61 3.61 0 01-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" /></svg>,
+  },
+  {
+    id: "email", label: "Email",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
   },
   {
     id: "tradeshows", label: "Tradeshows",
@@ -176,6 +181,7 @@ export function DashboardTabs({
   const filteredProducts = brandFilter === "all" ? products  : products.filter((p: any) => p.brand_id === brandFilter);
   const filteredAds      = brandFilter === "all" ? googleAds : googleAds.filter((d: any) => d.brand_id === brandFilter);
   const filteredMeta     = brandFilter === "all" ? metaAds   : metaAds.filter((d: any) => d.brand_id === brandFilter);
+  const filteredKlaviyo  = brandFilter === "all" ? klaviyo   : klaviyo.filter((d: any) => d.brand_id === brandFilter);
 
   const topProducts = [...products].sort((a: any, b: any) => b.gross_sales - a.gross_sales).slice(0, 10);
 
@@ -828,6 +834,108 @@ export function DashboardTabs({
                   { label: "Revenue",   getValue: (r: any) => fmt(r.cur.revenue),                       getSpark: (r: any) => r.revSpark,   getChg: (r: any) => r.revChg },
                   { label: "ROAS",      getValue: (r: any) => roasBadge(r.roas),                        getSpark: (r: any) => r.roasSpark,  getChg: (r: any) => r.roasChg },
                   { label: "Purchases", getValue: (r: any) => (r.cur.purchases ?? 0).toLocaleString(),  getSpark: (r: any) => r.purchSpark, getChg: (r: any) => r.purchChg },
+                ];
+
+                return (
+                  <div className="mt-4 space-y-3">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest px-1">Brand Breakdown — {wholeYear ? fyLabel : latestLabel}</p>
+                    {rows.map((r: any) => (
+                      <div key={r.brand.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                        <div className="flex items-center gap-2 px-5 py-2.5 border-b border-gray-50" style={{ borderLeft: `3px solid ${r.brand.color}` }}>
+                          <span className="text-sm font-bold text-slate-700">{r.brand.name}</span>
+                        </div>
+                        <div className="grid grid-cols-4 divide-x divide-gray-50">
+                          {cols.map(col => (
+                            <div key={col.label} className="px-5 py-3">
+                              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">{col.label}</p>
+                              <p className="text-lg font-semibold text-slate-800 leading-none">{col.getValue(r)}</p>
+                              <div className="my-1.5">
+                                <Spark values={col.getSpark(r)} color={r.brand.color} />
+                              </div>
+                              <p className="text-[10px] text-gray-400">vs {prevLabel} <Chg pct={col.getChg(r)} /></p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </>
+          )}
+
+          {/* ── Email (Klaviyo) ── */}
+          {active === "email" && (
+            <>
+              <div className="flex items-center gap-2 mb-2">
+                <select
+                  value={brandFilter === "all" ? "all" : String(brandFilter)}
+                  onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
+                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                >
+                  <option value="all">All Brands</option>
+                  {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
+                </select>
+              </div>
+              <EmailChart key={fy} brands={filteredBrands} data={filteredKlaviyo} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} wholeYear={wholeYear} />
+
+              {/* Brand breakdown — only when all brands shown */}
+              {brandFilter === "all" && (() => {
+                const MK_ALL = monthKeys;
+
+                function Spark({ values, color }: { values: number[]; color: string }) {
+                  const max = Math.max(...values, 0.001);
+                  const W = 80, H = 28;
+                  const pts = values.map((v, i) => `${(i / (values.length - 1)) * W},${H - (v / max) * H}`).join(" ");
+                  return (
+                    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="overflow-visible">
+                      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7" />
+                    </svg>
+                  );
+                }
+                function Chg({ pct }: { pct: number | null }) {
+                  if (pct === null) return <span className="text-[10px] text-gray-300">—</span>;
+                  return <span className={`text-[10px] font-semibold ${pct >= 0 ? "text-emerald-500" : "text-red-500"}`}>{pct >= 0 ? "+" : ""}{pct.toFixed(1)}%</span>;
+                }
+                const pctChg = (cur: number, prev: number | null | undefined) =>
+                  wholeYear ? null : (prev && prev > 0 ? ((cur - prev) / prev) * 100 : null);
+
+                const rows = brands
+                  .map((b: any) => {
+                    const history     = MK_ALL.map(mk => klaviyo.find((d: any) => d.brand_id === b.id && d.month_key === mk));
+                    const sentSpark   = history.map(r => r?.emails_sent ?? 0);
+                    const openSpark   = history.map(r => r?.open_rate   ?? 0);
+                    const clickSpark  = history.map(r => r?.click_rate  ?? 0);
+                    const revSpark    = history.map(r => r?.revenue     ?? 0);
+                    const monthCur = history[latestI];
+                    const prev     = wholeYear ? null : history[latestI - 1];
+                    if (!wholeYear && (!monthCur || monthCur.emails_sent === 0)) return null;
+                    const fySent = fySum(sentSpark);
+                    if (wholeYear && fySent === 0) return null;
+                    // Blend rates by delivered volume across the FY
+                    const fyOpen  = fySent > 0 ? history.reduce((s, r) => s + (r?.open_rate  ?? 0) * (r?.emails_sent ?? 0), 0) / fySent : 0;
+                    const fyClick = fySent > 0 ? history.reduce((s, r) => s + (r?.click_rate ?? 0) * (r?.emails_sent ?? 0), 0) / fySent : 0;
+                    const cur = wholeYear
+                      ? { emails_sent: fySent, open_rate: fyOpen, click_rate: fyClick, revenue: fySum(revSpark) }
+                      : monthCur;
+                    return {
+                      brand: b, cur, sentSpark, openSpark, clickSpark, revSpark,
+                      sentChg:  pctChg(cur.emails_sent, prev?.emails_sent),
+                      openChg:  pctChg(cur.open_rate,   prev?.open_rate),
+                      clickChg: pctChg(cur.click_rate,  prev?.click_rate),
+                      revChg:   pctChg(cur.revenue,     prev?.revenue),
+                    };
+                  })
+                  .filter(Boolean)
+                  .sort((a: any, b: any) => (b.cur.revenue ?? 0) - (a.cur.revenue ?? 0));
+
+                if (!rows.length) return null;
+
+                const cols = [
+                  { label: "Email Revenue", getValue: (r: any) => fmt(r.cur.revenue),                       getSpark: (r: any) => r.revSpark,   getChg: (r: any) => r.revChg },
+                  { label: "Delivered",     getValue: (r: any) => r.cur.emails_sent.toLocaleString(),       getSpark: (r: any) => r.sentSpark,  getChg: (r: any) => r.sentChg },
+                  { label: "Open Rate",     getValue: (r: any) => r.cur.open_rate.toFixed(1) + "%",          getSpark: (r: any) => r.openSpark,  getChg: (r: any) => r.openChg },
+                  { label: "Click Rate",    getValue: (r: any) => r.cur.click_rate.toFixed(1) + "%",         getSpark: (r: any) => r.clickSpark, getChg: (r: any) => r.clickChg },
                 ];
 
                 return (
