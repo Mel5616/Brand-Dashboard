@@ -48,7 +48,7 @@ CONFIG_PATH = os.path.join(BASE_DIR, "stores.config.json")
 
 MONTH_KEYS = [
     "2025-07","2025-08","2025-09","2025-10","2025-11","2025-12",
-    "2026-01","2026-02","2026-03","2026-04","2026-05",
+    "2026-01","2026-02","2026-03","2026-04","2026-05","2026-06",
 ]
 
 def load_config():
@@ -58,7 +58,7 @@ def load_config():
 def klaviyo_get(api_key, path, params=None):
     headers = {
         "Authorization": f"Klaviyo-API-Key {api_key}",
-        "revision": "2024-02-15",
+        "revision": "2024-10-15",
         "Accept": "application/json",
     }
     url = f"https://a.klaviyo.com/api/{path}"
@@ -69,7 +69,7 @@ def klaviyo_get(api_key, path, params=None):
 def klaviyo_post(api_key, path, payload):
     headers = {
         "Authorization": f"Klaviyo-API-Key {api_key}",
-        "revision": "2024-02-15",
+        "revision": "2024-10-15",
         "Content-Type": "application/json",
         "Accept": "application/json",
     }
@@ -85,73 +85,109 @@ def get_list_size(api_key, list_id):
         print(f"    Warning: could not fetch list size — {e}")
         return 0
 
-def get_metric_id(api_key, metric_name):
-    data = klaviyo_get(api_key, "metrics/", {"filter": f"equals(name,\"{metric_name}\")"})
-    items = data.get("data", [])
-    return items[0]["id"] if items else None
-
-def get_metric_aggregate(api_key, metric_id, year, month, measurement):
-    """Fetch monthly aggregate for a given metric."""
-    first = date(year, month, 1)
-    last  = date(year, month, monthrange(year, month)[1])
-    payload = {
-        "data": {
-            "type": "metric-aggregate",
-            "attributes": {
-                "metric_id": metric_id,
-                "measurements": [measurement],
-                "interval": "month",
-                "page_size": 500,
-                "filter": [
-                    f"greater-or-equal(datetime,{first.isoformat()}T00:00:00+00:00)",
-                    f"less-than(datetime,{last.isoformat()}T23:59:59+00:00)",
-                ],
-            },
+def get_metric_map(api_key):
+    """Return {metric_name: id} for the whole account (name isn't a filterable field,
+    so we list all metrics and match client-side). Follows pagination."""
+    out = {}
+    data = klaviyo_get(api_key, "metrics/")
+    while True:
+        for m in data.get("data", []):
+            out[m["attributes"]["name"]] = m["id"]
+        nxt = (data.get("links") or {}).get("next")
+        if not nxt:
+            break
+        headers = {
+            "Authorization": f"Klaviyo-API-Key {api_key}",
+            "revision": "2024-10-15",
+            "Accept": "application/json",
         }
+        r = requests.get(nxt, headers=headers, timeout=20)
+        r.raise_for_status()
+        data = r.json()
+    return out
+
+def month_bounds(year, month):
+    first = date(year, month, 1)
+    nxt   = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
+    return first, nxt
+
+def metric_aggregate(api_key, metric_id, year, month, measurement, by=None):
+    """Monthly aggregate. Returns the list of data rows ({dimensions, measurements})."""
+    first, nxt = month_bounds(year, month)
+    attrs = {
+        "metric_id": metric_id,
+        "measurements": [measurement],
+        "interval": "month",
+        "timezone": "UTC",
+        "filter": [
+            f"greater-or-equal(datetime,{first.isoformat()}T00:00:00+00:00)",
+            f"less-than(datetime,{nxt.isoformat()}T00:00:00+00:00)",
+        ],
     }
+    if by:
+        attrs["by"] = by
+    payload = {"data": {"type": "metric-aggregate", "attributes": attrs}}
     try:
         data = klaviyo_post(api_key, "metric-aggregates/", payload)
-        results = data.get("data", {}).get("attributes", {}).get("data", {})
-        dates = results.get("dates", [])
-        vals  = results.get("measurements", {}).get(measurement, [])
-        if dates and vals:
-            return vals[0] if vals else 0
-        return 0
+        return data.get("data", {}).get("attributes", {}).get("data", []) or []
     except Exception as e:
         print(f"    Warning: metric aggregate failed — {e}")
-        return 0
+        return []
+
+def agg_total(api_key, metric_id, year, month, measurement):
+    """Single scalar for a count/sum metric (no grouping)."""
+    rows = metric_aggregate(api_key, metric_id, year, month, measurement)
+    if rows:
+        vals = rows[0].get("measurements", {}).get(measurement, [])
+        return vals[0] if vals else 0
+    return 0
+
+def agg_email_revenue(api_key, metric_id, year, month):
+    """Email-attributed Placed Order revenue, grouped by $attributed_channel."""
+    rows = metric_aggregate(api_key, metric_id, year, month, "sum_value", by=["$attributed_channel"])
+    for r in rows:
+        if "$email_channel" in (r.get("dimensions") or []):
+            vals = r.get("measurements", {}).get("sum_value", [])
+            return vals[0] if vals else 0
+    return 0
 
 def sync_brand(db, api_key, brand, brand_id):
     list_id = brand.get("klaviyoListId")
-    if not api_key or not list_id:
-        print(f"  ↷ {brand['name']}: no klaviyoApiKey or klaviyoListId, skipping")
+    if not api_key:
+        print(f"  ↷ {brand['name']}: no klaviyoApiKey, skipping")
         return
 
-    print(f"  → {brand['name']} (list {list_id})")
+    print(f"  → {brand['name']}" + (f" (list {list_id})" if list_id else " (no list — subscriber count skipped)"))
 
-    # Get metric IDs once
+    # Look up metric IDs once (name isn't filterable, so fetch all + match)
     try:
-        opened_id  = get_metric_id(api_key, "Opened Email")
-        clicked_id = get_metric_id(api_key, "Clicked Email")
-        sent_id    = get_metric_id(api_key, "Sent Email")
-        revenue_id = get_metric_id(api_key, "Placed Order")
+        metrics     = get_metric_map(api_key)
     except Exception as e:
-        print(f"    Error fetching metric IDs: {e}")
+        print(f"    Error fetching metrics: {e}")
         return
+    received_id = metrics.get("Received Email")   # Klaviyo has no "Sent Email"; delivered = Received
+    opened_id   = metrics.get("Opened Email")
+    clicked_id  = metrics.get("Clicked Email")
+    revenue_id  = metrics.get("Placed Order")
 
-    list_size = get_list_size(api_key, list_id)
-    print(f"    Subscribers: {list_size:,}")
+    list_size = get_list_size(api_key, list_id) if list_id else 0
+    if list_id:
+        print(f"    Subscribers: {list_size:,}")
 
     for mk in MONTH_KEYS:
         year, month = int(mk[:4]), int(mk[5:])
 
-        sent    = get_metric_aggregate(api_key, sent_id,    year, month, "count")        if sent_id    else 0
-        opened  = get_metric_aggregate(api_key, opened_id,  year, month, "count")        if opened_id  else 0
-        clicked = get_metric_aggregate(api_key, clicked_id, year, month, "count")        if clicked_id else 0
-        revenue = get_metric_aggregate(api_key, revenue_id, year, month, "sum_value")    if revenue_id else 0
+        # "unique" = distinct profiles, so open/click rates match Klaviyo's own
+        # reporting and don't exceed 100% (Apple MPP inflates total-open counts).
+        sent    = agg_total(api_key, received_id, year, month, "unique") if received_id else 0
+        opened  = agg_total(api_key, opened_id,   year, month, "unique") if opened_id   else 0
+        clicked = agg_total(api_key, clicked_id,  year, month, "unique") if clicked_id  else 0
+        revenue = agg_email_revenue(api_key, revenue_id, year, month)    if revenue_id  else 0
 
-        open_rate  = (opened  / sent * 100) if sent > 0 else 0
-        click_rate = (clicked / sent * 100) if sent > 0 else 0
+        # Cap at 100%: in low-volume months, opens/clicks of emails delivered in a
+        # prior month can exceed that month's deliveries, pushing the ratio over 100%.
+        open_rate  = min(100.0, opened  / sent * 100) if sent > 0 else 0
+        click_rate = min(100.0, clicked / sent * 100) if sent > 0 else 0
 
         row = {
             "brand_id": brand_id,
@@ -163,8 +199,8 @@ def sync_brand(db, api_key, brand, brand_id):
             "revenue": round(float(revenue), 2),
         }
         db.table("klaviyo_metrics").upsert(row, on_conflict="brand_id,month_key").execute()
-        print(f"    {mk}: sent={int(sent)} open={open_rate:.1f}% click={click_rate:.1f}% rev=${revenue:.0f}")
-        time.sleep(0.3)
+        print(f"    {mk}: delivered={int(sent):,} open={open_rate:.1f}% click={click_rate:.1f}% email_rev=${revenue:,.0f}")
+        time.sleep(0.2)
 
 def main():
     config = load_config()
@@ -177,8 +213,8 @@ def main():
     for i, brand in enumerate(brands):
         # Per-brand key takes priority; fall back to global key if set
         api_key = brand.get("klaviyoApiKey") or config.get("klaviyoApiKey")
-        if not api_key or not brand.get("klaviyoListId"):
-            print(f"  ↷ {brand.get('name')}: missing klaviyoApiKey or klaviyoListId, skipping")
+        if not api_key:
+            print(f"  ↷ {brand.get('name')}: missing klaviyoApiKey, skipping")
             continue
         try:
             sync_brand(db, api_key, brand, i)
