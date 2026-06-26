@@ -29,7 +29,7 @@ export function MetaAdsChart({ brands, data, monthKeys = DEFAULT_MONTH_KEYS, mon
   if (activeBrands.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-        <h2 className="font-semibold text-gray-800 mb-2">Meta Ads</h2>
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-2">Meta Ads</h2>
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <p className="text-gray-500 font-medium">No Meta Ads data yet</p>
           <p className="text-sm text-gray-400 mt-1">Run <code className="bg-gray-100 px-1 rounded">python3 scripts/sync_meta.py</code></p>
@@ -81,7 +81,7 @@ export function MetaAdsChart({ brands, data, monthKeys = DEFAULT_MONTH_KEYS, mon
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <div>
-          <h2 className="font-semibold text-gray-800">Meta Ads</h2>
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Meta Ads</h2>
           <p className="text-xs text-gray-400 mt-0.5">Monthly performance across all brands</p>
         </div>
         <div className="flex gap-1 bg-gray-100 rounded-lg p-1">

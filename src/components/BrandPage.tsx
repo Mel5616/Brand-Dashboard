@@ -649,7 +649,7 @@ export function BrandPage({
         <div className="grid grid-cols-5 divide-x divide-gray-100 border-b border-gray-100">
           <div className="col-span-3 bg-white p-6">
             <p className="text-[10px] uppercase tracking-[0.18em] text-gray-400 mb-5">
-              Revenue &amp; Orders — {isWeekly ? "Weekly (Rolling 13 Weeks)" : "Monthly (${fyLabel})"}
+              Revenue &amp; Orders — {isWeekly ? "Weekly (Rolling 13 Weeks)" : `Monthly (${fyLabel})`}
             </p>
             <div className="h-52">
               <Bar data={barData} options={barOptions} />

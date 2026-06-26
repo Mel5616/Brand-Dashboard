@@ -94,7 +94,7 @@ export function EmailBrandDetail({
 
       {/* Email revenue — flow vs campaign */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-        <h3 className="font-semibold text-gray-800">Email revenue — flow vs campaign</h3>
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Email revenue — flow vs campaign</h3>
         <p className="text-xs text-gray-400 mb-3">Automated flows vs one-off campaigns, attributed</p>
         <div className="h-56">
           <Bar
@@ -116,7 +116,7 @@ export function EmailBrandDetail({
 
       {/* Engagement */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-        <h3 className="font-semibold text-gray-800">Engagement &amp; list health</h3>
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Engagement &amp; list health</h3>
         <p className="text-xs text-gray-400 mb-3">Open % and click % (left) · unsubscribe % (right)</p>
         <div className="h-56">
           <Line
@@ -143,7 +143,7 @@ export function EmailBrandDetail({
 
       {/* Monthly detail table */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 overflow-x-auto">
-        <h3 className="font-semibold text-gray-800 mb-3">Monthly detail</h3>
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-3">Monthly detail</h3>
         <table className="w-full text-sm">
           <thead>
             <tr className="text-[11px] text-gray-400 uppercase tracking-wide text-right border-b border-gray-100">

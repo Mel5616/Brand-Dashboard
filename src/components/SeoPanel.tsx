@@ -80,7 +80,7 @@ export function SeoPanel({
           <Card label="Brands with SEO" value={String(rows.length)} accent="#8b5cf6" />
         </div>
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 overflow-x-auto">
-          <h3 className="font-semibold text-gray-800 mb-0.5">Organic search leaderboard</h3>
+          <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-0.5">Organic search leaderboard</h3>
           <p className="text-xs text-gray-400 mb-3">Clicks/position from Search Console · keywords + traffic value from SEMrush (AU)</p>
           <table className="w-full text-sm">
             <thead>
@@ -154,7 +154,7 @@ export function SeoPanel({
           </div>
           {comps.length > 0 && (
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 overflow-x-auto">
-              <h3 className="font-semibold text-gray-800 mb-0.5">Top organic competitors</h3>
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-0.5">Top organic competitors</h3>
               <p className="text-xs text-gray-400 mb-3">Domains ranking for the same keywords (SEMrush, AU)</p>
               <table className="w-full text-sm">
                 <thead>
@@ -203,7 +203,7 @@ export function SeoPanel({
 
           {topKw.length > 0 && (
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 overflow-x-auto">
-              <h3 className="font-semibold text-gray-800 mb-0.5">Top organic keywords</h3>
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-0.5">Top organic keywords</h3>
               <p className="text-xs text-gray-400 mb-3">What this brand ranks for, by share of organic traffic (SEMrush, AU)</p>
               <table className="w-full text-sm">
                 <thead>
@@ -226,7 +226,7 @@ export function SeoPanel({
 
           {pages.length > 0 && (
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 overflow-x-auto">
-              <h3 className="font-semibold text-gray-800 mb-0.5">Top pages by organic traffic</h3>
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-0.5">Top pages by organic traffic</h3>
               <p className="text-xs text-gray-400 mb-3">Which URLs the traffic lands on (SEMrush, AU)</p>
               <table className="w-full text-sm">
                 <thead>
@@ -258,7 +258,7 @@ export function SeoPanel({
       </div>
 
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-        <h3 className="font-semibold text-gray-800">Visibility trend</h3>
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Visibility trend</h3>
         <p className="text-xs text-gray-400 mb-3">Organic clicks (left) and average position (right, lower is better)</p>
         <div className="h-56">
           <Line
@@ -311,7 +311,7 @@ export function SeoPanel({
       </div>
 
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 overflow-x-auto">
-        <h3 className="font-semibold text-gray-800 mb-0.5">Top queries — {monthLabels[li]}</h3>
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-0.5">Top queries — {monthLabels[li]}</h3>
         <p className="text-xs text-gray-400 mb-3">Search terms driving organic traffic</p>
         <table className="w-full text-sm">
           <thead>

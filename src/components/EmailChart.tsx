@@ -45,7 +45,7 @@ export function EmailChart({ brands, data, monthly = [], monthKeys = DEFAULT_MON
   if (activeBrands.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-        <h2 className="font-semibold text-gray-800 mb-2">Email Marketing</h2>
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-2">Email Marketing</h2>
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <div className="text-4xl mb-3">✉️</div>
           <p className="text-gray-500 font-medium">No Klaviyo data yet</p>
@@ -113,7 +113,7 @@ export function EmailChart({ brands, data, monthly = [], monthKeys = DEFAULT_MON
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <div>
-          <h2 className="font-semibold text-gray-800">Email Marketing</h2>
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Email Marketing</h2>
           <p className="text-xs text-gray-400 mt-0.5">Klaviyo — monthly performance across all brands</p>
         </div>
         <div className="flex gap-1 bg-gray-100 rounded-lg p-1">

@@ -11,6 +11,7 @@ import { buildReport } from "@/lib/report";
 import { GoogleCampaignTable, MetaPlatformBreakdown } from "./ChannelBrandDetail";
 import { CampaignCalendar } from "./CampaignCalendar";
 import { SeoPanel } from "./SeoPanel";
+import { SectionBar } from "./ui";
 import { ProductsTable } from "./ProductsTable";
 import { TradeshowAccordion } from "./TradeshowAccordion";
 import { BrandCard, type BrandPeriod } from "./BrandCard";
@@ -589,6 +590,7 @@ export function DashboardTabs({
           {/* ── Report (management report, per brand + portfolio, PDF) ── */}
           {active === "report" && (
             <>
+              <SectionBar title="Management Report" />
               <div className="flex items-center justify-between gap-2 mb-3 no-print">
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}
@@ -618,6 +620,7 @@ export function DashboardTabs({
           {/* ── Shopify ── */}
           {active === "shopify" && (
             <>
+              <SectionBar title="Shopify · Sales" />
               <div className="flex items-center gap-2 mb-2">
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}
@@ -729,6 +732,7 @@ export function DashboardTabs({
           {/* ── Google Ads ── */}
           {active === "google-ads" && (
             <>
+              <SectionBar title="Google Ads" />
               <div className="flex items-center gap-2 mb-2">
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}
@@ -846,6 +850,7 @@ export function DashboardTabs({
           {/* ── Meta Ads ── */}
           {active === "meta-ads" && (
             <>
+              <SectionBar title="Meta Ads" />
               <div className="flex items-center gap-2 mb-2">
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}
@@ -958,6 +963,7 @@ export function DashboardTabs({
           {/* ── Email (Klaviyo) ── */}
           {active === "email" && (
             <>
+              <SectionBar title="Email Marketing · Klaviyo" />
               <div className="flex items-center justify-between gap-2 mb-2 no-print">
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}
@@ -1109,6 +1115,7 @@ export function DashboardTabs({
           {/* ── SEO (Search Console, portfolio + per-brand) ── */}
           {active === "seo" && (
             <>
+              <SectionBar title="Organic Search · SEO" />
               <div className="flex items-center gap-2 mb-3">
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}

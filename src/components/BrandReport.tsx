@@ -30,7 +30,7 @@ function Card({ label, value, sub, accent }: { label: string; value: string; sub
 function DonutCard({ title, subtitle, slices, total }: { title: string; subtitle: string; slices: ChannelSlice[]; total: number }) {
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-      <h3 className="font-semibold text-gray-800">{title}</h3>
+      <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">{title}</h3>
       <p className="text-xs text-gray-400 mb-3">{subtitle}</p>
       <div className="flex items-center gap-5">
         <div className="relative w-36 h-36 shrink-0">
@@ -94,7 +94,7 @@ export function BrandReport({ r }: { r: ReportData }) {
 
       {/* Monthly sales vs spend */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-        <h3 className="font-semibold text-gray-800">Monthly sales vs marketing spend</h3>
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Monthly sales vs marketing spend</h3>
         <p className="text-xs text-gray-400 mb-3">Sales (solid, left axis) · spend (dashed, right axis)</p>
         <div className="h-64">
           <Line
@@ -121,7 +121,7 @@ export function BrandReport({ r }: { r: ReportData }) {
       {/* Budget vs spend + Sales comparison */}
       <div className="grid md:grid-cols-2 gap-4">
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-          <h3 className="font-semibold text-gray-800">Budget vs spend</h3>
+          <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Budget vs spend</h3>
           <p className="text-xs text-gray-400 mb-3">Marketing budget utilisation</p>
           <div className="flex items-center gap-5">
             <div className="relative w-32 h-32 shrink-0">
@@ -146,7 +146,7 @@ export function BrandReport({ r }: { r: ReportData }) {
         </div>
 
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-          <h3 className="font-semibold text-gray-800">Sales: prior year vs target vs actual</h3>
+          <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Sales: prior year vs target vs actual</h3>
           <p className="text-xs text-gray-400 mb-3">Prior yr actual · target · actual</p>
           <div className="h-40">
             <Bar

@@ -31,7 +31,7 @@ export function GoogleCampaignTable({ campaigns, brandId, fyLabel }: { campaigns
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 overflow-x-auto mt-4">
-      <h3 className="font-semibold text-gray-800 mb-0.5">Campaigns — {fyLabel}</h3>
+      <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-0.5">Campaigns — {fyLabel}</h3>
       <p className="text-xs text-gray-400 mb-3">Google Ads performance by campaign</p>
       <table className="w-full text-sm">
         <thead>
@@ -78,7 +78,7 @@ export function MetaPlatformBreakdown({ rows, brandId, fyLabel }: { rows: MetaPl
 
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 overflow-x-auto mt-4">
-      <h3 className="font-semibold text-gray-800 mb-0.5">By placement — {fyLabel}</h3>
+      <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-0.5">By placement — {fyLabel}</h3>
       <p className="text-xs text-gray-400 mb-3">Meta Ads performance by platform</p>
       <table className="w-full text-sm">
         <thead>
