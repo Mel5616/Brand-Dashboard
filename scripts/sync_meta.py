@@ -106,13 +106,19 @@ def parse_row(row):
     values  = row.get("action_values", [])
     purchases = int(pick_action(actions, "purchase", "omni_purchase", "offsite_conversion.fb_pixel_purchase"))
     revenue   = pick_action(values,  "purchase", "omni_purchase", "offsite_conversion.fb_pixel_purchase")
+    spend     = round(float(row.get("spend", 0)), 2)
+    impr      = int(float(row.get("impressions", 0)))
+    clicks    = int(float(row.get("clicks", 0)))
     return {
-        "spend":       round(float(row.get("spend", 0)), 2),
-        "impressions": int(float(row.get("impressions", 0))),
-        "clicks":      int(float(row.get("clicks", 0))),
+        "spend":       spend,
+        "impressions": impr,
+        "clicks":      clicks,
         "reach":       int(float(row.get("reach", 0))),
         "purchases":   purchases,
         "revenue":     round(revenue, 2),
+        "roas":        round(revenue / spend, 4) if spend > 0 else 0,
+        "cpm":         round(spend / impr * 1000, 2) if impr > 0 else 0,
+        "cpc":         round(spend / clicks, 2) if clicks > 0 else 0,
     }
 
 def sync_brand(brand_id, name, account_id, access_token):

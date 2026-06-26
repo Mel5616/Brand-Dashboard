@@ -86,7 +86,7 @@ def main():
     brands  = sb_get("brands?select=id,name&order=id")
     summ    = sb_get("brand_summary?select=brand_id,fy_revenue,last_month_rev,mom_growth,yoy_growth,last_month_label")
     google  = sb_get("google_ads?select=brand_id,month_key,spend,roas&order=month_key")
-    meta    = sb_get("meta_ads?select=brand_id,month_key,spend,roas&order=month_key")
+    meta    = sb_get("meta_ads?select=brand_id,month_key,spend,roas,revenue&order=month_key")
     klav    = sb_get("klaviyo_metrics?select=brand_id,month_key,revenue,open_rate,click_rate,emails_sent&order=month_key")
     gsc     = sb_get("gsc_metrics?select=brand_id,month_key,clicks,position&order=month_key")
     semrush = sb_get("semrush_metrics?select=brand_id,month_key,organic_keywords,traffic_value&order=month_key")
@@ -97,6 +97,8 @@ def main():
         bid, name = b["id"], b["name"]
         s = next((x for x in summ if x["brand_id"] == bid), {})
         g, m, k = latest(google, bid), latest(meta, bid), latest(klav, bid)
+        if m and not (m.get("roas") or 0) and (m.get("spend") or 0) > 0:
+            m["roas"] = (m.get("revenue") or 0) / m["spend"]  # roas column can be 0; derive it
         gs, sr = latest(gsc, bid), latest(semrush, bid)
         rev = s.get("last_month_rev") or 0
         mom = s.get("mom_growth") or 0
