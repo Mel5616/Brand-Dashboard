@@ -22,15 +22,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install --quiet anthropic supabase
+      - run: pip install --quiet anthropic supabase google-analytics-data
 
       - name: Write config files (gitignored secrets)
         env:
           STORES_CONFIG_JSON: ${{ secrets.STORES_CONFIG_JSON }}
           GOOGLE_ADS_CREDS_JSON: ${{ secrets.GOOGLE_ADS_CREDS_JSON }}
+          GA4_CREDENTIALS_JSON: ${{ secrets.GA4_CREDENTIALS_JSON }}
         run: |
           printf '%s' "$STORES_CONFIG_JSON" > stores.config.json
           if [ -n "$GOOGLE_ADS_CREDS_JSON" ]; then printf '%s' "$GOOGLE_ADS_CREDS_JSON" > google_ads_creds.json; fi
+          if [ -n "$GA4_CREDENTIALS_JSON" ]; then printf '%s' "$GA4_CREDENTIALS_JSON" > credentials.json; fi
 
       - name: Run sync
         env:
@@ -60,3 +62,11 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: python3 scripts/sync_instagram.py
+
+      - name: Run GA4 sync
+        if: ${{ always() }}
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python3 scripts/sync_ga4.py
