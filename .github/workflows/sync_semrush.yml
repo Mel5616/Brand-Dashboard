@@ -1,0 +1,32 @@
+name: Sync SEMrush (weekly)
+
+# SEMrush bills per API call, so this runs weekly (not twice daily like the main
+# sync). The data is a monthly snapshot, so weekly is plenty and keeps unit usage low.
+on:
+  schedule:
+    - cron: "0 20 * * 1"   # Monday 06:00 AEST
+  workflow_dispatch: {}
+
+concurrency:
+  group: semrush-sync
+  cancel-in-progress: false
+
+jobs:
+  semrush:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Write config (gitignored secret)
+        env:
+          STORES_CONFIG_JSON: ${{ secrets.STORES_CONFIG_JSON }}
+        run: printf '%s' "$STORES_CONFIG_JSON" > stores.config.json
+      - name: Run SEMrush sync
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python3 scripts/sync_semrush.py

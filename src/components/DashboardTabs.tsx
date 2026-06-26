@@ -130,6 +130,8 @@ interface Props {
   gscMetrics: any[];
   gscQueries: any[];
   gscInsights: any[];
+  semrushMetrics: any[];
+  semrushCompetitors: any[];
   boothFunnel: any;
   kpis: { label: string; value: string; sub: string }[];
   role?: "admin" | "member";
@@ -142,7 +144,7 @@ export function DashboardTabs({
   weekLabels, googleAds, metaAds, metaAdsPlatform,
   instagramOrganic, targets, klaviyo, ga4,
   marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, boothFunnel, kpis,
-  gscMetrics, gscQueries, gscInsights,
+  gscMetrics, gscQueries, gscInsights, semrushMetrics, semrushCompetitors,
   role = "admin", allowedTabs,
 }: Props) {
   // Financial tabs (cost / margin / budget) are admin-only even if otherwise granted.
@@ -1103,7 +1105,7 @@ export function DashboardTabs({
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
                 </select>
               </div>
-              <SeoPanel scope={brandFilter} brands={brands} gscMetrics={gscMetrics} gscQueries={gscQueries} gscInsights={gscInsights} monthKeys={monthKeys} monthLabels={monthLabels} />
+              <SeoPanel scope={brandFilter} brands={brands} gscMetrics={gscMetrics} gscQueries={gscQueries} gscInsights={gscInsights} semrushMetrics={semrushMetrics} semrushCompetitors={semrushCompetitors} monthKeys={monthKeys} monthLabels={monthLabels} />
             </>
           )}
 

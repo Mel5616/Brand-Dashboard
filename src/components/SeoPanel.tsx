@@ -6,7 +6,7 @@ import {
   PointElement, Tooltip, Legend,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
-import type { Brand, GscMetricRow, GscQueryRow, GscInsight } from "@/lib/db";
+import type { Brand, GscMetricRow, GscQueryRow, GscInsight, SemrushMetricRow, SemrushCompetitorRow } from "@/lib/db";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Tooltip, Legend);
 
@@ -30,18 +30,24 @@ function Delta({ now, prev, invert = false }: { now: number; prev: number; inver
   return <span className={good ? "text-emerald-500" : "text-red-500"}>{pct >= 0 ? "▲" : "▼"} {Math.abs(pct).toFixed(0)}%</span>;
 }
 
+const fmtAud = (n: number) => (n >= 1000 ? `$${(n / 1000).toFixed(1)}K` : `$${Math.round(n)}`);
+
 export function SeoPanel({
-  scope, brands, gscMetrics, gscQueries, gscInsights, monthKeys, monthLabels,
+  scope, brands, gscMetrics, gscQueries, gscInsights, semrushMetrics, semrushCompetitors, monthKeys, monthLabels,
 }: {
   scope: number | "all";
   brands: Brand[];
   gscMetrics: GscMetricRow[];
   gscQueries: GscQueryRow[];
   gscInsights: GscInsight[];
+  semrushMetrics: SemrushMetricRow[];
+  semrushCompetitors: SemrushCompetitorRow[];
   monthKeys: string[];
   monthLabels: string[];
 }) {
-  const has = (id: number) => gscMetrics.some(m => m.brand_id === id && (m.clicks > 0 || m.impressions > 0));
+  // SEMrush works for any public domain (even brands whose GSC isn't shared yet)
+  const semOf = (id: number) => semrushMetrics.filter(m => m.brand_id === id).sort((a, b) => a.month_key.localeCompare(b.month_key)).slice(-1)[0];
+  const has = (id: number) => gscMetrics.some(m => m.brand_id === id && (m.clicks > 0 || m.impressions > 0)) || !!semOf(id);
   const seoBrands = brands.filter(b => has(b.id));
 
   if (seoBrands.length === 0) {
@@ -59,39 +65,37 @@ export function SeoPanel({
     const rows = seoBrands.map(b => {
       const ms = monthKeys.map(mk => gscMetrics.find(m => m.brand_id === b.id && m.month_key === mk));
       const withData = ms.filter(m => m && (m.clicks > 0 || m.impressions > 0)) as GscMetricRow[];
-      const latest = withData[withData.length - 1];
-      const prev = withData[withData.length - 2];
-      return { b, latest, prev, spark: ms.map(m => m?.clicks ?? 0) };
-    }).filter(r => r.latest).sort((a, b) => (b.latest!.clicks) - (a.latest!.clicks));
+      return { b, latest: withData[withData.length - 1], prev: withData[withData.length - 2], spark: ms.map(m => m?.clicks ?? 0), sem: semOf(b.id) };
+    }).sort((a, b) => (b.latest?.clicks ?? 0) - (a.latest?.clicks ?? 0) || ((b.sem?.traffic_value ?? 0) - (a.sem?.traffic_value ?? 0)));
 
-    const tot = rows.reduce((a, r) => ({ clicks: a.clicks + r.latest!.clicks, impr: a.impr + r.latest!.impressions }), { clicks: 0, impr: 0 });
+    const tot = rows.reduce((a, r) => ({ clicks: a.clicks + (r.latest?.clicks ?? 0), val: a.val + (r.sem?.traffic_value ?? 0) }), { clicks: 0, val: 0 });
 
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          <Card label="Organic clicks (latest mo.)" value={num(tot.clicks)} accent="#10b981" />
-          <Card label="Impressions (latest mo.)" value={num(tot.impr)} accent="#3b82f6" />
+          <Card label="Organic clicks (latest mo.)" value={num(tot.clicks)} accent="#10b981" sub="Search Console" />
+          <Card label="Est. traffic value / mo" value={fmtAud(tot.val)} accent="#f59e0b" sub="SEMrush, AU" />
           <Card label="Brands with SEO" value={String(rows.length)} accent="#8b5cf6" />
         </div>
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 overflow-x-auto">
           <h3 className="font-semibold text-gray-800 mb-0.5">Organic search leaderboard</h3>
-          <p className="text-xs text-gray-400 mb-3">Latest month · Google Search Console</p>
+          <p className="text-xs text-gray-400 mb-3">Clicks/position from Search Console · keywords + traffic value from SEMrush (AU)</p>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-[11px] text-gray-400 uppercase tracking-wide text-right border-b border-gray-100">
                 <th className="text-left font-medium py-1.5">Brand</th>
-                <th className="font-medium">Clicks</th><th className="font-medium">Impressions</th>
-                <th className="font-medium">CTR</th><th className="font-medium">Avg position</th><th className="font-medium">Trend</th>
+                <th className="font-medium">Clicks</th><th className="font-medium">Avg pos</th>
+                <th className="font-medium">Keywords</th><th className="font-medium">Traffic value</th><th className="font-medium">Trend</th>
               </tr>
             </thead>
             <tbody>
               {rows.map(r => (
                 <tr key={r.b.id} className="text-right border-b border-gray-50 text-slate-700">
                   <td className="text-left py-2"><span className="inline-flex items-center gap-2"><span className="w-2 h-2 rounded-full" style={{ background: r.b.color }} />{r.b.name}</span></td>
-                  <td className="font-semibold">{r.latest!.clicks.toLocaleString()} <span className="text-[10px] font-normal"><Delta now={r.latest!.clicks} prev={r.prev?.clicks ?? 0} /></span></td>
-                  <td>{r.latest!.impressions.toLocaleString()}</td>
-                  <td>{r.latest!.ctr.toFixed(1)}%</td>
-                  <td>{r.latest!.position.toFixed(1)}</td>
+                  <td className="font-semibold">{r.latest ? <>{r.latest.clicks.toLocaleString()} <span className="text-[10px] font-normal"><Delta now={r.latest.clicks} prev={r.prev?.clicks ?? 0} /></span></> : <span className="text-gray-300">—</span>}</td>
+                  <td>{r.latest ? r.latest.position.toFixed(1) : <span className="text-gray-300">—</span>}</td>
+                  <td>{r.sem ? r.sem.organic_keywords.toLocaleString() : <span className="text-gray-300">—</span>}</td>
+                  <td className="font-medium text-amber-700">{r.sem ? fmtAud(r.sem.traffic_value) : <span className="text-gray-300">—</span>}</td>
                   <td><Sparkline values={r.spark} color={r.b.color} /></td>
                 </tr>
               ))}
@@ -104,12 +108,15 @@ export function SeoPanel({
 
   // ── Per-brand drill-down ───────────────────────────────────────────────
   const brand = brands.find(b => b.id === scope)!;
-  if (!has(scope)) {
+  const hasGsc = gscMetrics.some(m => m.brand_id === scope && (m.clicks > 0 || m.impressions > 0));
+  const sem = semOf(scope);
+  const comps = semrushCompetitors.filter(c => c.brand_id === scope).sort((a, b) => b.relevance - a.relevance).slice(0, 6);
+  if (!hasGsc && !sem) {
     return (
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-10 text-center">
         <div className="text-4xl mb-3">🔍</div>
-        <p className="text-gray-500 font-medium">No Search Console data for {brand?.name}</p>
-        <p className="text-sm text-gray-400 mt-1">Share its property with the service account to start tracking organic search.</p>
+        <p className="text-gray-500 font-medium">No organic search data for {brand?.name}</p>
+        <p className="text-sm text-gray-400 mt-1">Share its Search Console property with the service account to start tracking.</p>
       </div>
     );
   }
@@ -118,7 +125,7 @@ export function SeoPanel({
   const withData = ms.map((m, i) => ({ m, i })).filter(x => x.m && (x.m.clicks > 0 || x.m.impressions > 0));
   const li = withData[withData.length - 1]?.i ?? 0;
   const pi = withData[withData.length - 2]?.i;
-  const latest = ms[li]!; const prev = pi != null ? ms[pi] : undefined;
+  const latest = ms[li]; const prev = pi != null ? ms[pi] : undefined;
   const latestKey = monthKeys[li];
 
   const lq = gscQueries.filter(q => q.brand_id === scope && q.month_key === latestKey).sort((a, b) => b.clicks - a.clicks);
@@ -130,6 +137,43 @@ export function SeoPanel({
 
   return (
     <div className="space-y-4">
+      {sem && (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Card label="Organic keywords" value={sem.organic_keywords.toLocaleString()} accent="#6366f1" sub="SEMrush, AU" />
+            <Card label="Est. monthly traffic" value={num(sem.organic_traffic)} accent="#3b82f6" sub="SEMrush" />
+            <Card label="Traffic value / mo" value={fmtAud(sem.traffic_value)} accent="#f59e0b" sub="ad-equivalent cost" />
+            <Card label="SEMrush rank" value={sem.semrush_rank ? sem.semrush_rank.toLocaleString() : "—"} accent="#8b5cf6" sub="lower is stronger" />
+          </div>
+          {comps.length > 0 && (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 overflow-x-auto">
+              <h3 className="font-semibold text-gray-800 mb-0.5">Top organic competitors</h3>
+              <p className="text-xs text-gray-400 mb-3">Domains ranking for the same keywords (SEMrush, AU)</p>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-[11px] text-gray-400 uppercase tracking-wide text-right border-b border-gray-100">
+                    <th className="text-left font-medium py-1.5">Competitor</th>
+                    <th className="font-medium">Relevance</th><th className="font-medium">Common kw</th><th className="font-medium">Their keywords</th><th className="font-medium">Their traffic</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {comps.map(c => (
+                    <tr key={c.competitor} className="text-right border-b border-gray-50 text-slate-700">
+                      <td className="text-left py-1.5 font-medium">{c.competitor}</td>
+                      <td>{(c.relevance * 100).toFixed(0)}%</td>
+                      <td>{c.common_keywords.toLocaleString()}</td>
+                      <td>{c.organic_keywords.toLocaleString()}</td>
+                      <td>{c.organic_traffic.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+
+      {hasGsc && latest && (<>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card label={`Clicks (${monthLabels[li]})`} value={latest.clicks.toLocaleString()} accent="#10b981" sub={<Delta now={latest.clicks} prev={prev?.clicks ?? 0} />} />
         <Card label="Impressions" value={num(latest.impressions)} accent="#3b82f6" sub={<Delta now={latest.impressions} prev={prev?.impressions ?? 0} />} />
@@ -213,6 +257,7 @@ export function SeoPanel({
           </tbody>
         </table>
       </div>
+      </>)}
     </div>
   );
 }
