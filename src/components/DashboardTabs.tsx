@@ -409,7 +409,7 @@ export function DashboardTabs({
                         {ids.map(id => {
                           const brand   = brands.find((b: any) => b.id === id);
                           if (!brand) return null;
-                          const latestIg = instagramOrganic.find((d: any) => d.brand_id === id && d.month_key === LATEST);
+                          const latestIg = instagramOrganic.filter((d: any) => d.brand_id === id && (d.followers ?? 0) > 0).sort((a: any, b: any) => b.month_key.localeCompare(a.month_key))[0];
                           const latestG  = googleAds.find((d: any) => d.brand_id === id && d.month_key === LATEST);
                           const latestM  = metaAds.find((d: any) => d.brand_id === id && d.month_key === LATEST);
                           const target   = targets.find((t: any) => t.brand_id === id && t.month_key === LATEST);

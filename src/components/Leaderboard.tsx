@@ -53,7 +53,10 @@ export function Leaderboard({ brands, summaries, monthly, googleAds, metaAds, in
       const s = summaries.find(s => s.brand_id === b.id);
       const gLatest = googleAds.find(d => d.brand_id === b.id && d.month_key === LATEST);
       const mLatest = metaAds.find(d => d.brand_id === b.id && d.month_key === LATEST);
-      const igLatest = instagramOrganic.find(d => d.brand_id === b.id && d.month_key === LATEST);
+      // most recent month with a real follower count (some brands' IG isn't in the latest sync)
+      const igLatest = instagramOrganic
+        .filter(d => d.brand_id === b.id && (d.followers ?? 0) > 0)
+        .sort((a, c) => c.month_key.localeCompare(a.month_key))[0];
       const metaRoas = mLatest && mLatest.spend > 0 ? mLatest.revenue / mLatest.spend : 0;
       const revSpark = MONTH_KEYS.map(mk => monthly.find(m => m.brand_id === b.id && m.month_key === mk)?.revenue ?? 0);
       const gRoas = gLatest?.roas ?? 0;
