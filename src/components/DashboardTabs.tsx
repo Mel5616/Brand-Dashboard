@@ -8,6 +8,7 @@ import { EmailChart } from "./EmailChart";
 import { EmailBrandDetail } from "./EmailBrandDetail";
 import { BrandReport } from "./BrandReport";
 import { buildReport } from "@/lib/report";
+import { GoogleCampaignTable, MetaPlatformBreakdown } from "./ChannelBrandDetail";
 import { ProductsTable } from "./ProductsTable";
 import { TradeshowAccordion } from "./TradeshowAccordion";
 import { BrandCard, type BrandPeriod } from "./BrandCard";
@@ -138,13 +139,9 @@ export function DashboardTabs({
     : TABS.filter(t => (allowedTabs ?? []).includes(t.id) && !FINANCIAL.includes(t.id));
   const firstTab = (visibleTabs[0]?.id ?? "brands") as TabId;
   const [active, setActive] = useState<TabId>(firstTab);
+  // One brand selection, shared across every tab — pick a brand once and it
+  // persists as you move between Shopify / Google / Meta / Email / Report.
   const [brandFilter, setBrandFilter] = useState<number | "all">("all");
-  // Report tab has its own brand selector — using brandFilter would trip the
-  // selectedBrand short-circuit and open the brand detail page instead.
-  const [reportBrand, setReportBrand] = useState<number | "all">("all");
-  // Email tab also needs its own selector so picking a brand shows the Klaviyo
-  // detail view instead of bouncing to the brand detail page.
-  const [emailBrand, setEmailBrand] = useState<number | "all">("all");
   const [brandPeriod, setBrandPeriod] = useState<BrandPeriod>("monthly");
   const [fy, setFy] = useState<FY>(currentFY());
 
@@ -266,7 +263,7 @@ export function DashboardTabs({
           return (
             <button
               key={tab.id}
-              onClick={() => { setActive(tab.id); setBrandFilter("all"); }}
+              onClick={() => setActive(tab.id)}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${
                 isActive
                   ? "bg-indigo-50 text-indigo-600 font-semibold shadow-sm ring-1 ring-indigo-100"
@@ -305,7 +302,7 @@ export function DashboardTabs({
         <div className="ml-[200px]">
           <div className="flex justify-end mb-3">
             <button
-              onClick={() => { setReportBrand(selectedBrand.id); setBrandFilter("all"); setActive("report"); }}
+              onClick={() => setActive("report")}
               className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-3.5 py-1.5 transition shadow-sm"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
@@ -559,8 +556,8 @@ export function DashboardTabs({
             <>
               <div className="flex items-center justify-between gap-2 mb-3 no-print">
                 <select
-                  value={reportBrand === "all" ? "all" : String(reportBrand)}
-                  onChange={e => setReportBrand(e.target.value === "all" ? "all" : Number(e.target.value))}
+                  value={brandFilter === "all" ? "all" : String(brandFilter)}
+                  onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
                   className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
                 >
                   <option value="all">All Brands (Portfolio)</option>
@@ -574,7 +571,7 @@ export function DashboardTabs({
                   Download PDF
                 </button>
               </div>
-              <BrandReport r={buildReport(reportBrand, {
+              <BrandReport r={buildReport(brandFilter, {
                 brands, summaries, monthly, targets,
                 marketingBudgets: marketingBudgets.filter((b: any) => b.fy === fy),
                 marketingActuals: marketingActuals.filter((a: any) => monthKeys.includes(a.month_key)),
@@ -805,6 +802,9 @@ export function DashboardTabs({
                   </div>
                 );
               })()}
+              {brandFilter !== "all" && (
+                <GoogleCampaignTable campaigns={googleAdsCampaigns} brandId={brandFilter as number} fyLabel={fyLabel} />
+              )}
             </>
           )}
 
@@ -914,6 +914,9 @@ export function DashboardTabs({
                   </div>
                 );
               })()}
+              {brandFilter !== "all" && (
+                <MetaPlatformBreakdown rows={metaAdsPlatform} brandId={brandFilter as number} fyLabel={fyLabel} />
+              )}
             </>
           )}
 
@@ -922,22 +925,22 @@ export function DashboardTabs({
             <>
               <div className="flex items-center justify-between gap-2 mb-2 no-print">
                 <select
-                  value={emailBrand === "all" ? "all" : String(emailBrand)}
-                  onChange={e => setEmailBrand(e.target.value === "all" ? "all" : Number(e.target.value))}
+                  value={brandFilter === "all" ? "all" : String(brandFilter)}
+                  onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
                   className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
                 >
                   <option value="all">All Brands</option>
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
                 </select>
-                {emailBrand !== "all" && (
+                {brandFilter !== "all" && (
                   <button onClick={() => window.print()} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-3.5 py-1.5 transition">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
                     Download PDF
                   </button>
                 )}
               </div>
-              {emailBrand !== "all" ? (
-                <EmailBrandDetail brand={brands.find((b: any) => b.id === emailBrand)!} klaviyo={klaviyo} monthly={monthly} monthKeys={monthKeys} monthLabels={monthLabels} />
+              {brandFilter !== "all" ? (
+                <EmailBrandDetail brand={brands.find((b: any) => b.id === brandFilter)!} klaviyo={klaviyo} monthly={monthly} monthKeys={monthKeys} monthLabels={monthLabels} />
               ) : (
               <>
               <EmailChart key={fy} brands={brands} data={klaviyo} monthly={monthly} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} wholeYear={wholeYear} />
