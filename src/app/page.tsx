@@ -30,6 +30,7 @@ export default async function Dashboard() {
     tradeshows, tradeshowBrands, tradeshowSales,
     weekLabels, lastSync, googleAds, metaAds, metaAdsPlatform,
     instagramOrganic, targets, klaviyo, ga4, marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, aiInsight,
+    gscMetrics, gscQueries, gscInsights,
   } = await getDashboardData();
 
   const boothFunnel = await getBoothFunnel();
@@ -103,6 +104,9 @@ export default async function Dashboard() {
         marketingActuals={isAdmin ? marketingActuals : []}
         googleAdsCampaigns={googleAdsCampaigns}
         calendarEvents={calendarEvents}
+        gscMetrics={gscMetrics}
+        gscQueries={gscQueries}
+        gscInsights={gscInsights}
         boothFunnel={boothFunnel}
         kpis={kpis}
       />

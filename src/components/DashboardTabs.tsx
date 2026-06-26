@@ -10,6 +10,7 @@ import { BrandReport } from "./BrandReport";
 import { buildReport } from "@/lib/report";
 import { GoogleCampaignTable, MetaPlatformBreakdown } from "./ChannelBrandDetail";
 import { CampaignCalendar } from "./CampaignCalendar";
+import { SeoPanel } from "./SeoPanel";
 import { ProductsTable } from "./ProductsTable";
 import { TradeshowAccordion } from "./TradeshowAccordion";
 import { BrandCard, type BrandPeriod } from "./BrandCard";
@@ -26,7 +27,7 @@ import { ShopifyInsights } from "./ShopifyInsights";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "brands" | "campaign-calendar" | "report" | "shopify" | "google-ads" | "meta-ads" | "email" | "tradeshows" | "budget" | "calendar" | "content" | "influencer" | "team";
+type TabId = "brands" | "campaign-calendar" | "report" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "tradeshows" | "budget" | "calendar" | "content" | "influencer" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -56,6 +57,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
     id: "email", label: "Email",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+  },
+  {
+    id: "seo", label: "SEO",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
   },
   {
     id: "tradeshows", label: "Tradeshows",
@@ -122,6 +127,9 @@ interface Props {
   marketingActuals: any[];
   googleAdsCampaigns: any[];
   calendarEvents: any[];
+  gscMetrics: any[];
+  gscQueries: any[];
+  gscInsights: any[];
   boothFunnel: any;
   kpis: { label: string; value: string; sub: string }[];
   role?: "admin" | "member";
@@ -134,6 +142,7 @@ export function DashboardTabs({
   weekLabels, googleAds, metaAds, metaAdsPlatform,
   instagramOrganic, targets, klaviyo, ga4,
   marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, boothFunnel, kpis,
+  gscMetrics, gscQueries, gscInsights,
   role = "admin", allowedTabs,
 }: Props) {
   // Financial tabs (cost / margin / budget) are admin-only even if otherwise granted.
@@ -182,6 +191,8 @@ export function DashboardTabs({
   targets          = inFy(targets);
   klaviyo          = inFy(klaviyo);
   ga4              = inFy(ga4);
+  gscMetrics       = inFy(gscMetrics);
+  gscQueries       = inFy(gscQueries);
   marketingActuals = inFy(marketingActuals);
   googleAdsCampaigns = inFy(googleAdsCampaigns);
   marketingBudgets = marketingBudgets.filter((b: any) => (b.fy ?? "2025-26") === fy);
@@ -1076,6 +1087,23 @@ export function DashboardTabs({
               })()}
               </>
               )}
+            </>
+          )}
+
+          {/* ── SEO (Search Console, portfolio + per-brand) ── */}
+          {active === "seo" && (
+            <>
+              <div className="flex items-center gap-2 mb-3">
+                <select
+                  value={brandFilter === "all" ? "all" : String(brandFilter)}
+                  onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
+                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                >
+                  <option value="all">All Brands (Portfolio)</option>
+                  {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
+                </select>
+              </div>
+              <SeoPanel scope={brandFilter} brands={brands} gscMetrics={gscMetrics} gscQueries={gscQueries} gscInsights={gscInsights} monthKeys={monthKeys} monthLabels={monthLabels} />
             </>
           )}
 

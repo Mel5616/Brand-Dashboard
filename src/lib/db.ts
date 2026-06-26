@@ -222,6 +222,9 @@ export async function getDashboardData() {
     { data: googleAdsCampaigns },
     { data: calendarEvents },
     { data: aiInsights },
+    { data: gscMetrics },
+    { data: gscQueries },
+    { data: gscInsights },
   ] = await Promise.all([
     db.from("brands").select("*").order("id"),
     db.from("brand_summary").select("*"),
@@ -245,6 +248,9 @@ export async function getDashboardData() {
     db.from("google_ads_campaigns").select("*").order("month_key"),
     db.from("calendar_events").select("*").order("start_date"),
     db.from("ai_insights").select("*").order("generated_at", { ascending: false }).limit(1),
+    db.from("gsc_metrics").select("*").order("month_key"),
+    db.from("gsc_queries").select("*"),
+    db.from("gsc_insights").select("*"),
   ]);
 
   return {
@@ -270,5 +276,12 @@ export async function getDashboardData() {
     googleAdsCampaigns: (googleAdsCampaigns ?? []) as GoogleAdsCampaignRow[],
     calendarEvents: (calendarEvents ?? []) as CalendarEvent[],
     aiInsight: (aiInsights?.[0] ?? null) as AiInsight | null,
+    gscMetrics: (gscMetrics ?? []) as GscMetricRow[],
+    gscQueries: (gscQueries ?? []) as GscQueryRow[],
+    gscInsights: (gscInsights ?? []) as GscInsight[],
   };
 }
+
+export type GscMetricRow = { brand_id: number; month_key: string; clicks: number; impressions: number; ctr: number; position: number };
+export type GscQueryRow = { brand_id: number; month_key: string; query: string; clicks: number; impressions: number; ctr: number; position: number };
+export type GscInsight = { brand_id: number; generated_at: string; content: string };
