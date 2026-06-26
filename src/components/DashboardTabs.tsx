@@ -877,7 +877,7 @@ export function DashboardTabs({
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
                 </select>
               </div>
-              <EmailChart key={fy} brands={filteredBrands} data={filteredKlaviyo} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} wholeYear={wholeYear} />
+              <EmailChart key={fy} brands={filteredBrands} data={filteredKlaviyo} monthly={filteredMonthly} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} wholeYear={wholeYear} />
 
               {/* Brand breakdown — only when all brands shown */}
               {brandFilter === "all" && (() => {
@@ -908,6 +908,10 @@ export function DashboardTabs({
                     const clickSpark  = history.map(r => r?.click_rate  ?? 0);
                     const revSpark    = history.map(r => r?.revenue     ?? 0);
                     const subSpark    = history.map(r => r?.list_size   ?? 0);
+                    const ordersSpark = history.map(r => r?.orders       ?? 0);
+                    const unsubSpark  = history.map(r => (r?.emails_sent ?? 0) > 0 ? ((r?.unsubscribes ?? 0) / r!.emails_sent) * 100 : 0);
+                    const flowSpark   = history.map(r => r?.flow_revenue ?? 0);
+                    const campSpark   = history.map(r => r?.campaign_revenue ?? 0);
                     // Subscribers is a point-in-time count — use the most recent month that has one.
                     const subscribers = [...history].reverse().find(r => (r?.list_size ?? 0) > 0)?.list_size ?? 0;
                     const monthCur = history[latestI];
@@ -919,14 +923,33 @@ export function DashboardTabs({
                     const fyOpen  = fySent > 0 ? history.reduce((s, r) => s + (r?.open_rate  ?? 0) * (r?.emails_sent ?? 0), 0) / fySent : 0;
                     const fyClick = fySent > 0 ? history.reduce((s, r) => s + (r?.click_rate ?? 0) * (r?.emails_sent ?? 0), 0) / fySent : 0;
                     const cur = wholeYear
-                      ? { emails_sent: fySent, open_rate: fyOpen, click_rate: fyClick, revenue: fySum(revSpark) }
+                      ? { emails_sent: fySent, open_rate: fyOpen, click_rate: fyClick, revenue: fySum(revSpark),
+                          orders: fySum(ordersSpark), unsubscribes: fySum(history.map(r => r?.unsubscribes ?? 0)),
+                          flow_revenue: fySum(flowSpark), campaign_revenue: fySum(campSpark) }
                       : monthCur;
+                    // Store revenue (Shopify) for the same period → email's share of total
+                    const storeRev = wholeYear
+                      ? monthly.filter((m: any) => m.brand_id === b.id).reduce((s: number, m: any) => s + (m.revenue ?? 0), 0)
+                      : (monthly.find((m: any) => m.brand_id === b.id && m.month_key === LATEST)?.revenue ?? 0);
+                    const orders    = cur.orders ?? 0;
+                    const aov       = orders > 0 ? cur.revenue / orders : 0;
+                    const unsubRate = cur.emails_sent > 0 ? ((cur.unsubscribes ?? 0) / cur.emails_sent) * 100 : 0;
+                    const fc        = (cur.flow_revenue ?? 0) + (cur.campaign_revenue ?? 0);
+                    const flowShare = fc > 0 ? ((cur.flow_revenue ?? 0) / fc) * 100 : 0;
+                    const pctOfRev  = storeRev > 0 ? (cur.revenue / storeRev) * 100 : 0;
+                    const storeSpark = MK_ALL.map(mk => monthly.find((m: any) => m.brand_id === b.id && m.month_key === mk)?.revenue ?? 0);
+                    const aovSpark   = revSpark.map((r, i) => ordersSpark[i] > 0 ? r / ordersSpark[i] : 0);
+                    const flowShareSpark = flowSpark.map((f, i) => (f + campSpark[i]) > 0 ? (f / (f + campSpark[i])) * 100 : 0);
+                    const pctSpark   = revSpark.map((r, i) => storeSpark[i] > 0 ? (r / storeSpark[i]) * 100 : 0);
                     return {
                       brand: b, cur, subscribers, sentSpark, openSpark, clickSpark, revSpark, subSpark,
+                      ordersSpark, unsubSpark, flowSpark, campSpark, aovSpark, flowShareSpark, pctSpark,
+                      orders, aov, unsubRate, flowShare, pctOfRev, hasFc: fc > 0, hasStore: storeRev > 0,
                       sentChg:  pctChg(cur.emails_sent, prev?.emails_sent),
                       openChg:  pctChg(cur.open_rate,   prev?.open_rate),
                       clickChg: pctChg(cur.click_rate,  prev?.click_rate),
                       revChg:   pctChg(cur.revenue,     prev?.revenue),
+                      ordersChg: pctChg(orders, prev?.orders),
                     };
                   })
                   .filter(Boolean)
@@ -941,6 +964,22 @@ export function DashboardTabs({
                   { label: "Open Rate",     getValue: (r: any) => r.cur.open_rate.toFixed(1) + "%",          getSpark: (r: any) => r.openSpark,  getChg: (r: any) => r.openChg },
                   { label: "Click Rate",    getValue: (r: any) => r.cur.click_rate.toFixed(1) + "%",         getSpark: (r: any) => r.clickSpark, getChg: (r: any) => r.clickChg },
                 ];
+                const cols2 = [
+                  { label: "Email Orders",  getValue: (r: any) => r.orders.toLocaleString(),                                getSpark: (r: any) => r.ordersSpark,    getChg: (r: any) => r.ordersChg },
+                  { label: "Avg Order Value", getValue: (r: any) => r.orders > 0 ? fmt(r.aov) : "—",                       getSpark: (r: any) => r.aovSpark,       getChg: () => null },
+                  { label: "Unsub Rate",    getValue: (r: any) => r.unsubRate.toFixed(2) + "%",                            getSpark: (r: any) => r.unsubSpark,     getChg: () => null },
+                  { label: "Flow Share",    getValue: (r: any) => r.hasFc ? r.flowShare.toFixed(0) + "%" : "—",            getSpark: (r: any) => r.flowShareSpark, getChg: () => null },
+                  { label: "% of Total Rev", getValue: (r: any) => r.hasStore ? r.pctOfRev.toFixed(1) + "%" : "—",         getSpark: (r: any) => r.pctSpark,       getChg: () => null },
+                ];
+
+                const Metric = ({ col, r }: { col: any; r: any }) => (
+                  <div className="px-5 py-3">
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">{col.label}</p>
+                    <p className="text-lg font-semibold text-slate-800 leading-none">{col.getValue(r)}</p>
+                    <div className="my-1.5"><Spark values={col.getSpark(r)} color={r.brand.color} /></div>
+                    <p className="text-[10px] text-gray-400">vs {prevLabel} <Chg pct={col.getChg(r)} /></p>
+                  </div>
+                );
 
                 return (
                   <div className="mt-4 space-y-3">
@@ -951,16 +990,10 @@ export function DashboardTabs({
                           <span className="text-sm font-bold text-slate-700">{r.brand.name}</span>
                         </div>
                         <div className="grid grid-cols-5 divide-x divide-gray-50">
-                          {cols.map(col => (
-                            <div key={col.label} className="px-5 py-3">
-                              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">{col.label}</p>
-                              <p className="text-lg font-semibold text-slate-800 leading-none">{col.getValue(r)}</p>
-                              <div className="my-1.5">
-                                <Spark values={col.getSpark(r)} color={r.brand.color} />
-                              </div>
-                              <p className="text-[10px] text-gray-400">vs {prevLabel} <Chg pct={col.getChg(r)} /></p>
-                            </div>
-                          ))}
+                          {cols.map(col => <Metric key={col.label} col={col} r={r} />)}
+                        </div>
+                        <div className="grid grid-cols-5 divide-x divide-gray-50 border-t border-gray-50 bg-gray-50/30">
+                          {cols2.map(col => <Metric key={col.label} col={col} r={r} />)}
                         </div>
                       </div>
                     ))}

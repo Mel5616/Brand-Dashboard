@@ -135,6 +135,11 @@ export type KlaviyoRow = {
   click_rate: number;
   revenue: number;
   unsubscribes: number;
+  bounces: number;
+  spam_complaints: number;
+  orders: number;
+  flow_revenue: number;
+  campaign_revenue: number;
 };
 
 export type GA4Row = {

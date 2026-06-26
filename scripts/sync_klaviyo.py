@@ -55,27 +55,31 @@ def load_config():
     with open(CONFIG_PATH) as f:
         return json.load(f)
 
-def klaviyo_get(api_key, path, params=None):
+def _request(method, api_key, path, params=None, payload=None, _tries=6):
+    """Klaviyo request with 429 back-off. Metric-aggregates have a tight burst limit,
+    so honour Retry-After (capped) and retry before giving up."""
     headers = {
         "Authorization": f"Klaviyo-API-Key {api_key}",
         "revision": "2024-10-15",
         "Accept": "application/json",
     }
+    if method == "POST":
+        headers["Content-Type"] = "application/json"
     url = f"https://a.klaviyo.com/api/{path}"
-    r = requests.get(url, headers=headers, params=params, timeout=20)
-    r.raise_for_status()
-    return r.json()
+    for attempt in range(_tries):
+        r = requests.request(method, url, headers=headers, params=params, json=payload, timeout=30)
+        if r.status_code == 429 and attempt < _tries - 1:
+            wait = float(r.headers.get("Retry-After", 0)) or (2 ** attempt)
+            time.sleep(min(wait, 30))
+            continue
+        r.raise_for_status()
+        return r.json()
+
+def klaviyo_get(api_key, path, params=None):
+    return _request("GET", api_key, path, params=params)
 
 def klaviyo_post(api_key, path, payload):
-    headers = {
-        "Authorization": f"Klaviyo-API-Key {api_key}",
-        "revision": "2024-10-15",
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-    }
-    r = requests.post(f"https://a.klaviyo.com/api/{path}", headers=headers, json=payload, timeout=30)
-    r.raise_for_status()
-    return r.json()
+    return _request("POST", api_key, path, payload=payload)
 
 def get_list_size(api_key, list_id):
     try:
@@ -184,6 +188,32 @@ def agg_email_revenue(api_key, metric_id, year, month):
             return vals[0] if vals else 0
     return 0
 
+def agg_email_orders(api_key, metric_id, year, month):
+    """Email-attributed Placed Order count (unique orders), grouped by $attributed_channel."""
+    rows = metric_aggregate(api_key, metric_id, year, month, "unique", by=["$attributed_channel"])
+    for r in rows:
+        if "$email_channel" in (r.get("dimensions") or []):
+            vals = r.get("measurements", {}).get("unique", [])
+            return int(vals[0]) if vals else 0
+    return 0
+
+def agg_email_flow_campaign(api_key, metric_id, year, month):
+    """Split email-attributed revenue into flow vs campaign by grouping Placed Order on
+    [$attributed_channel, $attributed_flow]: within email, a flow id => flow, blank => campaign."""
+    rows = metric_aggregate(api_key, metric_id, year, month, "sum_value", by=["$attributed_channel", "$attributed_flow"])
+    flow_rev = campaign_rev = 0.0
+    for r in rows:
+        dims = r.get("dimensions") or []
+        if len(dims) < 2 or dims[0] != "$email_channel":
+            continue
+        vals = r.get("measurements", {}).get("sum_value", [])
+        amt = vals[0] if vals else 0
+        if dims[1]:          # non-empty flow id => flow-attributed
+            flow_rev += amt
+        else:                # email-attributed with no flow => campaign
+            campaign_rev += amt
+    return flow_rev, campaign_rev
+
 def sync_brand(db, api_key, brand, brand_id):
     list_id = brand.get("klaviyoListId")
     if not api_key:
@@ -202,6 +232,9 @@ def sync_brand(db, api_key, brand, brand_id):
     opened_id   = metrics.get("Opened Email")
     clicked_id  = metrics.get("Clicked Email")
     revenue_id  = metrics.get("Placed Order")
+    unsub_id    = metrics.get("Unsubscribed from Email Marketing")
+    bounce_id   = metrics.get("Bounced Email")
+    spam_id     = metrics.get("Marked Email as Spam")
 
     list_size = get_subscriber_count(api_key)
     print(f"    Subscribers: {list_size:,}" + ("" if list_size else "  (no 'Email Subscribers' segment found — create one in Klaviyo)"))
@@ -211,10 +244,19 @@ def sync_brand(db, api_key, brand, brand_id):
 
         # "unique" = distinct profiles, so open/click rates match Klaviyo's own
         # reporting and don't exceed 100% (Apple MPP inflates total-open counts).
+        # "unique" = distinct profiles, so open/click rates match Klaviyo's own
+        # reporting and don't exceed 100% (Apple MPP inflates total-open counts).
         sent    = agg_total(api_key, received_id, year, month, "unique") if received_id else 0
         opened  = agg_total(api_key, opened_id,   year, month, "unique") if opened_id   else 0
         clicked = agg_total(api_key, clicked_id,  year, month, "unique") if clicked_id  else 0
         revenue = agg_email_revenue(api_key, revenue_id, year, month)    if revenue_id  else 0
+        # Deliverability / list health (raw counts → rates computed in the UI)
+        unsubs  = agg_total(api_key, unsub_id,  year, month, "count") if unsub_id  else 0
+        bounces = agg_total(api_key, bounce_id, year, month, "count") if bounce_id else 0
+        spam    = agg_total(api_key, spam_id,   year, month, "count") if spam_id   else 0
+        # Conversions + flow/campaign revenue split (email-attributed)
+        orders  = agg_email_orders(api_key, revenue_id, year, month) if revenue_id else 0
+        flow_rev, campaign_rev = agg_email_flow_campaign(api_key, revenue_id, year, month) if revenue_id else (0, 0)
 
         # Cap at 100%: in low-volume months, opens/clicks of emails delivered in a
         # prior month can exceed that month's deliveries, pushing the ratio over 100%.
@@ -229,9 +271,15 @@ def sync_brand(db, api_key, brand, brand_id):
             "open_rate": round(open_rate, 2),
             "click_rate": round(click_rate, 2),
             "revenue": round(float(revenue), 2),
+            "unsubscribes": int(unsubs),
+            "bounces": int(bounces),
+            "spam_complaints": int(spam),
+            "orders": int(orders),
+            "flow_revenue": round(float(flow_rev), 2),
+            "campaign_revenue": round(float(campaign_rev), 2),
         }
         db.table("klaviyo_metrics").upsert(row, on_conflict="brand_id,month_key").execute()
-        print(f"    {mk}: delivered={int(sent):,} open={open_rate:.1f}% click={click_rate:.1f}% email_rev=${revenue:,.0f}")
+        print(f"    {mk}: delivered={int(sent):,} open={open_rate:.1f}% click={click_rate:.1f}% rev=${revenue:,.0f} orders={int(orders)} unsub={int(unsubs)} flow/camp=${flow_rev:,.0f}/${campaign_rev:,.0f}")
         time.sleep(0.2)
 
 def main():

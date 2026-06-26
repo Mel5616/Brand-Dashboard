@@ -14,24 +14,28 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointEleme
 const DEFAULT_MONTH_KEYS   = ["2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06"];
 const DEFAULT_MONTH_LABELS = ["Jul 25","Aug 25","Sep 25","Oct 25","Nov 25","Dec 25","Jan 26","Feb 26","Mar 26","Apr 26","May 26","Jun 26"];
 
-type Metric = "revenue" | "delivered" | "open" | "click";
+type Metric = "revenue" | "delivered" | "open" | "click" | "orders" | "unsub";
 
 const metricLabels: { id: Metric; label: string }[] = [
   { id: "revenue",   label: "Email Revenue" },
   { id: "delivered", label: "Delivered" },
+  { id: "orders",    label: "Orders" },
   { id: "open",      label: "Open %" },
   { id: "click",     label: "Click %" },
+  { id: "unsub",     label: "Unsub %" },
 ];
 
 function valueFor(row: KlaviyoRow | undefined, metric: Metric): number {
   if (!row) return 0;
   return metric === "revenue"   ? row.revenue
        : metric === "delivered" ? row.emails_sent
+       : metric === "orders"    ? (row.orders ?? 0)
        : metric === "open"      ? row.open_rate
-       :                          row.click_rate;
+       : metric === "click"     ? row.click_rate
+       : /* unsub rate */         (row.emails_sent > 0 ? ((row.unsubscribes ?? 0) / row.emails_sent) * 100 : 0);
 }
 
-export function EmailChart({ brands, data, monthKeys = DEFAULT_MONTH_KEYS, monthLabels = DEFAULT_MONTH_LABELS, latest, wholeYear = false }: { brands: Brand[]; data: KlaviyoRow[]; monthKeys?: string[]; monthLabels?: string[]; latest?: string; wholeYear?: boolean }) {
+export function EmailChart({ brands, data, monthly = [], monthKeys = DEFAULT_MONTH_KEYS, monthLabels = DEFAULT_MONTH_LABELS, latest, wholeYear = false }: { brands: Brand[]; data: KlaviyoRow[]; monthly?: { brand_id: number; month_key: string; revenue: number }[]; monthKeys?: string[]; monthLabels?: string[]; latest?: string; wholeYear?: boolean }) {
   const MONTH_KEYS = monthKeys;
   const MONTH_LABELS = monthLabels;
   const [metric, setMetric] = React.useState<Metric>("revenue");
@@ -73,17 +77,36 @@ export function EmailChart({ brands, data, monthKeys = DEFAULT_MONTH_KEYS, month
   // Subscribers is a point-in-time count (stamped to each month), so read the latest month, not the FY sum.
   const subscribers = data.filter(d => d.month_key === latestKey).reduce((s, d) => s + (d.list_size || 0), 0);
 
+  const orders    = rows.reduce((s, d) => s + (d.orders ?? 0), 0);
+  const aov       = orders > 0 ? revenue / orders : 0;
+  const unsubs    = rows.reduce((s, d) => s + (d.unsubscribes ?? 0), 0);
+  const unsubRate = delivered > 0 ? (unsubs / delivered) * 100 : 0;
+  const flowRev   = rows.reduce((s, d) => s + (d.flow_revenue ?? 0), 0);
+  const campRev   = rows.reduce((s, d) => s + (d.campaign_revenue ?? 0), 0);
+  const flowShare = (flowRev + campRev) > 0 ? (flowRev / (flowRev + campRev)) * 100 : 0;
+  // Email's share of total store revenue for the same period
+  const storeRows = wholeYear ? monthly : monthly.filter(m => m.month_key === latestKey);
+  const storeRev  = storeRows.reduce((s, m) => s + (m.revenue ?? 0), 0);
+  const pctOfRev  = storeRev > 0 ? (revenue / storeRev) * 100 : 0;
+
   const kpis = [
     { label: `${latestLbl} Email Revenue`, value: fmtFull(revenue) },
     { label: "Subscribers", value: subscribers > 0 ? subscribers.toLocaleString() : "—" },
     { label: `${latestLbl} Delivered`,     value: delivered.toLocaleString() },
     { label: "Open Rate",   value: blendOpen.toFixed(1) + "%" },
     { label: "Click Rate",  value: blendClick.toFixed(1) + "%" },
+    { label: "Email Orders", value: orders.toLocaleString() },
+    { label: "Avg Order Value", value: orders > 0 ? fmt(aov) : "—" },
+    { label: "Unsub Rate", value: unsubRate.toFixed(2) + "%" },
+    { label: "Flow Share", value: (flowRev + campRev) > 0 ? flowShare.toFixed(0) + "%" : "—" },
+    { label: "% of Total Rev", value: storeRev > 0 ? pctOfRev.toFixed(1) + "%" : "—" },
   ];
 
   const yFmt = (v: number) =>
     metric === "revenue"   ? fmt(v) :
     metric === "delivered" ? (v >= 1000 ? (v/1000).toFixed(0)+"K" : String(v)) :
+    metric === "orders"    ? (v >= 1000 ? (v/1000).toFixed(1)+"K" : String(Math.round(v))) :
+    metric === "unsub"     ? v.toFixed(2) + "%" :
                              v.toFixed(0) + "%";
 
   return (
