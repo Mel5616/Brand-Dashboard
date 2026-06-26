@@ -907,6 +907,9 @@ export function DashboardTabs({
                     const openSpark   = history.map(r => r?.open_rate   ?? 0);
                     const clickSpark  = history.map(r => r?.click_rate  ?? 0);
                     const revSpark    = history.map(r => r?.revenue     ?? 0);
+                    const subSpark    = history.map(r => r?.list_size   ?? 0);
+                    // Subscribers is a point-in-time count — use the most recent month that has one.
+                    const subscribers = [...history].reverse().find(r => (r?.list_size ?? 0) > 0)?.list_size ?? 0;
                     const monthCur = history[latestI];
                     const prev     = wholeYear ? null : history[latestI - 1];
                     if (!wholeYear && (!monthCur || monthCur.emails_sent === 0)) return null;
@@ -919,7 +922,7 @@ export function DashboardTabs({
                       ? { emails_sent: fySent, open_rate: fyOpen, click_rate: fyClick, revenue: fySum(revSpark) }
                       : monthCur;
                     return {
-                      brand: b, cur, sentSpark, openSpark, clickSpark, revSpark,
+                      brand: b, cur, subscribers, sentSpark, openSpark, clickSpark, revSpark, subSpark,
                       sentChg:  pctChg(cur.emails_sent, prev?.emails_sent),
                       openChg:  pctChg(cur.open_rate,   prev?.open_rate),
                       clickChg: pctChg(cur.click_rate,  prev?.click_rate),
@@ -933,6 +936,7 @@ export function DashboardTabs({
 
                 const cols = [
                   { label: "Email Revenue", getValue: (r: any) => fmt(r.cur.revenue),                       getSpark: (r: any) => r.revSpark,   getChg: (r: any) => r.revChg },
+                  { label: "Subscribers",   getValue: (r: any) => r.subscribers > 0 ? r.subscribers.toLocaleString() : "—", getSpark: (r: any) => r.subSpark, getChg: () => null },
                   { label: "Delivered",     getValue: (r: any) => r.cur.emails_sent.toLocaleString(),       getSpark: (r: any) => r.sentSpark,  getChg: (r: any) => r.sentChg },
                   { label: "Open Rate",     getValue: (r: any) => r.cur.open_rate.toFixed(1) + "%",          getSpark: (r: any) => r.openSpark,  getChg: (r: any) => r.openChg },
                   { label: "Click Rate",    getValue: (r: any) => r.cur.click_rate.toFixed(1) + "%",         getSpark: (r: any) => r.clickSpark, getChg: (r: any) => r.clickChg },
@@ -946,7 +950,7 @@ export function DashboardTabs({
                         <div className="flex items-center gap-2 px-5 py-2.5 border-b border-gray-50" style={{ borderLeft: `3px solid ${r.brand.color}` }}>
                           <span className="text-sm font-bold text-slate-700">{r.brand.name}</span>
                         </div>
-                        <div className="grid grid-cols-4 divide-x divide-gray-50">
+                        <div className="grid grid-cols-5 divide-x divide-gray-50">
                           {cols.map(col => (
                             <div key={col.label} className="px-5 py-3">
                               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">{col.label}</p>

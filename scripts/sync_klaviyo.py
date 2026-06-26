@@ -85,6 +85,39 @@ def get_list_size(api_key, list_id):
         print(f"    Warning: could not fetch list size — {e}")
         return 0
 
+# True email subscriber base = profile_count of a segment the user creates per account
+# in Klaviyo (condition: "can receive email marketing"). Match it by name, read-only.
+SUBSCRIBER_SEGMENT_NAMES = {
+    "email subscribers", "subscribers", "all subscribers", "email marketing subscribers",
+    "newsletter subscribers", "dashboard - email subscribers", "dashboard – email subscribers",
+}
+
+def get_subscriber_count(api_key):
+    """Find a segment named like 'Email Subscribers' and return its profile_count.
+    Returns 0 if no such segment exists yet. Read-only (no segments:write needed)."""
+    seg_id = None
+    try:
+        data = klaviyo_get(api_key, "segments/", {"fields[segment]": "name"})
+        while True:
+            for s in data.get("data", []):
+                name = (s.get("attributes", {}).get("name") or "").strip().lower()
+                if name in SUBSCRIBER_SEGMENT_NAMES:
+                    seg_id = s["id"]; break
+            nxt = (data.get("links") or {}).get("next")
+            if seg_id or not nxt:
+                break
+            headers = {"Authorization": f"Klaviyo-API-Key {api_key}", "revision": "2024-10-15", "Accept": "application/json"}
+            r = requests.get(nxt, headers=headers, timeout=20); r.raise_for_status(); data = r.json()
+    except Exception:
+        return 0
+    if not seg_id:
+        return 0
+    try:
+        d = klaviyo_get(api_key, f"segments/{seg_id}/", {"additional-fields[segment]": "profile_count"})
+        return int(d.get("data", {}).get("attributes", {}).get("profile_count") or 0)
+    except Exception:
+        return 0
+
 def get_metric_map(api_key):
     """Return {metric_name: id} for the whole account (name isn't a filterable field,
     so we list all metrics and match client-side). Follows pagination."""
@@ -170,9 +203,8 @@ def sync_brand(db, api_key, brand, brand_id):
     clicked_id  = metrics.get("Clicked Email")
     revenue_id  = metrics.get("Placed Order")
 
-    list_size = get_list_size(api_key, list_id) if list_id else 0
-    if list_id:
-        print(f"    Subscribers: {list_size:,}")
+    list_size = get_subscriber_count(api_key)
+    print(f"    Subscribers: {list_size:,}" + ("" if list_size else "  (no 'Email Subscribers' segment found — create one in Klaviyo)"))
 
     for mk in MONTH_KEYS:
         year, month = int(mk[:4]), int(mk[5:])

@@ -70,14 +70,15 @@ export function EmailChart({ brands, data, monthKeys = DEFAULT_MONTH_KEYS, month
   // Blend rates by delivered volume (open_rate is a % per brand-month).
   const blendOpen  = delivered > 0 ? rows.reduce((s, d) => s + d.open_rate  * d.emails_sent, 0) / delivered : 0;
   const blendClick = delivered > 0 ? rows.reduce((s, d) => s + d.click_rate * d.emails_sent, 0) / delivered : 0;
-  const revPerK    = delivered > 0 ? (revenue / delivered) * 1000 : 0;
+  // Subscribers is a point-in-time count (stamped to each month), so read the latest month, not the FY sum.
+  const subscribers = data.filter(d => d.month_key === latestKey).reduce((s, d) => s + (d.list_size || 0), 0);
 
   const kpis = [
     { label: `${latestLbl} Email Revenue`, value: fmtFull(revenue) },
+    { label: "Subscribers", value: subscribers > 0 ? subscribers.toLocaleString() : "—" },
     { label: `${latestLbl} Delivered`,     value: delivered.toLocaleString() },
     { label: "Open Rate",   value: blendOpen.toFixed(1) + "%" },
     { label: "Click Rate",  value: blendClick.toFixed(1) + "%" },
-    { label: "Rev / 1K Sent", value: fmt(revPerK) },
   ];
 
   const yFmt = (v: number) =>
