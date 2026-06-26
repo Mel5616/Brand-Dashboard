@@ -11,6 +11,7 @@ import { buildReport } from "@/lib/report";
 import { GoogleCampaignTable, MetaPlatformBreakdown } from "./ChannelBrandDetail";
 import { CampaignCalendar } from "./CampaignCalendar";
 import { SeoPanel } from "./SeoPanel";
+import { InsightsPanel } from "./InsightsPanel";
 import { SectionBar } from "./ui";
 import { ProductsTable } from "./ProductsTable";
 import { TradeshowAccordion } from "./TradeshowAccordion";
@@ -28,12 +29,16 @@ import { ShopifyInsights } from "./ShopifyInsights";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "brands" | "campaign-calendar" | "report" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "tradeshows" | "budget" | "calendar" | "content" | "influencer" | "team";
+type TabId = "brands" | "insights" | "campaign-calendar" | "report" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "tradeshows" | "budget" | "calendar" | "content" | "influencer" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
     id: "brands", label: "Brands",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
+  },
+  {
+    id: "insights", label: "Insights",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
   },
   {
     id: "campaign-calendar", label: "Campaigns",
@@ -371,15 +376,6 @@ export function DashboardTabs({
           {/* ── Brands ── */}
           {active === "brands" && (
             <>
-              {(() => {
-                const digest = brandInsights.find((x: any) => x.brand_id === -1)?.content;
-                return digest ? (
-                  <div className="bg-indigo-50/60 border border-indigo-100 rounded-2xl px-5 py-4 mb-4">
-                    <h3 className="text-sm font-semibold text-indigo-900 flex items-center gap-1.5 mb-1.5">✨ Portfolio digest <span className="text-[11px] font-normal text-indigo-400">what changed this month, ranked by attention</span></h3>
-                    <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">{digest}</p>
-                  </div>
-                ) : null;
-              })()}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {fyKpis.map(kpi => (
                   <div key={kpi.label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
@@ -580,6 +576,28 @@ export function DashboardTabs({
                 onBrandClick={openBrand}
                 monthKeys={monthKeys}
                 latest={LATEST}
+              />
+            </>
+          )}
+
+          {/* ── Insights (AI hub: portfolio digest + per-brand narratives) ── */}
+          {active === "insights" && (
+            <>
+              <SectionBar title="Insights" />
+              <div className="flex items-center gap-2 mb-3">
+                <select
+                  value={brandFilter === "all" ? "all" : String(brandFilter)}
+                  onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
+                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                >
+                  <option value="all">All Brands (Portfolio)</option>
+                  {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
+                </select>
+              </div>
+              <InsightsPanel
+                scope={brandFilter} brands={brands} brandInsights={brandInsights} gscInsights={gscInsights}
+                summaries={summaries} googleAds={googleAds} metaAds={metaAds} klaviyo={klaviyo}
+                gscMetrics={gscMetrics} semrushMetrics={semrushMetrics} onSelectBrand={setBrandFilter}
               />
             </>
           )}

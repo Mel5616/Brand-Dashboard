@@ -140,7 +140,6 @@ export function SeoPanel({
   const movers = lq.map(q => ({ ...q, delta: pmap[q.query] != null ? pmap[q.query] - q.position : null }));
   const up = movers.filter(q => q.delta != null && q.delta >= 1).sort((a, b) => (b.delta! - a.delta!)).slice(0, 6);
   const down = movers.filter(q => q.delta != null && q.delta <= -1).sort((a, b) => (a.delta! - b.delta!)).slice(0, 6);
-  const insight = gscInsights.find(i => i.brand_id === scope);
 
   return (
     <div className="space-y-4">
@@ -282,12 +281,6 @@ export function SeoPanel({
         </div>
       </div>
 
-      {insight && (
-        <div className="bg-indigo-50/50 rounded-xl border border-indigo-100 p-5">
-          <h3 className="font-semibold text-indigo-900 mb-1 flex items-center gap-1.5">✨ AI SEO summary</h3>
-          <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">{insight.content}</p>
-        </div>
-      )}
 
       <div className="grid md:grid-cols-2 gap-4">
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
