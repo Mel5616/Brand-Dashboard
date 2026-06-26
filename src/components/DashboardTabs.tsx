@@ -138,6 +138,9 @@ export function DashboardTabs({
   const firstTab = (visibleTabs[0]?.id ?? "brands") as TabId;
   const [active, setActive] = useState<TabId>(firstTab);
   const [brandFilter, setBrandFilter] = useState<number | "all">("all");
+  // Report tab has its own brand selector — using brandFilter would trip the
+  // selectedBrand short-circuit and open the brand detail page instead.
+  const [reportBrand, setReportBrand] = useState<number | "all">("all");
   const [brandPeriod, setBrandPeriod] = useState<BrandPeriod>("monthly");
   const [fy, setFy] = useState<FY>(currentFY());
 
@@ -294,6 +297,15 @@ export function DashboardTabs({
       <>
         <Sidebar />
         <div className="ml-[200px]">
+          <div className="flex justify-end mb-3">
+            <button
+              onClick={() => { setReportBrand(selectedBrand.id); setBrandFilter("all"); setActive("report"); }}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-3.5 py-1.5 transition shadow-sm"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              Management Report (PDF)
+            </button>
+          </div>
           <BrandPage
             brand={selectedBrand}
             summary={selectedSummary ?? undefined}
@@ -541,8 +553,8 @@ export function DashboardTabs({
             <>
               <div className="flex items-center justify-between gap-2 mb-3 no-print">
                 <select
-                  value={brandFilter === "all" ? "all" : String(brandFilter)}
-                  onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
+                  value={reportBrand === "all" ? "all" : String(reportBrand)}
+                  onChange={e => setReportBrand(e.target.value === "all" ? "all" : Number(e.target.value))}
                   className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
                 >
                   <option value="all">All Brands (Portfolio)</option>
@@ -556,7 +568,7 @@ export function DashboardTabs({
                   Download PDF
                 </button>
               </div>
-              <BrandReport r={buildReport(brandFilter, {
+              <BrandReport r={buildReport(reportBrand, {
                 brands, summaries, monthly, targets,
                 marketingBudgets: marketingBudgets.filter((b: any) => b.fy === fy),
                 marketingActuals: marketingActuals.filter((a: any) => monthKeys.includes(a.month_key)),
