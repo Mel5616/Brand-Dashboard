@@ -1,34 +1,60 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { buildSnapshot, snapshotHtml, type SnapshotInput } from "@/lib/snapshot";
 
-type Props = Omit<SnapshotInput, "brand"> & {
+type Props = Omit<SnapshotInput, "brand" | "note"> & {
   brands: { id: number; name: string; live?: boolean }[];
   selected: number | "all";
   onSelect: (id: number) => void;
+  canEdit: boolean;
 };
 
-export function BrandSnapshot({ brands, selected, onSelect, month, monthKeys, monthLabels, fyLabel, ...data }: Props) {
+export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, monthKeys, monthLabels, fyLabel, ...data }: Props) {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const live = brands.filter(b => b.live !== false);
-  // Fall back to the first live brand when "all" is selected — a snapshot is per brand.
+  // A snapshot is per brand — fall back to the first live brand when "all" is selected.
   const brandId = selected === "all" ? (live[0]?.id ?? brands[0]?.id) : selected;
   const brand = brands.find(b => b.id === brandId);
   const [busy, setBusy] = useState(false);
 
+  // Notes are stored per brand+month and fetched on change. needsSetup => table not created yet.
+  const [note, setNote] = useState("");
+  const [savedNote, setSavedNote] = useState("");
+  const [noteState, setNoteState] = useState<"idle" | "loading" | "saving" | "saved" | "needsSetup" | "error">("idle");
+
+  useEffect(() => {
+    if (!brand) return;
+    let cancelled = false;
+    setNoteState("loading");
+    fetch(`/api/snapshot-notes?brand=${brand.id}&month=${month}`)
+      .then(r => r.json())
+      .then(j => { if (cancelled) return; if (j.needsSetup) setNoteState("needsSetup"); else setNoteState("idle"); setNote(j.content ?? ""); setSavedNote(j.content ?? ""); })
+      .catch(() => { if (!cancelled) setNoteState("error"); });
+    return () => { cancelled = true; };
+  }, [brand?.id, month]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function saveNote() {
+    if (!brand) return;
+    setNoteState("saving");
+    try {
+      const res = await fetch("/api/snapshot-notes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brand_id: brand.id, month_key: month, content: note }) });
+      const j = await res.json();
+      if (j.ok) { setSavedNote(note); setNoteState("saved"); setTimeout(() => setNoteState("idle"), 1800); }
+      else setNoteState(j.needsSetup ? "needsSetup" : "error");
+    } catch { setNoteState("error"); }
+  }
+
+  // The saved note (not the in-progress edit) is what renders into the report.
   const html = useMemo(() => {
     if (!brand) return "";
-    return snapshotHtml(buildSnapshot({ brand, month, monthKeys, monthLabels, fyLabel, ...data }));
-  }, [brand, month, monthKeys, monthLabels, fyLabel, data]);
+    return snapshotHtml(buildSnapshot({ brand, month, monthKeys, monthLabels, fyLabel, note: savedNote, ...data }));
+  }, [brand, month, monthKeys, monthLabels, fyLabel, savedNote, data]);
 
   const monthName = monthLabels[monthKeys.indexOf(month)] ?? month;
   const fileName = `${(brand?.name ?? "brand").replace(/\s+/g, "_")}_${monthName}_${fyLabel}_Snapshot.html`.replace(/[^\w.\-]/g, "");
 
-  function printIt() {
-    const win = frameRef.current?.contentWindow;
-    if (win) { win.focus(); win.print(); }
-  }
+  function printIt() { const win = frameRef.current?.contentWindow; if (win) { win.focus(); win.print(); } }
   function download() {
     setBusy(true);
     const blob = new Blob([html], { type: "text/html" });
@@ -39,6 +65,8 @@ export function BrandSnapshot({ brands, selected, onSelect, month, monthKeys, mo
   }
 
   if (!brand) return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">No brand to report on.</div>;
+
+  const dirty = note !== savedNote;
 
   return (
     <div className="space-y-3">
@@ -61,9 +89,37 @@ export function BrandSnapshot({ brands, selected, onSelect, month, monthKeys, mo
           </button>
         </div>
       </div>
+
+      {/* Notes editor — saved text is rendered into the report's "Notes & commentary" block. */}
+      {canEdit && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 no-print">
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Notes for {brand.name} · {monthName}</label>
+            <div className="flex items-center gap-3">
+              {noteState === "saved" && <span className="text-xs text-emerald-600 font-medium">Saved</span>}
+              {noteState === "error" && <span className="text-xs text-red-500 font-medium">Save failed</span>}
+              <button onClick={saveNote} disabled={!dirty || noteState === "saving"} className="text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 disabled:opacity-40 rounded-lg px-3.5 py-1.5 transition">
+                {noteState === "saving" ? "Saving..." : "Save notes"}
+              </button>
+            </div>
+          </div>
+          {noteState === "needsSetup" ? (
+            <p className="text-xs text-amber-600">Notes table not set up yet. Run <code className="bg-amber-50 px-1 rounded">supabase/add_snapshot_notes.sql</code> in Supabase, then reload.</p>
+          ) : (
+            <textarea
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              placeholder="Commentary for the brand — wins, context, what's next. This prints into the report and the emailed HTML."
+              rows={4}
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y"
+            />
+          )}
+        </div>
+      )}
+
       {/* Rendered in an isolated iframe so the report's own styles match the sample exactly. */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <iframe ref={frameRef} title="snapshot" srcDoc={html} className="w-full" style={{ height: "1180px", border: 0 }} />
+        <iframe ref={frameRef} title="snapshot" srcDoc={html} className="w-full" style={{ height: "1680px", border: 0 }} />
       </div>
     </div>
   );

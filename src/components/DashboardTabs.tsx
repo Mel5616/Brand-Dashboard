@@ -792,6 +792,7 @@ export function DashboardTabs({
                 brands={brands}
                 selected={brandFilter}
                 onSelect={setBrandFilter}
+                canEdit={role === "admin"}
                 month={LATEST}
                 monthKeys={monthKeys}
                 monthLabels={monthLabels}
@@ -804,6 +805,12 @@ export function DashboardTabs({
                 products={products}
                 summaries={summaries}
                 googleAdsCampaigns={googleAdsCampaigns}
+                brandsAll={brands}
+                channelSales={channelSales}
+                tradeshows={tradeshows}
+                tradeshowSales={tradeshowSales}
+                shopifySources={shopifySources}
+                instagramMedia={instagramMedia}
               />
             </>
           )}

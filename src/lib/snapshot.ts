@@ -4,6 +4,9 @@
 // or downloaded/emailed as a self-contained .html file).
 
 import { fmt, fmtFull } from "./format";
+import { buildChannels, channelColor, DIGITAL_CHANNELS, type ChannelSaleRow } from "./channels";
+
+type IgPost = { brand_id: number; caption: string | null; media_type: string | null; permalink: string | null; posted_at: string | null; like_count: number; comments_count: number; image_url: string | null };
 
 export type SnapshotInput = {
   brand: { id: number; name: string };
@@ -19,6 +22,14 @@ export type SnapshotInput = {
   products: { brand_id: number; title: string; gross_sales: number }[];
   summaries: { brand_id: number; fy_refunds: number | null; fy_revenue: number }[];
   googleAdsCampaigns: { brand_id: number; month_key: string; campaign_name: string; spend: number; conv_value: number }[];
+  // Whole-business (all channels) — built via buildChannels, so it needs the raw inputs
+  brandsAll: { id: number; name: string }[];
+  channelSales: ChannelSaleRow[];
+  tradeshows: { id: string; date_start: string }[];
+  tradeshowSales: { tradeshow_id: string; brand_id: number; revenue: number }[];
+  shopifySources: { brand_id: number; month_key: string; source: string; revenue: number }[];
+  instagramMedia: IgPost[];
+  note?: string;            // editable commentary rendered into the report
 };
 
 // Rates may arrive as a fraction (0.515) or already as a percentage (51.5). Normalise to a percentage.
@@ -33,6 +44,10 @@ export function buildSnapshot(d: SnapshotInput) {
   const idx = monthKeys.indexOf(month);
   const prevMonth = idx > 0 ? monthKeys[idx - 1] : null;
   const monthName = monthLabels[idx] ?? month;
+  const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const [yy, mm] = month.split("-").map(Number);
+  const monthLong = MONTHS[(mm || 1) - 1] ?? monthName;
+  const monthFull = `${monthLong} ${yy || ""}`.trim();
 
   const forBrand = <T extends { brand_id: number }>(rows: T[]) => rows.filter(r => r.brand_id === brand.id);
   const at = <T extends { month_key: string }>(rows: T[], mk: string | null) => rows.find(r => r.month_key === mk);
@@ -85,6 +100,28 @@ export function buildSnapshot(d: SnapshotInput) {
   // ── Top product (FY) ────────────────────────────────────────────────
   const topProduct = [...forBrand(d.products)].sort((a, b) => b.gross_sales - a.gross_sales)[0] ?? null;
 
+  // ── Whole business (all channels, not just D2C) ─────────────────────
+  const channels = buildChannels(brand.id, {
+    brands: d.brandsAll, channelSales: d.channelSales, monthly: d.monthly,
+    tradeshows: d.tradeshows, tradeshowSales: d.tradeshowSales, shopifySources: d.shopifySources,
+    monthKeys, latest: month,
+  });
+  const wholeFy = sum(channels.map(c => c.fy));
+  const wholeMonth = sum(channels.map(c => c.latest));
+  const wholeTrend = monthKeys.map((_, i) => sum(channels.map(c => c.series[i] ?? 0)));
+  const digitalFy = sum(channels.filter(c => DIGITAL_CHANNELS.has(c.name)).map(c => c.fy));
+  const digitalShare = wholeFy > 0 ? (digitalFy / wholeFy) * 100 : 0;
+  const channelRows = channels.filter(c => c.fy > 0).map(c => ({
+    name: c.name, fy: c.fy, latest: c.latest, color: channelColor(c.name),
+    share: wholeFy > 0 ? (c.fy / wholeFy) * 100 : 0,
+  }));
+
+  // ── Top Instagram posts (by engagement) ─────────────────────────────
+  const igPosts = forBrand(d.instagramMedia)
+    .map(p => ({ ...p, engagement: (p.like_count || 0) + (p.comments_count || 0) }))
+    .sort((a, b) => b.engagement - a.engagement)
+    .slice(0, 5);
+
   // ── Seasonality (share of FY revenue per month) ─────────────────────
   const seasonal = monthKeys.map((mk, i) => ({
     label: monthLabels[i], month_key: mk,
@@ -95,7 +132,7 @@ export function buildSnapshot(d: SnapshotInput) {
   const topShare = [...seasonal].sort((a, b) => b.share - a.share)[0];
 
   return {
-    brand, monthName, fyLabel: d.fyLabel,
+    brand, month, monthName, monthLong, monthFull, fyLabel: d.fyLabel,
     monthRev, monthOrders, aov, ytdRev, fyRevTotal, monthTarget, fyTarget, targetMultiple, returnRate,
     google: { spend: gSpend, rev: gRev, roas: gRoas, revDelta: delta(gRev, gRevPrev), roasDelta: delta(gRoas, gPrev?.roas ?? 0), topCampaign },
     meta: { spend: mSpend, rev: mRev, roas: mRoas, cpa: mCpa, revDelta: delta(mRev, mPrev?.revenue ?? 0), roasDelta: delta(mRoas, mPrev && mPrev.spend > 0 ? mPrev.revenue / mPrev.spend : 0), cpaDelta: delta(mCpa, mCpaPrev) },
@@ -103,6 +140,9 @@ export function buildSnapshot(d: SnapshotInput) {
     email: { rev: kRev, openRate, clickRate, revDelta: delta(kRev, kPrev?.revenue ?? 0) },
     topProduct,
     seasonal, peakShare, peakMonthKey: topShare?.month_key,
+    wholeFy, wholeMonth, wholeTrend, digitalShare, channelRows,
+    igPosts, monthLabelsAll: monthLabels,
+    note: d.note ?? "",
   };
 }
 
@@ -111,10 +151,31 @@ const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 const up = (n: number | null, suffix = "%") => n == null ? "" : ` <span class="up">${n >= 0 ? "+" : ""}${n.toFixed(0)}${suffix}</span>`;
 const roundPct = (n: number) => `${n.toFixed(1)}%`;
 
+// Inline SVG area+line chart — no JS, so it survives in the downloaded HTML and the PDF.
+function svgArea(values: number[], labels: string[], color = "#2D4977"): string {
+  const W = 770, H = 168, padX = 6, padTop = 18, padBot = 22;
+  const max = Math.max(...values, 1), n = values.length;
+  const x = (i: number) => padX + (n > 1 ? (i / (n - 1)) * (W - 2 * padX) : 0);
+  const y = (v: number) => padTop + (1 - v / max) * (H - padTop - padBot);
+  const pts = values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`);
+  const line = pts.join(" ");
+  const area = `${x(0).toFixed(1)},${(H - padBot).toFixed(1)} ${line} ${x(n - 1).toFixed(1)},${(H - padBot).toFixed(1)}`;
+  const peakI = values.indexOf(max);
+  const ticks = labels.map((l, i) => (i % 2 === 0 || i === n - 1)
+    ? `<text x="${x(i).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="8.5" fill="#9aa6b4" font-weight="600">${esc(l)}</text>` : "").join("");
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block">
+    <polygon points="${area}" fill="${color}" opacity="0.08"/>
+    <polyline points="${line}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+    ${values.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="${i === peakI ? 3.6 : 2.2}" fill="${color}"/>`).join("")}
+    <text x="${x(peakI).toFixed(1)}" y="${(y(max) - 6).toFixed(1)}" text-anchor="middle" font-size="9" fill="${color}" font-weight="800">${fmt(max)}</text>
+    ${ticks}
+  </svg>`;
+}
+
 export function snapshotHtml(s: Snapshot): string {
   const bars = s.seasonal.map(m => {
     const h = Math.max(4, Math.round((m.share / s.peakShare) * 100));
-    const isPeak = m.month_key === s.peakMonthKey || (s.monthName && m.label === s.monthName);
+    const isPeak = m.month_key === s.peakMonthKey || m.month_key === s.month;
     const showVal = isPeak && m.share > 0;
     const showM = isPeak || s.seasonal.indexOf(m) === 0 || s.seasonal.indexOf(m) === s.seasonal.length - 1;
     return `<div class="b${isPeak ? " peak" : ""}" style="height:${h}%">${showVal ? `<span class="v">${m.share.toFixed(1)}%</span>` : ""}${showM ? `<span class="m">${esc(m.label)}</span>` : ""}</div>`;
@@ -124,7 +185,7 @@ export function snapshotHtml(s: Snapshot): string {
     ? `${s.targetMultiple.toFixed(1)}× the full-year D2C target`
     : `Direct-to-consumer revenue, financial year to date`;
   const d2cTag = s.monthTarget > 0
-    ? (s.monthRev >= s.monthTarget ? `${s.monthName} revenue ran ahead of target` : `${Math.round((s.monthRev / s.monthTarget) * 100)}% of the ${s.monthName} target`)
+    ? (s.monthRev >= s.monthTarget ? `${s.monthLong} revenue ran ahead of target` : `${Math.round((s.monthRev / s.monthTarget) * 100)}% of the ${s.monthLong} target`)
     : "";
   const emailTag = s.email.openRate >= 30 ? "Open rate well above sector benchmark" : "";
   const googleTag = (s.google.revDelta ?? 0) > 0 ? "Revenue growing on steady spend" : "";
@@ -134,9 +195,39 @@ export function snapshotHtml(s: Snapshot): string {
     `<div class="card"><div class="h">${h}</div><div class="rows">${rows}</div>${tag ? `<span class="tag">${esc(tag)}</span>` : ""}</div>`;
   const r = (k: string, v: string) => `<div class="r"><span class="k">${k}</span><span class="val">${v}</span></div>`;
 
+  // Whole-business section: KPI strip + channel split (bar + legend) + monthly revenue trend graph.
+  const chanBar = s.channelRows.map(c => `<div style="width:${c.share.toFixed(2)}%;background:${c.color}" title="${esc(c.name)}: ${fmtFull(c.fy)} (${c.share.toFixed(1)}%)"></div>`).join("");
+  const chanLegend = s.channelRows.map(c => `<div class="cr"><span class="dot" style="background:${c.color}"></span><span class="cn">${esc(c.name)}</span><span class="cv">${fmtFull(c.fy)}</span><span class="cp">${c.share.toFixed(0)}%</span></div>`).join("");
+  const wholeSection = s.wholeFy > 0 ? `
+  <div class="sec">
+    <div class="h">Whole business · all channels</div>
+    <div class="kpis">
+      <div class="c"><div class="l">Total brand revenue · FY</div><div class="v">${fmt(s.wholeFy)}</div></div>
+      <div class="c"><div class="l">${esc(s.monthLong)} · all channels</div><div class="v">${fmt(s.wholeMonth)}</div></div>
+      <div class="c"><div class="l">Channels</div><div class="v">${s.channelRows.length}</div></div>
+      <div class="c"><div class="l">Digital share</div><div class="v">${s.digitalShare.toFixed(0)}%</div></div>
+    </div>
+    <div class="chanwrap">
+      <div><div class="chanbar">${chanBar}</div></div>
+      <div class="chanlist">${chanLegend}</div>
+    </div>
+    <div class="trend"><div class="tl">Total revenue by month · ${esc(s.fyLabel)}</div>${svgArea(s.wholeTrend, s.monthLabelsAll)}</div>
+  </div>` : "";
+
+  // Top Instagram posts by engagement.
+  const igCards = s.igPosts.map(p => `<div class="igc"><div class="igimg"${p.image_url ? ` style="background-image:url('${esc(p.image_url)}')"` : ""}></div><div class="igb"><div class="igm">&#9829; ${p.like_count.toLocaleString()} &middot; ${p.comments_count.toLocaleString()} comments</div><div class="igcap">${esc((p.caption || "").replace(/\s+/g, " ").slice(0, 90))}</div></div></div>`).join("");
+  const igSection = s.igPosts.length ? `
+  <div class="sec">
+    <div class="h">Top Instagram posts · by engagement</div>
+    <div class="iggrid">${igCards}</div>
+  </div>` : "";
+
+  const notesSection = (s.note && s.note.trim()) ? `
+  <div class="notes"><div class="h">Notes &amp; commentary</div><div class="ntext">${esc(s.note.trim()).replace(/\n/g, "<br>")}</div></div>` : "";
+
   return `<!DOCTYPE html>
 <html lang="en-AU"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(s.brand.name)} · ${esc(s.monthName)} Performance Snapshot</title>
+<title>${esc(s.brand.name)} · ${esc(s.monthLong)} Performance Snapshot</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -181,23 +272,49 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
 .product .v{font-size:26px;font-weight:800;letter-spacing:-.02em;}
 .foot{margin-top:20px;border-top:1px solid var(--line);padding-top:12px;font-size:10px;color:var(--grey);line-height:1.55;font-weight:500;}
 .foot strong{color:var(--navy);}
-@media print{body{background:#fff;padding:0;}.page{box-shadow:none;max-width:none;padding:30px 34px;}@page{size:A4;margin:12mm;}}
-@media(max-width:680px){.hero{grid-template-columns:1fr;}.grid{grid-template-columns:1fr;}.seasonal{flex-direction:column;align-items:stretch;}.seasonal .copy{flex:none;}.masthead{flex-direction:column;align-items:flex-start;gap:10px;}.stamp{text-align:left;}}
+.sec{margin-top:30px;}
+.sec>.h{font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--navy);border-bottom:1px solid var(--line);padding-bottom:7px;margin-bottom:14px;}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:16px;}
+.kpis .c{background:var(--paper);padding:13px 15px;}
+.kpis .c .l{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--grey);font-weight:600;}
+.kpis .c .v{font-size:22px;font-weight:800;color:var(--navy);margin-top:5px;letter-spacing:-.02em;}
+.chanwrap{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:center;}
+.chanbar{display:flex;height:26px;border-radius:5px;overflow:hidden;background:#eef2f6;border:1px solid var(--line);}
+.chanbar>div{height:100%;}
+.chanlist{display:flex;flex-direction:column;gap:7px;}
+.cr{display:flex;align-items:center;gap:8px;font-size:11.5px;}
+.cr .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;}
+.cr .cn{flex:1;color:var(--ink);font-weight:600;}
+.cr .cv{color:var(--grey);font-weight:600;}
+.cr .cp{width:42px;text-align:right;color:var(--navy);font-weight:800;}
+.trend{margin-top:16px;border:1px solid var(--line);padding:14px 16px 8px;}
+.trend .tl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--grey);font-weight:700;margin-bottom:6px;}
+.iggrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+.igc{border:1px solid var(--line);border-radius:6px;overflow:hidden;background:#fbfcfd;}
+.igc .igimg{height:108px;background:#dde6ef;background-size:cover;background-position:center;}
+.igc .igb{padding:8px 9px 10px;}
+.igc .igm{font-size:10px;font-weight:800;color:var(--navy);}
+.igc .igcap{font-size:9.5px;color:var(--grey);margin-top:4px;line-height:1.35;font-weight:500;max-height:38px;overflow:hidden;}
+.notes{margin-top:30px;border:1px solid var(--blue-soft);background:var(--blue-wash);padding:16px 18px;}
+.notes .h{font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--navy);margin-bottom:9px;}
+.notes .ntext{font-size:12px;color:var(--ink);line-height:1.6;font-weight:500;}
+@media print{body{background:#fff;padding:0;}.page{box-shadow:none;max-width:none;padding:30px 34px;}@page{size:A4;margin:12mm;}.sec,.notes{break-inside:avoid;}.iggrid{break-inside:avoid;}}
+@media(max-width:680px){.hero{grid-template-columns:1fr;}.grid{grid-template-columns:1fr;}.seasonal{flex-direction:column;align-items:stretch;}.seasonal .copy{flex:none;}.masthead{flex-direction:column;align-items:flex-start;gap:10px;}.stamp{text-align:left;}.kpis{grid-template-columns:1fr 1fr;}.chanwrap{grid-template-columns:1fr;}.iggrid{grid-template-columns:1fr 1fr;}}
 </style></head>
 <body><div class="page">
   <div class="masthead">
     <div>
       <div class="eyebrow">${esc(s.brand.name)} Australia</div>
-      <h1>${esc(s.monthName)}<br>Performance Snapshot</h1>
+      <h1>${esc(s.monthFull)}<br>Performance Snapshot</h1>
       <div class="sub">Direct-to-consumer and marketing performance · ${esc(s.fyLabel)}</div>
     </div>
-    <div class="stamp"><strong>Coolkidz Australia</strong>Official AU distributor<br>Prepared ${esc(s.monthName)}</div>
+    <div class="stamp"><strong>Coolkidz Australia</strong>Official AU distributor<br>Prepared ${esc(s.monthFull)}</div>
   </div>
 
   <div class="hero">
     <div class="cell"><div class="lab">D2C revenue YTD</div><div class="big">${fmt(s.ytdRev)}</div><div class="note">${ytdNote}</div></div>
-    <div class="cell"><div class="lab">${esc(s.monthName)} D2C revenue</div><div class="big">${fmtFull(s.monthRev)}</div><div class="note">${s.monthOrders} orders · ${fmtFull(s.aov)} average order value</div></div>
-    <div class="cell"><div class="lab">Blended paid ROAS · ${esc(s.monthName)}</div><div class="big">${s.blendedRoas.toFixed(2)}×</div><div class="note">${s.blendedDelta != null ? `<span class="up">${s.blendedDelta >= 0 ? "+" : ""}${s.blendedDelta.toFixed(0)}%</span> on the prior month` : "blended Google and Meta"}</div></div>
+    <div class="cell"><div class="lab">${esc(s.monthLong)} D2C revenue</div><div class="big">${fmtFull(s.monthRev)}</div><div class="note">${s.monthOrders} orders · ${fmtFull(s.aov)} average order value</div></div>
+    <div class="cell"><div class="lab">Blended paid ROAS · ${esc(s.monthLong)}</div><div class="big">${s.blendedRoas.toFixed(2)}×</div><div class="note">${s.blendedDelta != null ? `<span class="up">${s.blendedDelta >= 0 ? "+" : ""}${s.blendedDelta.toFixed(0)}%</span> on the prior month` : "blended Google and Meta"}</div></div>
   </div>
 
   <div class="seasonal">
@@ -207,23 +324,23 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
 
   <div class="grid">
     ${card(`Direct to consumer · Shopify`, [
-      r(`${s.monthName} revenue`, fmtFull(s.monthRev)),
-      r(`${s.monthName} orders`, String(s.monthOrders)),
+      r(`${s.monthLong} revenue`, fmtFull(s.monthRev)),
+      r(`${s.monthLong} orders`, String(s.monthOrders)),
       r(`Average order value`, fmtFull(s.aov)),
       s.returnRate != null ? r(`FY return rate`, roundPct(s.returnRate)) : "",
     ].join(""), d2cTag)}
-    ${card(`Email · Klaviyo · ${s.monthName}`, [
+    ${card(`Email · Klaviyo · ${s.monthLong}`, [
       r(`Attributed revenue`, `${fmtFull(s.email.rev)}${up(s.email.revDelta)}`),
       r(`Open rate`, roundPct(s.email.openRate)),
       r(`Click rate`, roundPct(s.email.clickRate)),
     ].join(""), emailTag)}
-    ${card(`Google Ads · ${s.monthName}`, [
+    ${card(`Google Ads · ${s.monthLong}`, [
       r(`Spend`, fmtFull(s.google.spend)),
       r(`Revenue`, `${fmtFull(s.google.rev)}${up(s.google.revDelta)}`),
       r(`ROAS`, `${s.google.roas.toFixed(2)}×${up(s.google.roasDelta)}`),
       s.google.topCampaign ? r(`Top campaign`, `${s.google.topCampaign.roas.toFixed(1)}× ROAS`) : "",
     ].join(""), googleTag)}
-    ${card(`Meta Ads · ${s.monthName}`, [
+    ${card(`Meta Ads · ${s.monthLong}`, [
       r(`Spend`, fmtFull(s.meta.spend)),
       r(`Revenue`, `${fmtFull(s.meta.rev)}${up(s.meta.revDelta)}`),
       r(`ROAS`, `${s.meta.roas.toFixed(2)}×${up(s.meta.roasDelta)}`),
@@ -231,7 +348,13 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
     ].join(""), metaTag)}
   </div>
 
+  ${wholeSection}
+
   ${s.topProduct ? `<div class="product"><div class="l"><div class="lab">Top performing product · FY</div><div class="name">${esc(s.topProduct.title)}</div><div class="sub">The hero SKU driving the AU range</div></div><div class="v">${fmtFull(s.topProduct.gross_sales)}</div></div>` : ""}
+
+  ${igSection}
+
+  ${notesSection}
 
   <div class="foot"><strong>Source:</strong> Coolkidz Australia sales &amp; marketing dashboard, ${esc(s.fyLabel)}. Channel data from Google Ads, Meta Ads Manager, Shopify and Klaviyo. Deltas shown against the prior month.<br>Figures reflect ${esc(s.brand.name)} AU direct-to-consumer and digital marketing performance. Retail (Baby Bunting and other partners) is reported separately.</div>
 </div></body></html>`;
