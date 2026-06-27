@@ -19,6 +19,9 @@ const brandMatch = (dash: string, sheet: string) => {
   return !!a && !!b && (a === b || a.startsWith(b) || b.startsWith(a));
 };
 const CH_COLORS = ["#1e3a5f", "#10b981", "#f97316", "#3b82f6", "#a855f7", "#ec4899", "#14b8a6", "#92400e", "#22c55e", "#64748b", "#eab308", "#0ea5e9"];
+// Fixed colour per channel so the donut, stacked bars and brand-mix bars all agree.
+const CHANNEL_ORDER = ["Baby Bunting", "Website Sales", "Wholesale", "Tradeshows", "New Zealand", "Amazon", "Online Only Stores", "Specialty", "Marketplace", "Partnerships", "Affiliates"];
+const colorOf = (name: string) => { const i = CHANNEL_ORDER.indexOf(name); return CH_COLORS[(i >= 0 ? i : CHANNEL_ORDER.length + name.length) % CH_COLORS.length]; };
 
 function Card({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: string }) {
   return (
@@ -106,59 +109,41 @@ export function SalesPanel({
     if (fileRef.current) fileRef.current.value = "";
   }
 
-  // ── scope ──
-  const rows = scope === "all" ? channelSales : channelSales.filter(r => brandMatch(brands.find(b => b.id === scope)?.name ?? "", r.brand));
-  const liveMonthly = scope === "all" ? monthly : monthly.filter(m => m.brand_id === scope);
-  const offline = rows.filter(r => !r.is_online); // Shopify rows excluded — online comes live
-  const hasData = offline.length > 0 || liveMonthly.some(m => m.revenue > 0);
-
-  // Tradeshow sales (per show → month via date_start). These are Shopify/POS orders inside
-  // the live Website Sales total, so we report them separately and net them out of online.
-  const showMonth = Object.fromEntries(tradeshows.map(t => [t.id, (t.date_start || "").slice(0, 7)]));
-  const tsByMonth = (mk: string) => sum(
-    tradeshowSales
-      .filter(s => showMonth[s.tradeshow_id] === mk && (scope === "all" || s.brand_id === scope))
-      .map(s => s.revenue)
-  );
-  // Shopify special sources (Faire → Partnerships, Baby Bunting → Marketplace). Reported
-  // under their mapped channel and netted out of the live Website Sales total.
-  const sourcesIn = shopifySources.filter(s => scope === "all" || s.brand_id === scope);
-  const sourceToChannel = (mk: string, channel: string) => sum(
-    sourcesIn.filter(s => s.month_key === mk && SOURCE_CHANNEL[s.source] === channel).map(s => s.revenue)
-  );
-  const allSourcesByMonth = (mk: string) => sum(sourcesIn.filter(s => s.month_key === mk).map(s => s.revenue));
-
-  // Channel classification for the file (non-Shopify) rows:
-  //   API → Marketplace · no-group Backend/Cloud → Website Sales · else map/keep the customer group.
   const CHANNEL_MAP: Record<string, string> = {
-    "Online Store": "Online Only Stores",
-    "Affiliate": "Affiliates",
-    "Coolkidz": "Website Sales",
-    "Direct Customer": "Website Sales",
-    "Tradeshow Sales": "Tradeshows",
+    "Online Store": "Online Only Stores", "Affiliate": "Affiliates",
+    "Coolkidz": "Website Sales", "Direct Customer": "Website Sales", "Tradeshow Sales": "Tradeshows",
   };
   const channelOf = (r: ChannelSaleRow) =>
     r.register === "API" ? "Marketplace"
     : (!r.customer_group || r.customer_group === "Other") ? "Website Sales"
     : (CHANNEL_MAP[r.customer_group] ?? r.customer_group);
+  const showMonth = Object.fromEntries(tradeshows.map(t => [t.id, (t.date_start || "").slice(0, 7)]));
 
-  // Website Sales = live total Shopify (less tradeshow) + its file backend/cloud + no-group lines.
-  const valueOf = (ch: string, mk: string) => {
-    const fileSum = sum(offline.filter(r => channelOf(r) === ch && r.month_key === mk).map(r => r.value));
-    if (ch === "Tradeshows") return tsByMonth(mk) + fileSum;
-    const base = ch === "Website Sales"
-      ? sum(liveMonthly.filter(m => m.month_key === mk).map(m => m.revenue)) - tsByMonth(mk) - allSourcesByMonth(mk)
-      : 0;
-    return base + sourceToChannel(mk, ch) + fileSum;
-  };
+  // Channel breakdown for any scope (a brand id, or "all"). Website Sales = live Shopify
+  // (less tradeshows and special sources); Tradeshows live; Faire→Partnerships, BB→Marketplace.
+  type Chan = { name: string; series: number[]; fy: number; latest: number };
+  function computeChannels(s: number | "all"): Chan[] {
+    const offline = (s === "all" ? channelSales : channelSales.filter(r => brandMatch(brands.find(b => b.id === s)?.name ?? "", r.brand))).filter(r => !r.is_online);
+    const live = s === "all" ? monthly : monthly.filter(m => m.brand_id === s);
+    const srcIn = shopifySources.filter(x => s === "all" || x.brand_id === s);
+    const ts = (mk: string) => sum(tradeshowSales.filter(x => showMonth[x.tradeshow_id] === mk && (s === "all" || x.brand_id === s)).map(x => x.revenue));
+    const srcCh = (mk: string, ch: string) => sum(srcIn.filter(x => x.month_key === mk && SOURCE_CHANNEL[x.source] === ch).map(x => x.revenue));
+    const allSrc = (mk: string) => sum(srcIn.filter(x => x.month_key === mk).map(x => x.revenue));
+    const vOf = (ch: string, mk: string) => {
+      const fileSum = sum(offline.filter(r => channelOf(r) === ch && r.month_key === mk).map(r => r.value));
+      if (ch === "Tradeshows") return ts(mk) + fileSum;
+      const base = ch === "Website Sales" ? sum(live.filter(m => m.month_key === mk).map(m => m.revenue)) - ts(mk) - allSrc(mk) : 0;
+      return base + srcCh(mk, ch) + fileSum;
+    };
+    const names = new Set<string>(["Website Sales", "Tradeshows", ...Object.values(SOURCE_CHANNEL), ...offline.map(channelOf)]);
+    return [...names].map(name => {
+      const series = monthKeys.map(mk => vOf(name, mk));
+      return { name, series, fy: sum(series), latest: vOf(name, latest) };
+    }).filter(c => Math.abs(c.fy) > 0.5).sort((a, b) => b.fy - a.fy);
+  }
 
-  const names = new Set<string>(["Website Sales", "Tradeshows", ...Object.values(SOURCE_CHANNEL), ...offline.map(channelOf)]);
-  const channelRow = (name: string) => {
-    const series = monthKeys.map(mk => valueOf(name, mk));
-    return { name, series, fy: sum(series), latest: valueOf(name, latest) };
-  };
-  const channels = [...names].map(channelRow).filter(c => c.fy !== 0).sort((a, b) => b.fy - a.fy);
-
+  const channels = computeChannels(scope);
+  const hasData = channels.length > 0;
   const fyTotal = sum(channels.map(c => c.fy));
   const monthTotal = sum(channels.map(c => c.latest));
   const prevKey = monthKeys[monthKeys.indexOf(latest) - 1];
@@ -212,14 +197,14 @@ export function SalesPanel({
           <p className="text-xs text-gray-400 mb-3">Full year</p>
           <div className="flex items-center gap-5">
             <div className="relative w-36 h-36 shrink-0">
-              <Doughnut data={{ labels: channels.map(c => c.name), datasets: [{ data: channels.map(c => Math.max(0, c.fy)), backgroundColor: channels.map((_, i) => CH_COLORS[i % CH_COLORS.length]), borderWidth: 0 }] }}
+              <Doughnut data={{ labels: channels.map(c => c.name), datasets: [{ data: channels.map(c => Math.max(0, c.fy)), backgroundColor: channels.map(c => colorOf(c.name)), borderWidth: 0 }] }}
                 options={{ cutout: "66%", plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.label}: ${fmt(c.parsed as number)}` } } } }} />
               <div className="absolute inset-0 flex flex-col items-center justify-center"><span className="text-[10px] text-gray-400">Total</span><span className="text-sm font-bold text-slate-800">{fmt(fyTotal)}</span></div>
             </div>
             <div className="flex-1 space-y-1.5">
               {channels.map((c, i) => (
                 <div key={c.name} className="flex items-center gap-2 text-xs">
-                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: CH_COLORS[i % CH_COLORS.length] }} />
+                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: colorOf(c.name) }} />
                   <span className="text-gray-600 flex-1 truncate">{c.name}</span>
                   <span className="font-semibold text-slate-700">{fyTotal > 0 ? ((c.fy / fyTotal) * 100).toFixed(1) : "0"}%</span>
                 </div>
@@ -229,11 +214,11 @@ export function SalesPanel({
         </div>
 
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-          <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Monthly sales</h3>
-          <p className="text-xs text-gray-400 mb-3">Total across all channels</p>
+          <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Monthly sales by channel</h3>
+          <p className="text-xs text-gray-400 mb-3">Channel mix over the year</p>
           <div className="h-48">
-            <Bar data={{ labels: monthLabels, datasets: [{ label: "Sales", data: monthKeys.map(mk => sum(channels.map(c => c.series[monthKeys.indexOf(mk)]))), backgroundColor: "#1e3a5f", borderRadius: 3 }] }}
-              options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${fmt(c.parsed.y ?? 0)}` } } }, scales: { x: { grid: { display: false } }, y: { ticks: { callback: v => fmt(v as number) }, grid: { color: "#f3f4f6" } } } }} />
+            <Bar data={{ labels: monthLabels, datasets: channels.map(c => ({ label: c.name, data: c.series, backgroundColor: colorOf(c.name), stack: "s", borderWidth: 0 })) }}
+              options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${fmt(c.parsed.y ?? 0)}` } } }, scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, ticks: { callback: v => fmt(v as number) }, grid: { color: "#f3f4f6" } } } }} />
           </div>
         </div>
       </div>
@@ -251,7 +236,7 @@ export function SalesPanel({
           <tbody>
             {channels.map((c, i) => (
               <tr key={c.name} className="text-right border-b border-gray-50 text-slate-700">
-                <td className="text-left py-1.5"><span className="inline-flex items-center gap-2"><span className="w-2 h-2 rounded-full" style={{ background: CH_COLORS[i % CH_COLORS.length] }} />{c.name}</span></td>
+                <td className="text-left py-1.5"><span className="inline-flex items-center gap-2"><span className="w-2 h-2 rounded-full" style={{ background: colorOf(c.name) }} />{c.name}</span></td>
                 <td className="font-semibold">{fmt(c.fy)}</td>
                 <td>{fyTotal > 0 ? ((c.fy / fyTotal) * 100).toFixed(1) : "0"}%</td>
                 <td>{fmt(c.latest)}</td>
@@ -263,6 +248,43 @@ export function SalesPanel({
           </tbody>
         </table>
       </div>
+
+      {scope === "all" && (() => {
+        const mix = brands
+          .map(b => { const bc = computeChannels(b.id); return { b, bc, tot: sum(bc.map(c => c.fy)) }; })
+          .filter(x => x.tot > 0)
+          .sort((a, b) => b.tot - a.tot);
+        if (!mix.length) return null;
+        return (
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Channel mix by brand</h3>
+            <p className="text-xs text-gray-400 mb-3">Where each brand&apos;s sales come from · full year</p>
+            <div className="flex flex-wrap gap-x-3 gap-y-1 mb-4">
+              {channels.map(c => (
+                <span key={c.name} className="inline-flex items-center gap-1 text-[11px] text-gray-500">
+                  <span className="w-2 h-2 rounded-full" style={{ background: colorOf(c.name) }} />{c.name}
+                </span>
+              ))}
+            </div>
+            <div className="space-y-2">
+              {mix.map(({ b, bc, tot }) => {
+                const pos = sum(bc.filter(c => c.fy > 0).map(c => c.fy)) || 1;
+                return (
+                  <div key={b.id} className="flex items-center gap-3">
+                    <span className="w-28 sm:w-32 text-sm font-medium text-slate-700 truncate shrink-0">{b.name}</span>
+                    <div className="flex-1 h-5 rounded-md overflow-hidden flex bg-gray-50">
+                      {bc.filter(c => c.fy > 0).map(c => (
+                        <div key={c.name} title={`${c.name}: ${fmt(c.fy)} (${((c.fy / pos) * 100).toFixed(0)}%)`} style={{ width: `${(c.fy / pos) * 100}%`, background: colorOf(c.name) }} />
+                      ))}
+                    </div>
+                    <span className="w-20 text-right text-sm font-semibold text-slate-700 shrink-0">{fmt(tot)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

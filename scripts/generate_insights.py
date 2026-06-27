@@ -90,6 +90,16 @@ def main():
     klav    = sb_get("klaviyo_metrics?select=brand_id,month_key,revenue,open_rate,click_rate,emails_sent&order=month_key")
     gsc     = sb_get("gsc_metrics?select=brand_id,month_key,clicks,position&order=month_key")
     semrush = sb_get("semrush_metrics?select=brand_id,month_key,organic_keywords,traffic_value&order=month_key")
+    channel = sb_get("channel_sales?select=brand,customer_group,value")
+
+    def _norm(x): return "".join(c for c in (x or "").lower() if c.isalnum())
+    def brand_channels(bname):
+        n = _norm(bname); agg = {}
+        for r in channel:
+            bn = _norm(r.get("brand"))
+            if bn and (bn == n or n.startswith(bn) or bn.startswith(n)):
+                agg[r.get("customer_group") or "Other"] = agg.get(r.get("customer_group") or "Other", 0) + (r.get("value") or 0)
+        return agg
 
     print(f"Generating brand health summaries for {len(brands)} brands...\n")
     digest_lines = []
@@ -114,8 +124,15 @@ def main():
             f"SEO: {gs['clicks']:,} organic clicks at avg position {(gs.get('position') or 0):.1f}." if gs and gs.get("clicks") else "SEO: no Search Console data.",
             f"SEMrush: {sr['organic_keywords']:,} keywords, traffic value {money(sr['traffic_value'])}/mo." if sr and sr.get("organic_keywords") else "",
         ]
+        chans = brand_channels(name)
+        whole = sum(chans.values())
+        if whole > 0:
+            top = sorted(chans.items(), key=lambda x: -x[1])[:3]
+            facts.append(f"Whole business (all channels, incl. wholesale/retail): {money(whole)} FY. "
+                         f"Biggest channels: " + ", ".join(f"{g} {money(v)}" for g, v in top) + ". "
+                         f"The sales figures above are the digital store only, a slice of this.")
         facts = [f for f in facts if f]
-        digest_lines.append(f"{name}: sales MoM {mom:+.0f}%, " + (f"Meta ROAS {(m.get('roas') or 0):.1f}x, " if m and m.get('spend') else "") + (f"email {money(k['revenue'])}, " if k and k.get('emails_sent') else "") + (f"SEO {gs['clicks']:,} clicks" if gs and gs.get('clicks') else "no SEO"))
+        digest_lines.append(f"{name}: " + (f"whole-business {money(whole)} FY, " if whole > 0 else "") + f"digital sales MoM {mom:+.0f}%, " + (f"Meta ROAS {(m.get('roas') or 0):.1f}x, " if m and m.get('spend') else "") + (f"email {money(k['revenue'])}, " if k and k.get('emails_sent') else "") + (f"SEO {gs['clicks']:,} clicks" if gs and gs.get('clicks') else "no SEO"))
         prompt = (f"You are the marketing analyst for the brand {name}. Write a short cross-channel health read for the team. "
                   f"{STYLE} Three to four sentences covering how the brand is tracking across sales, paid, email and search, "
                   f"then one line starting with 'Priority:' naming the single most important action.\n\nData:\n" + "\n".join(facts))
