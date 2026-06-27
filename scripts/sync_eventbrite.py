@@ -75,10 +75,13 @@ def brand_for(name, brands):
             return i
     return None
 
+MAX_PAGES = 6  # newest ~300 events — enough for the dashboard, bounds runtime/the job timeout
+
 def list_events(org_id, token):
-    """All events for the org, expanded with venue + ticket classes."""
-    out, cont = [], None
-    while True:
+    """Recent events for the org (newest first), expanded with venue + ticket classes.
+    Capped at MAX_PAGES so a very large event history can't run past the job timeout."""
+    out, cont, pages = [], None, 0
+    while pages < MAX_PAGES:
         params = {"expand": "venue,ticket_classes", "order_by": "start_desc", "page_size": 50}
         if cont:
             params["continuation"] = cont
@@ -86,6 +89,7 @@ def list_events(org_id, token):
         out.extend(data.get("events", []))
         pg = data.get("pagination") or {}
         cont = pg.get("continuation")
+        pages += 1
         if not pg.get("has_more_items") or not cont:
             break
     return out
