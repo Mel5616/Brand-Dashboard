@@ -27,12 +27,13 @@ import { ContentPlanner } from "./ContentPlanner";
 import { InfluencerTracker } from "./InfluencerTracker";
 import { TeamPanel } from "./TeamPanel";
 import { BoothFunnel } from "./BoothFunnel";
+import { BrandSnapshot } from "./BrandSnapshot";
 import { SalesTargetTracker } from "./SalesTargetTracker";
 import { ShopifyInsights } from "./ShopifyInsights";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "brands" | "insights" | "campaign-calendar" | "report" | "sales" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "budget" | "calendar" | "content" | "influencer" | "team";
+type TabId = "brands" | "insights" | "campaign-calendar" | "report" | "snapshot" | "sales" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "budget" | "calendar" | "content" | "influencer" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -50,6 +51,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
     id: "report", label: "Report",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+  },
+  {
+    id: "snapshot", label: "Snapshot",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a2 2 0 012-2h12a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V5z M8 7h8M8 11h8M8 15h5" /></svg>,
   },
   {
     id: "sales", label: "Sales",
@@ -107,7 +112,7 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
 
 // Sidebar grouping — how you market (top) vs where you sell (bottom).
 const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
-  { label: "Overview", ids: ["brands", "insights", "report"] },
+  { label: "Overview", ids: ["brands", "insights", "report", "snapshot"] },
   { label: "Plan", ids: ["campaign-calendar", "calendar", "content"] },
   { label: "Paid", ids: ["google-ads", "meta-ads"] },
   { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer"] },
@@ -182,7 +187,7 @@ export function DashboardTabs({
   role = "admin", allowedTabs,
 }: Props) {
   // Financial tabs (cost / margin / budget) are admin-only even if otherwise granted.
-  const FINANCIAL = ["budget", "influencer"];
+  const FINANCIAL = ["budget", "influencer", "snapshot"];
   // Tabs this user may open (admin → all). Filter the nav + guard the active tab.
   const visibleTabs = role === "admin"
     ? TABS
@@ -776,6 +781,30 @@ export function DashboardTabs({
                 marketingActuals: marketingActuals.filter((a: any) => monthKeys.includes(a.month_key)),
                 googleAds, metaAds, monthKeys, monthLabels, fy,
               })} />
+            </>
+          )}
+
+          {/* ── Snapshot (one-page monthly brand performance report, print/PDF/HTML) ── */}
+          {active === "snapshot" && (
+            <>
+              <SectionBar title="Monthly Snapshot" />
+              <BrandSnapshot
+                brands={brands}
+                selected={brandFilter}
+                onSelect={setBrandFilter}
+                month={LATEST}
+                monthKeys={monthKeys}
+                monthLabels={monthLabels}
+                fyLabel={fyLabel}
+                monthly={monthly}
+                targets={targets}
+                googleAds={googleAds}
+                metaAds={metaAds}
+                klaviyo={klaviyo}
+                products={products}
+                summaries={summaries}
+                googleAdsCampaigns={googleAdsCampaigns}
+              />
             </>
           )}
 
