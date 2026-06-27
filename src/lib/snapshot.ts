@@ -137,6 +137,13 @@ export function buildSnapshot(d: SnapshotInput) {
   const monthBudget = annualBudget / 12;
   const otherSpend = sum(forBrand(d.marketingActuals).filter(a => a.month_key === month && a.channel !== "Google Advertising" && a.channel !== "Social Media (Meta)").map(a => a.spend));
   const mktSpend = gSpend + mSpend + otherSpend;
+  // Financial year to date: spend across every month up to and including the selected one,
+  // vs the annual budget pro-rated for months elapsed.
+  const monthsUpto = monthKeys.slice(0, idx + 1);
+  const ytdSpend = sum(forBrand(d.googleAds).filter(r => monthsUpto.includes(r.month_key)).map(r => r.spend))
+    + sum(forBrand(d.metaAds).filter(r => monthsUpto.includes(r.month_key)).map(r => r.spend))
+    + sum(forBrand(d.marketingActuals).filter(a => monthsUpto.includes(a.month_key) && a.channel !== "Google Advertising" && a.channel !== "Social Media (Meta)").map(a => a.spend));
+  const ytdBudget = annualBudget * ((idx + 1) / 12);
   const mktChannels = [
     { name: "Google", spend: gSpend, color: "#2D4977" },
     { name: "Meta", spend: mSpend, color: "#6691AB" },
@@ -186,7 +193,7 @@ export function buildSnapshot(d: SnapshotInput) {
     topProduct,
     seasonal, peakShare, peakMonthKey: topShare?.month_key,
     wholeFy, wholeMonth, wholeTrend, digitalShare, channelRows,
-    marketing: { annualBudget, monthBudget, spend: mktSpend, channels: mktChannels },
+    marketing: { annualBudget, monthBudget, spend: mktSpend, channels: mktChannels, ytdSpend, ytdBudget },
     aiInsight, seo, edms,
     igPosts, monthLabelsAll: monthLabels,
     note: d.note ?? "",
@@ -277,6 +284,7 @@ export function snapshotHtml(s: Snapshot): string {
       <div class="c"><div class="l">${mkDiff >= 0 ? "Under budget" : "Over budget"}</div><div class="v">${fmt(Math.abs(mkDiff))}</div></div>
     </div>
     ${mk.channels.length ? `<div class="chanwrap"><div><div class="chanbar">${mkBar}</div></div><div class="chanlist">${mkLegend}</div></div>` : ""}
+    ${mk.ytdBudget > 0 ? `<div class="seostat" style="margin-top:10px">Financial year to date: <strong>${fmt(mk.ytdSpend)}</strong> spent of <strong>${fmt(mk.ytdBudget)}</strong> budgeted &middot; <strong>${Math.round((mk.ytdSpend / mk.ytdBudget) * 100)}%</strong> ${mk.ytdSpend <= mk.ytdBudget ? "of pace" : "over pace"}</div>` : ""}
   </div>` : "";
 
   // Email creatives (EDMs) that went out — a thumbnail strip.
