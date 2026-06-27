@@ -62,7 +62,8 @@ export function SalesPanel({
         const y = years[j], mo = hdr[j];
         if (typeof y === "number" && typeof mo === "number") colMonth[j] = `${y}-${String(mo).padStart(2, "0")}`;
       }
-      const rows: ChannelSaleRow[] = [];
+      // Aggregate by primary key (month, brand, group, register) — the export can repeat combos
+      const agg = new Map<string, ChannelSaleRow>();
       let group = "";
       for (let i = 2; i < grid.length; i++) {
         const r = grid[i] as any[];
@@ -70,13 +71,18 @@ export function SalesPanel({
         const brand = r[1] ? String(r[1]).trim() : "";
         const register = r[2] ? String(r[2]).trim() : "";
         if (!register || !brand) continue;
+        const cg = group || "Other";
         for (const j of Object.keys(colMonth).map(Number)) {
           const v = r[j];
           if (typeof v === "number" && v !== 0) {
-            rows.push({ month_key: colMonth[j], brand, customer_group: group || "Other", register, value: Math.round(v * 100) / 100, is_online: /^shopify/i.test(register) });
+            const mk = colMonth[j], key = `${mk}|${brand}|${cg}|${register}`;
+            const ex = agg.get(key);
+            if (ex) ex.value = Math.round((ex.value + v) * 100) / 100;
+            else agg.set(key, { month_key: mk, brand, customer_group: cg, register, value: Math.round(v * 100) / 100, is_online: /^shopify/i.test(register) });
           }
         }
       }
+      const rows = [...agg.values()];
       if (!rows.length) throw new Error("No data rows found. Check the file matches the monthly export format.");
       const months = [...new Set(rows.map(r => r.month_key))].sort();
       setMsg(`Parsed ${rows.length.toLocaleString()} rows across ${months.length} month(s) (${months[0]} to ${months[months.length - 1]}). Saving...`);
