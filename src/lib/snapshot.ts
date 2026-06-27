@@ -29,6 +29,9 @@ export type SnapshotInput = {
   tradeshowSales: { tradeshow_id: string; brand_id: number; revenue: number }[];
   shopifySources: { brand_id: number; month_key: string; source: string; revenue: number }[];
   instagramMedia: IgPost[];
+  // Marketing budget vs spend (budgets already filtered to the FY, actuals to the FY months upstream)
+  marketingBudgets: { brand_id: number; channel: string; annual_budget: number }[];
+  marketingActuals: { brand_id: number; month_key: string; channel: string; spend: number }[];
   note?: string;            // editable commentary rendered into the report
 };
 
@@ -122,6 +125,19 @@ export function buildSnapshot(d: SnapshotInput) {
     .sort((a, b) => b.engagement - a.engagement)
     .slice(0, 5);
 
+  // ── Marketing budget vs spend (this month) ──────────────────────────
+  // Total spend mirrors the MER definition: Google + Meta + other marketing actuals
+  // (the actuals table also carries Google/Meta lines, so exclude those to avoid double counting).
+  const annualBudget = sum(forBrand(d.marketingBudgets).map(b => b.annual_budget));
+  const monthBudget = annualBudget / 12;
+  const otherSpend = sum(forBrand(d.marketingActuals).filter(a => a.month_key === month && a.channel !== "Google Advertising" && a.channel !== "Social Media (Meta)").map(a => a.spend));
+  const mktSpend = gSpend + mSpend + otherSpend;
+  const mktChannels = [
+    { name: "Google", spend: gSpend, color: "#2D4977" },
+    { name: "Meta", spend: mSpend, color: "#6691AB" },
+    { name: "Other", spend: otherSpend, color: "#BDD4E7" },
+  ].filter(c => c.spend > 0);
+
   // ── Seasonality (share of FY revenue per month) ─────────────────────
   const seasonal = monthKeys.map((mk, i) => ({
     label: monthLabels[i], month_key: mk,
@@ -141,6 +157,7 @@ export function buildSnapshot(d: SnapshotInput) {
     topProduct,
     seasonal, peakShare, peakMonthKey: topShare?.month_key,
     wholeFy, wholeMonth, wholeTrend, digitalShare, channelRows,
+    marketing: { annualBudget, monthBudget, spend: mktSpend, channels: mktChannels },
     igPosts, monthLabelsAll: monthLabels,
     note: d.note ?? "",
   };
@@ -212,6 +229,24 @@ export function snapshotHtml(s: Snapshot): string {
       <div class="chanlist">${chanLegend}</div>
     </div>
     <div class="trend"><div class="tl">Total revenue by month · ${esc(s.fyLabel)}</div>${svgArea(s.wholeTrend, s.monthLabelsAll)}</div>
+  </div>` : "";
+
+  // Marketing budget vs spend section: KPI strip + spend-by-channel bar/legend.
+  const mk = s.marketing;
+  const mkTot = mk.channels.reduce((t, c) => t + c.spend, 0) || 1;
+  const mkDiff = mk.monthBudget - mk.spend; // positive => under budget
+  const mkBar = mk.channels.map(c => `<div style="width:${((c.spend / mkTot) * 100).toFixed(2)}%;background:${c.color}" title="${esc(c.name)}: ${fmtFull(c.spend)}"></div>`).join("");
+  const mkLegend = mk.channels.map(c => `<div class="cr"><span class="dot" style="background:${c.color}"></span><span class="cn">${esc(c.name)}</span><span class="cv">${fmtFull(c.spend)}</span><span class="cp">${Math.round((c.spend / mkTot) * 100)}%</span></div>`).join("");
+  const marketingSection = (mk.monthBudget > 0 || mk.spend > 0) ? `
+  <div class="sec">
+    <div class="h">Marketing budget &amp; spend · ${esc(s.monthLong)}</div>
+    <div class="kpis">
+      <div class="c"><div class="l">Monthly budget</div><div class="v">${fmt(mk.monthBudget)}</div></div>
+      <div class="c"><div class="l">${esc(s.monthLong)} spend</div><div class="v">${fmt(mk.spend)}</div></div>
+      <div class="c"><div class="l">% of budget</div><div class="v">${mk.monthBudget > 0 ? Math.round((mk.spend / mk.monthBudget) * 100) : "—"}%</div></div>
+      <div class="c"><div class="l">${mkDiff >= 0 ? "Under budget" : "Over budget"}</div><div class="v">${fmt(Math.abs(mkDiff))}</div></div>
+    </div>
+    ${mk.channels.length ? `<div class="chanwrap"><div><div class="chanbar">${mkBar}</div></div><div class="chanlist">${mkLegend}</div></div>` : ""}
   </div>` : "";
 
   // Top Instagram posts by engagement.
@@ -311,6 +346,10 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
     <div class="stamp"><strong>Coolkidz Australia</strong>Official AU distributor<br>Prepared ${esc(s.monthFull)}</div>
   </div>
 
+  ${wholeSection}
+
+  ${marketingSection}
+
   <div class="hero">
     <div class="cell"><div class="lab">D2C revenue YTD</div><div class="big">${fmt(s.ytdRev)}</div><div class="note">${ytdNote}</div></div>
     <div class="cell"><div class="lab">${esc(s.monthLong)} D2C revenue</div><div class="big">${fmtFull(s.monthRev)}</div><div class="note">${s.monthOrders} orders · ${fmtFull(s.aov)} average order value</div></div>
@@ -347,8 +386,6 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
       s.meta.cpaDelta != null ? r(`Cost per acquisition`, s.meta.cpaDelta < 0 ? `down ${Math.abs(s.meta.cpaDelta).toFixed(0)}%` : `up ${s.meta.cpaDelta.toFixed(0)}%`) : "",
     ].join(""), metaTag)}
   </div>
-
-  ${wholeSection}
 
   ${s.topProduct ? `<div class="product"><div class="l"><div class="lab">Top performing product · FY</div><div class="name">${esc(s.topProduct.title)}</div><div class="sub">The hero SKU driving the AU range</div></div><div class="v">${fmtFull(s.topProduct.gross_sales)}</div></div>` : ""}
 

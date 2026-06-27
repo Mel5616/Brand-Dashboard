@@ -811,6 +811,8 @@ export function DashboardTabs({
                 tradeshowSales={tradeshowSales}
                 shopifySources={shopifySources}
                 instagramMedia={instagramMedia}
+                marketingBudgets={marketingBudgets}
+                marketingActuals={marketingActuals}
               />
             </>
           )}
