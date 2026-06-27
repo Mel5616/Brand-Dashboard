@@ -233,6 +233,7 @@ export async function getDashboardData() {
     { data: instagramMedia },
     { data: channelSales },
     { data: shopifySources },
+    { data: eventbriteEvents },
   ] = await Promise.all([
     db.from("brands").select("*").order("id"),
     db.from("brand_summary").select("*"),
@@ -267,6 +268,7 @@ export async function getDashboardData() {
     db.from("instagram_media").select("*").order("posted_at", { ascending: false }),
     db.from("channel_sales").select("*"),
     db.from("shopify_source_sales").select("*"),
+    db.from("eventbrite_events").select("*").order("start_at", { ascending: false }),
   ]);
 
   return {
@@ -303,8 +305,11 @@ export async function getDashboardData() {
     instagramMedia: (instagramMedia ?? []) as InstagramMediaRow[],
     channelSales: (channelSales ?? []) as ChannelSaleRow[],
     shopifySources: (shopifySources ?? []) as ShopifySourceRow[],
+    eventbriteEvents: (eventbriteEvents ?? []) as EventbriteEvent[],
   };
 }
+
+export type EventbriteEvent = { event_id: string; name: string | null; start_at: string | null; end_at: string | null; venue: string | null; status: string | null; url: string | null; capacity: number | null; tickets_sold: number; gross_revenue: number; currency: string | null; brand_id: number | null };
 
 export type ChannelSaleRow = { month_key: string; brand: string; customer_group: string; register: string; value: number; is_online: boolean };
 export type ShopifySourceRow = { brand_id: number; month_key: string; source: string; revenue: number };
