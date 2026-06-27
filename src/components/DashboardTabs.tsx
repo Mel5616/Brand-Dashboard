@@ -332,7 +332,7 @@ export function DashboardTabs({
           };
           return groups.map(g => (
             <div key={g.label} className="mb-2">
-              <p className="bg-indigo-500 text-white rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] mb-1.5 shadow-sm">{g.label}</p>
+              <p className="bg-indigo-800 text-white rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] mb-1.5 shadow-sm">{g.label}</p>
               <div className="space-y-0.5">{g.tabs.map(Btn)}</div>
             </div>
           ));
