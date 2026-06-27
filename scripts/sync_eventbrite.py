@@ -75,14 +75,15 @@ def brand_for(name, brands):
             return i
     return None
 
-MAX_PAGES = 6  # newest ~300 events — enough for the dashboard, bounds runtime/the job timeout
+MAX_PAGES = 4  # safety bound; live/upcoming events are few, so this is rarely hit
 
 def list_events(org_id, token):
-    """Recent events for the org (newest first), expanded with venue + ticket classes.
-    Capped at MAX_PAGES so a very large event history can't run past the job timeout."""
+    """Upcoming / on-sale events for the org (status=live, soonest first), expanded with
+    venue + ticket classes. We deliberately skip the (potentially huge) past-event history
+    so the sync stays fast — the dashboard cares about upcoming events."""
     out, cont, pages = [], None, 0
     while pages < MAX_PAGES:
-        params = {"expand": "venue,ticket_classes", "order_by": "start_desc", "page_size": 50}
+        params = {"expand": "venue,ticket_classes", "status": "live", "order_by": "start_asc", "page_size": 50}
         if cont:
             params["continuation"] = cont
         data = eb_get(f"organizations/{org_id}/events/", token, params)
