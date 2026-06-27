@@ -440,7 +440,7 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
     <div>
       <div class="eyebrow">${esc(s.brand.name)} Australia</div>
       <h1>${esc(s.monthFull)}<br>Performance Snapshot</h1>
-      <div class="sub">Direct-to-consumer and marketing performance · ${esc(s.fyLabel)}</div>
+      <div class="sub">Whole-of-business sales and marketing performance · ${esc(s.fyLabel)}</div>
     </div>
     <div class="stamp"><strong>Coolkidz Australia</strong>Official AU distributor<br>Prepared ${esc(s.monthFull)}</div>
   </div>
@@ -496,6 +496,6 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
 
   ${notesSection}
 
-  <div class="foot"><strong>Source:</strong> Coolkidz Australia sales &amp; marketing dashboard, ${esc(s.fyLabel)}. Channel data from Google Ads, Meta Ads Manager, Shopify and Klaviyo. Deltas shown against the prior month.<br>Figures reflect ${esc(s.brand.name)} AU direct-to-consumer and digital marketing performance. Retail (Baby Bunting and other partners) is reported separately.</div>
+  <div class="foot"><strong>Source:</strong> Coolkidz Australia sales &amp; marketing dashboard, ${esc(s.fyLabel)}. Channel data from Google Ads, Meta Ads Manager, Shopify and Klaviyo. Deltas shown against the prior month.<br>Figures reflect ${esc(s.brand.name)} AU performance across all sales channels (direct-to-consumer, retail and wholesale) and digital marketing.</div>
 </div></body></html>`;
 }
