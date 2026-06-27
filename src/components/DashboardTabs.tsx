@@ -29,13 +29,14 @@ import { TeamGiftingPanel } from "./TeamGiftingPanel";
 import { TeamPanel } from "./TeamPanel";
 import { BoothFunnel } from "./BoothFunnel";
 import { BrandSnapshot } from "./BrandSnapshot";
+import { UppababyReport } from "./UppababyReport";
 import { EventsPanel } from "./EventsPanel";
 import { SalesTargetTracker } from "./SalesTargetTracker";
 import { ShopifyInsights } from "./ShopifyInsights";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "brands" | "insights" | "campaign-calendar" | "report" | "snapshot" | "sales" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "events" | "budget" | "calendar" | "content" | "influencer" | "gifting" | "team";
+type TabId = "brands" | "insights" | "campaign-calendar" | "report" | "snapshot" | "uppababy" | "sales" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "events" | "budget" | "calendar" | "content" | "influencer" | "gifting" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -57,6 +58,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
     id: "snapshot", label: "Snapshot",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a2 2 0 012-2h12a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V5z M8 7h8M8 11h8M8 15h5" /></svg>,
+  },
+  {
+    id: "uppababy", label: "UPPAbaby",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3v18h18M7 14l3-3 3 3 5-6" /></svg>,
   },
   {
     id: "sales", label: "Sales",
@@ -122,7 +127,7 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
 
 // Sidebar grouping — how you market (top) vs where you sell (bottom).
 const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
-  { label: "Overview", ids: ["brands", "insights", "report", "snapshot"] },
+  { label: "Overview", ids: ["brands", "insights", "report", "snapshot", "uppababy"] },
   { label: "Plan", ids: ["campaign-calendar", "calendar", "content"] },
   { label: "Paid", ids: ["google-ads", "meta-ads"] },
   { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting"] },
@@ -198,7 +203,7 @@ export function DashboardTabs({
   role = "admin", allowedTabs,
 }: Props) {
   // Financial tabs (cost / margin / budget) are admin-only even if otherwise granted.
-  const FINANCIAL = ["budget", "influencer", "snapshot"];
+  const FINANCIAL = ["budget", "influencer", "snapshot", "uppababy"];
   // Tabs this user may open (admin → all). Filter the nav + guard the active tab.
   const visibleTabs = role === "admin"
     ? TABS
@@ -804,6 +809,40 @@ export function DashboardTabs({
                 selected={brandFilter}
                 onSelect={setBrandFilter}
                 canEdit={role === "admin"}
+                month={LATEST}
+                monthKeys={monthKeys}
+                monthLabels={monthLabels}
+                fyLabel={fyLabel}
+                monthly={monthly}
+                targets={targets}
+                googleAds={googleAds}
+                metaAds={metaAds}
+                klaviyo={klaviyo}
+                products={products}
+                summaries={summaries}
+                googleAdsCampaigns={googleAdsCampaigns}
+                brandsAll={brands}
+                channelSales={channelSales}
+                tradeshows={tradeshows}
+                tradeshowSales={tradeshowSales}
+                shopifySources={shopifySources}
+                instagramMedia={instagramMedia}
+                marketingBudgets={marketingBudgets}
+                marketingActuals={marketingActuals}
+                brandInsights={brandInsights}
+                semrushMetrics={semrushMetrics}
+                semrushKeywords={semrushKeywords}
+              />
+            </>
+          )}
+
+          {/* ── UPPAbaby monthly sales report (uploaded sell-through + dashboard marketing) ── */}
+          {active === "uppababy" && (
+            <>
+              <SectionBar title="UPPAbaby Monthly Report" />
+              <UppababyReport
+                brands={brands}
+                canUpload={role === "admin"}
                 month={LATEST}
                 monthKeys={monthKeys}
                 monthLabels={monthLabels}
