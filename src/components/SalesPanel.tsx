@@ -117,17 +117,25 @@ export function SalesPanel({
   );
 
   // Channel classification for the file (non-Shopify) rows:
-  //   API → Marketplace · no-group Backend/Cloud → Website Sales · else the customer group.
+  //   API → Marketplace · no-group Backend/Cloud → Website Sales · else map/keep the customer group.
+  const CHANNEL_MAP: Record<string, string> = {
+    "Online Store": "Online Only Stores",
+    "Affiliate": "Affiliates",
+    "Coolkidz": "Website Sales",
+    "Direct Customer": "Website Sales",
+    "Tradeshow Sales": "Tradeshows",
+  };
   const channelOf = (r: ChannelSaleRow) =>
     r.register === "API" ? "Marketplace"
     : (!r.customer_group || r.customer_group === "Other") ? "Website Sales"
-    : r.customer_group;
+    : (CHANNEL_MAP[r.customer_group] ?? r.customer_group);
 
   // Website Sales = live total Shopify (less tradeshow) + its file backend/cloud + no-group lines.
   const valueOf = (ch: string, mk: string) => {
-    if (ch === "Tradeshows") return tsByMonth(mk);
+    const fileSum = sum(offline.filter(r => channelOf(r) === ch && r.month_key === mk).map(r => r.value));
+    if (ch === "Tradeshows") return tsByMonth(mk) + fileSum;
     const base = ch === "Website Sales" ? sum(liveMonthly.filter(m => m.month_key === mk).map(m => m.revenue)) - tsByMonth(mk) : 0;
-    return base + sum(offline.filter(r => channelOf(r) === ch && r.month_key === mk).map(r => r.value));
+    return base + fileSum;
   };
 
   const names = new Set<string>(["Website Sales", "Tradeshows", ...offline.map(channelOf)]);
