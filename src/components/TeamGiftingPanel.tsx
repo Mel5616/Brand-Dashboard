@@ -12,13 +12,30 @@ type Gift = { month_key: string; handle: string | null; platform: string | null;
 const rrp = (n: number | null) => n == null ? "—" : "$" + Math.round(n).toLocaleString("en-AU");
 const mon = (k: string) => new Date(k + "-01T00:00:00").toLocaleDateString("en-AU", { month: "short", year: "2-digit" });
 
+const meterColor = (used: number) => used >= 100 ? "#ef4444" : used >= 80 ? "#f59e0b" : "#6366f1";
+
 function Bar({ used }: { used: number }) {
   const u = Math.min(100, Math.max(0, used));
-  const col = u >= 100 ? "#ef4444" : u >= 80 ? "#f59e0b" : "#6366f1";
   return (
     <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-      <div className="h-full rounded-full transition-all" style={{ width: `${u}%`, background: col }} />
+      <div className="h-full rounded-full transition-all" style={{ width: `${u}%`, background: meterColor(used) }} />
     </div>
+  );
+}
+
+// Circular budget meter — the ring depletes as budget is used (full ring = full budget).
+function Ring({ used, size = 96 }: { used: number; size?: number }) {
+  const u = Math.min(100, Math.max(0, used));
+  const left = Math.max(0, 100 - Math.round(used));
+  const r = size / 2 - 8, c = 2 * Math.PI * r, off = c * (u / 100);
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#eef2f6" strokeWidth="8" />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={meterColor(used)} strokeWidth="8" strokeLinecap="round"
+        strokeDasharray={c} strokeDashoffset={off} transform={`rotate(-90 ${size / 2} ${size / 2})`} />
+      <text x={size / 2} y={size / 2 - 1} textAnchor="middle" fontSize="20" fontWeight="800" fill="#1c2733">{left}%</text>
+      <text x={size / 2} y={size / 2 + 14} textAnchor="middle" fontSize="9.5" fontWeight="600" fill="#9aa6b4">left</text>
+    </svg>
   );
 }
 
@@ -58,20 +75,25 @@ export function TeamGiftingPanel() {
         <p className="text-[11px] text-gray-400 mt-1.5">{data.overall.used_pct}% of the FY gifting budget used across all brands</p>
       </div>
 
-      {/* Per brand */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-        <h3 className="text-sm font-semibold text-slate-700 mb-3">By brand</h3>
-        <div className="space-y-3">
-          {data.brands.map(b => (
-            <div key={b.brand} className="flex items-center gap-3">
-              <span className="w-28 sm:w-32 text-sm font-medium text-slate-700 truncate shrink-0">{b.brand}</span>
-              <div className="flex-1"><Bar used={b.used_pct} /></div>
-              <span className="w-16 text-right text-sm font-semibold text-slate-700 shrink-0">{b.left_pct}% <span className="text-[10px] text-gray-400">left</span></span>
-              <span className="w-24 text-right text-[11px] text-gray-400 shrink-0">{rrp(b.rrp_gifted)} RRP</span>
-            </div>
-          ))}
-          {data.brands.length === 0 && <p className="text-sm text-gray-400 text-center py-3">No gifts logged yet.</p>}
-        </div>
+      {/* Per brand — cards with a budget meter */}
+      <div>
+        <h3 className="text-sm font-semibold text-slate-700 mb-3">Budget by brand</h3>
+        {data.brands.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">No gifts logged yet.</div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {data.brands.map(b => (
+              <div key={b.brand} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-col items-center text-center">
+                <p className="text-sm font-semibold text-slate-700 truncate w-full" title={b.brand}>{b.brand}</p>
+                <div className="my-2"><Ring used={b.used_pct} /></div>
+                <div className="flex items-center gap-1.5 text-[11px]">
+                  <span className="font-semibold" style={{ color: meterColor(b.used_pct) }}>{b.used_pct}% used</span>
+                </div>
+                <p className="text-[11px] text-gray-400 mt-1">{b.gifts} gift{b.gifts === 1 ? "" : "s"} · {rrp(b.rrp_gifted)} RRP</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Recent gifts — RRP only */}
