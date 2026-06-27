@@ -129,6 +129,19 @@ export function buildSnapshot(d: SnapshotInput) {
     name: c.name, fy: c.fy, latest: c.latest, color: channelColor(c.name),
     share: wholeFy > 0 ? (c.fy / wholeFy) * 100 : 0,
   }));
+  // Website Sales + Tradeshows roll up under a "Direct to Consumer" parent (shown with
+  // the two split underneath). Used by the report's channel donut + legend.
+  const DTC_NAMES = ["Website Sales", "Tradeshows"];
+  const dtcKids = channelRows.filter(c => DTC_NAMES.includes(c.name));
+  type ChGroup = (typeof channelRows)[number] & { kids?: typeof channelRows };
+  const channelGroups: ChGroup[] = dtcKids.length >= 2
+    ? (() => {
+        const others: ChGroup[] = channelRows.filter(c => !DTC_NAMES.includes(c.name));
+        const fy = sum(dtcKids.map(k => k.fy));
+        const grp: ChGroup = { name: "Direct to Consumer", fy, latest: sum(dtcKids.map(k => k.latest)), color: "#0f766e", share: wholeFy > 0 ? (fy / wholeFy) * 100 : 0, kids: [...dtcKids].sort((a, b) => b.fy - a.fy) };
+        return [...others, grp].sort((a, b) => b.fy - a.fy);
+      })()
+    : channelRows;
 
   // ── Top Instagram posts (by engagement) ─────────────────────────────
   const igPosts = forBrand(d.instagramMedia)
@@ -193,7 +206,7 @@ export function buildSnapshot(d: SnapshotInput) {
     email,
     topProduct,
     seasonal, peakShare, peakMonthKey: topShare?.month_key,
-    wholeFy, wholeMonth, wholeTrend, digitalShare, channelRows,
+    wholeFy, wholeMonth, wholeTrend, digitalShare, channelRows, channelGroups,
     marketing: { annualBudget, monthBudget, spend: mktSpend, channels: mktChannels, ytdSpend, ytdBudget },
     aiInsight, seo,
     igPosts, monthLabelsAll: monthLabels,
@@ -273,8 +286,12 @@ export function snapshotHtml(s: Snapshot): string {
   const r = (k: string, v: string) => `<div class="r"><span class="k">${k}</span><span class="val">${v}</span></div>`;
 
   // Whole-business section: KPI strip + channel split (bar + legend) + monthly revenue trend graph.
-  const chanPie = svgPie(s.channelRows.map(c => ({ value: c.fy, color: c.color })), fmt(s.wholeFy));
-  const chanLegend = s.channelRows.map(c => `<div class="cr"><span class="dot" style="background:${c.color}"></span><span class="cn">${esc(c.name)}</span><span class="cv">${fmtFull(c.fy)}</span><span class="cp">${c.share.toFixed(0)}%</span></div>`).join("");
+  const chanPie = svgPie(s.channelGroups.map(c => ({ value: c.fy, color: c.color })), fmt(s.wholeFy));
+  const chanLegend = s.channelGroups.map(c => {
+    const row = `<div class="cr"><span class="dot" style="background:${c.color}"></span><span class="cn">${esc(c.name)}</span><span class="cv">${fmtFull(c.fy)}</span><span class="cp">${c.share.toFixed(0)}%</span></div>`;
+    const kids = c.kids ? c.kids.map(k => `<div class="cr ck"><span class="dot sm" style="background:${k.color}"></span><span class="cn">${esc(k.name)}</span><span class="cv">${fmtFull(k.fy)}</span><span class="cp">${k.share.toFixed(0)}%</span></div>`).join("") : "";
+    return row + kids;
+  }).join("");
   const wholeSection = s.wholeFy > 0 ? `
   <div class="sec">
     <div class="h">Whole business · all channels</div>
@@ -412,6 +429,9 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
 .cr .cn{flex:1;color:var(--ink);font-weight:600;}
 .cr .cv{color:var(--grey);font-weight:600;}
 .cr .cp{width:42px;text-align:right;color:var(--navy);font-weight:800;}
+.cr.ck{padding-left:16px;}
+.cr.ck .cn{color:var(--grey);font-weight:500;}
+.cr .dot.sm{width:7px;height:7px;}
 .trend{margin-top:16px;border:1px solid var(--line);padding:14px 16px 8px;}
 .trend .tl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--grey);font-weight:700;margin-bottom:6px;}
 .iggrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
