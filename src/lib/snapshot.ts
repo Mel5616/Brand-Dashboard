@@ -205,6 +205,28 @@ const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replac
 const up = (n: number | null, suffix = "%") => n == null ? "" : ` <span class="up">${n >= 0 ? "+" : ""}${n.toFixed(0)}${suffix}</span>`;
 const roundPct = (n: number) => `${n.toFixed(1)}%`;
 
+// Inline SVG donut/pie — no JS, so it survives in the downloaded HTML and the PDF.
+export function svgPie(slices: { value: number; color: string }[], centerText = "", size = 160): string {
+  const pos = slices.filter(s => s.value > 0);
+  const total = pos.reduce((t, s) => t + s.value, 0) || 1;
+  const cx = size / 2, cy = size / 2, r = size / 2 - 3, inner = r * 0.6;
+  const pt = (rad: number, ang: number): [string, string] => [(cx + rad * Math.cos(ang)).toFixed(2), (cy + rad * Math.sin(ang)).toFixed(2)];
+  let a0 = -Math.PI / 2, seg = "";
+  if (pos.length === 1) {
+    seg = `<circle cx="${cx}" cy="${cy}" r="${((r + inner) / 2).toFixed(1)}" fill="none" stroke="${pos[0].color}" stroke-width="${(r - inner).toFixed(1)}"/>`;
+  } else {
+    seg = pos.map(s => {
+      const frac = s.value / total, a1 = a0 + frac * 2 * Math.PI, large = frac > 0.5 ? 1 : 0;
+      const [x0, y0] = pt(r, a0), [x1, y1] = pt(r, a1), [ix1, iy1] = pt(inner, a1), [ix0, iy0] = pt(inner, a0);
+      const d = `M${x0},${y0} A${r},${r} 0 ${large} 1 ${x1},${y1} L${ix1},${iy1} A${inner},${inner} 0 ${large} 0 ${ix0},${iy0} Z`;
+      a0 = a1;
+      return `<path d="${d}" fill="${s.color}" stroke="#fff" stroke-width="1.5"/>`;
+    }).join("");
+  }
+  const center = centerText ? `<text x="${cx}" y="${cy - 3}" text-anchor="middle" font-size="9" fill="#6a7787" font-weight="600">Total</text><text x="${cx}" y="${cy + 12}" text-anchor="middle" font-size="15" fill="#2D4977" font-weight="800">${esc(centerText)}</text>` : "";
+  return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" style="display:block">${seg}${center}</svg>`;
+}
+
 // Inline SVG area+line chart — no JS, so it survives in the downloaded HTML and the PDF.
 function svgArea(values: number[], labels: string[], color = "#2D4977"): string {
   const W = 770, H = 168, padX = 6, padTop = 18, padBot = 22;
@@ -250,7 +272,7 @@ export function snapshotHtml(s: Snapshot): string {
   const r = (k: string, v: string) => `<div class="r"><span class="k">${k}</span><span class="val">${v}</span></div>`;
 
   // Whole-business section: KPI strip + channel split (bar + legend) + monthly revenue trend graph.
-  const chanBar = s.channelRows.map(c => `<div style="width:${c.share.toFixed(2)}%;background:${c.color}" title="${esc(c.name)}: ${fmtFull(c.fy)} (${c.share.toFixed(1)}%)"></div>`).join("");
+  const chanPie = svgPie(s.channelRows.map(c => ({ value: c.fy, color: c.color })), fmt(s.wholeFy));
   const chanLegend = s.channelRows.map(c => `<div class="cr"><span class="dot" style="background:${c.color}"></span><span class="cn">${esc(c.name)}</span><span class="cv">${fmtFull(c.fy)}</span><span class="cp">${c.share.toFixed(0)}%</span></div>`).join("");
   const wholeSection = s.wholeFy > 0 ? `
   <div class="sec">
@@ -262,7 +284,7 @@ export function snapshotHtml(s: Snapshot): string {
       <div class="c"><div class="l">Digital share</div><div class="v">${s.digitalShare.toFixed(0)}%</div></div>
     </div>
     <div class="chanwrap">
-      <div><div class="chanbar">${chanBar}</div></div>
+      <div style="display:flex;justify-content:center">${chanPie}</div>
       <div class="chanlist">${chanLegend}</div>
     </div>
     <div class="trend"><div class="tl">Total revenue by month · ${esc(s.fyLabel)}</div>${svgArea(s.wholeTrend, s.monthLabelsAll)}</div>
