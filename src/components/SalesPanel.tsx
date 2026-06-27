@@ -7,7 +7,7 @@ import {
 import { Bar, Doughnut } from "react-chartjs-2";
 import { fmt, fmtFull } from "@/lib/format";
 import type { Brand, BrandMonthly } from "@/lib/db";
-import { buildChannels, DIGITAL_CHANNELS, channelColor as colorOf, type ChannelSaleRow } from "@/lib/channels";
+import { buildChannels, groupDirect, DIGITAL_CHANNELS, channelColor as colorOf, type ChannelSaleRow } from "@/lib/channels";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
 
@@ -209,13 +209,32 @@ export function SalesPanel({
             </tr>
           </thead>
           <tbody>
-            {channels.map((c, i) => (
-              <tr key={c.name} className="text-right border-b border-gray-50 text-slate-700">
-                <td className="text-left py-1.5"><span className="inline-flex items-center gap-2"><span className="w-2 h-2 rounded-full" style={{ background: colorOf(c.name) }} />{c.name}</span></td>
-                <td className="font-semibold">{fmt(c.fy)}</td>
-                <td>{fyTotal > 0 ? ((c.fy / fyTotal) * 100).toFixed(1) : "0"}%</td>
-                <td>{fmt(c.latest)}</td>
-              </tr>
+            {groupDirect(channels).map((c) => (
+              c.isGroup ? (
+                <React.Fragment key={c.name}>
+                  <tr className="text-right border-b border-gray-50 text-slate-800 bg-slate-50/50">
+                    <td className="text-left py-1.5"><span className="inline-flex items-center gap-2"><span className="w-2 h-2 rounded-full" style={{ background: "#1e3a5f" }} /><span className="font-semibold">{c.name}</span></span></td>
+                    <td className="font-bold">{fmt(c.fy)}</td>
+                    <td className="font-semibold">{fyTotal > 0 ? ((c.fy / fyTotal) * 100).toFixed(1) : "0"}%</td>
+                    <td className="font-semibold">{fmt(c.latest)}</td>
+                  </tr>
+                  {c.kids!.map(k => (
+                    <tr key={k.name} className="text-right border-b border-gray-50 text-slate-500">
+                      <td className="text-left py-1.5"><span className="inline-flex items-center gap-2 pl-5"><span className="w-1.5 h-1.5 rounded-full" style={{ background: colorOf(k.name) }} />{k.name}</span></td>
+                      <td>{fmt(k.fy)}</td>
+                      <td>{fyTotal > 0 ? ((k.fy / fyTotal) * 100).toFixed(1) : "0"}%</td>
+                      <td>{fmt(k.latest)}</td>
+                    </tr>
+                  ))}
+                </React.Fragment>
+              ) : (
+                <tr key={c.name} className="text-right border-b border-gray-50 text-slate-700">
+                  <td className="text-left py-1.5"><span className="inline-flex items-center gap-2"><span className="w-2 h-2 rounded-full" style={{ background: colorOf(c.name) }} />{c.name}</span></td>
+                  <td className="font-semibold">{fmt(c.fy)}</td>
+                  <td>{fyTotal > 0 ? ((c.fy / fyTotal) * 100).toFixed(1) : "0"}%</td>
+                  <td>{fmt(c.latest)}</td>
+                </tr>
+              )
             ))}
             <tr className="text-right font-bold text-slate-800 border-t-2 border-gray-100">
               <td className="text-left py-2">Total</td><td>{fmt(fyTotal)}</td><td>100%</td><td>{fmt(monthTotal)}</td>

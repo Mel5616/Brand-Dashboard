@@ -14,7 +14,7 @@ import { SeoPanel } from "./SeoPanel";
 import { InsightsPanel } from "./InsightsPanel";
 import { SocialPanel } from "./SocialPanel";
 import { SalesPanel } from "./SalesPanel";
-import { buildChannels, channelColor, DIGITAL_CHANNELS } from "@/lib/channels";
+import { buildChannels, groupDirect, channelColor, DIGITAL_CHANNELS } from "@/lib/channels";
 import { SectionBar } from "./ui";
 import { ProductsTable } from "./ProductsTable";
 import { TradeshowAccordion } from "./TradeshowAccordion";
@@ -483,10 +483,18 @@ export function DashboardTabs({
                       ))}
                     </div>
                     <div className="flex flex-wrap gap-x-3 gap-y-1">
-                      {visible.filter((c: any) => c.fy > 0).map((c: any) => (
-                        <span key={c.name} className="inline-flex items-center gap-1 text-[11px] text-gray-500">
-                          <span className="w-2 h-2 rounded-full" style={{ background: channelColor(c.name) }} />{c.name} {Math.round((c.fy / pos) * 100)}%
-                        </span>
+                      {groupDirect(visible.filter((c: any) => c.fy > 0)).map((c: any) => (
+                        c.isGroup ? (
+                          <span key={c.name} className="inline-flex items-center gap-1 text-[11px] text-gray-500">
+                            <span className="w-2 h-2 rounded-full" style={{ background: "#1e3a5f" }} />
+                            <span className="font-semibold text-slate-600">{c.name} {Math.round((c.fy / pos) * 100)}%</span>
+                            <span className="text-gray-400">({c.kids.map((k: any) => `${k.name} ${Math.round((k.fy / pos) * 100)}%`).join(" · ")})</span>
+                          </span>
+                        ) : (
+                          <span key={c.name} className="inline-flex items-center gap-1 text-[11px] text-gray-500">
+                            <span className="w-2 h-2 rounded-full" style={{ background: channelColor(c.name) }} />{c.name} {Math.round((c.fy / pos) * 100)}%
+                          </span>
+                        )
                       ))}
                     </div>
                   </div>

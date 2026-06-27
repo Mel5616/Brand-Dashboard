@@ -41,6 +41,24 @@ export type ChannelData = {
   latest: string;
 };
 
+// Display grouping: Website Sales + Tradeshows roll up under a "Direct Sales" parent
+// (own-store sales, online plus at our booths) while still showing the split underneath.
+export const DIRECT_SALES = ["Website Sales", "Tradeshows"];
+export type ChannelRow = Channel & { isGroup?: boolean; kids?: Channel[] };
+
+export function groupDirect(channels: Channel[]): ChannelRow[] {
+  const kids = channels.filter(c => DIRECT_SALES.includes(c.name));
+  if (kids.length < 2) return channels;
+  const others = channels.filter(c => !DIRECT_SALES.includes(c.name));
+  const group: ChannelRow = {
+    name: "Direct Sales", isGroup: true,
+    fy: sum(kids.map(c => c.fy)), latest: sum(kids.map(c => c.latest)),
+    series: kids[0].series.map((_, i) => sum(kids.map(c => c.series[i]))),
+    kids: [...kids].sort((a, b) => DIRECT_SALES.indexOf(a.name) - DIRECT_SALES.indexOf(b.name)),
+  };
+  return [...others, group].sort((a, b) => b.fy - a.fy);
+}
+
 export function buildChannels(scope: number | "all", d: ChannelData): Channel[] {
   const { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest } = d;
   const showMonth = Object.fromEntries(tradeshows.map(t => [t.id, (t.date_start || "").slice(0, 7)]));
