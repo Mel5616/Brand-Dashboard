@@ -7,21 +7,11 @@ import {
 import { Bar, Doughnut } from "react-chartjs-2";
 import { fmt, fmtFull } from "@/lib/format";
 import type { Brand, BrandMonthly } from "@/lib/db";
+import { buildChannels, DIGITAL_CHANNELS, channelColor as colorOf, type ChannelSaleRow } from "@/lib/channels";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
 
-type ChannelSaleRow = { month_key: string; brand: string; customer_group: string; register: string; value: number; is_online: boolean };
-
 const sum = (a: number[]) => a.reduce((s, v) => s + (v || 0), 0);
-const norm = (s: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-const brandMatch = (dash: string, sheet: string) => {
-  const a = norm(dash), b = norm(sheet);
-  return !!a && !!b && (a === b || a.startsWith(b) || b.startsWith(a));
-};
-const CH_COLORS = ["#1e3a5f", "#10b981", "#f97316", "#3b82f6", "#a855f7", "#ec4899", "#14b8a6", "#92400e", "#22c55e", "#64748b", "#eab308", "#0ea5e9"];
-// Fixed colour per channel so the donut, stacked bars and brand-mix bars all agree.
-const CHANNEL_ORDER = ["Baby Bunting", "Website Sales", "Wholesale", "Tradeshows", "New Zealand", "Amazon", "Online Only Stores", "Specialty", "Marketplace", "Partnerships", "Affiliates"];
-const colorOf = (name: string) => { const i = CHANNEL_ORDER.indexOf(name); return CH_COLORS[(i >= 0 ? i : CHANNEL_ORDER.length + name.length) % CH_COLORS.length]; };
 
 function Card({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: string }) {
   return (
@@ -36,11 +26,6 @@ function Card({ label, value, sub, accent }: { label: string; value: string; sub
 type Tradeshow = { id: string; date_start: string };
 type TradeshowSale = { tradeshow_id: string; brand_id: number; revenue: number };
 type ShopifySource = { brand_id: number; month_key: string; source: string; revenue: number };
-
-// Shopify orders from these sources are reported under their own channel, not Website Sales.
-const SOURCE_CHANNEL: Record<string, string> = { "faire": "Partnerships", "Baby Bunting": "Marketplace" };
-// Digital = D2C + marketplace + affiliate. The digital team sees only these channels and Digital MER.
-const DIGITAL_CHANNELS = new Set(["Website Sales", "Marketplace", "Affiliates", "Online Only Stores"]);
 
 export function SalesPanel({
   scope, brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, googleAds, metaAds, marketingActuals, role, monthKeys, monthLabels, latest, canUpload,
@@ -116,38 +101,8 @@ export function SalesPanel({
     if (fileRef.current) fileRef.current.value = "";
   }
 
-  const CHANNEL_MAP: Record<string, string> = {
-    "Online Store": "Online Only Stores", "Affiliate": "Affiliates",
-    "Coolkidz": "Website Sales", "Direct Customer": "Website Sales", "Tradeshow Sales": "Tradeshows",
-  };
-  const channelOf = (r: ChannelSaleRow) =>
-    r.register === "API" ? "Marketplace"
-    : (!r.customer_group || r.customer_group === "Other") ? "Website Sales"
-    : (CHANNEL_MAP[r.customer_group] ?? r.customer_group);
-  const showMonth = Object.fromEntries(tradeshows.map(t => [t.id, (t.date_start || "").slice(0, 7)]));
-
-  // Channel breakdown for any scope (a brand id, or "all"). Website Sales = live Shopify
-  // (less tradeshows and special sources); Tradeshows live; Faire→Partnerships, BB→Marketplace.
-  type Chan = { name: string; series: number[]; fy: number; latest: number };
-  function computeChannels(s: number | "all"): Chan[] {
-    const offline = (s === "all" ? channelSales : channelSales.filter(r => brandMatch(brands.find(b => b.id === s)?.name ?? "", r.brand))).filter(r => !r.is_online);
-    const live = s === "all" ? monthly : monthly.filter(m => m.brand_id === s);
-    const srcIn = shopifySources.filter(x => s === "all" || x.brand_id === s);
-    const ts = (mk: string) => sum(tradeshowSales.filter(x => showMonth[x.tradeshow_id] === mk && (s === "all" || x.brand_id === s)).map(x => x.revenue));
-    const srcCh = (mk: string, ch: string) => sum(srcIn.filter(x => x.month_key === mk && SOURCE_CHANNEL[x.source] === ch).map(x => x.revenue));
-    const allSrc = (mk: string) => sum(srcIn.filter(x => x.month_key === mk).map(x => x.revenue));
-    const vOf = (ch: string, mk: string) => {
-      const fileSum = sum(offline.filter(r => channelOf(r) === ch && r.month_key === mk).map(r => r.value));
-      if (ch === "Tradeshows") return ts(mk) + fileSum;
-      const base = ch === "Website Sales" ? sum(live.filter(m => m.month_key === mk).map(m => m.revenue)) - ts(mk) - allSrc(mk) : 0;
-      return base + srcCh(mk, ch) + fileSum;
-    };
-    const names = new Set<string>(["Website Sales", "Tradeshows", ...Object.values(SOURCE_CHANNEL), ...offline.map(channelOf)]);
-    return [...names].map(name => {
-      const series = monthKeys.map(mk => vOf(name, mk));
-      return { name, series, fy: sum(series), latest: vOf(name, latest) };
-    }).filter(c => Math.abs(c.fy) > 0.5).sort((a, b) => b.fy - a.fy);
-  }
+  const computeChannels = (s: number | "all") =>
+    buildChannels(s, { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest });
 
   const allChannels = computeChannels(scope);
   // The digital team only sees digital channels (no wholesale/retail/total business).

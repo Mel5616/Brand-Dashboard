@@ -14,6 +14,7 @@ import { SeoPanel } from "./SeoPanel";
 import { InsightsPanel } from "./InsightsPanel";
 import { SocialPanel } from "./SocialPanel";
 import { SalesPanel } from "./SalesPanel";
+import { buildChannels, channelColor, DIGITAL_CHANNELS } from "@/lib/channels";
 import { SectionBar } from "./ui";
 import { ProductsTable } from "./ProductsTable";
 import { TradeshowAccordion } from "./TradeshowAccordion";
@@ -256,7 +257,7 @@ export function DashboardTabs({
   const fyElapsed = Math.min(1, Math.max(0, (Date.now() - new Date(fyStartYear, 6, 1).getTime()) / (new Date(fyStartYear + 1, 5, 30).getTime() - new Date(fyStartYear, 6, 1).getTime())));
   const fyForecast = fyElapsed > 0.02 ? fyRevenue / fyElapsed : fyRevenue;
   const fyKpis = [
-    { label: `${fyLabel} Revenue`, value: fmt(fyRevenue), sub: fyTarget > 0 ? `${Math.round(fyRevenue / fyTarget * 100)}% to target · pacing ${fmt(fyForecast)}` : "ex-GST, all brands" },
+    { label: `${fyLabel} Digital revenue`, value: fmt(fyRevenue), sub: fyTarget > 0 ? `${Math.round(fyRevenue / fyTarget * 100)}% to target · pacing ${fmt(fyForecast)}` : "Shopify D2C, ex-GST" },
     { label: "Active Brands",      value: String(liveCount), sub: `of ${brands.length} total` },
     { label: `${wholeYear ? fyLabel : latestLabel} Orders`, value: ordersVal.toLocaleString(), sub: wholeYear ? "all months" : fyLabel },
     { label: "Tradeshows",         value: String(tradeshows.length), sub: `${tradeshows.filter((t: any) => new Date() < new Date(t.date_start)).length} upcoming` },
@@ -444,6 +445,54 @@ export function DashboardTabs({
                   </div>
                 );
               })()}
+
+              {(() => {
+                const biz = buildChannels("all", { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest: LATEST });
+                if (!biz.length) return null;
+                const ssum = (a: number[]) => a.reduce((s, v) => s + (v || 0), 0);
+                const visible = role === "admin" ? biz : biz.filter((c: any) => DIGITAL_CHANNELS.has(c.name));
+                const total = ssum(visible.map((c: any) => c.fy));
+                const gSpend = ssum(googleAds.map((r: any) => r.spend));
+                const mSpend = ssum(metaAds.map((r: any) => r.spend));
+                const oSpend = ssum(marketingActuals.filter((a: any) => a.channel !== "Google Advertising" && a.channel !== "Social Media (Meta)").map((a: any) => a.spend));
+                const merSpend = role === "admin" ? gSpend + mSpend + oSpend : gSpend + mSpend;
+                const mer = total > 0 ? (merSpend / total) * 100 : null;
+                const online = biz.find((c: any) => DIGITAL_CHANNELS.has(c.name) && c.name === "Website Sales");
+                const onlinePct = total > 0 ? (ssum(biz.filter((c: any) => DIGITAL_CHANNELS.has(c.name)).map((c: any) => c.fy)) / ssum(biz.map((c: any) => c.fy))) * 100 : 0;
+                const pos = ssum(visible.filter((c: any) => c.fy > 0).map((c: any) => c.fy)) || 1;
+                const cards = [
+                  { label: role === "admin" ? "Total business revenue" : "Digital revenue", value: fmt(total), accent: "#1e3a5f" },
+                  { label: role === "admin" ? "True MER" : "Digital MER", value: mer != null ? mer.toFixed(1) + "%" : "—", accent: "#f97316" },
+                  { label: "Digital share", value: Math.round(onlinePct) + "%", accent: "#10b981" },
+                  { label: "Channels", value: String(visible.length), accent: "#a855f7" },
+                ];
+                return (
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-3">{role === "admin" ? "Business overview" : "Digital overview"} <span className="font-normal text-gray-400 normal-case tracking-normal">· {fyLabel}, all channels{role === "admin" ? "" : " (digital)"}</span></p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                      {cards.map(c => (
+                        <div key={c.label} className="bg-gray-50/60 rounded-xl px-4 py-3">
+                          <p className="text-[11px] font-medium text-gray-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full inline-block" style={{ background: c.accent }} />{c.label}</p>
+                          <p className="text-2xl font-bold text-slate-800 mt-1 leading-none">{c.value}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="h-6 rounded-md overflow-hidden flex bg-gray-50 mb-2">
+                      {visible.filter((c: any) => c.fy > 0).map((c: any) => (
+                        <div key={c.name} title={`${c.name}: ${fmt(c.fy)} (${((c.fy / pos) * 100).toFixed(0)}%)`} style={{ width: `${(c.fy / pos) * 100}%`, background: channelColor(c.name) }} />
+                      ))}
+                    </div>
+                    <div className="flex flex-wrap gap-x-3 gap-y-1">
+                      {visible.filter((c: any) => c.fy > 0).map((c: any) => (
+                        <span key={c.name} className="inline-flex items-center gap-1 text-[11px] text-gray-500">
+                          <span className="w-2 h-2 rounded-full" style={{ background: channelColor(c.name) }} />{c.name} {Math.round((c.fy / pos) * 100)}%
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {fyKpis.map(kpi => (
                   <div key={kpi.label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
