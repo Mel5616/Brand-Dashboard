@@ -104,6 +104,16 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   },
 ];
 
+// Sidebar grouping — how you market (top) vs where you sell (bottom).
+const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
+  { label: "Overview", ids: ["brands", "insights", "report"] },
+  { label: "Plan", ids: ["campaign-calendar", "calendar", "content"] },
+  { label: "Paid", ids: ["google-ads", "meta-ads"] },
+  { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer"] },
+  { label: "Revenue & Channels", ids: ["sales", "shopify", "tradeshows"] },
+  { label: "Operations", ids: ["budget", "team"] },
+];
+
 
 // ── Brand tiers ──────────────────────────────────────────────────────────────
 const BRAND_TIERS: Record<number, "A" | "B" | "C"> = {
@@ -241,8 +251,12 @@ export function DashboardTabs({
   const orderRows   = wholeYear ? monthly : monthly.filter((m: any) => m.month_key === LATEST);
   const ordersVal   = orderRows.reduce((s: number, m: any) => s + (m.orders ?? 0), 0);
   const liveCount    = brands.filter((b: any) => b.live).length;
+  const fyTarget = targets.reduce((s: number, t: any) => s + (t.revenue_target ?? 0), 0);
+  const fyStartYear = Number(String(fy).slice(0, 4));
+  const fyElapsed = Math.min(1, Math.max(0, (Date.now() - new Date(fyStartYear, 6, 1).getTime()) / (new Date(fyStartYear + 1, 5, 30).getTime() - new Date(fyStartYear, 6, 1).getTime())));
+  const fyForecast = fyElapsed > 0.02 ? fyRevenue / fyElapsed : fyRevenue;
   const fyKpis = [
-    { label: `${fyLabel} Revenue`, value: fmt(fyRevenue), sub: "ex-GST, all brands" },
+    { label: `${fyLabel} Revenue`, value: fmt(fyRevenue), sub: fyTarget > 0 ? `${Math.round(fyRevenue / fyTarget * 100)}% to target · pacing ${fmt(fyForecast)}` : "ex-GST, all brands" },
     { label: "Active Brands",      value: String(liveCount), sub: `of ${brands.length} total` },
     { label: `${wholeYear ? fyLabel : latestLabel} Orders`, value: ordersVal.toLocaleString(), sub: wholeYear ? "all months" : fyLabel },
     { label: "Tradeshows",         value: String(tradeshows.length), sub: `${tradeshows.filter((t: any) => new Date() < new Date(t.date_start)).length} upcoming` },
@@ -297,25 +311,31 @@ export function DashboardTabs({
           </div>
         </div>
       )}
-      <nav className="flex-1 py-3 px-2 space-y-0.5">
-        <p className="px-2 text-[9px] font-semibold text-gray-300 uppercase tracking-[0.18em] mb-1.5">Navigation</p>
-        {visibleTabs.map(tab => {
-          const isActive = active === tab.id && !(selectedBrand && active === "brands");
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActive(tab.id)}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${
-                isActive
-                  ? "bg-indigo-50 text-indigo-600 font-semibold shadow-sm ring-1 ring-indigo-100"
-                  : "text-gray-500 hover:bg-gray-100/70 hover:text-gray-700"
-              }`}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
-          );
-        })}
+      <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
+        {(() => {
+          const visIds = new Set(visibleTabs.map(t => t.id));
+          const grouped = new Set(TAB_GROUPS.flatMap(g => g.ids));
+          const groups = [
+            ...TAB_GROUPS.map(g => ({ label: g.label, tabs: g.ids.filter(id => visIds.has(id)).map(id => TABS.find(t => t.id === id)!) })),
+            { label: "More", tabs: visibleTabs.filter(t => !grouped.has(t.id)) }, // any tab not placed in a group
+          ].filter(g => g.tabs.length > 0);
+          const Btn = (tab: typeof TABS[number]) => {
+            const isActive = active === tab.id && !(selectedBrand && active === "brands");
+            return (
+              <button key={tab.id} onClick={() => setActive(tab.id)}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${
+                  isActive ? "bg-indigo-50 text-indigo-600 font-semibold shadow-sm ring-1 ring-indigo-100" : "text-gray-500 hover:bg-gray-100/70 hover:text-gray-700"}`}>
+                {tab.icon}{tab.label}
+              </button>
+            );
+          };
+          return groups.map(g => (
+            <div key={g.label} className="mb-1">
+              <p className="px-2 pt-2 text-[9px] font-semibold text-gray-300 uppercase tracking-[0.18em] mb-1">{g.label}</p>
+              <div className="space-y-0.5">{g.tabs.map(Btn)}</div>
+            </div>
+          ));
+        })()}
       </nav>
       {selectedBrand && (
         <div className="px-4 py-3 border-t border-gray-100">
@@ -389,6 +409,41 @@ export function DashboardTabs({
           {/* ── Brands ── */}
           {active === "brands" && (
             <>
+              {(() => {
+                const risks: { sev: "red" | "amber"; text: string }[] = [];
+                const syncs = summaries.map((s: any) => s.synced_at).filter(Boolean).map((t: string) => Date.parse(t));
+                if (syncs.length) {
+                  const ageH = (Date.now() - Math.max(...syncs)) / 3.6e6;
+                  if (ageH > 30) risks.push({ sev: "red", text: `Data sync is ${Math.round(ageH)}h old — it may have failed` });
+                  else if (ageH > 20) risks.push({ sev: "amber", text: `Data sync is ${Math.round(ageH)}h old` });
+                }
+                brands.filter((b: any) => b.live).forEach((b: any) => {
+                  const actual = monthly.find((x: any) => x.brand_id === b.id && x.month_key === LATEST)?.revenue ?? 0;
+                  const tgt = targets.find((t: any) => t.brand_id === b.id && t.month_key === LATEST)?.revenue_target ?? 0;
+                  if (tgt > 0 && actual < tgt * 0.8) risks.push({ sev: actual < tgt * 0.6 ? "red" : "amber", text: `${b.name} ${Math.round((1 - actual / tgt) * 100)}% behind ${latestLabel} target` });
+                  const m = metaAds.find((x: any) => x.brand_id === b.id && x.month_key === LATEST);
+                  if (m && m.spend > 1000 && m.revenue / m.spend < 1) risks.push({ sev: "red", text: `${b.name} Meta ROAS ${(m.revenue / m.spend).toFixed(1)}× — under 1×` });
+                  const g = googleAds.find((x: any) => x.brand_id === b.id && x.month_key === LATEST);
+                  if (g && g.spend > 1000 && (g.roas ?? 0) < 1) risks.push({ sev: "red", text: `${b.name} Google ROAS ${(g.roas ?? 0).toFixed(1)}× — under 1×` });
+                });
+                risks.sort((a, b) => (a.sev === b.sev ? 0 : a.sev === "red" ? -1 : 1));
+                return (
+                  <div className={`rounded-2xl border px-4 py-3 mb-4 ${risks.length ? "bg-red-50/40 border-red-100" : "bg-emerald-50/40 border-emerald-100"}`}>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] mb-2 flex items-center gap-1.5" style={{ color: risks.length ? "#b91c1c" : "#047857" }}>
+                      {risks.length ? "⚠ Needs attention" : "✓ All clear"}<span className="font-normal text-gray-400 normal-case tracking-normal">· {latestLabel}</span>
+                    </p>
+                    {risks.length ? (
+                      <div className="flex flex-wrap gap-2">
+                        {risks.slice(0, 10).map((r, i) => (
+                          <span key={i} className={`inline-flex items-center gap-1.5 text-xs font-medium rounded-full px-3 py-1 ${r.sev === "red" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>
+                            <span className="w-1.5 h-1.5 rounded-full" style={{ background: r.sev === "red" ? "#dc2626" : "#d97706" }} />{r.text}
+                          </span>
+                        ))}
+                      </div>
+                    ) : <p className="text-sm text-gray-500">No brands off-pace, no sub-1× paid channels, sync is current.</p>}
+                  </div>
+                );
+              })()}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {fyKpis.map(kpi => (
                   <div key={kpi.label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
@@ -662,7 +717,7 @@ export function DashboardTabs({
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
                 </select>
               </div>
-              <SalesPanel scope={brandFilter} brands={brands} channelSales={channelSales} monthly={monthly} tradeshows={tradeshows} tradeshowSales={tradeshowSales} shopifySources={shopifySources} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} canUpload={role === "admin"} />
+              <SalesPanel scope={brandFilter} brands={brands} channelSales={channelSales} monthly={monthly} tradeshows={tradeshows} tradeshowSales={tradeshowSales} shopifySources={shopifySources} googleAds={googleAds} metaAds={metaAds} marketingActuals={marketingActuals} role={role} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} canUpload={role === "admin"} />
             </>
           )}
 

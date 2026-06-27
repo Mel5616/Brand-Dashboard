@@ -39,9 +39,11 @@ type ShopifySource = { brand_id: number; month_key: string; source: string; reve
 
 // Shopify orders from these sources are reported under their own channel, not Website Sales.
 const SOURCE_CHANNEL: Record<string, string> = { "faire": "Partnerships", "Baby Bunting": "Marketplace" };
+// Digital = D2C + marketplace + affiliate. The digital team sees only these channels and Digital MER.
+const DIGITAL_CHANNELS = new Set(["Website Sales", "Marketplace", "Affiliates", "Online Only Stores"]);
 
 export function SalesPanel({
-  scope, brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, monthLabels, latest, canUpload,
+  scope, brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, googleAds, metaAds, marketingActuals, role, monthKeys, monthLabels, latest, canUpload,
 }: {
   scope: number | "all";
   brands: Brand[];
@@ -50,11 +52,16 @@ export function SalesPanel({
   tradeshows: Tradeshow[];
   tradeshowSales: TradeshowSale[];
   shopifySources: ShopifySource[];
+  googleAds: { brand_id: number; month_key: string; spend: number }[];
+  metaAds: { brand_id: number; month_key: string; spend: number }[];
+  marketingActuals: { brand_id: number; month_key: string; channel: string; spend: number }[];
+  role: "admin" | "member";
   monthKeys: string[];
   monthLabels: string[];
   latest: string;
   canUpload: boolean;
 }) {
+  const isAdmin = role === "admin";
   const [busy, setBusy] = React.useState(false);
   const [msg, setMsg] = React.useState<string | null>(null);
   const fileRef = React.useRef<HTMLInputElement>(null);
@@ -142,16 +149,29 @@ export function SalesPanel({
     }).filter(c => Math.abs(c.fy) > 0.5).sort((a, b) => b.fy - a.fy);
   }
 
-  const channels = computeChannels(scope);
+  const allChannels = computeChannels(scope);
+  // The digital team only sees digital channels (no wholesale/retail/total business).
+  const channels = isAdmin ? allChannels : allChannels.filter(c => DIGITAL_CHANNELS.has(c.name));
   const hasData = channels.length > 0;
   const fyTotal = sum(channels.map(c => c.fy));
   const monthTotal = sum(channels.map(c => c.latest));
   const prevKey = monthKeys[monthKeys.indexOf(latest) - 1];
   const prevTotal = prevKey ? sum(channels.map(c => c.series[monthKeys.indexOf(prevKey)])) : 0;
   const mom = prevTotal > 0 ? ((monthTotal - prevTotal) / prevTotal) * 100 : null;
-  const online = channels.find(c => c.name === "Website Sales");
-  const onlinePct = fyTotal > 0 ? ((online?.fy ?? 0) / fyTotal) * 100 : 0;
   const latestLabel = monthLabels[monthKeys.indexOf(latest)] ?? latest;
+
+  // MER = marketing spend / revenue (lower is better). True (all channels, wholesale) for the
+  // Director; Digital (paid digital / digital revenue) for the team.
+  const inScope = <T extends { brand_id: number }>(rows: T[]) => rows.filter(r => scope === "all" || r.brand_id === scope);
+  const gSpend = sum(inScope(googleAds).map(r => r.spend));
+  const mSpend = sum(inScope(metaAds).map(r => r.spend));
+  const oSpend = sum(inScope(marketingActuals).filter(a => a.channel !== "Google Advertising" && a.channel !== "Social Media (Meta)").map(a => a.spend));
+  const digitalRev = sum(allChannels.filter(c => DIGITAL_CHANNELS.has(c.name)).map(c => c.fy));
+  const trueRev = sum(allChannels.map(c => c.fy));
+  const trueMer = trueRev > 0 ? ((gSpend + mSpend + oSpend) / trueRev) * 100 : null;
+  const digitalMer = digitalRev > 0 ? ((gSpend + mSpend) / digitalRev) * 100 : null;
+  const merValue = isAdmin ? trueMer : digitalMer;
+  const merLabel = isAdmin ? "True MER" : "Digital MER";
 
   const Upload = canUpload ? (
     <div className="no-print">
@@ -180,14 +200,14 @@ export function SalesPanel({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs text-gray-400">Website Sales is pulled live from Shopify · other channels from the monthly upload</p>
+        <p className="text-xs text-gray-400">{isAdmin ? "Whole business · Website Sales live from Shopify, other channels from the monthly upload" : "Digital channels only · D2C, marketplace and affiliate"}</p>
         <div className="flex items-center gap-2">{msg && <span className="text-xs text-gray-500">{msg}</span>}{Upload}</div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card label="Total sales (FY)" value={fmtFull(fyTotal)} accent="#1e3a5f" />
+        <Card label={isAdmin ? "Total sales (FY)" : "Digital sales (FY)"} value={fmtFull(fyTotal)} accent="#1e3a5f" />
         <Card label={`${latestLabel} sales`} value={fmtFull(monthTotal)} sub={mom != null ? `${mom >= 0 ? "▲" : "▼"} ${Math.abs(mom).toFixed(0)}% vs prev` : undefined} accent="#10b981" />
-        <Card label="Online share" value={onlinePct.toFixed(0) + "%"} sub="of total sales" accent="#f97316" />
+        <Card label={merLabel} value={merValue != null ? merValue.toFixed(1) + "%" : "—"} sub={isAdmin ? "marketing spend ÷ all revenue" : "paid digital ÷ digital revenue"} accent="#f97316" />
         <Card label="Channels" value={String(channels.length)} accent="#a855f7" />
       </div>
 
@@ -251,7 +271,7 @@ export function SalesPanel({
 
       {scope === "all" && (() => {
         const mix = brands
-          .map(b => { const bc = computeChannels(b.id); return { b, bc, tot: sum(bc.map(c => c.fy)) }; })
+          .map(b => { const bc = computeChannels(b.id).filter(c => isAdmin || DIGITAL_CHANNELS.has(c.name)); return { b, bc, tot: sum(bc.map(c => c.fy)) }; })
           .filter(x => x.tot > 0)
           .sort((a, b) => b.tot - a.tot);
         if (!mix.length) return null;
