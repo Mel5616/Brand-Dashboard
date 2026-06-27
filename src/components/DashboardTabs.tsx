@@ -13,6 +13,7 @@ import { CampaignCalendar } from "./CampaignCalendar";
 import { SeoPanel } from "./SeoPanel";
 import { InsightsPanel } from "./InsightsPanel";
 import { SocialPanel } from "./SocialPanel";
+import { SalesPanel } from "./SalesPanel";
 import { SectionBar } from "./ui";
 import { ProductsTable } from "./ProductsTable";
 import { TradeshowAccordion } from "./TradeshowAccordion";
@@ -30,7 +31,7 @@ import { ShopifyInsights } from "./ShopifyInsights";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "brands" | "insights" | "campaign-calendar" | "report" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "budget" | "calendar" | "content" | "influencer" | "team";
+type TabId = "brands" | "insights" | "campaign-calendar" | "report" | "sales" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "budget" | "calendar" | "content" | "influencer" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -48,6 +49,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
     id: "report", label: "Report",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+  },
+  {
+    id: "sales", label: "Sales",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3v18h18M7 14l4-4 3 3 5-6" /></svg>,
   },
   {
     id: "shopify", label: "Shopify",
@@ -147,6 +152,7 @@ interface Props {
   semrushPages: any[];
   brandInsights: any[];
   instagramMedia: any[];
+  channelSales: any[];
   boothFunnel: any;
   kpis: { label: string; value: string; sub: string }[];
   role?: "admin" | "member";
@@ -160,7 +166,7 @@ export function DashboardTabs({
   instagramOrganic, targets, klaviyo, ga4,
   marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, boothFunnel, kpis,
   gscMetrics, gscQueries, gscInsights, semrushMetrics, semrushCompetitors,
-  semrushKeywords, semrushPages, brandInsights, instagramMedia,
+  semrushKeywords, semrushPages, brandInsights, instagramMedia, channelSales,
   role = "admin", allowedTabs,
 }: Props) {
   // Financial tabs (cost / margin / budget) are admin-only even if otherwise granted.
@@ -638,6 +644,24 @@ export function DashboardTabs({
                 marketingActuals: marketingActuals.filter((a: any) => monthKeys.includes(a.month_key)),
                 googleAds, metaAds, monthKeys, monthLabels, fy,
               })} />
+            </>
+          )}
+
+          {/* ── Sales by channel (wider business, monthly upload + live online) ── */}
+          {active === "sales" && (
+            <>
+              <SectionBar title="Sales by channel" />
+              <div className="flex items-center gap-2 mb-3">
+                <select
+                  value={brandFilter === "all" ? "all" : String(brandFilter)}
+                  onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
+                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                >
+                  <option value="all">All Brands (Whole business)</option>
+                  {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
+                </select>
+              </div>
+              <SalesPanel scope={brandFilter} brands={brands} channelSales={channelSales} monthly={monthly} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} canUpload={role === "admin"} />
             </>
           )}
 

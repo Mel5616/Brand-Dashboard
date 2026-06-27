@@ -231,6 +231,7 @@ export async function getDashboardData() {
     { data: semrushPages },
     { data: brandInsights },
     { data: instagramMedia },
+    { data: channelSales },
   ] = await Promise.all([
     db.from("brands").select("*").order("id"),
     db.from("brand_summary").select("*"),
@@ -263,6 +264,7 @@ export async function getDashboardData() {
     db.from("semrush_pages").select("*"),
     db.from("brand_insights").select("*"),
     db.from("instagram_media").select("*").order("posted_at", { ascending: false }),
+    db.from("channel_sales").select("*"),
   ]);
 
   return {
@@ -297,8 +299,11 @@ export async function getDashboardData() {
     semrushPages: (semrushPages ?? []) as SemrushPageRow[],
     brandInsights: (brandInsights ?? []) as BrandInsightRow[],
     instagramMedia: (instagramMedia ?? []) as InstagramMediaRow[],
+    channelSales: (channelSales ?? []) as ChannelSaleRow[],
   };
 }
+
+export type ChannelSaleRow = { month_key: string; brand: string; customer_group: string; register: string; value: number; is_online: boolean };
 
 export type InstagramMediaRow = { brand_id: number; media_id: string; caption: string | null; media_type: string | null; permalink: string | null; posted_at: string | null; like_count: number; comments_count: number; image_url: string | null };
 
