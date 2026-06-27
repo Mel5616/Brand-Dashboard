@@ -32,10 +32,13 @@ function Card({ label, value, sub, accent }: { label: string; value: string; sub
 
 type Tradeshow = { id: string; date_start: string };
 type TradeshowSale = { tradeshow_id: string; brand_id: number; revenue: number };
-type FaireSale = { brand_id: number; month_key: string; revenue: number };
+type ShopifySource = { brand_id: number; month_key: string; source: string; revenue: number };
+
+// Shopify orders from these sources are reported under their own channel, not Website Sales.
+const SOURCE_CHANNEL: Record<string, string> = { "faire": "Partnerships", "Baby Bunting": "Marketplace" };
 
 export function SalesPanel({
-  scope, brands, channelSales, monthly, tradeshows, tradeshowSales, faireSales, monthKeys, monthLabels, latest, canUpload,
+  scope, brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, monthLabels, latest, canUpload,
 }: {
   scope: number | "all";
   brands: Brand[];
@@ -43,7 +46,7 @@ export function SalesPanel({
   monthly: BrandMonthly[];
   tradeshows: Tradeshow[];
   tradeshowSales: TradeshowSale[];
-  faireSales: FaireSale[];
+  shopifySources: ShopifySource[];
   monthKeys: string[];
   monthLabels: string[];
   latest: string;
@@ -117,11 +120,13 @@ export function SalesPanel({
       .filter(s => showMonth[s.tradeshow_id] === mk && (scope === "all" || s.brand_id === scope))
       .map(s => s.revenue)
   );
-  // Faire orders (live from Shopify, source_name:faire) → reported under Partnerships,
-  // and netted out of the live Website Sales total so they aren't double-counted.
-  const faireByMonth = (mk: string) => sum(
-    faireSales.filter(f => f.month_key === mk && (scope === "all" || f.brand_id === scope)).map(f => f.revenue)
+  // Shopify special sources (Faire → Partnerships, Baby Bunting → Marketplace). Reported
+  // under their mapped channel and netted out of the live Website Sales total.
+  const sourcesIn = shopifySources.filter(s => scope === "all" || s.brand_id === scope);
+  const sourceToChannel = (mk: string, channel: string) => sum(
+    sourcesIn.filter(s => s.month_key === mk && SOURCE_CHANNEL[s.source] === channel).map(s => s.revenue)
   );
+  const allSourcesByMonth = (mk: string) => sum(sourcesIn.filter(s => s.month_key === mk).map(s => s.revenue));
 
   // Channel classification for the file (non-Shopify) rows:
   //   API → Marketplace · no-group Backend/Cloud → Website Sales · else map/keep the customer group.
@@ -141,12 +146,13 @@ export function SalesPanel({
   const valueOf = (ch: string, mk: string) => {
     const fileSum = sum(offline.filter(r => channelOf(r) === ch && r.month_key === mk).map(r => r.value));
     if (ch === "Tradeshows") return tsByMonth(mk) + fileSum;
-    if (ch === "Partnerships") return faireByMonth(mk) + fileSum;
-    const base = ch === "Website Sales" ? sum(liveMonthly.filter(m => m.month_key === mk).map(m => m.revenue)) - tsByMonth(mk) - faireByMonth(mk) : 0;
-    return base + fileSum;
+    const base = ch === "Website Sales"
+      ? sum(liveMonthly.filter(m => m.month_key === mk).map(m => m.revenue)) - tsByMonth(mk) - allSourcesByMonth(mk)
+      : 0;
+    return base + sourceToChannel(mk, ch) + fileSum;
   };
 
-  const names = new Set<string>(["Website Sales", "Tradeshows", "Partnerships", ...offline.map(channelOf)]);
+  const names = new Set<string>(["Website Sales", "Tradeshows", ...Object.values(SOURCE_CHANNEL), ...offline.map(channelOf)]);
   const channelRow = (name: string) => {
     const series = monthKeys.map(mk => valueOf(name, mk));
     return { name, series, fy: sum(series), latest: valueOf(name, latest) };

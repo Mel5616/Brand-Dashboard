@@ -153,7 +153,7 @@ interface Props {
   brandInsights: any[];
   instagramMedia: any[];
   channelSales: any[];
-  faireSales: any[];
+  shopifySources: any[];
   boothFunnel: any;
   kpis: { label: string; value: string; sub: string }[];
   role?: "admin" | "member";
@@ -167,7 +167,7 @@ export function DashboardTabs({
   instagramOrganic, targets, klaviyo, ga4,
   marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, boothFunnel, kpis,
   gscMetrics, gscQueries, gscInsights, semrushMetrics, semrushCompetitors,
-  semrushKeywords, semrushPages, brandInsights, instagramMedia, channelSales, faireSales,
+  semrushKeywords, semrushPages, brandInsights, instagramMedia, channelSales, shopifySources,
   role = "admin", allowedTabs,
 }: Props) {
   // Financial tabs (cost / margin / budget) are admin-only even if otherwise granted.
@@ -662,7 +662,7 @@ export function DashboardTabs({
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
                 </select>
               </div>
-              <SalesPanel scope={brandFilter} brands={brands} channelSales={channelSales} monthly={monthly} tradeshows={tradeshows} tradeshowSales={tradeshowSales} faireSales={faireSales} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} canUpload={role === "admin"} />
+              <SalesPanel scope={brandFilter} brands={brands} channelSales={channelSales} monthly={monthly} tradeshows={tradeshows} tradeshowSales={tradeshowSales} shopifySources={shopifySources} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} canUpload={role === "admin"} />
             </>
           )}
 

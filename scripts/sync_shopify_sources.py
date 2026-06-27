@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 """
-Faire sync — pulls each brand's Faire orders from Shopify (source_name:faire) and
-writes net (ex-GST) revenue per brand per month to faire_sales. The Sales-by-channel
-report moves this out of Website Sales and into Partnerships.
+Shopify special-source sync — some orders flow through Shopify from marketplaces /
+wholesale partners (Faire, Baby Bunting via Mirakl, …) and should be reported under
+their own channel, not Website Sales. This pulls net (ex-GST) revenue per brand /
+month / source for the SOURCES below, into shopify_source_sales. The Sales report
+maps each source to a channel and nets it out of the live Website Sales total.
 
-Net revenue matches sync.py: totalPrice - tax (or totalPrice/1.1 when tax is 0).
+Add a new source here and it just works (then map it in SalesPanel.SOURCE_CHANNEL).
 
 Table (run once in Supabase):
-  create table if not exists faire_sales (
-    brand_id int not null, month_key text not null, revenue numeric default 0,
-    primary key (brand_id, month_key));
-  alter table faire_sales disable row level security;
+  create table if not exists shopify_source_sales (
+    brand_id int not null, month_key text not null, source text not null,
+    revenue numeric default 0, primary key (brand_id, month_key, source));
+  alter table shopify_source_sales disable row level security;
 
-Run: python3 scripts/sync_faire.py
+Run: python3 scripts/sync_shopify_sources.py
 """
 
 import os, sys, json, ssl, urllib.request
@@ -23,6 +25,7 @@ CONFIG_PATH = os.path.join(BASE_DIR, "stores.config.json")
 ENV_PATH    = os.path.join(BASE_DIR, ".env.local")
 RANGE_START = "2025-07-01"
 RANGE_END   = "2026-06-30"
+SOURCES     = ["faire", "Baby Bunting"]   # Shopify source_name values to break out
 CTX = ssl.create_default_context()
 
 def load_env():
@@ -45,7 +48,7 @@ ANON = os.environ.get("NEXT_PUBLIC_SUPABASE_ANON_KEY", "")
 def sb_upsert(rows):
     if not rows:
         return
-    req = urllib.request.Request(f"{URL}/rest/v1/faire_sales?on_conflict=brand_id,month_key",
+    req = urllib.request.Request(f"{URL}/rest/v1/shopify_source_sales?on_conflict=brand_id,month_key,source",
         data=json.dumps(rows).encode(), method="POST")
     req.add_header("Content-Type", "application/json"); req.add_header("apikey", ANON or KEY)
     req.add_header("Authorization", f"Bearer {KEY}"); req.add_header("Prefer", "resolution=merge-duplicates")
@@ -62,14 +65,16 @@ def gql(domain, token, q):
     with urllib.request.urlopen(req, context=CTX, timeout=40) as r:
         return json.loads(r.read().decode())
 
-def faire_orders(domain, token):
+def source_orders(domain, token, source):
+    # Quote the value for Shopify search if it contains a space.
+    val = f'\\"{source}\\"' if " " in source else source
     out, cursor = [], None
     while True:
         after = f', after: "{cursor}"' if cursor else ""
         q = f'''{{ orders(first: 250{after},
-            query: "financial_status:paid source_name:faire created_at:>={RANGE_START} created_at:<={RANGE_END}",
+            query: "financial_status:paid source_name:{val} created_at:>={RANGE_START} created_at:<={RANGE_END}",
             sortKey: CREATED_AT) {{
-            edges {{ cursor node {{ createdAt totalPriceSet {{ shopMoney {{ amount }} }} totalTaxSet {{ shopMoney {{ amount }} }} }} }}
+            edges {{ cursor node {{ createdAt sourceName totalPriceSet {{ shopMoney {{ amount }} }} totalTaxSet {{ shopMoney {{ amount }} }} }} }}
             pageInfo {{ hasNextPage }}
         }} }}'''
         data = gql(domain, token, q).get("data", {}).get("orders", {})
@@ -80,22 +85,30 @@ def faire_orders(domain, token):
         cursor = edges[-1]["cursor"]
     return out
 
+def net(node):
+    gross = float(node.get("totalPriceSet", {}).get("shopMoney", {}).get("amount", 0))
+    tax   = float(node.get("totalTaxSet", {}).get("shopMoney", {}).get("amount", 0))
+    return (gross - tax) if tax > 0 else round(gross / 1.1, 2)
+
 def sync_brand(brand_id, name, domain, token):
-    print(f"  {name} ...", end=" ", flush=True)
-    try:
-        edges = faire_orders(domain, token)
-    except Exception as e:
-        print(f"error ({str(e)[:60]})"); return
-    monthly = defaultdict(float)
-    for e in edges:
-        n = e["node"]
-        gross = float(n.get("totalPriceSet", {}).get("shopMoney", {}).get("amount", 0))
-        tax   = float(n.get("totalTaxSet", {}).get("shopMoney", {}).get("amount", 0))
-        net   = (gross - tax) if tax > 0 else round(gross / 1.1, 2)
-        monthly[n["createdAt"][:7]] += net
-    rows = [{"brand_id": brand_id, "month_key": mk, "revenue": round(v, 2)} for mk, v in monthly.items()]
+    rows, parts = [], []
+    for source in SOURCES:
+        try:
+            edges = source_orders(domain, token, source)
+        except Exception as e:
+            print(f"  {name} / {source}: error ({str(e)[:50]})"); continue
+        # exact match on sourceName (the search can be fuzzy)
+        edges = [e for e in edges if (e["node"].get("sourceName") or "").lower() == source.lower()]
+        monthly = defaultdict(float)
+        for e in edges:
+            monthly[e["node"]["createdAt"][:7]] += net(e["node"])
+        for mk, v in monthly.items():
+            rows.append({"brand_id": brand_id, "month_key": mk, "source": source, "revenue": round(v, 2)})
+        if monthly:
+            parts.append(f"{source} ${sum(monthly.values()):,.0f}")
     sb_upsert(rows)
-    print(f"{len(edges)} Faire orders · ${sum(monthly.values()):,.0f}")
+    if parts:
+        print(f"  {name}: " + " · ".join(parts))
 
 def main():
     with open(CONFIG_PATH) as f:
@@ -103,7 +116,7 @@ def main():
     brands = [b for b in config.get("brands", []) if b.get("domain") and b.get("token")]
     if not brands:
         print("No brands with Shopify domain/token"); sys.exit(1)
-    print(f"Syncing Faire orders for {len(brands)} brand(s)...\n")
+    print(f"Syncing Shopify special sources {SOURCES} for {len(brands)} brand(s)...\n")
     for b in brands:
         try:
             sync_brand(b["id"], b["name"], b["domain"], b["token"])
