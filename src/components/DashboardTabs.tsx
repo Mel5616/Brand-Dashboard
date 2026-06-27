@@ -813,6 +813,9 @@ export function DashboardTabs({
                 instagramMedia={instagramMedia}
                 marketingBudgets={marketingBudgets}
                 marketingActuals={marketingActuals}
+                brandInsights={brandInsights}
+                semrushMetrics={semrushMetrics}
+                semrushKeywords={semrushKeywords}
               />
             </>
           )}

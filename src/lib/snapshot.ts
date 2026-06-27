@@ -32,6 +32,10 @@ export type SnapshotInput = {
   // Marketing budget vs spend (budgets already filtered to the FY, actuals to the FY months upstream)
   marketingBudgets: { brand_id: number; channel: string; annual_budget: number }[];
   marketingActuals: { brand_id: number; month_key: string; channel: string; spend: number }[];
+  // AI insight narrative + SEMrush organic data for the "opportunities to move" block
+  brandInsights: { brand_id: number; content: string; generated_at: string }[];
+  semrushMetrics: { brand_id: number; month_key: string; organic_keywords: number; organic_traffic: number; traffic_value: number }[];
+  semrushKeywords: { brand_id: number; month_key: string; phrase: string; position: number; search_volume: number; cpc: number; url: string }[];
   note?: string;            // editable commentary rendered into the report
 };
 
@@ -138,6 +142,25 @@ export function buildSnapshot(d: SnapshotInput) {
     { name: "Other", spend: otherSpend, color: "#BDD4E7" },
   ].filter(c => c.spend > 0);
 
+  // ── AI insight + SEMrush organic opportunities ──────────────────────
+  const aiInsight = [...forBrand(d.brandInsights)].sort((a, b) => (b.generated_at || "").localeCompare(a.generated_at || ""))[0]?.content ?? "";
+  const smRows = forBrand(d.semrushKeywords);
+  const smMonth = [...new Set(smRows.map(k => k.month_key))].sort().pop() ?? null;
+  const opportunities = smRows
+    .filter(k => k.month_key === smMonth && k.position >= 4 && k.position <= 20 && k.search_volume > 0)
+    .sort((a, b) => b.search_volume - a.search_volume)
+    .slice(0, 6)
+    .map(k => ({ phrase: k.phrase, position: Math.round(k.position), volume: k.search_volume, cpc: k.cpc, url: k.url }));
+  const smMetric = forBrand(d.semrushMetrics).find(m => m.month_key === smMonth)
+    ?? [...forBrand(d.semrushMetrics)].sort((a, b) => b.month_key.localeCompare(a.month_key))[0];
+  const seo = {
+    month: smMonth,
+    keywords: smMetric?.organic_keywords ?? 0,
+    traffic: smMetric?.organic_traffic ?? 0,
+    value: smMetric?.traffic_value ?? 0,
+    opportunities,
+  };
+
   // ── Seasonality (share of FY revenue per month) ─────────────────────
   const seasonal = monthKeys.map((mk, i) => ({
     label: monthLabels[i], month_key: mk,
@@ -158,6 +181,7 @@ export function buildSnapshot(d: SnapshotInput) {
     seasonal, peakShare, peakMonthKey: topShare?.month_key,
     wholeFy, wholeMonth, wholeTrend, digitalShare, channelRows,
     marketing: { annualBudget, monthBudget, spend: mktSpend, channels: mktChannels },
+    aiInsight, seo,
     igPosts, monthLabelsAll: monthLabels,
     note: d.note ?? "",
   };
@@ -257,6 +281,21 @@ export function snapshotHtml(s: Snapshot): string {
     <div class="iggrid">${igCards}</div>
   </div>` : "";
 
+  // AI insights + SEMrush "opportunities to move" (striking-distance keywords).
+  const cleanInsight = (t: string) => esc(t).replace(/^#{1,6}\s*/gm, "").replace(/^\s*[-*]\s+/gm, "• ").replace(/\*\*(.+?)\*\*/g, "$1").trim().slice(0, 900);
+  const opp = s.seo.opportunities;
+  const oppRows = opp.map(o => `<tr><td><span class="pos">#${o.position}</span> &nbsp;${esc(o.phrase)}</td><td class="r">${o.volume.toLocaleString()}</td><td class="r">${o.cpc ? "$" + o.cpc.toFixed(2) : "—"}</td></tr>`).join("");
+  const aiBlock = s.aiInsight ? `<div class="ai"><div class="aitext">${cleanInsight(s.aiInsight).replace(/\n/g, "<br>")}</div></div>` : "";
+  const seoBlock = opp.length ? `
+    <div class="seostat">SEMrush organic visibility: <strong>${s.seo.keywords.toLocaleString()}</strong> keywords · <strong>${Math.round(s.seo.traffic).toLocaleString()}</strong> est. visits/mo · <strong>${fmt(s.seo.value)}</strong> traffic value</div>
+    <table class="optbl"><thead><tr><th>Opportunity to move &middot; ranks 4&ndash;20</th><th class="r">Searches/mo</th><th class="r">CPC</th></tr></thead><tbody>${oppRows}</tbody></table>` : "";
+  const aiSection = (aiBlock || seoBlock) ? `
+  <div class="sec">
+    <div class="h">AI insights &amp; SEO opportunities</div>
+    ${aiBlock}
+    ${seoBlock}
+  </div>` : "";
+
   const notesSection = (s.note && s.note.trim()) ? `
   <div class="notes"><div class="h">Notes &amp; commentary</div><div class="ntext">${esc(s.note.trim()).replace(/\n/g, "<br>")}</div></div>` : "";
 
@@ -330,6 +369,15 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
 .igc .igb{padding:8px 9px 10px;}
 .igc .igm{font-size:10px;font-weight:800;color:var(--navy);}
 .igc .igcap{font-size:9.5px;color:var(--grey);margin-top:4px;line-height:1.35;font-weight:500;max-height:38px;overflow:hidden;}
+.ai{border-left:3px solid var(--blue);background:#fbfcfd;padding:13px 16px;margin-bottom:14px;}
+.ai .aitext{font-size:11.5px;color:var(--ink);line-height:1.6;font-weight:500;}
+.seostat{font-size:11px;color:var(--grey);font-weight:600;margin:4px 0 2px;}
+.seostat strong{color:var(--navy);font-weight:800;}
+.optbl{width:100%;border-collapse:collapse;margin-top:8px;font-size:11.5px;}
+.optbl th{text-align:left;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--grey);font-weight:700;padding:0 0 6px;border-bottom:1px solid var(--line);}
+.optbl th.r,.optbl td.r{text-align:right;}
+.optbl td{padding:7px 0;border-bottom:1px solid var(--line);color:var(--ink);font-weight:500;}
+.optbl .pos{display:inline-block;min-width:26px;text-align:center;font-weight:800;color:#fff;background:var(--blue);border-radius:3px;font-size:10px;padding:1px 0;}
 .notes{margin-top:30px;border:1px solid var(--blue-soft);background:var(--blue-wash);padding:16px 18px;}
 .notes .h{font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--navy);margin-bottom:9px;}
 .notes .ntext{font-size:12px;color:var(--ink);line-height:1.6;font-weight:500;}
@@ -390,6 +438,8 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
   ${s.topProduct ? `<div class="product"><div class="l"><div class="lab">Top performing product · FY</div><div class="name">${esc(s.topProduct.title)}</div><div class="sub">The hero SKU driving the AU range</div></div><div class="v">${fmtFull(s.topProduct.gross_sales)}</div></div>` : ""}
 
   ${igSection}
+
+  ${aiSection}
 
   ${notesSection}
 
