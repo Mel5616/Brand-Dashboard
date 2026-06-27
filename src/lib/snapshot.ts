@@ -496,6 +496,6 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
 
   ${notesSection}
 
-  <div class="foot"><strong>Source:</strong> Coolkidz Australia sales &amp; marketing dashboard, ${esc(s.fyLabel)}. Channel data from Google Ads, Meta Ads Manager, Shopify and Klaviyo. Deltas shown against the prior month.<br>Figures reflect ${esc(s.brand.name)} AU performance across all sales channels (direct-to-consumer, retail and wholesale) and digital marketing.</div>
+  <div class="foot"><strong>Private &amp; confidential.</strong> Prepared by Coolkidz Australia, official Australian distributor of ${esc(s.brand.name)}. This report contains confidential business information intended solely for ${esc(s.brand.name)}. Please do not distribute, copy or share without prior written permission.</div>
 </div></body></html>`;
 }
