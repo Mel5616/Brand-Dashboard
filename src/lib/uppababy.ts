@@ -104,8 +104,8 @@ function svgCompare(s25: number[], s26: (number | null)[]): string {
 }
 
 export function uppababyHtml(u: Uppa, snap: Snapshot, periodLabel: string): string {
-  const ch = (c: typeof u.channels[number]) => `<tr><td class="cn">${titleCase(c.name)}</td><td>${fmtFull(c.ytd2025)}</td><td>${fmtFull(c.ytd2026)}</td><td class="${c.delta >= 0 ? "up" : "dn"}">${c.delta >= 0 ? "+" : "−"}${fmtFull(Math.abs(c.delta))}</td><td class="${(c.pct ?? 0) >= 0 ? "up" : "dn"}">${pctTag(c.pct)}</td></tr>`;
-  const q = (x: typeof u.quarters[number]) => `<tr><td class="cn">${x.label}${x.partial ? "<span style='color:var(--grey);font-weight:600'> · to date</span>" : ""}</td><td>${fmtFull(x.t2025)}</td><td>${fmtFull(x.t2026)}</td><td class="${x.delta >= 0 ? "up" : "dn"}">${x.delta >= 0 ? "+" : "−"}${fmtFull(Math.abs(x.delta))}</td><td>${pctTag(x.pct)}</td></tr>`;
+  const ch = (c: typeof u.channels[number]) => `<tr><td class="cn">${titleCase(c.name)}</td><td>${fmtFull(c.ytd2025)}</td><td class="cy">${fmtFull(c.ytd2026)}</td><td class="${c.delta >= 0 ? "up" : "dn"}">${c.delta >= 0 ? "+" : "−"}${fmtFull(Math.abs(c.delta))}</td><td class="${(c.pct ?? 0) >= 0 ? "up" : "dn"}">${pctTag(c.pct)}</td></tr>`;
+  const q = (x: typeof u.quarters[number]) => `<tr><td class="cn">${x.label}${x.partial ? "<span style='color:var(--grey);font-weight:600'> · to date</span>" : ""}</td><td>${fmtFull(x.t2025)}</td><td class="cy">${fmtFull(x.t2026)}</td><td class="${x.delta >= 0 ? "up" : "dn"}">${x.delta >= 0 ? "+" : "−"}${fmtFull(Math.abs(x.delta))}</td><td>${pctTag(x.pct)}</td></tr>`;
   const m = snap; // marketing numbers reused from the Snapshot computation
   const r = (k: string, v: string) => `<div class="r"><span class="k">${k}</span><span class="val">${v}</span></div>`;
 
@@ -139,6 +139,8 @@ table.cmp td.cn{text-align:left;color:var(--ink);font-weight:700;}
 table.cmp tr:last-child td{border-bottom:none;}
 table.cmp .tot td{border-top:2px solid var(--line);font-weight:800;color:var(--ink);padding-top:9px;}
 .up{color:var(--up);}.dn{color:var(--dn);}
+table.cmp th.cy,table.cmp td.cy{background:rgba(8,145,178,.07);}
+table.cmp th.cy{box-shadow:inset 0 -1px 0 var(--line);}
 .trend{margin-top:14px;border:1px solid var(--line);padding:14px 16px 8px;}
 .trend .tl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--grey);font-weight:700;}
 .lgnd{display:flex;gap:16px;margin-top:4px;}
@@ -170,14 +172,14 @@ table.cmp .tot td{border-top:2px solid var(--line);font-weight:800;color:var(--i
 
   <div class="sec">
     <div class="h">Sales by channel · year to date (through ${esc(u.latestMonthLabel)})</div>
-    <table class="cmp"><thead><tr><th>Channel</th><th>2025 YTD</th><th>2026 YTD</th><th>Difference</th><th>Change</th></tr></thead>
-    <tbody>${u.channels.map(ch).join("")}<tr class="tot"><td class="cn">Total</td><td>${fmtFull(u.total.ytd2025)}</td><td>${fmtFull(u.total.ytd2026)}</td><td class="${u.totalDelta >= 0 ? "up" : "dn"}">${u.totalDelta >= 0 ? "+" : "−"}${fmtFull(Math.abs(u.totalDelta))}</td><td>${pctTag(u.totalPct)}</td></tr></tbody></table>
+    <table class="cmp"><thead><tr><th>Channel</th><th>2025 YTD</th><th class="cy">2026 YTD</th><th>Difference</th><th>Change</th></tr></thead>
+    <tbody>${u.channels.map(ch).join("")}<tr class="tot"><td class="cn">Total</td><td>${fmtFull(u.total.ytd2025)}</td><td class="cy">${fmtFull(u.total.ytd2026)}</td><td class="${u.totalDelta >= 0 ? "up" : "dn"}">${u.totalDelta >= 0 ? "+" : "−"}${fmtFull(Math.abs(u.totalDelta))}</td><td>${pctTag(u.totalPct)}</td></tr></tbody></table>
     <div class="trend"><div class="tl">Monthly sales · 2025 vs 2026</div>${svgCompare(u.monthly2025, u.monthly2026)}<div class="lgnd"><span><i style="background:#cbd5e1"></i>2025</span><span><i style="background:#0891b2"></i>2026</span></div></div>
   </div>
 
   <div class="sec">
     <div class="h">Quarterly comparison</div>
-    <table class="cmp"><thead><tr><th>Quarter</th><th>2025</th><th>2026</th><th>Difference</th><th>Change</th></tr></thead><tbody>${u.quarters.map(q).join("")}</tbody></table>
+    <table class="cmp"><thead><tr><th>Quarter</th><th>2025</th><th class="cy">2026</th><th>Difference</th><th>Change</th></tr></thead><tbody>${u.quarters.map(q).join("")}</tbody></table>
     ${u.anyPartial ? `<p style="font-size:10px;color:var(--grey);margin-top:8px;font-weight:500">Quarters in progress compare the same completed months in each year (like-for-like).</p>` : ""}
   </div>
 
