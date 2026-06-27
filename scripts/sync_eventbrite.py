@@ -121,7 +121,15 @@ def main():
         print("No eventbriteToken in stores.config.json (or EVENTBRITE_TOKEN env) — skipping"); return
     brands = config.get("brands", [])
 
-    org_ids = get_org_ids(token, config.get("eventbriteOrgId"))
+    try:
+        org_ids = get_org_ids(token, config.get("eventbriteOrgId"))
+    except urllib.error.HTTPError as e:
+        if e.code == 401:
+            print("Eventbrite rejected the token (401 Unauthorized). Check the EVENTBRITE_TOKEN "
+                  "secret is your *Private token* (not the API key / client secret / public token), "
+                  "with no extra spaces — and if you regenerated it, update the secret.")
+            return
+        raise
     if not org_ids:
         print("Could not resolve an Eventbrite organisation for this token"); return
     print(f"Organisations ({len(org_ids)}): {org_ids}", flush=True)
