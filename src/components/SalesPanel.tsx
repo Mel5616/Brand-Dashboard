@@ -30,13 +30,18 @@ function Card({ label, value, sub, accent }: { label: string; value: string; sub
   );
 }
 
+type Tradeshow = { id: string; date_start: string };
+type TradeshowSale = { tradeshow_id: string; brand_id: number; revenue: number };
+
 export function SalesPanel({
-  scope, brands, channelSales, monthly, monthKeys, monthLabels, latest, canUpload,
+  scope, brands, channelSales, monthly, tradeshows, tradeshowSales, monthKeys, monthLabels, latest, canUpload,
 }: {
   scope: number | "all";
   brands: Brand[];
   channelSales: ChannelSaleRow[];
   monthly: BrandMonthly[];
+  tradeshows: Tradeshow[];
+  tradeshowSales: TradeshowSale[];
   monthKeys: string[];
   monthLabels: string[];
   latest: string;
@@ -102,19 +107,30 @@ export function SalesPanel({
   const offline = rows.filter(r => !r.is_online); // Shopify rows excluded — online comes live
   const hasData = offline.length > 0 || liveMonthly.some(m => m.revenue > 0);
 
+  // Tradeshow sales (per show → month via date_start). These are Shopify/POS orders inside
+  // the live Website Sales total, so we report them separately and net them out of online.
+  const showMonth = Object.fromEntries(tradeshows.map(t => [t.id, (t.date_start || "").slice(0, 7)]));
+  const tsByMonth = (mk: string) => sum(
+    tradeshowSales
+      .filter(s => showMonth[s.tradeshow_id] === mk && (scope === "all" || s.brand_id === scope))
+      .map(s => s.revenue)
+  );
+
   // Channel classification for the file (non-Shopify) rows:
-  //   API → Marketplace · no-group Backend/Cloud → Direct Sales · else the customer group.
+  //   API → Marketplace · no-group Backend/Cloud → Website Sales · else the customer group.
   const channelOf = (r: ChannelSaleRow) =>
     r.register === "API" ? "Marketplace"
-    : (!r.customer_group || r.customer_group === "Other") ? "Direct Sales"
+    : (!r.customer_group || r.customer_group === "Other") ? "Website Sales"
     : r.customer_group;
 
-  // Website Sales = live total Shopify (always current) + its file backend/cloud lines.
-  const valueOf = (ch: string, mk: string) =>
-    (ch === "Website Sales" ? sum(liveMonthly.filter(m => m.month_key === mk).map(m => m.revenue)) : 0)
-    + sum(offline.filter(r => channelOf(r) === ch && r.month_key === mk).map(r => r.value));
+  // Website Sales = live total Shopify (less tradeshow) + its file backend/cloud + no-group lines.
+  const valueOf = (ch: string, mk: string) => {
+    if (ch === "Tradeshows") return tsByMonth(mk);
+    const base = ch === "Website Sales" ? sum(liveMonthly.filter(m => m.month_key === mk).map(m => m.revenue)) - tsByMonth(mk) : 0;
+    return base + sum(offline.filter(r => channelOf(r) === ch && r.month_key === mk).map(r => r.value));
+  };
 
-  const names = new Set<string>(["Website Sales", ...offline.map(channelOf)]);
+  const names = new Set<string>(["Website Sales", "Tradeshows", ...offline.map(channelOf)]);
   const channelRow = (name: string) => {
     const series = monthKeys.map(mk => valueOf(name, mk));
     return { name, series, fy: sum(series), latest: valueOf(name, latest) };

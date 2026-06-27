@@ -661,7 +661,7 @@ export function DashboardTabs({
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
                 </select>
               </div>
-              <SalesPanel scope={brandFilter} brands={brands} channelSales={channelSales} monthly={monthly} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} canUpload={role === "admin"} />
+              <SalesPanel scope={brandFilter} brands={brands} channelSales={channelSales} monthly={monthly} tradeshows={tradeshows} tradeshowSales={tradeshowSales} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} canUpload={role === "admin"} />
             </>
           )}
 
