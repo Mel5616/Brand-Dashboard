@@ -7,12 +7,17 @@ import { useEffect, useMemo, useState } from "react";
 
 type Product = { style_code: string; product_name: string; brand: string; rrp: number | null };
 
+// Months of the financial year that contains today (Jul–Jun), so the current month
+// is always selectable. Defaults to the current month.
+const NOW = new Date();
+const FY_START_YEAR = NOW.getMonth() >= 6 ? NOW.getFullYear() : NOW.getFullYear() - 1; // getMonth() 6 = July
 const FY_MONTHS = Array.from({ length: 12 }, (_, i) => {
-  const m = 7 + i; const y = m <= 12 ? 2026 : 2027; const mm = ((m - 1) % 12) + 1;
-  const key = `${y}-${String(mm).padStart(2, "0")}`;
-  const label = new Date(`${key}-01T00:00:00`).toLocaleDateString("en-AU", { month: "short", year: "numeric" });
+  const d = new Date(FY_START_YEAR, 6 + i, 1);
+  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  const label = d.toLocaleDateString("en-AU", { month: "short", year: "numeric" });
   return { key, label };
 });
+const CURRENT_MONTH_KEY = `${NOW.getFullYear()}-${String(NOW.getMonth() + 1).padStart(2, "0")}`;
 const BRANDS = ["UPPAbaby", "Gaia", "WonderFold", "SmarTrike", "Frida", "Nanit", "Hannie", "Magic", "Mamave", "Matchstick Monkey", "Zazu", "MiaMily"];
 const PLATFORMS = ["Instagram", "TikTok", "YouTube", "Multiple", "Other"];
 
@@ -23,7 +28,7 @@ export default function LogGift() {
   const [done, setDone] = useState(false);
   const [err, setErr] = useState("");
 
-  const [f, setF] = useState<any>({ month_key: FY_MONTHS[0].key, platform: "Instagram" });
+  const [f, setF] = useState<any>({ month_key: CURRENT_MONTH_KEY, platform: "Instagram" });
   const [oneOff, setOneOff] = useState(false);
   const [search, setSearch] = useState("");
   const [picked, setPicked] = useState<Product | null>(null);
@@ -125,7 +130,16 @@ export default function LogGift() {
                   ))}
                 </div>
               )}
-              {picked && <p className="text-[12px] text-gray-500 mt-1.5">{picked.brand} · RRP ${picked.rrp ?? "—"}</p>}
+              {picked && <p className="text-[12px] text-gray-500 mt-1.5">{[picked.brand, `RRP $${picked.rrp ?? "—"}`].filter(Boolean).join(" · ")}</p>}
+              {picked && !f.brand && (
+                <div className="mt-2">
+                  <label className={label}>Brand <span className="text-rose-400 font-normal">(needed to log)</span></label>
+                  <select value={f.brand ?? ""} onChange={e => set("brand", e.target.value)} className={input}>
+                    <option value="">Select brand…</option>
+                    {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+                  </select>
+                </div>
+              )}
               <button onClick={() => { setOneOff(true); clearPick(); }} className="text-[11px] text-indigo-600 hover:underline mt-2">Can’t find it? Enter manually</button>
             </div>
           ) : (
