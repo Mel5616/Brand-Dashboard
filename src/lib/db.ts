@@ -233,6 +233,7 @@ export async function getDashboardData() {
     { data: instagramMedia },
     { data: channelSales },
     { data: shopifySources },
+    { data: edmCampaigns },
   ] = await Promise.all([
     db.from("brands").select("*").order("id"),
     db.from("brand_summary").select("*"),
@@ -267,6 +268,7 @@ export async function getDashboardData() {
     db.from("instagram_media").select("*").order("posted_at", { ascending: false }),
     db.from("channel_sales").select("*"),
     db.from("shopify_source_sales").select("*"),
+    db.from("edm_campaigns").select("*").order("sent_at", { ascending: false }),
   ]);
 
   return {
@@ -303,8 +305,11 @@ export async function getDashboardData() {
     instagramMedia: (instagramMedia ?? []) as InstagramMediaRow[],
     channelSales: (channelSales ?? []) as ChannelSaleRow[],
     shopifySources: (shopifySources ?? []) as ShopifySourceRow[],
+    edmCampaigns: (edmCampaigns ?? []) as EdmCampaign[],
   };
 }
+
+export type EdmCampaign = { brand_id: number; campaign_id: string; month_key: string | null; name: string | null; subject: string | null; sent_at: string | null; image_url: string | null; web_url: string | null };
 
 export type ChannelSaleRow = { month_key: string; brand: string; customer_group: string; register: string; value: number; is_online: boolean };
 export type ShopifySourceRow = { brand_id: number; month_key: string; source: string; revenue: number };

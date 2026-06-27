@@ -6,6 +6,7 @@ import { GoogleAdsChart } from "./GoogleAdsChart";
 import { MetaAdsChart } from "./MetaAdsChart";
 import { EmailChart } from "./EmailChart";
 import { EmailBrandDetail } from "./EmailBrandDetail";
+import { EdmGallery } from "./EdmGallery";
 import { BrandReport } from "./BrandReport";
 import { buildReport } from "@/lib/report";
 import { GoogleCampaignTable, MetaPlatformBreakdown } from "./ChannelBrandDetail";
@@ -170,6 +171,7 @@ interface Props {
   instagramMedia: any[];
   channelSales: any[];
   shopifySources: any[];
+  edmCampaigns: any[];
   boothFunnel: any;
   kpis: { label: string; value: string; sub: string }[];
   role?: "admin" | "member";
@@ -183,7 +185,7 @@ export function DashboardTabs({
   instagramOrganic, targets, klaviyo, ga4,
   marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, boothFunnel, kpis,
   gscMetrics, gscQueries, gscInsights, semrushMetrics, semrushCompetitors,
-  semrushKeywords, semrushPages, brandInsights, instagramMedia, channelSales, shopifySources,
+  semrushKeywords, semrushPages, brandInsights, instagramMedia, channelSales, shopifySources, edmCampaigns,
   role = "admin", allowedTabs,
 }: Props) {
   // Financial tabs (cost / margin / budget) are admin-only even if otherwise granted.
@@ -816,6 +818,7 @@ export function DashboardTabs({
                 brandInsights={brandInsights}
                 semrushMetrics={semrushMetrics}
                 semrushKeywords={semrushKeywords}
+                edmCampaigns={edmCampaigns}
               />
             </>
           )}
@@ -1201,6 +1204,7 @@ export function DashboardTabs({
                   </button>
                 )}
               </div>
+              <EdmGallery campaigns={edmCampaigns} brandFilter={brandFilter} monthKeys={monthKeys} />
               {brandFilter !== "all" ? (
                 <EmailBrandDetail brand={brands.find((b: any) => b.id === brandFilter)!} klaviyo={klaviyo} monthly={monthly} monthKeys={monthKeys} monthLabels={monthLabels} />
               ) : (

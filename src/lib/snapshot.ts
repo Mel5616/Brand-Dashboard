@@ -36,6 +36,7 @@ export type SnapshotInput = {
   brandInsights: { brand_id: number; content: string; generated_at: string }[];
   semrushMetrics: { brand_id: number; month_key: string; organic_keywords: number; organic_traffic: number; traffic_value: number }[];
   semrushKeywords: { brand_id: number; month_key: string; phrase: string; position: number; search_volume: number; cpc: number; url: string }[];
+  edmCampaigns: { brand_id: number; campaign_id: string; month_key: string | null; name: string | null; subject: string | null; sent_at: string | null; image_url: string | null; web_url: string | null }[];
   note?: string;            // editable commentary rendered into the report
 };
 
@@ -161,6 +162,11 @@ export function buildSnapshot(d: SnapshotInput) {
     opportunities,
   };
 
+  // ── EDM creatives for this month (fall back to most recent if none in-month) ─
+  const edmAll = [...forBrand(d.edmCampaigns)].sort((a, b) => (b.sent_at || "").localeCompare(a.sent_at || ""));
+  const edmThisMonth = edmAll.filter(c => c.month_key === month);
+  const edms = (edmThisMonth.length ? edmThisMonth : edmAll).slice(0, 5);
+
   // ── Seasonality (share of FY revenue per month) ─────────────────────
   const seasonal = monthKeys.map((mk, i) => ({
     label: monthLabels[i], month_key: mk,
@@ -181,7 +187,7 @@ export function buildSnapshot(d: SnapshotInput) {
     seasonal, peakShare, peakMonthKey: topShare?.month_key,
     wholeFy, wholeMonth, wholeTrend, digitalShare, channelRows,
     marketing: { annualBudget, monthBudget, spend: mktSpend, channels: mktChannels },
-    aiInsight, seo,
+    aiInsight, seo, edms,
     igPosts, monthLabelsAll: monthLabels,
     note: d.note ?? "",
   };
@@ -271,6 +277,15 @@ export function snapshotHtml(s: Snapshot): string {
       <div class="c"><div class="l">${mkDiff >= 0 ? "Under budget" : "Over budget"}</div><div class="v">${fmt(Math.abs(mkDiff))}</div></div>
     </div>
     ${mk.channels.length ? `<div class="chanwrap"><div><div class="chanbar">${mkBar}</div></div><div class="chanlist">${mkLegend}</div></div>` : ""}
+  </div>` : "";
+
+  // Email creatives (EDMs) that went out — a thumbnail strip.
+  const edmDate = (s: string | null) => s ? new Date(s).toLocaleDateString("en-AU", { day: "numeric", month: "short" }) : "";
+  const edmCards = s.edms.map(e => `<div class="edmc"><div class="edmimg"${e.image_url ? ` style="background-image:url('${esc(e.image_url)}')"` : ""}></div><div class="edmb"><div class="edms">${esc(e.subject || e.name || "Campaign")}</div><div class="edmd">${esc(edmDate(e.sent_at))}</div></div></div>`).join("");
+  const edmSection = s.edms.length ? `
+  <div class="sec">
+    <div class="h">Email creative · sent campaigns</div>
+    <div class="edmgrid">${edmCards}</div>
   </div>` : "";
 
   // Top Instagram posts by engagement.
@@ -378,11 +393,17 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
 .optbl th.r,.optbl td.r{text-align:right;}
 .optbl td{padding:7px 0;border-bottom:1px solid var(--line);color:var(--ink);font-weight:500;}
 .optbl .pos{display:inline-block;min-width:26px;text-align:center;font-weight:800;color:#fff;background:var(--blue);border-radius:3px;font-size:10px;padding:1px 0;}
+.edmgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+.edmc{border:1px solid var(--line);border-radius:6px;overflow:hidden;background:#fbfcfd;}
+.edmc .edmimg{aspect-ratio:3/4;background:#eef2f6;background-size:cover;background-position:top center;}
+.edmc .edmb{padding:7px 8px 9px;}
+.edmc .edms{font-size:9.5px;color:var(--ink);font-weight:600;line-height:1.3;max-height:38px;overflow:hidden;}
+.edmc .edmd{font-size:8.5px;color:var(--grey);margin-top:3px;font-weight:600;}
 .notes{margin-top:30px;border:1px solid var(--blue-soft);background:var(--blue-wash);padding:16px 18px;}
 .notes .h{font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--navy);margin-bottom:9px;}
 .notes .ntext{font-size:12px;color:var(--ink);line-height:1.6;font-weight:500;}
-@media print{body{background:#fff;padding:0;}.page{box-shadow:none;max-width:none;padding:30px 34px;}@page{size:A4;margin:12mm;}.sec,.notes{break-inside:avoid;}.iggrid{break-inside:avoid;}}
-@media(max-width:680px){.hero{grid-template-columns:1fr;}.grid{grid-template-columns:1fr;}.seasonal{flex-direction:column;align-items:stretch;}.seasonal .copy{flex:none;}.masthead{flex-direction:column;align-items:flex-start;gap:10px;}.stamp{text-align:left;}.kpis{grid-template-columns:1fr 1fr;}.chanwrap{grid-template-columns:1fr;}.iggrid{grid-template-columns:1fr 1fr;}}
+@media print{body{background:#fff;padding:0;}.page{box-shadow:none;max-width:none;padding:30px 34px;}@page{size:A4;margin:12mm;}.sec,.notes{break-inside:avoid;}.iggrid,.edmgrid{break-inside:avoid;}}
+@media(max-width:680px){.hero{grid-template-columns:1fr;}.grid{grid-template-columns:1fr;}.seasonal{flex-direction:column;align-items:stretch;}.seasonal .copy{flex:none;}.masthead{flex-direction:column;align-items:flex-start;gap:10px;}.stamp{text-align:left;}.kpis{grid-template-columns:1fr 1fr;}.chanwrap{grid-template-columns:1fr;}.iggrid{grid-template-columns:1fr 1fr;}.edmgrid{grid-template-columns:1fr 1fr;}}
 </style></head>
 <body><div class="page">
   <div class="masthead">
@@ -434,6 +455,8 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
       s.meta.cpaDelta != null ? r(`Cost per acquisition`, s.meta.cpaDelta < 0 ? `down ${Math.abs(s.meta.cpaDelta).toFixed(0)}%` : `up ${s.meta.cpaDelta.toFixed(0)}%`) : "",
     ].join(""), metaTag)}
   </div>
+
+  ${edmSection}
 
   ${s.topProduct ? `<div class="product"><div class="l"><div class="lab">Top performing product · FY</div><div class="name">${esc(s.topProduct.title)}</div><div class="sub">The hero SKU driving the AU range</div></div><div class="v">${fmtFull(s.topProduct.gross_sales)}</div></div>` : ""}
 
