@@ -12,6 +12,7 @@ import { GoogleCampaignTable, MetaPlatformBreakdown } from "./ChannelBrandDetail
 import { CampaignCalendar } from "./CampaignCalendar";
 import { SeoPanel } from "./SeoPanel";
 import { InsightsPanel } from "./InsightsPanel";
+import { SocialPanel } from "./SocialPanel";
 import { SectionBar } from "./ui";
 import { ProductsTable } from "./ProductsTable";
 import { TradeshowAccordion } from "./TradeshowAccordion";
@@ -29,7 +30,7 @@ import { ShopifyInsights } from "./ShopifyInsights";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "brands" | "insights" | "campaign-calendar" | "report" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "tradeshows" | "budget" | "calendar" | "content" | "influencer" | "team";
+type TabId = "brands" | "insights" | "campaign-calendar" | "report" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "budget" | "calendar" | "content" | "influencer" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -67,6 +68,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
     id: "seo", label: "SEO",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
+  },
+  {
+    id: "social", label: "Social",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5" strokeWidth={2} /><circle cx="12" cy="12" r="3.5" strokeWidth={2} /><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" /></svg>,
   },
   {
     id: "tradeshows", label: "Tradeshows",
@@ -141,6 +146,7 @@ interface Props {
   semrushKeywords: any[];
   semrushPages: any[];
   brandInsights: any[];
+  instagramMedia: any[];
   boothFunnel: any;
   kpis: { label: string; value: string; sub: string }[];
   role?: "admin" | "member";
@@ -154,7 +160,7 @@ export function DashboardTabs({
   instagramOrganic, targets, klaviyo, ga4,
   marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, boothFunnel, kpis,
   gscMetrics, gscQueries, gscInsights, semrushMetrics, semrushCompetitors,
-  semrushKeywords, semrushPages, brandInsights,
+  semrushKeywords, semrushPages, brandInsights, instagramMedia,
   role = "admin", allowedTabs,
 }: Props) {
   // Financial tabs (cost / margin / budget) are admin-only even if otherwise granted.
@@ -1145,6 +1151,24 @@ export function DashboardTabs({
                 </select>
               </div>
               <SeoPanel scope={brandFilter} brands={brands} gscMetrics={gscMetrics} gscQueries={gscQueries} gscInsights={gscInsights} semrushMetrics={semrushMetrics} semrushCompetitors={semrushCompetitors} semrushKeywords={semrushKeywords} semrushPages={semrushPages} monthKeys={monthKeys} monthLabels={monthLabels} />
+            </>
+          )}
+
+          {/* ── Social (Instagram visual feed + metrics) ── */}
+          {active === "social" && (
+            <>
+              <SectionBar title="Social · Instagram" />
+              <div className="flex items-center gap-2 mb-3">
+                <select
+                  value={brandFilter === "all" ? "all" : String(brandFilter)}
+                  onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
+                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                >
+                  <option value="all">All Brands (Portfolio)</option>
+                  {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
+                </select>
+              </div>
+              <SocialPanel scope={brandFilter} brands={brands} instagramOrganic={instagramOrganic} instagramMedia={instagramMedia} monthKeys={monthKeys} onSelectBrand={setBrandFilter} />
             </>
           )}
 

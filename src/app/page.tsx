@@ -31,7 +31,7 @@ export default async function Dashboard() {
     weekLabels, lastSync, googleAds, metaAds, metaAdsPlatform,
     instagramOrganic, targets, klaviyo, ga4, marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, aiInsight,
     gscMetrics, gscQueries, gscInsights, semrushMetrics, semrushCompetitors,
-    semrushKeywords, semrushPages, brandInsights,
+    semrushKeywords, semrushPages, brandInsights, instagramMedia,
   } = await getDashboardData();
 
   const boothFunnel = await getBoothFunnel();
@@ -113,6 +113,7 @@ export default async function Dashboard() {
         semrushKeywords={semrushKeywords}
         semrushPages={semrushPages}
         brandInsights={brandInsights}
+        instagramMedia={instagramMedia}
         boothFunnel={boothFunnel}
         kpis={kpis}
       />
