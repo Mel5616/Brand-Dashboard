@@ -19,6 +19,7 @@ export default function LogGift() {
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
   const [err, setErr] = useState("");
+  const [batch, setBatch] = useState(0); // products logged in this multi-product session
 
   const [f, setF] = useState<any>({ month_key: FY_MONTHS[0].key, platform: "Instagram" });
   const [oneOff, setOneOff] = useState(false);
@@ -61,13 +62,20 @@ export default function LogGift() {
 
   const valid = f.month_key && f.handle && f.brand && (f.rrp != null && f.rrp !== "");
 
-  async function submit() {
+  async function submit(addAnother = false) {
     if (!valid) return;
     setSaving(true); setErr("");
     const body = { ...f, rrp: Number(f.rrp), influencer_cost: f.influencer_cost ? Number(f.influencer_cost) : 0 };
     const res = await fetch("/api/influencer/entries", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()).catch(() => null);
     setSaving(false);
-    if (res?.ok) setDone(true);
+    if (res?.ok) {
+      if (addAnother) {
+        // Keep the influencer + month; clear just the product (and the cash fee, so it
+        // isn't counted again for the same collaboration) so the next product is quick.
+        setBatch(b => b + 1); setPicked(null); setSearch(""); setOneOff(false);
+        setF((p: any) => ({ month_key: p.month_key, name: p.name, handle: p.handle, platform: p.platform, followers: p.followers, campaign: p.campaign }));
+      } else setDone(true);
+    }
     else if (res?.needsSetup) setNeedsSetup(true);
     else setErr("Couldn't save — please try again.");
   }
@@ -90,7 +98,7 @@ export default function LogGift() {
         <div className="text-4xl mb-2">✅</div>
         <p className="text-lg font-semibold text-gray-800">Gift logged</p>
         <p className="text-sm text-gray-400 mt-1">Thanks! Your entry has been recorded.</p>
-        <button onClick={() => { setDone(false); setPicked(null); setSearch(""); setF({ month_key: f.month_key, platform: "Instagram" }); }}
+        <button onClick={() => { setDone(false); setBatch(0); setPicked(null); setSearch(""); setF({ month_key: f.month_key, platform: "Instagram" }); }}
           className="mt-5 text-sm font-semibold text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg px-5 py-2.5">Log another</button>
       </div>
     </div>
@@ -207,11 +215,18 @@ export default function LogGift() {
           </div>
 
           {err && <p className="text-[12px] text-rose-500">{err}</p>}
-          <button onClick={submit} disabled={!valid || saving}
-            className="w-full text-sm font-semibold text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 rounded-lg py-3">
-            {saving ? "Saving…" : "Log gift"}
-          </button>
-          <p className="text-[11px] text-gray-300 text-center">Gifting value is tracked for budgeting automatically.</p>
+          {batch > 0 && <p className="text-[12px] text-emerald-600 font-medium">✓ {batch} product{batch > 1 ? "s" : ""} logged{f.handle ? ` for ${f.handle}` : ""} — add another below or finish.</p>}
+          <div className="flex gap-2">
+            <button onClick={() => submit(true)} disabled={!valid || saving}
+              className="flex-1 text-sm font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-40 rounded-lg py-3">
+              + Add another product
+            </button>
+            <button onClick={() => submit(false)} disabled={!valid || saving}
+              className="flex-1 text-sm font-semibold text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 rounded-lg py-3">
+              {saving ? "Saving…" : batch > 0 ? "Log & finish" : "Log gift"}
+            </button>
+          </div>
+          <p className="text-[11px] text-gray-300 text-center">Multiple products for one influencer? Use “Add another product”. Gifting value is tracked for budgeting automatically.</p>
         </div>
       </div>
     </div>
