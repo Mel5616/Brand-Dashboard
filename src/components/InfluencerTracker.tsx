@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { INFLUENCER_FY_MONTHS, INFLUENCER_FY_LABEL } from "@/lib/influencerFy";
 
 // Admin reporting for influencer gifting: brand × month cost spend vs budget.
 // Cost figures are shown here (this is your dashboard); the team form never does.
@@ -9,11 +10,7 @@ type Entry = { id: number; month_key: string; handle: string | null; platform: s
 type Budget = { brand: string; month_key: string; budget: number };
 type Influencer = { handle: string; name: string | null; platform: string | null; followers: number | null; contact: string | null; notes: string | null };
 
-const FY_MONTHS = Array.from({ length: 12 }, (_, i) => {
-  const m = 7 + i; const y = m <= 12 ? 2026 : 2027; const mm = ((m - 1) % 12) + 1;
-  const key = `${y}-${String(mm).padStart(2, "0")}`;
-  return { key, label: new Date(`${key}-01T00:00:00`).toLocaleDateString("en-AU", { month: "short" }) };
-});
+const FY_MONTHS = INFLUENCER_FY_MONTHS.map(m => ({ key: m.key, label: m.labelShort }));
 const CANON = ["UPPAbaby", "Gaia", "WonderFold", "SmarTrike", "Frida", "Nanit", "Hannie", "Magic", "Mamave", "Matchstick Monkey", "Zazu", "MiaMily"];
 const aud = (n: number) => "$" + Math.round(n).toLocaleString("en-AU");
 const compact = (n: number) => n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? Math.round(n / 1e3) + "k" : String(Math.round(n));
@@ -166,7 +163,7 @@ export function InfluencerTracker() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="font-semibold text-gray-800">Influencer Gifting</h2>
-          <p className="text-xs text-gray-400 mt-0.5">FY 2026–27 · cost terms · ex-GST</p>
+          <p className="text-xs text-gray-400 mt-0.5">{INFLUENCER_FY_LABEL} · cost terms · ex-GST</p>
         </div>
         <a href="/log-gift" target="_blank" className="text-xs font-semibold text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg px-3 py-2">Open team gift form ↗</a>
       </div>

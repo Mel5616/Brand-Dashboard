@@ -25,6 +25,7 @@ import { MarketingBudgetTab } from "./MarketingBudgetTab";
 import { MarketingCalendar } from "./MarketingCalendar";
 import { ContentPlanner } from "./ContentPlanner";
 import { InfluencerTracker } from "./InfluencerTracker";
+import { TeamGiftingPanel } from "./TeamGiftingPanel";
 import { TeamPanel } from "./TeamPanel";
 import { BoothFunnel } from "./BoothFunnel";
 import { BrandSnapshot } from "./BrandSnapshot";
@@ -34,7 +35,7 @@ import { ShopifyInsights } from "./ShopifyInsights";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "brands" | "insights" | "campaign-calendar" | "report" | "snapshot" | "sales" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "events" | "budget" | "calendar" | "content" | "influencer" | "team";
+type TabId = "brands" | "insights" | "campaign-calendar" | "report" | "snapshot" | "sales" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "events" | "budget" | "calendar" | "content" | "influencer" | "gifting" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -110,6 +111,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /></svg>,
   },
   {
+    id: "gifting", label: "Gifting",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8M12 4v16" /></svg>,
+  },
+  {
     id: "team", label: "Team",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 00-3-3.87" /></svg>,
   },
@@ -120,7 +125,7 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Overview", ids: ["brands", "insights", "report", "snapshot"] },
   { label: "Plan", ids: ["campaign-calendar", "calendar", "content"] },
   { label: "Paid", ids: ["google-ads", "meta-ads"] },
-  { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer"] },
+  { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting"] },
   { label: "Revenue & Channels", ids: ["sales", "shopify", "tradeshows", "events"] },
   { label: "Operations", ids: ["budget", "team"] },
 ];
@@ -1421,6 +1426,14 @@ export function DashboardTabs({
 
           {/* ── Influencer tracker ── */}
           {active === "influencer" && <InfluencerTracker />}
+
+          {/* ── Gifting (team view: % of budget + RRP, no cost) ── */}
+          {active === "gifting" && (
+            <>
+              <SectionBar title="Influencer Gifting" />
+              <TeamGiftingPanel />
+            </>
+          )}
 
           {/* ── Team & access (admin only) ── */}
           {active === "team" && role === "admin" && <TeamPanel />}

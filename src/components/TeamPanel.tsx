@@ -13,6 +13,7 @@ const ASSIGNABLE: { id: string; label: string }[] = [
   { id: "tradeshows", label: "Tradeshows" },
   { id: "calendar", label: "Calendar" },
   { id: "content", label: "Content" },
+  { id: "gifting", label: "Gifting (team)" },
 ];
 
 export function TeamPanel() {
