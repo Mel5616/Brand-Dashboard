@@ -94,7 +94,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           EVENTBRITE_TOKEN: ${{ secrets.EVENTBRITE_TOKEN }}
-        run: python3 scripts/sync_eventbrite.py
+        run: python3 -u scripts/sync_eventbrite.py
 
       # Slow step (rate-limited metric aggregates) — kept after the faster syncs so a
       # timeout here can't starve them.

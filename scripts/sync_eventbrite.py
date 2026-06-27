@@ -15,7 +15,7 @@ Tickets sold and gross revenue are summed from each event's ticket classes
 (quantity_sold and cost). Free tickets count toward tickets sold at $0.
 """
 
-import os, sys, json, ssl, urllib.request, urllib.parse
+import os, sys, json, ssl, time, urllib.request, urllib.parse
 
 BASE_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_PATH = os.path.join(BASE_DIR, "stores.config.json")
@@ -86,9 +86,11 @@ def list_events(org_id, token):
         params = {"expand": "venue,ticket_classes", "status": "live", "order_by": "start_asc", "page_size": 50}
         if cont:
             params["continuation"] = cont
+        t0 = time.time()
         data = eb_get(f"organizations/{org_id}/events/", token, params)
-        out.extend(data.get("events", []))
         pg = data.get("pagination") or {}
+        out.extend(data.get("events", []))
+        print(f"    page {pages + 1}: {len(data.get('events', []))} events in {time.time() - t0:.1f}s (more={pg.get('has_more_items')})", flush=True)
         cont = pg.get("continuation")
         pages += 1
         if not pg.get("has_more_items") or not cont:
@@ -122,12 +124,13 @@ def main():
     org_ids = get_org_ids(token, config.get("eventbriteOrgId"))
     if not org_ids:
         print("Could not resolve an Eventbrite organisation for this token"); return
-    print(f"Organisations: {org_ids}")
+    print(f"Organisations ({len(org_ids)}): {org_ids}", flush=True)
 
     events = []
     for oid in org_ids:
+        print(f"  org {oid} …", flush=True)
         evs = list_events(oid, token)
-        print(f"  org {oid}: {len(evs)} events")
+        print(f"  org {oid}: {len(evs)} events", flush=True)
         events.extend(evs)
     rows = []
     for ev in events:
