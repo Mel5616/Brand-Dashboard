@@ -32,9 +32,10 @@ function Card({ label, value, sub, accent }: { label: string; value: string; sub
 
 type Tradeshow = { id: string; date_start: string };
 type TradeshowSale = { tradeshow_id: string; brand_id: number; revenue: number };
+type FaireSale = { brand_id: number; month_key: string; revenue: number };
 
 export function SalesPanel({
-  scope, brands, channelSales, monthly, tradeshows, tradeshowSales, monthKeys, monthLabels, latest, canUpload,
+  scope, brands, channelSales, monthly, tradeshows, tradeshowSales, faireSales, monthKeys, monthLabels, latest, canUpload,
 }: {
   scope: number | "all";
   brands: Brand[];
@@ -42,6 +43,7 @@ export function SalesPanel({
   monthly: BrandMonthly[];
   tradeshows: Tradeshow[];
   tradeshowSales: TradeshowSale[];
+  faireSales: FaireSale[];
   monthKeys: string[];
   monthLabels: string[];
   latest: string;
@@ -115,6 +117,11 @@ export function SalesPanel({
       .filter(s => showMonth[s.tradeshow_id] === mk && (scope === "all" || s.brand_id === scope))
       .map(s => s.revenue)
   );
+  // Faire orders (live from Shopify, source_name:faire) → reported under Partnerships,
+  // and netted out of the live Website Sales total so they aren't double-counted.
+  const faireByMonth = (mk: string) => sum(
+    faireSales.filter(f => f.month_key === mk && (scope === "all" || f.brand_id === scope)).map(f => f.revenue)
+  );
 
   // Channel classification for the file (non-Shopify) rows:
   //   API → Marketplace · no-group Backend/Cloud → Website Sales · else map/keep the customer group.
@@ -134,11 +141,12 @@ export function SalesPanel({
   const valueOf = (ch: string, mk: string) => {
     const fileSum = sum(offline.filter(r => channelOf(r) === ch && r.month_key === mk).map(r => r.value));
     if (ch === "Tradeshows") return tsByMonth(mk) + fileSum;
-    const base = ch === "Website Sales" ? sum(liveMonthly.filter(m => m.month_key === mk).map(m => m.revenue)) - tsByMonth(mk) : 0;
+    if (ch === "Partnerships") return faireByMonth(mk) + fileSum;
+    const base = ch === "Website Sales" ? sum(liveMonthly.filter(m => m.month_key === mk).map(m => m.revenue)) - tsByMonth(mk) - faireByMonth(mk) : 0;
     return base + fileSum;
   };
 
-  const names = new Set<string>(["Website Sales", "Tradeshows", ...offline.map(channelOf)]);
+  const names = new Set<string>(["Website Sales", "Tradeshows", "Partnerships", ...offline.map(channelOf)]);
   const channelRow = (name: string) => {
     const series = monthKeys.map(mk => valueOf(name, mk));
     return { name, series, fy: sum(series), latest: valueOf(name, latest) };

@@ -232,6 +232,7 @@ export async function getDashboardData() {
     { data: brandInsights },
     { data: instagramMedia },
     { data: channelSales },
+    { data: faireSales },
   ] = await Promise.all([
     db.from("brands").select("*").order("id"),
     db.from("brand_summary").select("*"),
@@ -265,6 +266,7 @@ export async function getDashboardData() {
     db.from("brand_insights").select("*"),
     db.from("instagram_media").select("*").order("posted_at", { ascending: false }),
     db.from("channel_sales").select("*"),
+    db.from("faire_sales").select("*"),
   ]);
 
   return {
@@ -300,10 +302,12 @@ export async function getDashboardData() {
     brandInsights: (brandInsights ?? []) as BrandInsightRow[],
     instagramMedia: (instagramMedia ?? []) as InstagramMediaRow[],
     channelSales: (channelSales ?? []) as ChannelSaleRow[],
+    faireSales: (faireSales ?? []) as FaireSaleRow[],
   };
 }
 
 export type ChannelSaleRow = { month_key: string; brand: string; customer_group: string; register: string; value: number; is_online: boolean };
+export type FaireSaleRow = { brand_id: number; month_key: string; revenue: number };
 
 export type InstagramMediaRow = { brand_id: number; media_id: string; caption: string | null; media_type: string | null; permalink: string | null; posted_at: string | null; like_count: number; comments_count: number; image_url: string | null };
 
