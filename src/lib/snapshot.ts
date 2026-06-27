@@ -342,7 +342,7 @@ export function snapshotHtml(s: Snapshot): string {
     <table class="optbl"><thead><tr><th>Opportunity to move &middot; ranks 4&ndash;20</th><th class="r">Searches/mo</th><th class="r">CPC</th></tr></thead><tbody>${oppRows}</tbody></table>` : "";
   const aiSection = (aiBlock || seoBlock) ? `
   <div class="sec">
-    <div class="h">AI insights &amp; SEO opportunities</div>
+    <div class="h">Insights and opportunities</div>
     ${aiBlock}
     ${seoBlock}
   </div>` : "";
