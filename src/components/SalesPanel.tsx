@@ -7,11 +7,19 @@ import {
 import { Bar, Doughnut } from "react-chartjs-2";
 import { fmt, fmtFull } from "@/lib/format";
 import type { Brand, BrandMonthly } from "@/lib/db";
-import { buildChannels, groupDirect, DIGITAL_CHANNELS, channelColor as colorOf, type ChannelSaleRow } from "@/lib/channels";
+import { buildChannels, groupDirect, momPct, DIGITAL_CHANNELS, channelColor as colorOf, type ChannelSaleRow } from "@/lib/channels";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
 
 const sum = (a: number[]) => a.reduce((s, v) => s + (v || 0), 0);
+
+// Small month-on-month direction badge — green up / red down, muted when flat or unknown.
+function Mom({ series, idx }: { series: number[]; idx: number }) {
+  const p = momPct(series, idx);
+  if (p == null) return null;
+  const up = p >= 0;
+  return <span className={`ml-1.5 text-[10px] font-semibold ${Math.abs(p) < 0.5 ? "text-gray-300" : up ? "text-emerald-500" : "text-red-500"}`}>{up ? "▲" : "▼"}{Math.abs(p).toFixed(0)}%</span>;
+}
 
 function Card({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: string }) {
   return (
@@ -110,7 +118,8 @@ export function SalesPanel({
   const hasData = channels.length > 0;
   const fyTotal = sum(channels.map(c => c.fy));
   const monthTotal = sum(channels.map(c => c.latest));
-  const prevKey = monthKeys[monthKeys.indexOf(latest) - 1];
+  const li = monthKeys.indexOf(latest);
+  const prevKey = monthKeys[li - 1];
   const prevTotal = prevKey ? sum(channels.map(c => c.series[monthKeys.indexOf(prevKey)])) : 0;
   const mom = prevTotal > 0 ? ((monthTotal - prevTotal) / prevTotal) * 100 : null;
   const latestLabel = monthLabels[monthKeys.indexOf(latest)] ?? latest;
@@ -200,7 +209,7 @@ export function SalesPanel({
 
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 overflow-x-auto">
         <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-0.5">Sales by channel</h3>
-        <p className="text-xs text-gray-400 mb-3">Full year and {latestLabel}</p>
+        <p className="text-xs text-gray-400 mb-3">Full year and {latestLabel}, with month-on-month change</p>
         <table className="w-full text-sm">
           <thead>
             <tr className="text-[11px] text-gray-400 uppercase tracking-wide text-right border-b border-gray-100">
@@ -216,14 +225,14 @@ export function SalesPanel({
                     <td className="text-left py-1.5"><span className="inline-flex items-center gap-2"><span className="w-2 h-2 rounded-full" style={{ background: "#1e3a5f" }} /><span className="font-semibold">{c.name}</span></span></td>
                     <td className="font-bold">{fmt(c.fy)}</td>
                     <td className="font-semibold">{fyTotal > 0 ? ((c.fy / fyTotal) * 100).toFixed(1) : "0"}%</td>
-                    <td className="font-semibold">{fmt(c.latest)}</td>
+                    <td className="font-semibold whitespace-nowrap">{fmt(c.latest)}<Mom series={c.series} idx={li} /></td>
                   </tr>
                   {c.kids!.map(k => (
                     <tr key={k.name} className="text-right border-b border-gray-50 text-slate-500">
                       <td className="text-left py-1.5"><span className="inline-flex items-center gap-2 pl-5"><span className="w-1.5 h-1.5 rounded-full" style={{ background: colorOf(k.name) }} />{k.name}</span></td>
                       <td>{fmt(k.fy)}</td>
                       <td>{fyTotal > 0 ? ((k.fy / fyTotal) * 100).toFixed(1) : "0"}%</td>
-                      <td>{fmt(k.latest)}</td>
+                      <td className="whitespace-nowrap">{fmt(k.latest)}<Mom series={k.series} idx={li} /></td>
                     </tr>
                   ))}
                 </React.Fragment>
@@ -232,7 +241,7 @@ export function SalesPanel({
                   <td className="text-left py-1.5"><span className="inline-flex items-center gap-2"><span className="w-2 h-2 rounded-full" style={{ background: colorOf(c.name) }} />{c.name}</span></td>
                   <td className="font-semibold">{fmt(c.fy)}</td>
                   <td>{fyTotal > 0 ? ((c.fy / fyTotal) * 100).toFixed(1) : "0"}%</td>
-                  <td>{fmt(c.latest)}</td>
+                  <td className="whitespace-nowrap">{fmt(c.latest)}<Mom series={c.series} idx={li} /></td>
                 </tr>
               )
             ))}

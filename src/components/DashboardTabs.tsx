@@ -14,7 +14,7 @@ import { SeoPanel } from "./SeoPanel";
 import { InsightsPanel } from "./InsightsPanel";
 import { SocialPanel } from "./SocialPanel";
 import { SalesPanel } from "./SalesPanel";
-import { buildChannels, groupDirect, channelColor, DIGITAL_CHANNELS } from "@/lib/channels";
+import { buildChannels, groupDirect, channelColor, momPct, DIGITAL_CHANNELS } from "@/lib/channels";
 import { SectionBar } from "./ui";
 import { ProductsTable } from "./ProductsTable";
 import { TradeshowAccordion } from "./TradeshowAccordion";
@@ -460,11 +460,22 @@ export function DashboardTabs({
                 const online = biz.find((c: any) => DIGITAL_CHANNELS.has(c.name) && c.name === "Website Sales");
                 const onlinePct = total > 0 ? (ssum(biz.filter((c: any) => DIGITAL_CHANNELS.has(c.name)).map((c: any) => c.fy)) / ssum(biz.map((c: any) => c.fy))) * 100 : 0;
                 const pos = ssum(visible.filter((c: any) => c.fy > 0).map((c: any) => c.fy)) || 1;
+                // Month-on-month on the whole visible book — sum every channel's series per month, then compare the selected month to the one before.
+                const totalSeries = monthKeys.map((_, i) => ssum(visible.map((c: any) => c.series[i] ?? 0)));
+                const revMom = momPct(totalSeries, latestI);
+                const momSub = revMom != null ? `${revMom >= 0 ? "▲" : "▼"} ${Math.abs(revMom).toFixed(0)}% vs ${prevLabel}` : undefined;
+                // Pace vs plan — digital revenue against digital target, cumulative through the selected month.
+                // (Targets in the schema are Shopify D2C revenue targets, so this is a digital pacing read for both roles.)
+                const upto = monthKeys.slice(0, latestI + 1);
+                const tgtToDate = upto.reduce((s, mk) => s + ssum(targets.filter((t: any) => t.month_key === mk).map((t: any) => t.revenue_target ?? 0)), 0);
+                const actToDate = upto.reduce((s, mk) => s + ssum(monthly.filter((m: any) => m.month_key === mk).map((m: any) => m.revenue ?? 0)), 0);
+                const paceDelta = actToDate - tgtToDate;
+                const hasTarget = tgtToDate > 0;
                 const cards = [
-                  { label: role === "admin" ? "Total business revenue" : "Digital revenue", value: fmt(total), accent: "#1e3a5f" },
-                  { label: role === "admin" ? "True MER" : "Digital MER", value: mer != null ? mer.toFixed(1) + "%" : "—", accent: "#f97316" },
-                  { label: "Digital share", value: Math.round(onlinePct) + "%", accent: "#10b981" },
-                  { label: "Channels", value: String(visible.length), accent: "#a855f7" },
+                  { label: role === "admin" ? "Total business revenue" : "Digital revenue", value: fmt(total), accent: "#1e3a5f", sub: momSub },
+                  { label: role === "admin" ? "True MER" : "Digital MER", value: mer != null ? mer.toFixed(1) + "%" : "—", accent: "#f97316", sub: undefined as string | undefined },
+                  { label: "Digital share", value: Math.round(onlinePct) + "%", accent: "#10b981", sub: undefined as string | undefined },
+                  { label: "Channels", value: String(visible.length), accent: "#a855f7", sub: undefined as string | undefined },
                 ];
                 return (
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
@@ -474,9 +485,17 @@ export function DashboardTabs({
                         <div key={c.label} className="bg-gray-50/60 rounded-xl px-4 py-3">
                           <p className="text-[11px] font-medium text-gray-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full inline-block" style={{ background: c.accent }} />{c.label}</p>
                           <p className="text-2xl font-bold text-slate-800 mt-1 leading-none">{c.value}</p>
+                          {c.sub && <p className={`text-[11px] mt-1 font-semibold ${c.sub.startsWith("▼") ? "text-red-500" : "text-emerald-500"}`}>{c.sub}</p>}
                         </div>
                       ))}
                     </div>
+                    {hasTarget && (
+                      <div className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] mb-3 rounded-lg px-3 py-1.5 ${paceDelta >= 0 ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"}`}>
+                        <span className="font-bold">{paceDelta >= 0 ? "On pace" : "Behind plan"}</span>
+                        <span>{paceDelta >= 0 ? "+" : ""}{fmt(paceDelta)} vs digital plan to {latestLabel}</span>
+                        <span className="text-gray-400">· {Math.round((actToDate / tgtToDate) * 100)}% of target to date</span>
+                      </div>
+                    )}
                     <div className="h-6 rounded-md overflow-hidden flex bg-gray-50 mb-2">
                       {visible.filter((c: any) => c.fy > 0).map((c: any) => (
                         <div key={c.name} title={`${c.name}: ${fmt(c.fy)} (${((c.fy / pos) * 100).toFixed(0)}%)`} style={{ width: `${(c.fy / pos) * 100}%`, background: channelColor(c.name) }} />

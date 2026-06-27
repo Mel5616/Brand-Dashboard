@@ -59,6 +59,14 @@ export function groupDirect(channels: Channel[]): ChannelRow[] {
   return [...others, group].sort((a, b) => b.fy - a.fy);
 }
 
+// Month-on-month change for a channel's series at the given month index.
+// null when there is no prior month or the prior month was zero (avoids divide-by-zero noise).
+export function momPct(series: number[], idx: number): number | null {
+  if (idx <= 0) return null;
+  const prev = series[idx - 1], cur = series[idx] ?? 0;
+  return prev > 0 ? ((cur - prev) / prev) * 100 : null;
+}
+
 export function buildChannels(scope: number | "all", d: ChannelData): Channel[] {
   const { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest } = d;
   const showMonth = Object.fromEntries(tradeshows.map(t => [t.id, (t.date_start || "").slice(0, 7)]));
