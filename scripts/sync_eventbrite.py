@@ -61,12 +61,11 @@ def eb_get(path, token, params=None):
     with urllib.request.urlopen(r, context=CTX, timeout=30) as resp:
         return json.loads(resp.read().decode())
 
-def get_org_id(token, pinned):
+def get_org_ids(token, pinned):
     if pinned:
-        return pinned
+        return [pinned]
     data = eb_get("users/me/organizations/", token)
-    orgs = data.get("organizations", [])
-    return orgs[0]["id"] if orgs else None
+    return [o["id"] for o in data.get("organizations", [])]
 
 def brand_for(name, brands):
     low = (name or "").lower()
@@ -115,12 +114,16 @@ def main():
         print("No eventbriteToken in stores.config.json (or EVENTBRITE_TOKEN env) — skipping"); return
     brands = config.get("brands", [])
 
-    org_id = get_org_id(token, config.get("eventbriteOrgId"))
-    if not org_id:
+    org_ids = get_org_ids(token, config.get("eventbriteOrgId"))
+    if not org_ids:
         print("Could not resolve an Eventbrite organisation for this token"); return
-    print(f"Organisation {org_id}")
+    print(f"Organisations: {org_ids}")
 
-    events = list_events(org_id, token)
+    events = []
+    for oid in org_ids:
+        evs = list_events(oid, token)
+        print(f"  org {oid}: {len(evs)} events")
+        events.extend(evs)
     rows = []
     for ev in events:
         sold, gross, cap, venue = summarise(ev)
