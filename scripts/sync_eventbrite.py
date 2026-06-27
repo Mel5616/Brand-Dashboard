@@ -75,7 +75,7 @@ def brand_for(name, brands):
             return i
     return None
 
-MAX_PAGES = 4  # safety bound; live/upcoming events are few, so this is rarely hit
+MAX_PAGES = 2  # live/upcoming events are few (~1 page); hard bound on runtime
 
 def list_events(org_id, token):
     """Upcoming / on-sale events for the org (status=live, soonest first), expanded with
@@ -132,7 +132,10 @@ def main():
         raise
     if not org_ids:
         print("Could not resolve an Eventbrite organisation for this token"); return
-    print(f"Organisations ({len(org_ids)}): {org_ids}", flush=True)
+    print(f"Organisations found ({len(org_ids)}): {org_ids}", flush=True)
+    # Only the primary org unless one is pinned — iterating every org on the account is slow.
+    if not config.get("eventbriteOrgId"):
+        org_ids = org_ids[:1]
 
     events = []
     for oid in org_ids:
