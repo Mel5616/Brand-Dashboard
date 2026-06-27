@@ -62,16 +62,15 @@ export function SalesPanel({
         const y = years[j], mo = hdr[j];
         if (typeof y === "number" && typeof mo === "number") colMonth[j] = `${y}-${String(mo).padStart(2, "0")}`;
       }
-      // Aggregate by primary key (month, brand, group, register) — the export can repeat combos
+      // Aggregate by primary key (month, brand, group, register) — the export can repeat combos.
+      // The group is repeated on every row, so a blank group genuinely means "no group".
       const agg = new Map<string, ChannelSaleRow>();
-      let group = "";
       for (let i = 2; i < grid.length; i++) {
         const r = grid[i] as any[];
-        if (r[0]) group = String(r[0]).trim();
         const brand = r[1] ? String(r[1]).trim() : "";
         const register = r[2] ? String(r[2]).trim() : "";
         if (!register || !brand) continue;
-        const cg = group || "Other";
+        const cg = r[0] ? String(r[0]).trim() : "Other";
         for (const j of Object.keys(colMonth).map(Number)) {
           const v = r[j];
           if (typeof v === "number" && v !== 0) {
@@ -100,28 +99,34 @@ export function SalesPanel({
   // ── scope ──
   const rows = scope === "all" ? channelSales : channelSales.filter(r => brandMatch(brands.find(b => b.id === scope)?.name ?? "", r.brand));
   const liveMonthly = scope === "all" ? monthly : monthly.filter(m => m.brand_id === scope);
-  const offline = rows.filter(r => !r.is_online);
+  const offline = rows.filter(r => !r.is_online); // Shopify rows excluded — online comes live
   const hasData = offline.length > 0 || liveMonthly.some(m => m.revenue > 0);
 
-  // Online (live Shopify) channel per month
-  const onlineByMonth = (mk: string) => sum(liveMonthly.filter(m => m.month_key === mk).map(m => m.revenue));
-  // Channels from upload (offline), grouped by customer_group
-  const groups = [...new Set(offline.map(r => r.customer_group))];
-  const channelRow = (name: string, valueOf: (mk: string) => number) => {
-    const series = monthKeys.map(valueOf);
-    return { name, series, fy: sum(series), latest: valueOf(latest) };
+  // Channel classification for the file (non-Shopify) rows:
+  //   API → Marketplace · no-group Backend/Cloud → Direct Sales · else the customer group.
+  const channelOf = (r: ChannelSaleRow) =>
+    r.register === "API" ? "Marketplace"
+    : (!r.customer_group || r.customer_group === "Other") ? "Direct Sales"
+    : r.customer_group;
+
+  // Website Sales = live total Shopify (always current) + its file backend/cloud lines.
+  const valueOf = (ch: string, mk: string) =>
+    (ch === "Website Sales" ? sum(liveMonthly.filter(m => m.month_key === mk).map(m => m.revenue)) : 0)
+    + sum(offline.filter(r => channelOf(r) === ch && r.month_key === mk).map(r => r.value));
+
+  const names = new Set<string>(["Website Sales", ...offline.map(channelOf)]);
+  const channelRow = (name: string) => {
+    const series = monthKeys.map(mk => valueOf(name, mk));
+    return { name, series, fy: sum(series), latest: valueOf(name, latest) };
   };
-  const channels = [
-    channelRow("Online (Shopify)", onlineByMonth),
-    ...groups.map(g => channelRow(g, mk => sum(offline.filter(r => r.customer_group === g && r.month_key === mk).map(r => r.value)))),
-  ].filter(c => c.fy !== 0).sort((a, b) => b.fy - a.fy);
+  const channels = [...names].map(channelRow).filter(c => c.fy !== 0).sort((a, b) => b.fy - a.fy);
 
   const fyTotal = sum(channels.map(c => c.fy));
   const monthTotal = sum(channels.map(c => c.latest));
   const prevKey = monthKeys[monthKeys.indexOf(latest) - 1];
   const prevTotal = prevKey ? sum(channels.map(c => c.series[monthKeys.indexOf(prevKey)])) : 0;
   const mom = prevTotal > 0 ? ((monthTotal - prevTotal) / prevTotal) * 100 : null;
-  const online = channels.find(c => c.name === "Online (Shopify)");
+  const online = channels.find(c => c.name === "Website Sales");
   const onlinePct = fyTotal > 0 ? ((online?.fy ?? 0) / fyTotal) * 100 : 0;
   const latestLabel = monthLabels[monthKeys.indexOf(latest)] ?? latest;
 
@@ -152,7 +157,7 @@ export function SalesPanel({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs text-gray-400">Online is pulled live from Shopify · other channels from the monthly upload</p>
+        <p className="text-xs text-gray-400">Website Sales is pulled live from Shopify · other channels from the monthly upload</p>
         <div className="flex items-center gap-2">{msg && <span className="text-xs text-gray-500">{msg}</span>}{Upload}</div>
       </div>
 
