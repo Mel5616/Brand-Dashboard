@@ -84,6 +84,7 @@ export default async function Dashboard() {
       <DashboardTabs
         role={access.role!}
         allowedTabs={access.allowedTabs}
+        currentEmail={access.user.email}
         brands={brands}
         /* financial data withheld from non-admins (not just hidden — not sent) */
         summaries={summaries}

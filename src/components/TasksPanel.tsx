@@ -8,9 +8,17 @@ const STATUS_COLOR: Record<string, string> = {
 };
 const PRIORITY_COLOR: Record<string, string> = { "High": "#16a34a", "Medium": "#ca8a04", "Low": "#dc2626" };
 
+// Maps a dashboard login to its Asana assignee name, so "assigned to me" works.
+// Add team members here as they start being assigned blog tasks.
+const ASANA_NAME_BY_EMAIL: Record<string, string> = {
+  "mel@coolkidz.com.au": "Melanie Kingsford",
+  "william@coolkidz.com.au": "William Han",
+};
+const isWaiting = (s: string | null) => (s || "").toLowerCase().includes("waiting");
+
 // Read-only Asana tasks for one project, grouped by section (Asana stays the
 // source of truth — the dashboard only reads).
-export function TasksPanel({ tasks, brands }: { tasks: AsanaTask[]; brands: { id: number; name: string; color?: string }[] }) {
+export function TasksPanel({ tasks, brands, currentEmail }: { tasks: AsanaTask[]; brands: { id: number; name: string; color?: string }[]; currentEmail?: string }) {
   if (!tasks.length) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
@@ -29,7 +37,7 @@ export function TasksPanel({ tasks, brands }: { tasks: AsanaTask[]; brands: { id
     return d >= today && d <= wk;
   }).length;
 
-  const waiting = open.filter(t => (t.status || "").toLowerCase().includes("waiting")).length;
+  const waiting = open.filter(t => isWaiting(t.status)).length;
   const kpis = [
     { label: "Open tasks", value: String(open.length), accent: "#1e3a5f" },
     { label: "Waiting approval", value: String(waiting), accent: "#dc2626" },
@@ -37,10 +45,16 @@ export function TasksPanel({ tasks, brands }: { tasks: AsanaTask[]; brands: { id
     { label: "Completed", value: String(done.length), accent: "#10b981" },
   ];
 
-  // Group open tasks by section (preserving first-seen order).
+  // Tasks assigned to the logged-in user that are awaiting their approval — pinned to the top.
+  const myName = ASANA_NAME_BY_EMAIL[(currentEmail || "").toLowerCase()];
+  const myWaiting = myName ? open.filter(t => isWaiting(t.status) && t.assignee === myName) : [];
+  const pinned = new Set(myWaiting.map(t => t.gid));
+
+  // Group the remaining open tasks by section (preserving first-seen order).
   const order: string[] = [];
   const bySection = new Map<string, AsanaTask[]>();
   for (const t of open) {
+    if (pinned.has(t.gid)) continue;
     const k = t.section || "No section";
     if (!bySection.has(k)) { bySection.set(k, []); order.push(k); }
     bySection.get(k)!.push(t);
@@ -83,6 +97,17 @@ export function TasksPanel({ tasks, brands }: { tasks: AsanaTask[]; brands: { id
           </div>
         ))}
       </div>
+
+      {myWaiting.length > 0 && (
+        <div className="bg-amber-50 rounded-2xl border border-amber-200 shadow-sm p-5">
+          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-amber-200/70">
+            <span className="text-base">📌</span>
+            <h3 className="text-sm font-bold text-amber-800">Waiting your approval</h3>
+            <span className="text-xs font-semibold text-white rounded-full px-2 py-0.5" style={{ background: "#d97706" }}>{myWaiting.length}</span>
+          </div>
+          <div className="divide-y divide-amber-200/50">{myWaiting.map(Row)}</div>
+        </div>
+      )}
 
       <div className="grid md:grid-cols-2 gap-4 items-start">
         {order.map(sec => (

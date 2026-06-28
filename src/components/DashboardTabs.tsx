@@ -223,6 +223,7 @@ interface Props {
   kpis: { label: string; value: string; sub: string }[];
   role?: "admin" | "member";
   allowedTabs?: string[];
+  currentEmail?: string;
 }
 
 export function DashboardTabs({
@@ -233,7 +234,7 @@ export function DashboardTabs({
   marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, boothFunnel, kpis,
   gscMetrics, gscQueries, gscInsights, semrushMetrics, semrushCompetitors,
   semrushKeywords, semrushPages, brandInsights, instagramMedia, channelSales, shopifySources, eventbriteEvents, asanaTasks,
-  role = "admin", allowedTabs,
+  role = "admin", allowedTabs, currentEmail,
 }: Props) {
   // Financial tabs (cost / margin / budget) are admin-only even if otherwise granted.
   const FINANCIAL = ["budget", "influencer", "snapshot", "uppababy"];
@@ -1458,7 +1459,7 @@ export function DashboardTabs({
           {active === "tasks" && (
             <>
               <SectionBar title="Tasks · Asana" />
-              <TasksPanel tasks={asanaTasks} brands={brands} />
+              <TasksPanel tasks={asanaTasks} brands={brands} currentEmail={currentEmail} />
             </>
           )}
 
