@@ -97,6 +97,21 @@ def list_events(org_id, token):
             break
     return out
 
+# Map Eventbrite venue regions to Australian state abbreviations for grouping.
+_STATE_MAP = {
+    "victoria": "VIC", "vic": "VIC",
+    "new south wales": "NSW", "nsw": "NSW",
+    "queensland": "QLD", "qld": "QLD",
+    "south australia": "SA", "sa": "SA",
+    "western australia": "WA", "wa": "WA",
+    "tasmania": "TAS", "tas": "TAS",
+    "australian capital territory": "ACT", "act": "ACT",
+    "northern territory": "NT", "nt": "NT",
+}
+
+def norm_state(region):
+    return _STATE_MAP.get((region or "").strip().lower(), (region or "").strip())
+
 def summarise(ev):
     sold, gross = 0, 0.0
     for tc in (ev.get("ticket_classes") or []):
@@ -108,8 +123,10 @@ def summarise(ev):
     cap = ev.get("capacity")
     if not cap:
         cap = sum(int(tc.get("quantity_total") or 0) for tc in (ev.get("ticket_classes") or [])) or None
-    venue = ((ev.get("venue") or {}).get("name")) or (((ev.get("venue") or {}).get("address") or {}).get("city")) or ""
-    return sold, round(gross, 2), cap, venue
+    addr = ((ev.get("venue") or {}).get("address")) or {}
+    venue = ((ev.get("venue") or {}).get("name")) or addr.get("city") or ""
+    state = norm_state(addr.get("region"))
+    return sold, round(gross, 2), cap, venue, state
 
 def main():
     if not URL or not KEY:
@@ -145,13 +162,13 @@ def main():
         events.extend(evs)
     rows = []
     for ev in events:
-        sold, gross, cap, venue = summarise(ev)
+        sold, gross, cap, venue, state = summarise(ev)
         rows.append({
             "event_id": ev["id"],
             "name": (ev.get("name") or {}).get("text") or "",
             "start_at": (ev.get("start") or {}).get("utc"),
             "end_at": (ev.get("end") or {}).get("utc"),
-            "venue": venue, "status": ev.get("status"), "url": ev.get("url"),
+            "venue": venue, "state": state, "status": ev.get("status"), "url": ev.get("url"),
             "capacity": cap, "tickets_sold": sold, "gross_revenue": gross,
             "currency": ev.get("currency"), "brand_id": brand_for((ev.get("name") or {}).get("text"), brands),
         })

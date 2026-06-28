@@ -129,13 +129,32 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
     if (immediate) patch(id, { [field]: value } as Partial<Campaign>);
     else timers.current[key] = setTimeout(() => patch(id, { [field]: value } as Partial<Campaign>), 600);
   }
-  function editBrief(item: Campaign, fieldKey: string, value: string) {
-    const next = { ...(item.brief ?? {}), [fieldKey]: value };
-    setItems(prev => prev.map(it => (it.id === item.id ? { ...it, brief: next } : it)));
+  // Drawer text fields: autosave on a debounce and only sync React state on blur,
+  // so a keystroke never re-renders the drawer (which was dropping focus → one
+  // letter at a time). Inputs are uncontrolled (defaultValue), so the DOM keeps
+  // whatever is typed regardless of re-renders.
+  const briefDraft = useRef<Record<string, Record<string, string>>>({});
+  function saveText(id: string, field: keyof Campaign, value: string) {
+    if (id.startsWith("temp-")) return;
+    const key = id + String(field);
+    clearTimeout(timers.current[key]);
+    timers.current[key] = setTimeout(() => patch(id, { [field]: value } as Partial<Campaign>), 500);
+  }
+  function commitText(id: string, field: keyof Campaign, value: string) {
+    setItems(prev => prev.map(it => (it.id === id ? { ...it, [field]: value } : it)));
+  }
+  function saveBrief(item: Campaign, fieldKey: string, value: string) {
+    const cur = { ...(briefDraft.current[item.id] ?? (item.brief as any) ?? {}), [fieldKey]: value };
+    briefDraft.current[item.id] = cur;
     if (item.id.startsWith("temp-")) return;
     const key = item.id + "brief" + fieldKey;
     clearTimeout(timers.current[key]);
-    timers.current[key] = setTimeout(() => patch(item.id, { brief: next }), 600);
+    timers.current[key] = setTimeout(() => patch(item.id, { brief: { ...cur } } as Partial<Campaign>), 500);
+  }
+  function commitBrief(item: Campaign, fieldKey: string, value: string) {
+    const cur = { ...(briefDraft.current[item.id] ?? (item.brief as any) ?? {}), [fieldKey]: value };
+    briefDraft.current[item.id] = cur;
+    setItems(prev => prev.map(it => (it.id === item.id ? { ...it, brief: { ...cur } } : it)));
   }
   async function addRow(horizon: string) {
     const order = Math.max(0, ...items.filter(i => i.horizon === horizon).map(i => i.sort_order || 0)) + 1;
@@ -378,18 +397,18 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                   <input
                     key={open.id + "name"}
                     aria-label="Campaign name" readOnly={ro} defaultValue={open.campaign} placeholder="Campaign name"
-                    onChange={e => editField(open.id, "campaign", e.target.value)}
+                    onChange={e => saveText(open.id, "campaign", e.target.value)} onBlur={e => commitText(open.id, "campaign", e.target.value)}
                     className="w-full text-xl font-bold text-slate-900 bg-transparent rounded px-1 -ml-1 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 read-only:cursor-default placeholder:text-gray-300"
                   />
                   <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2 text-sm">
                     <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ background: TIER_DOT[open.tier] ?? "#ccc" }} />Tier {open.tier}</span>
-                    <input key={open.id + "brand"} aria-label="Brand" readOnly={ro} defaultValue={open.brand} placeholder="Brand" onChange={e => editField(open.id, "brand", e.target.value)} className={cell + " w-32"} />
+                    <input key={open.id + "brand"} aria-label="Brand" readOnly={ro} defaultValue={open.brand} placeholder="Brand" onChange={e => saveText(open.id, "brand", e.target.value)} onBlur={e => commitText(open.id, "brand", e.target.value)} className={cell + " w-32"} />
                     <span className="font-semibold text-white rounded-full px-2.5 py-0.5 text-xs" style={{ background: STATUS_COLOR[open.status] ?? "#9A9A9A" }}>{open.status}</span>
                     <input type="date" aria-label="Key date" readOnly={ro} value={parseDate(open.key_date) ? open.key_date.slice(0, 10) : ""} onChange={e => editField(open.id, "key_date", e.target.value, true)} className={cell + " w-36"} />
                     <span className="text-gray-400">Owner</span>
-                    <input key={open.id + "owner"} aria-label="Owner" readOnly={ro} defaultValue={open.owner} placeholder="TBC" onChange={e => editField(open.id, "owner", e.target.value)} className={cell + " w-24"} />
+                    <input key={open.id + "owner"} aria-label="Owner" readOnly={ro} defaultValue={open.owner} placeholder="TBC" onChange={e => saveText(open.id, "owner", e.target.value)} onBlur={e => commitText(open.id, "owner", e.target.value)} className={cell + " w-24"} />
                   </div>
-                  <input key={open.id + "channel"} aria-label="Channel" readOnly={ro} defaultValue={open.channel} placeholder="Channels (summary)" onChange={e => editField(open.id, "channel", e.target.value)} className={cell + " mt-1 text-xs text-gray-500"} />
+                  <input key={open.id + "channel"} aria-label="Channel" readOnly={ro} defaultValue={open.channel} placeholder="Channels (summary)" onChange={e => saveText(open.id, "channel", e.target.value)} onBlur={e => commitText(open.id, "channel", e.target.value)} className={cell + " mt-1 text-xs text-gray-500"} />
                 </div>
                 <button aria-label="Close brief" onClick={() => setOpenId(null)} className="no-print shrink-0 text-gray-400 hover:text-gray-700 rounded-lg p-1.5 hover:bg-gray-100">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -409,7 +428,7 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                         key={open.id + f.key}
                         aria-label={f.label} readOnly={ro} defaultValue={val} rows={f.key === "offerMechanic" ? 4 : 2}
                         placeholder={`Add the ${f.label.toLowerCase()}`}
-                        onChange={e => editBrief(open, f.key, e.target.value)}
+                        onChange={e => saveBrief(open, f.key, e.target.value)} onBlur={e => commitBrief(open, f.key, e.target.value)}
                         className="w-full bg-transparent text-sm text-slate-700 leading-relaxed rounded px-1 -ml-1 resize-y focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 read-only:cursor-default placeholder:text-gray-300 placeholder:italic"
                       />
                     </div>

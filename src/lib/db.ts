@@ -309,7 +309,7 @@ export async function getDashboardData() {
   };
 }
 
-export type EventbriteEvent = { event_id: string; name: string | null; start_at: string | null; end_at: string | null; venue: string | null; status: string | null; url: string | null; capacity: number | null; tickets_sold: number; gross_revenue: number; currency: string | null; brand_id: number | null };
+export type EventbriteEvent = { event_id: string; name: string | null; start_at: string | null; end_at: string | null; venue: string | null; state: string | null; status: string | null; url: string | null; capacity: number | null; tickets_sold: number; gross_revenue: number; currency: string | null; brand_id: number | null };
 
 export type ChannelSaleRow = { month_key: string; brand: string; customer_group: string; register: string; value: number; is_online: boolean };
 export type ShopifySourceRow = { brand_id: number; month_key: string; source: string; revenue: number };
