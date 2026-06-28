@@ -66,6 +66,8 @@ insert into brand_profiles (slug, name, tier, profile) values
   "brandLine": "Parenthood looks different here",
   "positioning": "A premium, app-connected baby monitoring and sleep system that uses advanced computer vision and data-driven insights to help parents understand sleep, support healthy routines and feel confident every step of the way.",
   "hero": "Nanit Pro Camera, positioned as the default recommended configuration",
+  "siteUrl": "https://nanit.com.au",
+  "marketContext": "baby monitors and infant sleep technology",
   "audience": {
     "primary": "Modern, tech-confident parent, 28 to 40, metro and inner-suburban, research-driven and digitally fluent.",
     "split": "Women skew to discovery, men skew to conversion. Balance emotional reassurance with clear, practical explanation."

@@ -25,7 +25,7 @@ export type BrandRow = { id: string; slug: string; name: string; tier: "A" | "B"
 export type Deliverable = { id: string; presets: string; copy_direction: string; visual_direction: string };
 
 // ── Compliance-aware prompt builder ────────────────────────────────────────
-export function buildSystemPrompt(brandName: string, p: BrandProfile, pillar: Pillar, moment: Moment, selected: Channel[], focus: string) {
+export function buildSystemPrompt(brandName: string, p: BrandProfile, pillar: Pillar, moment: Moment, selected: Channel[], focus: string, live?: { siteContext?: string; market?: string }) {
   return `You write marketing briefs for ${brandName}, distributed by Coolkidz Australia.
 You produce creative direction only. You never invent facts, statistics, regulatory status or product specs.
 
@@ -35,7 +35,7 @@ Brand line: ${p.brandLine}
 Positioning: ${p.positioning}
 Hero: ${p.hero}
 Audience: ${p.audience.primary} ${p.audience.split}
-
+${live?.siteContext ? `\nCURRENT FROM THE BRAND WEBSITE (live, authoritative for product names and the current range):\n${live.siteContext}\nUse these exact product names. Do not reference products that are not on this list.\n` : ""}
 PILLAR FOR THIS BRIEF: ${pillar.name}. ${pillar.desc}
 CAMPAIGN MOMENT: ${moment.name}. Objective: ${moment.objective}. Focus: ${moment.focus}
 
@@ -46,7 +46,13 @@ HARD RULES
 ${p.standingFlags.map((f) => `  - ${f.level.toUpperCase()}: ${f.note}`).join("\n")}
 - Do not assert any regulatory status. Soften or flag claims rather than stating them as fact.
 - Direction must be specific and usable by a designer and a copywriter, not generic.
-
+${live?.market !== undefined ? `
+LIVE MARKET CONTEXT
+Use the web_search tool to check current ${live.market || "category"} news, seasonal timing and competitor activity in Australia relevant to this moment. Treat everything you find as BACKGROUND CONTEXT ONLY:
+- Never lift a statistic, claim, regulatory status, price or efficacy statement from a search result into the brief.
+- The standing compliance flags above always win. If a search result conflicts with them, ignore it.
+- Use search only to keep the angle timely and relevant, never to make a factual assertion.
+` : ""}
 Return ONLY valid JSON, no preamble, no markdown fences, in exactly this shape:
 {
   "title": "short campaign or brief name",
@@ -60,6 +66,24 @@ Return ONLY valid JSON, no preamble, no markdown fences, in exactly this shape:
 Channel ids to include, in this order: ${selected.map((c) => c.id).join(", ")}.
 ${selected.some((c) => c.id === "blog") ? `For the blog channel: put the angle and hook in copy_direction, and SEO and structure guidance in visual_direction (target keyword, H2/H3 outline, internal links, FAQ, target word count). Blogs do not need art direction.` : ""}
 ${focus ? `Specific product or angle focus from the lead: ${focus}` : ""}`;
+}
+
+// ── Live brand-site context (Shopify) ──────────────────────────────────────
+// Pulls the current product range from the brand's Shopify site so briefs use the
+// real, current SKUs. Reliable structured feed, no scraping. Fails soft.
+export async function fetchSiteContext(siteUrl?: string): Promise<string> {
+  if (!siteUrl) return "";
+  const base = siteUrl.replace(/\/$/, "");
+  const out: string[] = [];
+  try {
+    const r = await fetch(`${base}/products.json?limit=50`, { headers: { "User-Agent": "Mozilla/5.0" }, cache: "no-store", signal: AbortSignal.timeout(8000) });
+    if (r.ok) {
+      const j = await r.json();
+      const names = (j.products || []).map((p: { title?: string }) => p.title).filter(Boolean).slice(0, 40);
+      if (names.length) out.push(`Current product range (${names.length} live): ${names.join("; ")}`);
+    }
+  } catch { /* site feed unavailable — fall back to the profile */ }
+  return out.join("\n");
 }
 
 // ── Asana routing (real GIDs) ──────────────────────────────────────────────

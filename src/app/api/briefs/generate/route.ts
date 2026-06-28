@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
 import { createClient } from "@/lib/supabase/server";
-import { buildSystemPrompt, createBriefTask, briefToHtmlNotes, BRIEFING_ENGINE_PROJECT, DRAFTED_SECTION_NAME } from "@/lib/briefing";
+import { buildSystemPrompt, createBriefTask, briefToHtmlNotes, fetchSiteContext, BRIEFING_ENGINE_PROJECT, DRAFTED_SECTION_NAME } from "@/lib/briefing";
 
 export const revalidate = 0;
+export const maxDuration = 60; // web search adds latency
 
 // Draft a compliance-aware brief: load the brand profile, call Claude server-side,
 // snapshot the guardrails onto the brief, save as draft, and (if the approval board
@@ -26,7 +27,10 @@ export async function POST(req: Request) {
     const selected = p.channels.filter((c: any) => channels.includes(c.id));
     if (!pillar || !moment) return NextResponse.json({ error: "Invalid moment or pillar" }, { status: 400 });
 
-    const system = buildSystemPrompt(brand.name, p, pillar, moment, selected, focus || "");
+    // Live context: the brand's current Shopify range + (optional) market-news web search.
+    const siteContext = await fetchSiteContext(p.siteUrl);
+    const market: string | undefined = typeof p.marketContext === "string" ? p.marketContext : undefined;
+    const system = buildSystemPrompt(brand.name, p, pillar, moment, selected, focus || "", { siteContext, market });
 
     const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -37,8 +41,9 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 1200,
+        max_tokens: 1500,
         system,
+        ...(market !== undefined ? { tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 3 }] } : {}),
         messages: [
           { role: "user", content: `Write the brief for the ${moment.name} moment across: ${selected.map((c: any) => c.name).join(", ")}. Return only the JSON object.` },
         ],
