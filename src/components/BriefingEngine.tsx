@@ -148,11 +148,17 @@ export function BriefingEngine() {
                 <div>
                   <Lbl>Channel deliverables</Lbl>
                   {(brief.deliverables || []).map((d: any) => (
-                    <div key={d.id} className="rounded p-3 mt-1" style={{ background: C.paper, border: `1px solid ${C.line}` }}>
+                    <div key={d.id} className="rounded-lg p-3.5 mt-2" style={{ background: C.paper, border: `1px solid ${C.line}` }}>
                       <div className="font-medium" style={{ color: C.navy }}>{cn(d.id)}</div>
                       <div className="text-xs opacity-60">{cp(d.id)}</div>
-                      <div className="mt-1"><span className="opacity-50 text-xs uppercase tracking-wide">Copy. </span>{d.copy_direction}</div>
-                      <div><span className="opacity-50 text-xs uppercase tracking-wide">{d.id === "blog" ? "SEO / structure. " : "Visual. "}</span>{d.visual_direction}</div>
+                      <div className="mt-2.5">
+                        <div className="opacity-50 text-[11px] uppercase tracking-wide mb-0.5">Copy</div>
+                        <p className="leading-relaxed whitespace-pre-line">{(d.copy_direction || "").replace(/\s*\|\s*/g, "\n")}</p>
+                      </div>
+                      <div className="mt-3">
+                        <div className="opacity-50 text-[11px] uppercase tracking-wide mb-0.5">{d.id === "blog" ? "SEO / structure" : "Visual"}</div>
+                        <p className="leading-relaxed whitespace-pre-line">{(d.visual_direction || "").replace(/\s*\|\s*/g, "\n")}</p>
+                      </div>
                     </div>
                   ))}
                 </div>

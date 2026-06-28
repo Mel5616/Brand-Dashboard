@@ -38,12 +38,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const lbl = (t: string) => `<div style="font-size:11px;text-transform:uppercase;letter-spacing:.15em;opacity:.5">${esc(t)}</div>`;
   const field = (label: string, val: string) => `<div style="margin-top:14px">${lbl(label)}<div style="margin-top:3px;line-height:1.5">${esc(val)}</div></div>`;
 
+  const fmtDir = (s: string) => esc(s || "").replace(/\s*\|\s*/g, "<br>");
+  const dirLabel = "font-size:10px;text-transform:uppercase;letter-spacing:.05em;opacity:.5;margin-bottom:2px";
   const deliv = (brief.deliverables || []).map((d: any) =>
-    `<div style="border:1px solid ${C.line};background:${C.paper};border-radius:8px;padding:12px 14px;margin-top:6px">
+    `<div style="border:1px solid ${C.line};background:${C.paper};border-radius:8px;padding:12px 14px;margin-top:8px">
       <div style="font-weight:500;color:${C.navy}">${esc(cname(d.id))}</div>
-      <div style="font-size:12px;opacity:.6;margin-top:1px">${esc(d.presets)}</div>
-      <div style="margin-top:6px"><span style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;opacity:.5">Copy. </span>${esc(d.copy_direction)}</div>
-      <div style="margin-top:2px"><span style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;opacity:.5">${d.id === "blog" ? "SEO / structure. " : "Visual. "}</span>${esc(d.visual_direction)}</div>
+      <div style="font-size:11px;opacity:.6;margin-top:1px">${esc(d.presets)}</div>
+      <div style="margin-top:8px"><div style="${dirLabel}">Copy</div><div style="line-height:1.55">${fmtDir(d.copy_direction)}</div></div>
+      <div style="margin-top:10px"><div style="${dirLabel}">${d.id === "blog" ? "SEO / structure" : "Visual"}</div><div style="line-height:1.55">${fmtDir(d.visual_direction)}</div></div>
     </div>`).join("");
 
   const mand = (brief.mandatory || []).map((m: string) =>
