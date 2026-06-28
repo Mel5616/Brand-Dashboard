@@ -125,6 +125,12 @@ export const ASANA_ROUTES: Record<string, Record<string, string>> = {
     blog: "1213417959049946",     // Blogs board
     _default: "1205954873551895", // Design To Do List (Diep)
   },
+  wonderfold: {
+    social: "1203558671371011",   // Wonderfold (Social Media Pages 2026)
+    edm: "1204327235272517",      // WonderFold EDMs (Email Marketing 2026)
+    blog: "1213417959049946",     // Blogs board
+    _default: "1205954873551895", // Design To Do List (Diep)
+  },
 };
 export const BRIEFING_ENGINE_PROJECT = process.env.BRIEFING_ENGINE_PROJECT_GID || "";
 export const DRAFTED_SECTION_NAME = "Drafted · needs Mel";
