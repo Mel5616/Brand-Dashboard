@@ -41,6 +41,10 @@ export function MarketingCalendar({ events, brands }: Props) {
   const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [campaigns, setCampaigns] = useState<any[]>([]);
   useEffect(() => { fetch("/api/campaigns").then(r => r.json()).then(d => setCampaigns(d.items ?? [])).catch(() => {}); }, []);
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [showAll, setShowAll] = useState<Record<string, boolean>>({});
+  const toggleCollapsed = (id: string) => setCollapsed(p => ({ ...p, [id]: !p[id] }));
+  const toggleShowAll = (id: string) => setShowAll(p => ({ ...p, [id]: !p[id] }));
 
   const brandMap = Object.fromEntries(brands.map((b: any) => [b.id, b]));
 
@@ -177,22 +181,36 @@ export function MarketingCalendar({ events, brands }: Props) {
             </div>
           )}
 
-          {CATEGORIES.map(cat => {
-            const list = future.filter(e => categorize(e.title, (e as any)._isCampaign) === cat.id);
-            if (!list.length) return null;
-            return (
-              <div key={cat.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="px-5 py-2.5 border-b border-gray-50 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full" style={{ background: cat.color }} />
-                  <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">{cat.label}</span>
-                  <span className="text-[11px] text-gray-300 ml-auto">{list.length}</span>
+          <div className="grid md:grid-cols-2 gap-4 items-start">
+            {CATEGORIES.map(cat => {
+              const list = future.filter(e => categorize(e.title, (e as any)._isCampaign) === cat.id);
+              if (!list.length) return null;
+              const isOpen = !collapsed[cat.id];
+              const visible = showAll[cat.id] ? list : list.slice(0, 5);
+              return (
+                <div key={cat.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                  <button onClick={() => toggleCollapsed(cat.id)} className="w-full px-5 py-3 flex items-center gap-2 hover:bg-gray-50/60 transition" aria-expanded={isOpen}>
+                    <span className="w-2 h-2 rounded-full" style={{ background: cat.color }} />
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">{cat.label}</span>
+                    <span className="text-[11px] text-gray-300 ml-auto">{list.length}</span>
+                    <svg className={`w-4 h-4 text-gray-300 transition-transform ${isOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                  </button>
+                  {isOpen && (
+                    <div className="border-t border-gray-50">
+                      <div className="divide-y divide-gray-50">
+                        {visible.map(e => <EventRow key={e.uid} e={e} />)}
+                      </div>
+                      {list.length > 5 && (
+                        <button onClick={() => toggleShowAll(cat.id)} className="w-full text-[11px] font-semibold text-indigo-500 hover:bg-indigo-50/50 py-2 border-t border-gray-50 transition">
+                          {showAll[cat.id] ? "Show less" : `+ ${list.length - 5} more`}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div className="divide-y divide-gray-50">
-                  {list.map(e => <EventRow key={e.uid} e={e} />)}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
           {future.length === 0 && (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-6 text-sm text-gray-400 text-center">No upcoming events scheduled</div>
           )}
