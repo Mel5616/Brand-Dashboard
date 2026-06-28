@@ -96,7 +96,7 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
   },
   {
-    id: "events", label: "Events",
+    id: "events", label: "Tune Up Days",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>,
   },
   {
@@ -128,10 +128,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
 // Sidebar grouping — how you market (top) vs where you sell (bottom).
 const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Overview", ids: ["brands", "insights", "report", "snapshot", "uppababy"] },
-  { label: "Plan", ids: ["campaign-calendar", "calendar", "content"] },
+  { label: "Plan", ids: ["campaign-calendar", "calendar", "content", "events"] },
   { label: "Paid", ids: ["google-ads", "meta-ads"] },
   { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting"] },
-  { label: "Revenue & Channels", ids: ["sales", "shopify", "tradeshows", "events"] },
+  { label: "Revenue & Channels", ids: ["sales", "shopify", "tradeshows"] },
   { label: "Operations", ids: ["budget", "team"] },
 ];
 
@@ -1423,7 +1423,7 @@ export function DashboardTabs({
           {/* ── Events (Eventbrite — tickets sold, capacity, revenue) ── */}
           {active === "events" && (
             <>
-              <SectionBar title="Events · Eventbrite" />
+              <SectionBar title="Tune-Up Days · Eventbrite" />
               <EventsPanel events={eventbriteEvents} brands={brands} />
             </>
           )}
