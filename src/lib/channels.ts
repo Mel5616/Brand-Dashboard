@@ -19,7 +19,10 @@ const CHANNEL_MAP: Record<string, string> = {
   "Coolkidz": "Website Sales", "Direct Customer": "Website Sales", "Tradeshow Sales": "Tradeshows",
 };
 
-export const CH_COLORS = ["#1e3a5f", "#10b981", "#f97316", "#3b82f6", "#a855f7", "#ec4899", "#14b8a6", "#92400e", "#22c55e", "#64748b", "#eab308", "#0ea5e9"];
+// Muted, cohesive palette (cool teals/slates + warm terracotta/rose/ochre accents),
+// inspired by the reference dashboard. Indexes map to CHANNEL_ORDER below, and this
+// also drives the donut + legend so the whole Overview stays consistent.
+export const CH_COLORS = ["#2f4858", "#4f9d86", "#cc7a57", "#5b86b0", "#8a79ad", "#c97f96", "#73a9a0", "#9c7c5e", "#7fae8a", "#6f7a87", "#b8954a", "#5f93a8"];
 const CHANNEL_ORDER = ["Baby Bunting", "Website Sales", "Wholesale", "Tradeshows", "New Zealand", "Amazon", "Online Only Stores", "Specialty", "Marketplace", "Partnerships", "Affiliates"];
 export const channelColor = (name: string) => { const i = CHANNEL_ORDER.indexOf(name); return CH_COLORS[(i >= 0 ? i : CHANNEL_ORDER.length + name.length) % CH_COLORS.length]; };
 
