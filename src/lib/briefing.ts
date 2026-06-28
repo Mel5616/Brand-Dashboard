@@ -12,6 +12,7 @@ export type BrandProfile = {
   brandLine: string;
   positioning: string;
   hero: string;
+  tone?: string[];
   audience: { primary: string; split: string };
   pillars: Pillar[];
   moments: Moment[];
@@ -41,11 +42,15 @@ CAMPAIGN MOMENT: ${moment.name}. Objective: ${moment.objective}. Focus: ${moment
 
 HARD RULES
 - Australian English throughout. No em dashes anywhere.
-- Education-led and reassurance-led. Never fear-based. Never discount-led.
 - Honour every standing compliance flag for this brand:
 ${p.standingFlags.map((f) => `  - ${f.level.toUpperCase()}: ${f.note}`).join("\n")}
 - Do not assert any regulatory status. Soften or flag claims rather than stating them as fact.
 - Direction must be specific and usable by a designer and a copywriter, not generic.
+
+BRAND VOICE AND GUARDRAILS (specific to ${brandName} — follow these exactly, they define this brand's posture)
+${p.tone?.length ? `Tone: ${p.tone.join("; ")}` : ""}
+ALWAYS: ${p.mandatory.join(" | ")}
+NEVER: ${p.exclusions.join(" | ")}
 ${live?.market !== undefined ? `
 LIVE MARKET CONTEXT
 Use the web_search tool to check current ${live.market || "category"} news, seasonal timing and competitor activity in Australia relevant to this moment. Treat everything you find as BACKGROUND CONTEXT ONLY:
@@ -105,6 +110,12 @@ export const ASANA_ROUTES: Record<string, Record<string, string>> = {
   uppababy: {
     social: "1203558671371025",   // UPPAbaby (Social Media Pages 2026) — note: AU only, no NZ handling yet
     edm: "1204336076946263",      // UPPAbaby EDMs (Email Marketing 2026)
+    blog: "1213417959049946",     // Blogs board
+    _default: "1205954873551895", // Design To Do List (Diep)
+  },
+  magic: {
+    social: "1212637192218248",   // Magic (Social Media Pages 2026)
+    edm: "1212637191678636",      // Magic EDMs (Email Marketing 2026)
     blog: "1213417959049946",     // Blogs board
     _default: "1205954873551895", // Design To Do List (Diep)
   },
