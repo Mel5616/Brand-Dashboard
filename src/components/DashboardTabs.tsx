@@ -589,22 +589,16 @@ export function DashboardTabs({
               {(() => {
                 const biz = buildChannels("all", { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest: LATEST });
                 if (!biz.length) return null;
-                const ssum = (a: number[]) => a.reduce((s, v) => s + (v || 0), 0);
                 const visible = role === "admin" ? biz : biz.filter((c: any) => DIGITAL_CHANNELS.has(c.name));
-                const total = ssum(visible.map((c: any) => c.fy));
                 const chans = [...visible].sort((a: any, b: any) => (b.fy ?? 0) - (a.fy ?? 0));
                 return (
                   <div className="mb-4">
                     <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-3">Channel sales <span className="font-normal text-gray-400 normal-case tracking-normal">· {fyLabel}</span></p>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      <div className="col-span-2 rounded-2xl p-5 flex flex-col justify-center text-white shadow-sm" style={{ background: "linear-gradient(135deg, #10b981 0%, #0891b2 100%)" }}>
-                        <p className="text-3xl md:text-4xl font-bold leading-none">{fmt(total)}</p>
-                        <p className="text-[11px] uppercase tracking-[0.12em] font-semibold opacity-90 mt-1.5">Total sales{role === "admin" ? "" : " (digital)"}</p>
-                      </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
                       {chans.map((c: any) => (
-                        <div key={c.name} className="rounded-2xl p-4 flex flex-col justify-center text-white shadow-sm" style={{ background: channelColor(c.name) }}>
-                          <p className="text-2xl font-bold leading-none">{fmt(c.fy ?? 0)}</p>
-                          <p className="text-[10px] uppercase tracking-[0.1em] font-semibold opacity-90 mt-1.5 leading-tight">{c.name}</p>
+                        <div key={c.name} className="rounded-xl px-3 py-2.5 text-white shadow-sm" style={{ background: channelColor(c.name) }}>
+                          <p className="text-lg font-bold leading-none">{fmt(c.fy ?? 0)}</p>
+                          <p className="text-[9px] uppercase tracking-[0.08em] font-semibold opacity-90 mt-1 leading-tight">{c.name}</p>
                         </div>
                       ))}
                     </div>
