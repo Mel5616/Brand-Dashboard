@@ -138,6 +138,30 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
 // Report-type pages collapse under a "Reports" dropdown in the sidebar.
 const REPORT_IDS: TabId[] = ["report", "snapshot", "uppababy"];
 
+// Inline SVG donut for the Business overview channel split.
+function ChannelDonut({ slices, total, size = 150 }: { slices: { value: number; color: string }[]; total: number; size?: number }) {
+  const r = size / 2 - 4, inner = r * 0.6, cx = size / 2, cy = size / 2;
+  const pos = slices.filter(s => s.value > 0);
+  const sum = pos.reduce((s, x) => s + x.value, 0) || 1;
+  const pt = (rad: number, ang: number): [number, number] => [cx + rad * Math.cos(ang), cy + rad * Math.sin(ang)];
+  let a0 = -Math.PI / 2;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="shrink-0">
+      {pos.length === 1
+        ? <circle cx={cx} cy={cy} r={(r + inner) / 2} fill="none" stroke={pos[0].color} strokeWidth={r - inner} />
+        : pos.map((s, i) => {
+            const frac = s.value / sum, a1 = a0 + frac * 2 * Math.PI, large = frac > 0.5 ? 1 : 0;
+            const [x0, y0] = pt(r, a0), [x1, y1] = pt(r, a1), [ix1, iy1] = pt(inner, a1), [ix0, iy0] = pt(inner, a0);
+            const d = `M${x0.toFixed(2)},${y0.toFixed(2)} A${r},${r} 0 ${large} 1 ${x1.toFixed(2)},${y1.toFixed(2)} L${ix1.toFixed(2)},${iy1.toFixed(2)} A${inner},${inner} 0 ${large} 0 ${ix0.toFixed(2)},${iy0.toFixed(2)} Z`;
+            a0 = a1;
+            return <path key={i} d={d} fill={s.color} stroke="#fff" strokeWidth={1.5} />;
+          })}
+      <text x={cx} y={cy - 2} textAnchor="middle" fontSize="9" fill="#9aa6b4" fontWeight="600">Total</text>
+      <text x={cx} y={cy + 13} textAnchor="middle" fontSize="15" fill="#1e293b" fontWeight="800">{fmt(total)}</text>
+    </svg>
+  );
+}
+
 
 // ── Brand tiers ──────────────────────────────────────────────────────────────
 const BRAND_TIERS: Record<number, "A" | "B" | "C"> = {
@@ -539,12 +563,9 @@ export function DashboardTabs({
                         <span className="text-gray-400">· {Math.round((actToDate / tgtToDate) * 100)}% of target to date</span>
                       </div>
                     )}
-                    <div className="h-6 rounded-md overflow-hidden flex bg-gray-50 mb-2">
-                      {visible.filter((c: any) => c.fy > 0).map((c: any) => (
-                        <div key={c.name} title={`${c.name}: ${fmt(c.fy)} (${((c.fy / pos) * 100).toFixed(0)}%)`} style={{ width: `${(c.fy / pos) * 100}%`, background: channelColor(c.name) }} />
-                      ))}
-                    </div>
-                    <div className="flex flex-wrap gap-x-3 gap-y-1">
+                    <div className="flex items-center gap-5">
+                      <ChannelDonut total={total} slices={groupDirect(visible.filter((c: any) => c.fy > 0)).map((c: any) => ({ value: c.fy, color: c.isGroup ? "#1e3a5f" : channelColor(c.name) }))} />
+                      <div className="flex-1 flex flex-wrap gap-x-3 gap-y-1.5">
                       {groupDirect(visible.filter((c: any) => c.fy > 0)).map((c: any) => (
                         c.isGroup ? (
                           <span key={c.name} className="inline-flex items-center gap-1 text-[11px] text-gray-500">
@@ -558,6 +579,7 @@ export function DashboardTabs({
                           </span>
                         )
                       ))}
+                      </div>
                     </div>
                   </div>
                 );
