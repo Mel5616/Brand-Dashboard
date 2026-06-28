@@ -102,6 +102,12 @@ export const ASANA_ROUTES: Record<string, Record<string, string>> = {
     blog: "1213417959049946",     // Blogs board
     _default: "1205954873551895", // Design To Do List (Diep)
   },
+  uppababy: {
+    social: "1203558671371025",   // UPPAbaby (Social Media Pages 2026) — note: AU only, no NZ handling yet
+    edm: "1204336076946263",      // UPPAbaby EDMs (Email Marketing 2026)
+    blog: "1213417959049946",     // Blogs board
+    _default: "1205954873551895", // Design To Do List (Diep)
+  },
 };
 export const BRIEFING_ENGINE_PROJECT = process.env.BRIEFING_ENGINE_PROJECT_GID || "";
 export const DRAFTED_SECTION_NAME = "Drafted · needs Mel";
