@@ -56,10 +56,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     </div>`).join("");
 
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(brief.title)}</title><style>
-    @page { size: A4; margin: 14mm; }
+    @page { size: A4; margin: 12mm; }
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, -apple-system, sans-serif; font-weight: 300; font-size: 12px; line-height: 1.5; color: ${C.ink}; background: ${C.paper}; }
-    .card { max-width: 720px; margin: 0 auto; border: 1px solid ${C.line}; border-radius: 10px; overflow: hidden; background: #fff; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; font-weight: 300; font-size: 12px; line-height: 1.5; color: ${C.ink}; background: ${C.paper}; }
+    .card { width: 100%; max-width: 680px; margin: 0 auto; border: 1px solid ${C.line}; border-radius: 10px; overflow: hidden; background: #fff; }
     .serif { font-family: Georgia, "Times New Roman", serif; font-weight: 400; }
     h1 { margin: 3px 0 0; font-size: 21px; }
     ul { margin: 6px 0 0; padding: 0; }
