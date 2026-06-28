@@ -40,8 +40,7 @@ export async function POST(req: Request) {
         max_tokens: 1200,
         system,
         messages: [
-          { role: "user", content: `Write the brief for the ${moment.name} moment across: ${selected.map((c: any) => c.name).join(", ")}.` },
-          { role: "assistant", content: "{" }, // prefill forces clean JSON, no preamble or fences
+          { role: "user", content: `Write the brief for the ${moment.name} moment across: ${selected.map((c: any) => c.name).join(", ")}. Return only the JSON object.` },
         ],
       }),
     });
@@ -51,7 +50,8 @@ export async function POST(req: Request) {
     const raw = (aiJson.content || []).filter((b: any) => b.type === "text").map((b: any) => b.text).join("").replace(/```json|```/g, "").trim();
     let gen: any;
     try {
-      gen = JSON.parse(raw.startsWith("{") ? raw : "{" + raw);
+      const s = raw.indexOf("{"), e = raw.lastIndexOf("}");
+      gen = JSON.parse(s >= 0 && e > s ? raw.slice(s, e + 1) : raw);
     } catch {
       return NextResponse.json({ error: "The model returned an unreadable draft. Try again or reduce the channels." }, { status: 502 });
     }
