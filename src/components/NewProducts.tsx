@@ -11,25 +11,73 @@ const STATUSES: { id: string; label: string; bg: string }[] = [
 const statusOf = (s: string) => STATUSES.find(x => x.id === s) ?? STATUSES[0];
 const fmtDate = (s?: string | null) => s ? new Date(s + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : null;
 
+// Variants share a base SKU (the part before the last hyphen, e.g. GSBW-G -> GSBW).
+const groupKeyOf = (p: any) => { const s = String(p.sku || "").trim(); return (s.includes("-") ? s.slice(0, s.lastIndexOf("-")) : (s || p.id)).toUpperCase(); };
+// Longest shared word-prefix across the variant names — the product line title.
+function commonPrefix(names: string[]): string {
+  if (!names.length) return "";
+  const split = names.map(n => n.trim().split(/\s+/));
+  const out: string[] = [];
+  for (let i = 0; i < split[0].length; i++) { const w = split[0][i]; if (split.every(s => s[i] === w)) out.push(w); else break; }
+  return out.join(" ").trim() || names[0];
+}
+
 export function NewProducts({ brands, canEdit = false }: { brands: { id: number; name: string }[]; canEdit?: boolean }) {
   const [products, setProducts] = useState<any[]>([]);
   const [needsSetup, setNeedsSetup] = useState(false);
-  const [openId, setOpenId] = useState<string | null>(null);
-  const [edit, setEdit] = useState<any>(null);
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const [edit, setEdit] = useState<any>(null);          // shared copy fields (from the representative)
   const [busy, setBusy] = useState("");
   const [msg, setMsg] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<HTMLInputElement>(null);
+  const imgTarget = useRef<string | null>(null);        // which variant id an uploaded image is for
 
   async function load() {
     const d = await fetch("/api/new-products").then(r => r.json()).catch(() => ({ products: [] }));
-    setNeedsSetup(!!d.needsSetup);
-    setProducts(d.products || []);
+    setNeedsSetup(!!d.needsSetup); setProducts(d.products || []);
   }
   useEffect(() => { load(); }, []);
 
-  const open = products.find(p => p.id === openId) || null;
-  useEffect(() => { setEdit(open ? { ...open } : null); }, [openId]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Group products into product lines.
+  const map = new Map<string, any[]>();
+  for (const p of products) { const k = groupKeyOf(p); (map.get(k) ?? map.set(k, []).get(k)!).push(p); }
+  const groups = [...map.entries()].map(([key, members]) => ({ key, members, title: commonPrefix(members.map(m => m.name)) }))
+    .sort((a, b) => a.title.localeCompare(b.title));
+
+  const open = groups.find(g => g.key === openKey) || null;
+  const rep = open?.members[0];
+  useEffect(() => { setEdit(rep ? { ...rep } : null); }, [openKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const variantLabel = (name: string, title: string) => name.replace(title, "").trim() || name;
+
+  async function save() {
+    if (!open || !edit) return;
+    setBusy("save");
+    const payload = { long_description: edit.long_description, short_description: edit.short_description, whats_in_box: edit.whats_in_box, features: edit.features, status: edit.status, launch_date: edit.launch_date || null };
+    const res = await Promise.all(open.members.map(m => fetch(`/api/new-products/${m.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then(r => r.json())));
+    setProducts(prev => prev.map(p => { const u = res.find(x => x.product?.id === p.id); return u?.product ?? p; }));
+    setBusy(""); setMsg(`Saved to ${open.members.length} colour${open.members.length === 1 ? "" : "s"}.`);
+  }
+
+  async function draft() {
+    if (!rep) return;
+    setBusy("draft"); setMsg("");
+    const j = await fetch(`/api/new-products/${rep.id}/draft`, { method: "POST" }).then(r => r.json());
+    setBusy("");
+    if (j.error) setMsg(j.detail ? `${j.error}: ${j.detail}` : j.error);
+    else setEdit((e: any) => ({ ...e, ...j.draft }));
+  }
+
+  function pickImage(targetId: string) { imgTarget.current = targetId; imgRef.current?.click(); }
+  async function uploadImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]; const id = imgTarget.current; if (!f || !id) return;
+    setBusy("image:" + id); setMsg("");
+    const fd = new FormData(); fd.append("file", f);
+    const j = await fetch(`/api/new-products/${id}/image`, { method: "POST", body: fd }).then(r => r.json());
+    setBusy(""); if (imgRef.current) imgRef.current.value = "";
+    if (j.error) setMsg(j.error);
+    else setProducts(prev => prev.map(p => p.id === j.product.id ? j.product : p));
+  }
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]; if (!file) return;
@@ -47,53 +95,16 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
         name: r[iN], sku: r[iC], source_description: iD >= 0 ? r[iD] : "", barcode: iB >= 0 ? r[iB] : "",
         weight: iW >= 0 ? r[iW] : "", length: iL >= 0 ? r[iL] : "", width: iWi >= 0 ? r[iWi] : "", height: iH >= 0 ? r[iH] : "",
       }));
-      const res = await fetch("/api/new-products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows }) });
-      const j = await res.json();
-      if (j.error) setMsg(j.error);
-      else { setMsg(`Imported ${j.imported} new product${j.imported === 1 ? "" : "s"} (${j.received} in file).`); await load(); }
+      const j = await fetch("/api/new-products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows }) }).then(r => r.json());
+      if (j.error) setMsg(j.error); else { setMsg(`Imported ${j.imported} new (${j.received} in file).`); await load(); }
     } catch { setMsg("Could not read that file."); }
     finally { setBusy(""); if (fileRef.current) fileRef.current.value = ""; }
   }
 
-  async function save() {
-    if (!edit) return;
-    setBusy("save");
-    const res = await fetch(`/api/new-products/${edit.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: edit.name, long_description: edit.long_description, short_description: edit.short_description, whats_in_box: edit.whats_in_box, features: edit.features, status: edit.status, launch_date: edit.launch_date || null }) });
-    const j = await res.json(); setBusy("");
-    if (j.error) setMsg(j.error);
-    else { setProducts(prev => prev.map(p => p.id === j.product.id ? j.product : p)); setMsg("Saved."); }
-  }
-
-  async function draft() {
-    if (!edit) return;
-    setBusy("draft"); setMsg("");
-    const res = await fetch(`/api/new-products/${edit.id}/draft`, { method: "POST" });
-    const j = await res.json(); setBusy("");
-    if (j.error) setMsg(j.detail ? `${j.error}: ${j.detail}` : j.error);
-    else setEdit((e: any) => ({ ...e, ...j.draft }));
-  }
-
-  async function del() {
-    if (!edit || !confirm("Delete this product?")) return;
-    await fetch(`/api/new-products/${edit.id}`, { method: "DELETE" });
-    setProducts(prev => prev.filter(p => p.id !== edit.id)); setOpenId(null);
-  }
-
-  async function uploadImage(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0]; if (!f || !edit) return;
-    setBusy("image"); setMsg("");
-    const fd = new FormData(); fd.append("file", f);
-    const res = await fetch(`/api/new-products/${edit.id}/image`, { method: "POST", body: fd });
-    const j = await res.json(); setBusy(""); if (imgRef.current) imgRef.current.value = "";
-    if (j.error) setMsg(j.error);
-    else { setEdit((p: any) => ({ ...p, attrs: j.product.attrs })); setProducts(prev => prev.map(p => p.id === j.product.id ? j.product : p)); }
-  }
-
-  function copyShare() {
-    if (!open) return;
-    navigator.clipboard?.writeText(`${window.location.origin}/p/${open.share_token}`);
-    setMsg("Share link copied.");
+  async function delGroup() {
+    if (!open || !confirm(`Delete this product and all ${open.members.length} colour(s)?`)) return;
+    await Promise.all(open.members.map(m => fetch(`/api/new-products/${m.id}`, { method: "DELETE" })));
+    setProducts(prev => prev.filter(p => !open.members.some(m => m.id === p.id))); setOpenKey(null);
   }
 
   if (needsSetup) return (
@@ -102,45 +113,43 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
       <p className="text-xs text-gray-400 mt-1">Run <code className="bg-gray-50 px-1 rounded">supabase/add_new_products.sql</code>, then upload your Excel.</p>
     </div>
   );
-
   const ta = "w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-y";
 
   return (
     <div className="space-y-4">
+      <input ref={imgRef} type="file" accept="image/*" onChange={uploadImage} className="hidden" />
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="text-xs text-gray-400">{products.length} product{products.length === 1 ? "" : "s"}{msg && <span className="ml-2 text-indigo-500 font-medium">{msg}</span>}</div>
+        <div className="text-xs text-gray-400">{groups.length} product line{groups.length === 1 ? "" : "s"}{msg && <span className="ml-2 text-indigo-500 font-medium">{msg}</span>}</div>
         {canEdit && (
           <div>
             <input ref={fileRef} type="file" accept=".xlsx,.xls" onChange={handleFile} className="hidden" />
-            <button onClick={() => fileRef.current?.click()} disabled={busy === "import"} className="text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg px-4 py-2 disabled:opacity-60">
-              {busy === "import" ? "Importing…" : "Upload Excel"}
-            </button>
+            <button onClick={() => fileRef.current?.click()} disabled={busy === "import"} className="text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg px-4 py-2 disabled:opacity-60">{busy === "import" ? "Importing…" : "Upload Excel"}</button>
           </div>
         )}
       </div>
 
-      {products.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-10 text-center text-sm text-gray-400">
-          Upload your New Products Excel to get started. Only the highlighted columns (name, code, description, barcode, dimensions) are imported.
-        </div>
+      {groups.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-10 text-center text-sm text-gray-400">Upload your New Products Excel to get started.</div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {products.map(p => {
-            const st = statusOf(p.status); const filled = !!p.long_description;
+          {groups.map(g => {
+            const r = g.members[0]; const st = statusOf(r.status);
+            const img = g.members.find(m => m.attrs?.image_url)?.attrs?.image_url;
+            const ready = g.members.every(m => m.long_description);
+            const colours = g.members.map(m => variantLabel(m.name, g.title)).filter(Boolean);
             return (
-              <button key={p.id} onClick={() => setOpenId(p.id)} className="text-left bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow hover:border-indigo-200 transition p-3">
+              <button key={g.key} onClick={() => setOpenKey(g.key)} className="text-left bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow hover:border-indigo-200 transition p-3">
                 <div className="flex items-center justify-between mb-1.5">
-                  {p.brand_id != null && BRAND_LOGOS[p.brand_id]
-                    ? <img src={BRAND_LOGOS[p.brand_id]} alt="" className="h-4 max-w-[64px] object-contain" />
-                    : <span className="text-[10px] text-gray-400">—</span>}
+                  {r.brand_id != null && BRAND_LOGOS[r.brand_id] ? <img src={BRAND_LOGOS[r.brand_id]} alt="" className="h-4 max-w-[64px] object-contain" /> : <span className="text-[10px] text-gray-400">—</span>}
                   <span className="text-[9px] font-semibold text-white rounded-full px-1.5 py-0.5" style={{ background: st.bg }}>{st.label}</span>
                 </div>
-                {p.attrs?.image_url && <img src={p.attrs.image_url} alt="" className="w-full h-20 object-contain rounded-md bg-gray-50 mb-1.5" />}
-                <p className="text-sm font-medium text-slate-700 leading-snug line-clamp-2 min-h-[2.5rem]">{p.name}</p>
+                {img && <img src={img} alt="" className="w-full h-20 object-contain rounded-md bg-gray-50 mb-1.5" />}
+                <p className="text-sm font-medium text-slate-700 leading-snug line-clamp-2 min-h-[2.5rem]">{g.title}</p>
                 <div className="flex items-center justify-between mt-1.5">
-                  <span className="text-[10px] text-gray-400">{p.sku}</span>
-                  {fmtDate(p.launch_date) ? <span className="text-[10px] text-indigo-500">{fmtDate(p.launch_date)}</span> : <span className={`text-[10px] ${filled ? "text-emerald-500" : "text-amber-500"}`}>{filled ? "copy ready" : "needs copy"}</span>}
+                  <span className="text-[10px] text-gray-400 truncate">{g.members.length > 1 ? `${g.members.length} colours` : r.sku}</span>
+                  <span className={`text-[10px] ${ready ? "text-emerald-500" : "text-amber-500"}`}>{ready ? "copy ready" : "needs copy"}</span>
                 </div>
+                {colours.length > 1 && <p className="text-[10px] text-gray-400 mt-0.5 truncate">{colours.join(", ")}</p>}
               </button>
             );
           })}
@@ -149,12 +158,12 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
 
       {open && edit && (
         <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-slate-900/40" onClick={() => setOpenId(null)} aria-hidden />
+          <div className="absolute inset-0 bg-slate-900/40" onClick={() => setOpenKey(null)} aria-hidden />
           <div className="relative w-full max-w-xl bg-white h-full overflow-y-auto shadow-2xl">
             <div className="p-6 space-y-4">
               <div className="flex items-start justify-between gap-3">
-                <input value={edit.name ?? ""} readOnly={!canEdit} onChange={e => setEdit({ ...edit, name: e.target.value })} className="flex-1 text-lg font-bold text-slate-900 bg-transparent rounded px-1 -ml-1 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400" />
-                <button onClick={() => setOpenId(null)} className="text-gray-400 hover:text-gray-700 p-1.5 rounded-lg hover:bg-gray-100">✕</button>
+                <div><h2 className="text-lg font-bold text-slate-900">{open.title}</h2><p className="text-xs text-gray-400">{open.members.length} colour{open.members.length === 1 ? "" : "s"} · shared copy</p></div>
+                <button onClick={() => setOpenKey(null)} className="text-gray-400 hover:text-gray-700 p-1.5 rounded-lg hover:bg-gray-100">✕</button>
               </div>
 
               <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -165,48 +174,48 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
                 <input type="date" value={edit.launch_date ? String(edit.launch_date).slice(0, 10) : ""} readOnly={!canEdit} onChange={e => setEdit({ ...edit, launch_date: e.target.value })} className="text-sm border border-gray-200 rounded-lg px-2 py-1" />
               </div>
 
-              <div>
-                <input ref={imgRef} type="file" accept="image/*" onChange={uploadImage} className="hidden" />
-                {edit.attrs?.image_url
-                  ? <img src={edit.attrs.image_url} alt="" className="w-full max-h-56 object-contain rounded-lg border border-gray-100 bg-gray-50" />
-                  : <div className="w-full h-28 rounded-lg border border-dashed border-gray-200 bg-gray-50 grid place-items-center text-xs text-gray-400">No image</div>}
-                {canEdit && (
-                  <button onClick={() => imgRef.current?.click()} disabled={busy === "image"} className="mt-1.5 text-xs font-medium text-indigo-600 hover:underline disabled:opacity-60">
-                    {busy === "image" ? "Uploading…" : edit.attrs?.image_url ? "Replace image" : "Upload image"}
-                  </button>
-                )}
-              </div>
-
-              <div className="rounded-lg bg-gray-50 border border-gray-100 p-3 text-xs text-gray-500 grid grid-cols-2 gap-x-4 gap-y-1">
-                <span>SKU: <b className="text-slate-600">{open.sku || "—"}</b></span>
-                <span>Barcode: <b className="text-slate-600">{open.barcode || "—"}</b></span>
-                <span>Dimensions: <b className="text-slate-600">{[open.length, open.width, open.height].every((v: any) => v != null) ? `${open.length}×${open.width}×${open.height} cm` : "—"}</b></span>
-                <span>Weight: <b className="text-slate-600">{open.weight != null ? `${open.weight} kg` : "—"}</b></span>
-                {open.source_description && <span className="col-span-2 mt-1">Supplier note: <span className="text-slate-600">{open.source_description}</span></span>}
-              </div>
-
               {canEdit && (
                 <button onClick={draft} disabled={busy === "draft"} className="inline-flex items-center gap-2 text-sm font-medium text-indigo-600 border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 rounded-lg px-3 py-1.5 disabled:opacity-60">
-                  {busy === "draft" && <span className="w-3.5 h-3.5 rounded-full border-2 border-indigo-300 border-t-indigo-600 animate-spin" />}
-                  {busy === "draft" ? "Drafting…" : "✨ Draft copy with Claude"}
+                  {busy === "draft" && <span className="w-3.5 h-3.5 rounded-full border-2 border-indigo-300 border-t-indigo-600 animate-spin" />}{busy === "draft" ? "Drafting…" : "✨ Draft copy with Claude"}
                 </button>
               )}
 
               {([["short_description", "Short description", 2], ["long_description", "Long description (website body)", 6], ["features", "Key features (one per line)", 5], ["whats_in_box", "What's in the box (one per line)", 3]] as const).map(([k, label, rows]) => (
                 <div key={k}>
-                  <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">{label}</label>
+                  <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-1">{label} <span className="font-normal lowercase tracking-normal text-gray-300">· shared across colours</span></label>
                   <textarea value={edit[k] ?? ""} readOnly={!canEdit} rows={rows} onChange={e => setEdit({ ...edit, [k]: e.target.value })} className={ta} />
                 </div>
               ))}
 
               {canEdit && (
-                <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
-                  <button onClick={save} disabled={busy === "save"} className="text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg px-4 py-2 disabled:opacity-60">{busy === "save" ? "Saving…" : "Save"}</button>
-                  <a href={`/new-products/${open.id}/print`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-slate-700 border border-gray-200 hover:bg-gray-50 rounded-lg px-4 py-2">PDF</a>
-                  <button onClick={copyShare} className="text-sm font-medium text-slate-700 border border-gray-200 hover:bg-gray-50 rounded-lg px-4 py-2">Copy share link</button>
-                  <button onClick={del} className="text-sm font-medium text-red-500 hover:bg-red-50 rounded-lg px-3 py-2 ml-auto">Delete</button>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <button onClick={save} disabled={busy === "save"} className="text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg px-4 py-2 disabled:opacity-60">{busy === "save" ? "Saving…" : `Save to all ${open.members.length > 1 ? open.members.length + " colours" : ""}`.trim()}</button>
+                  <button onClick={delGroup} className="text-sm font-medium text-red-500 hover:bg-red-50 rounded-lg px-3 py-2 ml-auto">Delete</button>
                 </div>
               )}
+
+              {/* Colours — per-variant SKU/dims/image/links */}
+              <div className="pt-3 border-t border-gray-100">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 mb-2">Colours & details</p>
+                <div className="space-y-2">
+                  {open.members.map(m => (
+                    <div key={m.id} className="flex items-center gap-3 rounded-lg border border-gray-100 p-2">
+                      {m.attrs?.image_url
+                        ? <img src={m.attrs.image_url} alt="" className="w-12 h-12 object-contain rounded bg-gray-50 shrink-0" />
+                        : <div className="w-12 h-12 rounded bg-gray-50 border border-dashed border-gray-200 shrink-0 grid place-items-center text-[9px] text-gray-300">img</div>}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-700 truncate">{variantLabel(m.name, open.title) || m.name}</p>
+                        <p className="text-[11px] text-gray-400 truncate">{m.sku}{m.barcode ? ` · ${m.barcode}` : ""}{[m.length, m.width, m.height].every((v: any) => v != null) ? ` · ${m.length}×${m.width}×${m.height}cm` : ""}</p>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0 text-[11px]">
+                        {canEdit && <button onClick={() => pickImage(m.id)} disabled={busy === "image:" + m.id} className="text-indigo-600 hover:underline disabled:opacity-60">{busy === "image:" + m.id ? "…" : m.attrs?.image_url ? "swap" : "image"}</button>}
+                        <a href={`/new-products/${m.id}/print`} target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:underline">PDF</a>
+                        <button onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/p/${m.share_token}`); setMsg("Link copied."); }} className="text-slate-500 hover:underline">link</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
