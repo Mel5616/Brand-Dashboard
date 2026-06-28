@@ -345,7 +345,7 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
               {maint.map(m => (
                 <div key={m.id} className="inline-flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-full pl-2.5 pr-1.5 py-1">
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ background: TIER_DOT[m.tier] ?? "#ccc" }} aria-hidden />
-                  <input aria-label="Maintenance brand name" readOnly={ro} value={m.name} onChange={e => editMaint(m.id, "name", e.target.value)} className="bg-transparent text-sm text-slate-700 w-[7.5rem] focus:outline-none focus:ring-2 focus:ring-indigo-400 rounded px-1 read-only:cursor-default" />
+                  <input key={m.id + "name"} aria-label="Maintenance brand name" readOnly={ro} defaultValue={m.name} onChange={e => editMaint(m.id, "name", e.target.value)} className="bg-transparent text-sm text-slate-700 w-[7.5rem] focus:outline-none focus:ring-2 focus:ring-indigo-400 rounded px-1 read-only:cursor-default" />
                   {canEdit
                     ? <select aria-label="Tier" value={m.tier} onChange={e => editMaint(m.id, "tier", e.target.value, true)} className="text-xs text-gray-400 bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-400 rounded cursor-pointer">{TIERS.map(t => <option key={t} value={t}>{t}</option>)}</select>
                     : <span className="text-xs text-gray-400">{m.tier}</span>}
@@ -376,19 +376,20 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
               <div className="flex items-start justify-between gap-3 mb-4">
                 <div className="flex-1">
                   <input
-                    aria-label="Campaign name" readOnly={ro} value={open.campaign} placeholder="Campaign name"
+                    key={open.id + "name"}
+                    aria-label="Campaign name" readOnly={ro} defaultValue={open.campaign} placeholder="Campaign name"
                     onChange={e => editField(open.id, "campaign", e.target.value)}
                     className="w-full text-xl font-bold text-slate-900 bg-transparent rounded px-1 -ml-1 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 read-only:cursor-default placeholder:text-gray-300"
                   />
                   <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2 text-sm">
                     <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ background: TIER_DOT[open.tier] ?? "#ccc" }} />Tier {open.tier}</span>
-                    <input aria-label="Brand" readOnly={ro} value={open.brand} placeholder="Brand" onChange={e => editField(open.id, "brand", e.target.value)} className={cell + " w-32"} />
+                    <input key={open.id + "brand"} aria-label="Brand" readOnly={ro} defaultValue={open.brand} placeholder="Brand" onChange={e => editField(open.id, "brand", e.target.value)} className={cell + " w-32"} />
                     <span className="font-semibold text-white rounded-full px-2.5 py-0.5 text-xs" style={{ background: STATUS_COLOR[open.status] ?? "#9A9A9A" }}>{open.status}</span>
                     <input type="date" aria-label="Key date" readOnly={ro} value={parseDate(open.key_date) ? open.key_date.slice(0, 10) : ""} onChange={e => editField(open.id, "key_date", e.target.value, true)} className={cell + " w-36"} />
                     <span className="text-gray-400">Owner</span>
-                    <input aria-label="Owner" readOnly={ro} value={open.owner} placeholder="TBC" onChange={e => editField(open.id, "owner", e.target.value)} className={cell + " w-24"} />
+                    <input key={open.id + "owner"} aria-label="Owner" readOnly={ro} defaultValue={open.owner} placeholder="TBC" onChange={e => editField(open.id, "owner", e.target.value)} className={cell + " w-24"} />
                   </div>
-                  <input aria-label="Channel" readOnly={ro} value={open.channel} placeholder="Channels (summary)" onChange={e => editField(open.id, "channel", e.target.value)} className={cell + " mt-1 text-xs text-gray-500"} />
+                  <input key={open.id + "channel"} aria-label="Channel" readOnly={ro} defaultValue={open.channel} placeholder="Channels (summary)" onChange={e => editField(open.id, "channel", e.target.value)} className={cell + " mt-1 text-xs text-gray-500"} />
                 </div>
                 <button aria-label="Close brief" onClick={() => setOpenId(null)} className="no-print shrink-0 text-gray-400 hover:text-gray-700 rounded-lg p-1.5 hover:bg-gray-100">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -405,7 +406,8 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                     <div key={f.key} className={guard ? `rounded-lg p-3 ${flag ? "bg-amber-50 border border-amber-200" : "bg-gray-50 border border-gray-100"}` : ""}>
                       <label className={`block text-[11px] font-semibold uppercase tracking-widest mb-1 ${flag ? "text-amber-700" : "text-gray-400"}`}>{f.label}{flag && " ·  flagged"}</label>
                       <textarea
-                        aria-label={f.label} readOnly={ro} value={val} rows={f.key === "offerMechanic" ? 4 : 2}
+                        key={open.id + f.key}
+                        aria-label={f.label} readOnly={ro} defaultValue={val} rows={f.key === "offerMechanic" ? 4 : 2}
                         placeholder={`Add the ${f.label.toLowerCase()}`}
                         onChange={e => editBrief(open, f.key, e.target.value)}
                         className="w-full bg-transparent text-sm text-slate-700 leading-relaxed rounded px-1 -ml-1 resize-y focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 read-only:cursor-default placeholder:text-gray-300 placeholder:italic"
