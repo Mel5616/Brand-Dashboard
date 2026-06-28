@@ -542,9 +542,27 @@ def fetch_state_orders_by_brand(domain, token, state, date_start, date_end):
         cursor = data['edges'][-1]['cursor']
     return {bid: (round(rev), brand_count[bid]) for bid, rev in brand_rev.items()}
 
+def load_excluded_tradeshows():
+    # Committed kill-list so a show can be removed without editing the config secret.
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'excluded_tradeshows.json')
+    ids = set()
+    try:
+        with open(path) as f:
+            ids = {int(x) for x in (json.load(f) or [])}
+    except (FileNotFoundError, ValueError):
+        pass
+    return ids
+
 def sync_tradeshows(config, all_brands):
-    shows = config.get('tradeshows', [])
+    excluded = load_excluded_tradeshows()
+    shows = [s for s in config.get('tradeshows', []) if s.get('id') not in excluded]
     now   = datetime.utcnow().isoformat() + 'Z'
+
+    # Self-heal: clear any rows for excluded shows (handles ones already synced).
+    for ex in excluded:
+        sb_delete_where('tradeshow_sales', 'tradeshow_id', ex)
+        sb_delete_where('tradeshow_brands', 'tradeshow_id', ex)
+        sb_delete_where('tradeshows', 'id', ex)
 
     # Upsert tradeshow definitions
     ts_rows = [{'id': s['id'], 'name': s['name'], 'date_start': s['dateStart'], 'date_end': s['dateEnd'], 'state': s['state'], 'location': s.get('location','')} for s in shows]
