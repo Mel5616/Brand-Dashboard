@@ -34,6 +34,19 @@ jobs:
           if [ -n "$GOOGLE_ADS_CREDS_JSON" ]; then printf '%s' "$GOOGLE_ADS_CREDS_JSON" > google_ads_creds.json; fi
           if [ -n "$GA4_CREDENTIALS_JSON" ]; then printf '%s' "$GA4_CREDENTIALS_JSON" > credentials.json; fi
 
+      # Asana is fast (a couple of API calls) and was timing out behind the slow
+      # Shopify/Klaviyo steps, so it runs first.
+      - name: Run Asana tasks sync
+        if: ${{ always() }}
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ASANA_TOKEN: ${{ secrets.ASANA_TOKEN }}
+          ASANA_PROJECT_ID: ${{ secrets.ASANA_PROJECT_ID }}
+          ASANA_DESIGN_PROJECT_ID: ${{ secrets.ASANA_DESIGN_PROJECT_ID }}
+        run: python3 -u scripts/sync_asana.py
+
       - name: Run sync
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
@@ -95,17 +108,6 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           EVENTBRITE_TOKEN: ${{ secrets.EVENTBRITE_TOKEN }}
         run: python3 -u scripts/sync_eventbrite.py
-
-      - name: Run Asana tasks sync
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          ASANA_TOKEN: ${{ secrets.ASANA_TOKEN }}
-          ASANA_PROJECT_ID: ${{ secrets.ASANA_PROJECT_ID }}
-          ASANA_DESIGN_PROJECT_ID: ${{ secrets.ASANA_DESIGN_PROJECT_ID }}
-        run: python3 -u scripts/sync_asana.py
 
       # Slow step (rate-limited metric aggregates) — kept after the faster syncs so a
       # timeout here can't starve them.
