@@ -31,6 +31,10 @@ const horizonForDate = (s: string): string => {
   const diff = (d.getFullYear() * 12 + d.getMonth()) - (now.getFullYear() * 12 + now.getMonth());
   return ["now", "next", "later"][Math.max(0, Math.min(2, diff))];
 };
+// Position within the 3-month Now/Next/Later window (0–1), for the card duration bar.
+const winStart = (() => { const s = new Date(); s.setDate(1); s.setHours(0, 0, 0, 0); return s; })();
+const winSpanMs = (() => { const e = new Date(winStart); e.setMonth(e.getMonth() + 3); return e.getTime() - winStart.getTime(); })();
+const winFrac = (d: Date) => Math.max(0, Math.min(1, (d.getTime() - winStart.getTime()) / winSpanMs));
 
 // Key date: stored as YYYY-MM-DD. These helpers format it and build calendar links.
 const parseDate = (s: string) => { if (!/^\d{4}-\d{2}-\d{2}/.test(s || "")) return null; const d = new Date(s.slice(0, 10) + "T00:00:00"); return isNaN(d.getTime()) ? null : d; };
@@ -66,6 +70,9 @@ const BRIEF_FIELDS: { key: string; label: string }[] = [
   { key: "dependencies", label: "Dependencies" },
   { key: "compliance", label: "Compliance" },
 ];
+// The brief "Channels" field is a fixed checklist (stored as a comma-joined string).
+const CHANNEL_OPTIONS = ["Brand Website", "Retail", "Baby Bunting", "Marketplace", "Google", "Meta", "EDM", "Social Media", "Influencers"];
+const splitChannels = (v: string) => (v || "").split(",").map(s => s.trim()).filter(Boolean);
 const GUARD = new Set(["do", "dont", "compliance"]);
 const isFlagged = (v: string) => /^\s*(high|check)/i.test(v || "");
 
@@ -175,6 +182,17 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
     const cur = { ...(briefDraft.current[item.id] ?? (item.brief as any) ?? {}), [fieldKey]: value };
     briefDraft.current[item.id] = cur;
     setItems(prev => prev.map(it => (it.id === item.id ? { ...it, brief: { ...cur } } : it)));
+  }
+  // Channels checklist toggles save immediately (no debounce — checkboxes don't lose focus).
+  function toggleChannel(item: Campaign, opt: string) {
+    const set = new Set(splitChannels((briefDraft.current[item.id] ?? (item.brief as any) ?? {}).channels ?? ""));
+    set.has(opt) ? set.delete(opt) : set.add(opt);
+    const value = CHANNEL_OPTIONS.filter(o => set.has(o)).join(", ");
+    const cur = { ...(briefDraft.current[item.id] ?? (item.brief as any) ?? {}), channels: value };
+    briefDraft.current[item.id] = cur;
+    setItems(prev => prev.map(it => (it.id === item.id ? { ...it, brief: { ...cur } } : it)));
+    if (item.id.startsWith("temp-")) return;
+    patch(item.id, { brief: { ...cur } } as Partial<Campaign>);
   }
   async function addRow(horizon: string) {
     const order = Math.max(0, ...items.filter(i => i.horizon === horizon).map(i => i.sort_order || 0)) + 1;
@@ -360,6 +378,17 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                               ? <span className="inline-flex items-center gap-1 text-indigo-500 font-medium"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>{fmtKeyDate(c.key_date)}{parseDate(c.end_date ?? "") ? ` – ${fmtKeyDate(c.end_date!)}` : ""}</span>
                               : <span className="text-gray-400">{c.key_date}</span>}
                           </div>
+                          {(() => {
+                            const sd = parseDate(c.key_date), ed = parseDate(c.end_date ?? "");
+                            if (!sd || !ed) return null;
+                            return (
+                              <div className="relative h-1.5 rounded-full bg-gray-100 mt-1.5" title={`${fmtKeyDate(c.key_date)} – ${fmtKeyDate(c.end_date!)}`}>
+                                <div className="absolute inset-y-0 left-1/3 w-px bg-white" />
+                                <div className="absolute inset-y-0 left-2/3 w-px bg-white" />
+                                <div className="absolute inset-y-0 rounded-full" style={{ left: `${winFrac(sd) * 100}%`, right: `${(1 - winFrac(ed)) * 100}%`, background: STATUS_COLOR[c.status] ?? "#9A9A9A" }} />
+                              </div>
+                            );
+                          })()}
                           <p className="text-[11px] text-gray-400">Owner {c.owner || "TBC"}{c.channel ? ` · ${c.channel}` : ""}</p>
                           {c.note && <p className="text-[11px] text-gray-500 leading-snug">{c.note}</p>}
                           <p className="text-[11px] font-medium text-indigo-500 flex items-center gap-1">{flagged && <span title="Compliance flag" className="text-amber-500">⚠</span>}Open brief →</p>
@@ -449,13 +478,27 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                   return (
                     <div key={f.key} className={guard ? `rounded-lg p-3 ${flag ? "bg-amber-50 border border-amber-200" : "bg-gray-50 border border-gray-100"}` : ""}>
                       <label className={`block text-[11px] font-semibold uppercase tracking-widest mb-1 ${flag ? "text-amber-700" : "text-gray-400"}`}>{f.label}{flag && " ·  flagged"}</label>
-                      <textarea
-                        key={open.id + f.key}
-                        aria-label={f.label} readOnly={ro} defaultValue={val} rows={f.key === "offerMechanic" ? 4 : 2}
-                        placeholder={`Add the ${f.label.toLowerCase()}`}
-                        onChange={e => saveBrief(open, f.key, e.target.value)} onBlur={e => commitBrief(open, f.key, e.target.value)}
-                        className="w-full bg-transparent text-sm text-slate-700 leading-relaxed rounded px-1 -ml-1 resize-y focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 read-only:cursor-default placeholder:text-gray-300 placeholder:italic"
-                      />
+                      {f.key === "channels" ? (
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {CHANNEL_OPTIONS.map(opt => {
+                            const on = splitChannels(val).includes(opt);
+                            return (
+                              <label key={opt} className={`inline-flex items-center gap-1.5 text-[13px] rounded-full border px-2.5 py-1 cursor-pointer transition ${ro ? "cursor-default" : ""} ${on ? "bg-indigo-50 border-indigo-300 text-indigo-700 font-medium" : "bg-white border-gray-200 text-gray-500 hover:border-gray-300"}`}>
+                                <input type="checkbox" disabled={ro} checked={on} onChange={() => toggleChannel(open, opt)} className="accent-indigo-500 w-3.5 h-3.5" />
+                                {opt}
+                              </label>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <textarea
+                          key={open.id + f.key}
+                          aria-label={f.label} readOnly={ro} defaultValue={val} rows={f.key === "offerMechanic" ? 4 : 2}
+                          placeholder={`Add the ${f.label.toLowerCase()}`}
+                          onChange={e => saveBrief(open, f.key, e.target.value)} onBlur={e => commitBrief(open, f.key, e.target.value)}
+                          className="w-full bg-transparent text-sm text-slate-700 leading-relaxed rounded px-1 -ml-1 resize-y focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 read-only:cursor-default placeholder:text-gray-300 placeholder:italic"
+                        />
+                      )}
                     </div>
                   );
                 })}
