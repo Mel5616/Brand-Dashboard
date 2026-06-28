@@ -55,6 +55,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const spec = specRows.map((r, i) => `<tr style="background:${i % 2 ? "#fff" : "#f8fafc"}"><td style="padding:6px 10px;color:${MUTE};border:1px solid ${LINE}">${esc(r[0])}</td><td style="padding:6px 10px;font-weight:600;border:1px solid ${LINE}">${esc(r[1])}</td></tr>`).join("");
 
   const variantRows = members.map(m => `<tr>
+    <td style="padding:4px 6px;border:1px solid ${LINE};width:44px;text-align:center">${m.attrs?.image_url ? `<img src="${esc(m.attrs.image_url)}" style="width:34px;height:34px;object-fit:contain;display:inline-block;background:#f8fafc;border-radius:3px"/>` : ""}</td>
     <td style="padding:6px 9px;border:1px solid ${LINE};font-weight:600">${esc(variantLabel(m.name))}</td>
     <td style="padding:6px 9px;border:1px solid ${LINE}">${esc(m.sku || "")}</td>
     <td style="padding:6px 9px;border:1px solid ${LINE}">${esc(m.barcode || "")}</td>
@@ -84,20 +85,21 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1.15fr 0.85fr;gap:10mm;padding:2mm 14mm 6mm">
+    <div style="display:grid;grid-template-columns:1.1fr 0.9fr;gap:10mm;padding:2mm 14mm 6mm">
       <div>
         ${para ? `${h("Description")}<div style="color:#334155">${para}</div>` : ""}
-        ${feat ? `<div style="margin-top:14px">${h("Key features")}<ul style="margin:0;padding:0">${feat}</ul></div>` : ""}
-        ${box ? `<div style="margin-top:14px">${h("What's in the box")}<ul style="margin:0;padding:0">${box}</ul></div>` : ""}
       </div>
       <div>
         ${specRows.length ? `${h("Specification data")}<table>${spec}</table>` : ""}
+        ${feat ? `<div style="margin-top:14px">${h("Key features")}<ul style="margin:0;padding:0">${feat}</ul></div>` : ""}
+        ${box ? `<div style="margin-top:14px">${h("What's in the box")}<ul style="margin:0;padding:0">${box}</ul></div>` : ""}
       </div>
     </div>
 
     ${multi ? `<div style="padding:0 14mm 8mm">${h("Colours")}
       <table>
         <thead><tr style="background:${NAVY};color:#fff">
+          <th style="padding:7px 6px;width:44px"></th>
           <th style="padding:7px 9px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em">Colour</th>
           <th style="padding:7px 9px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em">SKU</th>
           <th style="padding:7px 9px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em">Barcode</th>
