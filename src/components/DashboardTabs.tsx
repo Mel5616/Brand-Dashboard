@@ -607,22 +607,9 @@ export function DashboardTabs({
               )}
 
               <div>
-                {/* Period toggle + heading */}
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex items-baseline justify-between mb-3">
                   <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Brands — click to explore</h2>
-                  <div className="flex gap-0.5 bg-gray-100 rounded-lg p-0.5">
-                    {(["monthly", "weekly", "fy"] as BrandPeriod[]).map(p => (
-                      <button
-                        key={p}
-                        onClick={() => setBrandPeriod(p)}
-                        className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                          brandPeriod === p ? "bg-white shadow-sm text-slate-700" : "text-gray-400 hover:text-gray-600"
-                        }`}
-                      >
-                        {p === "monthly" ? "Monthly" : p === "weekly" ? "Weekly" : "Full Year"}
-                      </button>
-                    ))}
-                  </div>
+                  <span className="text-[11px] text-gray-400">{fyLabel} · whole business, all channels</span>
                 </div>
 
                 {/* Brand grid — grouped by tier if tiers configured */}
@@ -663,35 +650,12 @@ export function DashboardTabs({
                           const mRoas    = latestM && latestM.spend > 0 ? latestM.revenue / latestM.spend : 0;
                           const sum      = summaryMap[id];
 
-                          // Period-specific revenue + growth + pacing
-                          let periodRevenue: number | undefined;
-                          let periodGrowth: number | null | undefined;
-                          let periodLabel: string | undefined;
-                          let pacePct: number | null = null;
-                          if (brandPeriod === "weekly") {
-                            const wkRev  = weekly.find((w: any) => w.brand_id === id && w.week_start === lastWkStart)?.revenue ?? 0;
-                            const prevRev = weekly.find((w: any) => w.brand_id === id && w.week_start === prevWkStart)?.revenue ?? 0;
-                            periodRevenue = wkRev;
-                            periodGrowth  = prevRev > 0 ? ((wkRev - prevRev) / prevRev) * 100 : null;
-                            periodLabel   = sortedWeeks[0] ? `Wk ${new Date(lastWkStart).toLocaleDateString("en-AU", { day:"numeric", month:"short" })}` : "Last week";
-                          } else if (brandPeriod === "fy" || wholeYear) {
-                            // Full year — whole-FY revenue vs whole-FY target
-                            const fyRev    = monthly.filter((m: any) => m.brand_id === id).reduce((s: number, m: any) => s + (m.revenue ?? 0), 0);
-                            const fyTarget = targets.filter((t: any) => t.brand_id === id).reduce((s: number, t: any) => s + (t.revenue_target ?? 0), 0);
-                            periodRevenue = fyRev;
-                            periodGrowth  = sum?.yoy_growth ?? null;
-                            periodLabel   = fyLabel;
-                            pacePct       = fyTarget > 0 ? Math.min((fyRev / fyTarget) * 100, 100) : null;
-                          } else {
-                            // monthly — reflect the selected month
-                            const moRev    = monthly.find((m: any) => m.brand_id === id && m.month_key === LATEST)?.revenue ?? 0;
-                            const prevRev  = monthly.find((m: any) => m.brand_id === id && m.month_key === PREV_MO)?.revenue ?? 0;
-                            const moTarget = target?.revenue_target ?? 0;
-                            periodRevenue = moRev;
-                            periodGrowth  = prevRev > 0 ? ((moRev - prevRev) / prevRev) * 100 : null;
-                            periodLabel   = latestLabel;
-                            pacePct       = moTarget > 0 ? Math.min((moRev / moTarget) * 100, 100) : null;
-                          }
+                          // Whole-business FY revenue across all channels — the brand's true size.
+                          const wholeRevenue = buildChannels(id, { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest: LATEST }).reduce((s: number, c: any) => s + (c.fy ?? 0), 0);
+                          // Small "vs target" bar stays as monthly D2C pacing (D2C detail lives on Shopify).
+                          const moRev    = monthly.find((m: any) => m.brand_id === id && m.month_key === LATEST)?.revenue ?? 0;
+                          const moTarget = target?.revenue_target ?? 0;
+                          const pacePct  = moTarget > 0 ? Math.min((moRev / moTarget) * 100, 100) : null;
 
                           return (
                             <BrandCard
@@ -705,10 +669,8 @@ export function DashboardTabs({
                               igFollowers={latestIg?.followers}
                               target={target}
                               roasAlert={(gRoas > 0 && gRoas < 1.5) || (mRoas > 0 && mRoas < 1.5)}
-                              period={brandPeriod}
-                              periodRevenue={periodRevenue}
-                              periodGrowth={periodGrowth}
-                              periodLabel={periodLabel}
+                              wholeRevenue={wholeRevenue}
+                              wholeLabel={`${fyLabel} · all channels`}
                               pacePct={pacePct}
                             />
                           );

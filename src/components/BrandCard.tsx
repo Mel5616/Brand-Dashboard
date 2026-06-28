@@ -1,5 +1,5 @@
 "use client";
-import { fmt, fmtPct } from "@/lib/format";
+import { fmt } from "@/lib/format";
 import type { Brand, BrandSummary, BrandTarget } from "@/lib/db";
 
 export const BRAND_LOGOS: Record<number, string> = {
@@ -36,26 +36,18 @@ interface Props {
   target?: BrandTarget;
   roasAlert?: boolean;
   period?: BrandPeriod;
-  periodRevenue?: number;
-  periodGrowth?: number | null;
-  periodLabel?: string;
   pacePct?: number | null;
+  // Whole-business FY revenue across all channels — the card's headline figure.
+  wholeRevenue?: number;
+  wholeLabel?: string;
 }
 
-export function BrandCard({ brand, summary, onClick, hasGoogle, hasMeta, hasInstagram, igFollowers, target, roasAlert, period = "monthly", periodRevenue, periodGrowth, periodLabel, pacePct }: Props) {
+export function BrandCard({ brand, summary, onClick, hasGoogle, hasMeta, hasInstagram, igFollowers, target, roasAlert, pacePct, wholeRevenue, wholeLabel }: Props) {
   const logo = BRAND_LOGOS[brand.id];
 
-  const displayRevenue = periodRevenue ?? (period === "fy" ? (summary?.fy_revenue ?? 0) : (summary?.last_month_rev ?? 0));
-  const displayGrowth  = periodGrowth  ?? (period === "monthly" ? (summary?.mom_growth ?? null) : null);
-  const displayLabel   = periodLabel   ?? (period === "fy" ? "FY 2025–26" : period === "weekly" ? "Last week" : (summary?.last_month_label ?? "Last month"));
-
-  const growthPos  = (displayGrowth ?? 0) >= 0;
+  const headlineRevenue = wholeRevenue ?? summary?.fy_revenue ?? 0;
   const momAlert   = (summary?.mom_growth ?? 0) < -20;
-  const revenuePct = pacePct !== undefined
-    ? pacePct
-    : (period === "monthly" && target && target.revenue_target > 0 && summary
-        ? Math.min((summary.last_month_rev / target.revenue_target) * 100, 100)
-        : null);
+  const revenuePct = pacePct ?? (target && target.revenue_target > 0 && summary ? Math.min((summary.last_month_rev / target.revenue_target) * 100, 100) : null);
   const onTrack = revenuePct !== null && revenuePct >= 80;
 
   return (
@@ -115,16 +107,9 @@ export function BrandCard({ brand, summary, onClick, hasGoogle, hasMeta, hasInst
               </div>
             )}
 
-            <div className="flex items-end justify-between">
-              <div>
-                <p className="text-2xl font-light text-slate-800 leading-none">{fmt(displayRevenue)}</p>
-                <p className="text-[10px] text-gray-400 mt-1">{displayLabel}</p>
-              </div>
-              {displayGrowth !== null && (
-                <p className={`text-sm font-bold mb-0.5 ${growthPos ? "text-emerald-500" : "text-red-500"}`}>
-                  {fmtPct(displayGrowth)}
-                </p>
-              )}
+            <div>
+              <p className="text-2xl font-light text-slate-800 leading-none">{fmt(headlineRevenue)}</p>
+              <p className="text-[10px] text-gray-400 mt-1">{wholeLabel ?? "FY · all channels"}</p>
             </div>
 
             {/* Channel tags */}
