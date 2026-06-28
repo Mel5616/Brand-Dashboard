@@ -31,7 +31,7 @@ export default async function Dashboard() {
     weekLabels, lastSync, googleAds, metaAds, metaAdsPlatform,
     instagramOrganic, targets, klaviyo, ga4, marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, aiInsight,
     gscMetrics, gscQueries, gscInsights, semrushMetrics, semrushCompetitors,
-    semrushKeywords, semrushPages, brandInsights, instagramMedia, channelSales, shopifySources, eventbriteEvents,
+    semrushKeywords, semrushPages, brandInsights, instagramMedia, channelSales, shopifySources, eventbriteEvents, asanaTasks,
   } = await getDashboardData();
 
   const boothFunnel = await getBoothFunnel();
@@ -117,6 +117,7 @@ export default async function Dashboard() {
         channelSales={channelSales}
         shopifySources={shopifySources}
         eventbriteEvents={eventbriteEvents}
+        asanaTasks={asanaTasks}
         boothFunnel={boothFunnel}
         kpis={kpis}
       />

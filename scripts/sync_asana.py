@@ -1,0 +1,155 @@
+#!/usr/bin/env python3
+"""
+Asana tasks sync (read-only) — pulls every task from ONE Asana project into
+Supabase for the Tasks tab. Asana stays the source of truth; the dashboard only
+reads.
+
+Setup:
+  1. Table — run supabase/add_asana_tasks.sql once.
+  2. Personal access token: Asana → Settings → Apps → "Manage Developer Apps" →
+     Personal access tokens → "Create new token". Add the GitHub secret
+     ASANA_TOKEN (or put "asanaToken" in stores.config.json / ASANA_TOKEN in
+     .env.local).
+  3. Project id — open the project in Asana; the URL is
+     https://app.asana.com/0/<PROJECT_GID>/list . Put it in stores.config.json:
+       "asanaProjectId": "1234567890123456"
+     (or ASANA_PROJECT_ID in the environment).
+  4. python3 -u scripts/sync_asana.py
+"""
+
+import os, sys, json, ssl, urllib.request, urllib.parse, urllib.error
+
+BASE_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CONFIG_PATH = os.path.join(BASE_DIR, "stores.config.json")
+ENV_PATH    = os.path.join(BASE_DIR, ".env.local")
+API         = "https://app.asana.com/api/1.0"
+CTX         = ssl.create_default_context()
+MAX_PAGES   = 20  # 100 tasks/page — plenty for a single project board
+
+def load_env():
+    if not os.path.exists(ENV_PATH):
+        return
+    with open(ENV_PATH) as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, _, v = line.partition("=")
+            if k.strip() not in os.environ:
+                os.environ[k.strip()] = v.strip().strip('"').strip("'")
+load_env()
+
+URL  = os.environ.get("NEXT_PUBLIC_SUPABASE_URL", "")
+KEY  = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+ANON = os.environ.get("NEXT_PUBLIC_SUPABASE_ANON_KEY", "")
+
+def sb(method, path, data=None, extra=None):
+    r = urllib.request.Request(f"{URL}{path}", data=data, method=method)
+    r.add_header("Authorization", f"Bearer {KEY}"); r.add_header("apikey", ANON or KEY)
+    if data is not None:
+        r.add_header("Content-Type", "application/json")
+    for k, v in (extra or {}).items():
+        r.add_header(k, v)
+    try:
+        with urllib.request.urlopen(r, context=CTX, timeout=40) as resp:
+            return resp.status, resp.read()
+    except urllib.error.HTTPError as e:
+        return e.code, e.read()
+
+def asana_get(path, token, params=None):
+    url = f"{API}/{path}"
+    if params:
+        url += "?" + urllib.parse.urlencode(params)
+    r = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"}, method="GET")
+    with urllib.request.urlopen(r, context=CTX, timeout=30) as resp:
+        return json.loads(resp.read().decode())
+
+def brand_for(name, brands):
+    low = (name or "").lower()
+    for i, b in enumerate(brands):
+        bn = (b.get("name") or "").lower()
+        if bn and bn in low:
+            return i
+    return None
+
+OPT_FIELDS = ("name,notes,completed,completed_at,due_on,permalink_url,modified_at,"
+              "assignee.name,memberships.section.name,memberships.project.gid")
+
+def list_tasks(project_gid, token):
+    tasks, offset, pages = [], None, 0
+    while pages < MAX_PAGES:
+        params = {"opt_fields": OPT_FIELDS, "limit": 100}
+        if offset:
+            params["offset"] = offset
+        data = asana_get(f"projects/{project_gid}/tasks", token, params)
+        batch = data.get("data", [])
+        tasks.extend(batch)
+        print(f"  page {pages + 1}: {len(batch)} tasks (total {len(tasks)})", flush=True)
+        nxt = (data.get("next_page") or {}).get("offset")
+        pages += 1
+        if not nxt:
+            break
+        offset = nxt
+    return tasks
+
+def section_for(task, project_gid):
+    for m in (task.get("memberships") or []):
+        if ((m.get("project") or {}).get("gid")) == project_gid:
+            return ((m.get("section") or {}).get("name")) or None
+    # fall back to the first membership's section if the project didn't match
+    for m in (task.get("memberships") or []):
+        s = (m.get("section") or {}).get("name")
+        if s:
+            return s
+    return None
+
+def main():
+    if not URL or not KEY:
+        print("Missing Supabase env"); sys.exit(1)
+    with open(CONFIG_PATH) as f:
+        config = json.load(f)
+    token = config.get("asanaToken") or os.environ.get("ASANA_TOKEN")
+    project = config.get("asanaProjectId") or os.environ.get("ASANA_PROJECT_ID")
+    if not token:
+        print("No asanaToken (or ASANA_TOKEN env) — skipping"); return
+    if not project:
+        print("No asanaProjectId (or ASANA_PROJECT_ID env) — skipping"); return
+    brands = config.get("brands", [])
+
+    try:
+        tasks = list_tasks(project, token)
+    except urllib.error.HTTPError as e:
+        body = e.read().decode(errors="replace")
+        if e.code in (401, 403):
+            print(f"Asana rejected the token ({e.code}). Check ASANA_TOKEN is a valid "
+                  f"Personal access token and has access to project {project}.")
+            return
+        print(f"Asana error {e.code}: {body[:300]}"); return
+
+    rows = []
+    for t in tasks:
+        rows.append({
+            "gid": t["gid"],
+            "name": t.get("name") or "",
+            "notes": (t.get("notes") or "")[:2000],
+            "assignee": ((t.get("assignee") or {}).get("name")),
+            "due_on": t.get("due_on"),
+            "completed": bool(t.get("completed")),
+            "completed_at": t.get("completed_at"),
+            "section": section_for(t, project),
+            "project_gid": project,
+            "permalink_url": t.get("permalink_url"),
+            "modified_at": t.get("modified_at"),
+            "brand_id": brand_for(t.get("name"), brands),
+        })
+
+    if not rows:
+        print("No tasks found in the project"); return
+    st, b = sb("POST", "/rest/v1/asana_tasks?on_conflict=gid",
+               json.dumps(rows).encode(), extra={"Prefer": "resolution=merge-duplicates"})
+    if st not in (200, 201, 204):
+        print(f"Supabase upsert failed ({st}): {b.decode(errors='replace')[:300]}"); sys.exit(1)
+    print(f"Synced {len(rows)} Asana tasks from project {project}", flush=True)
+
+if __name__ == "__main__":
+    main()

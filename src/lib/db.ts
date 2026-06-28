@@ -234,6 +234,7 @@ export async function getDashboardData() {
     { data: channelSales },
     { data: shopifySources },
     { data: eventbriteEvents },
+    { data: asanaTasks },
   ] = await Promise.all([
     db.from("brands").select("*").order("id"),
     db.from("brand_summary").select("*"),
@@ -269,6 +270,7 @@ export async function getDashboardData() {
     db.from("channel_sales").select("*"),
     db.from("shopify_source_sales").select("*"),
     db.from("eventbrite_events").select("*").order("start_at", { ascending: false }),
+    db.from("asana_tasks").select("*").order("due_on", { ascending: true }),
   ]);
 
   return {
@@ -306,8 +308,11 @@ export async function getDashboardData() {
     channelSales: (channelSales ?? []) as ChannelSaleRow[],
     shopifySources: (shopifySources ?? []) as ShopifySourceRow[],
     eventbriteEvents: (eventbriteEvents ?? []) as EventbriteEvent[],
+    asanaTasks: (asanaTasks ?? []) as AsanaTask[],
   };
 }
+
+export type AsanaTask = { gid: string; name: string | null; notes: string | null; assignee: string | null; due_on: string | null; completed: boolean; completed_at: string | null; section: string | null; project_gid: string | null; permalink_url: string | null; modified_at: string | null; brand_id: number | null };
 
 export type EventbriteEvent = { event_id: string; name: string | null; start_at: string | null; end_at: string | null; venue: string | null; state: string | null; status: string | null; url: string | null; capacity: number | null; tickets_sold: number; gross_revenue: number; currency: string | null; brand_id: number | null };
 
