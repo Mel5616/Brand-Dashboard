@@ -24,6 +24,7 @@ import { BrandPage } from "./BrandPage";
 import { MarketingBudgetTab } from "./MarketingBudgetTab";
 import { MarketingCalendar } from "./MarketingCalendar";
 import { BriefingEngine } from "./BriefingEngine";
+import { ShopifyBrandSales } from "./ShopifyBrandSales";
 import { InfluencerTracker } from "./InfluencerTracker";
 import { TeamGiftingPanel } from "./TeamGiftingPanel";
 import { TeamPanel } from "./TeamPanel";
@@ -910,6 +911,7 @@ export function DashboardTabs({
           {active === "shopify" && (
             <>
               <SectionBar title="Shopify · Sales" />
+              <ShopifyBrandSales brands={brands} monthly={monthly} weekly={weekly} months={monthKeys} latestI={latestI} />
               <div className="flex items-center gap-2 mb-2">
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}

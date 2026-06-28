@@ -60,18 +60,16 @@ export function EventsPanel({ events, brands }: { events: EventbriteEvent[]; bra
       : <div key={e.event_id}>{card}</div>;
   };
 
-  // Upcoming Tune-Up Days grouped into state cards.
-  const STATE_ORDER = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"];
+  // Upcoming Tune-Up Days grouped into month cards (chronological).
   const shortDate = (s: string | null) => s ? new Date(s).toLocaleDateString("en-AU", { day: "numeric", month: "short" }) : "—";
-  const byState = new Map<string, EventbriteEvent[]>();
+  const monthKeyOf = (s: string | null) => { const d = s ? new Date(s) : null; return d && !isNaN(d.getTime()) ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` : "9999-99"; };
+  const monthLabelOf = (s: string | null) => { const d = s ? new Date(s) : null; return d && !isNaN(d.getTime()) ? d.toLocaleDateString("en-AU", { month: "long", year: "numeric" }) : "Undated"; };
+  const byMonth = new Map<string, EventbriteEvent[]>();
   for (const e of upcoming) {
-    const k = (e.state && e.state.trim()) || "Other";
-    (byState.get(k) ?? byState.set(k, []).get(k)!).push(e);
+    const k = monthKeyOf(e.start_at);
+    (byMonth.get(k) ?? byMonth.set(k, []).get(k)!).push(e);
   }
-  const stateCards = [...byState.entries()].sort((a, b) => {
-    const ai = STATE_ORDER.indexOf(a[0]), bi = STATE_ORDER.indexOf(b[0]);
-    return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi) || b[1].length - a[1].length;
-  });
+  const monthCards = [...byMonth.entries()].sort((a, b) => a[0].localeCompare(b[0]));
 
   const MiniRow = (e: EventbriteEvent) => {
     const pct = e.capacity ? Math.min(100, Math.round((e.tickets_sold / e.capacity) * 100)) : null;
@@ -80,7 +78,7 @@ export function EventsPanel({ events, brands }: { events: EventbriteEvent[]; bra
         <div className="w-12 shrink-0 text-[11px] text-gray-400 font-medium">{shortDate(e.start_at)}</div>
         <div className="flex-1 min-w-0">
           <p className="text-[13px] font-medium text-slate-700 truncate">{(e.name || "Event").replace(/^Tune[-\s]?Up Day\s*[-–]\s*/i, "")}</p>
-          {pct != null && <div className="mt-1 h-1 bg-gray-100 rounded-full overflow-hidden"><div className="h-full rounded-full" style={{ width: `${pct}%`, background: pct >= 90 ? "#10b981" : "#3b82f6" }} /></div>}
+          <p className="text-[10px] text-gray-400 truncate">{[e.state, e.venue].filter(Boolean).join(" · ")}</p>
         </div>
         <div className="shrink-0 text-right">
           <p className="text-[10px] text-gray-400">{pct != null ? `${e.tickets_sold}/${e.capacity} · ${pct}%` : `${e.tickets_sold} sold`}</p>
@@ -106,17 +104,17 @@ export function EventsPanel({ events, brands }: { events: EventbriteEvent[]; bra
 
       {upcoming.length > 0 && (
         <div>
-          <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-2">Upcoming Tune-Up Days by state</h3>
+          <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-2">Upcoming Tune-Up Days by month</h3>
           <div className="grid md:grid-cols-2 gap-4 items-start">
-            {stateCards.map(([st, list]) => {
+            {monthCards.map(([key, list]) => {
               const sold = list.reduce((s, e) => s + (e.tickets_sold || 0), 0);
               const cap = list.reduce((s, e) => s + (e.capacity || 0), 0);
               const pct = cap > 0 ? Math.round((sold / cap) * 100) : null;
               return (
-                <div key={st} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                <div key={key} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                   <div className="flex items-center justify-between mb-2 pb-2 border-b border-gray-50">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-white rounded-md px-2 py-0.5" style={{ background: "#1e3a5f" }}>{st}</span>
+                      <span className="text-sm font-bold text-slate-700">{monthLabelOf(list[0].start_at)}</span>
                       <span className="text-xs font-medium text-gray-400">{list.length} {list.length === 1 ? "day" : "days"}</span>
                     </div>
                     {pct != null && <span className="text-[11px] text-gray-400">{sold.toLocaleString()}/{cap.toLocaleString()} · {pct}%</span>}

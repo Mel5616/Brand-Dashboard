@@ -119,7 +119,7 @@ export function BriefingEngine() {
           </div>
           <button onClick={generate} disabled={loading || channels.length === 0} className="w-full py-3 rounded text-sm font-medium"
             style={{ background: C.navy, color: C.cream, opacity: loading || channels.length === 0 ? 0.6 : 1 }}>
-            {loading ? "Drafting brief…" : "Draft brief"}
+            {loading ? <span className="inline-flex items-center gap-2"><span className="w-3.5 h-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin motion-reduce:animate-none" />Drafting brief…</span> : "Draft brief"}
           </button>
           {error && <p className="text-xs mt-2" style={{ color: C.must }}>{error}</p>}
         </div>
@@ -132,7 +132,13 @@ export function BriefingEngine() {
               <p className="opacity-70 leading-relaxed">Pick a moment and channels, then draft. The engine pulls the pillar, audience angle, channel specs, mandatory inclusions and the brand compliance flags automatically. You approve before anything ships.</p>
             </div>
           )}
-          {loading && <div className="rounded p-6 text-sm" style={{ border: `1px solid ${C.line}` }}><p className="opacity-60">Pulling profile, applying guardrails, drafting direction…</p></div>}
+          {loading && (
+            <div className="rounded-2xl p-10 flex flex-col items-center justify-center gap-3 bg-white" style={{ border: `1px solid ${C.line}` }}>
+              <span className="w-9 h-9 rounded-full border-[3px] border-gray-200 animate-spin motion-reduce:animate-none" style={{ borderTopColor: C.navy }} />
+              <p className="text-sm font-medium" style={{ color: C.navy }}>Drafting your brief…</p>
+              <p className="text-xs opacity-50 text-center">Pulling the profile, applying guardrails and the live range, writing the direction. This can take a few seconds.</p>
+            </div>
+          )}
 
           {brief && (
             <div className="rounded overflow-hidden bg-white" style={{ border: `1px solid ${C.line}` }}>
