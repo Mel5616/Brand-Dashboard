@@ -563,19 +563,6 @@ export function DashboardTabs({
                 );
               })()}
 
-              <div>
-                <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Direct to Consumer</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  {fyKpis.map(kpi => (
-                    <div key={kpi.label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-                      <p className="text-xs text-gray-400">{kpi.label}</p>
-                      <p className="text-2xl font-bold text-gray-900 mt-1">{kpi.value}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{kpi.sub}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
               {/* Top 5 products — quick summary */}
               {topProducts.length > 0 && (
                 <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
@@ -679,6 +666,19 @@ export function DashboardTabs({
                     </div>
                   ));
                 })()}
+              </div>
+
+              <div>
+                <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Direct to Consumer</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {fyKpis.map(kpi => (
+                    <div key={kpi.label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+                      <p className="text-xs text-gray-400">{kpi.label}</p>
+                      <p className="text-2xl font-bold text-gray-900 mt-1">{kpi.value}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{kpi.sub}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {topProducts.length > 0 && (
