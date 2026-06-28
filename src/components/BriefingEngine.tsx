@@ -46,7 +46,7 @@ export function BriefingEngine() {
         body: JSON.stringify({ brandSlug: brand.slug, momentId, pillarId, channels, focus, owner, dueDate: due }),
       });
       const data = await res.json();
-      if (data.error) setError(data.error); else setBrief(data.brief);
+      if (data.error) setError(data.detail ? `${data.error}: ${data.detail}` : data.error); else setBrief(data.brief);
     } catch { setError("Generation did not complete. Try again."); }
     finally { setLoading(false); }
   }
