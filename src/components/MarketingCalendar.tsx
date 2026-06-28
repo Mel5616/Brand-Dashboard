@@ -11,6 +11,23 @@ interface Props {
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 const DOW = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 
+// Bucket each event by its title (and whether it came from the Campaigns tab).
+const CATEGORIES = [
+  { id: "tradeshow", label: "Tradeshows", color: "#0891b2" },
+  { id: "worldday", label: "World Event Days", color: "#7c3aed" },
+  { id: "campaign", label: "Campaigns", color: "#e8956b" },
+  { id: "tuneup", label: "Tune Up Days", color: "#2dc8a5" },
+  { id: "other", label: "Other", color: "#94a3b8" },
+] as const;
+function categorize(title: string, isCampaign?: boolean): string {
+  const t = (title || "").toLowerCase();
+  if (/tune[\s-]?up/.test(t)) return "tuneup";
+  if (/\bexpo\b|trade\s?show|baby\s?show|\bfair\b/.test(t)) return "tradeshow";
+  if (/^(world|international|national|global)\b/.test(t) || /\bday of\b/.test(t) || /\bday$/.test(t)) return "worldday";
+  if (isCampaign || /\bsale|launch|%\s?off|\boff\b|coming soon|\bdrop\b|promo|campaign|offer|bundle/.test(t)) return "campaign";
+  return "other";
+}
+
 function parseLocalDate(s: string): Date {
   // s is "YYYY-MM-DD" — build as local date to avoid tz shifting
   const [y, m, d] = s.split("-").map(Number);
@@ -157,18 +174,25 @@ export function MarketingCalendar({ events, brands }: Props) {
             </div>
           )}
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="px-5 py-2.5 border-b border-gray-50">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Upcoming</span>
-            </div>
-            {future.length > 0 ? (
-              <div className="divide-y divide-gray-50">
-                {future.map(e => <EventRow key={e.uid} e={e} />)}
+          {CATEGORIES.map(cat => {
+            const list = future.filter(e => categorize(e.title, (e as any)._isCampaign) === cat.id);
+            if (!list.length) return null;
+            return (
+              <div key={cat.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div className="px-5 py-2.5 border-b border-gray-50 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full" style={{ background: cat.color }} />
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">{cat.label}</span>
+                  <span className="text-[11px] text-gray-300 ml-auto">{list.length}</span>
+                </div>
+                <div className="divide-y divide-gray-50">
+                  {list.map(e => <EventRow key={e.uid} e={e} />)}
+                </div>
               </div>
-            ) : (
-              <p className="px-5 py-6 text-sm text-gray-400 text-center">No upcoming campaigns scheduled</p>
-            )}
-          </div>
+            );
+          })}
+          {future.length === 0 && (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-6 text-sm text-gray-400 text-center">No upcoming events scheduled</div>
+          )}
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
