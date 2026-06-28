@@ -15,12 +15,13 @@ const lines = (s?: string | null) => (s || "").split(/\r?\n/).map(x => x.replace
 export default async function ProductShare({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const sb = await createClient();
-  const { data: p } = await sb.from("new_products").select("*, brands(name)").eq("share_token", token).single();
+  const { data: p } = await sb.from("new_products").select("*").eq("share_token", token).single();
 
   if (!p) return (
     <main className="min-h-screen grid place-items-center bg-slate-50 text-slate-500 text-sm">This product link is not valid.</main>
   );
-  const brand = (p as any).brands?.name;
+  let brand: string | undefined;
+  if (p.brand_id != null) { const { data: b } = await sb.from("brands").select("name").eq("id", p.brand_id).single(); brand = b?.name ?? undefined; }
   const st = STATUS[p.status] ?? STATUS.coming_soon;
   const dims = [p.length, p.width, p.height].every((v: any) => v != null) ? `${p.length} × ${p.width} × ${p.height} cm` : null;
   const launch = p.launch_date ? new Date(p.launch_date + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" }) : null;

@@ -11,9 +11,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   if (!(await getAccess()).role) return new Response("Unauthorised", { status: 401 });
   const { id } = await params;
   const sb = await createClient();
-  const { data: p } = await sb.from("new_products").select("*, brands(name)").eq("id", id).single();
+  const { data: p } = await sb.from("new_products").select("*").eq("id", id).single();
   if (!p) return new Response("Not found", { status: 404 });
-  const brand = (p as any).brands?.name;
+  let brand: string | undefined;
+  if (p.brand_id != null) { const { data: b } = await sb.from("brands").select("name").eq("id", p.brand_id).single(); brand = b?.name ?? undefined; }
   const dims = [p.length, p.width, p.height].every((v: any) => v != null) ? `${p.length} × ${p.width} × ${p.height} cm` : null;
   const launch = p.launch_date ? new Date(p.launch_date + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" }) : null;
   const statusLabel = ({ coming_soon: "Coming soon", launching: "Launching", launched: "Available now", archived: "Archived" } as any)[p.status] || "Coming soon";

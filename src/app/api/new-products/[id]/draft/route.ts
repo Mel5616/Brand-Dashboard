@@ -11,9 +11,10 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     if ((await getAccess()).role !== "admin") return NextResponse.json({ error: "Admins only" }, { status: 403 });
     const { id } = await params;
     const sb = await createClient();
-    const { data: p } = await sb.from("new_products").select("*, brands(name)").eq("id", id).single();
+    const { data: p } = await sb.from("new_products").select("*").eq("id", id).single();
     if (!p) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    const brand = (p as any).brands?.name;
+    let brand: string | undefined;
+    if (p.brand_id != null) { const { data: b } = await sb.from("brands").select("name").eq("id", p.brand_id).single(); brand = b?.name ?? undefined; }
 
     const dims = [p.length, p.width, p.height].every((v: any) => v != null) ? `${p.length} x ${p.width} x ${p.height} cm` : null;
     const facts = [
