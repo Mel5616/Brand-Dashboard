@@ -23,7 +23,8 @@ function categorize(title: string, isCampaign?: boolean): string {
   const t = (title || "").toLowerCase();
   if (/tune[\s-]?up/.test(t)) return "tuneup";
   if (/\bexpo\b|trade\s?show|baby\s?show|\bfair\b/.test(t)) return "tradeshow";
-  if (/^(world|international|national|global)\b/.test(t) || /\bday of\b/.test(t) || /\bday$/.test(t)) return "worldday";
+  if (/^(world|international|national|global)\b/.test(t) || /\bday of\b/.test(t) || /\bday$/.test(t) ||
+      /halloween|black friday|cyber (monday|weekend)|christmas|boxing day|easter|valentine|mother'?s day|father'?s day|click frenzy|singles'? day|new year/.test(t)) return "worldday";
   if (isCampaign || /\bsale|launch|%\s?off|\boff\b|coming soon|\bdrop\b|promo|campaign|offer|bundle/.test(t)) return "campaign";
   return "other";
 }
@@ -57,7 +58,9 @@ export function MarketingCalendar({ events, brands }: Props) {
   const campaignEvents: any[] = campaigns
     .filter(c => /^\d{4}-\d{2}-\d{2}/.test(c.key_date || ""))
     .map(c => ({ uid: `campaign-${c.id}`, title: c.campaign || "Campaign", description: c.brief?.oneLiner || c.note || "", location: "", start_date: c.key_date.slice(0, 10), end_date: c.key_date.slice(0, 10), all_day: true, brand_id: brandIdByName(c.brand), _isCampaign: true }));
-  const allEvents = [...events, ...campaignEvents];
+  // Drop personal/travel noise that syncs in from the shared Apple Calendar.
+  const isPersonal = (e: any) => /^\s*(flight|hotel|booking|boarding|check.?in|itinerary|car hire|rental)\b|booking number/i.test(`${e.title || ""} ${e.description || ""}`);
+  const allEvents = [...events, ...campaignEvents].filter(e => !isPersonal(e));
 
   // Normalize event date ranges
   const normalized = allEvents
