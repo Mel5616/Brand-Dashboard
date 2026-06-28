@@ -15,11 +15,27 @@ type Campaign = {
 };
 type Maint = { id: string; name: string; tier: string; sort_order: number };
 
+// Now / Next / Later roll with the current month so they never go stale.
+const monthName = (add: number) => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + add); return d.toLocaleDateString("en-AU", { month: "long" }); };
 const HORIZONS = [
-  { id: "now", label: "Now", sub: "July" },
-  { id: "next", label: "Next", sub: "August" },
-  { id: "later", label: "Later", sub: "September" },
+  { id: "now", label: "Now", sub: monthName(0) },
+  { id: "next", label: "Next", sub: monthName(1) },
+  { id: "later", label: "Later", sub: monthName(2) },
 ];
+const HORIZON_RANGE = `${monthName(0)} to ${monthName(2)} ${new Date().getFullYear()}`;
+
+// Key date: stored as YYYY-MM-DD. These helpers format it and build calendar links.
+const parseDate = (s: string) => { if (!/^\d{4}-\d{2}-\d{2}/.test(s || "")) return null; const d = new Date(s.slice(0, 10) + "T00:00:00"); return isNaN(d.getTime()) ? null : d; };
+const fmtKeyDate = (s: string) => { const d = parseDate(s); return d ? d.toLocaleDateString("en-AU", { day: "numeric", month: "short" }) : (s || ""); };
+const icsDate = (d: Date) => `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+const escIcs = (s: string) => String(s ?? "").replace(/([,;\\])/g, "\\$1").replace(/\r?\n/g, "\\n");
+const calDesc = (c: { brief?: Brief }) => [c.brief?.oneLiner, c.brief?.objective].filter(Boolean).join(" — ");
+const gcalUrl = (c: Campaign) => {
+  const d = parseDate(c.key_date); if (!d) return "#";
+  const end = new Date(d); end.setDate(end.getDate() + 1);
+  const p = new URLSearchParams({ action: "TEMPLATE", text: c.campaign || "Campaign", dates: `${icsDate(d)}/${icsDate(end)}`, details: calDesc(c) });
+  return `https://calendar.google.com/calendar/render?${p.toString()}`;
+};
 const TIERS = ["A", "B", "C"];
 const STATUSES = ["Live", "Build", "Planned", "Pipeline", "Paused"];
 const STATUS_COLOR: Record<string, string> = { Live: "#2E7D5B", Build: "#C77D3C", Planned: "#3C6E9E", Pipeline: "#8A7BB0", Paused: "#9A9A9A" };
@@ -194,6 +210,17 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
     a.href = url; a.download = name; a.click();
     URL.revokeObjectURL(url);
   }
+  function addToCalendar(c: Campaign) {
+    const d = parseDate(c.key_date); if (!d) return;
+    const end = new Date(d); end.setDate(end.getDate() + 1);
+    const desc = calDesc(c);
+    const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Coolkidz//Campaigns//EN", "CALSCALE:GREGORIAN", "BEGIN:VEVENT",
+      `UID:campaign-${c.id}@coolkidz`, `DTSTAMP:${icsDate(new Date())}T000000Z`,
+      `DTSTART;VALUE=DATE:${icsDate(d)}`, `DTEND;VALUE=DATE:${icsDate(end)}`,
+      `SUMMARY:${escIcs((c.campaign || "Campaign") + (c.brand ? " — " + c.brand : ""))}`,
+      desc ? `DESCRIPTION:${escIcs(desc)}` : "", "END:VEVENT", "END:VCALENDAR"].filter(Boolean).join("\r\n");
+    download(`${(c.campaign || "campaign").replace(/[^\w]+/g, "_").slice(0, 40)}.ics`, "text/calendar", ics);
+  }
   function exportCSV() {
     const cols = ["horizon", "campaign", "brand", "tier", "owner", "channel", "status", "key_date", "note"];
     const head = cols.join(",");
@@ -225,7 +252,7 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
       <div className="flex items-center justify-between flex-wrap gap-3 mb-4 no-print">
         <div>
           <h2 className="text-lg font-bold text-slate-800">Campaigns</h2>
-          <p className="text-xs text-gray-400">Cross-brand Now / Next / Later · July to September 2026 · click a card for the full brief{canEdit ? "" : " · view only"}</p>
+          <p className="text-xs text-gray-400">Cross-brand Now / Next / Later · {HORIZON_RANGE} · click a card for the full brief{canEdit ? "" : " · view only"}</p>
         </div>
         <div className="flex gap-2">
           <button onClick={exportCSV} className="text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3 py-1.5 transition motion-reduce:transition-none">Export CSV</button>
@@ -288,7 +315,9 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                             {canEdit
                               ? <select aria-label="Status" value={c.status} onClick={e => e.stopPropagation()} onChange={e => editField(c.id, "status", e.target.value, true)} className="font-semibold text-white rounded-full px-2.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer" style={{ background: STATUS_COLOR[c.status] ?? "#9A9A9A" }}>{STATUSES.map(s => <option key={s} value={s} className="text-slate-700 bg-white">{s}</option>)}</select>
                               : <span className="font-semibold text-white rounded-full px-2.5 py-0.5" style={{ background: STATUS_COLOR[c.status] ?? "#9A9A9A" }}>{c.status}</span>}
-                            <span className="text-gray-400">{c.key_date}</span>
+                            {parseDate(c.key_date)
+                              ? <span className="inline-flex items-center gap-1 text-indigo-500 font-medium"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>{fmtKeyDate(c.key_date)}</span>
+                              : <span className="text-gray-400">{c.key_date}</span>}
                           </div>
                           <p className="text-[11px] text-gray-400">Owner {c.owner || "TBC"}{c.channel ? ` · ${c.channel}` : ""}</p>
                           {c.note && <p className="text-[11px] text-gray-500 leading-snug">{c.note}</p>}
@@ -355,7 +384,7 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                     <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ background: TIER_DOT[open.tier] ?? "#ccc" }} />Tier {open.tier}</span>
                     <input aria-label="Brand" readOnly={ro} value={open.brand} placeholder="Brand" onChange={e => editField(open.id, "brand", e.target.value)} className={cell + " w-32"} />
                     <span className="font-semibold text-white rounded-full px-2.5 py-0.5 text-xs" style={{ background: STATUS_COLOR[open.status] ?? "#9A9A9A" }}>{open.status}</span>
-                    <input aria-label="Key date" readOnly={ro} value={open.key_date} placeholder="Key date" onChange={e => editField(open.id, "key_date", e.target.value)} className={cell + " w-24"} />
+                    <input type="date" aria-label="Key date" readOnly={ro} value={parseDate(open.key_date) ? open.key_date.slice(0, 10) : ""} onChange={e => editField(open.id, "key_date", e.target.value, true)} className={cell + " w-36"} />
                     <span className="text-gray-400">Owner</span>
                     <input aria-label="Owner" readOnly={ro} value={open.owner} placeholder="TBC" onChange={e => editField(open.id, "owner", e.target.value)} className={cell + " w-24"} />
                   </div>
@@ -387,7 +416,16 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
               </div>
 
               {/* Footer */}
-              <div className="no-print flex gap-2 mt-5 pt-4 border-t border-gray-100">
+              <div className="no-print flex flex-wrap gap-2 mt-5 pt-4 border-t border-gray-100">
+                {parseDate(open.key_date) && (
+                  <>
+                    <button onClick={() => addToCalendar(open)} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg px-3.5 py-1.5 transition motion-reduce:transition-none">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                      Add to calendar
+                    </button>
+                    <a href={gcalUrl(open)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3.5 py-1.5 transition motion-reduce:transition-none">Google Calendar ↗</a>
+                  </>
+                )}
                 <button onClick={() => copyBrief(open)} className="text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3.5 py-1.5 transition motion-reduce:transition-none">{copied ? "Copied" : "Copy brief"}</button>
                 <button onClick={() => window.print()} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-3.5 py-1.5 transition motion-reduce:transition-none">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
