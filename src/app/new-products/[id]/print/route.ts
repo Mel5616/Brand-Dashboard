@@ -38,15 +38,16 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         ${logo}
         <span style="font-size:11px;font-weight:600;color:#fff;background:#0891b2;border-radius:999px;padding:3px 10px">${statusLabel}${launch ? " · " + esc(launch) : ""}</span>
       </div>
+      ${p.attrs?.image_url ? `<img src="${esc(p.attrs.image_url)}" style="display:block;width:100%;max-height:280px;object-fit:contain;background:#f8fafc;border-radius:8px;margin-top:12px"/>` : ""}
       <h1>${esc(p.name)}</h1>
       ${p.short_description ? `<p style="color:#64748b;margin:4px 0 0">${esc(p.short_description)}</p>` : ""}
-      ${paras ? `<div style="margin-top:10px">${paras}</div>` : ""}
-      ${lines(p.features).length ? `<h2>Key features</h2><ul>${ul(p.features, "✓")}</ul>` : ""}
-      ${lines(p.whats_in_box).length ? `<h2>What's in the box</h2><ul>${ul(p.whats_in_box)}</ul>` : ""}
       <h2>Details</h2>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
         ${fact("SKU", p.sku)}${fact("Barcode", p.barcode)}${fact("Dimensions", dims || "")}${fact("Weight", p.weight != null ? p.weight + " kg" : "")}
       </div>
+      ${paras ? `<div style="margin-top:12px">${paras}</div>` : ""}
+      ${lines(p.features).length ? `<h2>Key features</h2><ul>${ul(p.features, "✓")}</ul>` : ""}
+      ${lines(p.whats_in_box).length ? `<h2>What's in the box</h2><ul>${ul(p.whats_in_box)}</ul>` : ""}
     </div>
     <script>window.onload=function(){window.print()}</script>
   </body></html>`;

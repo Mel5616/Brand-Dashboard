@@ -19,6 +19,7 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
   const [busy, setBusy] = useState("");
   const [msg, setMsg] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const imgRef = useRef<HTMLInputElement>(null);
 
   async function load() {
     const d = await fetch("/api/new-products").then(r => r.json()).catch(() => ({ products: [] }));
@@ -79,6 +80,16 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
     setProducts(prev => prev.filter(p => p.id !== edit.id)); setOpenId(null);
   }
 
+  async function uploadImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]; if (!f || !edit) return;
+    setBusy("image"); setMsg("");
+    const fd = new FormData(); fd.append("file", f);
+    const res = await fetch(`/api/new-products/${edit.id}/image`, { method: "POST", body: fd });
+    const j = await res.json(); setBusy(""); if (imgRef.current) imgRef.current.value = "";
+    if (j.error) setMsg(j.error);
+    else { setEdit((p: any) => ({ ...p, attrs: j.product.attrs })); setProducts(prev => prev.map(p => p.id === j.product.id ? j.product : p)); }
+  }
+
   function copyShare() {
     if (!open) return;
     navigator.clipboard?.writeText(`${window.location.origin}/p/${open.share_token}`);
@@ -124,6 +135,7 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
                     : <span className="text-[10px] text-gray-400">—</span>}
                   <span className="text-[9px] font-semibold text-white rounded-full px-1.5 py-0.5" style={{ background: st.bg }}>{st.label}</span>
                 </div>
+                {p.attrs?.image_url && <img src={p.attrs.image_url} alt="" className="w-full h-20 object-contain rounded-md bg-gray-50 mb-1.5" />}
                 <p className="text-sm font-medium text-slate-700 leading-snug line-clamp-2 min-h-[2.5rem]">{p.name}</p>
                 <div className="flex items-center justify-between mt-1.5">
                   <span className="text-[10px] text-gray-400">{p.sku}</span>
@@ -151,6 +163,18 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
                   : <span className="text-xs font-semibold text-white rounded-full px-2.5 py-1" style={{ background: statusOf(edit.status).bg }}>{statusOf(edit.status).label}</span>}
                 <span className="text-gray-400 text-xs">Launch</span>
                 <input type="date" value={edit.launch_date ? String(edit.launch_date).slice(0, 10) : ""} readOnly={!canEdit} onChange={e => setEdit({ ...edit, launch_date: e.target.value })} className="text-sm border border-gray-200 rounded-lg px-2 py-1" />
+              </div>
+
+              <div>
+                <input ref={imgRef} type="file" accept="image/*" onChange={uploadImage} className="hidden" />
+                {edit.attrs?.image_url
+                  ? <img src={edit.attrs.image_url} alt="" className="w-full max-h-56 object-contain rounded-lg border border-gray-100 bg-gray-50" />
+                  : <div className="w-full h-28 rounded-lg border border-dashed border-gray-200 bg-gray-50 grid place-items-center text-xs text-gray-400">No image</div>}
+                {canEdit && (
+                  <button onClick={() => imgRef.current?.click()} disabled={busy === "image"} className="mt-1.5 text-xs font-medium text-indigo-600 hover:underline disabled:opacity-60">
+                    {busy === "image" ? "Uploading…" : edit.attrs?.image_url ? "Replace image" : "Upload image"}
+                  </button>
+                )}
               </div>
 
               <div className="rounded-lg bg-gray-50 border border-gray-100 p-3 text-xs text-gray-500 grid grid-cols-2 gap-x-4 gap-y-1">

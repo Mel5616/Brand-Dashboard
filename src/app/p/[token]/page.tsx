@@ -36,9 +36,18 @@ export default async function ProductShare({ params }: { params: Promise<{ token
           <span className="text-xs font-semibold text-white rounded-full px-3 py-1" style={{ background: st.bg }}>{st.label}{launch ? ` · ${launch}` : ""}</span>
         </header>
 
+        {p.attrs?.image_url && <img src={p.attrs.image_url} alt={p.name} className="w-full max-h-80 object-contain bg-slate-50" />}
+
         <div className="px-7 py-7">
           <h1 className="text-2xl font-bold text-slate-900">{p.name}</h1>
           {p.short_description && <p className="text-base text-slate-500 mt-1.5">{p.short_description}</p>}
+
+          <section className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+            {p.sku && <div className="rounded-lg bg-slate-50 px-3 py-2"><p className="text-[10px] uppercase tracking-wide text-slate-400">SKU</p><p className="font-medium text-slate-700">{p.sku}</p></div>}
+            {p.barcode && <div className="rounded-lg bg-slate-50 px-3 py-2"><p className="text-[10px] uppercase tracking-wide text-slate-400">Barcode</p><p className="font-medium text-slate-700">{p.barcode}</p></div>}
+            {dims && <div className="rounded-lg bg-slate-50 px-3 py-2"><p className="text-[10px] uppercase tracking-wide text-slate-400">Dimensions</p><p className="font-medium text-slate-700">{dims}</p></div>}
+            {p.weight != null && <div className="rounded-lg bg-slate-50 px-3 py-2"><p className="text-[10px] uppercase tracking-wide text-slate-400">Weight</p><p className="font-medium text-slate-700">{p.weight} kg</p></div>}
+          </section>
 
           {p.long_description && (
             <div className="mt-6 space-y-3 text-slate-700 leading-relaxed">
@@ -60,12 +69,6 @@ export default async function ProductShare({ params }: { params: Promise<{ token
             </section>
           )}
 
-          <section className="mt-7 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-            {p.sku && <div className="rounded-lg bg-slate-50 px-3 py-2"><p className="text-[10px] uppercase tracking-wide text-slate-400">SKU</p><p className="font-medium text-slate-700">{p.sku}</p></div>}
-            {p.barcode && <div className="rounded-lg bg-slate-50 px-3 py-2"><p className="text-[10px] uppercase tracking-wide text-slate-400">Barcode</p><p className="font-medium text-slate-700">{p.barcode}</p></div>}
-            {dims && <div className="rounded-lg bg-slate-50 px-3 py-2"><p className="text-[10px] uppercase tracking-wide text-slate-400">Dimensions</p><p className="font-medium text-slate-700">{dims}</p></div>}
-            {p.weight != null && <div className="rounded-lg bg-slate-50 px-3 py-2"><p className="text-[10px] uppercase tracking-wide text-slate-400">Weight</p><p className="font-medium text-slate-700">{p.weight} kg</p></div>}
-          </section>
         </div>
         <footer className="px-7 py-3 border-t border-slate-100 text-[11px] text-slate-400">Coolkidz Australia · product information</footer>
       </article>
