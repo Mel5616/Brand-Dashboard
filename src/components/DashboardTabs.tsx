@@ -613,36 +613,6 @@ export function DashboardTabs({
                 );
               })()}
 
-              {/* Top 5 products — quick summary */}
-              {topProducts.length > 0 && (
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-                  <div className="flex items-baseline justify-between mb-3">
-                    <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Top 5 Products</h2>
-                    <span className="text-[11px] text-gray-400">{fyLabel} · gross sales</span>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                    {topProducts.slice(0, 5).map((p: any, i: number) => {
-                      const brand = brands.find((b: any) => b.id === p.brand_id);
-                      return (
-                        <button
-                          key={i}
-                          onClick={() => openBrand(p.brand_id)}
-                          className="text-left border border-gray-100 rounded-lg p-3 hover:bg-gray-50/60 transition-colors"
-                        >
-                          <div className="flex items-center gap-1.5 mb-1.5">
-                            <span className="text-[11px] font-bold text-gray-300">#{i + 1}</span>
-                            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: brand?.color ?? "#ccc" }} />
-                            <span className="text-[11px] text-gray-500 truncate">{brand?.name ?? "—"}</span>
-                          </div>
-                          <p className="text-xs text-slate-700 font-medium leading-snug line-clamp-2 min-h-[2rem]" title={p.title}>{p.title}</p>
-                          <p className="text-sm font-bold text-slate-900 mt-1.5">{fmt(p.gross_sales)}</p>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
               <div>
                 <div className="flex items-baseline justify-between mb-3">
                   <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Brands — click to explore</h2>
