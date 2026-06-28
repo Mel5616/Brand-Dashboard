@@ -501,6 +501,18 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                 </button>
               </div>
 
+              {/* Card note — the short line shown on the board card */}
+              <div className="mb-1">
+                <label className="block text-[11px] font-semibold uppercase tracking-widest mb-1 text-gray-400">Card note <span className="font-normal lowercase tracking-normal text-gray-300">· shows on the board card</span></label>
+                <textarea
+                  key={open.id + "note"}
+                  aria-label="Card note" readOnly={ro} defaultValue={open.note} rows={2}
+                  placeholder="Short summary shown on the card"
+                  onChange={e => saveText(open.id, "note", e.target.value)} onBlur={e => commitText(open.id, "note", e.target.value)}
+                  className="w-full bg-transparent text-sm text-slate-700 leading-relaxed rounded px-1 -ml-1 resize-y focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 read-only:cursor-default placeholder:text-gray-300 placeholder:italic"
+                />
+              </div>
+
               {/* Brief body */}
               <div className="space-y-3 border-t border-gray-100 pt-4">
                 {BRIEF_FIELDS.map(f => {
