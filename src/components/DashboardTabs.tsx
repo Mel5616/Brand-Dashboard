@@ -591,16 +591,23 @@ export function DashboardTabs({
                 if (!biz.length) return null;
                 const visible = role === "admin" ? biz : biz.filter((c: any) => DIGITAL_CHANNELS.has(c.name));
                 const chans = [...visible].sort((a: any, b: any) => (b.fy ?? 0) - (a.fy ?? 0));
+                const total = visible.reduce((s: number, c: any) => s + Math.max(0, c.fy ?? 0), 0) || 1;
                 return (
                   <div className="mb-4">
                     <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-3">Channel sales <span className="font-normal text-gray-400 normal-case tracking-normal">· {fyLabel}</span></p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
-                      {chans.map((c: any) => (
-                        <div key={c.name} className="rounded-xl px-3 py-2.5 text-white shadow-sm" style={{ background: channelColor(c.name) }}>
-                          <p className="text-lg font-bold leading-none">{fmt(c.fy ?? 0)}</p>
-                          <p className="text-[9px] uppercase tracking-[0.08em] font-semibold opacity-90 mt-1 leading-tight">{c.name}</p>
-                        </div>
-                      ))}
+                      {chans.map((c: any) => {
+                        const pct = Math.round(((c.fy ?? 0) / total) * 100);
+                        return (
+                          <div key={c.name} className="rounded-xl px-3 py-2.5 text-white shadow-sm" style={{ background: channelColor(c.name) }}>
+                            <div className="flex items-baseline justify-between gap-1">
+                              <p className="text-lg font-bold leading-none">{fmt(c.fy ?? 0)}</p>
+                              <p className="text-[11px] font-semibold opacity-80 leading-none">{pct}%</p>
+                            </div>
+                            <p className="text-[9px] uppercase tracking-[0.08em] font-semibold opacity-90 mt-1 leading-tight">{c.name}</p>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 );
