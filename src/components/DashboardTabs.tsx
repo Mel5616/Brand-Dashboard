@@ -195,6 +195,7 @@ interface Props {
   summaries: any[];
   monthly: any[];
   weekly: any[];
+  brandDaily: any[];
   products: any[];
   tradeshows: any[];
   tradeshowBrands: any[];
@@ -232,7 +233,7 @@ interface Props {
 }
 
 export function DashboardTabs({
-  brands, summaries, monthly, weekly, products,
+  brands, summaries, monthly, weekly, brandDaily, products,
   tradeshows, tradeshowBrands, tradeshowSales,
   weekLabels, googleAds, metaAds, metaAdsPlatform,
   instagramOrganic, targets, klaviyo, ga4,
@@ -911,7 +912,7 @@ export function DashboardTabs({
           {active === "shopify" && (
             <>
               <SectionBar title="Shopify · Sales" />
-              <ShopifyBrandSales brands={brands} monthly={monthly} weekly={weekly} months={monthKeys} latestI={latestI} />
+              <ShopifyBrandSales brands={brands} monthly={monthly} weekly={weekly} daily={brandDaily} months={monthKeys} latestI={latestI} />
               <div className="flex items-center gap-2 mb-2">
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}

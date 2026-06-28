@@ -43,6 +43,9 @@ _cws       = _today - _td(days=_today.weekday())
 WEEK_STARTS = [(_cws - _td(weeks=i)).isoformat() for i in range(12, -1, -1)]
 WEEK_LABELS = [_date.fromisoformat(w).strftime('%-d %b') for w in WEEK_STARTS]
 
+# ── Daily buckets: last 30 days (rolling), for the Shopify brand Day view ──────
+DAY_KEYS = [(_today - _td(days=i)).isoformat() for i in range(29, -1, -1)]
+
 MONTHS       = ['Jul 25','Aug 25','Sep 25','Oct 25','Nov 25','Dec 25','Jan 26','Feb 26','Mar 26','Apr 26','May 26','Jun 26']
 MONTH_KEYS   = ['2025-07','2025-08','2025-09','2025-10','2025-11','2025-12','2026-01','2026-02','2026-03','2026-04','2026-05','2026-06']
 MONTHS_PREV  = ['Jul 24','Aug 24','Sep 24','Oct 24','Nov 24','Dec 24','Jan 25','Feb 25','Mar 25','Apr 25','May 25','Jun 25']
@@ -221,6 +224,8 @@ def compute_metrics(orders, refunded_orders=None, sales_start=None):
     monthly_count   = defaultdict(int)
     weekly_rev      = defaultdict(float)
     weekly_count    = defaultdict(int)
+    daily_rev       = defaultdict(float)
+    daily_count     = defaultdict(int)
     product_rev     = defaultdict(float)               # key (sku or title) -> revenue
     product_titles  = defaultdict(lambda: defaultdict(float))  # key -> {title: revenue}
     monthly_refunds = defaultdict(float)
@@ -239,10 +244,13 @@ def compute_metrics(orders, refunded_orders=None, sales_start=None):
         monthly_rev[ym]   += amt
         monthly_count[ym] += 1
 
-        d_obj = _date.fromisoformat(node['createdAt'][:10])
+        day_k = node['createdAt'][:10]
+        d_obj = _date.fromisoformat(day_k)
         ws    = (d_obj - _td(days=d_obj.weekday())).isoformat()
         weekly_rev[ws]   += amt
         weekly_count[ws] += 1
+        daily_rev[day_k]   += amt
+        daily_count[day_k] += 1
 
         for li in node.get('lineItems', {}).get('edges', []):
             item     = li['node']
@@ -286,6 +294,8 @@ def compute_metrics(orders, refunded_orders=None, sales_start=None):
     orders_m     = [monthly_count.get(ym, 0)      for ym in MONTH_KEYS]
     weekly_revenue = [round(weekly_rev.get(w, 0)) for w in WEEK_STARTS]
     weekly_orders  = [weekly_count.get(w, 0)       for w in WEEK_STARTS]
+    daily_revenue  = [round(daily_rev.get(d, 0))   for d in DAY_KEYS]
+    daily_orders   = [daily_count.get(d, 0)        for d in DAY_KEYS]
     # Top products grouped by SKU; show the title that earned the most under each SKU
     top_keys     = sorted(product_rev.items(), key=lambda x: x[1], reverse=True)[:5]
     top_products = [(max(product_titles[k].items(), key=lambda t: t[1])[0], v) for k, v in top_keys]
@@ -309,6 +319,7 @@ def compute_metrics(orders, refunded_orders=None, sales_start=None):
     return {
         'revenue': revenue, 'revenue_prev': revenue_prev, 'orders_m': orders_m,
         'weekly_revenue': weekly_revenue, 'weekly_orders': weekly_orders,
+        'daily_revenue': daily_revenue, 'daily_orders': daily_orders,
         'top_products': top_products,
         'last_rev': last_rev, 'last_orders': last_orders,
         'mom': mom, 'aov': aov, 'fy_revenue': fy_revenue, 'yoy': yoy,
@@ -348,14 +359,16 @@ def compute_coolkidz_split(ck_orders, start_dates=None):
                 continue  # brand only started selling on/after this date
             amt = round(float(item.get('originalTotalSet', {}).get('shopMoney', {}).get('amount', 0)) / 1.1, 2)
             s = split.setdefault(bid, {
-                'monthly_rev': defaultdict(float), 'weekly_rev': defaultdict(float),
-                'mo_orders': defaultdict(set), 'wk_orders': defaultdict(set),
+                'monthly_rev': defaultdict(float), 'weekly_rev': defaultdict(float), 'daily_rev': defaultdict(float),
+                'mo_orders': defaultdict(set), 'wk_orders': defaultdict(set), 'dy_orders': defaultdict(set),
                 'product_rev': defaultdict(float), 'product_titles': defaultdict(lambda: defaultdict(float)),
             })
             s['monthly_rev'][ym] += amt
             s['weekly_rev'][ws]  += amt
+            s['daily_rev'][day]  += amt
             s['mo_orders'][ym].add(idx)
             s['wk_orders'][ws].add(idx)
+            s['dy_orders'][day].add(idx)
             key = sku if sku else f'T::{title}'
             s['product_rev'][key]          += amt
             s['product_titles'][key][title] += amt
@@ -371,6 +384,9 @@ def merge_coolkidz(m, cs):
     for i, ws in enumerate(WEEK_STARTS):
         m['weekly_revenue'][i] += round(cs['weekly_rev'].get(ws, 0))
         m['weekly_orders'][i]  += len(cs['wk_orders'].get(ws, set()))
+    for i, dk in enumerate(DAY_KEYS):
+        m['daily_revenue'][i] += round(cs['daily_rev'].get(dk, 0))
+        m['daily_orders'][i]  += len(cs['dy_orders'].get(dk, set()))
     # merge products + re-rank top 5
     pr, pt = m['product_rev'], m['product_titles']
     for k, v in cs['product_rev'].items():
@@ -410,7 +426,7 @@ def sync_brand(brand, ck_split=None):
     # (see compute_coolkidz_split), so it's not shown as a standalone brand.
     if name == 'Coolkidz Australia':
         sb_upsert('brands', [{'id': bid, 'name': name, 'color': brand.get('color','#666'), 'init': brand.get('init','?'), 'live': False, 'synced_at': datetime.utcnow().isoformat() + 'Z'}], on_conflict='id')
-        for tbl in ('brand_monthly', 'brand_weekly', 'brand_products', 'brand_summary'):
+        for tbl in ('brand_monthly', 'brand_weekly', 'brand_daily', 'brand_products', 'brand_summary'):
             sb_delete_where(tbl, 'brand_id', bid)
         print(f'  ⏭  {name} — folded into individual brands')
         return False
@@ -437,6 +453,10 @@ def sync_brand(brand, ck_split=None):
         # Upsert weekly data
         weekly_rows = [{'brand_id': bid, 'week_start': WEEK_STARTS[i], 'revenue': m['weekly_revenue'][i], 'orders': m['weekly_orders'][i]} for i in range(13)]
         sb_upsert('brand_weekly', weekly_rows, on_conflict='brand_id,week_start')
+
+        # Upsert daily data (last 30 days)
+        daily_rows = [{'brand_id': bid, 'day': DAY_KEYS[i], 'revenue': m['daily_revenue'][i], 'orders': m['daily_orders'][i]} for i in range(len(DAY_KEYS))]
+        sb_upsert('brand_daily', daily_rows, on_conflict='brand_id,day')
 
         # Upsert top products (delete+insert to avoid stale rank data)
         sb_delete_where('brand_products', 'brand_id', bid)

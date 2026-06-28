@@ -26,7 +26,7 @@ export default async function Dashboard() {
     );
   }
   const {
-    brands, summaries, monthly, weekly, products,
+    brands, summaries, monthly, weekly, brandDaily, products,
     tradeshows, tradeshowBrands, tradeshowSales,
     weekLabels, lastSync, googleAds, metaAds, metaAdsPlatform,
     instagramOrganic, targets, klaviyo, ga4, marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, aiInsight,
@@ -90,6 +90,7 @@ export default async function Dashboard() {
         summaries={summaries}
         monthly={monthly}
         weekly={weekly}
+        brandDaily={brandDaily}
         products={products}
         tradeshows={tradeshows}
         tradeshowBrands={tradeshowBrands}

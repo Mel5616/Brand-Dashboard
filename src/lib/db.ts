@@ -41,6 +41,13 @@ export type BrandWeekly = {
   orders: number;
 };
 
+export type BrandDaily = {
+  brand_id: number;
+  day: string;
+  revenue: number;
+  orders: number;
+};
+
 export type BrandProduct = {
   brand_id: number;
   rank: number;
@@ -204,6 +211,7 @@ export async function getDashboardData() {
     { data: summaries },
     { data: monthly },
     { data: weekly },
+    { data: brandDaily },
     { data: products },
     { data: tradeshows },
     { data: tradeshowBrands },
@@ -240,6 +248,7 @@ export async function getDashboardData() {
     db.from("brand_summary").select("*"),
     db.from("brand_monthly").select("*").order("month_key"),
     db.from("brand_weekly").select("*").order("week_start"),
+    db.from("brand_daily").select("*").order("day"),
     db.from("brand_products").select("*").order("rank"),
     db.from("tradeshows").select("*").order("date_start"),
     db.from("tradeshow_brands").select("*"),
@@ -278,6 +287,7 @@ export async function getDashboardData() {
     summaries: (summaries ?? []) as BrandSummary[],
     monthly: (monthly ?? []) as BrandMonthly[],
     weekly: (weekly ?? []) as BrandWeekly[],
+    brandDaily: (brandDaily ?? []) as BrandDaily[],
     products: (products ?? []) as BrandProduct[],
     tradeshows: (tradeshows ?? []) as Tradeshow[],
     tradeshowBrands: (tradeshowBrands ?? []) as { tradeshow_id: string; brand_id: number }[],
