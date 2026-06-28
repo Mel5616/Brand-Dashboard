@@ -23,6 +23,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const paras = lines((p.long_description || "").replace(/\n\n+/g, "\n")).map(x => `<p style="margin:8px 0">${esc(x)}</p>`).join("");
   const fact = (l: string, v: string) => v ? `<div style="border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8">${l}</div><div style="font-weight:500">${esc(v)}</div></div>` : "";
 
+  const detail = `<h2>Details</h2><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">${fact("SKU", p.sku)}${fact("Barcode", p.barcode)}${fact("Dimensions", dims || "")}${fact("Weight", p.weight != null ? p.weight + " kg" : "")}</div>`;
+  const body = `${detail}${paras ? `<div style="margin-top:12px">${paras}</div>` : ""}${lines(p.features).length ? `<h2>Key features</h2><ul>${ul(p.features, "✓")}</ul>` : ""}${lines(p.whats_in_box).length ? `<h2>What's in the box</h2><ul>${ul(p.whats_in_box)}</ul>` : ""}`;
+  const imgHtml = p.attrs?.image_url ? `<img src="${esc(p.attrs.image_url)}" style="width:100%;object-fit:contain;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px"/>` : "";
+  const main = imgHtml
+    ? `<div style="display:grid;grid-template-columns:1fr 210px;gap:18px;align-items:start;margin-top:12px"><div>${body}</div><div>${imgHtml}</div></div>`
+    : body;
+
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(p.name)}</title><style>
     @page { size: A4; margin: 14mm; }
     * { -webkit-print-color-adjust: exact; print-color-adjust: exact; box-sizing: border-box; }
@@ -38,16 +45,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         ${logo}
         <span style="font-size:11px;font-weight:600;color:#fff;background:#0891b2;border-radius:999px;padding:3px 10px">${statusLabel}${launch ? " · " + esc(launch) : ""}</span>
       </div>
-      ${p.attrs?.image_url ? `<img src="${esc(p.attrs.image_url)}" style="display:block;width:100%;max-height:280px;object-fit:contain;background:#f8fafc;border-radius:8px;margin-top:12px"/>` : ""}
       <h1>${esc(p.name)}</h1>
-      ${p.short_description ? `<p style="color:#64748b;margin:4px 0 0">${esc(p.short_description)}</p>` : ""}
-      <h2>Details</h2>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
-        ${fact("SKU", p.sku)}${fact("Barcode", p.barcode)}${fact("Dimensions", dims || "")}${fact("Weight", p.weight != null ? p.weight + " kg" : "")}
-      </div>
-      ${paras ? `<div style="margin-top:12px">${paras}</div>` : ""}
-      ${lines(p.features).length ? `<h2>Key features</h2><ul>${ul(p.features, "✓")}</ul>` : ""}
-      ${lines(p.whats_in_box).length ? `<h2>What's in the box</h2><ul>${ul(p.whats_in_box)}</ul>` : ""}
+      ${p.short_description ? `<p style="color:#64748b;margin:4px 0 0;font-size:14px">${esc(p.short_description)}</p>` : ""}
+      ${main}
     </div>
     <script>window.onload=function(){window.print()}</script>
   </body></html>`;
