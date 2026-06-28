@@ -30,6 +30,7 @@ export async function POST(req: Request) {
     // Live context: the brand's current Shopify range + (optional) market-news web search.
     const siteContext = await fetchSiteContext(p.siteUrl);
     const market: string | undefined = typeof p.marketContext === "string" ? p.marketContext : undefined;
+    const system = buildSystemPrompt(brand.name, p, pillar, moment, selected, focus || "", { siteContext, market });
     const userMsg = `Write the brief for the ${moment.name} moment across: ${selected.map((c: any) => c.name).join(", ")}. Return only the JSON object.`;
     const callClaude = (useSearch: boolean) =>
       fetch("https://api.anthropic.com/v1/messages", {
