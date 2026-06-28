@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
 import { createClient } from "@/lib/supabase/server";
-import { createBriefTask, briefToHtmlNotes, ASANA_ROUTES } from "@/lib/briefing";
+import { createBriefTask, briefToHtmlNotes, ASANA_ROUTES, BRIEFING_STAGING, BRIEFING_ENGINE_PROJECT, APPROVED_SECTION_NAME } from "@/lib/briefing";
 
 export const revalidate = 0;
 
@@ -21,23 +21,38 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   }
 
   const brand = (brief as any).brand_profiles;
-  const routes = ASANA_ROUTES[brand.slug] || {};
-  const boards = new Set<string>();
-  for (const ch of brief.channels) { const b = routes[ch] || routes._default; if (b) boards.add(b); }
-
   const pushed: string[] = [];
+
   if (process.env.ASANA_TOKEN) {
-    for (const projectGid of boards) {
-      const gid = await createBriefTask({
-        projectGid,
-        name: `${brand.name} · ${brief.title}`,
-        htmlNotes: briefToHtmlNotes(brief, brand.name, brand.tier),
-        dueOn: brief.due_date,
-      });
-      if (gid) pushed.push(gid);
+    if (BRIEFING_STAGING) {
+      // Staging: keep everything in the Briefing Engine board (Approved section).
+      if (BRIEFING_ENGINE_PROJECT) {
+        const gid = await createBriefTask({
+          projectGid: BRIEFING_ENGINE_PROJECT,
+          sectionName: APPROVED_SECTION_NAME,
+          name: `${brand.name} · ${brief.title}`,
+          htmlNotes: briefToHtmlNotes(brief, brand.name, brand.tier),
+          dueOn: brief.due_date,
+        });
+        if (gid) pushed.push(gid);
+      }
+    } else {
+      // Live: push to the correct downstream board(s), deduped.
+      const routes = ASANA_ROUTES[brand.slug] || {};
+      const boards = new Set<string>();
+      for (const ch of brief.channels) { const b = routes[ch] || routes._default; if (b) boards.add(b); }
+      for (const projectGid of boards) {
+        const gid = await createBriefTask({
+          projectGid,
+          name: `${brand.name} · ${brief.title}`,
+          htmlNotes: briefToHtmlNotes(brief, brand.name, brand.tier),
+          dueOn: brief.due_date,
+        });
+        if (gid) pushed.push(gid);
+      }
     }
   }
 
   await sb.from("briefs").update({ status: pushed.length ? "pushed" : "approved" }).eq("id", id);
-  return NextResponse.json({ ok: true, pushedTasks: pushed });
+  return NextResponse.json({ ok: true, pushedTasks: pushed, staging: BRIEFING_STAGING });
 }

@@ -73,6 +73,11 @@ export const ASANA_ROUTES: Record<string, Record<string, string>> = {
 };
 export const BRIEFING_ENGINE_PROJECT = process.env.BRIEFING_ENGINE_PROJECT_GID || "";
 export const DRAFTED_SECTION_NAME = "Drafted · needs Mel";
+export const APPROVED_SECTION_NAME = "Approved";
+// While true, approvals push back into the Briefing Engine board (Approved section)
+// instead of the live downstream brand boards, so the flow can be tested safely.
+// Set BRIEFING_STAGING=false in Vercel (or flip this) to go live.
+export const BRIEFING_STAGING = process.env.BRIEFING_STAGING !== "false";
 
 // ── Asana write helpers ────────────────────────────────────────────────────
 const ASANA_BASE = "https://app.asana.com/api/1.0";
