@@ -110,55 +110,80 @@ def section_for(task, project_gid):
             return s
     return None
 
+# Named secrets map to a labelled tab in the dashboard. Add more here as needed.
+NAMED_PROJECTS = [
+    ("ASANA_PROJECT_ID",        "Blogs"),
+    ("ASANA_DESIGN_PROJECT_ID", "Design Requirements"),
+]
+
+def resolve_projects(config):
+    # Canonical form: ASANA_PROJECTS / config.asanaProjects = [{"gid":..,"label":..}, ...]
+    raw = os.environ.get("ASANA_PROJECTS") or config.get("asanaProjects")
+    out = []
+    if raw:
+        items = json.loads(raw) if isinstance(raw, str) else raw
+        for it in items:
+            if it.get("gid"):
+                out.append((str(it["gid"]), it.get("label") or "Tasks"))
+    # Fallback / additive: individually named secrets.
+    seen = {g for g, _ in out}
+    for env_key, label in NAMED_PROJECTS:
+        gid = os.environ.get(env_key) or config.get(env_key)
+        if gid and str(gid) not in seen:
+            out.append((str(gid), label)); seen.add(str(gid))
+    return out
+
 def main():
     if not URL or not KEY:
         print("Missing Supabase env"); sys.exit(1)
     with open(CONFIG_PATH) as f:
         config = json.load(f)
     token = config.get("asanaToken") or os.environ.get("ASANA_TOKEN")
-    project = config.get("asanaProjectId") or os.environ.get("ASANA_PROJECT_ID")
     if not token:
         print("No asanaToken (or ASANA_TOKEN env) — skipping"); return
-    if not project:
-        print("No asanaProjectId (or ASANA_PROJECT_ID env) — skipping"); return
     brands = config.get("brands", [])
+    projects = resolve_projects(config)
+    if not projects:
+        print("No Asana projects configured (ASANA_PROJECT_ID etc.) — skipping"); return
 
-    try:
-        tasks = list_tasks(project, token)
-    except urllib.error.HTTPError as e:
-        body = e.read().decode(errors="replace")
-        if e.code in (401, 403):
-            print(f"Asana rejected the token ({e.code}). Check ASANA_TOKEN is a valid "
-                  f"Personal access token and has access to project {project}.")
-            return
-        print(f"Asana error {e.code}: {body[:300]}"); return
+    all_rows = []
+    for project, label in projects:
+        try:
+            tasks = list_tasks(project, token)
+        except urllib.error.HTTPError as e:
+            body = e.read().decode(errors="replace")
+            if e.code in (401, 403):
+                print(f"Asana rejected the token for {label} ({e.code}) — check access to project {project}.")
+            else:
+                print(f"Asana error {e.code} for {label}: {body[:200]}")
+            continue
+        for t in tasks:
+            all_rows.append({
+                "gid": t["gid"],
+                "name": t.get("name") or "",
+                "notes": (t.get("notes") or "")[:2000],
+                "assignee": ((t.get("assignee") or {}).get("name")),
+                "due_on": t.get("due_on"),
+                "completed": bool(t.get("completed")),
+                "completed_at": t.get("completed_at"),
+                "section": section_for(t, project),
+                "status": custom_field(t, "Status"),
+                "priority": custom_field(t, "Priority"),
+                "project_gid": project,
+                "project_label": label,
+                "permalink_url": t.get("permalink_url"),
+                "modified_at": t.get("modified_at"),
+                "brand_id": brand_for(t.get("name"), brands),
+            })
+        print(f"  {label}: {len(tasks)} tasks", flush=True)
 
-    rows = []
-    for t in tasks:
-        rows.append({
-            "gid": t["gid"],
-            "name": t.get("name") or "",
-            "notes": (t.get("notes") or "")[:2000],
-            "assignee": ((t.get("assignee") or {}).get("name")),
-            "due_on": t.get("due_on"),
-            "completed": bool(t.get("completed")),
-            "completed_at": t.get("completed_at"),
-            "section": section_for(t, project),
-            "status": custom_field(t, "Status"),
-            "priority": custom_field(t, "Priority"),
-            "project_gid": project,
-            "permalink_url": t.get("permalink_url"),
-            "modified_at": t.get("modified_at"),
-            "brand_id": brand_for(t.get("name"), brands),
-        })
-
-    if not rows:
-        print("No tasks found in the project"); return
+    if not all_rows:
+        print("No tasks found in any configured project"); return
     st, b = sb("POST", "/rest/v1/asana_tasks?on_conflict=gid",
-               json.dumps(rows).encode(), extra={"Prefer": "resolution=merge-duplicates"})
+               json.dumps(all_rows).encode(), extra={"Prefer": "resolution=merge-duplicates"})
     if st not in (200, 201, 204):
         print(f"Supabase upsert failed ({st}): {b.decode(errors='replace')[:300]}"); sys.exit(1)
-    print(f"Synced {len(rows)} Asana tasks from project {project}", flush=True)
+    print(f"Synced {len(all_rows)} Asana tasks across {len(projects)} project(s)", flush=True)
 
 if __name__ == "__main__":
     main()

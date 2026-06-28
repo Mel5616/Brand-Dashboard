@@ -312,7 +312,7 @@ export async function getDashboardData() {
   };
 }
 
-export type AsanaTask = { gid: string; name: string | null; notes: string | null; assignee: string | null; due_on: string | null; completed: boolean; completed_at: string | null; section: string | null; status: string | null; priority: string | null; project_gid: string | null; permalink_url: string | null; modified_at: string | null; brand_id: number | null };
+export type AsanaTask = { gid: string; name: string | null; notes: string | null; assignee: string | null; due_on: string | null; completed: boolean; completed_at: string | null; section: string | null; status: string | null; priority: string | null; project_gid: string | null; project_label: string | null; permalink_url: string | null; modified_at: string | null; brand_id: number | null };
 
 export type EventbriteEvent = { event_id: string; name: string | null; start_at: string | null; end_at: string | null; venue: string | null; state: string | null; status: string | null; url: string | null; capacity: number | null; tickets_sold: number; gross_revenue: number; currency: string | null; brand_id: number | null };
 

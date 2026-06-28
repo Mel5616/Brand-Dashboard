@@ -2,9 +2,18 @@
 
 import type { AsanaTask } from "@/lib/db";
 
-// Status / priority colours mirror the Asana project's field colours.
+// Status / priority colours mirror the Asana projects' field colours (Blogs + Design Requirements).
 const STATUS_COLOR: Record<string, string> = {
-  "Approved": "#16a34a", "Ready to post": "#d97706", "Waiting Approval": "#dc2626", "On Hold": "#ea580c",
+  // shared / approval flow
+  "Waiting Approval": "#dc2626", "Approved": "#16a34a", "On Hold": "#ea580c", "Cancelled": "#9ca3af",
+  // blogs
+  "Ready to post": "#d97706",
+  // design requirements
+  "Ready to Action": "#d97706", "Planning": "#6366f1", "In Progress": "#3b82f6",
+  "Ready to Schedule": "#0891b2", "Making Changes": "#ea580c", "Sent to Print": "#7c3aed",
+  "Completed": "#10b981", "Need Graphics": "#d97706", "Artwork Done": "#0d9488",
+  "Uploaded to Socials": "#16a34a", "Need EDM Planning": "#d97706", "Needs Eventbrite": "#d97706",
+  "Needs Content": "#d97706", "Scheduled": "#0891b2", "LIVE": "#16a34a",
 };
 const PRIORITY_COLOR: Record<string, string> = { "High": "#16a34a", "Medium": "#ca8a04", "Low": "#dc2626" };
 
