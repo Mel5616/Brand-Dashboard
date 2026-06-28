@@ -17,9 +17,11 @@ const CATEGORIES = [
   { id: "worldday", label: "World Event Days", color: "#7c3aed" },
   { id: "campaign", label: "Campaigns", color: "#e8956b" },
   { id: "tuneup", label: "Tune Up Days", color: "#2dc8a5" },
+  { id: "productlaunch", label: "Product Launches", color: "#0ea5e9" },
   { id: "other", label: "Other", color: "#94a3b8" },
 ] as const;
-function categorize(title: string, isCampaign?: boolean): string {
+function categorize(title: string, isCampaign?: boolean, isProduct?: boolean): string {
+  if (isProduct) return "productlaunch";
   const t = (title || "").toLowerCase();
   if (/tune[\s-]?up/.test(t)) return "tuneup";
   if (/\bexpo\b|trade\s?show|baby\s?show|\bfair\b/.test(t)) return "tradeshow";
@@ -40,7 +42,9 @@ export function MarketingCalendar({ events, brands }: Props) {
   const [view, setView] = useState<"upcoming" | "month">("upcoming");
   const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   useEffect(() => { fetch("/api/campaigns").then(r => r.json()).then(d => setCampaigns(d.items ?? [])).catch(() => {}); }, []);
+  useEffect(() => { fetch("/api/new-products").then(r => r.json()).then(d => setProducts(d.products ?? [])).catch(() => {}); }, []);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [showAll, setShowAll] = useState<Record<string, boolean>>({});
   const toggleCollapsed = (id: string) => setCollapsed(p => ({ ...p, [id]: !p[id] }));
@@ -62,9 +66,13 @@ export function MarketingCalendar({ events, brands }: Props) {
   const campaignEvents: any[] = campaigns
     .filter(c => /^\d{4}-\d{2}-\d{2}/.test(c.key_date || ""))
     .map(c => ({ uid: `campaign-${c.id}`, title: c.campaign || "Campaign", description: c.brief?.oneLiner || c.note || "", location: "", start_date: c.key_date.slice(0, 10), end_date: c.key_date.slice(0, 10), all_day: true, brand_id: brandIdByName(c.brand), _isCampaign: true }));
+  // New-product launches (from the New Products tab) land on the calendar too.
+  const productEvents: any[] = products
+    .filter(p => /^\d{4}-\d{2}-\d{2}/.test(p.launch_date || ""))
+    .map(p => ({ uid: `product-${p.id}`, title: `${p.name} launch`, description: p.short_description || "", location: "", start_date: p.launch_date.slice(0, 10), end_date: p.launch_date.slice(0, 10), all_day: true, brand_id: p.brand_id ?? null, _isProduct: true }));
   // Drop personal/travel noise that syncs in from the shared Apple Calendar.
   const isPersonal = (e: any) => /^\s*(flight|hotel|booking|boarding|check.?in|itinerary|car hire|rental)\b|booking number/i.test(`${e.title || ""} ${e.description || ""}`);
-  const allEvents = [...events, ...campaignEvents].filter(e => !isPersonal(e));
+  const allEvents = [...events, ...campaignEvents, ...productEvents].filter(e => !isPersonal(e));
 
   // Normalize event date ranges
   const normalized = allEvents
@@ -109,6 +117,7 @@ export function MarketingCalendar({ events, brands }: Props) {
               </span>
             )}
             {(e as any)._isCampaign && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600">Campaign</span>}
+            {(e as any)._isProduct && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-sky-50 text-sky-600">Launch</span>}
           </div>
           {e.location && <p className="text-[11px] text-gray-400 mt-0.5">📍 {e.location}</p>}
           {e.description && <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-2">{e.description}</p>}
@@ -183,7 +192,7 @@ export function MarketingCalendar({ events, brands }: Props) {
 
           <div className="grid md:grid-cols-2 gap-4 items-start">
             {CATEGORIES.map(cat => {
-              const list = future.filter(e => categorize(e.title, (e as any)._isCampaign) === cat.id);
+              const list = future.filter(e => categorize(e.title, (e as any)._isCampaign, (e as any)._isProduct) === cat.id);
               if (!list.length) return null;
               const isOpen = !collapsed[cat.id];
               const visible = showAll[cat.id] ? list : list.slice(0, 5);

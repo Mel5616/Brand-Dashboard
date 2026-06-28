@@ -6,7 +6,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // Public paths (login, auth callback, the team gift form, and API routes) pass
 // through — per-route financial gating is enforced in the routes themselves.
 
-const PUBLIC = ["/login", "/auth", "/log-gift"];
+const PUBLIC = ["/login", "/auth", "/log-gift", "/p"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
