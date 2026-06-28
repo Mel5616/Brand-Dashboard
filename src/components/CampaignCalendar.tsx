@@ -10,7 +10,7 @@ import React, { useEffect, useRef, useState } from "react";
 type Brief = Record<string, string>;
 type Campaign = {
   id: string; horizon: string; campaign: string; brand: string; tier: string;
-  owner: string; channel: string; status: string; key_date: string; note: string;
+  owner: string; channel: string; status: string; key_date: string; end_date?: string; note: string;
   sort_order: number; brief?: Brief;
 };
 type Maint = { id: string; name: string; tier: string; sort_order: number };
@@ -23,6 +23,14 @@ const HORIZONS = [
   { id: "later", label: "Later", sub: monthName(2) },
 ];
 const HORIZON_RANGE = `${monthName(0)} to ${monthName(2)} ${new Date().getFullYear()}`;
+// Which column a campaign belongs in, derived from its start date: this month → Now,
+// next → Next, the month after (or anything later) → Later; past dates clamp to Now.
+const horizonForDate = (s: string): string => {
+  const d = parseDate(s); if (!d) return "now";
+  const now = new Date();
+  const diff = (d.getFullYear() * 12 + d.getMonth()) - (now.getFullYear() * 12 + now.getMonth());
+  return ["now", "next", "later"][Math.max(0, Math.min(2, diff))];
+};
 
 // Key date: stored as YYYY-MM-DD. These helpers format it and build calendar links.
 const parseDate = (s: string) => { if (!/^\d{4}-\d{2}-\d{2}/.test(s || "")) return null; const d = new Date(s.slice(0, 10) + "T00:00:00"); return isNaN(d.getTime()) ? null : d; };
@@ -32,7 +40,7 @@ const escIcs = (s: string) => String(s ?? "").replace(/([,;\\])/g, "\\$1").repla
 const calDesc = (c: { brief?: Brief }) => [c.brief?.oneLiner, c.brief?.objective].filter(Boolean).join(" — ");
 const gcalUrl = (c: Campaign) => {
   const d = parseDate(c.key_date); if (!d) return "#";
-  const end = new Date(d); end.setDate(end.getDate() + 1);
+  const end = new Date(parseDate(c.end_date ?? "") ?? d); end.setDate(end.getDate() + 1);
   const p = new URLSearchParams({ action: "TEMPLATE", text: c.campaign || "Campaign", dates: `${icsDate(d)}/${icsDate(end)}`, details: calDesc(c) });
   return `https://calendar.google.com/calendar/render?${p.toString()}`;
 };
@@ -143,6 +151,18 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
   function commitText(id: string, field: keyof Campaign, value: string) {
     setItems(prev => prev.map(it => (it.id === id ? { ...it, [field]: value } : it)));
   }
+  // Changing the start date auto-moves the card to the matching month column.
+  function changeStart(item: Campaign, value: string) {
+    const horizon = value ? horizonForDate(value) : item.horizon;
+    setItems(prev => prev.map(it => (it.id === item.id ? { ...it, key_date: value, horizon } : it)));
+    if (item.id.startsWith("temp-")) return;
+    patch(item.id, { key_date: value, horizon });
+  }
+  function changeEnd(item: Campaign, value: string) {
+    setItems(prev => prev.map(it => (it.id === item.id ? { ...it, end_date: value } : it)));
+    if (item.id.startsWith("temp-")) return;
+    patch(item.id, { end_date: value } as Partial<Campaign>);
+  }
   function saveBrief(item: Campaign, fieldKey: string, value: string) {
     const cur = { ...(briefDraft.current[item.id] ?? (item.brief as any) ?? {}), [fieldKey]: value };
     briefDraft.current[item.id] = cur;
@@ -158,7 +178,7 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
   }
   async function addRow(horizon: string) {
     const order = Math.max(0, ...items.filter(i => i.horizon === horizon).map(i => i.sort_order || 0)) + 1;
-    const draft = { horizon, campaign: "", brand: "", tier: "A", owner: "TBC", channel: "", status: "Planned", key_date: "", note: "", sort_order: order, brief: {} };
+    const draft = { horizon, campaign: "", brand: "", tier: "A", owner: "TBC", channel: "", status: "Planned", key_date: "", end_date: "", note: "", sort_order: order, brief: {} };
     const tempId = "temp-" + Date.now();
     setItems(prev => [...prev, { ...draft, id: tempId }]);
     try {
@@ -231,7 +251,9 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
   }
   function addToCalendar(c: Campaign) {
     const d = parseDate(c.key_date); if (!d) return;
-    const end = new Date(d); end.setDate(end.getDate() + 1);
+    // All-day DTEND is exclusive, so add a day to the end date (or the start if none).
+    const endIn = parseDate(c.end_date ?? "") ?? d;
+    const end = new Date(endIn); end.setDate(end.getDate() + 1);
     const desc = calDesc(c);
     const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Coolkidz//Campaigns//EN", "CALSCALE:GREGORIAN", "BEGIN:VEVENT",
       `UID:campaign-${c.id}@coolkidz`, `DTSTAMP:${icsDate(new Date())}T000000Z`,
@@ -335,7 +357,7 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                               ? <select aria-label="Status" value={c.status} onClick={e => e.stopPropagation()} onChange={e => editField(c.id, "status", e.target.value, true)} className="font-semibold text-white rounded-full px-2.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer" style={{ background: STATUS_COLOR[c.status] ?? "#9A9A9A" }}>{STATUSES.map(s => <option key={s} value={s} className="text-slate-700 bg-white">{s}</option>)}</select>
                               : <span className="font-semibold text-white rounded-full px-2.5 py-0.5" style={{ background: STATUS_COLOR[c.status] ?? "#9A9A9A" }}>{c.status}</span>}
                             {parseDate(c.key_date)
-                              ? <span className="inline-flex items-center gap-1 text-indigo-500 font-medium"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>{fmtKeyDate(c.key_date)}</span>
+                              ? <span className="inline-flex items-center gap-1 text-indigo-500 font-medium"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>{fmtKeyDate(c.key_date)}{parseDate(c.end_date ?? "") ? ` – ${fmtKeyDate(c.end_date!)}` : ""}</span>
                               : <span className="text-gray-400">{c.key_date}</span>}
                           </div>
                           <p className="text-[11px] text-gray-400">Owner {c.owner || "TBC"}{c.channel ? ` · ${c.channel}` : ""}</p>
@@ -404,7 +426,10 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                     <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ background: TIER_DOT[open.tier] ?? "#ccc" }} />Tier {open.tier}</span>
                     <input key={open.id + "brand"} aria-label="Brand" readOnly={ro} defaultValue={open.brand} placeholder="Brand" onChange={e => saveText(open.id, "brand", e.target.value)} onBlur={e => commitText(open.id, "brand", e.target.value)} className={cell + " w-32"} />
                     <span className="font-semibold text-white rounded-full px-2.5 py-0.5 text-xs" style={{ background: STATUS_COLOR[open.status] ?? "#9A9A9A" }}>{open.status}</span>
-                    <input type="date" aria-label="Key date" readOnly={ro} value={parseDate(open.key_date) ? open.key_date.slice(0, 10) : ""} onChange={e => editField(open.id, "key_date", e.target.value, true)} className={cell + " w-36"} />
+                    <span className="text-gray-400">Start</span>
+                    <input type="date" aria-label="Start date" readOnly={ro} value={parseDate(open.key_date) ? open.key_date.slice(0, 10) : ""} onChange={e => changeStart(open, e.target.value)} className={cell + " w-36"} />
+                    <span className="text-gray-400">End</span>
+                    <input type="date" aria-label="End date" readOnly={ro} min={parseDate(open.key_date) ? open.key_date.slice(0, 10) : undefined} value={parseDate(open.end_date ?? "") ? (open.end_date ?? "").slice(0, 10) : ""} onChange={e => changeEnd(open, e.target.value)} className={cell + " w-36"} />
                     <span className="text-gray-400">Owner</span>
                     <input key={open.id + "owner"} aria-label="Owner" readOnly={ro} defaultValue={open.owner} placeholder="TBC" onChange={e => saveText(open.id, "owner", e.target.value)} onBlur={e => commitText(open.id, "owner", e.target.value)} className={cell + " w-24"} />
                   </div>
