@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { CalendarEvent } from "@/lib/db";
 
 interface Props {
@@ -21,6 +21,8 @@ export function MarketingCalendar({ events, brands }: Props) {
   const today = new Date();
   const [view, setView] = useState<"upcoming" | "month">("upcoming");
   const [cursor, setCursor] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  useEffect(() => { fetch("/api/campaigns").then(r => r.json()).then(d => setCampaigns(d.items ?? [])).catch(() => {}); }, []);
 
   const brandMap = Object.fromEntries(brands.map((b: any) => [b.id, b]));
 
@@ -28,8 +30,20 @@ export function MarketingCalendar({ events, brands }: Props) {
     return ev.brand_id != null ? brandMap[ev.brand_id] : null;
   }
 
+  // Dated campaigns (from the Campaigns tab) become calendar events too, coloured by brand.
+  const norm = (s: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const brandIdByName = (name: string) => {
+    const n = norm(name); if (!n) return null;
+    const hit = brands.find((b: any) => { const bn = norm(b.name); return bn && (bn === n || bn.startsWith(n) || n.startsWith(bn)); });
+    return hit ? hit.id : null;
+  };
+  const campaignEvents: any[] = campaigns
+    .filter(c => /^\d{4}-\d{2}-\d{2}/.test(c.key_date || ""))
+    .map(c => ({ uid: `campaign-${c.id}`, title: c.campaign || "Campaign", description: c.brief?.oneLiner || c.note || "", location: "", start_date: c.key_date.slice(0, 10), end_date: c.key_date.slice(0, 10), all_day: true, brand_id: brandIdByName(c.brand), _isCampaign: true }));
+  const allEvents = [...events, ...campaignEvents];
+
   // Normalize event date ranges
-  const normalized = events
+  const normalized = allEvents
     .filter(e => e.start_date)
     .map(e => {
       const start = parseLocalDate(e.start_date);
@@ -70,6 +84,7 @@ export function MarketingCalendar({ events, brands }: Props) {
                 {brand.name}
               </span>
             )}
+            {(e as any)._isCampaign && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600">Campaign</span>}
           </div>
           {e.location && <p className="text-[11px] text-gray-400 mt-0.5">📍 {e.location}</p>}
           {e.description && <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-2">{e.description}</p>}
@@ -94,7 +109,7 @@ export function MarketingCalendar({ events, brands }: Props) {
       .sort((a, b) => a._start.getTime() - b._start.getTime());
   }
 
-  if (events.length === 0) {
+  if (allEvents.length === 0) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">
         <div className="text-4xl mb-3">📅</div>
@@ -113,7 +128,7 @@ export function MarketingCalendar({ events, brands }: Props) {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="font-semibold text-gray-800">Marketing Calendar</h2>
-          <p className="text-xs text-gray-400 mt-0.5">Campaigns from Apple Calendar · {events.length} events</p>
+          <p className="text-xs text-gray-400 mt-0.5">Apple Calendar + dated campaigns · {allEvents.length} events</p>
         </div>
         <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
           {(["upcoming", "month"] as const).map(v => (
