@@ -144,11 +144,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
 const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Overview", ids: ["brands", "insights", "report", "snapshot", "uppababy"] },
   { label: "Plan", ids: ["campaign-calendar", "calendar", "content", "events", "tasks", "design-requests"] },
-  { label: "Operations", ids: ["new-products"] },
+  { label: "Operations", ids: ["budget", "new-products"] },
   { label: "Paid", ids: ["google-ads", "meta-ads"] },
   { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting"] },
   { label: "Revenue & Channels", ids: ["sales", "shopify", "tradeshows"] },
-  { label: "Operations", ids: ["budget", "team"] },
 ];
 
 // Report-type pages collapse under a "Reports" dropdown in the sidebar.
@@ -386,7 +385,7 @@ export function DashboardTabs({
           const grouped = new Set(TAB_GROUPS.flatMap(g => g.ids));
           const groups = [
             ...TAB_GROUPS.map(g => ({ label: g.label, tabs: g.ids.filter(id => visIds.has(id)).map(id => TABS.find(t => t.id === id)!) })),
-            { label: "More", tabs: visibleTabs.filter(t => !grouped.has(t.id)) }, // any tab not placed in a group
+            { label: "More", tabs: visibleTabs.filter(t => !grouped.has(t.id) && t.id !== "team") }, // ungrouped tabs (Team is pinned at the bottom)
           ].filter(g => g.tabs.length > 0);
           const Btn = (tab: typeof TABS[number]) => {
             const isActive = active === tab.id && !(selectedBrand && active === "brands");
@@ -435,6 +434,15 @@ export function DashboardTabs({
               <option key={b.id} value={String(b.id)}>{b.name}</option>
             ))}
           </select>
+        </div>
+      )}
+      {visibleTabs.some(t => t.id === "team") && (
+        <div className="px-2 py-2 border-t border-gray-100">
+          <button onClick={() => setActive("team")}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${
+              active === "team" ? "bg-indigo-50 text-indigo-600 font-semibold ring-1 ring-indigo-100" : "bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-700"}`}>
+            {TABS.find(t => t.id === "team")!.icon}Team
+          </button>
         </div>
       )}
     </aside>
