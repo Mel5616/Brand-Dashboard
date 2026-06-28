@@ -187,12 +187,12 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
                 </div>
               ))}
 
-              {canEdit && (
-                <div className="flex flex-wrap gap-2 pt-1">
-                  <button onClick={save} disabled={busy === "save"} className="text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg px-4 py-2 disabled:opacity-60">{busy === "save" ? "Saving…" : `Save to all ${open.members.length > 1 ? open.members.length + " colours" : ""}`.trim()}</button>
-                  <button onClick={delGroup} className="text-sm font-medium text-red-500 hover:bg-red-50 rounded-lg px-3 py-2 ml-auto">Delete</button>
-                </div>
-              )}
+              <div className="flex flex-wrap gap-2 pt-1">
+                {canEdit && <button onClick={save} disabled={busy === "save"} className="text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg px-4 py-2 disabled:opacity-60">{busy === "save" ? "Saving…" : `Save to all ${open.members.length > 1 ? open.members.length + " colours" : ""}`.trim()}</button>}
+                {rep && <a href={`/new-products/${rep.id}/print`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-slate-700 border border-gray-200 hover:bg-gray-50 rounded-lg px-4 py-2">PDF</a>}
+                {rep && <button onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/p/${rep.share_token}`); setMsg("Share link copied."); }} className="text-sm font-medium text-slate-700 border border-gray-200 hover:bg-gray-50 rounded-lg px-4 py-2">Copy share link</button>}
+                {canEdit && <button onClick={delGroup} className="text-sm font-medium text-red-500 hover:bg-red-50 rounded-lg px-3 py-2 ml-auto">Delete</button>}
+              </div>
 
               {/* Colours — per-variant SKU/dims/image/links */}
               <div className="pt-3 border-t border-gray-100">
