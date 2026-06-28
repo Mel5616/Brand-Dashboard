@@ -30,26 +30,28 @@ export async function POST(req: Request) {
     // Live context: the brand's current Shopify range + (optional) market-news web search.
     const siteContext = await fetchSiteContext(p.siteUrl);
     const market: string | undefined = typeof p.marketContext === "string" ? p.marketContext : undefined;
-    const system = buildSystemPrompt(brand.name, p, pillar, moment, selected, focus || "", { siteContext, market });
+    const userMsg = `Write the brief for the ${moment.name} moment across: ${selected.map((c: any) => c.name).join(", ")}. Return only the JSON object.`;
+    const callClaude = (useSearch: boolean) =>
+      fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY!, "anthropic-version": "2023-06-01" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 1500,
+          system: useSearch ? system : system.replace(/\nLIVE MARKET CONTEXT[\s\S]*?never to make a factual assertion\.\n/, "\n"),
+          ...(useSearch ? { tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 2 }] } : {}),
+          messages: [{ role: "user", content: userMsg }],
+        }),
+      });
 
-    const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY!,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1500,
-        system,
-        ...(market !== undefined ? { tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 3 }] } : {}),
-        messages: [
-          { role: "user", content: `Write the brief for the ${moment.name} moment across: ${selected.map((c: any) => c.name).join(", ")}. Return only the JSON object.` },
-        ],
-      }),
-    });
-    const aiJson = await aiRes.json();
+    let aiRes = await callClaude(market !== undefined);
+    let aiJson = await aiRes.json();
+    // Web search feeds large results back as input; on a low input-token rate limit that
+    // can overflow. Fall back to a search-free draft so the brief still generates.
+    if (!aiRes.ok && market !== undefined) {
+      aiRes = await callClaude(false);
+      aiJson = await aiRes.json();
+    }
     if (!aiRes.ok) return NextResponse.json({ error: "Model call failed", detail: aiJson?.error?.message ?? null }, { status: 502 });
 
     const raw = (aiJson.content || []).filter((b: any) => b.type === "text").map((b: any) => b.text).join("").replace(/```json|```/g, "").trim();
