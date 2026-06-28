@@ -43,7 +43,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       <div style="font-weight:500;color:${C.navy}">${esc(cname(d.id))}</div>
       <div style="font-size:12px;opacity:.6;margin-top:1px">${esc(d.presets)}</div>
       <div style="margin-top:6px"><span style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;opacity:.5">Copy. </span>${esc(d.copy_direction)}</div>
-      <div style="margin-top:2px"><span style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;opacity:.5">Visual. </span>${esc(d.visual_direction)}</div>
+      <div style="margin-top:2px"><span style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;opacity:.5">${d.id === "blog" ? "SEO / structure. " : "Visual. "}</span>${esc(d.visual_direction)}</div>
     </div>`).join("");
 
   const mand = (brief.mandatory || []).map((m: string) =>

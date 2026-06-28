@@ -58,6 +58,7 @@ Return ONLY valid JSON, no preamble, no markdown fences, in exactly this shape:
   ]
 }
 Channel ids to include, in this order: ${selected.map((c) => c.id).join(", ")}.
+${selected.some((c) => c.id === "blog") ? `For the blog channel: put the angle and hook in copy_direction, and SEO and structure guidance in visual_direction (target keyword, H2/H3 outline, internal links, FAQ, target word count). Blogs do not need art direction.` : ""}
 ${focus ? `Specific product or angle focus from the lead: ${focus}` : ""}`;
 }
 
@@ -68,6 +69,7 @@ export const ASANA_ROUTES: Record<string, Record<string, string>> = {
   nanit: {
     social: "1212637192218254",   // Nanit (Social Media Pages 2026)
     edm: "1212637191678633",      // Nanit EDMs (Email Marketing 2026)
+    blog: "1213417959049946",     // Blogs board (the content pipeline)
     _default: "1205954873551895", // Design To Do List (Diep) — paid, pdp, affiliate, event
   },
 };

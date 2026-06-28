@@ -152,7 +152,7 @@ export function BriefingEngine() {
                       <div className="font-medium" style={{ color: C.navy }}>{cn(d.id)}</div>
                       <div className="text-xs opacity-60">{cp(d.id)}</div>
                       <div className="mt-1"><span className="opacity-50 text-xs uppercase tracking-wide">Copy. </span>{d.copy_direction}</div>
-                      <div><span className="opacity-50 text-xs uppercase tracking-wide">Visual. </span>{d.visual_direction}</div>
+                      <div><span className="opacity-50 text-xs uppercase tracking-wide">{d.id === "blog" ? "SEO / structure. " : "Visual. "}</span>{d.visual_direction}</div>
                     </div>
                   ))}
                 </div>

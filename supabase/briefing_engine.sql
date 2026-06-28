@@ -85,6 +85,7 @@ insert into brand_profiles (slug, name, tier, profile) values
   ],
   "channels": [
     {"id":"social","name":"Social (organic)","presets":"IG/FB feed 1080x1350, Story/Reel 1080x1920, carousel up to 10 frames","role":"Education, credibility and storytelling, not volume-led engagement."},
+    {"id":"blog","name":"Blog / SEO","presets":"1500-2000 word post, H2/H3 structure, target keyword, internal links, FAQ schema","role":"SEO-led education that ranks and supports PDP and retail conversion."},
     {"id":"paid","name":"Paid media","presets":"Search RSA, paid social 1080x1350 and 1080x1920, video 16:9 and 9:16","role":"Amplify education at high-intent research moments. Consideration, not impulse."},
     {"id":"edm","name":"EDM (Klaviyo)","presets":"600px content width, modular blocks, single primary CTA","role":"Education, nurture and confidence-building. Not promotional."},
     {"id":"pdp","name":"D2C / PDP","presets":"Product page modules, FAQ schema, comparison block, store locator","role":"Central source of truth. Education that drives informed conversion and see-it-in-store."},
