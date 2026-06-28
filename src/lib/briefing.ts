@@ -137,6 +137,30 @@ export const ASANA_ROUTES: Record<string, Record<string, string>> = {
     blog: "1213417959049946",     // Blogs board
     _default: "1205954873551895", // Design To Do List (Diep)
   },
+  "gaia-baby": {
+    social: "1203558671371018",   // Gaia Baby (Social Media Pages 2026)
+    edm: "1204304573037017",      // Gaia Baby EDMs (Email Marketing 2026)
+    blog: "1213417959049946",     // Blogs board
+    _default: "1205954873551895", // Design To Do List (Diep)
+  },
+  "matchstick-monkey": {
+    social: "1213517766368454",   // Matchstick Monkey (Social Media Pages 2026)
+    edm: "1213550907233053",      // Matchstick Monkey EDMs (Email Marketing 2026)
+    blog: "1213417959049946",     // Blogs board
+    _default: "1205954873551895", // Design To Do List (Diep)
+  },
+  miamily: {
+    social: "1207763660389463",   // MiaMily (Social Media Pages 2026)
+    edm: "1207763792908764",      // MiaMily EDMs (Email Marketing 2026)
+    blog: "1213417959049946",     // Blogs board
+    _default: "1205954873551895", // Design To Do List (Diep)
+  },
+  zazu: {
+    social: "1213517766368450",   // ZAZU Kids (Social Media Pages 2026)
+    edm: "1212998394660857",      // ZAZU EDMs (Email Marketing 2026)
+    blog: "1213417959049946",     // Blogs board
+    _default: "1205954873551895", // Design To Do List (Diep)
+  },
 };
 export const BRIEFING_ENGINE_PROJECT = process.env.BRIEFING_ENGINE_PROJECT_GID || "";
 export const DRAFTED_SECTION_NAME = "Drafted · needs Mel";
