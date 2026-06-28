@@ -35,6 +35,8 @@ const horizonForDate = (s: string): string => {
 const winStart = (() => { const s = new Date(); s.setDate(1); s.setHours(0, 0, 0, 0); return s; })();
 const winSpanMs = (() => { const e = new Date(winStart); e.setMonth(e.getMonth() + 3); return e.getTime() - winStart.getTime(); })();
 const winFrac = (d: Date) => Math.max(0, Math.min(1, (d.getTime() - winStart.getTime()) / winSpanMs));
+const HORIZON_INDEX: Record<string, number> = { now: 0, next: 1, later: 2 };
+const isoDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
 // Key date: stored as YYYY-MM-DD. These helpers format it and build calendar links.
 const parseDate = (s: string) => { if (!/^\d{4}-\d{2}-\d{2}/.test(s || "")) return null; const d = new Date(s.slice(0, 10) + "T00:00:00"); return isNaN(d.getTime()) ? null : d; };
@@ -86,6 +88,8 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState<string | null>(null);
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const drawerRef = useRef<HTMLDivElement>(null);
 
@@ -169,6 +173,24 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
     setItems(prev => prev.map(it => (it.id === item.id ? { ...it, end_date: value } : it)));
     if (item.id.startsWith("temp-")) return;
     patch(item.id, { end_date: value } as Partial<Campaign>);
+  }
+  // Drag a card into another column: set the horizon and shift its dates to that
+  // month (keeping the day and any duration) so the date and column stay in sync.
+  function moveTo(id: string, horizon: string) {
+    const item = items.find(i => i.id === id);
+    if (!item || item.horizon === horizon) return;
+    let { key_date, end_date } = item;
+    const d = parseDate(item.key_date);
+    if (d) {
+      const tgt = new Date(); tgt.setDate(1); tgt.setMonth(tgt.getMonth() + (HORIZON_INDEX[horizon] ?? 0));
+      const delta = (tgt.getFullYear() * 12 + tgt.getMonth()) - (d.getFullYear() * 12 + d.getMonth());
+      const shift = (s?: string) => { const x = parseDate(s ?? ""); if (!x) return s; x.setMonth(x.getMonth() + delta); return isoDate(x); };
+      key_date = shift(item.key_date) ?? key_date;
+      end_date = shift(item.end_date);
+    }
+    setItems(prev => prev.map(it => (it.id === id ? { ...it, horizon, key_date, end_date } : it)));
+    if (id.startsWith("temp-")) return;
+    patch(id, { horizon, key_date, end_date } as Partial<Campaign>);
   }
   function saveBrief(item: Campaign, fieldKey: string, value: string) {
     const cur = { ...(briefDraft.current[item.id] ?? (item.brief as any) ?? {}), [fieldKey]: value };
@@ -342,7 +364,14 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
             {HORIZONS.map(h => {
               const rows = items.filter(i => i.horizon === h.id).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
               return (
-                <section key={h.id} className="bg-gray-50/60 rounded-2xl border border-gray-100 p-3" aria-label={`${h.label} (${h.sub})`}>
+                <section
+                  key={h.id}
+                  aria-label={`${h.label} (${h.sub})`}
+                  onDragOver={canEdit ? (e => { e.preventDefault(); if (dragId) setDragOver(h.id); }) : undefined}
+                  onDragLeave={canEdit ? (e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(null); }) : undefined}
+                  onDrop={canEdit ? (e => { e.preventDefault(); if (dragId) moveTo(dragId, h.id); setDragId(null); setDragOver(null); }) : undefined}
+                  className={`rounded-2xl border p-3 transition-colors ${dragOver === h.id ? "bg-indigo-50/70 border-indigo-300 border-dashed" : "bg-gray-50/60 border-gray-100"}`}
+                >
                   <header className="flex items-baseline justify-between px-1 mb-2">
                     <h3 className="text-sm font-bold text-slate-700">{h.label} <span className="text-gray-400 font-normal">· {h.sub}</span></h3>
                     <span className="text-xs text-gray-400">{rows.length}</span>
@@ -357,7 +386,10 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                           onClick={() => setOpenId(c.id)}
                           tabIndex={0}
                           onKeyDown={e => { if (e.key === "Enter") setOpenId(c.id); }}
-                          className="bg-white rounded-xl border border-gray-100 shadow-sm p-3 space-y-1.5 cursor-pointer hover:border-indigo-200 hover:shadow transition motion-reduce:transition-none focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                          draggable={canEdit}
+                          onDragStart={canEdit ? (e => { setDragId(c.id); e.dataTransfer.effectAllowed = "move"; }) : undefined}
+                          onDragEnd={canEdit ? (() => { setDragId(null); setDragOver(null); }) : undefined}
+                          className={`bg-white rounded-xl border border-gray-100 shadow-sm p-3 space-y-1.5 cursor-pointer hover:border-indigo-200 hover:shadow transition motion-reduce:transition-none focus:outline-none focus:ring-2 focus:ring-indigo-400 ${canEdit ? "active:cursor-grabbing" : ""} ${dragId === c.id ? "opacity-40" : ""}`}
                         >
                           <div className="flex items-start gap-1">
                             <span className="flex-1 font-semibold text-slate-800 text-sm leading-snug">{c.campaign || <span className="text-gray-300">Untitled campaign</span>}</span>
