@@ -113,17 +113,17 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
       <p className="text-xs text-gray-400 mt-1">Run <code className="bg-gray-50 px-1 rounded">supabase/add_new_products.sql</code>, then upload your Excel.</p>
     </div>
   );
-  const ta = "w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-y";
+  const ta = "w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-400 resize-y";
 
   return (
     <div className="space-y-4">
       <input ref={imgRef} type="file" accept="image/*" onChange={uploadImage} className="hidden" />
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="text-xs text-gray-400">{groups.length} product line{groups.length === 1 ? "" : "s"}{msg && <span className="ml-2 text-indigo-500 font-medium">{msg}</span>}</div>
+        <div className="text-xs text-gray-400">{groups.length} product line{groups.length === 1 ? "" : "s"}{msg && <span className="ml-2 text-emerald-500 font-medium">{msg}</span>}</div>
         {canEdit && (
           <div>
             <input ref={fileRef} type="file" accept=".xlsx,.xls" onChange={handleFile} className="hidden" />
-            <button onClick={() => fileRef.current?.click()} disabled={busy === "import"} className="text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg px-4 py-2 disabled:opacity-60">{busy === "import" ? "Importing…" : "Upload Excel"}</button>
+            <button onClick={() => fileRef.current?.click()} disabled={busy === "import"} className="text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg px-4 py-2 disabled:opacity-60">{busy === "import" ? "Importing…" : "Upload Excel"}</button>
           </div>
         )}
       </div>
@@ -138,7 +138,7 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
             const ready = g.members.every(m => m.long_description);
             const colours = g.members.map(m => variantLabel(m.name, g.title)).filter(Boolean);
             return (
-              <button key={g.key} onClick={() => setOpenKey(g.key)} className="text-left bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow hover:border-indigo-200 transition p-3">
+              <button key={g.key} onClick={() => setOpenKey(g.key)} className="text-left bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow hover:border-emerald-200 transition p-3">
                 <div className="flex items-center justify-between mb-1.5">
                   {r.brand_id != null && BRAND_LOGOS[r.brand_id] ? <img src={BRAND_LOGOS[r.brand_id]} alt="" className="h-4 max-w-[64px] object-contain" /> : <span className="text-[10px] text-gray-400">—</span>}
                   <span className="text-[9px] font-semibold text-white rounded-full px-1.5 py-0.5" style={{ background: st.bg }}>{st.label}</span>
@@ -182,8 +182,8 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
               </div>
 
               {canEdit && (
-                <button onClick={draft} disabled={busy === "draft"} className="inline-flex items-center gap-2 text-sm font-medium text-indigo-600 border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 rounded-lg px-3 py-1.5 disabled:opacity-60">
-                  {busy === "draft" && <span className="w-3.5 h-3.5 rounded-full border-2 border-indigo-300 border-t-indigo-600 animate-spin" />}{busy === "draft" ? "Drafting…" : "✨ Draft copy with Claude"}
+                <button onClick={draft} disabled={busy === "draft"} className="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 rounded-lg px-3 py-1.5 disabled:opacity-60">
+                  {busy === "draft" && <span className="w-3.5 h-3.5 rounded-full border-2 border-emerald-300 border-t-emerald-600 animate-spin" />}{busy === "draft" ? "Drafting…" : "✨ Draft copy with Claude"}
                 </button>
               )}
 
@@ -195,7 +195,7 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
               ))}
 
               <div className="flex flex-wrap gap-2 pt-1">
-                {canEdit && <button onClick={save} disabled={busy === "save"} className="text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg px-4 py-2 disabled:opacity-60">{busy === "save" ? "Saving…" : `Save to all ${open.members.length > 1 ? open.members.length + " colours" : ""}`.trim()}</button>}
+                {canEdit && <button onClick={save} disabled={busy === "save"} className="text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg px-4 py-2 disabled:opacity-60">{busy === "save" ? "Saving…" : `Save to all ${open.members.length > 1 ? open.members.length + " colours" : ""}`.trim()}</button>}
                 {rep && <a href={`/new-products/${rep.id}/print`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-slate-700 border border-gray-200 hover:bg-gray-50 rounded-lg px-4 py-2">PDF</a>}
                 {rep && <button onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/p/${rep.share_token}`); setMsg("Share link copied."); }} className="text-sm font-medium text-slate-700 border border-gray-200 hover:bg-gray-50 rounded-lg px-4 py-2">Copy share link</button>}
                 {canEdit && <button onClick={delGroup} className="text-sm font-medium text-red-500 hover:bg-red-50 rounded-lg px-3 py-2 ml-auto">Delete</button>}
@@ -215,7 +215,7 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
                         <p className="text-[11px] text-gray-400 truncate">{m.sku}{m.barcode ? ` · ${m.barcode}` : ""}{[m.length, m.width, m.height].every((v: any) => v != null) ? ` · ${m.length}×${m.width}×${m.height}cm` : ""}</p>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0 text-[11px]">
-                        {canEdit && <button onClick={() => pickImage(m.id)} disabled={busy === "image:" + m.id} className="text-indigo-600 hover:underline disabled:opacity-60">{busy === "image:" + m.id ? "…" : m.attrs?.image_url ? "swap" : "image"}</button>}
+                        {canEdit && <button onClick={() => pickImage(m.id)} disabled={busy === "image:" + m.id} className="text-emerald-600 hover:underline disabled:opacity-60">{busy === "image:" + m.id ? "…" : m.attrs?.image_url ? "swap" : "image"}</button>}
                         <a href={`/new-products/${m.id}/print`} target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:underline">PDF</a>
                         <button onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/p/${m.share_token}`); setMsg("Link copied."); }} className="text-slate-500 hover:underline">link</button>
                       </div>

@@ -12,7 +12,7 @@ const CHANNELS = ["Instagram", "Facebook", "TikTok", "Email", "Blog", "Website",
 const STATUSES = [
   { key: "idea",      label: "Idea",      dot: "#94a3b8", chip: "bg-slate-100 text-slate-600" },
   { key: "drafting",  label: "Drafting",  dot: "#f59e0b", chip: "bg-amber-100 text-amber-700" },
-  { key: "scheduled", label: "Scheduled", dot: "#6366f1", chip: "bg-indigo-100 text-indigo-700" },
+  { key: "scheduled", label: "Scheduled", dot: "#6366f1", chip: "bg-emerald-100 text-emerald-700" },
   { key: "live",      label: "Live",      dot: "#10b981", chip: "bg-emerald-100 text-emerald-700" },
 ];
 const statusMeta = (k: string) => STATUSES.find(s => s.key === k) ?? STATUSES[0];
@@ -84,7 +84,7 @@ export function ContentPlanner({ brands, brandFilter, monthKey }: { brands: Bran
         <h2 className="font-semibold text-gray-800">One-time setup</h2>
         <p className="text-sm text-gray-500 mt-1">The content planner needs a table to store entries. Run this once in the Supabase SQL editor, then reload.</p>
         <pre className="mt-4 text-[11px] bg-slate-900 text-slate-100 rounded-lg p-4 overflow-x-auto whitespace-pre-wrap">{SQL}</pre>
-        <button onClick={() => { setLoading(true); setNeedsSetup(false); load(); }} className="mt-4 text-xs font-semibold text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg px-3 py-2">I've run it — reload</button>
+        <button onClick={() => { setLoading(true); setNeedsSetup(false); load(); }} className="mt-4 text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2">I've run it — reload</button>
       </div>
     );
   }
@@ -104,7 +104,7 @@ export function ContentPlanner({ brands, brandFilter, monthKey }: { brands: Bran
             ))}
           </div>
           <button onClick={() => setEdit({ brand_id: brandFilter === "all" ? liveBrands[0]?.id : (brandFilter as number), channel: "Instagram", status: "idea", scheduled_date: `${monthKey}-15` })}
-            className="text-xs font-semibold text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg px-3 py-2">+ Add content</button>
+            className="text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2">+ Add content</button>
         </div>
       </div>
 
@@ -165,7 +165,7 @@ function Card({ it, colorOf, brandOf, onClick, onStatus }: { it: Item; colorOf: 
         <p className="text-xs text-slate-700 font-medium leading-snug">{it.title}</p>
         <div className="flex items-center gap-1.5 mt-1">
           {it.scheduled_date && <span className="text-[10px] text-gray-400">{new Date(it.scheduled_date + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" })}</span>}
-          {it.draft && <span className="text-[9px] text-indigo-500" title="Has AI draft">✨ draft</span>}
+          {it.draft && <span className="text-[9px] text-emerald-500" title="Has AI draft">✨ draft</span>}
         </div>
       </button>
       <select value={it.status} onChange={e => onStatus(it, e.target.value)} onClick={e => e.stopPropagation()}
@@ -196,10 +196,10 @@ function CalendarGrid({ monthKey, items, colorOf, onAdd, onOpen }: { monthKey: s
       </div>
       <div className="grid grid-cols-7 gap-1">
         {cells.map((date, i) => (
-          <div key={i} className={`min-h-[84px] rounded-lg border p-1 ${date ? "border-gray-100" : "border-transparent bg-gray-50/40"} ${date === today ? "ring-1 ring-indigo-300" : ""}`}>
+          <div key={i} className={`min-h-[84px] rounded-lg border p-1 ${date ? "border-gray-100" : "border-transparent bg-gray-50/40"} ${date === today ? "ring-1 ring-emerald-300" : ""}`}>
             {date && (
               <>
-                <button onClick={() => onAdd(date)} className="w-full text-left text-[10px] text-gray-400 hover:text-indigo-500 px-0.5">{Number(date.slice(-2))}</button>
+                <button onClick={() => onAdd(date)} className="w-full text-left text-[10px] text-gray-400 hover:text-emerald-500 px-0.5">{Number(date.slice(-2))}</button>
                 <div className="space-y-1 mt-0.5">
                   {(byDay.get(date) ?? []).map(it => (
                     <button key={it.id} onClick={() => onOpen(it)} className="w-full text-left flex items-center gap-1 rounded px-1 py-0.5 hover:bg-gray-50" style={{ background: `${colorOf(it.brand_id)}14` }}>
@@ -244,28 +244,28 @@ function EditModal({ item, brands, onClose, onSave, onDelete }: { item: Partial<
           <div>
             <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Title</label>
             <input autoFocus value={f.title ?? ""} onChange={e => set("title", e.target.value)} placeholder="e.g. Vista V3 launch reel"
-              className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+              className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Brand</label>
-              <select value={f.brand_id ?? ""} onChange={e => set("brand_id", Number(e.target.value))} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+              <select value={f.brand_id ?? ""} onChange={e => set("brand_id", Number(e.target.value))} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400">
                 {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
               </select>
             </div>
             <div>
               <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Channel</label>
-              <select value={f.channel ?? "Instagram"} onChange={e => set("channel", e.target.value)} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+              <select value={f.channel ?? "Instagram"} onChange={e => set("channel", e.target.value)} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400">
                 {CHANNELS.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div>
               <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Date</label>
-              <input type="date" value={f.scheduled_date ?? ""} onChange={e => set("scheduled_date", e.target.value || null)} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+              <input type="date" value={f.scheduled_date ?? ""} onChange={e => set("scheduled_date", e.target.value || null)} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400" />
             </div>
             <div>
               <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Status</label>
-              <select value={f.status ?? "idea"} onChange={e => set("status", e.target.value)} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+              <select value={f.status ?? "idea"} onChange={e => set("status", e.target.value)} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400">
                 {STATUSES.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
               </select>
             </div>
@@ -273,24 +273,24 @@ function EditModal({ item, brands, onClose, onSave, onDelete }: { item: Partial<
           <div>
             <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Notes</label>
             <textarea value={f.notes ?? ""} onChange={e => set("notes", e.target.value)} rows={2} placeholder="brief, angle, links…"
-              className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-400 resize-none" />
+              className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400 resize-none" />
           </div>
           <div>
             <div className="flex items-center justify-between">
               <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Draft copy</label>
               <button onClick={generate} disabled={!valid || drafting}
-                className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-700 disabled:opacity-40 flex items-center gap-1">
+                className="text-[11px] font-semibold text-emerald-600 hover:text-emerald-700 disabled:opacity-40 flex items-center gap-1">
                 {drafting ? "✨ Writing…" : f.draft ? "✨ Regenerate" : "✨ Draft copy"}
               </button>
             </div>
             <textarea value={f.draft ?? ""} onChange={e => set("draft", e.target.value)} rows={f.draft ? 6 : 2}
               placeholder="Click ‘Draft copy’ to generate on-brand copy for this channel — then edit freely."
-              className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-400 resize-none" />
+              className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400 resize-none" />
             {draftErr && <p className="text-[11px] text-rose-500 mt-1">{draftErr}</p>}
           </div>
         </div>
         <div className="flex items-center gap-2 mt-5">
-          <button disabled={!valid} onClick={() => onSave(f)} className="text-sm font-semibold text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 rounded-lg px-4 py-2">Save</button>
+          <button disabled={!valid} onClick={() => onSave(f)} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 rounded-lg px-4 py-2">Save</button>
           <button onClick={onClose} className="text-sm text-gray-400 hover:text-gray-600 px-2">Cancel</button>
           {item.id && <button onClick={() => onDelete(item.id!)} className="ml-auto text-sm text-rose-500 hover:text-rose-600">Delete</button>}
         </div>

@@ -101,7 +101,7 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
         <select
           value={String(brandId)}
           onChange={e => onSelect(Number(e.target.value))}
-          className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+          className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
         >
           {live.map(b => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
         </select>
@@ -138,7 +138,7 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
               onChange={e => setNote(e.target.value)}
               placeholder="Commentary for the brand — wins, context, what's next. This prints into the report and the emailed HTML."
               rows={4}
-              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-y"
+              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-y"
             />
           )}
         </div>
@@ -150,9 +150,9 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
           <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mr-1">Send to brand</span>
           <input
             type="email" value={to} onChange={e => setTo(e.target.value)} placeholder="brand contact email"
-            className="flex-1 min-w-[200px] text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="flex-1 min-w-[200px] text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
-          <button onClick={sendToBrand} disabled={!to || sendState === "sending"} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 rounded-lg px-3.5 py-1.5 transition">
+          <button onClick={sendToBrand} disabled={!to || sendState === "sending"} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 rounded-lg px-3.5 py-1.5 transition">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
             {sendState === "sending" ? "Sending..." : "Send"}
           </button>

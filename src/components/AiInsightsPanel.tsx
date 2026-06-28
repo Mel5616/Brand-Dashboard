@@ -29,7 +29,7 @@ function renderMarkdown(md: string) {
         <ul key={`ul-${blocks.length}`} className="space-y-1.5 mb-3">
           {bullets.map((b, i) => (
             <li key={i} className="flex gap-2 text-sm text-slate-600 leading-relaxed">
-              <span className="text-indigo-400 mt-0.5 flex-shrink-0">•</span>
+              <span className="text-emerald-400 mt-0.5 flex-shrink-0">•</span>
               <span>{renderInline(b, `li-${blocks.length}-${i}`)}</span>
             </li>
           ))}
@@ -47,7 +47,7 @@ function renderMarkdown(md: string) {
       const heading = line.slice(3);
       const isWatch = /watch/i.test(heading);
       blocks.push(
-        <h4 key={`h-${blocks.length}`} className={`text-xs font-bold uppercase tracking-widest mt-4 mb-2 first:mt-0 ${isWatch ? "text-amber-600" : "text-indigo-500"}`}>
+        <h4 key={`h-${blocks.length}`} className={`text-xs font-bold uppercase tracking-widest mt-4 mb-2 first:mt-0 ${isWatch ? "text-amber-600" : "text-emerald-500"}`}>
           {heading.replace(/:$/, "")}
         </h4>
       );
@@ -94,7 +94,7 @@ export function AiInsightsPanel({ insight }: Props) {
 
       {open && (
         <div className="absolute right-0 top-11 w-[26rem] max-w-[90vw] bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden">
-          <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2 bg-gradient-to-r from-indigo-50/70 to-white">
+          <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-2 bg-gradient-to-r from-emerald-50/70 to-white">
             <SparkIcon />
             <h3 className="text-sm font-semibold text-slate-700">Weekly AI Brief</h3>
             {insight && <span className="text-[11px] text-gray-400 ml-auto">{insight.period_label ?? when}</span>}
@@ -125,7 +125,7 @@ export function AiInsightsPanel({ insight }: Props) {
 
 function SparkIcon() {
   return (
-    <svg className="w-4 h-4 text-indigo-500" fill="currentColor" viewBox="0 0 24 24">
+    <svg className="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 24 24">
       <path d="M12 2l1.6 5.6L19 9.2l-5.4 1.6L12 16l-1.6-5.2L5 9.2l5.4-1.6L12 2z" opacity="0.9" />
       <path d="M18 14l.8 2.6L21.4 17.4l-2.6.8L18 21l-.8-2.8L14.6 17.4l2.6-.8L18 14z" opacity="0.6" />
     </svg>

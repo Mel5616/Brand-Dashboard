@@ -49,7 +49,7 @@ export function ShopifyBrandSales({ brands, monthly, weekly, daily = [], months,
         <div className="inline-flex rounded-lg border border-gray-200 overflow-hidden text-xs">
           {(["day", "week", "month"] as Period[]).map(p => (
             <button key={p} onClick={() => setPeriod(p)}
-              className={`px-3 py-1.5 capitalize transition ${period === p ? "bg-indigo-600 text-white font-semibold" : "text-gray-500 hover:bg-gray-50"}`}>
+              className={`px-3 py-1.5 capitalize transition ${period === p ? "bg-emerald-600 text-white font-semibold" : "text-gray-500 hover:bg-gray-50"}`}>
               {p}
             </button>
           ))}

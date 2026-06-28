@@ -33,12 +33,12 @@ export function SyncStatus({ lastSync, isAdmin = true }: { lastSync: { finished_
         <button
           onClick={triggerSync}
           disabled={syncing}
-          className="px-3 py-1 rounded-md bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 disabled:opacity-50 transition"
+          className="px-3 py-1 rounded-md bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 disabled:opacity-50 transition"
         >
           {syncing ? "Starting…" : "↻ Sync Now"}
         </button>
       )}
-      {msg && <span className="text-xs text-indigo-600">{msg}</span>}
+      {msg && <span className="text-xs text-emerald-600">{msg}</span>}
     </div>
   );
 }

@@ -112,9 +112,9 @@ export function BoothFunnel({ data }: { data: BoothFunnelData }) {
             <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">POS Revenue {POS_IS_TEST && <span className="text-amber-500">· test</span>}</p>
             <p className="text-xl font-bold mt-1 text-slate-700">{posLoading ? "…" : aud(pos?.revenue ?? 0)}</p>
           </div>
-          <div className="rounded-xl border border-indigo-100 shadow-sm px-4 py-3 bg-gradient-to-br from-indigo-50/70 to-white">
-            <p className="text-[10px] font-semibold text-indigo-400 uppercase tracking-widest">Total Expo Stand Revenue</p>
-            <p className="text-xl font-bold mt-1 text-indigo-600">{posLoading ? "…" : aud(totals.revenue + (pos?.revenue ?? 0))}</p>
+          <div className="rounded-xl border border-emerald-100 shadow-sm px-4 py-3 bg-gradient-to-br from-emerald-50/70 to-white">
+            <p className="text-[10px] font-semibold text-emerald-400 uppercase tracking-widest">Total Expo Stand Revenue</p>
+            <p className="text-xl font-bold mt-1 text-emerald-600">{posLoading ? "…" : aud(totals.revenue + (pos?.revenue ?? 0))}</p>
             <p className="text-[10px] text-gray-400">QR + POS{POS_IS_TEST ? " (incl. test)" : ""}</p>
           </div>
         </div>

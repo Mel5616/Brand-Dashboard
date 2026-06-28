@@ -227,13 +227,13 @@ export function MarketingBudgetTab({ brands, marketingBudgets, marketingActuals,
       {/* Brand selector — drill into a single brand's budget */}
       <div className="flex items-center gap-2 flex-wrap">
         {selectedBudgetBrand && (
-          <button onClick={() => setBudgetBrand("all")} className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 mr-1">← All brands</button>
+          <button onClick={() => setBudgetBrand("all")} className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 mr-1">← All brands</button>
         )}
         <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">{selectedBudgetBrand ? "Brand" : "View"}</label>
         <select
           value={budgetBrand === "all" ? "all" : String(budgetBrand)}
           onChange={e => setBudgetBrand(e.target.value === "all" ? "all" : Number(e.target.value))}
-          className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+          className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
         >
           <option value="all">All Brands (portfolio)</option>
           {budgetBrandList.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
@@ -376,12 +376,12 @@ export function MarketingBudgetTab({ brands, marketingBudgets, marketingActuals,
                 const pct  = budget > 0 ? (actual / budget) * 100 : 0;
                 const rem  = budget - actual;
                 return (
-                  <tr key={brand.id} onClick={() => setBudgetBrand(brand.id)} className="hover:bg-indigo-50/50 transition-colors cursor-pointer group">
+                  <tr key={brand.id} onClick={() => setBudgetBrand(brand.id)} className="hover:bg-emerald-50/50 transition-colors cursor-pointer group">
                     <td className="px-6 py-3">
                       <div className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: brand.color }} />
-                        <span className="font-medium text-slate-700 group-hover:text-indigo-600">{brand.name}</span>
-                        <span className="text-gray-300 group-hover:text-indigo-400 transition-colors">›</span>
+                        <span className="font-medium text-slate-700 group-hover:text-emerald-600">{brand.name}</span>
+                        <span className="text-gray-300 group-hover:text-emerald-400 transition-colors">›</span>
                       </div>
                     </td>
                     <td className="px-6 py-3 text-right text-slate-600">{fmtFull(budget)}</td>

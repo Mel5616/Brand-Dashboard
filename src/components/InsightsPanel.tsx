@@ -53,8 +53,8 @@ export function InsightsPanel({
     return (
       <div className="space-y-4">
         {digest && (
-          <div className="bg-indigo-50/60 border border-indigo-100 rounded-2xl px-5 py-4">
-            <h3 className="text-sm font-semibold text-indigo-900 flex items-center gap-1.5 mb-1.5">✨ Portfolio digest <span className="text-[11px] font-normal text-indigo-400">what changed this month, ranked by attention</span></h3>
+          <div className="bg-emerald-50/60 border border-emerald-100 rounded-2xl px-5 py-4">
+            <h3 className="text-sm font-semibold text-emerald-900 flex items-center gap-1.5 mb-1.5">✨ Portfolio digest <span className="text-[11px] font-normal text-emerald-400">what changed this month, ranked by attention</span></h3>
             <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">{digest}</p>
           </div>
         )}
@@ -63,11 +63,11 @@ export function InsightsPanel({
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 px-1 mb-2">Brand priorities</p>
             <div className="grid gap-3 md:grid-cols-2">
               {priorities.map(({ b, priority }) => (
-                <button key={b.id} onClick={() => onSelectBrand(b.id)} className="text-left bg-white rounded-xl border border-gray-100 shadow-sm hover:border-indigo-200 hover:shadow transition motion-reduce:transition-none p-4">
+                <button key={b.id} onClick={() => onSelectBrand(b.id)} className="text-left bg-white rounded-xl border border-gray-100 shadow-sm hover:border-emerald-200 hover:shadow transition motion-reduce:transition-none p-4">
                   <div className="flex items-center gap-2 mb-1.5">
                     <span className="w-2.5 h-2.5 rounded-full" style={{ background: b.color }} />
                     <span className="text-sm font-bold text-slate-700">{b.name}</span>
-                    <span className="ml-auto text-[11px] text-indigo-500 font-medium">Open →</span>
+                    <span className="ml-auto text-[11px] text-emerald-500 font-medium">Open →</span>
                   </div>
                   <p className="text-sm text-slate-600 leading-snug">{priority}</p>
                 </button>
@@ -113,8 +113,8 @@ export function InsightsPanel({
       </div>
 
       {health && (
-        <div className="bg-indigo-50/60 border border-indigo-100 rounded-2xl p-5">
-          <h3 className="text-sm font-semibold text-indigo-900 flex items-center gap-1.5 mb-1">✨ Brand Health <span className="text-[11px] font-normal text-indigo-400">across sales, paid, email and search</span></h3>
+        <div className="bg-emerald-50/60 border border-emerald-100 rounded-2xl p-5">
+          <h3 className="text-sm font-semibold text-emerald-900 flex items-center gap-1.5 mb-1">✨ Brand Health <span className="text-[11px] font-normal text-emerald-400">across sales, paid, email and search</span></h3>
           <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">{health}</p>
         </div>
       )}

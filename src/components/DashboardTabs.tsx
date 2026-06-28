@@ -343,7 +343,7 @@ export function DashboardTabs({
           <select
             value={fy}
             onChange={e => setFy(e.target.value as FY)}
-            className="w-full mt-1 text-xs font-medium border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+            className="w-full mt-1 text-xs font-medium border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
           >
             {FY_LIST.map(f => <option key={f} value={f}>{FY_LABEL[f]}</option>)}
           </select>
@@ -353,7 +353,7 @@ export function DashboardTabs({
           <select
             value={wholeYear ? "all" : LATEST}
             onChange={e => setMonthSel(e.target.value)}
-            className="w-full mt-1 text-xs font-medium border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+            className="w-full mt-1 text-xs font-medium border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
           >
             <option value="all">Full Year</option>
             {[...monthOptions].reverse().map(mk => (
@@ -392,7 +392,7 @@ export function DashboardTabs({
             return (
               <button key={tab.id} onClick={() => setActive(tab.id)}
                 className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${
-                  isActive ? "bg-indigo-50 text-indigo-600 font-semibold shadow-sm ring-1 ring-indigo-100" : "text-gray-500 hover:bg-gray-100/70 hover:text-gray-700"}`}>
+                  isActive ? "bg-emerald-50 text-emerald-600 font-semibold shadow-sm ring-1 ring-emerald-100" : "text-gray-500 hover:bg-gray-100/70 hover:text-gray-700"}`}>
                 {tab.icon}{tab.label}
               </button>
             );
@@ -403,13 +403,13 @@ export function DashboardTabs({
             const reportTabs = g.tabs.filter(t => REPORT_IDS.includes(t.id as TabId));
             return (
               <div key={g.label} className="mb-2">
-                <p className="bg-indigo-800 text-white rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] mb-1.5 shadow-sm">{g.label}</p>
+                <p className="bg-slate-700 text-white rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] mb-1.5 shadow-sm">{g.label}</p>
                 <div className="space-y-0.5">
                   {flatTabs.map(Btn)}
                   {reportTabs.length > 0 && (
                     <>
                       <button onClick={() => setReportsOpen(o => !o)}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${reportActive ? "text-indigo-600 font-semibold" : "text-gray-500 hover:bg-gray-100/70 hover:text-gray-700"}`}>
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${reportActive ? "text-emerald-600 font-semibold" : "text-gray-500 hover:bg-gray-100/70 hover:text-gray-700"}`}>
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                         Reports
                         <svg className={`ml-auto w-3.5 h-3.5 transition-transform ${reportsOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
@@ -428,7 +428,7 @@ export function DashboardTabs({
           <select
             value={String(brandFilter)}
             onChange={e => setBrandFilter(Number(e.target.value))}
-            className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+            className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
           >
             {brands.map((b: any) => (
               <option key={b.id} value={String(b.id)}>{b.name}</option>
@@ -440,7 +440,7 @@ export function DashboardTabs({
         <div className="px-2 py-2 border-t border-gray-100">
           <button onClick={() => setActive("team")}
             className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${
-              active === "team" ? "bg-indigo-50 text-indigo-600 font-semibold ring-1 ring-indigo-100" : "bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-700"}`}>
+              active === "team" ? "bg-emerald-50 text-emerald-600 font-semibold ring-1 ring-emerald-100" : "bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-700"}`}>
             {TABS.find(t => t.id === "team")!.icon}Team
           </button>
         </div>
@@ -787,7 +787,7 @@ export function DashboardTabs({
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}
                   onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
-                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                 >
                   <option value="all">All Brands (Portfolio)</option>
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
@@ -812,7 +812,7 @@ export function DashboardTabs({
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}
                   onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
-                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                 >
                   <option value="all">All Brands (Portfolio)</option>
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
@@ -912,7 +912,7 @@ export function DashboardTabs({
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}
                   onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
-                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                 >
                   <option value="all">All Brands (Whole business)</option>
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
@@ -931,7 +931,7 @@ export function DashboardTabs({
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}
                   onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
-                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                 >
                   <option value="all">All Brands</option>
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
@@ -1043,7 +1043,7 @@ export function DashboardTabs({
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}
                   onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
-                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                 >
                   <option value="all">All Brands</option>
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
@@ -1161,7 +1161,7 @@ export function DashboardTabs({
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}
                   onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
-                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                 >
                   <option value="all">All Brands</option>
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
@@ -1274,7 +1274,7 @@ export function DashboardTabs({
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}
                   onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
-                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                 >
                   <option value="all">All Brands</option>
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
@@ -1426,7 +1426,7 @@ export function DashboardTabs({
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}
                   onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
-                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                 >
                   <option value="all">All Brands (Portfolio)</option>
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
@@ -1444,7 +1444,7 @@ export function DashboardTabs({
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}
                   onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
-                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                 >
                   <option value="all">All Brands (Portfolio)</option>
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}

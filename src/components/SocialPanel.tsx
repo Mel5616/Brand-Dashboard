@@ -71,9 +71,9 @@ export function SocialPanel({
             <div key={b.id}>
               <button onClick={() => onSelectBrand(b.id)} className="flex items-center gap-2 mb-2 group">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ background: b.color }} />
-                <span className="text-sm font-bold text-slate-700 group-hover:text-indigo-600">{b.name}</span>
+                <span className="text-sm font-bold text-slate-700 group-hover:text-emerald-600">{b.name}</span>
                 <span className="text-xs text-gray-400">{num(latestFollowers(b.id))} followers</span>
-                <span className="text-[11px] text-indigo-500 font-medium opacity-0 group-hover:opacity-100">Open →</span>
+                <span className="text-[11px] text-emerald-500 font-medium opacity-0 group-hover:opacity-100">Open →</span>
               </button>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
                 {posts.map(m => <PostTile key={m.media_id} m={m} />)}
@@ -113,7 +113,7 @@ export function SocialPanel({
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Recent posts</p>
             <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
               {(["recent", "top"] as const).map(s => (
-                <button key={s} onClick={() => setSort(s)} className={`px-3 py-1 rounded-md text-xs font-medium transition motion-reduce:transition-none ${sort === s ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+                <button key={s} onClick={() => setSort(s)} className={`px-3 py-1 rounded-md text-xs font-medium transition motion-reduce:transition-none ${sort === s ? "bg-white text-emerald-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
                   {s === "recent" ? "Recent" : "Top performing"}
                 </button>
               ))}

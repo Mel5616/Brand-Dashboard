@@ -116,7 +116,7 @@ export function MarketingCalendar({ events, brands }: Props) {
                 {brand.name}
               </span>
             )}
-            {(e as any)._isCampaign && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600">Campaign</span>}
+            {(e as any)._isCampaign && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600">Campaign</span>}
             {(e as any)._isProduct && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-sky-50 text-sky-600">Launch</span>}
           </div>
           {e.location && <p className="text-[11px] text-gray-400 mt-0.5">📍 {e.location}</p>}
@@ -168,7 +168,7 @@ export function MarketingCalendar({ events, brands }: Props) {
             <button
               key={v}
               onClick={() => setView(v)}
-              className={`px-3 py-1 rounded-md text-xs font-medium capitalize transition ${view === v ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              className={`px-3 py-1 rounded-md text-xs font-medium capitalize transition ${view === v ? "bg-white text-emerald-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
             >
               {v}
             </button>
@@ -210,7 +210,7 @@ export function MarketingCalendar({ events, brands }: Props) {
                         {visible.map(e => <EventRow key={e.uid} e={e} />)}
                       </div>
                       {list.length > 5 && (
-                        <button onClick={() => toggleShowAll(cat.id)} className="w-full text-[11px] font-semibold text-indigo-500 hover:bg-indigo-50/50 py-2 border-t border-gray-50 transition">
+                        <button onClick={() => toggleShowAll(cat.id)} className="w-full text-[11px] font-semibold text-emerald-500 hover:bg-emerald-50/50 py-2 border-t border-gray-50 transition">
                           {showAll[cat.id] ? "Show less" : `+ ${list.length - 5} more`}
                         </button>
                       )}
@@ -243,8 +243,8 @@ export function MarketingCalendar({ events, brands }: Props) {
               const isToday = day.toDateString() === today.toDateString();
               const dayEvents = eventsOnDay(day);
               return (
-                <div key={i} className={`min-h-[72px] rounded-lg border p-1.5 ${isToday ? "border-indigo-300 bg-indigo-50/30" : "border-gray-100"}`}>
-                  <div className={`text-[11px] font-semibold mb-1 ${isToday ? "text-indigo-600" : "text-gray-400"}`}>{day.getDate()}</div>
+                <div key={i} className={`min-h-[72px] rounded-lg border p-1.5 ${isToday ? "border-emerald-300 bg-emerald-50/30" : "border-gray-100"}`}>
+                  <div className={`text-[11px] font-semibold mb-1 ${isToday ? "text-emerald-600" : "text-gray-400"}`}>{day.getDate()}</div>
                   <div className="space-y-0.5">
                     {dayEvents.slice(0, 3).map(e => {
                       const brand = brandFor(e);

@@ -60,27 +60,27 @@ export function TeamPanel() {
           <h2 className="font-semibold text-gray-800">Team &amp; Access</h2>
           <p className="text-xs text-gray-400 mt-0.5">Invite people and choose exactly which sections they can open. You (admin) and other admins see everything; Budget &amp; Influencer stay admin-only.</p>
         </div>
-        <button onClick={() => setAdding(a => !a)} className="text-xs font-semibold text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg px-3 py-2">+ Invite member</button>
+        <button onClick={() => setAdding(a => !a)} className="text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2">+ Invite member</button>
       </div>
 
       {adding && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Email</label>
-          <input value={email} onChange={e => setEmail(e.target.value)} placeholder="name@coolkidz.com.au" className="mt-1 w-full max-w-sm text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+          <input value={email} onChange={e => setEmail(e.target.value)} placeholder="name@coolkidz.com.au" className="mt-1 w-full max-w-sm text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400" />
           <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mt-4 mb-1.5">Can access</p>
           <div className="flex flex-wrap gap-2">
             {ASSIGNABLE.map(t => {
               const on = newTabs.includes(t.id);
               return (
                 <button key={t.id} onClick={() => setNewTabs(p => on ? p.filter(x => x !== t.id) : [...p, t.id])}
-                  className={`text-xs font-medium rounded-full px-3 py-1.5 border transition-colors ${on ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white border-gray-200 text-gray-500 hover:border-gray-300"}`}>
+                  className={`text-xs font-medium rounded-full px-3 py-1.5 border transition-colors ${on ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-white border-gray-200 text-gray-500 hover:border-gray-300"}`}>
                   {on ? "✓ " : ""}{t.label}
                 </button>
               );
             })}
           </div>
           <div className="flex items-center gap-2 mt-4">
-            <button disabled={busy || !email.trim()} onClick={invite} className="text-sm font-semibold text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 rounded-lg px-4 py-2">{busy ? "Inviting…" : "Send invite"}</button>
+            <button disabled={busy || !email.trim()} onClick={invite} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 rounded-lg px-4 py-2">{busy ? "Inviting…" : "Send invite"}</button>
             <button onClick={() => setAdding(false)} className="text-sm text-gray-400 hover:text-gray-600 px-2">Cancel</button>
             {msg && <span className="text-xs text-gray-500">{msg}</span>}
           </div>
@@ -112,7 +112,7 @@ export function TeamPanel() {
                         const on = m.allowed_tabs?.includes(t.id);
                         return (
                           <button key={t.id} onClick={() => toggleTab(m, t.id)}
-                            className={`text-[11px] font-medium rounded-full px-2.5 py-1 border transition-colors ${on ? "bg-indigo-50 border-indigo-200 text-indigo-700" : "bg-white border-gray-200 text-gray-400 hover:border-gray-300"}`}>
+                            className={`text-[11px] font-medium rounded-full px-2.5 py-1 border transition-colors ${on ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-white border-gray-200 text-gray-400 hover:border-gray-300"}`}>
                             {on ? "✓ " : ""}{t.label}
                           </button>
                         );

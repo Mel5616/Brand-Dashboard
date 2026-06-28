@@ -16,7 +16,7 @@ const aud = (n: number) => "$" + Math.round(n).toLocaleString("en-AU");
 const compact = (n: number) => n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? Math.round(n / 1e3) + "k" : String(Math.round(n));
 const STATUS_CHIP: Record<string, string> = {
   pitched: "bg-slate-100 text-slate-600", agreed: "bg-blue-100 text-blue-700",
-  shipped: "bg-amber-100 text-amber-700", posted: "bg-indigo-100 text-indigo-700", complete: "bg-emerald-100 text-emerald-700",
+  shipped: "bg-amber-100 text-amber-700", posted: "bg-emerald-100 text-emerald-700", complete: "bg-emerald-100 text-emerald-700",
 };
 
 const SQL = `-- run once in Supabase, then the admin imports products + budgets
@@ -151,7 +151,7 @@ export function InfluencerTracker() {
       <pre className="mt-4 text-[10px] bg-slate-900 text-slate-100 rounded-lg p-4 overflow-x-auto whitespace-pre-wrap">{SQL}</pre>
       <div className="flex gap-2 mt-4">
         <button onClick={() => { navigator.clipboard?.writeText(SQL); setCopied(true); }} className="text-xs font-semibold text-slate-600 bg-gray-100 hover:bg-gray-200 rounded-lg px-3 py-2">{copied ? "Copied ✓" : "Copy SQL"}</button>
-        <button onClick={() => { setLoading(true); setNeedsSetup(false); load(); }} className="text-xs font-semibold text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg px-3 py-2">I’ve run it — reload</button>
+        <button onClick={() => { setLoading(true); setNeedsSetup(false); load(); }} className="text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2">I’ve run it — reload</button>
       </div>
     </div>
   );
@@ -165,7 +165,7 @@ export function InfluencerTracker() {
           <h2 className="font-semibold text-gray-800">Influencer Gifting</h2>
           <p className="text-xs text-gray-400 mt-0.5">{INFLUENCER_FY_LABEL} · cost terms · ex-GST</p>
         </div>
-        <a href="/log-gift" target="_blank" className="text-xs font-semibold text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg px-3 py-2">Open team gift form ↗</a>
+        <a href="/log-gift" target="_blank" className="text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2">Open team gift form ↗</a>
       </div>
 
       {/* View toggle: spend report vs influencer roster */}
@@ -225,7 +225,7 @@ export function InfluencerTracker() {
                     if (view === "budget") return (
                       <td key={m.key} className="py-1 px-1 text-right">
                         <input defaultValue={budget[b]?.[m.key] ?? 0} onBlur={e => { const n = Number(e.target.value) || 0; if (n !== (budget[b]?.[m.key] ?? 0)) saveBudget(b, m.key, n); }}
-                          className="w-14 text-right text-[11px] text-slate-600 bg-gray-50/60 border border-gray-100 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-indigo-300" />
+                          className="w-14 text-right text-[11px] text-slate-600 bg-gray-50/60 border border-gray-100 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-emerald-300" />
                       </td>
                     );
                     const over = view === "variance" && v < 0;
@@ -289,7 +289,7 @@ export function InfluencerTracker() {
                 {entries.slice(0, 40).map(e => {
                   const cpm = cpmOf(e), roi = roiOf(e);
                   return (
-                    <tr key={e.id} className="border-t border-gray-50 hover:bg-indigo-50/40 cursor-pointer" onClick={() => setEditResult(e)}>
+                    <tr key={e.id} className="border-t border-gray-50 hover:bg-emerald-50/40 cursor-pointer" onClick={() => setEditResult(e)}>
                       <td className="py-1.5 px-2 text-gray-500">{new Date(e.month_key + "-01T00:00:00").toLocaleDateString("en-AU", { month: "short", year: "2-digit" })}</td>
                       <td className="py-1.5 px-2 text-slate-700">{e.handle}<span className="text-gray-400"> · {e.platform}</span></td>
                       <td className="py-1.5 px-2 text-slate-600">{e.brand}</td>
@@ -319,20 +319,20 @@ export function InfluencerTracker() {
             <div className="space-y-3">
               <div>
                 <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Status</label>
-                <select defaultValue={editResult.status ?? ""} onChange={ev => setEditResult(p => p && { ...p, status: ev.target.value })} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+                <select defaultValue={editResult.status ?? ""} onChange={ev => setEditResult(p => p && { ...p, status: ev.target.value })} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400">
                   <option value="">—</option>
                   {["pitched", "agreed", "shipped", "posted", "complete"].map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
               <div>
                 <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Content URL</label>
-                <input defaultValue={editResult.content_url ?? ""} onChange={ev => setEditResult(p => p && { ...p, content_url: ev.target.value })} placeholder="https://…" className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+                <input defaultValue={editResult.content_url ?? ""} onChange={ev => setEditResult(p => p && { ...p, content_url: ev.target.value })} placeholder="https://…" className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400" />
               </div>
               <div className="grid grid-cols-3 gap-3">
                 {([["reach", "Reach / views"], ["engagements", "Engagements"], ["sales_value", "Sales ($)"]] as const).map(([k, lbl]) => (
                   <div key={k}>
                     <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{lbl}</label>
-                    <input type="number" defaultValue={(editResult as any)[k] ?? ""} onChange={ev => setEditResult(p => p && { ...p, [k]: ev.target.value === "" ? null : Number(ev.target.value) })} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+                    <input type="number" defaultValue={(editResult as any)[k] ?? ""} onChange={ev => setEditResult(p => p && { ...p, [k]: ev.target.value === "" ? null : Number(ev.target.value) })} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400" />
                   </div>
                 ))}
               </div>
@@ -341,7 +341,7 @@ export function InfluencerTracker() {
               ) : null}
             </div>
             <div className="flex items-center gap-2 mt-5">
-              <button onClick={() => saveResult({ id: editResult.id, status: editResult.status, content_url: editResult.content_url, reach: editResult.reach, engagements: editResult.engagements, sales_value: editResult.sales_value })} className="text-sm font-semibold text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg px-4 py-2">Save</button>
+              <button onClick={() => saveResult({ id: editResult.id, status: editResult.status, content_url: editResult.content_url, reach: editResult.reach, engagements: editResult.engagements, sales_value: editResult.sales_value })} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2">Save</button>
               <button onClick={() => setEditResult(null)} className="text-sm text-gray-400 hover:text-gray-600 px-2">Cancel</button>
             </div>
           </div>
@@ -356,7 +356,7 @@ export function InfluencerTracker() {
               <h3 className="text-sm font-semibold text-slate-700">Influencer Roster</h3>
               <p className="text-[11px] text-gray-400">{roster.length} influencers · gifting value is ex-GST cost</p>
             </div>
-            <button onClick={() => setEditInf({})} className="text-xs font-semibold text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg px-3 py-2">+ Add influencer</button>
+            <button onClick={() => setEditInf({})} className="text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2">+ Add influencer</button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
@@ -384,7 +384,7 @@ export function InfluencerTracker() {
                     <td className="py-1.5 px-2 text-right font-semibold text-emerald-600">{r.sales > 0 && r.value > 0 ? (r.sales / r.value).toFixed(1) + "×" : "—"}</td>
                     <td className="py-1.5 px-2 text-gray-500 max-w-[200px] truncate" title={r.brands.join(", ")}>{r.brands.join(", ") || "—"}</td>
                     <td className="py-1.5 px-2 text-gray-500">{r.last ? new Date(r.last + "-01T00:00:00").toLocaleDateString("en-AU", { month: "short", year: "2-digit" }) : "—"}</td>
-                    <td className="py-1.5 px-2 text-right"><button onClick={() => setEditInf(r.m ?? { handle: r.handle })} className="text-indigo-500 hover:text-indigo-700 text-[11px]">edit</button></td>
+                    <td className="py-1.5 px-2 text-right"><button onClick={() => setEditInf(r.m ?? { handle: r.handle })} className="text-emerald-500 hover:text-emerald-700 text-[11px]">edit</button></td>
                   </tr>
                 ))}
               </tbody>
@@ -405,20 +405,20 @@ export function InfluencerTracker() {
                     defaultValue={(editInf as any)[k] ?? ""} disabled={k === "handle" && !!editInf.handle && roster.some(r => r.handle === editInf.handle)}
                     onChange={e => setEditInf(p => ({ ...p, [k]: e.target.value }))}
                     placeholder={k === "handle" ? "@handle" : k === "platform" ? "Instagram / TikTok…" : ""}
-                    className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-400 disabled:bg-gray-50 disabled:text-gray-400" />
+                    className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400 disabled:bg-gray-50 disabled:text-gray-400" />
                 </div>
               ))}
               <div>
                 <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Followers</label>
-                <input type="number" defaultValue={editInf.followers ?? ""} onChange={e => setEditInf(p => ({ ...p, followers: Number(e.target.value) }))} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+                <input type="number" defaultValue={editInf.followers ?? ""} onChange={e => setEditInf(p => ({ ...p, followers: Number(e.target.value) }))} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400" />
               </div>
               <div>
                 <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Notes</label>
-                <textarea defaultValue={editInf.notes ?? ""} onChange={e => setEditInf(p => ({ ...p, notes: e.target.value }))} rows={2} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-400 resize-none" />
+                <textarea defaultValue={editInf.notes ?? ""} onChange={e => setEditInf(p => ({ ...p, notes: e.target.value }))} rows={2} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400 resize-none" />
               </div>
             </div>
             <div className="flex items-center gap-2 mt-5">
-              <button disabled={!editInf.handle} onClick={() => saveInfluencer(editInf)} className="text-sm font-semibold text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 rounded-lg px-4 py-2">Save</button>
+              <button disabled={!editInf.handle} onClick={() => saveInfluencer(editInf)} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 rounded-lg px-4 py-2">Save</button>
               <button onClick={() => setEditInf(null)} className="text-sm text-gray-400 hover:text-gray-600 px-2">Cancel</button>
               {editInf.handle && roster.some(r => r.handle === editInf.handle) && <button onClick={() => delInfluencer(editInf.handle!)} className="ml-auto text-sm text-rose-500 hover:text-rose-600">Delete</button>}
             </div>

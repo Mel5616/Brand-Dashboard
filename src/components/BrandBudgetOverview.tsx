@@ -114,7 +114,7 @@ export function BrandBudgetOverview({
           <select
             value={month}
             onChange={e => setMonth(e.target.value)}
-            className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+            className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
           >
             {monthKeys.map((mk, i) => <option key={mk} value={mk}>{monthLabels[i]}</option>)}
           </select>

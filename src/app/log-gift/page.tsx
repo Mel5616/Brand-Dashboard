@@ -80,7 +80,7 @@ export default function LogGift() {
     else setErr("Couldn't save — please try again.");
   }
 
-  const input = "mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-300";
+  const input = "mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-300";
   const label = "text-[12px] font-semibold text-gray-500";
 
   if (needsSetup) return (
@@ -99,7 +99,7 @@ export default function LogGift() {
         <p className="text-lg font-semibold text-gray-800">Gift logged</p>
         <p className="text-sm text-gray-400 mt-1">Thanks! Your entry has been recorded.</p>
         <button onClick={() => { setDone(false); setBatch(0); setPicked(null); setSearch(""); setF({ month_key: f.month_key, platform: "Instagram" }); }}
-          className="mt-5 text-sm font-semibold text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg px-5 py-2.5">Log another</button>
+          className="mt-5 text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2.5">Log another</button>
       </div>
     </div>
   );
@@ -117,13 +117,13 @@ export default function LogGift() {
               <label className={label}>Product</label>
               <div className="flex gap-2 mt-1">
                 <input value={search} onChange={e => { setSearch(e.target.value); if (picked) clearPick(); }} placeholder="Search name or SKU…"
-                  className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-300" />
+                  className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-300" />
                 {picked && <button onClick={clearPick} className="text-xs text-gray-400 px-2">clear</button>}
               </div>
               {matches.length > 0 && (
                 <div className="absolute z-10 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
                   {matches.map(p => (
-                    <button key={p.style_code} onClick={() => choose(p)} className="w-full text-left px-3 py-2 hover:bg-indigo-50 border-b border-gray-50 last:border-0">
+                    <button key={p.style_code} onClick={() => choose(p)} className="w-full text-left px-3 py-2 hover:bg-emerald-50 border-b border-gray-50 last:border-0">
                       <p className="text-sm text-slate-700">{p.product_name}</p>
                       <p className="text-[11px] text-gray-400">{p.brand} · {p.style_code}{p.rrp != null ? ` · RRP $${p.rrp}` : ""}</p>
                     </button>
@@ -140,7 +140,7 @@ export default function LogGift() {
                   </select>
                 </div>
               )}
-              <button onClick={() => { setOneOff(true); clearPick(); }} className="text-[11px] text-indigo-600 hover:underline mt-2">Can’t find it? Enter manually</button>
+              <button onClick={() => { setOneOff(true); clearPick(); }} className="text-[11px] text-emerald-600 hover:underline mt-2">Can’t find it? Enter manually</button>
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
@@ -152,7 +152,7 @@ export default function LogGift() {
                 </select>
               </div>
               <div className="flex items-end">
-                <button onClick={() => { setOneOff(false); set("brand", undefined); }} className="text-[11px] text-indigo-600 hover:underline pb-3">Back to product search</button>
+                <button onClick={() => { setOneOff(false); set("brand", undefined); }} className="text-[11px] text-emerald-600 hover:underline pb-3">Back to product search</button>
               </div>
             </div>
           )}
@@ -181,7 +181,7 @@ export default function LogGift() {
               {handleMatches.length > 0 && (
                 <div className="absolute z-10 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
                   {handleMatches.map((i: any) => (
-                    <button key={i.handle} onMouseDown={e => { e.preventDefault(); pickInfluencer(i); }} className="w-full text-left px-3 py-2 hover:bg-indigo-50 border-b border-gray-50 last:border-0">
+                    <button key={i.handle} onMouseDown={e => { e.preventDefault(); pickInfluencer(i); }} className="w-full text-left px-3 py-2 hover:bg-emerald-50 border-b border-gray-50 last:border-0">
                       <p className="text-sm text-slate-700">{i.handle}{i.name ? <span className="text-gray-400"> · {i.name}</span> : ""}</p>
                       {(i.platform || i.followers) && <p className="text-[11px] text-gray-400">{[i.platform, i.followers ? `${Number(i.followers).toLocaleString("en-AU")} followers` : ""].filter(Boolean).join(" · ")}</p>}
                     </button>
@@ -218,11 +218,11 @@ export default function LogGift() {
           {batch > 0 && <p className="text-[12px] text-emerald-600 font-medium">✓ {batch} product{batch > 1 ? "s" : ""} logged{f.handle ? ` for ${f.handle}` : ""} — add another below or finish.</p>}
           <div className="flex gap-2">
             <button onClick={() => submit(true)} disabled={!valid || saving}
-              className="flex-1 text-sm font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 disabled:opacity-40 rounded-lg py-3">
+              className="flex-1 text-sm font-semibold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 disabled:opacity-40 rounded-lg py-3">
               + Add another product
             </button>
             <button onClick={() => submit(false)} disabled={!valid || saving}
-              className="flex-1 text-sm font-semibold text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 rounded-lg py-3">
+              className="flex-1 text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 rounded-lg py-3">
               {saving ? "Saving…" : batch > 0 ? "Log & finish" : "Log gift"}
             </button>
           </div>

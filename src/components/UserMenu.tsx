@@ -12,13 +12,13 @@ export function UserMenu({ email, role, minimal }: { email: string; role: string
   const initial = (email[0] || "?").toUpperCase();
 
   if (minimal) {
-    return <button onClick={signOut} className="mt-4 text-xs font-semibold text-indigo-600 hover:underline">Sign out</button>;
+    return <button onClick={signOut} className="mt-4 text-xs font-semibold text-emerald-600 hover:underline">Sign out</button>;
   }
 
   return (
     <div className="relative">
       <button onClick={() => setOpen(o => !o)} onBlur={() => setTimeout(() => setOpen(false), 150)}
-        className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold flex items-center justify-center hover:bg-indigo-200 transition-colors" title={email}>
+        className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center justify-center hover:bg-emerald-200 transition-colors" title={email}>
         {initial}
       </button>
       {open && (

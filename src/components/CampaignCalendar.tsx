@@ -325,7 +325,7 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
     catch { setError("Could not copy. Select the text and copy it manually."); }
   }
 
-  const cell = "w-full bg-transparent rounded px-1.5 py-1 text-sm text-slate-700 placeholder:text-gray-300 read-only:cursor-default focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 motion-reduce:transition-none";
+  const cell = "w-full bg-transparent rounded px-1.5 py-1 text-sm text-slate-700 placeholder:text-gray-300 read-only:cursor-default focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400 motion-reduce:transition-none";
   const ro = !canEdit;
 
   return (
@@ -355,7 +355,7 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
 
       {loading ? (
         <div className="flex items-center gap-2 text-sm text-gray-400 py-16 justify-center">
-          <span className="w-4 h-4 border-2 border-gray-200 border-t-indigo-500 rounded-full animate-spin motion-reduce:animate-none" />
+          <span className="w-4 h-4 border-2 border-gray-200 border-t-emerald-500 rounded-full animate-spin motion-reduce:animate-none" />
           Loading the calendar
         </div>
       ) : (
@@ -370,7 +370,7 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                   onDragOver={canEdit ? (e => { e.preventDefault(); if (dragId) setDragOver(h.id); }) : undefined}
                   onDragLeave={canEdit ? (e => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(null); }) : undefined}
                   onDrop={canEdit ? (e => { e.preventDefault(); if (dragId) moveTo(dragId, h.id); setDragId(null); setDragOver(null); }) : undefined}
-                  className={`rounded-2xl border p-3 transition-colors ${dragOver === h.id ? "bg-indigo-50/70 border-indigo-300 border-dashed" : "bg-gray-50/60 border-gray-100"}`}
+                  className={`rounded-2xl border p-3 transition-colors ${dragOver === h.id ? "bg-emerald-50/70 border-emerald-300 border-dashed" : "bg-gray-50/60 border-gray-100"}`}
                 >
                   <header className="flex items-baseline justify-between px-1 mb-2">
                     <h3 className="text-sm font-bold text-slate-700">{h.label} <span className="text-gray-400 font-normal">· {h.sub}</span></h3>
@@ -389,7 +389,7 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                           draggable={canEdit}
                           onDragStart={canEdit ? (e => { setDragId(c.id); e.dataTransfer.effectAllowed = "move"; }) : undefined}
                           onDragEnd={canEdit ? (() => { setDragId(null); setDragOver(null); }) : undefined}
-                          className={`bg-white rounded-xl border border-gray-100 shadow-sm p-3 space-y-1.5 cursor-pointer hover:border-indigo-200 hover:shadow transition motion-reduce:transition-none focus:outline-none focus:ring-2 focus:ring-indigo-400 ${canEdit ? "active:cursor-grabbing" : ""} ${dragId === c.id ? "opacity-40" : ""}`}
+                          className={`bg-white rounded-xl border border-gray-100 shadow-sm p-3 space-y-1.5 cursor-pointer hover:border-emerald-200 hover:shadow transition motion-reduce:transition-none focus:outline-none focus:ring-2 focus:ring-emerald-400 ${canEdit ? "active:cursor-grabbing" : ""} ${dragId === c.id ? "opacity-40" : ""}`}
                         >
                           <div className="flex items-start gap-1">
                             <span className="flex-1 font-semibold text-slate-800 text-sm leading-snug">{c.campaign || <span className="text-gray-300">Untitled campaign</span>}</span>
@@ -398,16 +398,16 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                           <div className="flex items-center gap-1.5 text-xs">
                             <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: TIER_DOT[c.tier] ?? "#ccc" }} aria-hidden />
                             {canEdit
-                              ? <select aria-label="Tier" value={c.tier} onClick={e => e.stopPropagation()} onChange={e => editField(c.id, "tier", e.target.value, true)} className="text-gray-500 bg-transparent rounded px-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer">{TIERS.map(t => <option key={t} value={t}>Tier {t}</option>)}</select>
+                              ? <select aria-label="Tier" value={c.tier} onClick={e => e.stopPropagation()} onChange={e => editField(c.id, "tier", e.target.value, true)} className="text-gray-500 bg-transparent rounded px-0.5 focus:outline-none focus:ring-2 focus:ring-emerald-400 cursor-pointer">{TIERS.map(t => <option key={t} value={t}>Tier {t}</option>)}</select>
                               : <span className="text-gray-500">Tier {c.tier}</span>}
                             <span className="text-slate-600 truncate">{c.brand}</span>
                           </div>
                           <div className="flex items-center gap-2 text-xs">
                             {canEdit
-                              ? <select aria-label="Status" value={c.status} onClick={e => e.stopPropagation()} onChange={e => editField(c.id, "status", e.target.value, true)} className="font-semibold text-white rounded-full px-2.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer" style={{ background: STATUS_COLOR[c.status] ?? "#9A9A9A" }}>{STATUSES.map(s => <option key={s} value={s} className="text-slate-700 bg-white">{s}</option>)}</select>
+                              ? <select aria-label="Status" value={c.status} onClick={e => e.stopPropagation()} onChange={e => editField(c.id, "status", e.target.value, true)} className="font-semibold text-white rounded-full px-2.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-emerald-400 cursor-pointer" style={{ background: STATUS_COLOR[c.status] ?? "#9A9A9A" }}>{STATUSES.map(s => <option key={s} value={s} className="text-slate-700 bg-white">{s}</option>)}</select>
                               : <span className="font-semibold text-white rounded-full px-2.5 py-0.5" style={{ background: STATUS_COLOR[c.status] ?? "#9A9A9A" }}>{c.status}</span>}
                             {parseDate(c.key_date)
-                              ? <span className="inline-flex items-center gap-1 text-indigo-500 font-medium"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>{fmtKeyDate(c.key_date)}{parseDate(c.end_date ?? "") ? ` – ${fmtKeyDate(c.end_date!)}` : ""}</span>
+                              ? <span className="inline-flex items-center gap-1 text-emerald-500 font-medium"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>{fmtKeyDate(c.key_date)}{parseDate(c.end_date ?? "") ? ` – ${fmtKeyDate(c.end_date!)}` : ""}</span>
                               : <span className="text-gray-400">{c.key_date}</span>}
                           </div>
                           {(() => {
@@ -423,13 +423,13 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                           })()}
                           <p className="text-[11px] text-gray-400">Owner {c.owner || "TBC"}{c.channel ? ` · ${c.channel}` : ""}</p>
                           {c.note && <p className="text-[11px] text-gray-500 leading-snug">{c.note}</p>}
-                          <p className="text-[11px] font-medium text-indigo-500 flex items-center gap-1">{flagged && <span title="Compliance flag" className="text-amber-500">⚠</span>}Open brief →</p>
+                          <p className="text-[11px] font-medium text-emerald-500 flex items-center gap-1">{flagged && <span title="Compliance flag" className="text-amber-500">⚠</span>}Open brief →</p>
                         </article>
                       );
                     })}
 
                     {canEdit && (
-                      <button onClick={() => addRow(h.id)} className="w-full text-sm text-gray-400 hover:text-indigo-600 hover:bg-white border border-dashed border-gray-200 hover:border-indigo-200 rounded-xl py-2 transition motion-reduce:transition-none">
+                      <button onClick={() => addRow(h.id)} className="w-full text-sm text-gray-400 hover:text-emerald-600 hover:bg-white border border-dashed border-gray-200 hover:border-emerald-200 rounded-xl py-2 transition motion-reduce:transition-none">
                         + Add campaign
                       </button>
                     )}
@@ -447,15 +447,15 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
               {maint.map(m => (
                 <div key={m.id} className="inline-flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-full pl-2.5 pr-1.5 py-1">
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ background: TIER_DOT[m.tier] ?? "#ccc" }} aria-hidden />
-                  <input key={m.id + "name"} aria-label="Maintenance brand name" readOnly={ro} defaultValue={m.name} onChange={e => editMaint(m.id, "name", e.target.value)} className="bg-transparent text-sm text-slate-700 w-[7.5rem] focus:outline-none focus:ring-2 focus:ring-indigo-400 rounded px-1 read-only:cursor-default" />
+                  <input key={m.id + "name"} aria-label="Maintenance brand name" readOnly={ro} defaultValue={m.name} onChange={e => editMaint(m.id, "name", e.target.value)} className="bg-transparent text-sm text-slate-700 w-[7.5rem] focus:outline-none focus:ring-2 focus:ring-emerald-400 rounded px-1 read-only:cursor-default" />
                   {canEdit
-                    ? <select aria-label="Tier" value={m.tier} onChange={e => editMaint(m.id, "tier", e.target.value, true)} className="text-xs text-gray-400 bg-transparent focus:outline-none focus:ring-2 focus:ring-indigo-400 rounded cursor-pointer">{TIERS.map(t => <option key={t} value={t}>{t}</option>)}</select>
+                    ? <select aria-label="Tier" value={m.tier} onChange={e => editMaint(m.id, "tier", e.target.value, true)} className="text-xs text-gray-400 bg-transparent focus:outline-none focus:ring-2 focus:ring-emerald-400 rounded cursor-pointer">{TIERS.map(t => <option key={t} value={t}>{t}</option>)}</select>
                     : <span className="text-xs text-gray-400">{m.tier}</span>}
                   {canEdit && <button aria-label="Remove brand" onClick={() => delMaint(m.id)} className="text-gray-300 hover:text-red-500 px-1 text-sm">✕</button>}
                 </div>
               ))}
               {canEdit && (
-                <button onClick={addMaint} className="inline-flex items-center text-sm text-gray-400 hover:text-indigo-600 border border-dashed border-gray-200 hover:border-indigo-200 rounded-full px-3 py-1 transition motion-reduce:transition-none">
+                <button onClick={addMaint} className="inline-flex items-center text-sm text-gray-400 hover:text-emerald-600 border border-dashed border-gray-200 hover:border-emerald-200 rounded-full px-3 py-1 transition motion-reduce:transition-none">
                   + Add brand
                 </button>
               )}
@@ -481,7 +481,7 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                     key={open.id + "name"}
                     aria-label="Campaign name" readOnly={ro} defaultValue={open.campaign} placeholder="Campaign name"
                     onChange={e => saveText(open.id, "campaign", e.target.value)} onBlur={e => commitText(open.id, "campaign", e.target.value)}
-                    className="w-full text-xl font-bold text-slate-900 bg-transparent rounded px-1 -ml-1 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 read-only:cursor-default placeholder:text-gray-300"
+                    className="w-full text-xl font-bold text-slate-900 bg-transparent rounded px-1 -ml-1 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400 read-only:cursor-default placeholder:text-gray-300"
                   />
                   <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2 text-sm">
                     <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ background: TIER_DOT[open.tier] ?? "#ccc" }} />Tier {open.tier}</span>
@@ -509,7 +509,7 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                   aria-label="Card note" readOnly={ro} defaultValue={open.note} rows={2}
                   placeholder="Short summary shown on the card"
                   onChange={e => saveText(open.id, "note", e.target.value)} onBlur={e => commitText(open.id, "note", e.target.value)}
-                  className="w-full bg-transparent text-sm text-slate-700 leading-relaxed rounded px-1 -ml-1 resize-y focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 read-only:cursor-default placeholder:text-gray-300 placeholder:italic"
+                  className="w-full bg-transparent text-sm text-slate-700 leading-relaxed rounded px-1 -ml-1 resize-y focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400 read-only:cursor-default placeholder:text-gray-300 placeholder:italic"
                 />
               </div>
 
@@ -527,8 +527,8 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                           {CHANNEL_OPTIONS.map(opt => {
                             const on = splitChannels(val).includes(opt);
                             return (
-                              <label key={opt} className={`inline-flex items-center gap-1.5 text-[13px] rounded-full border px-2.5 py-1 cursor-pointer transition ${ro ? "cursor-default" : ""} ${on ? "bg-indigo-50 border-indigo-300 text-indigo-700 font-medium" : "bg-white border-gray-200 text-gray-500 hover:border-gray-300"}`}>
-                                <input type="checkbox" disabled={ro} checked={on} onChange={() => toggleChannel(open, opt)} className="accent-indigo-500 w-3.5 h-3.5" />
+                              <label key={opt} className={`inline-flex items-center gap-1.5 text-[13px] rounded-full border px-2.5 py-1 cursor-pointer transition ${ro ? "cursor-default" : ""} ${on ? "bg-emerald-50 border-emerald-300 text-emerald-700 font-medium" : "bg-white border-gray-200 text-gray-500 hover:border-gray-300"}`}>
+                                <input type="checkbox" disabled={ro} checked={on} onChange={() => toggleChannel(open, opt)} className="accent-emerald-500 w-3.5 h-3.5" />
                                 {opt}
                               </label>
                             );
@@ -540,7 +540,7 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                           aria-label={f.label} readOnly={ro} defaultValue={val} rows={f.key === "offerMechanic" ? 4 : 2}
                           placeholder={`Add the ${f.label.toLowerCase()}`}
                           onChange={e => saveBrief(open, f.key, e.target.value)} onBlur={e => commitBrief(open, f.key, e.target.value)}
-                          className="w-full bg-transparent text-sm text-slate-700 leading-relaxed rounded px-1 -ml-1 resize-y focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400 read-only:cursor-default placeholder:text-gray-300 placeholder:italic"
+                          className="w-full bg-transparent text-sm text-slate-700 leading-relaxed rounded px-1 -ml-1 resize-y focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400 read-only:cursor-default placeholder:text-gray-300 placeholder:italic"
                         />
                       )}
                     </div>
@@ -552,7 +552,7 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
               <div className="no-print flex flex-wrap gap-2 mt-5 pt-4 border-t border-gray-100">
                 {parseDate(open.key_date) && (
                   <>
-                    <button onClick={() => addToCalendar(open)} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg px-3.5 py-1.5 transition motion-reduce:transition-none">
+                    <button onClick={() => addToCalendar(open)} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3.5 py-1.5 transition motion-reduce:transition-none">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                       Add to calendar
                     </button>

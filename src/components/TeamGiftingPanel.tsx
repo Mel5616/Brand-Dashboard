@@ -62,7 +62,7 @@ export function TeamGiftingPanel() {
           <h2 className="font-semibold text-gray-800">Influencer Gifting</h2>
           <p className="text-xs text-gray-400 mt-0.5">{data.fyLabel} · budget shown as % · gift value is RRP</p>
         </div>
-        <a href="/log-gift" target="_blank" className="text-xs font-semibold text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg px-3 py-2">Log a gift ↗</a>
+        <a href="/log-gift" target="_blank" className="text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2">Log a gift ↗</a>
       </div>
 
       {/* Overall budget left */}
