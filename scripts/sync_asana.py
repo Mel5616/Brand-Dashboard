@@ -73,7 +73,14 @@ def brand_for(name, brands):
     return None
 
 OPT_FIELDS = ("name,notes,completed,completed_at,due_on,permalink_url,modified_at,"
-              "assignee.name,memberships.section.name,memberships.project.gid")
+              "assignee.name,memberships.section.name,memberships.project.gid,"
+              "custom_fields.name,custom_fields.display_value,custom_fields.enum_value.name")
+
+def custom_field(task, field_name):
+    for cf in (task.get("custom_fields") or []):
+        if (cf.get("name") or "").strip().lower() == field_name.lower():
+            return ((cf.get("enum_value") or {}).get("name")) or cf.get("display_value") or None
+    return None
 
 def list_tasks(project_gid, token):
     tasks, offset, pages = [], None, 0
@@ -137,6 +144,8 @@ def main():
             "completed": bool(t.get("completed")),
             "completed_at": t.get("completed_at"),
             "section": section_for(t, project),
+            "status": custom_field(t, "Status"),
+            "priority": custom_field(t, "Priority"),
             "project_gid": project,
             "permalink_url": t.get("permalink_url"),
             "modified_at": t.get("modified_at"),

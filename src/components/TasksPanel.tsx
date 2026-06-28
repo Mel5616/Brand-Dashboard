@@ -2,6 +2,12 @@
 
 import type { AsanaTask } from "@/lib/db";
 
+// Status / priority colours mirror the Asana project's field colours.
+const STATUS_COLOR: Record<string, string> = {
+  "Approved": "#16a34a", "Ready to post": "#d97706", "Waiting Approval": "#dc2626", "On Hold": "#ea580c",
+};
+const PRIORITY_COLOR: Record<string, string> = { "High": "#16a34a", "Medium": "#ca8a04", "Low": "#dc2626" };
+
 // Read-only Asana tasks for one project, grouped by section (Asana stays the
 // source of truth — the dashboard only reads).
 export function TasksPanel({ tasks, brands }: { tasks: AsanaTask[]; brands: { id: number; name: string; color?: string }[] }) {
@@ -17,17 +23,17 @@ export function TasksPanel({ tasks, brands }: { tasks: AsanaTask[]; brands: { id
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const open = tasks.filter(t => !t.completed);
   const done = tasks.filter(t => t.completed);
-  const overdue = open.filter(t => t.due_on && new Date(t.due_on + "T00:00:00") < today).length;
   const dueSoon = open.filter(t => {
     if (!t.due_on) return false;
     const d = new Date(t.due_on + "T00:00:00"); const wk = new Date(today); wk.setDate(wk.getDate() + 7);
     return d >= today && d <= wk;
   }).length;
 
+  const waiting = open.filter(t => (t.status || "").toLowerCase().includes("waiting")).length;
   const kpis = [
     { label: "Open tasks", value: String(open.length), accent: "#1e3a5f" },
+    { label: "Waiting approval", value: String(waiting), accent: "#dc2626" },
     { label: "Due this week", value: String(dueSoon), accent: "#f97316" },
-    { label: "Overdue", value: String(overdue), accent: "#ef4444" },
     { label: "Completed", value: String(done.length), accent: "#10b981" },
   ];
 
@@ -48,11 +54,15 @@ export function TasksPanel({ tasks, brands }: { tasks: AsanaTask[]; brands: { id
     const isOverdue = due && due < today;
     const b = brandOf(t.brand_id);
     const inner = (
-      <div className="flex items-center gap-3 py-2">
+      <div className="flex items-center gap-2.5 py-2">
+        {t.priority && <span className="shrink-0 w-2 h-2 rounded-full" title={`Priority: ${t.priority}`} style={{ background: PRIORITY_COLOR[t.priority] ?? "#cbd5e1" }} />}
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-slate-700 truncate">{t.name || "Task"}</p>
           <p className="text-[11px] text-gray-400 truncate">{[t.assignee, b?.name].filter(Boolean).join(" · ") || "Unassigned"}</p>
         </div>
+        {t.status && (
+          <span className="shrink-0 text-[10px] font-semibold rounded-full px-2 py-0.5 text-white" style={{ background: STATUS_COLOR[t.status] ?? "#64748b" }}>{t.status}</span>
+        )}
         {t.due_on && (
           <span className={`shrink-0 text-[11px] font-medium rounded-full px-2 py-0.5 ${isOverdue ? "bg-red-50 text-red-600" : "bg-gray-50 text-gray-500"}`}>{fmtDue(t.due_on)}</span>
         )}

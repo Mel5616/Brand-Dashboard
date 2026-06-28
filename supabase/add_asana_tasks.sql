@@ -8,10 +8,15 @@ create table if not exists asana_tasks (
   completed     boolean default false,
   completed_at  timestamptz,
   section       text,
+  status        text,
+  priority      text,
   project_gid   text,
   permalink_url text,
   modified_at   timestamptz,
   brand_id      int,
   synced_at     timestamptz default now()
 );
+-- Custom fields (safe to run again on an existing table).
+alter table asana_tasks add column if not exists status   text;
+alter table asana_tasks add column if not exists priority text;
 create index if not exists asana_tasks_due_idx on asana_tasks (due_on);
