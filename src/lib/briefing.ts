@@ -131,6 +131,12 @@ export const ASANA_ROUTES: Record<string, Record<string, string>> = {
     blog: "1213417959049946",     // Blogs board
     _default: "1205954873551895", // Design To Do List (Diep)
   },
+  frida: {
+    social: "1215475657278112",   // Frida (Social Media Pages)
+    edm: "1215104041157845",      // Frida EDMs
+    blog: "1213417959049946",     // Blogs board
+    _default: "1205954873551895", // Design To Do List (Diep)
+  },
 };
 export const BRIEFING_ENGINE_PROJECT = process.env.BRIEFING_ENGINE_PROJECT_GID || "";
 export const DRAFTED_SECTION_NAME = "Drafted · needs Mel";
