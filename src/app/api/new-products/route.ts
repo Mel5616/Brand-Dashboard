@@ -26,7 +26,9 @@ export async function POST(req: Request) {
   const { data: brands } = await sb.from("brands").select("id, name");
   const brandFor = (name: string) => {
     const low = (name || "").toLowerCase();
-    for (const b of (brands ?? [])) if (b.name && low.includes(String(b.name).toLowerCase())) return b.id;
+    for (const b of (brands ?? [])) if (b.name && low.includes(String(b.name).toLowerCase())) return b.id; // full brand name in product name
+    const first = low.split(/\s+/)[0];                                                                     // else match the leading word (e.g. "Gaia" → "Gaia Baby")
+    for (const b of (brands ?? [])) { const bw = String(b.name || "").toLowerCase().split(/\s+/)[0]; if (bw.length >= 4 && bw === first) return b.id; }
     return null;
   };
 

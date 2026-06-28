@@ -81,7 +81,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
           <span style="display:inline-block;margin-top:9px;background:${accent};color:#fff;font-weight:700;letter-spacing:.07em;text-transform:uppercase;font-size:11px;padding:6px 14px;border-radius:6px">${esc(brand || "Coolkidz")}</span>
           <div style="margin-top:7px;font-size:11px;color:${MUTE}">${statusLabel}${launch ? " · " + esc(launch) : ""}${multi ? " · " + members.length + " colours" : ""}</div>
         </div>
-        ${hero ? `<img src="${esc(hero)}" style="width:52mm;max-height:52mm;object-fit:contain;border-radius:8px;background:#f8fafc"/>` : ""}
+        ${hero ? `<div style="width:52mm;height:52mm;flex-shrink:0;overflow:hidden;border-radius:8px;background:#f8fafc;display:flex;align-items:center;justify-content:center"><img src="${esc(hero)}" style="max-width:100%;max-height:100%;object-fit:contain"/></div>` : ""}
       </div>
     </div>
 

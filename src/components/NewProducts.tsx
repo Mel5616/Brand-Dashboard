@@ -53,7 +53,7 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
   async function save() {
     if (!open || !edit) return;
     setBusy("save");
-    const payload = { long_description: edit.long_description, short_description: edit.short_description, whats_in_box: edit.whats_in_box, features: edit.features, status: edit.status, launch_date: edit.launch_date || null };
+    const payload = { long_description: edit.long_description, short_description: edit.short_description, whats_in_box: edit.whats_in_box, features: edit.features, status: edit.status, launch_date: edit.launch_date || null, brand_id: edit.brand_id ?? null };
     const res = await Promise.all(open.members.map(m => fetch(`/api/new-products/${m.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then(r => r.json())));
     setProducts(prev => prev.map(p => { const u = res.find(x => x.product?.id === p.id); return u?.product ?? p; }));
     setBusy(""); setMsg(`Saved to ${open.members.length} colour${open.members.length === 1 ? "" : "s"}.`);
@@ -172,6 +172,13 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
                   : <span className="text-xs font-semibold text-white rounded-full px-2.5 py-1" style={{ background: statusOf(edit.status).bg }}>{statusOf(edit.status).label}</span>}
                 <span className="text-gray-400 text-xs">Launch</span>
                 <input type="date" value={edit.launch_date ? String(edit.launch_date).slice(0, 10) : ""} readOnly={!canEdit} onChange={e => setEdit({ ...edit, launch_date: e.target.value })} className="text-sm border border-gray-200 rounded-lg px-2 py-1" />
+                <span className="text-gray-400 text-xs">Brand</span>
+                {canEdit
+                  ? <select value={edit.brand_id ?? ""} onChange={e => setEdit({ ...edit, brand_id: e.target.value === "" ? null : Number(e.target.value) })} className="text-sm border border-gray-200 rounded-lg px-2 py-1 bg-white">
+                      <option value="">— select —</option>
+                      {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    </select>
+                  : <span className="text-sm text-slate-600">{brands.find(b => b.id === edit.brand_id)?.name ?? "—"}</span>}
               </div>
 
               {canEdit && (
