@@ -29,6 +29,8 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
   const [insState, setInsState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   // Open-tracked share links for this brand + month.
+  const [topups, setTopups] = useState<any[]>([]);
+  useEffect(() => { fetch("/api/budget-topups").then(r => r.json()).then(j => setTopups(j.topups ?? [])).catch(() => {}); }, []);
   const [shares, setShares] = useState<any[]>([]);
   const [sharing, setSharing] = useState(false);
   const [shareNeedsSetup, setShareNeedsSetup] = useState(false);
@@ -71,8 +73,8 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
   // The saved note (not the in-progress edit) is what renders into the report.
   const html = useMemo(() => {
     if (!brand) return "";
-    return snapshotHtml(buildSnapshot({ brand, month, monthKeys, monthLabels, fyLabel, note: savedNote, insightsOverride: savedInsights, ...data }));
-  }, [brand, month, monthKeys, monthLabels, fyLabel, savedNote, savedInsights, data]);
+    return snapshotHtml(buildSnapshot({ brand, month, monthKeys, monthLabels, fyLabel, note: savedNote, insightsOverride: savedInsights, budgetTopups: topups, ...data }));
+  }, [brand, month, monthKeys, monthLabels, fyLabel, savedNote, savedInsights, topups, data]);
 
   const monthName = monthLabels[monthKeys.indexOf(month)] ?? month;
 

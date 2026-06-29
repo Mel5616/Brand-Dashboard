@@ -31,6 +31,7 @@ export type SnapshotInput = {
   instagramMedia: IgPost[];
   // Marketing budget vs spend (budgets already filtered to the FY, actuals to the FY months upstream)
   marketingBudgets: { brand_id: number; channel: string; annual_budget: number }[];
+  budgetTopups?: { brand_id: number; month_key: string; channel: string; amount: number }[];
   marketingActuals: { brand_id: number; month_key: string; channel: string; spend: number }[];
   // AI insight narrative + SEMrush organic data for the "opportunities to move" block
   brandInsights: { brand_id: number; content: string; generated_at: string }[];
@@ -153,17 +154,21 @@ export function buildSnapshot(d: SnapshotInput) {
   // ── Marketing budget vs spend (this month) ──────────────────────────
   // Total spend mirrors the MER definition: Google + Meta + other marketing actuals
   // (the actuals table also carries Google/Meta lines, so exclude those to avoid double counting).
-  const annualBudget = sum(forBrand(d.marketingBudgets).map(b => b.annual_budget));
-  const monthBudget = annualBudget / 12;
+  // Per-channel monthly budget = the per-month override if set, else annual ÷ 12.
+  const bRows = forBrand(d.marketingBudgets);
+  const bTopups = forBrand(d.budgetTopups ?? []);
+  const ovr = (channel: string, mk: string): number | null => { const t = bTopups.find((x: any) => x.channel === channel && x.month_key === mk); return t ? (Number(t.amount) || 0) : null; };
+  const mBudget = (mk: string) => sum(bRows.map((b: any) => { const o = ovr(b.channel, mk); return o != null ? o : b.annual_budget / 12; }));
+  const monthsUpto = monthKeys.slice(0, idx + 1);
+  const monthBudget = mBudget(month);
   const otherSpend = sum(forBrand(d.marketingActuals).filter(a => a.month_key === month && a.channel !== "Google Advertising" && a.channel !== "Social Media (Meta)").map(a => a.spend));
   const mktSpend = gSpend + mSpend + otherSpend;
   // Financial year to date: spend across every month up to and including the selected one,
-  // vs the annual budget pro-rated for months elapsed.
-  const monthsUpto = monthKeys.slice(0, idx + 1);
+  // vs the monthly budget summed across those months (overrides honoured).
   const ytdSpend = sum(forBrand(d.googleAds).filter(r => monthsUpto.includes(r.month_key)).map(r => r.spend))
     + sum(forBrand(d.metaAds).filter(r => monthsUpto.includes(r.month_key)).map(r => r.spend))
     + sum(forBrand(d.marketingActuals).filter(a => monthsUpto.includes(a.month_key) && a.channel !== "Google Advertising" && a.channel !== "Social Media (Meta)").map(a => a.spend));
-  const ytdBudget = annualBudget * ((idx + 1) / 12);
+  const ytdBudget = sum(monthsUpto.map(mBudget));
   const mktChannels = [
     { name: "Google", spend: gSpend, color: "#2D4977" },
     { name: "Meta", spend: mSpend, color: "#6691AB" },
