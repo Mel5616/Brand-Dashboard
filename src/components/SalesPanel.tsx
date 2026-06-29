@@ -259,28 +259,38 @@ export function SalesPanel({
           .sort((a, b) => b.tot - a.tot);
         if (!mix.length) return null;
         return (
-          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+          <div>
             <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Channel mix by brand</h3>
-            <p className="text-xs text-gray-400 mb-3">Where each brand&apos;s sales come from · full year</p>
-            <div className="flex flex-wrap gap-x-3 gap-y-1 mb-4">
-              {channels.map(c => (
-                <span key={c.name} className="inline-flex items-center gap-1 text-[11px] text-gray-500">
-                  <span className="w-2 h-2 rounded-full" style={{ background: colorOf(c.name) }} />{c.name}
-                </span>
-              ))}
-            </div>
-            <div className="space-y-2">
+            <p className="text-xs text-gray-400 mb-4">Where each brand&apos;s sales come from · full year</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {mix.map(({ b, bc, tot }) => {
                 const pos = sum(bc.filter(c => c.fy > 0).map(c => c.fy)) || 1;
+                const cols = bc.filter(c => c.fy > 0).sort((a, c) => c.fy - a.fy);
                 return (
-                  <div key={b.id} className="flex items-center gap-3">
-                    <span className="w-28 sm:w-32 text-sm font-medium text-slate-700 truncate shrink-0">{b.name}</span>
-                    <div className="flex-1 h-5 rounded-md overflow-hidden flex bg-gray-50">
-                      {bc.filter(c => c.fy > 0).map(c => (
-                        <div key={c.name} title={`${c.name}: ${fmt(c.fy)} (${((c.fy / pos) * 100).toFixed(0)}%)`} style={{ width: `${(c.fy / pos) * 100}%`, background: colorOf(c.name) }} />
-                      ))}
+                  <div key={b.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+                    <div className="flex items-baseline justify-between mb-3 pb-2 border-b border-gray-50">
+                      <span className="text-sm font-semibold text-slate-700 truncate">{b.name}</span>
+                      <span className="text-sm font-bold text-slate-800 shrink-0">{fmt(tot)}</span>
                     </div>
-                    <span className="w-20 text-right text-sm font-semibold text-slate-700 shrink-0">{fmt(tot)}</span>
+                    <div className="space-y-2">
+                      {cols.map(c => {
+                        const pct = (c.fy / pos) * 100;
+                        return (
+                          <div key={c.name}>
+                            <div className="flex items-center justify-between text-[11px] mb-1">
+                              <span className="flex items-center gap-1.5 text-slate-600 truncate min-w-0">
+                                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: colorOf(c.name) }} />
+                                <span className="truncate">{c.name}</span>
+                              </span>
+                              <span className="text-slate-500 shrink-0 ml-2"><span className="font-semibold text-slate-700">{fmt(c.fy)}</span> · {pct.toFixed(0)}%</span>
+                            </div>
+                            <div className="h-1.5 rounded-full bg-gray-100">
+                              <div className="h-full rounded-full" style={{ width: `${pct}%`, background: colorOf(c.name) }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 );
               })}
