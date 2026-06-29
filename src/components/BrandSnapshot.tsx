@@ -33,6 +33,12 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
   const [to, setTo] = useState("");
   const [sendState, setSendState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [sendMsg, setSendMsg] = useState("");
+
+  // Open-tracked share links for this brand + month.
+  const [shares, setShares] = useState<any[]>([]);
+  const [sharing, setSharing] = useState(false);
+  const [shareNeedsSetup, setShareNeedsSetup] = useState(false);
+  const [copied, setCopied] = useState("");
   useEffect(() => {
     if (!brand || typeof window === "undefined") return;
     setTo(window.localStorage.getItem(`snap_to_${brand.id}`) ?? "");
@@ -97,6 +103,39 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
       if (j.ok) { setSendState("sent"); setTimeout(() => setSendState("idle"), 2500); }
       else { setSendState("error"); setSendMsg(j.message || "Send failed"); }
     } catch { setSendState("error"); setSendMsg("Send failed"); }
+  }
+
+  async function loadShares() {
+    if (!brand) return;
+    try {
+      const j = await fetch(`/api/snapshot-share?brand_id=${brand.id}&month_key=${month}`).then(r => r.json());
+      if (j.ok) { setShares(j.items); setShareNeedsSetup(false); }
+      else if (j.needsSetup) setShareNeedsSetup(true);
+    } catch { /* ignore */ }
+  }
+  useEffect(() => { loadShares(); }, [brand?.id, month]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function createShare() {
+    if (!brand) return;
+    setSharing(true);
+    try {
+      const res = await fetch("/api/snapshot-share", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brand_id: brand.id, brand: brand.name, month_key: month, label: `${monthName} ${fyLabel}`, html }),
+      });
+      const j = await res.json();
+      if (j.ok) await loadShares();
+      else if (j.needsSetup) setShareNeedsSetup(true);
+    } finally { setSharing(false); }
+  }
+  function copyLink(token: string) {
+    navigator.clipboard?.writeText(`${window.location.origin}/s/${token}`);
+    setCopied(token); setTimeout(() => setCopied(""), 1500);
+  }
+  async function deleteShare(id: number) {
+    if (!window.confirm("Delete this share link? Anyone who has it will no longer be able to open it.")) return;
+    await fetch(`/api/snapshot-share?id=${id}`, { method: "DELETE" }).catch(() => {});
+    loadShares();
   }
 
   function printIt() { const win = frameRef.current?.contentWindow; if (win) { win.focus(); win.print(); } }
@@ -202,6 +241,40 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
           {sendState === "sent" && <span className="text-xs text-emerald-600 font-medium">Sent</span>}
           {sendState === "error" && <span className="text-xs text-red-500 font-medium">{sendMsg}</span>}
           <span className="basis-full text-[11px] text-gray-400">Emails the report inline and attaches the HTML file. Needs RESEND_API_KEY and a verified sending domain.</span>
+        </div>
+      )}
+
+      {/* Shareable, open-tracked link — send to a customer and see when they open it. */}
+      {canEdit && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 no-print">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Shareable link · {monthName}</span>
+            <button onClick={createShare} disabled={sharing} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 rounded-lg px-3.5 py-1.5 transition">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5" /></svg>
+              {sharing ? "Creating..." : "Create share link"}
+            </button>
+          </div>
+          {shareNeedsSetup ? (
+            <p className="text-xs text-amber-600">Run <code className="bg-amber-50 px-1 rounded">supabase/add_snapshot_shares.sql</code> in Supabase, then reload.</p>
+          ) : shares.length === 0 ? (
+            <p className="text-xs text-gray-400">No links yet. Create one to share this snapshot with a customer — you&apos;ll see when they open it.</p>
+          ) : (
+            <div className="space-y-2">
+              {shares.map(s => (
+                <div key={s.id} className="flex flex-wrap items-center gap-2 border border-gray-100 rounded-lg px-3 py-2">
+                  <input readOnly value={`${typeof window !== "undefined" ? window.location.origin : ""}/s/${s.token}`} onFocus={e => e.currentTarget.select()}
+                    className="flex-1 min-w-[220px] text-xs text-slate-600 bg-slate-50 border border-gray-200 rounded px-2 py-1.5" />
+                  <button onClick={() => copyLink(s.token)} className="text-xs font-medium text-emerald-600 hover:underline">{copied === s.token ? "Copied!" : "Copy"}</button>
+                  {s.open_count > 0
+                    ? <span className="text-xs font-medium text-emerald-700 bg-emerald-50 rounded-full px-2.5 py-1">Opened {s.open_count}× · last {new Date(s.last_opened_at).toLocaleString("en-AU", { dateStyle: "medium", timeStyle: "short" })}</span>
+                    : <span className="text-xs text-slate-400 bg-slate-50 rounded-full px-2.5 py-1">Not opened yet</span>}
+                  <button onClick={() => deleteShare(s.id)} className="text-xs text-rose-400 hover:text-rose-600">Delete</button>
+                </div>
+              ))}
+              <button onClick={loadShares} className="text-[11px] text-slate-400 hover:text-slate-600">Refresh open status</button>
+            </div>
+          )}
+          <p className="text-[11px] text-gray-400 mt-2">Anyone with the link can view this report (no login). Each open is tracked.</p>
         </div>
       )}
 
