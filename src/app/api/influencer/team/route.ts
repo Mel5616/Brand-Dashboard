@@ -18,12 +18,15 @@ export async function GET() {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   if (!(await getAccess()).role) return NextResponse.json({ ok: false, error: "auth" }, { status: 401 });
 
-  const [bRes, eRes] = await Promise.all([
+  const [bRes, eRes, rRes] = await Promise.all([
     sb("influencer_budgets?select=brand,month_key,budget"),
     sb("influencer_entries?select=id,brand,month_key,total_cost,rrp,handle,platform,product_name,status,content_url,likes,reach,posted_at,content_type&order=month_key.desc"),
+    sb("influencers?select=handle,name,followers,avatar_url"),
   ]);
   const bText = await bRes.text(), eText = await eRes.text();
   if (!bRes.ok || !eRes.ok) return NextResponse.json({ ok: false, needsSetup: missing(bRes.status, bText) || missing(eRes.status, eText) });
+  const roster = rRes.ok ? (JSON.parse(await rRes.text() || "[]") as any[]) : [];
+  const rosterBy = new Map(roster.map(r => [r.handle, r]));
 
   const fy = new Set(INFLUENCER_FY_KEYS);
   const budgets = (JSON.parse(bText || "[]") as any[]).filter(r => fy.has(r.month_key));
@@ -50,6 +53,7 @@ export async function GET() {
     status: e.status ?? null, content_url: e.content_url ?? null, content_type: e.content_type ?? null,
     likes: e.likes != null ? Number(e.likes) : null, reach: e.reach != null ? Number(e.reach) : null,
     posted_at: e.posted_at ?? null,
+    avatar_url: rosterBy.get(e.handle)?.avatar_url ?? null,
   }));
 
   // Social performance totals (no cost involved — safe for the team).
@@ -60,5 +64,18 @@ export async function GET() {
     reach: posted.reduce((s, e) => s + (Number(e.reach) || 0), 0),
   };
 
-  return NextResponse.json({ ok: true, fyLabel: INFLUENCER_FY_LABEL, overall, brands, gifts, social });
+  // Notable users — top influencers by likes across the FY, with avatar + followers.
+  const byHandle = new Map<string, { handle: string; likes: number }>();
+  for (const e of entries) {
+    if (!e.handle) continue;
+    const cur = byHandle.get(e.handle) ?? { handle: e.handle, likes: 0 };
+    cur.likes += Number(e.likes) || 0;
+    byHandle.set(e.handle, cur);
+  }
+  const topInfluencers = [...byHandle.values()]
+    .map(x => { const r = rosterBy.get(x.handle); return { handle: x.handle, likes: x.likes, name: r?.name ?? null, followers: r?.followers ?? null, avatar_url: r?.avatar_url ?? null }; })
+    .sort((a, b) => b.likes - a.likes)
+    .slice(0, 8);
+
+  return NextResponse.json({ ok: true, fyLabel: INFLUENCER_FY_LABEL, overall, brands, gifts, social, topInfluencers });
 }

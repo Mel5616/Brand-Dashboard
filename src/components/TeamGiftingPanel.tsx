@@ -11,9 +11,18 @@ type Gift = {
   id: number; month_key: string; handle: string | null; platform: string | null; brand: string | null;
   product_name: string | null; rrp: number | null; status: string | null; content_url: string | null;
   content_type: string | null; likes: number | null; reach: number | null; posted_at: string | null;
+  avatar_url: string | null;
 };
+type TopInf = { handle: string; likes: number; name: string | null; followers: number | null; avatar_url: string | null };
 type Social = { posts: number; likes: number; reach: number };
-type Data = { fyLabel: string; overall: { used_pct: number; left_pct: number }; brands: Brand[]; gifts: Gift[]; social: Social };
+type Data = { fyLabel: string; overall: { used_pct: number; left_pct: number }; brands: Brand[]; gifts: Gift[]; social: Social; topInfluencers: TopInf[] };
+
+function Avatar({ url, name, size = 40 }: { url: string | null; name: string | null; size?: number }) {
+  const initial = (name || "?").replace(/^@/, "")[0]?.toUpperCase() || "?";
+  return url
+    ? <img src={url} alt="" className="rounded-full object-cover shrink-0" style={{ width: size, height: size }} />
+    : <div className="rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center shrink-0" style={{ width: size, height: size, fontSize: size * 0.4 }}>{initial}</div>;
+}
 
 const rrp = (n: number | null) => n == null ? "—" : "$" + Math.round(n).toLocaleString("en-AU");
 const compact = (n: number | null) => n == null ? "—" : n >= 1_000_000 ? (n / 1e6).toFixed(1) + "M" : n >= 1_000 ? (n / 1e3).toFixed(1) + "K" : String(n);
@@ -90,6 +99,29 @@ export function TeamGiftingPanel() {
         <Kpi label="Avg engagement" value={avgEng != null ? avgEng.toFixed(1) + "%" : "—"} accent="#4f9d86" />
       </div>
 
+      {/* Notable users — top influencers by likes */}
+      {data.topInfluencers.filter(t => t.likes > 0 || t.avatar_url).length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-slate-700">Notable influencers</h3>
+            <div className="hidden sm:flex gap-10 text-[10px] font-semibold uppercase tracking-wide text-gray-400 pr-1"><span className="w-12 text-right">Likes</span><span className="w-14 text-right">Followers</span></div>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {data.topInfluencers.filter(t => t.likes > 0 || t.avatar_url).map(t => (
+              <div key={t.handle} className="flex items-center gap-3 py-2.5">
+                <Avatar url={t.avatar_url} name={t.name || t.handle} size={44} />
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-slate-800 truncate">{(t.name || t.handle || "").replace(/^@/, "")}</p>
+                  <p className="text-xs text-gray-400 truncate">{t.handle}</p>
+                </div>
+                <span className="w-12 text-right font-semibold text-slate-700">{compact(t.likes)}</span>
+                <span className="w-14 text-right font-semibold text-slate-700">{compact(t.followers)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Overall budget */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
         <div className="flex items-baseline justify-between mb-2">
@@ -141,8 +173,9 @@ function PostCard({ g, editing, onEdit, onClose, onSaved }: { g: Gift; editing: 
   if (editing) return <PostEditor g={g} onClose={onClose} onSaved={onSaved} />;
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
+      <div className="flex items-start gap-3">
+        <Avatar url={g.avatar_url} name={g.handle} size={40} />
+        <div className="min-w-0 flex-1">
           <p className="font-semibold text-slate-700 truncate">{g.handle || "—"}{g.platform && <span className="text-gray-400 font-normal"> · {g.platform}</span>}</p>
           <p className="text-[11px] text-gray-400 truncate">{g.brand || "—"}{g.product_name ? ` · ${g.product_name}` : ""}</p>
         </div>
@@ -181,7 +214,17 @@ function PostEditor({ g, onClose, onSaved }: { g: Gift; onClose: () => void; onS
   const [reach, setReach] = useState(g.reach != null ? String(g.reach) : "");
   const [posted, setPosted] = useState(g.posted_at || "");
   const [status, setStatus] = useState(g.status || "Live");
+  const [avatar, setAvatar] = useState(g.avatar_url || "");
+  const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState(false);
+  async function uploadAvatar(file: File) {
+    if (!g.handle) return;
+    setUploading(true);
+    const fd = new FormData(); fd.append("file", file); fd.append("handle", g.handle);
+    const r = await fetch("/api/influencer/avatar", { method: "POST", body: fd }).then(x => x.json()).catch(() => ({}));
+    setUploading(false);
+    if (r.url) setAvatar(r.url);
+  }
   async function save() {
     setBusy(true);
     await fetch("/api/influencer/post", { method: "PATCH", headers: { "Content-Type": "application/json" },
@@ -191,7 +234,16 @@ function PostEditor({ g, onClose, onSaved }: { g: Gift; onClose: () => void; onS
   const inp = "w-full text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-400";
   return (
     <div className="bg-white rounded-2xl border border-emerald-200 shadow-sm p-4">
-      <p className="font-semibold text-slate-700 text-sm mb-2">{g.handle} · {g.brand}</p>
+      <div className="flex items-center gap-3 mb-3">
+        <Avatar url={avatar || null} name={g.handle} size={44} />
+        <div className="min-w-0">
+          <p className="font-semibold text-slate-700 text-sm truncate">{g.handle} · {g.brand}</p>
+          <label className={`text-[11px] font-medium ${g.handle ? "text-emerald-600 hover:underline cursor-pointer" : "text-gray-300"}`}>
+            {uploading ? "Uploading…" : avatar ? "Change photo" : "Upload photo"}
+            <input type="file" accept="image/*" disabled={!g.handle || uploading} className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadAvatar(f); }} />
+          </label>
+        </div>
+      </div>
       <div className="space-y-2">
         <input value={url} onChange={e => setUrl(e.target.value)} placeholder="Post link (https://instagram.com/p/…)" className={inp} />
         <div className="grid grid-cols-2 gap-2">
