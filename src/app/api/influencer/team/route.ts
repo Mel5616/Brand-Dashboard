@@ -20,7 +20,7 @@ export async function GET() {
 
   const [bRes, eRes, rRes] = await Promise.all([
     sb("influencer_budgets?select=brand,month_key,budget"),
-    sb("influencer_entries?select=id,brand,month_key,total_cost,rrp,handle,platform,product_name,status,content_url,likes,reach,posted_at,content_type,affiliate_code&order=month_key.desc"),
+    sb("influencer_entries?select=*&order=month_key.desc"),
     sb("influencers?select=handle,name,followers,avatar_url,profile_url"),
   ]);
   const bText = await bRes.text(), eText = await eRes.text();
