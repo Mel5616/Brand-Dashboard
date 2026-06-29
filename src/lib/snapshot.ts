@@ -295,12 +295,12 @@ export function snapshotHtml(s: Snapshot): string {
   const r = (k: string, v: string) => `<div class="r"><span class="k">${k}</span><span class="val">${v}</span></div>`;
 
   // Whole-business section: KPI strip + channel split (bar + legend) + monthly revenue trend graph.
-  const chanPie = svgPie(s.channelGroups.map(c => ({ value: c.fy, color: c.color })), fmt(s.wholeFy));
-  const chanLegend = s.channelGroups.map(c => {
-    const row = `<div class="cr"><span class="dot" style="background:${c.color}"></span><span class="cn">${esc(c.name)}</span><span class="cv">${fmtFull(c.fy)}</span><span class="cp">${c.share.toFixed(0)}%</span></div>`;
-    const kids = c.kids ? c.kids.map(k => `<div class="cr ck"><span class="dot sm" style="background:${k.color}"></span><span class="cn">${esc(k.name)}</span><span class="cv">${fmtFull(k.fy)}</span><span class="cp">${k.share.toFixed(0)}%</span></div>`).join("") : "";
-    return row + kids;
-  }).join("");
+  // Flat leaf channels only — no "Direct to Consumer" roll-up, so the bars/legend
+  // sum to the real total ($370K / 100%) and match the channel count on the card.
+  const chanPie = svgPie(s.channelRows.map(c => ({ value: c.fy, color: c.color })), fmt(s.wholeFy));
+  const chanLegend = s.channelRows.map(c =>
+    `<div class="cr"><span class="dot" style="background:${c.color}"></span><span class="cn">${esc(c.name)}</span><span class="cv">${fmtFull(c.fy)}</span><span class="cp">${c.share.toFixed(0)}%</span></div>`
+  ).join("");
   const wholeSection = s.wholeFy > 0 ? `
   <div class="sec">
     <div class="h">Whole business · all channels</div>
