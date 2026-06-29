@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement,
   LineElement, PointElement, Tooltip, Legend,
@@ -42,6 +42,12 @@ export function BrandBudgetOverview({
   const bid = brand.id;
   const rows = marketingBudgets.filter(b => b.brand_id === bid && b.annual_budget > 0);
 
+  // Per-month top-ups: extra budget added to a specific month/channel on top of annual ÷ 12.
+  const [topups, setTopups] = useState<{ brand_id: number; month_key: string; channel: string; amount: number }[]>([]);
+  useEffect(() => { fetch("/api/budget-topups").then(r => r.json()).then(j => setTopups(j.topups ?? [])).catch(() => {}); }, []);
+  const topup = (channel: string, mk: string) => topups.filter(t => t.brand_id === bid && t.channel === channel && t.month_key === mk).reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const fyTopup = (channel: string) => monthKeys.reduce((s, mk) => s + topup(channel, mk), 0);
+
   // Sales target vs actual (revenue_target is monthly; sum across the FY = annual)
   const salesTarget = targets.filter(t => t.brand_id === bid && monthKeys.includes(t.month_key))
     .reduce((s, t) => s + (t.revenue_target ?? 0), 0);
@@ -68,8 +74,8 @@ export function BrandBudgetOverview({
 
   const channels = rows.map(r => r.channel);
 
-  // FY totals
-  const fyBudget = rows.reduce((s, r) => s + r.annual_budget, 0);
+  // FY totals (annual budget + any per-month top-ups)
+  const fyBudget = rows.reduce((s, r) => s + r.annual_budget + fyTopup(r.channel), 0);
   const fyActual = channels.reduce((s, ch) => s + monthKeys.reduce((m, mk) => m + actual(ch, mk), 0), 0);
   const fyPct = fyBudget > 0 ? (fyActual / fyBudget) * 100 : 0;
   const mktgPctOfSales = salesTarget > 0 ? (fyBudget / salesTarget) * 100 : null;
@@ -77,14 +83,15 @@ export function BrandBudgetOverview({
 
   // selected-month rows: monthly budget = annual / 12
   const monthRows = rows.map((r, i) => {
-    const monthlyBudget = r.annual_budget / 12;
+    const monthlyBudget = r.annual_budget / 12 + topup(r.channel, month);
     const spent = actual(r.channel, month);
     return { channel: r.channel, color: colorFor(r.channel, i), budget: monthlyBudget, spent, pct: monthlyBudget > 0 ? (spent / monthlyBudget) * 100 : 0 };
   }).sort((a, b) => b.budget - a.budget);
-  // annual (FY) rows: full-year budget per channel vs FY-to-date actual
+  // annual (FY) rows: full-year budget (annual + top-ups) per channel vs FY-to-date actual
   const fyRows = rows.map((r, i) => {
     const spent = monthKeys.reduce((s, mk) => s + actual(r.channel, mk), 0);
-    return { channel: r.channel, color: colorFor(r.channel, i), budget: r.annual_budget, spent, pct: r.annual_budget > 0 ? (spent / r.annual_budget) * 100 : 0 };
+    const budget = r.annual_budget + fyTopup(r.channel);
+    return { channel: r.channel, color: colorFor(r.channel, i), budget, spent, pct: budget > 0 ? (spent / budget) * 100 : 0 };
   }).sort((a, b) => b.budget - a.budget);
 
   const chanRows = chanScope === "fy" ? fyRows : monthRows;
@@ -92,7 +99,7 @@ export function BrandBudgetOverview({
   const chanActualTotal = chanRows.reduce((s, r) => s + r.spent, 0);
 
   // monthly trend across the FY
-  const monthlyBudgetLine = monthKeys.map(() => rows.reduce((s, r) => s + r.annual_budget / 12, 0));
+  const monthlyBudgetLine = monthKeys.map(mk => rows.reduce((s, r) => s + r.annual_budget / 12 + topup(r.channel, mk), 0));
   const monthlyActualBars = monthKeys.map(mk => channels.reduce((s, ch) => s + actual(ch, mk), 0));
 
   const monthIdx = monthKeys.indexOf(month);
