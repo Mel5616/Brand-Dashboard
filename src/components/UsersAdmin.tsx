@@ -23,6 +23,7 @@ export function UsersAdmin({ sections, adminOnly }: { sections: TabSection[]; ad
     const r = await fetch("/api/users").then(x => x.json()).catch(() => ({ ok: false }));
     setLoading(false);
     if (!r.ok) { setNeedsSetup(true); return; }
+    setNeedsSetup(false);
     setRows(r.rows);
   }
   useEffect(() => { load(); }, []);
