@@ -37,3 +37,22 @@ export async function getAccess(): Promise<Access> {
     return { user: u, role: "member", allowedTabs: [] };
   }
 }
+
+// Resolve a specific user's effective access (for the admin "View as" preview).
+// Does NOT change anyone's session — purely computes what that user would see.
+export async function getAccessForUser(userId: string): Promise<Access> {
+  try {
+    const admin = createAdminClient();
+    const { data: got } = await admin.auth.admin.getUserById(userId);
+    if (!got?.user) return { user: null, role: null, allowedTabs: [] };
+    const email = (got.user.email || "").toLowerCase();
+    const u = { id: userId, email };
+    if (ADMIN_EMAILS.includes(email)) return { user: u, role: "admin", allowedTabs: [...ALL_TABS] };
+    const { data } = await admin.from("profiles").select("*").eq("id", userId).maybeSingle();
+    if (data?.disabled) return { user: u, role: "member", allowedTabs: [] };
+    if (data?.role === "admin") return { user: u, role: "admin", allowedTabs: [...ALL_TABS] };
+    return { user: u, role: "member", allowedTabs: (data?.allowed_tabs ?? []) as string[] };
+  } catch {
+    return { user: null, role: null, allowedTabs: [] };
+  }
+}

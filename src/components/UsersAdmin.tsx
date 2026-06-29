@@ -89,7 +89,10 @@ function UserRow({ u, sections, adminOnly, open, onToggle, onChanged }: { u: Row
         </td>
         <td className="px-4 py-3 text-xs text-slate-500">{u.role === "admin" ? "All sections" : (u.allowed_tabs.length ? `${u.allowed_tabs.length} section${u.allowed_tabs.length > 1 ? "s" : ""}` : "None")}</td>
         <td className="px-4 py-3 text-xs text-slate-500">{when(u.last_sign_in_at)}</td>
-        <td className="px-4 py-3 text-right"><button onClick={onToggle} className="text-xs text-emerald-600 hover:underline">{open ? "Close" : "Manage"}</button></td>
+        <td className="px-4 py-3 text-right whitespace-nowrap">
+          {u.role === "member" && !u.disabled && <a href={`/?preview=${encodeURIComponent(u.id)}`} className="text-xs text-slate-500 hover:underline mr-3">View as</a>}
+          <button onClick={onToggle} className="text-xs text-emerald-600 hover:underline">{open ? "Close" : "Manage"}</button>
+        </td>
       </tr>
       {open && <tr><td colSpan={5} className="px-4 pb-4 bg-slate-50/60"><EditUser u={u} sections={sections} adminOnly={adminOnly} onChanged={onChanged} /></td></tr>}
     </>

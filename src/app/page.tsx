@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getDashboardData } from "@/lib/db";
 import { getBoothFunnel } from "@/lib/booth";
-import { getAccess } from "@/lib/access";
+import { getAccess, getAccessForUser } from "@/lib/access";
 import { SyncStatus } from "@/components/SyncStatus";
 import { DashboardTabs } from "@/components/DashboardTabs";
 import { NotificationCenter } from "@/components/NotificationCenter";
@@ -10,17 +10,31 @@ import { UserMenu } from "@/components/UserMenu";
 
 export const revalidate = 0;
 
-export default async function Dashboard() {
-  const access = await getAccess();
-  if (!access.user) redirect("/login");
+export default async function Dashboard(props: { searchParams: Promise<{ preview?: string }> }) {
+  const real = await getAccess();
+  if (!real.user) redirect("/login");
+
+  // Admin "View as": render exactly what a chosen user would see. Read-only, no
+  // session change — non-admins can't preview (the param is ignored).
+  const sp = await props.searchParams;
+  const previewId = real.role === "admin" && sp.preview ? sp.preview : null;
+  const access = previewId ? await getAccessForUser(previewId) : real;
+  const previewing = previewId && access.user ? access.user.email : null;
   const isAdmin = access.role === "admin";
-  if (access.role === "member" && access.allowedTabs.length === 0) {
+
+  if (!access.user || (access.role === "member" && access.allowedTabs.length === 0)) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-md text-center">
           <p className="text-gray-700 font-medium">No access yet</p>
-          <p className="text-sm text-gray-400 mt-1">Your account ({access.user.email}) is signed in but hasn’t been granted any dashboard sections. Ask an admin to set your access.</p>
-          <UserMenu email={access.user.email} role={access.role} minimal />
+          <p className="text-sm text-gray-400 mt-1">
+            {previewing
+              ? `${previewing} has no dashboard sections granted, so they'd see this screen.`
+              : `Your account (${access.user?.email}) is signed in but hasn’t been granted any dashboard sections. Ask an admin to set your access.`}
+          </p>
+          {previewing
+            ? <a href="/" className="inline-block mt-4 text-xs font-semibold text-emerald-600 hover:underline">← Exit preview</a>
+            : <UserMenu email={access.user!.email} role={access.role!} minimal />}
         </div>
       </div>
     );
@@ -75,10 +89,19 @@ export default async function Dashboard() {
               marketingActuals={isAdmin ? marketingActuals : []}
             />
             <SyncStatus lastSync={lastSync} isAdmin={isAdmin} />
-            <UserMenu email={access.user.email} role={access.role!} />
+            <UserMenu email={real.user.email} role={real.role!} />
           </div>
         </div>
       </header>
+
+      {previewing && (
+        <div className="bg-amber-100 border-b border-amber-200 text-amber-900 text-sm">
+          <div className="max-w-screen-2xl mx-auto px-6 py-2 flex items-center justify-between">
+            <span>👁️ Viewing as <strong>{previewing}</strong>{access.role === "admin" ? " (admin — full access)" : ` — ${access.allowedTabs.length} section${access.allowedTabs.length === 1 ? "" : "s"}`}. This is read-only.</span>
+            <a href="/" className="font-semibold hover:underline whitespace-nowrap">Exit preview ✕</a>
+          </div>
+        </div>
+      )}
 
       <DashboardTabs
         role={access.role!}
