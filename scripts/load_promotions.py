@@ -11,7 +11,7 @@ Consecutive on-sale weeks with the same channel merge into one period.
 Pricing/notes entered in the dashboard are NEVER overwritten — the upsert only
 touches brand/date/channel columns. Stale sheet-sourced rows are pruned.
 """
-import os, sys, json, datetime, urllib.request
+import os, sys, json, datetime, urllib.request, urllib.parse
 import openpyxl
 
 SB_URL = os.environ["NEXT_PUBLIC_SUPABASE_URL"].rstrip("/")
@@ -102,8 +102,7 @@ def req(method, path, body=None, prefer=None):
     with urllib.request.urlopen(r) as resp:
         return resp.status, resp.read().decode()
 
-def main():
-    path = sys.argv[1] if len(sys.argv) > 1 else "/Users/melaniekingsford/Downloads/Promo Calendar.xlsx"
+def load_from_path(path):
     CUTOFF = "2026-07-01"  # FY26 — drop any promo ending before this
     periods = parse(path)
     payload = []
@@ -159,6 +158,50 @@ def main():
     for i in staled:
         req("DELETE", f"d2c_promos?id=eq.{i}", prefer="return=minimal")
     print(f"d2c: upserted {len(d2c)} D2C promos (HTTP {st3}); pruned {len(staled)} stale")
+
+def download_via_graph():
+    """Download the Promo Calendar xlsx from SharePoint via Microsoft Graph
+    (app-only client-credentials). Returns a temp file path, or None if not configured."""
+    import base64, tempfile
+    tenant = os.environ.get("MS_TENANT_ID")
+    client = os.environ.get("MS_CLIENT_ID")
+    secret = os.environ.get("MS_CLIENT_SECRET")
+    share_url = os.environ.get("MS_PROMO_SHARE_URL")
+    if not (tenant and client and secret and share_url):
+        return None
+    # 1) token
+    body = urllib.parse.urlencode({
+        "client_id": client, "client_secret": secret,
+        "scope": "https://graph.microsoft.com/.default", "grant_type": "client_credentials",
+    }).encode()
+    tok_req = urllib.request.Request(f"https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token", data=body,
+                                     headers={"Content-Type": "application/x-www-form-urlencoded"}, method="POST")
+    with urllib.request.urlopen(tok_req) as r:
+        token = json.loads(r.read().decode())["access_token"]
+    # 2) resolve share link -> driveItem content
+    enc = "u!" + base64.urlsafe_b64encode(share_url.encode()).decode().rstrip("=")
+    dl = urllib.request.Request(f"https://graph.microsoft.com/v1.0/shares/{enc}/driveItem/content",
+                                headers={"Authorization": f"Bearer {token}"})
+    with urllib.request.urlopen(dl) as r:
+        data = r.read()
+    fd, tmp = tempfile.mkstemp(suffix=".xlsx")
+    with os.fdopen(fd, "wb") as f:
+        f.write(data)
+    return tmp
+
+def main():
+    # Explicit local path wins (manual run); otherwise pull from SharePoint via Graph.
+    if len(sys.argv) > 1:
+        load_from_path(sys.argv[1]); return
+    tmp = None
+    try:
+        tmp = download_via_graph()
+    except Exception as e:
+        print(f"promo sync: Graph download failed: {e}"); return
+    if not tmp:
+        print("promo sync: MS_* env not set — skipping SharePoint pull."); return
+    print("promo sync: downloaded Promo Calendar from SharePoint")
+    load_from_path(tmp)
 
 if __name__ == "__main__":
     main()
