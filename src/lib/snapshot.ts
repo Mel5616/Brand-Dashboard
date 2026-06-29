@@ -455,7 +455,7 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
 .notes{margin-top:30px;border:1px solid var(--blue-soft);background:var(--blue-wash);padding:16px 18px;}
 .notes .h{font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:var(--navy);margin-bottom:9px;}
 .notes .ntext{font-size:12px;color:var(--ink);line-height:1.6;font-weight:500;}
-@media print{body{background:#fff;padding:0;}.page{box-shadow:none;max-width:none;padding:30px 34px;}@page{size:A4;margin:12mm;}.sec,.notes{break-inside:avoid;}.iggrid{break-inside:avoid;}}
+@media print{body{background:#fff;padding:0;}.page{box-shadow:none;max-width:none;padding:30px 34px;}@page{size:A4;margin:12mm;}.sec,.notes{break-inside:avoid;}.iggrid{break-inside:avoid;}.pagebreak{page-break-before:always;break-before:page;}}
 @media(max-width:680px){.hero{grid-template-columns:1fr;}.grid{grid-template-columns:1fr;}.seasonal{flex-direction:column;align-items:stretch;}.seasonal .copy{flex:none;}.masthead{flex-direction:column;align-items:flex-start;gap:10px;}.stamp{text-align:left;}.kpis{grid-template-columns:1fr 1fr;}.chanwrap{grid-template-columns:1fr;}.iggrid{grid-template-columns:1fr 1fr;}}
 </style></head>
 <body><div class="page">
@@ -472,7 +472,7 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
 
   ${marketingSection}
 
-  <div class="hero">
+  <div class="hero pagebreak">
     <div class="cell"><div class="lab">D2C revenue YTD</div><div class="big">${fmt(s.ytdRev)}</div><div class="note">${ytdNote}</div></div>
     <div class="cell"><div class="lab">${esc(s.monthLong)} D2C revenue</div><div class="big">${fmtFull(s.monthRev)}</div><div class="note">${s.monthOrders} orders · ${fmtFull(s.aov)} average order value</div></div>
     <div class="cell"><div class="lab">Blended paid ROAS · ${esc(s.monthLong)}</div><div class="big">${s.blendedRoas.toFixed(2)}×</div><div class="note">${s.blendedDelta != null ? `<span class="up">${s.blendedDelta >= 0 ? "+" : ""}${s.blendedDelta.toFixed(0)}%</span> on the prior month` : "blended Google and Meta"}</div></div>
