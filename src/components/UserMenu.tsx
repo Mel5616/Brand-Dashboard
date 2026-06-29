@@ -6,6 +6,9 @@ import { createClient } from "@/lib/supabase/client";
 export function UserMenu({ email, role, minimal }: { email: string; role: string; minimal?: boolean }) {
   const [open, setOpen] = useState(false);
   async function signOut() {
+    try {
+      await fetch("/api/activity", { method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true, body: JSON.stringify({ action: "logout" }) });
+    } catch { /* best-effort */ }
     await createClient().auth.signOut();
     window.location.href = "/login";
   }
@@ -27,6 +30,12 @@ export function UserMenu({ email, role, minimal }: { email: string; role: string
             <p className="text-xs font-semibold text-slate-700 truncate">{email}</p>
             <p className="text-[10px] text-gray-400 uppercase tracking-wide">{role === "admin" ? "Admin · full access" : "Team member"}</p>
           </div>
+          {role === "admin" && (
+            <>
+              <a href="/admin/users" className="block text-sm text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 mt-1">Users &amp; access</a>
+              <a href="/admin/activity" className="block text-sm text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2">Activity log</a>
+            </>
+          )}
           <button onMouseDown={signOut} className="w-full text-left text-sm text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 mt-1">Sign out</button>
         </div>
       )}

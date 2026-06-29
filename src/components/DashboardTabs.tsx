@@ -256,6 +256,14 @@ export function DashboardTabs({
   const firstTab = (visibleTabs[0]?.id ?? "brands") as TabId;
   const [active, setActive] = useState<TabId>(firstTab);
   const [reportsOpen, setReportsOpen] = useState<boolean>(() => REPORT_IDS.includes(firstTab));
+  // Activity tracking: record which tab/page the user is viewing.
+  useEffect(() => {
+    const label = TABS.find(t => t.id === active)?.label ?? active;
+    fetch("/api/activity", {
+      method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true,
+      body: JSON.stringify({ action: "view", target: active, detail: { label } }),
+    }).catch(() => { /* best-effort */ });
+  }, [active]);
   // One brand selection, shared across every tab — pick a brand once and it
   // persists as you move between Shopify / Google / Meta / Email / Report.
   const [brandFilter, setBrandFilter] = useState<number | "all">("all");

@@ -30,7 +30,8 @@ export async function getAccess(): Promise<Access> {
   // member: read role + allowed_tabs from profiles (service role; gracefully empty if absent)
   try {
     const admin = createAdminClient();
-    const { data } = await admin.from("profiles").select("role, allowed_tabs").eq("id", user.id).maybeSingle();
+    const { data } = await admin.from("profiles").select("*").eq("id", user.id).maybeSingle();
+    if (data?.disabled) return { user: u, role: "member", allowedTabs: [] }; // suspended → no sections
     if (data?.role === "admin") return { user: u, role: "admin", allowedTabs: [...ALL_TABS] };
     return { user: u, role: "member", allowedTabs: (data?.allowed_tabs ?? []) as string[] };
   } catch {

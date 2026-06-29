@@ -43,6 +43,27 @@ export async function proxy(request: NextRequest) {
     url.searchParams.set("next", path);
     return NextResponse.redirect(url);
   }
+
+  // Activity tracking: log every change (any non-GET API call). Page/tab views and
+  // logins are logged from the client via /api/activity, which we skip here.
+  const method = request.method;
+  if (user && method !== "GET" && path.startsWith("/api") && !path.startsWith("/api/activity")) {
+    const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (sbUrl && sbKey) {
+      const action = method === "POST" ? "create" : method === "DELETE" ? "delete" : method === "PATCH" || method === "PUT" ? "update" : "request";
+      const ip = (request.headers.get("x-forwarded-for") || "").split(",")[0].trim() || null;
+      await fetch(`${sbUrl}/rest/v1/activity_log`, {
+        method: "POST",
+        headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({
+          user_id: user.id, user_email: user.email, action,
+          target: path.replace(/^\/api\//, ""), method, path,
+          detail: request.nextUrl.search ? { query: request.nextUrl.search } : null, ip,
+        }),
+      }).catch(() => { /* tracking must never break a request */ });
+    }
+  }
   return response;
 }
 

@@ -5,22 +5,25 @@ import { createClient } from "@/lib/supabase/client";
 
 export default function Login() {
   const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
-  async function send() {
-    if (!email.trim()) return;
+  async function signIn() {
+    if (!email.trim() || !password) return;
     setLoading(true); setErr("");
     const supabase = createClient();
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
+    if (error) { setLoading(false); setErr(error.message); return; }
+    // Record the sign-in, then go to the requested page.
+    try {
+      await fetch("/api/activity", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "login", path: "/login" }),
+      });
+    } catch { /* tracking is best-effort */ }
     const next = new URLSearchParams(window.location.search).get("next") || "/";
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` },
-    });
-    setLoading(false);
-    if (error) setErr(error.message);
-    else setSent(true);
+    window.location.href = next;
   }
 
   return (
@@ -32,31 +35,28 @@ export default function Login() {
         </div>
         <p className="text-sm text-gray-400 mb-6">Coolkidz Australia dashboard</p>
 
-        {sent ? (
-          <div className="text-center py-4">
-            <div className="text-3xl mb-2">📩</div>
-            <p className="text-sm font-semibold text-gray-700">Check your email</p>
-            <p className="text-xs text-gray-400 mt-1">We sent a sign-in link to<br /><span className="text-gray-600">{email}</span>. Open it on this device.</p>
-            <button onClick={() => setSent(false)} className="text-[11px] text-emerald-600 hover:underline mt-4">Use a different email</button>
-          </div>
-        ) : (
-          <>
-            <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Work email</label>
-            <input
-              type="email" value={email} autoFocus
-              onChange={e => setEmail(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter") send(); }}
-              placeholder="you@coolkidz.com.au"
-              className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-300"
-            />
-            {err && <p className="text-[12px] text-rose-500 mt-2">{err}</p>}
-            <button onClick={send} disabled={loading || !email.trim()}
-              className="mt-4 w-full text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 rounded-lg py-2.5">
-              {loading ? "Sending…" : "Email me a sign-in link"}
-            </button>
-            <p className="text-[11px] text-gray-300 text-center mt-4">No password needed — we email you a secure link.</p>
-          </>
-        )}
+        <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Work email</label>
+        <input
+          type="email" value={email} autoFocus autoComplete="username"
+          onChange={e => setEmail(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") document.getElementById("pw")?.focus(); }}
+          placeholder="you@coolkidz.com.au"
+          className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+        />
+        <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide block mt-3">Password</label>
+        <input
+          id="pw" type="password" value={password} autoComplete="current-password"
+          onChange={e => setPassword(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") signIn(); }}
+          placeholder="••••••••"
+          className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+        />
+        {err && <p className="text-[12px] text-rose-500 mt-2">{err}</p>}
+        <button onClick={signIn} disabled={loading || !email.trim() || !password}
+          className="mt-4 w-full text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 rounded-lg py-2.5">
+          {loading ? "Signing in…" : "Sign in"}
+        </button>
+        <p className="text-[11px] text-gray-300 text-center mt-4">Forgot your password? Ask an admin to reset it.</p>
       </div>
     </div>
   );
