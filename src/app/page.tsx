@@ -60,8 +60,7 @@ export default async function Dashboard() {
           <div className="flex items-center gap-3.5">
             <img src="/logos/Coolkidz Logo.png" alt="Coolkidz Australia" className="h-6 w-auto" />
             <div className="hidden sm:block pl-3.5 border-l border-gray-200">
-              <h1 className="font-semibold text-gray-800 text-sm leading-tight">Brand Dashboard</h1>
-              <p className="text-[11px] text-gray-400 leading-tight">{liveBrands.length} active brands</p>
+              <h1 className="font-semibold text-gray-800 text-sm leading-tight">Coolkidz Australia Marketing Dashboard</h1>
             </div>
           </div>
           <div className="flex items-center gap-2">
