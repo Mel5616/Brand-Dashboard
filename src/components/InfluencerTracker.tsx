@@ -203,7 +203,7 @@ export function InfluencerTracker() {
           <h2 className="font-semibold text-gray-800">Influencer Gifting</h2>
           <p className="text-xs text-gray-400 mt-0.5">{INFLUENCER_FY_LABEL} · cost terms · ex-GST</p>
         </div>
-        <a href="/log-gift" target="_blank" className="text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2">Open team gift form ↗</a>
+        <a href="/log-gift" target="_blank" className="text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2">+ Add Influencer ↗</a>
       </div>
 
       {/* View toggle: spend report vs influencer roster */}
