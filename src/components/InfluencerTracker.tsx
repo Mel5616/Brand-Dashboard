@@ -85,7 +85,7 @@ export function InfluencerTracker() {
       const valid = rows.filter(r => r.style_code);
       if (valid.length === 0) { setProdMsg("No rows with a style_code — check the headers."); setProdBusy(false); return; }
       const res = await fetch("/api/influencer/products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows: valid, replace: true }) }).then(r => r.json()).catch(() => ({ ok: false }));
-      setProdMsg(res.ok ? `✓ Loaded ${res.count} products (replaced the catalogue).` : (res.error || "Upload failed."));
+      setProdMsg(res.ok ? `✓ Loaded ${res.count} products${res.skipped ? ` (skipped ${res.skipped} blank/zz)` : ""} — catalogue replaced.` : (res.error || "Upload failed."));
     } catch { setProdMsg("Couldn't read the file."); }
     setProdBusy(false);
   }

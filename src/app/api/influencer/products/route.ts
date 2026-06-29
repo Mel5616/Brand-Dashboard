@@ -33,16 +33,23 @@ export async function POST(req: Request) {
   if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
-  const rows = (Array.isArray(b.rows) ? b.rows : []).map((r: any) => {
+  // Dedupe by style_code (last wins), skip blanks and any "zz" placeholder codes,
+  // and default the (NOT NULL) product name to the style code if missing.
+  const byCode = new Map<string, any>();
+  let skipped = 0;
+  for (const r of (Array.isArray(b.rows) ? b.rows : [])) {
+    const code = String(r.style_code ?? r.sku ?? "").trim();
+    if (!code || /zz/i.test(code)) { skipped++; continue; }
     const rrp = toNum(r.rrp), cost = toNum(r.cost_price ?? r.cost);
-    return {
-      style_code: String(r.style_code ?? r.sku ?? "").trim(),
-      product_name: (r.product_name ?? r.product ?? r.name ?? null) || null,
+    byCode.set(code, {
+      style_code: code,
+      product_name: (r.product_name ?? r.product ?? r.name ?? "").toString().trim() || code,
       brand: (r.brand ?? null) || null,
       cost_price: cost, rrp,
       cost_ratio: rrp && cost != null && rrp > 0 ? Number((cost / rrp).toFixed(4)) : null,
-    };
-  }).filter((r: any) => r.style_code);
+    });
+  }
+  const rows = [...byCode.values()];
   if (rows.length === 0) return NextResponse.json({ ok: false, error: "No valid rows (need a style_code)." }, { status: 400 });
 
   // Start fresh when requested, so each upload re-bases the catalogue.
@@ -51,9 +58,13 @@ export async function POST(req: Request) {
   }
   let inserted = 0;
   for (let i = 0; i < rows.length; i += 200) {
-    const res = await fetch(`${sbUrl}/rest/v1/influencer_products?on_conflict=style_code`, { method: "POST", headers: hdr({ Prefer: "resolution=merge-duplicates,return=minimal" }), body: JSON.stringify(rows.slice(i, i + 200)) });
-    if (!res.ok) { const t = await res.text(); return NextResponse.json({ ok: false, needsSetup: missing(res.status, t), error: "Upload failed." }, { status: 500 }); }
-    inserted += rows.slice(i, i + 200).length;
+    const batch = rows.slice(i, i + 200);
+    const res = await fetch(`${sbUrl}/rest/v1/influencer_products?on_conflict=style_code`, { method: "POST", headers: hdr({ Prefer: "resolution=merge-duplicates,return=minimal" }), body: JSON.stringify(batch) });
+    if (!res.ok) {
+      const t = await res.text();
+      return NextResponse.json({ ok: false, needsSetup: missing(res.status, t), error: (t || "Upload failed").slice(0, 300) }, { status: 500 });
+    }
+    inserted += batch.length;
   }
-  return NextResponse.json({ ok: true, count: inserted });
+  return NextResponse.json({ ok: true, count: inserted, skipped });
 }
