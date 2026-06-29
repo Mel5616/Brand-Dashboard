@@ -104,9 +104,12 @@ def req(method, path, body=None, prefer=None):
 
 def main():
     path = sys.argv[1] if len(sys.argv) > 1 else "/Users/melaniekingsford/Downloads/Promo Calendar.xlsx"
+    CUTOFF = "2026-07-01"  # FY26 — drop any promo ending before this
     periods = parse(path)
     payload = []
     for brand, s, e, ch, ti in periods:
+        if e.isoformat() < CUTOFF:
+            continue
         payload.append({
             "brand_id": brand_id_for(brand), "brand": brand,
             "period_start": s.isoformat(), "period_end": e.isoformat(),
@@ -122,12 +125,40 @@ def main():
         req("DELETE", f"promotions?id=eq.{i}", prefer="return=minimal")
     print(f"calendar: upserted {len(payload)} promo periods (HTTP {st}); pruned {len(stale)} stale")
 
-    # promo_lines have no manual edits → replace all sheet rows
-    lines = parse_lines(path)
+    # promo_lines have no manual edits → replace all sheet rows (FY26+ only)
+    lines = [l for l in parse_lines(path) if l.get("end_date") and l["end_date"] >= CUTOFF]
     req("DELETE", "promo_lines?source=eq.sheet", prefer="return=minimal")
     for i in range(0, len(lines), 200):
         req("POST", "promo_lines", lines[i:i+200], "return=minimal")
-    print(f"lines: loaded {len(lines)} product-promo lines")
+    print(f"lines: loaded {len(lines)} product-promo lines (FY26+)")
+
+    # D2C plan — dedupe lines to one row per brand+product+window; keep status/note.
+    groups = {}
+    for l in lines:
+        key = (l["brand"], l.get("sku") or l.get("product") or "", l["start_date"], l["end_date"])
+        if None in (l["start_date"], l["end_date"]):
+            continue
+        g = groups.get(key)
+        if g is None or (l.get("promo_price") is not None and (g["promo_price"] is None or l["promo_price"] < g["promo_price"])):
+            best = {"rrp": l.get("rrp"), "promo_price": l.get("promo_price"), "discount_rrp": l.get("discount_rrp"), "tier": l.get("tier")}
+        else:
+            best = {k: g[k] for k in ("rrp", "promo_price", "discount_rrp", "tier")}
+        retailers = sorted(set((g["_ret"] if g else []) + ([l["customer"]] if l.get("customer") else [])))
+        groups[key] = {
+            "brand": l["brand"], "brand_id": l.get("brand_id"), "sku": key[1], "product": l.get("product"),
+            "period_start": l["start_date"], "period_end": l["end_date"],
+            **best, "retailers": ", ".join(retailers), "_ret": retailers,
+            "source": "sheet", "updated_at": datetime.datetime.utcnow().isoformat(),
+        }
+    d2c = [{k: v for k, v in g.items() if k != "_ret"} for g in groups.values()]
+    st3, _ = req("POST", "d2c_promos?on_conflict=brand,sku,period_start,period_end", d2c,
+                 "resolution=merge-duplicates,return=minimal")
+    keepd = {(g["brand"], g["sku"], g["period_start"], g["period_end"]) for g in d2c}
+    _, ex = req("GET", "d2c_promos?select=id,brand,sku,period_start,period_end&source=eq.sheet")
+    staled = [r["id"] for r in json.loads(ex) if (r["brand"], r["sku"], r["period_start"], r["period_end"]) not in keepd]
+    for i in staled:
+        req("DELETE", f"d2c_promos?id=eq.{i}", prefer="return=minimal")
+    print(f"d2c: upserted {len(d2c)} D2C promos (HTTP {st3}); pruned {len(staled)} stale")
 
 if __name__ == "__main__":
     main()

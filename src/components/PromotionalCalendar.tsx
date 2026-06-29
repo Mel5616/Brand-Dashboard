@@ -12,6 +12,12 @@ type Line = {
   tier: number | null; start_date: string | null; end_date: string | null; days: number | null;
   rrp: number | null; current_price: number | null; promo_price: number | null; discount_rrp: number | null;
 };
+type D2c = {
+  id: number; brand: string; brand_id: number | null; sku: string | null; product: string | null;
+  period_start: string; period_end: string; tier: number | null; rrp: number | null;
+  promo_price: number | null; discount_rrp: number | null; retailers: string | null;
+  status: string; note: string | null;
+};
 type Brand = { id: number; name: string };
 
 const TIER_COLOR: Record<number, string> = { 1: "#0F9ED5", 2: "#4EA72E" };
@@ -26,24 +32,28 @@ const norm = (s: string | null) => (s || "").toLowerCase().replace(/[^a-z0-9]/g,
 export function PromotionalCalendar({ canEdit, brands }: { canEdit: boolean; brands: Brand[] }) {
   const [promos, setPromos] = useState<Promo[]>([]);
   const [lines, setLines] = useState<Line[]>([]);
+  const [d2c, setD2c] = useState<D2c[]>([]);
   const [loading, setLoading] = useState(true);
   const [needsSetup, setNeedsSetup] = useState(false);
-  const [view, setView] = useState<"calendar" | "products">("calendar");
+  const [view, setView] = useState<"d2c" | "calendar" | "products">("d2c");
   const [brandF, setBrandF] = useState("");
   const [tierF, setTierF] = useState("");
   const [retailerF, setRetailerF] = useState("");
+  const [statusF, setStatusF] = useState("");
   const [open, setOpen] = useState<number | null>(null);
 
   async function load() {
     setLoading(true);
-    const [a, b] = await Promise.all([
+    const [a, b, c] = await Promise.all([
       fetch("/api/promotions").then(x => x.json()).catch(() => ({ ok: false })),
       fetch("/api/promo-lines").then(x => x.json()).catch(() => ({ ok: false })),
+      fetch("/api/d2c").then(x => x.json()).catch(() => ({ ok: false })),
     ]);
     setLoading(false);
     if (!a.ok && a.needsSetup) { setNeedsSetup(true); return; }
     setPromos(a.items || []);
     setLines(b.items || []);
+    setD2c(c.items || []);
   }
   useEffect(() => { load(); }, []);
 
@@ -94,8 +104,9 @@ export function PromotionalCalendar({ canEdit, brands }: { canEdit: boolean; bra
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-2">
         <div className="inline-flex rounded-lg border border-gray-200 overflow-hidden text-sm">
-          <button onClick={() => setView("calendar")} className={`px-3 py-1.5 ${view === "calendar" ? "bg-emerald-500 text-white" : "text-slate-600"}`}>Calendar</button>
-          <button onClick={() => setView("products")} className={`px-3 py-1.5 ${view === "products" ? "bg-emerald-500 text-white" : "text-slate-600"}`}>By product</button>
+          <button onClick={() => setView("d2c")} className={`px-3 py-1.5 ${view === "d2c" ? "bg-emerald-500 text-white" : "text-slate-600"}`}>D2C plan</button>
+          <button onClick={() => setView("calendar")} className={`px-3 py-1.5 border-l border-gray-200 ${view === "calendar" ? "bg-emerald-500 text-white" : "text-slate-600"}`}>Calendar</button>
+          <button onClick={() => setView("products")} className={`px-3 py-1.5 border-l border-gray-200 ${view === "products" ? "bg-emerald-500 text-white" : "text-slate-600"}`}>By product</button>
         </div>
         <select value={brandF} onChange={e => setBrandF(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white">
           <option value="">All brands</option>{promoBrands.map(b => <option key={b} value={b}>{b}</option>)}
@@ -108,10 +119,17 @@ export function PromotionalCalendar({ canEdit, brands }: { canEdit: boolean; bra
             <option value="">All retailers</option>{retailers.sort().map(r => <option key={r} value={r}>{r}</option>)}
           </select>
         )}
+        {view === "d2c" && (
+          <select value={statusF} onChange={e => setStatusF(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white">
+            <option value="">All statuses</option><option value="todo">To do</option><option value="planned">Planned</option><option value="live">Live</option><option value="done">Done</option><option value="skip">Skip</option>
+          </select>
+        )}
         <div className="ml-auto"><Legend /></div>
       </div>
 
-      {view === "calendar" ? (
+      {view === "d2c" ? (
+        <D2cPlan d2c={d2c} canEdit={canEdit} brandF={brandF} tierF={tierF} statusF={statusF} onChanged={load} />
+      ) : view === "calendar" ? (
         <>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 overflow-x-auto">
             <div className="min-w-[760px]">
@@ -210,6 +228,71 @@ function PromoRow({ p, lines, open, onToggle }: { p: Promo; lines: Line[]; open:
         </td></tr>
       )}
     </>
+  );
+}
+
+const STATUS_META: Record<string, { label: string; cls: string }> = {
+  todo: { label: "To do", cls: "bg-slate-100 text-slate-500" },
+  planned: { label: "Planned", cls: "bg-sky-100 text-sky-700" },
+  live: { label: "Live", cls: "bg-emerald-100 text-emerald-700" },
+  done: { label: "Done", cls: "bg-violet-100 text-violet-700" },
+  skip: { label: "Skip", cls: "bg-rose-50 text-rose-400" },
+};
+
+function D2cPlan({ d2c, canEdit, brandF, tierF, statusF, onChanged }: { d2c: D2c[]; canEdit: boolean; brandF: string; tierF: string; statusF: string; onChanged: () => void }) {
+  const rows = d2c.filter(r => (!brandF || r.brand === brandF) && (!tierF || String(r.tier) === tierF) && (!statusF || r.status === statusF));
+  const counts = d2c.reduce((m, r) => { m[r.status] = (m[r.status] || 0) + 1; return m; }, {} as Record<string, number>);
+
+  async function setStatus(id: number, status: string) {
+    await fetch("/api/d2c", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status }) }).catch(() => {});
+    onChanged();
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-2 text-xs">
+        {["todo", "planned", "live", "done", "skip"].map(s => (
+          <span key={s} className={`px-2.5 py-1 rounded-full font-semibold ${STATUS_META[s].cls}`}>{STATUS_META[s].label}: {counts[s] || 0}</span>
+        ))}
+      </div>
+      <p className="text-xs text-slate-400">Each row is a brand + product on promo at a retailer. Run the same on D2C for the same dates and mark its status.</p>
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">
+        <table className="w-full text-sm min-w-[820px]">
+          <thead className="bg-slate-50 text-slate-400 text-xs uppercase tracking-wide">
+            <tr>
+              <th className="text-left font-semibold px-3 py-3">Brand</th><th className="text-left font-semibold px-3 py-3">Product</th>
+              <th className="text-left font-semibold px-3 py-3">Tier</th><th className="text-left font-semibold px-3 py-3">Dates</th>
+              <th className="text-right font-semibold px-3 py-3">RRP</th><th className="text-right font-semibold px-3 py-3">Promo</th>
+              <th className="text-right font-semibold px-3 py-3">Disc.</th><th className="text-left font-semibold px-3 py-3">Retailers</th>
+              <th className="text-left font-semibold px-3 py-3">D2C status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-50">
+            {rows.map(r => (
+              <tr key={r.id} className={r.status === "skip" ? "opacity-50" : ""}>
+                <td className="px-3 py-2 font-medium text-slate-700">{r.brand}</td>
+                <td className="px-3 py-2 text-slate-700">{r.product || r.sku || "—"}</td>
+                <td className="px-3 py-2"><TierBadge t={r.tier} /></td>
+                <td className="px-3 py-2 text-slate-600 whitespace-nowrap">{fmt(r.period_start)} – {fmt(r.period_end)}</td>
+                <td className="px-3 py-2 text-right text-slate-400 line-through">{money(r.rrp)}</td>
+                <td className="px-3 py-2 text-right font-semibold text-slate-800">{money(r.promo_price)}</td>
+                <td className="px-3 py-2 text-right text-rose-500 font-medium">{pct(r.discount_rrp)}</td>
+                <td className="px-3 py-2 text-slate-400 text-xs">{r.retailers || "—"}</td>
+                <td className="px-3 py-2">
+                  {canEdit ? (
+                    <select value={r.status} onChange={e => setStatus(r.id, e.target.value)}
+                      className={`text-xs font-semibold rounded-full px-2.5 py-1 border-0 cursor-pointer ${STATUS_META[r.status]?.cls || ""}`}>
+                      {["todo", "planned", "live", "done", "skip"].map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
+                    </select>
+                  ) : <span className={`text-xs font-semibold rounded-full px-2.5 py-1 ${STATUS_META[r.status]?.cls || ""}`}>{STATUS_META[r.status]?.label}</span>}
+                </td>
+              </tr>
+            ))}
+            {rows.length === 0 && <tr><td colSpan={9} className="px-4 py-8 text-center text-slate-300">No D2C promos.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
 
