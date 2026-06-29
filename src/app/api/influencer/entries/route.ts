@@ -84,6 +84,7 @@ export async function POST(req: Request) {
     if (b.name) inf.name = b.name;
     if (b.platform) inf.platform = b.platform;
     if (row.followers != null) inf.followers = row.followers;
+    if (b.profile_url) inf.profile_url = String(b.profile_url).slice(0, 500);
     try { await fetch(`${sbUrl}/rest/v1/influencers?on_conflict=handle`, { method: "POST", headers: headers({ Prefer: "resolution=merge-duplicates,return=minimal" }), body: JSON.stringify(inf) }); } catch { /* roster table optional */ }
   }
   return NextResponse.json({ ok: true }); // no cost returned to the team form

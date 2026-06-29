@@ -99,7 +99,7 @@ export function TeamGiftingPanel() {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={load} className="text-xs font-medium text-slate-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3 py-2">↻ Refresh</button>
-          <a href="/log-gift" target="_blank" className="text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2">Log a gift ↗</a>
+          <a href="/log-gift" target="_blank" className="text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2">+ Add influencer ↗</a>
         </div>
       </div>
 

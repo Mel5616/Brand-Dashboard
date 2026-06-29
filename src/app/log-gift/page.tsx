@@ -74,7 +74,7 @@ export default function LogGift() {
         // Keep the influencer + month; clear just the product (and the cash fee, so it
         // isn't counted again for the same collaboration) so the next product is quick.
         setBatch(b => b + 1); setPicked(null); setSearch(""); setOneOff(false);
-        setF((p: any) => ({ month_key: p.month_key, name: p.name, handle: p.handle, platform: p.platform, followers: p.followers, campaign: p.campaign }));
+        setF((p: any) => ({ month_key: p.month_key, name: p.name, handle: p.handle, platform: p.platform, followers: p.followers, profile_url: p.profile_url, campaign: p.campaign }));
       } else setDone(true);
     }
     else if (res?.needsSetup) setNeedsSetup(true);
@@ -97,7 +97,7 @@ export default function LogGift() {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-md text-center">
         <div className="text-4xl mb-2">✅</div>
-        <p className="text-lg font-semibold text-gray-800">Gift logged</p>
+        <p className="text-lg font-semibold text-gray-800">Influencer added</p>
         <p className="text-sm text-gray-400 mt-1">Thanks! Your entry has been recorded.</p>
         <button onClick={() => { setDone(false); setBatch(0); setPicked(null); setSearch(""); setF({ month_key: f.month_key, platform: "Instagram" }); }}
           className="mt-5 text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2.5">Log another</button>
@@ -108,8 +108,8 @@ export default function LogGift() {
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4">
       <div className="max-w-md mx-auto">
-        <h1 className="text-xl font-bold text-gray-800">Log an influencer gift</h1>
-        <p className="text-sm text-gray-400 mt-0.5 mb-5">Pick the product and the RRP — that’s it.</p>
+        <h1 className="text-xl font-bold text-gray-800">Add an influencer</h1>
+        <p className="text-sm text-gray-400 mt-0.5 mb-5">Add the influencer, the product gifted and its RRP.</p>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-4">
           {/* Product picker */}
@@ -206,6 +206,11 @@ export default function LogGift() {
           </div>
 
           <div>
+            <label className={label}>Instagram / profile URL <span className="text-gray-300 font-normal">(optional)</span></label>
+            <input value={f.profile_url ?? ""} onChange={e => set("profile_url", e.target.value)} placeholder="https://instagram.com/handle" className={input} />
+          </div>
+
+          <div>
             <label className={label}>Campaign / note <span className="text-gray-300 font-normal">(optional)</span></label>
             <input value={f.campaign ?? ""} onChange={e => set("campaign", e.target.value)} placeholder="e.g. EOFY launch" className={input} />
           </div>
@@ -224,10 +229,10 @@ export default function LogGift() {
             </button>
             <button onClick={() => submit(false)} disabled={!valid || saving}
               className="flex-1 text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 rounded-lg py-3">
-              {saving ? "Saving…" : batch > 0 ? "Log & finish" : "Log gift"}
+              {saving ? "Saving…" : batch > 0 ? "Add & finish" : "Add influencer"}
             </button>
           </div>
-          <p className="text-[11px] text-gray-300 text-center">Multiple products for one influencer? Use “Add another product”. Gifting value is tracked for budgeting automatically.</p>
+          <p className="text-[11px] text-gray-300 text-center">Multiple products for one influencer? Use “Add another product”. Gift value is tracked for budgeting automatically.</p>
         </div>
       </div>
     </div>
