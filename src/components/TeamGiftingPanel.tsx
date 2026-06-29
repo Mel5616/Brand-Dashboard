@@ -282,6 +282,12 @@ function PostEditor({ g, onClose, onSaved }: { g: Gift; onClose: () => void; onS
       body: JSON.stringify({ id: g.id, handle: g.handle, profile_url: profileUrl, content_url: url, content_type: type, likes, reach, posted_at: posted || null, status }) }).catch(() => {});
     setBusy(false); onSaved();
   }
+  async function remove() {
+    if (!window.confirm(`Remove this gift for ${g.handle || "this influencer"}? This deletes the entry.`)) return;
+    setBusy(true);
+    await fetch(`/api/influencer/post?id=${g.id}`, { method: "DELETE" }).catch(() => {});
+    setBusy(false); onSaved();
+  }
   const inp = "w-full text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-400";
   return (
     <div className="bg-white rounded-2xl border border-emerald-200 shadow-sm p-4">
@@ -310,9 +316,12 @@ function PostEditor({ g, onClose, onSaved }: { g: Gift; onClose: () => void; onS
           <input type="date" value={posted} onChange={e => setPosted(e.target.value)} className={inp + " col-span-2"} />
         </div>
       </div>
-      <div className="flex justify-end gap-2 mt-3">
-        <button onClick={onClose} className="text-sm text-slate-500 px-3 py-1.5">Cancel</button>
-        <button onClick={save} disabled={busy} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 rounded-lg px-4 py-1.5">{busy ? "Saving…" : "Save"}</button>
+      <div className="flex items-center mt-3">
+        <button onClick={remove} disabled={busy} className="text-xs text-rose-500 hover:text-rose-700 disabled:opacity-40">Delete</button>
+        <div className="ml-auto flex gap-2">
+          <button onClick={onClose} className="text-sm text-slate-500 px-3 py-1.5">Cancel</button>
+          <button onClick={save} disabled={busy} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 rounded-lg px-4 py-1.5">{busy ? "Saving…" : "Save"}</button>
+        </div>
       </div>
     </div>
   );

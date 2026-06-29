@@ -9,6 +9,18 @@ export const revalidate = 0;
 const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+export async function DELETE(req: Request) {
+  if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
+  if (!(await getAccess()).user) return NextResponse.json({ ok: false, error: "auth" }, { status: 401 });
+  const id = new URL(req.url).searchParams.get("id");
+  if (!id) return NextResponse.json({ ok: false }, { status: 400 });
+  const res = await fetch(`${sbUrl}/rest/v1/influencer_entries?id=eq.${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}`, Prefer: "return=minimal" },
+  });
+  return NextResponse.json({ ok: res.ok }, { status: res.ok ? 200 : 500 });
+}
+
 export async function PATCH(req: Request) {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   if (!(await getAccess()).user) return NextResponse.json({ ok: false, error: "auth" }, { status: 401 });
