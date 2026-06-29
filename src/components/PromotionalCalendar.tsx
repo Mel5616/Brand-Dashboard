@@ -243,6 +243,19 @@ function D2cPlan({ d2c, canEdit, brandF, tierF, statusF, onChanged }: { d2c: D2c
   const rows = d2c.filter(r => (!brandF || r.brand === brandF) && (!tierF || String(r.tier) === tierF) && (!statusF || r.status === statusF));
   const counts = d2c.reduce((m, r) => { m[r.status] = (m[r.status] || 0) + 1; return m; }, {} as Record<string, number>);
 
+  // Group by month (of the sale start), then by brand inside each month.
+  const monthsOrder: string[] = [];
+  const months = new Map<string, D2c[]>();
+  for (const r of [...rows].sort((a, b) => a.period_start.localeCompare(b.period_start) || a.brand.localeCompare(b.brand))) {
+    const key = r.period_start.slice(0, 7);
+    if (!months.has(key)) { months.set(key, []); monthsOrder.push(key); }
+    months.get(key)!.push(r);
+  }
+  const monthLabel = (k: string) => new Date(k + "-01T00:00:00").toLocaleDateString("en-AU", { month: "long", year: "numeric" });
+
+  const [openMonths, setOpenMonths] = useState<Set<string>>(() => new Set(monthsOrder.slice(0, 1)));
+  const toggle = (k: string) => setOpenMonths(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
+
   async function setStatus(id: number, status: string) {
     await fetch("/api/d2c", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status }) }).catch(() => {});
     onChanged();
@@ -250,49 +263,80 @@ function D2cPlan({ d2c, canEdit, brandF, tierF, statusF, onChanged }: { d2c: D2c
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-2 text-xs">
+      <div className="flex flex-wrap items-center gap-2 text-xs">
         {["todo", "planned", "live", "done", "skip"].map(s => (
           <span key={s} className={`px-2.5 py-1 rounded-full font-semibold ${STATUS_META[s].cls}`}>{STATUS_META[s].label}: {counts[s] || 0}</span>
         ))}
+        <div className="ml-auto flex gap-2">
+          <button onClick={() => setOpenMonths(new Set(monthsOrder))} className="text-emerald-600 hover:underline">Expand all</button>
+          <button onClick={() => setOpenMonths(new Set())} className="text-slate-400 hover:underline">Collapse all</button>
+        </div>
       </div>
-      <p className="text-xs text-slate-400">Each row is a brand + product on promo at a retailer. Run the same on D2C for the same dates and mark its status.</p>
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">
-        <table className="w-full text-sm min-w-[820px]">
-          <thead className="bg-slate-50 text-slate-400 text-xs uppercase tracking-wide">
-            <tr>
-              <th className="text-left font-semibold px-3 py-3">Brand</th><th className="text-left font-semibold px-3 py-3">Product</th>
-              <th className="text-left font-semibold px-3 py-3">Tier</th><th className="text-left font-semibold px-3 py-3">Dates</th>
-              <th className="text-right font-semibold px-3 py-3">RRP</th><th className="text-right font-semibold px-3 py-3">Promo</th>
-              <th className="text-right font-semibold px-3 py-3">Disc.</th><th className="text-left font-semibold px-3 py-3">Retailers</th>
-              <th className="text-left font-semibold px-3 py-3">D2C status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {rows.map(r => (
-              <tr key={r.id} className={r.status === "skip" ? "opacity-50" : ""}>
-                <td className="px-3 py-2 font-medium text-slate-700">{r.brand}</td>
-                <td className="px-3 py-2 text-slate-700">{r.product || r.sku || "—"}</td>
-                <td className="px-3 py-2"><TierBadge t={r.tier} /></td>
-                <td className="px-3 py-2 text-slate-600 whitespace-nowrap">{fmt(r.period_start)} – {fmt(r.period_end)}</td>
-                <td className="px-3 py-2 text-right text-slate-400 line-through">{money(r.rrp)}</td>
-                <td className="px-3 py-2 text-right font-semibold text-slate-800">{money(r.promo_price)}</td>
-                <td className="px-3 py-2 text-right text-rose-500 font-medium">{pct(r.discount_rrp)}</td>
-                <td className="px-3 py-2 text-slate-400 text-xs">{r.retailers || "—"}</td>
-                <td className="px-3 py-2">
-                  {canEdit ? (
-                    <select value={r.status} onChange={e => setStatus(r.id, e.target.value)}
-                      className={`text-xs font-semibold rounded-full px-2.5 py-1 border-0 cursor-pointer ${STATUS_META[r.status]?.cls || ""}`}>
-                      {["todo", "planned", "live", "done", "skip"].map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
-                    </select>
-                  ) : <span className={`text-xs font-semibold rounded-full px-2.5 py-1 ${STATUS_META[r.status]?.cls || ""}`}>{STATUS_META[r.status]?.label}</span>}
-                </td>
-              </tr>
-            ))}
-            {rows.length === 0 && <tr><td colSpan={9} className="px-4 py-8 text-center text-slate-300">No D2C promos.</td></tr>}
-          </tbody>
-        </table>
-      </div>
+      <p className="text-xs text-slate-400">Promos by month — open a month to see every sale, grouped by brand. Run the same on D2C for the same dates and set each status.</p>
+
+      {monthsOrder.length === 0 && <div className="bg-white rounded-2xl border border-gray-100 shadow-sm py-8 text-center text-slate-300 text-sm">No D2C promos.</div>}
+
+      {monthsOrder.map(mk => {
+        const list = months.get(mk)!;
+        const isOpen = openMonths.has(mk);
+        const brandsIn = Array.from(new Set(list.map(r => r.brand)));
+        return (
+          <div key={mk} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <button onClick={() => toggle(mk)} className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50">
+              <span className="flex items-center gap-2">
+                <svg className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? "rotate-90" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                <span className="font-semibold text-slate-700">{monthLabel(mk)}</span>
+              </span>
+              <span className="text-xs text-slate-400">{list.length} sale{list.length === 1 ? "" : "s"} · {brandsIn.length} brand{brandsIn.length === 1 ? "" : "s"}</span>
+            </button>
+            {isOpen && (
+              <table className="w-full text-sm border-t border-gray-100">
+                <thead className="bg-slate-50/60 text-slate-400 text-[11px] uppercase tracking-wide">
+                  <tr>
+                    <th className="text-left font-semibold px-3 py-2">Product</th><th className="text-left font-semibold px-3 py-2">Tier</th>
+                    <th className="text-left font-semibold px-3 py-2">Dates</th><th className="text-right font-semibold px-3 py-2">RRP</th>
+                    <th className="text-right font-semibold px-3 py-2">Promo</th><th className="text-right font-semibold px-3 py-2">Disc.</th>
+                    <th className="text-left font-semibold px-3 py-2">Retailers</th><th className="text-left font-semibold px-3 py-2">D2C status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {brandsIn.map(brand => (
+                    <BrandGroup key={brand} brand={brand} rows={list.filter(r => r.brand === brand)} canEdit={canEdit} setStatus={setStatus} />
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        );
+      })}
     </div>
+  );
+}
+
+function BrandGroup({ brand, rows, canEdit, setStatus }: { brand: string; rows: D2c[]; canEdit: boolean; setStatus: (id: number, s: string) => void }) {
+  return (
+    <>
+      <tr className="bg-slate-50/40"><td colSpan={8} className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-500">{brand}</td></tr>
+      {rows.map(r => (
+        <tr key={r.id} className={`border-t border-gray-50 ${r.status === "skip" ? "opacity-50" : ""}`}>
+          <td className="px-3 py-2 text-slate-700">{r.product || r.sku || "—"}</td>
+          <td className="px-3 py-2"><TierBadge t={r.tier} /></td>
+          <td className="px-3 py-2 text-slate-600 whitespace-nowrap">{fmt(r.period_start)} – {fmt(r.period_end)}</td>
+          <td className="px-3 py-2 text-right text-slate-400 line-through">{money(r.rrp)}</td>
+          <td className="px-3 py-2 text-right font-semibold text-slate-800">{money(r.promo_price)}</td>
+          <td className="px-3 py-2 text-right text-rose-500 font-medium">{pct(r.discount_rrp)}</td>
+          <td className="px-3 py-2 text-slate-400 text-xs">{r.retailers || "—"}</td>
+          <td className="px-3 py-2">
+            {canEdit ? (
+              <select value={r.status} onChange={e => setStatus(r.id, e.target.value)}
+                className={`text-xs font-semibold rounded-full px-2.5 py-1 border-0 cursor-pointer ${STATUS_META[r.status]?.cls || ""}`}>
+                {["todo", "planned", "live", "done", "skip"].map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
+              </select>
+            ) : <span className={`text-xs font-semibold rounded-full px-2.5 py-1 ${STATUS_META[r.status]?.cls || ""}`}>{STATUS_META[r.status]?.label}</span>}
+          </td>
+        </tr>
+      ))}
+    </>
   );
 }
 
