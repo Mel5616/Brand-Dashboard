@@ -25,7 +25,7 @@ import { TradeshowAccordion } from "./TradeshowAccordion";
 import { BrandCard, type BrandPeriod } from "./BrandCard";
 import { Leaderboard } from "./Leaderboard";
 import { BrandPage } from "./BrandPage";
-import { MarketingBudgetTab } from "./MarketingBudgetTab";
+import { MarketingBudgetMonthly } from "./MarketingBudgetMonthly";
 import { MarketingCalendar } from "./MarketingCalendar";
 import { BriefingEngine } from "./BriefingEngine";
 import { ShopifyBrandSales } from "./ShopifyBrandSales";
@@ -1533,20 +1533,13 @@ export function DashboardTabs({
 
           {/* ── Budget ── */}
           {active === "budget" && (
-            <MarketingBudgetTab
+            <MarketingBudgetMonthly
               brands={brands}
-              marketingBudgets={marketingBudgets}
-              marketingActuals={marketingActuals}
-              googleAds={googleAds}
-              metaAds={metaAds}
-              monthly={monthly}
-              targets={targets}
-              fyLabel={fyLabel}
-              fy={fy}
-              canEdit={role === "admin"}
               monthKeys={monthKeys}
               monthLabels={monthLabels}
               latest={LATEST}
+              fyLabel={fyLabel}
+              canEdit={role === "admin"}
             />
           )}
 
