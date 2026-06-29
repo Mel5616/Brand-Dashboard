@@ -20,7 +20,7 @@ export async function GET() {
 
   const [bRes, eRes] = await Promise.all([
     sb("influencer_budgets?select=brand,month_key,budget"),
-    sb("influencer_entries?select=brand,month_key,total_cost,rrp,handle,platform,product_name,status&order=month_key.desc"),
+    sb("influencer_entries?select=id,brand,month_key,total_cost,rrp,handle,platform,product_name,status,content_url,likes,reach,posted_at,content_type&order=month_key.desc"),
   ]);
   const bText = await bRes.text(), eText = await eRes.text();
   if (!bRes.ok || !eRes.ok) return NextResponse.json({ ok: false, needsSetup: missing(bRes.status, bText) || missing(eRes.status, eText) });
@@ -44,10 +44,21 @@ export async function GET() {
   const totSpend = entries.reduce((s, e) => s + (Number(e.total_cost) || 0), 0);
   const overall = { used_pct: pct(totSpend, totBudget), left_pct: Math.max(0, 100 - pct(totSpend, totBudget)) };
 
-  const gifts = entries.slice(0, 60).map(e => ({
-    month_key: e.month_key, handle: e.handle, platform: e.platform, brand: e.brand, product_name: e.product_name,
+  const gifts = entries.slice(0, 120).map(e => ({
+    id: e.id, month_key: e.month_key, handle: e.handle, platform: e.platform, brand: e.brand, product_name: e.product_name,
     rrp: e.rrp != null ? Math.round(Number(e.rrp)) : null,
+    status: e.status ?? null, content_url: e.content_url ?? null, content_type: e.content_type ?? null,
+    likes: e.likes != null ? Number(e.likes) : null, reach: e.reach != null ? Number(e.reach) : null,
+    posted_at: e.posted_at ?? null,
   }));
 
-  return NextResponse.json({ ok: true, fyLabel: INFLUENCER_FY_LABEL, overall, brands, gifts });
+  // Social performance totals (no cost involved — safe for the team).
+  const posted = entries.filter(e => e.content_url);
+  const social = {
+    posts: posted.length,
+    likes: posted.reduce((s, e) => s + (Number(e.likes) || 0), 0),
+    reach: posted.reduce((s, e) => s + (Number(e.reach) || 0), 0),
+  };
+
+  return NextResponse.json({ ok: true, fyLabel: INFLUENCER_FY_LABEL, overall, brands, gifts, social });
 }
