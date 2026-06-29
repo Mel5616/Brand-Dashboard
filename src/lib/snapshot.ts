@@ -156,6 +156,7 @@ export function buildSnapshot(d: SnapshotInput) {
   // (the actuals table also carries Google/Meta lines, so exclude those to avoid double counting).
   // Per-channel monthly budget = the per-month override if set, else annual ÷ 12.
   const bRows = forBrand(d.marketingBudgets);
+  const annualBudget = sum(bRows.map((b: any) => b.annual_budget));
   const bTopups = forBrand(d.budgetTopups ?? []);
   const ovr = (channel: string, mk: string): number | null => { const t = bTopups.find((x: any) => x.channel === channel && x.month_key === mk); return t ? (Number(t.amount) || 0) : null; };
   const mBudget = (mk: string) => sum(bRows.map((b: any) => { const o = ovr(b.channel, mk); return o != null ? o : b.annual_budget / 12; }));
