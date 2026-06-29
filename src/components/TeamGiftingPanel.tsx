@@ -61,13 +61,22 @@ export function TeamGiftingPanel() {
 
   async function load() {
     try {
-      const d = await fetch("/api/influencer/team").then(r => r.json());
+      const d = await fetch("/api/influencer/team", { cache: "no-store" }).then(r => r.json());
       if (d.needsSetup) setState("needsSetup");
       else if (d.ok) { setData(d); setState("ready"); }
       else setState("error");
     } catch { setState("error"); }
   }
-  useEffect(() => { load(); }, []);
+  // Load on mount, and re-load whenever the tab/window regains focus (so gifts logged
+  // in the /log-gift tab show up without a full page refresh).
+  useEffect(() => {
+    load();
+    const onFocus = () => load();
+    const onVis = () => { if (!document.hidden) load(); };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVis);
+    return () => { window.removeEventListener("focus", onFocus); document.removeEventListener("visibilitychange", onVis); };
+  }, []);
 
   if (state === "loading") return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">Loading…</div>;
   if (state === "needsSetup") return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">Gifting isn’t set up yet. Run <code>add_influencer_social.sql</code> in Supabase, then reload.</div>;
@@ -88,7 +97,10 @@ export function TeamGiftingPanel() {
           <h2 className="font-semibold text-gray-800">Influencer & Social</h2>
           <p className="text-xs text-gray-400 mt-0.5">{data.fyLabel} · budget as % · gift value is RRP · add post results as they go live</p>
         </div>
-        <a href="/log-gift" target="_blank" className="text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2">Log a gift ↗</a>
+        <div className="flex items-center gap-2">
+          <button onClick={load} className="text-xs font-medium text-slate-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3 py-2">↻ Refresh</button>
+          <a href="/log-gift" target="_blank" className="text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2">Log a gift ↗</a>
+        </div>
       </div>
 
       {/* Social performance KPIs */}
