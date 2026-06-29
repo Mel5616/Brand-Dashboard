@@ -16,7 +16,8 @@ create table if not exists snapshot_shares (
   first_opened_at timestamptz,
   last_opened_at timestamptz,
   last_ip text,
-  last_ua text
+  last_ua text,
+  expires_at timestamptz
 );
 create index if not exists snapshot_shares_brand_idx on snapshot_shares (brand_id, month_key, created_at desc);
 create index if not exists snapshot_shares_token_idx on snapshot_shares (token);

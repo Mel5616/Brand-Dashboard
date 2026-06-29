@@ -8,17 +8,19 @@ const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const hdr = { apikey: sbKey || "", Authorization: `Bearer ${sbKey || ""}`, "Content-Type": "application/json" };
 
-const notFound = () => new NextResponse("<!doctype html><meta charset=utf-8><title>Not found</title><body style='font-family:sans-serif;padding:3rem;text-align:center;color:#475569'>This report link is no longer available.</body>", { status: 404, headers: { "content-type": "text/html; charset=utf-8" } });
+const page = (msg: string, status: number) => new NextResponse(`<!doctype html><meta charset=utf-8><title>Report</title><body style='font-family:sans-serif;padding:3rem;text-align:center;color:#475569'>${msg}</body>`, { status, headers: { "content-type": "text/html; charset=utf-8" } });
+const notFound = () => page("This report link is no longer available.", 404);
 
 export async function GET(req: Request, ctx: { params: Promise<{ token: string }> }) {
   const { token } = await ctx.params;
   if (!sbUrl || !sbKey || !token) return notFound();
 
-  const res = await fetch(`${sbUrl}/rest/v1/snapshot_shares?token=eq.${encodeURIComponent(token)}&select=id,html,open_count,first_opened_at`, { headers: hdr, cache: "no-store" });
+  const res = await fetch(`${sbUrl}/rest/v1/snapshot_shares?token=eq.${encodeURIComponent(token)}&select=id,html,open_count,first_opened_at,expires_at`, { headers: hdr, cache: "no-store" });
   if (!res.ok) return notFound();
   const rows = await res.json();
   const row = rows?.[0];
   if (!row) return notFound();
+  if (row.expires_at && Date.now() > Date.parse(row.expires_at)) return page("This report link has expired. Please ask for an updated link.", 410);
 
   // Log the open (best-effort; never blocks serving the report).
   try {

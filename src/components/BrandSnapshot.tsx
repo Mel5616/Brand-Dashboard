@@ -108,6 +108,10 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
     await fetch(`/api/snapshot-share?id=${id}`, { method: "DELETE" }).catch(() => {});
     loadShares();
   }
+  async function extendShare(id: number) {
+    await fetch("/api/snapshot-share", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, expiryDays: 5 }) }).catch(() => {});
+    loadShares();
+  }
 
   function printIt() { const win = frameRef.current?.contentWindow; if (win) { win.focus(); win.print(); } }
 
@@ -209,13 +213,19 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
                   {s.open_count > 0
                     ? <span className="text-xs font-medium text-emerald-700 bg-emerald-50 rounded-full px-2.5 py-1">Opened {s.open_count}× · last {new Date(s.last_opened_at).toLocaleString("en-AU", { dateStyle: "medium", timeStyle: "short" })}</span>
                     : <span className="text-xs text-slate-400 bg-slate-50 rounded-full px-2.5 py-1">Not opened yet</span>}
+                  {(() => {
+                    const exp = s.expires_at ? Date.parse(s.expires_at) : null;
+                    const expired = exp != null && Date.now() > exp;
+                    return <span className={`text-xs rounded-full px-2.5 py-1 ${expired ? "text-rose-600 bg-rose-50 font-medium" : "text-slate-400 bg-slate-50"}`}>{exp == null ? "No expiry" : expired ? "Expired" : `Expires ${new Date(exp).toLocaleDateString("en-AU", { dateStyle: "medium" })}`}</span>;
+                  })()}
+                  <button onClick={() => extendShare(s.id)} className="text-xs text-emerald-600 hover:underline">Extend 5 days</button>
                   <button onClick={() => deleteShare(s.id)} className="text-xs text-rose-400 hover:text-rose-600">Delete</button>
                 </div>
               ))}
               <button onClick={loadShares} className="text-[11px] text-slate-400 hover:text-slate-600">Refresh open status</button>
             </div>
           )}
-          <p className="text-[11px] text-gray-400 mt-2">Anyone with the link can view this report (no login). Each open is tracked.</p>
+          <p className="text-[11px] text-gray-400 mt-2">Anyone with the link can view this report (no login). Each open is tracked. Links expire after 5 days — use Extend to renew.</p>
         </div>
       )}
 
