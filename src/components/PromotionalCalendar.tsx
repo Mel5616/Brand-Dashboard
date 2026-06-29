@@ -178,16 +178,24 @@ function D2cPlan({ d2c, canEdit, brandF, tierF, statusF, onChanged }: { d2c: D2c
 
   const [openMonths, setOpenMonths] = useState<Set<string>>(() => new Set(monthsOrder.slice(0, 1)));
   const [groupColours, setGroupColours] = useState(true);
+  const [sel, setSel] = useState<Map<string, VGroup>>(new Map());
+  const [bulkStatus, setBulkStatus] = useState("planned");
   const toggle = (k: string) => setOpenMonths(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
 
-  async function setStatus(ids: number[], status: string) {
-    await Promise.all(ids.map(id => fetch("/api/d2c", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status }) }).catch(() => {})));
-    onChanged();
+  function toggleGroup(g: VGroup, on: boolean) {
+    setSel(m => { const n = new Map(m); on ? n.set(g.key, g) : n.delete(g.key); return n; });
   }
+  function toggleMany(gs: VGroup[], on: boolean) {
+    setSel(m => { const n = new Map(m); gs.forEach(g => on ? n.set(g.key, g) : n.delete(g.key)); return n; });
+  }
+  const clearSel = () => setSel(new Map());
+
+  const patch = (ids: number[], status: string) =>
+    Promise.all(ids.map(id => fetch("/api/d2c", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status }) }).catch(() => {})));
 
   // "Action" → create a Campaign from the promo (shows in Campaigns + on the Calendar
   // via its start-date key_date), then mark the product's colours as actioned.
-  async function action(g: VGroup) {
+  async function makeCampaign(g: VGroup) {
     const r = g.rep;
     const days = (+d(r.period_start) - Date.now()) / 86400000;
     const horizon = days <= 42 ? "now" : days <= 120 ? "next" : "later";
@@ -199,7 +207,18 @@ function D2cPlan({ d2c, canEdit, brandF, tierF, statusF, onChanged }: { d2c: D2c
         key_date: r.period_start, end_date: r.period_end, note, brief: { oneLiner: note },
       }),
     }).catch(() => {});
-    await setStatus(g.ids, "action");
+    await patch(g.ids, "action");
+  }
+
+  async function setStatus(ids: number[], status: string) { await patch(ids, status); onChanged(); }
+  async function action(g: VGroup) { await makeCampaign(g); onChanged(); }
+
+  async function applyBulk() {
+    const groups = [...sel.values()];
+    if (!groups.length) return;
+    if (bulkStatus === "action") { for (const g of groups) await makeCampaign(g); }
+    else await patch(groups.flatMap(g => g.ids), bulkStatus);
+    clearSel(); onChanged();
   }
 
   return (
@@ -214,7 +233,18 @@ function D2cPlan({ d2c, canEdit, brandF, tierF, statusF, onChanged }: { d2c: D2c
           <button onClick={() => setOpenMonths(new Set())} className="text-slate-400 hover:underline">Collapse all</button>
         </div>
       </div>
-      <p className="text-xs text-slate-400">Open a month, then a brand, to see its sales. Run the same on D2C for the same dates and set each status.</p>
+      <p className="text-xs text-slate-400">Open a month, then a brand, to see its sales. Tick products to bulk-update, or set each status. Run the same on D2C for the same dates.</p>
+
+      {sel.size > 0 && (
+        <div className="sticky top-2 z-10 flex flex-wrap items-center gap-2 bg-slate-800 text-white rounded-xl px-4 py-2.5 shadow-lg">
+          <span className="text-sm font-semibold">{sel.size} selected</span>
+          <select value={bulkStatus} onChange={e => setBulkStatus(e.target.value)} className="text-sm text-slate-800 rounded-lg px-2.5 py-1.5 bg-white">
+            {STATUS_LIST.map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
+          </select>
+          <button onClick={applyBulk} className="text-sm font-semibold bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-1.5">Apply</button>
+          <button onClick={clearSel} className="ml-auto text-xs text-slate-300 hover:text-white">Clear</button>
+        </div>
+      )}
 
       {monthsOrder.length === 0 && <div className="bg-white rounded-2xl border border-gray-100 shadow-sm py-8 text-center text-slate-300 text-sm">No D2C promos in this period.</div>}
 
@@ -234,7 +264,7 @@ function D2cPlan({ d2c, canEdit, brandF, tierF, statusF, onChanged }: { d2c: D2c
             {isOpen && (
               <div className="border-t border-gray-100 divide-y divide-gray-50">
                 {brandsIn.map(brand => (
-                  <BrandGroup key={brand} brand={brand} rows={list.filter(r => r.brand === brand)} canEdit={canEdit} setStatus={setStatus} action={action} groupColours={groupColours} />
+                  <BrandGroup key={brand} brand={brand} rows={list.filter(r => r.brand === brand)} canEdit={canEdit} setStatus={setStatus} action={action} groupColours={groupColours} sel={sel} toggleGroup={toggleGroup} toggleMany={toggleMany} />
                 ))}
               </div>
             )}
@@ -245,25 +275,26 @@ function D2cPlan({ d2c, canEdit, brandF, tierF, statusF, onChanged }: { d2c: D2c
   );
 }
 
-type VGroup = { base: string; colours: string[]; ids: number[]; rows: D2c[]; rep: D2c };
+type VGroup = { key: string; base: string; colours: string[]; ids: number[]; rows: D2c[]; rep: D2c };
 
 function buildGroups(rows: D2c[]): VGroup[] {
   const map = new Map<string, VGroup>();
   const order: string[] = [];
   for (const r of rows) {
     const { base, colour } = splitColour(r.product || r.sku);
-    const key = `${base}|${r.period_start}|${r.period_end}|${r.tier}|${r.promo_price}`;
+    const key = `${r.brand}|${base}|${r.period_start}|${r.period_end}|${r.tier}|${r.promo_price}`;
     let g = map.get(key);
-    if (!g) { g = { base, colours: [], ids: [], rows: [], rep: r }; map.set(key, g); order.push(key); }
+    if (!g) { g = { key, base, colours: [], ids: [], rows: [], rep: r }; map.set(key, g); order.push(key); }
     g.rows.push(r); g.ids.push(r.id); if (colour) g.colours.push(colour);
   }
   return order.map(k => map.get(k)!);
 }
 
-function BrandGroup({ brand, rows, canEdit, setStatus, action, groupColours }: { brand: string; rows: D2c[]; canEdit: boolean; setStatus: (ids: number[], s: string) => void; action: (g: VGroup) => void; groupColours: boolean }) {
+function BrandGroup({ brand, rows, canEdit, setStatus, action, groupColours, sel, toggleGroup, toggleMany }: { brand: string; rows: D2c[]; canEdit: boolean; setStatus: (ids: number[], s: string) => void; action: (g: VGroup) => void; groupColours: boolean; sel: Map<string, VGroup>; toggleGroup: (g: VGroup, on: boolean) => void; toggleMany: (gs: VGroup[], on: boolean) => void }) {
   const [open, setOpen] = useState(false);
-  const groups = groupColours ? buildGroups(rows) : rows.map(r => ({ base: r.product || r.sku || "—", colours: [], ids: [r.id], rows: [r], rep: r } as VGroup));
+  const groups = groupColours ? buildGroups(rows) : rows.map(r => ({ key: `${r.brand}|${r.product || r.sku}|${r.period_start}|${r.period_end}|${r.tier}|${r.promo_price}`, base: r.product || r.sku || "—", colours: [], ids: [r.id], rows: [r], rep: r } as VGroup));
   const statusSummary = Array.from(new Set(rows.map(r => r.status)));
+  const allSel = groups.length > 0 && groups.every(g => sel.has(g.key));
   return (
     <div>
       <button onClick={() => setOpen(o => !o)} className="w-full flex items-center justify-between px-4 py-2 bg-slate-50/50 hover:bg-slate-100/60">
@@ -277,6 +308,7 @@ function BrandGroup({ brand, rows, canEdit, setStatus, action, groupColours }: {
         <table className="w-full text-sm">
           <thead className="bg-white text-slate-400 text-[11px] uppercase tracking-wide">
             <tr>
+              {canEdit && <th className="px-3 py-2 w-8"><input type="checkbox" checked={allSel} onChange={e => toggleMany(groups, e.target.checked)} className="accent-emerald-500" title="Select all" /></th>}
               <th className="text-left font-semibold px-4 py-2">Product</th><th className="text-left font-semibold px-3 py-2">Tier</th>
               <th className="text-left font-semibold px-3 py-2">Dates</th><th className="text-right font-semibold px-3 py-2">RRP</th>
               <th className="text-right font-semibold px-3 py-2">Promo</th><th className="text-right font-semibold px-3 py-2">Disc.</th>
@@ -290,7 +322,8 @@ function BrandGroup({ brand, rows, canEdit, setStatus, action, groupColours }: {
               const unified = statuses.length === 1 ? statuses[0] : "";
               const grouped = g.rows.length > 1;
               return (
-                <tr key={g.ids[0]} className={unified === "skip" ? "opacity-50" : ""}>
+                <tr key={g.ids[0]} className={`${unified === "skip" ? "opacity-50" : ""} ${sel.has(g.key) ? "bg-emerald-50/60" : ""}`}>
+                  {canEdit && <td className="px-3 py-2"><input type="checkbox" checked={sel.has(g.key)} onChange={e => toggleGroup(g, e.target.checked)} className="accent-emerald-500" /></td>}
                   <td className="px-4 py-2 text-slate-700">
                     {g.base}
                     {grouped && <span className="ml-2 text-[10px] font-semibold text-slate-400">{g.colours.length || g.rows.length} colours</span>}
