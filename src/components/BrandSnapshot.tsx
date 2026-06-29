@@ -16,7 +16,6 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
   // A snapshot is per brand — fall back to the first live brand when "all" is selected.
   const brandId = selected === "all" ? (live[0]?.id ?? brands[0]?.id) : selected;
   const brand = brands.find(b => b.id === brandId);
-  const [busy, setBusy] = useState(false);
 
   // Notes are stored per brand+month and fetched on change. needsSetup => table not created yet.
   const [note, setNote] = useState("");
@@ -29,21 +28,11 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
   const [savedInsights, setSavedInsights] = useState("");
   const [insState, setInsState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
-  // Email the report to the brand. Recipient is remembered per brand in localStorage.
-  const [to, setTo] = useState("");
-  const [sendState, setSendState] = useState<"idle" | "sending" | "sent" | "error">("idle");
-  const [sendMsg, setSendMsg] = useState("");
-
   // Open-tracked share links for this brand + month.
   const [shares, setShares] = useState<any[]>([]);
   const [sharing, setSharing] = useState(false);
   const [shareNeedsSetup, setShareNeedsSetup] = useState(false);
   const [copied, setCopied] = useState("");
-  useEffect(() => {
-    if (!brand || typeof window === "undefined") return;
-    setTo(window.localStorage.getItem(`snap_to_${brand.id}`) ?? "");
-    setSendState("idle"); setSendMsg("");
-  }, [brand?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!brand) return;
@@ -86,24 +75,6 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
   }, [brand, month, monthKeys, monthLabels, fyLabel, savedNote, savedInsights, data]);
 
   const monthName = monthLabels[monthKeys.indexOf(month)] ?? month;
-  const fileName = `${(brand?.name ?? "brand").replace(/\s+/g, "_")}_${monthName}_${fyLabel}_Snapshot.html`.replace(/[^\w.\-]/g, "");
-
-  async function sendToBrand() {
-    if (!brand || !to) return;
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) { setSendState("error"); setSendMsg("Enter a valid email address"); return; }
-    if (!window.confirm(`Email the ${monthName} ${brand.name} snapshot to ${to}?`)) return;
-    window.localStorage.setItem(`snap_to_${brand.id}`, to);
-    setSendState("sending"); setSendMsg("");
-    try {
-      const res = await fetch("/api/send-snapshot", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to, subject: `${brand.name} · ${monthName} ${fyLabel} Performance Snapshot`, html, fileName }),
-      });
-      const j = await res.json();
-      if (j.ok) { setSendState("sent"); setTimeout(() => setSendState("idle"), 2500); }
-      else { setSendState("error"); setSendMsg(j.message || "Send failed"); }
-    } catch { setSendState("error"); setSendMsg("Send failed"); }
-  }
 
   async function loadShares() {
     if (!brand) return;
@@ -139,14 +110,6 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
   }
 
   function printIt() { const win = frameRef.current?.contentWindow; if (win) { win.focus(); win.print(); } }
-  function download() {
-    setBusy(true);
-    const blob = new Blob([html], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = fileName; a.click();
-    setTimeout(() => { URL.revokeObjectURL(url); setBusy(false); }, 500);
-  }
 
   if (!brand) return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">No brand to report on.</div>;
 
@@ -164,10 +127,6 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
           {live.map(b => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
         </select>
         <div className="flex items-center gap-2">
-          <button onClick={download} disabled={busy} className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3.5 py-1.5 transition disabled:opacity-60">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
-            Download HTML
-          </button>
           <button onClick={printIt} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-3.5 py-1.5 transition shadow-sm">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
             Print / PDF
@@ -223,24 +182,6 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
               className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-y"
             />
           )}
-        </div>
-      )}
-
-      {/* Send to brand — emails the rendered report (and attaches it as an .html file). */}
-      {canEdit && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 no-print flex flex-wrap items-center gap-2">
-          <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mr-1">Send to brand</span>
-          <input
-            type="email" value={to} onChange={e => setTo(e.target.value)} placeholder="brand contact email"
-            className="flex-1 min-w-[200px] text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          />
-          <button onClick={sendToBrand} disabled={!to || sendState === "sending"} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 rounded-lg px-3.5 py-1.5 transition">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-            {sendState === "sending" ? "Sending..." : "Send"}
-          </button>
-          {sendState === "sent" && <span className="text-xs text-emerald-600 font-medium">Sent</span>}
-          {sendState === "error" && <span className="text-xs text-red-500 font-medium">{sendMsg}</span>}
-          <span className="basis-full text-[11px] text-gray-400">Emails the report inline and attaches the HTML file. Needs RESEND_API_KEY and a verified sending domain.</span>
         </div>
       )}
 
