@@ -121,7 +121,7 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
   const insDirty = insights !== (savedInsights || aiDefault);
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2 no-print">
         <select
           value={String(brandId)}
@@ -140,7 +140,7 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
 
       {/* Insights editor — pre-filled with the AI text; a saved edit replaces it in the report. */}
       {canEdit && noteState !== "needsSetup" && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 no-print">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 no-print order-last">
           <div className="flex items-center justify-between mb-2">
             <label className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Insights & opportunities {savedInsights ? "· edited" : "· AI"}</label>
             <div className="flex items-center gap-3">
@@ -164,7 +164,7 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
 
       {/* Notes editor — saved text is rendered into the report's "Notes & commentary" block. */}
       {canEdit && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 no-print">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 no-print order-last">
           <div className="flex items-center justify-between mb-2">
             <label className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Notes for {brand.name} · {monthName}</label>
             <div className="flex items-center gap-3">
