@@ -91,10 +91,10 @@ export function buildChannels(scope: number | "all", d: ChannelData): Channel[] 
   const vOf = (ch: string, mk: string) => {
     const fileSum = sum(offline.filter(r => channelOf(r) === ch && r.month_key === mk).map(r => r.value));
     if (ch === "Tradeshows") return ts(mk) + fileSum;
-    // Website Sales = the brand's own Shopify minus only the sources that flow through
-    // that Shopify (Faire). Baby Bunting (retailer feed) and tradeshow booth sales come
-    // from separate systems, so they are NOT subtracted here. Floored at 0.
-    const base = ch === "Website Sales" ? Math.max(0, sum(live.filter(m => m.month_key === mk).map(m => m.revenue)) - inShopSrc(mk)) : 0;
+    // Website Sales = the brand's own Shopify minus what else runs through that Shopify:
+    // tradeshow booth orders (rung up on the brand's store) and Faire imports. Baby Bunting
+    // is a separate retailer feed (NOT in the brand's Shopify), so it is not subtracted. Floored at 0.
+    const base = ch === "Website Sales" ? Math.max(0, sum(live.filter(m => m.month_key === mk).map(m => m.revenue)) - ts(mk) - inShopSrc(mk)) : 0;
     return base + srcCh(mk, ch) + fileSum;
   };
   const names = new Set<string>(["Website Sales", "Tradeshows", ...Object.values(SOURCE_CHANNEL), ...offline.map(channelOf)]);
