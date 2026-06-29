@@ -39,11 +39,13 @@ function splitColour(name: string | null): { base: string; colour: string | null
 
 const STATUS_META: Record<string, { label: string; cls: string }> = {
   todo: { label: "To do", cls: "bg-slate-100 text-slate-500" },
+  action: { label: "Action → Campaign", cls: "bg-amber-100 text-amber-700" },
   planned: { label: "Planned", cls: "bg-sky-100 text-sky-700" },
   live: { label: "Live", cls: "bg-emerald-100 text-emerald-700" },
   done: { label: "Done", cls: "bg-violet-100 text-violet-700" },
   skip: { label: "Skip", cls: "bg-rose-50 text-rose-400" },
 };
+const STATUS_LIST = ["todo", "action", "planned", "live", "done", "skip"];
 
 export function PromotionalCalendar({ canEdit, fy, month }: { canEdit: boolean; brands: Brand[]; fy: string; month: string }) {
   const [promos, setPromos] = useState<Promo[]>([]);
@@ -108,7 +110,7 @@ export function PromotionalCalendar({ canEdit, fy, month }: { canEdit: boolean; 
           <option value="">Both tiers</option><option value="1">Tier 1</option><option value="2">Tier 2</option>
         </select>
         <select value={statusF} onChange={e => setStatusF(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white">
-          <option value="">All statuses</option><option value="todo">To do</option><option value="planned">Planned</option><option value="live">Live</option><option value="done">Done</option><option value="skip">Skip</option>
+          <option value="">All statuses</option>{STATUS_LIST.map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
         </select>
         <div className="ml-auto flex items-center gap-4 text-xs text-slate-500">
           <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded" style={{ background: TIER_COLOR[1] }} /> Tier 1 (deeper)</span>
@@ -183,10 +185,27 @@ function D2cPlan({ d2c, canEdit, brandF, tierF, statusF, onChanged }: { d2c: D2c
     onChanged();
   }
 
+  // "Action" → create a Campaign from the promo (shows in Campaigns + on the Calendar
+  // via its start-date key_date), then mark the product's colours as actioned.
+  async function action(g: VGroup) {
+    const r = g.rep;
+    const days = (+d(r.period_start) - Date.now()) / 86400000;
+    const horizon = days <= 42 ? "now" : days <= 120 ? "next" : "later";
+    const note = `D2C mirror of ${r.retailers || "retailer"} promo · ${fmt(r.period_start)}–${fmt(r.period_end)} · ${money(r.promo_price)}${r.rrp ? ` (was ${money(r.rrp)}, ${pct(r.discount_rrp)})` : ""}`;
+    await fetch("/api/campaigns", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        horizon, campaign: g.base, brand: r.brand, channel: "D2C", status: "Planned", owner: "TBC",
+        key_date: r.period_start, end_date: r.period_end, note, brief: { oneLiner: note },
+      }),
+    }).catch(() => {});
+    await setStatus(g.ids, "action");
+  }
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        {["todo", "planned", "live", "done", "skip"].map(s => (
+        {STATUS_LIST.map(s => (
           <span key={s} className={`px-2.5 py-1 rounded-full font-semibold ${STATUS_META[s].cls}`}>{STATUS_META[s].label}: {counts[s] || 0}</span>
         ))}
         <div className="ml-auto flex items-center gap-3">
@@ -215,7 +234,7 @@ function D2cPlan({ d2c, canEdit, brandF, tierF, statusF, onChanged }: { d2c: D2c
             {isOpen && (
               <div className="border-t border-gray-100 divide-y divide-gray-50">
                 {brandsIn.map(brand => (
-                  <BrandGroup key={brand} brand={brand} rows={list.filter(r => r.brand === brand)} canEdit={canEdit} setStatus={setStatus} groupColours={groupColours} />
+                  <BrandGroup key={brand} brand={brand} rows={list.filter(r => r.brand === brand)} canEdit={canEdit} setStatus={setStatus} action={action} groupColours={groupColours} />
                 ))}
               </div>
             )}
@@ -241,7 +260,7 @@ function buildGroups(rows: D2c[]): VGroup[] {
   return order.map(k => map.get(k)!);
 }
 
-function BrandGroup({ brand, rows, canEdit, setStatus, groupColours }: { brand: string; rows: D2c[]; canEdit: boolean; setStatus: (ids: number[], s: string) => void; groupColours: boolean }) {
+function BrandGroup({ brand, rows, canEdit, setStatus, action, groupColours }: { brand: string; rows: D2c[]; canEdit: boolean; setStatus: (ids: number[], s: string) => void; action: (g: VGroup) => void; groupColours: boolean }) {
   const [open, setOpen] = useState(false);
   const groups = groupColours ? buildGroups(rows) : rows.map(r => ({ base: r.product || r.sku || "—", colours: [], ids: [r.id], rows: [r], rep: r } as VGroup));
   const statusSummary = Array.from(new Set(rows.map(r => r.status)));
@@ -285,10 +304,10 @@ function BrandGroup({ brand, rows, canEdit, setStatus, groupColours }: { brand: 
                   <td className="px-3 py-2 text-slate-400 text-xs">{r.retailers || "—"}</td>
                   <td className="px-3 py-2">
                     {canEdit ? (
-                      <select value={unified} onChange={e => setStatus(g.ids, e.target.value)}
+                      <select value={unified} onChange={e => e.target.value === "action" ? action(g) : setStatus(g.ids, e.target.value)}
                         className={`text-xs font-semibold rounded-full px-2.5 py-1 border-0 cursor-pointer ${STATUS_META[unified]?.cls || "bg-slate-100 text-slate-400"}`}>
                         {unified === "" && <option value="">Mixed</option>}
-                        {["todo", "planned", "live", "done", "skip"].map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
+                        {STATUS_LIST.map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
                       </select>
                     ) : <span className={`text-xs font-semibold rounded-full px-2.5 py-1 ${STATUS_META[unified]?.cls || "bg-slate-100 text-slate-400"}`}>{unified ? STATUS_META[unified].label : "Mixed"}</span>}
                   </td>
