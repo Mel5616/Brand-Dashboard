@@ -12,6 +12,8 @@ import { GoogleCampaignTable, MetaPlatformBreakdown } from "./ChannelBrandDetail
 import { CampaignCalendar } from "./CampaignCalendar";
 import { PromotionalCalendar } from "./PromotionalCalendar";
 import { SyncStatus } from "./SyncStatus";
+import { PartnershipsBudget } from "./PartnershipsBudget";
+import { PartnershipsTracker } from "./PartnershipsTracker";
 import { SeoPanel } from "./SeoPanel";
 import { InsightsPanel } from "./InsightsPanel";
 import { SocialPanel } from "./SocialPanel";
@@ -41,7 +43,7 @@ import { ShopifyInsights } from "./ShopifyInsights";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "brands" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "uppababy" | "sales" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "events" | "tasks" | "design-requests" | "new-products" | "budget" | "calendar" | "content" | "influencer" | "gifting" | "team";
+type TabId = "brands" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "uppababy" | "sales" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "events" | "tasks" | "design-requests" | "new-products" | "budget" | "calendar" | "content" | "influencer" | "gifting" | "pa-budget" | "pa-tracker" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -141,6 +143,14 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8M12 4v16" /></svg>,
   },
   {
+    id: "pa-budget", label: "Budget",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 1v8m0 0v1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  },
+  {
+    id: "pa-tracker", label: "Tracker",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 00-3-3.87" /></svg>,
+  },
+  {
     id: "team", label: "Team",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 00-3-3.87" /></svg>,
   },
@@ -153,13 +163,15 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Plan", ids: ["campaign-calendar", "promotions", "calendar", "content", "events", "tasks", "design-requests"] },
   { label: "Operations", ids: ["budget", "new-products"] },
   { label: "Paid", ids: ["google-ads", "meta-ads"] },
-  { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting"] },
+  { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting", "pa-budget", "pa-tracker"] },
 ];
 
 // Report-type pages collapse under a "Reports" dropdown in the sidebar.
 const REPORT_IDS: TabId[] = ["report", "snapshot", "uppababy"];
 // Influencer pages collapse under an "Influencers" dropdown in the sidebar.
 const INFLUENCER_IDS: TabId[] = ["influencer", "gifting"];
+// Partnerships pages collapse under a "Partnerships & Affiliates" dropdown.
+const PARTNERSHIP_IDS: TabId[] = ["pa-budget", "pa-tracker"];
 
 // Inline SVG donut for the Business overview channel split.
 function ChannelDonut({ slices, total, size = 150 }: { slices: { value: number; color: string }[]; total: number; size?: number }) {
@@ -266,6 +278,7 @@ export function DashboardTabs({
   const [active, setActive] = useState<TabId>(firstTab);
   const [reportsOpen, setReportsOpen] = useState<boolean>(() => REPORT_IDS.includes(firstTab));
   const [influencersOpen, setInfluencersOpen] = useState<boolean>(() => INFLUENCER_IDS.includes(firstTab));
+  const [partnershipsOpen, setPartnershipsOpen] = useState<boolean>(() => PARTNERSHIP_IDS.includes(firstTab));
   // Activity tracking: record which tab/page the user is viewing.
   useEffect(() => {
     const label = TABS.find(t => t.id === active)?.label ?? active;
@@ -416,10 +429,12 @@ export function DashboardTabs({
           };
           const reportActive = REPORT_IDS.includes(active);
           const inflActive = INFLUENCER_IDS.includes(active);
+          const paActive = PARTNERSHIP_IDS.includes(active);
           return groups.map(g => {
-            const flatTabs = g.tabs.filter(t => !REPORT_IDS.includes(t.id as TabId) && !INFLUENCER_IDS.includes(t.id as TabId));
+            const flatTabs = g.tabs.filter(t => !REPORT_IDS.includes(t.id as TabId) && !INFLUENCER_IDS.includes(t.id as TabId) && !PARTNERSHIP_IDS.includes(t.id as TabId));
             const reportTabs = g.tabs.filter(t => REPORT_IDS.includes(t.id as TabId));
             const inflTabs = g.tabs.filter(t => INFLUENCER_IDS.includes(t.id as TabId));
+            const paTabs = g.tabs.filter(t => PARTNERSHIP_IDS.includes(t.id as TabId));
             return (
               <div key={g.label} className="mb-2">
                 <p className="bg-slate-700 text-white rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] mb-1.5 shadow-sm">{g.label}</p>
@@ -445,6 +460,17 @@ export function DashboardTabs({
                         <svg className={`ml-auto w-3.5 h-3.5 transition-transform ${influencersOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                       </button>
                       {influencersOpen && <div className="ml-3 pl-1.5 border-l border-gray-200 space-y-0.5">{inflTabs.map(Btn)}</div>}
+                    </>
+                  )}
+                  {paTabs.length > 0 && (
+                    <>
+                      <button onClick={() => setPartnershipsOpen(o => !o)}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${paActive ? "text-emerald-600 font-semibold" : "text-gray-500 hover:bg-gray-100/70 hover:text-gray-700"}`}>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 00-3-3.87" /></svg>
+                        Partnerships &amp; Affiliates
+                        <svg className={`ml-auto w-3.5 h-3.5 transition-transform ${partnershipsOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                      </button>
+                      {partnershipsOpen && <div className="ml-3 pl-1.5 border-l border-gray-200 space-y-0.5">{paTabs.map(Btn)}</div>}
                     </>
                   )}
                 </div>
@@ -1516,6 +1542,8 @@ export function DashboardTabs({
               monthly={monthly}
               targets={targets}
               fyLabel={fyLabel}
+              fy={fy}
+              canEdit={role === "admin"}
               monthKeys={monthKeys}
               monthLabels={monthLabels}
               latest={LATEST}
@@ -1538,6 +1566,20 @@ export function DashboardTabs({
             <>
               <SectionBar title="Influencer Gifting" />
               <TeamGiftingPanel />
+            </>
+          )}
+
+          {/* ── Partnerships & Affiliates (admin) ── */}
+          {active === "pa-budget" && role === "admin" && (
+            <>
+              <SectionBar title="Partnerships & Affiliates · Budget" />
+              <PartnershipsBudget />
+            </>
+          )}
+          {active === "pa-tracker" && role === "admin" && (
+            <>
+              <SectionBar title="Partnerships & Affiliates · Tracker" />
+              <PartnershipsTracker />
             </>
           )}
 

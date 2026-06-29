@@ -34,6 +34,8 @@ interface Props {
   monthly:          BrandMonthly[];
   targets?:         any[];
   fyLabel?:         string;
+  fy?:              string;
+  canEdit?:         boolean;
   monthKeys?:       string[];
   monthLabels?:     string[];
   latest?:          string;
@@ -66,9 +68,46 @@ const DONUT_OPTS: any = {
   },
 };
 
-export function MarketingBudgetTab({ brands, marketingBudgets, marketingActuals, googleAds, metaAds, monthly, targets = [], fyLabel = "FY 2025–26", monthKeys = DEFAULT_MONTH_KEYS, monthLabels = DEFAULT_MONTH_LABELS, latest = DEFAULT_MONTH_KEYS[DEFAULT_MONTH_KEYS.length - 1] }: Props) {
+export function MarketingBudgetTab({ brands, marketingBudgets, marketingActuals, googleAds, metaAds, monthly, targets = [], fyLabel = "FY 2025–26", fy = "2025-26", canEdit = false, monthKeys = DEFAULT_MONTH_KEYS, monthLabels = DEFAULT_MONTH_LABELS, latest = DEFAULT_MONTH_KEYS[DEFAULT_MONTH_KEYS.length - 1] }: Props) {
   const MONTH_KEYS = monthKeys;
   const MONTH_LABELS = monthLabels;
+  const [budgetMsg, setBudgetMsg] = useState("");
+  const [budgetBusy, setBudgetBusy] = useState(false);
+
+  function parseBudgetCSV(text: string): Record<string, string>[] {
+    const rows: string[][] = []; let row: string[] = [], cell = "", q = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (q) { if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += c; }
+      else if (c === '"') q = true;
+      else if (c === ",") { row.push(cell); cell = ""; }
+      else if (c === "\n" || c === "\r") { if (c === "\r" && text[i + 1] === "\n") i++; row.push(cell); rows.push(row); row = []; cell = ""; }
+      else cell += c;
+    }
+    if (cell !== "" || row.length) { row.push(cell); rows.push(row); }
+    const clean = rows.filter(r => r.some(c => c.trim() !== ""));
+    if (clean.length < 2) return [];
+    const headers = clean[0].map(h => h.trim().toLowerCase().replace(/\s*\(\$\)/, "").replace(/\s+/g, "_"));
+    return clean.slice(1).map(r => Object.fromEntries(headers.map((h, i) => [h, (r[i] ?? "").trim()])));
+  }
+  async function uploadBudget(file: File) {
+    setBudgetBusy(true); setBudgetMsg("");
+    try {
+      const parsed = parseBudgetCSV(await file.text());
+      const rows = parsed.map(r => ({ brand: r.brand, channel: r.channel, budget: r.budget ?? r.annual_budget }));
+      const valid = rows.filter(r => r.brand && r.channel);
+      if (!valid.length) { setBudgetMsg("No rows with brand + channel — check the headers."); setBudgetBusy(false); return; }
+      const res = await fetch("/api/marketing-budget", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows: valid, fy, replace: true }) }).then(r => r.json()).catch(() => ({ ok: false }));
+      setBudgetMsg(res.ok ? `✓ Loaded ${res.count} budget rows for ${fyLabel}${res.unmatched?.length ? ` (unmatched brands: ${res.unmatched.join(", ")})` : ""}. Reloading…` : (res.error || "Upload failed."));
+      if (res.ok) setTimeout(() => window.location.reload(), 1500);
+    } catch { setBudgetMsg("Couldn't read the file."); }
+    setBudgetBusy(false);
+  }
+  function downloadBudgetTemplate() {
+    const chans = ["Google Advertising", "Social Media (Meta)", "Klaviyo", "Influencer Marketing", "Photography", "Shopify"];
+    const csv = "brand,channel,budget\n" + brands.filter((b: any) => b.live).slice(0, 1).flatMap((b: any) => chans.map(c => `${b.name},${c},0`)).join("\n") + "\n";
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = `marketing_budget_${fy}.csv`; a.click();
+  }
   const [budgetBrand, setBudgetBrand] = useState<number | "all">("all");
   const budgetBrandList = brands.filter((b: any) => b.live && marketingBudgets.some(mb => mb.brand_id === b.id));
 
@@ -238,6 +277,16 @@ export function MarketingBudgetTab({ brands, marketingBudgets, marketingActuals,
           <option value="all">All Brands (portfolio)</option>
           {budgetBrandList.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
         </select>
+        {canEdit && (
+          <div className="ml-auto flex items-center gap-2">
+            {budgetMsg && <span className={`text-[11px] ${budgetMsg.startsWith("✓") ? "text-emerald-600" : "text-rose-500"}`}>{budgetMsg}</span>}
+            <button onClick={downloadBudgetTemplate} className="text-xs font-medium text-slate-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3 py-1.5">Template</button>
+            <label className={`text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-1.5 cursor-pointer ${budgetBusy ? "opacity-50" : ""}`}>
+              {budgetBusy ? "Uploading…" : `Upload budget CSV · ${fyLabel}`}
+              <input type="file" accept=".csv,text/csv" disabled={budgetBusy} className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadBudget(f); e.currentTarget.value = ""; }} />
+            </label>
+          </div>
+        )}
       </div>
 
       {selectedBudgetBrand ? (

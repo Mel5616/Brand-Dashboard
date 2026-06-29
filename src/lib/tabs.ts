@@ -41,8 +41,10 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "email", label: "Email" },
     { id: "seo", label: "SEO" },
     { id: "social", label: "Social" },
-    { id: "influencer", label: "Budget" },
-    { id: "gifting", label: "Tracker" },
+    { id: "influencer", label: "Influencer Budget" },
+    { id: "gifting", label: "Influencer Tracker" },
+    { id: "pa-budget", label: "Partnerships Budget" },
+    { id: "pa-tracker", label: "Partnerships Tracker" },
   ] },
 ];
 
@@ -50,4 +52,4 @@ export const TAB_SECTIONS: TabSection[] = [
 export const ALL_TABS: string[] = TAB_SECTIONS.flatMap(s => s.tabs.map(t => t.id));
 
 // Cost / margin sections — admin-only, never shown to members even if granted.
-export const ADMIN_ONLY_TABS = ["budget", "influencer", "snapshot", "uppababy"];
+export const ADMIN_ONLY_TABS = ["budget", "influencer", "snapshot", "uppababy", "pa-budget", "pa-tracker"];
