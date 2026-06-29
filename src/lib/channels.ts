@@ -13,6 +13,10 @@ type BrandLite = { id: number; name: string };
 export type Channel = { name: string; series: number[]; fy: number; latest: number };
 
 export const SOURCE_CHANNEL: Record<string, string> = { "faire": "Partnerships", "Baby Bunting": "Marketplace" };
+// Sources whose orders actually flow through the brand's OWN Shopify (so they must be
+// carved out of Website Sales to avoid double-counting). Faire imports into Shopify;
+// Baby Bunting is a separate retailer sell-through feed, NOT in the brand's Shopify.
+const IN_SHOPIFY_SOURCES = new Set(["faire"]);
 export const DIGITAL_CHANNELS = new Set(["Website Sales", "Marketplace", "Affiliates", "Online Only Stores"]);
 const CHANNEL_MAP: Record<string, string> = {
   "Online Store": "Online Only Stores", "Affiliate": "Affiliates",
@@ -83,14 +87,14 @@ export function buildChannels(scope: number | "all", d: ChannelData): Channel[] 
   const srcIn = shopifySources.filter(x => scope === "all" || x.brand_id === scope);
   const ts = (mk: string) => sum(tradeshowSales.filter(x => showMonth[x.tradeshow_id] === mk && (scope === "all" || x.brand_id === scope)).map(x => x.revenue));
   const srcCh = (mk: string, ch: string) => sum(srcIn.filter(x => x.month_key === mk && SOURCE_CHANNEL[x.source] === ch).map(x => x.revenue));
-  const allSrc = (mk: string) => sum(srcIn.filter(x => x.month_key === mk).map(x => x.revenue));
+  const inShopSrc = (mk: string) => sum(srcIn.filter(x => x.month_key === mk && IN_SHOPIFY_SOURCES.has(x.source)).map(x => x.revenue));
   const vOf = (ch: string, mk: string) => {
     const fileSum = sum(offline.filter(r => channelOf(r) === ch && r.month_key === mk).map(r => r.value));
     if (ch === "Tradeshows") return ts(mk) + fileSum;
-    // Website Sales = the brand's own Shopify minus its in-Shopify marketplace sources
-    // (Faire, Baby Bunting). Tradeshow booth sales are NOT in the brand's Shopify (they
-    // come from the separate booth till), so they are not subtracted here. Floored at 0.
-    const base = ch === "Website Sales" ? Math.max(0, sum(live.filter(m => m.month_key === mk).map(m => m.revenue)) - allSrc(mk)) : 0;
+    // Website Sales = the brand's own Shopify minus only the sources that flow through
+    // that Shopify (Faire). Baby Bunting (retailer feed) and tradeshow booth sales come
+    // from separate systems, so they are NOT subtracted here. Floored at 0.
+    const base = ch === "Website Sales" ? Math.max(0, sum(live.filter(m => m.month_key === mk).map(m => m.revenue)) - inShopSrc(mk)) : 0;
     return base + srcCh(mk, ch) + fileSum;
   };
   const names = new Set<string>(["Website Sales", "Tradeshows", ...Object.values(SOURCE_CHANNEL), ...offline.map(channelOf)]);
