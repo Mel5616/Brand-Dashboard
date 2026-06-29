@@ -10,6 +10,7 @@ import { BrandReport } from "./BrandReport";
 import { buildReport } from "@/lib/report";
 import { GoogleCampaignTable, MetaPlatformBreakdown } from "./ChannelBrandDetail";
 import { CampaignCalendar } from "./CampaignCalendar";
+import { PromotionalCalendar } from "./PromotionalCalendar";
 import { SeoPanel } from "./SeoPanel";
 import { InsightsPanel } from "./InsightsPanel";
 import { SocialPanel } from "./SocialPanel";
@@ -39,7 +40,7 @@ import { ShopifyInsights } from "./ShopifyInsights";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "brands" | "insights" | "campaign-calendar" | "report" | "snapshot" | "uppababy" | "sales" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "events" | "tasks" | "design-requests" | "new-products" | "budget" | "calendar" | "content" | "influencer" | "gifting" | "team";
+type TabId = "brands" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "uppababy" | "sales" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "events" | "tasks" | "design-requests" | "new-products" | "budget" | "calendar" | "content" | "influencer" | "gifting" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -53,6 +54,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
     id: "campaign-calendar", label: "Campaigns",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /></svg>,
+  },
+  {
+    id: "promotions", label: "Promotions",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z" /></svg>,
   },
   {
     id: "report", label: "Report",
@@ -144,7 +149,7 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
 const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Overview", ids: ["brands", "insights", "report", "snapshot", "uppababy"] },
   { label: "Revenue & Channels", ids: ["sales", "shopify", "tradeshows"] },
-  { label: "Plan", ids: ["campaign-calendar", "calendar", "content", "events", "tasks", "design-requests"] },
+  { label: "Plan", ids: ["campaign-calendar", "promotions", "calendar", "content", "events", "tasks", "design-requests"] },
   { label: "Operations", ids: ["budget", "new-products"] },
   { label: "Paid", ids: ["google-ads", "meta-ads"] },
   { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting"] },
@@ -811,6 +816,14 @@ export function DashboardTabs({
 
           {/* ── Campaign Calendar (portfolio Now/Next/Later roadmap) ── */}
           {active === "campaign-calendar" && <CampaignCalendar canEdit={role === "admin"} />}
+
+          {/* ── Promotional Calendar (per-brand sale periods from the Promo Tracker) ── */}
+          {active === "promotions" && (
+            <>
+              <SectionBar title="Promotional Calendar" />
+              <PromotionalCalendar canEdit={role === "admin"} brands={brands} />
+            </>
+          )}
 
           {/* ── Report (management report, per brand + portfolio, PDF) ── */}
           {active === "report" && (
