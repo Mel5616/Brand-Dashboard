@@ -56,6 +56,43 @@ export function InfluencerTracker() {
   const [tab, setTab] = useState<"report" | "roster">("report");
   const [influencers, setInfluencers] = useState<Influencer[]>([]);
   const [editInf, setEditInf] = useState<Partial<Influencer> | null>(null);
+  const [prodMsg, setProdMsg] = useState("");
+  const [prodBusy, setProdBusy] = useState(false);
+
+  // Parse a CSV (handles quoted fields) into objects keyed by header.
+  function parseCSV(text: string): Record<string, string>[] {
+    const rows: string[][] = []; let row: string[] = [], cell = "", q = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (q) { if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += c; }
+      else if (c === '"') q = true;
+      else if (c === ",") { row.push(cell); cell = ""; }
+      else if (c === "\n" || c === "\r") { if (c === "\r" && text[i + 1] === "\n") i++; row.push(cell); rows.push(row); row = []; cell = ""; }
+      else cell += c;
+    }
+    if (cell !== "" || row.length) { row.push(cell); rows.push(row); }
+    const clean = rows.filter(r => r.some(c => c.trim() !== ""));
+    if (clean.length < 2) return [];
+    const headers = clean[0].map(h => h.trim().toLowerCase().replace(/\s+/g, "_"));
+    return clean.slice(1).map(r => Object.fromEntries(headers.map((h, i) => [h, (r[i] ?? "").trim()])));
+  }
+
+  async function uploadProducts(file: File) {
+    setProdBusy(true); setProdMsg("");
+    try {
+      const parsed = parseCSV(await file.text());
+      const rows = parsed.map(r => ({ style_code: r.style_code || r.sku, product_name: r.product_name || r.product || r.name, brand: r.brand, cost_price: r.cost_price || r.cost, rrp: r.rrp }));
+      const valid = rows.filter(r => r.style_code);
+      if (valid.length === 0) { setProdMsg("No rows with a style_code — check the headers."); setProdBusy(false); return; }
+      const res = await fetch("/api/influencer/products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows: valid, replace: true }) }).then(r => r.json()).catch(() => ({ ok: false }));
+      setProdMsg(res.ok ? `✓ Loaded ${res.count} products (replaced the catalogue).` : (res.error || "Upload failed."));
+    } catch { setProdMsg("Couldn't read the file."); }
+    setProdBusy(false);
+  }
+  function downloadTemplate() {
+    const csv = "style_code,product_name,brand,cost_price,rrp\nN303AW,Nanit Pro Baby Monitor,Nanit,185.73,799\n";
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "influencer_products_template.csv"; a.click();
+  }
 
   function load() {
     Promise.all([
@@ -190,6 +227,42 @@ export function InfluencerTracker() {
             <p className="text-[11px] text-gray-400">{k.sub}</p>
           </div>
         ))}
+      </div>
+
+      {/* Notable influencers overview (avatars, by likes) + product catalogue upload */}
+      <div className="grid lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <h3 className="text-sm font-semibold text-slate-700 mb-3">Notable influencers</h3>
+          {(() => {
+            const m = new Map<string, { handle: string; likes: number; spend: number }>();
+            for (const e of entries) { if (!e.handle) continue; const c = m.get(e.handle) ?? { handle: e.handle, likes: 0, spend: 0 }; c.likes += (e as any).likes || 0; c.spend += e.total_cost ?? 0; m.set(e.handle, c); }
+            const top = [...m.values()].map(x => { const inf: any = influencers.find(i => i.handle === x.handle) || {}; return { ...x, name: inf.name, followers: inf.followers, avatar: inf.avatar_url }; }).sort((a, b) => b.likes - a.likes).slice(0, 6);
+            if (top.length === 0) return <p className="text-xs text-gray-400">No influencers yet.</p>;
+            return (
+              <div className="divide-y divide-gray-50">
+                {top.map(t => (
+                  <div key={t.handle} className="flex items-center gap-3 py-2">
+                    {t.avatar ? <img src={t.avatar} alt="" className="w-10 h-10 rounded-full object-cover" /> : <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center">{(t.name || t.handle).replace(/^@/, "")[0]?.toUpperCase()}</div>}
+                    <div className="min-w-0 flex-1"><p className="font-semibold text-slate-800 truncate text-sm">{(t.name || t.handle || "").replace(/^@/, "")}</p><p className="text-[11px] text-gray-400 truncate">{t.handle}</p></div>
+                    <span className="text-xs text-gray-500 w-16 text-right"><span className="font-semibold text-slate-700">{compactNum(t.likes)}</span> likes</span>
+                    <span className="text-xs text-gray-500 w-20 text-right">{compactNum(t.followers)} foll.</span>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <h3 className="text-sm font-semibold text-slate-700">Product catalogue</h3>
+          <p className="text-[11px] text-gray-400 mt-0.5 mb-3">Upload a CSV to replace the gifting product list (used for cost &amp; ROI). Same template each time.</p>
+          <label className={`block text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2 text-center cursor-pointer ${prodBusy ? "opacity-50" : ""}`}>
+            {prodBusy ? "Uploading…" : "Upload CSV (replace all)"}
+            <input type="file" accept=".csv,text/csv" disabled={prodBusy} className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadProducts(f); e.currentTarget.value = ""; }} />
+          </label>
+          <button onClick={downloadTemplate} className="mt-2 w-full text-xs font-medium text-slate-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3 py-2">Download template</button>
+          {prodMsg && <p className={`text-[11px] mt-2 ${prodMsg.startsWith("✓") ? "text-emerald-600" : "text-rose-500"}`}>{prodMsg}</p>}
+          <p className="text-[10px] text-gray-300 mt-2">Columns: style_code, product_name, brand, cost_price, rrp</p>
+        </div>
       </div>
 
       {/* Brand × month matrix */}
@@ -355,9 +428,8 @@ export function InfluencerTracker() {
           <div className="flex items-center justify-between mb-3">
             <div>
               <h3 className="text-sm font-semibold text-slate-700">Influencer Roster</h3>
-              <p className="text-[11px] text-gray-400">{roster.length} influencers · gifting value is ex-GST cost</p>
+              <p className="text-[11px] text-gray-400">{roster.length} influencers · gifting value is ex-GST cost · added via the team form</p>
             </div>
-            <button onClick={() => setEditInf({})} className="text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2">+ Add influencer</button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
@@ -375,7 +447,14 @@ export function InfluencerTracker() {
                   <tr><td colSpan={11} className="text-center text-gray-400 py-6">No influencers yet — add one or log a gift.</td></tr>
                 ) : roster.map(r => (
                   <tr key={r.handle} className="border-t border-gray-50 hover:bg-gray-50/50">
-                    <td className="py-1.5 px-2 text-slate-700 font-medium">{r.m?.name ?? <span className="text-gray-300">—</span>}</td>
+                    <td className="py-1.5 px-2 text-slate-700 font-medium">
+                      <span className="flex items-center gap-2">
+                        {(r.m as any)?.avatar_url
+                          ? <img src={(r.m as any).avatar_url} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
+                          : <span className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold flex items-center justify-center shrink-0">{((r.m?.name || r.handle || "?").replace(/^@/, "")[0] || "?").toUpperCase()}</span>}
+                        {r.m?.name ?? <span className="text-gray-300">—</span>}
+                      </span>
+                    </td>
                     <td className="py-1.5 px-2 text-slate-600">{r.handle}</td>
                     <td className="py-1.5 px-2 text-gray-500">{r.m?.platform ?? "—"}</td>
                     <td className="py-1.5 px-2 text-right text-gray-500">{r.m?.followers != null ? compactNum(Number(r.m.followers)) : "—"}</td>
