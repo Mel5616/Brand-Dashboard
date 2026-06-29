@@ -23,7 +23,18 @@ export async function PATCH(req: Request) {
   for (const k of ["likes", "reach"] as const) {
     if (b[k] !== undefined) fields[k] = parseCount(b[k]);
   }
-  if (Object.keys(fields).length === 0) return NextResponse.json({ ok: false }, { status: 400 });
+  // The Instagram/profile link lives on the roster (keyed by handle), shared across
+  // all that influencer's posts.
+  if (b.profile_url !== undefined && b.handle) {
+    let handle = String(b.handle).trim(); if (!handle.startsWith("@")) handle = "@" + handle.replace(/^@+/, "");
+    await fetch(`${sbUrl}/rest/v1/influencers?on_conflict=handle`, {
+      method: "POST",
+      headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify({ handle, profile_url: b.profile_url ? String(b.profile_url).slice(0, 500) : null }),
+    }).catch(() => {});
+  }
+
+  if (Object.keys(fields).length === 0) return NextResponse.json({ ok: true });
 
   const res = await fetch(`${sbUrl}/rest/v1/influencer_entries?id=eq.${encodeURIComponent(String(b.id))}`, {
     method: "PATCH",

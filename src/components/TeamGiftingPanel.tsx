@@ -11,7 +11,7 @@ type Gift = {
   id: number; month_key: string; handle: string | null; platform: string | null; brand: string | null;
   product_name: string | null; rrp: number | null; status: string | null; content_url: string | null;
   content_type: string | null; likes: number | null; reach: number | null; posted_at: string | null;
-  avatar_url: string | null;
+  avatar_url: string | null; profile_url: string | null;
 };
 type TopInf = { handle: string; likes: number; name: string | null; followers: number | null; avatar_url: string | null };
 type Social = { posts: number; likes: number; reach: number };
@@ -152,18 +152,43 @@ export function TeamGiftingPanel() {
       </div>
 
       {/* Post board */}
-      <div>
-        <h3 className="text-sm font-semibold text-slate-700 mb-3">Posts</h3>
-        {data.gifts.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">No gifts logged yet.</div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {data.gifts.map(g => (
-              <PostCard key={g.id} g={g} editing={editing === g.id} onEdit={() => setEditing(g.id)} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }} />
-            ))}
-          </div>
-        )}
+      <PostBoard gifts={data.gifts} editing={editing} setEditing={setEditing} onSaved={() => { setEditing(null); load(); }} />
+    </div>
+  );
+}
+
+function PostBoard({ gifts, editing, setEditing, onSaved }: { gifts: Gift[]; editing: number | null; setEditing: (id: number | null) => void; onSaved: () => void }) {
+  const [brand, setBrand] = useState("");
+  const [sort, setSort] = useState<"newest" | "brand" | "month">("newest");
+  const brands = Array.from(new Set(gifts.map(g => g.brand).filter(Boolean))) as string[];
+  const sortKey = (g: Gift) => g.posted_at || g.month_key + "-01";
+  let list = gifts.filter(g => !brand || g.brand === brand);
+  list = [...list].sort((a, b) => {
+    if (sort === "brand") return (a.brand || "").localeCompare(b.brand || "") || sortKey(b).localeCompare(sortKey(a));
+    if (sort === "month") return b.month_key.localeCompare(a.month_key) || (a.brand || "").localeCompare(b.brand || "");
+    return sortKey(b).localeCompare(sortKey(a));
+  });
+  return (
+    <div>
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <h3 className="text-sm font-semibold text-slate-700 mr-1">Posts</h3>
+        <select value={brand} onChange={e => setBrand(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white">
+          <option value="">All brands</option>{brands.sort().map(b => <option key={b} value={b}>{b}</option>)}
+        </select>
+        <select value={sort} onChange={e => setSort(e.target.value as any)} className="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white">
+          <option value="newest">Newest</option><option value="brand">By brand</option><option value="month">By month</option>
+        </select>
+        <span className="text-[11px] text-gray-400 ml-auto">{list.length} post{list.length === 1 ? "" : "s"}</span>
       </div>
+      {list.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">No gifts logged yet.</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {list.map(g => (
+            <PostCard key={g.id} g={g} editing={editing === g.id} onEdit={() => setEditing(g.id)} onClose={() => setEditing(null)} onSaved={onSaved} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -172,12 +197,23 @@ function PostCard({ g, editing, onEdit, onClose, onSaved }: { g: Gift; editing: 
   const er = engRate(g.likes, g.reach);
   if (editing) return <PostEditor g={g} onClose={onClose} onSaved={onSaved} />;
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      {/* Brand band on top */}
+      <div className="flex items-center justify-between px-4 py-2 bg-slate-50 border-b border-gray-100">
+        <span className="text-[11px] font-bold uppercase tracking-wide text-slate-600 truncate">{g.brand || "—"}</span>
+        <span className="text-[10px] text-gray-400 shrink-0">{mon(g.month_key)}</span>
+      </div>
+      <div className="p-4">
       <div className="flex items-start gap-3">
         <Avatar url={g.avatar_url} name={g.handle} size={40} />
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-slate-700 truncate">{g.handle || "—"}{g.platform && <span className="text-gray-400 font-normal"> · {g.platform}</span>}</p>
-          <p className="text-[11px] text-gray-400 truncate">{g.brand || "—"}{g.product_name ? ` · ${g.product_name}` : ""}</p>
+          <p className="font-semibold text-slate-700 truncate">
+            {g.profile_url
+              ? <a href={g.profile_url} target="_blank" rel="noopener" className="hover:text-emerald-600 hover:underline">{g.handle || "—"}</a>
+              : (g.handle || "—")}
+            {g.platform && <span className="text-gray-400 font-normal"> · {g.platform}</span>}
+          </p>
+          <p className="text-[11px] text-gray-400 truncate">{g.product_name || "—"}</p>
         </div>
         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${statusCls(g.status)}`}>{g.status || "Gifted"}</span>
       </div>
@@ -203,6 +239,7 @@ function PostCard({ g, editing, onEdit, onClose, onSaved }: { g: Gift; editing: 
           <button onClick={onEdit} className="text-xs font-semibold text-emerald-600 hover:underline">+ Add results</button>
         </div>
       )}
+      </div>
     </div>
   );
 }
@@ -214,6 +251,7 @@ function PostEditor({ g, onClose, onSaved }: { g: Gift; onClose: () => void; onS
   const [reach, setReach] = useState(g.reach != null ? String(g.reach) : "");
   const [posted, setPosted] = useState(g.posted_at || "");
   const [status, setStatus] = useState(g.status || "Live");
+  const [profileUrl, setProfileUrl] = useState(g.profile_url || "");
   const [avatar, setAvatar] = useState(g.avatar_url || "");
   const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -228,7 +266,7 @@ function PostEditor({ g, onClose, onSaved }: { g: Gift; onClose: () => void; onS
   async function save() {
     setBusy(true);
     await fetch("/api/influencer/post", { method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: g.id, content_url: url, content_type: type, likes, reach, posted_at: posted || null, status }) }).catch(() => {});
+      body: JSON.stringify({ id: g.id, handle: g.handle, profile_url: profileUrl, content_url: url, content_type: type, likes, reach, posted_at: posted || null, status }) }).catch(() => {});
     setBusy(false); onSaved();
   }
   const inp = "w-full text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-400";
@@ -245,6 +283,7 @@ function PostEditor({ g, onClose, onSaved }: { g: Gift; onClose: () => void; onS
         </div>
       </div>
       <div className="space-y-2">
+        <input value={profileUrl} onChange={e => setProfileUrl(e.target.value)} placeholder="Instagram profile (https://instagram.com/handle)" className={inp} />
         <input value={url} onChange={e => setUrl(e.target.value)} placeholder="Post link (https://instagram.com/p/…)" className={inp} />
         <div className="grid grid-cols-2 gap-2">
           <select value={type} onChange={e => setType(e.target.value)} className={inp + " bg-white"}>

@@ -5,5 +5,6 @@ alter table influencer_entries add column if not exists likes int;
 alter table influencer_entries add column if not exists posted_at date;
 alter table influencer_entries add column if not exists content_type text;  -- Reel | Post | Story | Other
 
--- Influencer profile photo (on the roster, keyed by handle) for the visual board.
+-- Influencer profile photo + Instagram/profile link (on the roster, keyed by handle).
 alter table influencers add column if not exists avatar_url text;
+alter table influencers add column if not exists profile_url text;
