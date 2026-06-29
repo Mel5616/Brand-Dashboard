@@ -59,14 +59,20 @@ export function Leaderboard({ brands, summaries, monthly, googleAds, metaAds, in
         .sort((a, c) => c.month_key.localeCompare(a.month_key))[0];
       const metaRoas = mLatest && mLatest.spend > 0 ? mLatest.revenue / mLatest.spend : 0;
       const revSpark = MONTH_KEYS.map(mk => monthly.find(m => m.brand_id === b.id && m.month_key === mk)?.revenue ?? 0);
+      // Latest (selected) month + the month before it, derived live from monthly data
+      // so the column tracks the FY/Month selector instead of a stale snapshot.
+      const li = MONTH_KEYS.indexOf(LATEST);
+      const latestRev = monthly.find(m => m.brand_id === b.id && m.month_key === LATEST)?.revenue ?? 0;
+      const prevRev = li > 0 ? (monthly.find(m => m.brand_id === b.id && m.month_key === MONTH_KEYS[li - 1])?.revenue ?? 0) : 0;
+      const mom = prevRev > 0 ? ((latestRev - prevRev) / prevRev) * 100 : 0;
       const gRoas = gLatest?.roas ?? 0;
       const roasAlert = (gRoas > 0 && gRoas < 1.5) || (metaRoas > 0 && metaRoas < 1.5);
-      const momAlert = (s?.mom_growth ?? 0) < -20;
+      const momAlert = mom < -20;
       return {
         brand: b,
         fy_revenue:     s?.fy_revenue ?? 0,
-        last_month_rev: s?.last_month_rev ?? 0,
-        mom_growth:     s?.mom_growth ?? 0,
+        last_month_rev: latestRev,
+        mom_growth:     mom,
         google_roas:    gRoas,
         meta_roas:      metaRoas,
         ig_followers:   igLatest?.followers ?? 0,
@@ -98,6 +104,7 @@ export function Leaderboard({ brands, summaries, monthly, googleAds, metaAds, in
   }
 
   const medals = ["🥇", "🥈", "🥉"];
+  const latestMonthShort = (() => { const [y, m] = LATEST.split("-"); return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("en-AU", { month: "short" }); })();
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -113,7 +120,7 @@ export function Leaderboard({ brands, summaries, monthly, googleAds, metaAds, in
               <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400">Brand</th>
               <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400">Trend</th>
               <Th label="FY Revenue" k="fy_revenue" />
-              <Th label="May Revenue" k="last_month_rev" />
+              <Th label={`${latestMonthShort} Revenue`} k="last_month_rev" />
               <Th label="MoM" k="mom_growth" />
               <Th label="Google ROAS" k="google_roas" />
               <Th label="Meta ROAS" k="meta_roas" />
