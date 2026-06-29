@@ -20,7 +20,7 @@ export async function GET() {
 
   const [bRes, eRes, rRes] = await Promise.all([
     sb("influencer_budgets?select=brand,month_key,budget"),
-    sb("influencer_entries?select=id,brand,month_key,total_cost,rrp,handle,platform,product_name,status,content_url,likes,reach,posted_at,content_type&order=month_key.desc"),
+    sb("influencer_entries?select=id,brand,month_key,total_cost,rrp,handle,platform,product_name,status,content_url,likes,reach,posted_at,content_type,affiliate_code&order=month_key.desc"),
     sb("influencers?select=handle,name,followers,avatar_url,profile_url"),
   ]);
   const bText = await bRes.text(), eText = await eRes.text();
@@ -52,7 +52,7 @@ export async function GET() {
     rrp: e.rrp != null ? Math.round(Number(e.rrp)) : null,
     status: e.status ?? null, content_url: e.content_url ?? null, content_type: e.content_type ?? null,
     likes: e.likes != null ? Number(e.likes) : null, reach: e.reach != null ? Number(e.reach) : null,
-    posted_at: e.posted_at ?? null,
+    posted_at: e.posted_at ?? null, affiliate_code: e.affiliate_code ?? null,
     avatar_url: rosterBy.get(e.handle)?.avatar_url ?? null,
     profile_url: rosterBy.get(e.handle)?.profile_url ?? null,
   }));

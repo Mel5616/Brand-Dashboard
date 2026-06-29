@@ -8,3 +8,6 @@ alter table influencer_entries add column if not exists content_type text;  -- R
 -- Influencer profile photo + Instagram/profile link (on the roster, keyed by handle).
 alter table influencers add column if not exists avatar_url text;
 alter table influencers add column if not exists profile_url text;
+
+-- Unique affiliate / discount code given to the influencer (per gift).
+alter table influencer_entries add column if not exists affiliate_code text;

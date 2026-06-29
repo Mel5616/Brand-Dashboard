@@ -74,7 +74,7 @@ export default function LogGift() {
         // Keep the influencer + month; clear just the product (and the cash fee, so it
         // isn't counted again for the same collaboration) so the next product is quick.
         setBatch(b => b + 1); setPicked(null); setSearch(""); setOneOff(false);
-        setF((p: any) => ({ month_key: p.month_key, name: p.name, handle: p.handle, platform: p.platform, followers: p.followers, profile_url: p.profile_url, campaign: p.campaign }));
+        setF((p: any) => ({ month_key: p.month_key, name: p.name, handle: p.handle, platform: p.platform, followers: p.followers, profile_url: p.profile_url, affiliate_code: p.affiliate_code, campaign: p.campaign }));
       } else setDone(true);
     }
     else if (res?.needsSetup) setNeedsSetup(true);
@@ -205,9 +205,15 @@ export default function LogGift() {
             </div>
           </div>
 
-          <div>
-            <label className={label}>Instagram / profile URL <span className="text-gray-300 font-normal">(optional)</span></label>
-            <input value={f.profile_url ?? ""} onChange={e => set("profile_url", e.target.value)} placeholder="https://instagram.com/handle" className={input} />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={label}>Instagram / profile URL <span className="text-gray-300 font-normal">(optional)</span></label>
+              <input value={f.profile_url ?? ""} onChange={e => set("profile_url", e.target.value)} placeholder="https://instagram.com/handle" className={input} />
+            </div>
+            <div>
+              <label className={label}>Affiliate / discount code <span className="text-gray-300 font-normal">(optional)</span></label>
+              <input value={f.affiliate_code ?? ""} onChange={e => set("affiliate_code", e.target.value)} placeholder="e.g. SARAH15" className={input} />
+            </div>
           </div>
 
           <div>

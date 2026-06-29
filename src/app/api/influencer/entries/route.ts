@@ -72,6 +72,7 @@ export async function POST(req: Request) {
     month_key: b.month_key, handle: b.handle || null, platform: b.platform || null,
     followers: parseCount(b.followers),
     campaign: b.campaign || null, brand, style_code: b.style_code || null, product_name, rrp,
+    affiliate_code: b.affiliate_code ? String(b.affiliate_code).slice(0, 120) : null,
     gifting_cost, influencer_cost, total_cost: round(gifting_cost + influencer_cost),
   };
   const res = await fetch(`${sbUrl}/rest/v1/influencer_entries`, { method: "POST", headers: headers({ Prefer: "return=minimal" }), body: JSON.stringify(row) });

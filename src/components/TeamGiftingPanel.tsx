@@ -11,7 +11,7 @@ type Gift = {
   id: number; month_key: string; handle: string | null; platform: string | null; brand: string | null;
   product_name: string | null; rrp: number | null; status: string | null; content_url: string | null;
   content_type: string | null; likes: number | null; reach: number | null; posted_at: string | null;
-  avatar_url: string | null; profile_url: string | null;
+  avatar_url: string | null; profile_url: string | null; affiliate_code: string | null;
 };
 type TopInf = { handle: string; likes: number; name: string | null; followers: number | null; avatar_url: string | null };
 type Social = { posts: number; likes: number; reach: number };
@@ -226,6 +226,7 @@ function PostCard({ g, editing, onEdit, onClose, onSaved }: { g: Gift; editing: 
             {g.platform && <span className="text-gray-400 font-normal"> · {g.platform}</span>}
           </p>
           <p className="text-[11px] text-gray-400 truncate">{g.product_name || "—"}</p>
+          {g.affiliate_code && <span className="inline-block mt-1 text-[10px] font-mono font-semibold text-violet-700 bg-violet-50 rounded px-1.5 py-0.5">🔗 {g.affiliate_code}</span>}
         </div>
         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${statusCls(g.status)}`}>{g.status || "Gifted"}</span>
       </div>
