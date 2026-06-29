@@ -30,9 +30,8 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 const norm = (s: string | null) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 // AU financial year: starts 1 July. July 2026 onward = FY 2026-27.
 const fyStartYear = (s: string) => { const dt = d(s); return dt.getMonth() >= 6 ? dt.getFullYear() : dt.getFullYear() - 1; };
-const fyLabel = (y: number) => `FY ${y}-${String((y + 1) % 100).padStart(2, "0")}`;
 
-export function PromotionalCalendar({ canEdit, brands }: { canEdit: boolean; brands: Brand[] }) {
+export function PromotionalCalendar({ canEdit, brands, fy, month }: { canEdit: boolean; brands: Brand[]; fy: string; month: string }) {
   const [promos, setPromos] = useState<Promo[]>([]);
   const [lines, setLines] = useState<Line[]>([]);
   const [d2c, setD2c] = useState<D2c[]>([]);
@@ -43,7 +42,6 @@ export function PromotionalCalendar({ canEdit, brands }: { canEdit: boolean; bra
   const [tierF, setTierF] = useState("");
   const [retailerF, setRetailerF] = useState("");
   const [statusF, setStatusF] = useState("");
-  const [fyF, setFyF] = useState("");
   const [open, setOpen] = useState<number | null>(null);
 
   async function load() {
@@ -70,18 +68,12 @@ export function PromotionalCalendar({ canEdit, brands }: { canEdit: boolean; bra
     return byRetailer.length ? byRetailer : base;
   }
 
-  // Financial-year filter (global). Default to the current FY, or the earliest with data.
-  const inFY = (s: string | null) => !fyF || (!!s && String(fyStartYear(s)) === fyF);
-  const fyList = useMemo(() => Array.from(new Set([...promos.map(p => p.period_start), ...d2c.map(r => r.period_start)].map(fyStartYear))).sort((a, b) => a - b), [promos, d2c]);
-  useEffect(() => {
-    if (!fyF && fyList.length) {
-      const cur = fyStartYear(new Date().toISOString().slice(0, 10));
-      setFyF(String(fyList.includes(cur) ? cur : fyList[0]));
-    }
-  }, [fyList]); // eslint-disable-line react-hooks/exhaustive-deps
-  const promosFY = useMemo(() => promos.filter(p => inFY(p.period_start)), [promos, fyF]); // eslint-disable-line react-hooks/exhaustive-deps
-  const linesFY = useMemo(() => lines.filter(l => inFY(l.start_date)), [lines, fyF]); // eslint-disable-line react-hooks/exhaustive-deps
-  const d2cFY = useMemo(() => d2c.filter(r => inFY(r.period_start)), [d2c, fyF]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Driven by the sidebar's Financial Year + Month selectors (no duplicate control here).
+  const fyStart = Number((fy || "").slice(0, 4)) || null;
+  const inScope = (s: string | null) => !!s && (fyStart === null || fyStartYear(s) === fyStart) && (month === "all" || !month || s.slice(0, 7) === month);
+  const promosFY = useMemo(() => promos.filter(p => inScope(p.period_start)), [promos, fy, month]); // eslint-disable-line react-hooks/exhaustive-deps
+  const linesFY = useMemo(() => lines.filter(l => inScope(l.start_date)), [lines, fy, month]); // eslint-disable-line react-hooks/exhaustive-deps
+  const d2cFY = useMemo(() => d2c.filter(r => inScope(r.period_start)), [d2c, fy, month]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const retailers = useMemo(() => Array.from(new Set(linesFY.map(l => l.customer).filter(Boolean))) as string[], [linesFY]);
   const promoBrands = useMemo(() => Array.from(new Set(promosFY.map(p => p.brand))).sort(), [promosFY]);
@@ -125,9 +117,6 @@ export function PromotionalCalendar({ canEdit, brands }: { canEdit: boolean; bra
           <button onClick={() => setView("calendar")} className={`px-3 py-1.5 border-l border-gray-200 ${view === "calendar" ? "bg-emerald-500 text-white" : "text-slate-600"}`}>Calendar</button>
           <button onClick={() => setView("products")} className={`px-3 py-1.5 border-l border-gray-200 ${view === "products" ? "bg-emerald-500 text-white" : "text-slate-600"}`}>By product</button>
         </div>
-        <select value={fyF} onChange={e => setFyF(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white font-medium">
-          <option value="">All years</option>{fyList.map(y => <option key={y} value={String(y)}>{fyLabel(y)}</option>)}
-        </select>
         <select value={brandF} onChange={e => setBrandF(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white">
           <option value="">All brands</option>{promoBrands.map(b => <option key={b} value={b}>{b}</option>)}
         </select>

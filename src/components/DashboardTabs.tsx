@@ -821,7 +821,7 @@ export function DashboardTabs({
           {active === "promotions" && (
             <>
               <SectionBar title="Promotional Calendar" />
-              <PromotionalCalendar canEdit={role === "admin"} brands={brands} />
+              <PromotionalCalendar canEdit={role === "admin"} brands={brands} fy={fy} month={monthSel} />
             </>
           )}
 
