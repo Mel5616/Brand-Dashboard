@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { getDashboardData } from "@/lib/db";
 import { getBoothFunnel } from "@/lib/booth";
 import { getAccess, getAccessForUser } from "@/lib/access";
-import { SyncStatus } from "@/components/SyncStatus";
 import { DashboardTabs } from "@/components/DashboardTabs";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { AiInsightsPanel } from "@/components/AiInsightsPanel";
@@ -88,7 +87,6 @@ export default async function Dashboard(props: { searchParams: Promise<{ preview
               marketingBudgets={isAdmin ? marketingBudgets : []}
               marketingActuals={isAdmin ? marketingActuals : []}
             />
-            <SyncStatus lastSync={lastSync} isAdmin={isAdmin} />
             <UserMenu email={real.user.email} role={real.role!} />
           </div>
         </div>
@@ -107,6 +105,7 @@ export default async function Dashboard(props: { searchParams: Promise<{ preview
         role={access.role!}
         allowedTabs={access.allowedTabs}
         currentEmail={access.user.email}
+        lastSync={lastSync}
         brands={brands}
         /* financial data withheld from non-admins (not just hidden — not sent) */
         summaries={summaries}

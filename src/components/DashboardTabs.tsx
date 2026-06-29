@@ -11,6 +11,7 @@ import { buildReport } from "@/lib/report";
 import { GoogleCampaignTable, MetaPlatformBreakdown } from "./ChannelBrandDetail";
 import { CampaignCalendar } from "./CampaignCalendar";
 import { PromotionalCalendar } from "./PromotionalCalendar";
+import { SyncStatus } from "./SyncStatus";
 import { SeoPanel } from "./SeoPanel";
 import { InsightsPanel } from "./InsightsPanel";
 import { SocialPanel } from "./SocialPanel";
@@ -240,6 +241,7 @@ interface Props {
   role?: "admin" | "member";
   allowedTabs?: string[];
   currentEmail?: string;
+  lastSync?: { finished_at: string | null; triggered_by: string } | null;
 }
 
 export function DashboardTabs({
@@ -250,7 +252,7 @@ export function DashboardTabs({
   marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, boothFunnel, kpis,
   gscMetrics, gscQueries, gscInsights, semrushMetrics, semrushCompetitors,
   semrushKeywords, semrushPages, brandInsights, instagramMedia, channelSales, shopifySources, eventbriteEvents, asanaTasks,
-  role = "admin", allowedTabs, currentEmail,
+  role = "admin", allowedTabs, currentEmail, lastSync,
 }: Props) {
   // Financial tabs (cost / margin / budget) are admin-only even if otherwise granted.
   const FINANCIAL = ["budget", "influencer", "snapshot", "uppababy"];
@@ -458,6 +460,9 @@ export function DashboardTabs({
           </button>
         </div>
       )}
+      <div className="border-t border-gray-100">
+        <SyncStatus lastSync={lastSync ?? null} isAdmin={role === "admin"} />
+      </div>
     </aside>
   );
 

@@ -12,12 +12,16 @@ export function SyncStatus({ lastSync, isAdmin = true }: { lastSync: { finished_
     try {
       const res = await fetch("/api/sync", { method: "POST" });
       const json = await res.json();
-      setMsg(json.message ?? (json.ok ? "Sync started" : "Couldn’t start sync"));
-      // sync runs in the cloud (~1–2 min); reload later to pick up fresh data
-      if (json.ok) setTimeout(() => window.location.reload(), 90_000);
+      if (json.ok) {
+        // Sync runs in the cloud (~1–2 min). Keep the spinner going, then reload.
+        setMsg("Syncing… ~1–2 min");
+        setTimeout(() => window.location.reload(), 90_000);
+      } else {
+        setMsg(json.message ?? "Couldn’t start sync");
+        setSyncing(false);
+      }
     } catch {
       setMsg("Error — try again");
-    } finally {
       setSyncing(false);
     }
   }
@@ -26,19 +30,26 @@ export function SyncStatus({ lastSync, isAdmin = true }: { lastSync: { finished_
     ? new Date(lastSync.finished_at).toLocaleString("en-AU", { timeZone: "Australia/Sydney", dateStyle: "short", timeStyle: "short" })
     : "Never";
 
+  const RefreshIcon = (
+    <svg className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0A8.003 8.003 0 015.064 15m14.355 0H15" />
+    </svg>
+  );
+
   return (
-    <div className="flex items-center gap-3 text-sm text-gray-500">
-      <span>Last sync: {timeStr} AEST</span>
-      {isAdmin && (
-        <button
-          onClick={triggerSync}
-          disabled={syncing}
-          className="px-3 py-1 rounded-md bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 disabled:opacity-50 transition"
-        >
-          {syncing ? "Starting…" : "↻ Sync Now"}
-        </button>
-      )}
-      {msg && <span className="text-xs text-emerald-600">{msg}</span>}
+    <div className="px-2 pb-3">
+      <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-gray-50">
+        <div className="min-w-0">
+          <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-gray-400">{syncing ? "Syncing" : "Last sync"}</p>
+          <p className="text-[11px] text-gray-500 truncate">{syncing ? (msg || "in progress…") : `${timeStr} AEST`}</p>
+        </div>
+        {isAdmin && (
+          <button onClick={triggerSync} disabled={syncing} title="Sync now"
+            className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 hover:text-emerald-700 disabled:opacity-60">
+            {RefreshIcon}{!syncing && "Sync"}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
