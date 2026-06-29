@@ -298,19 +298,23 @@ export function snapshotHtml(s: Snapshot): string {
   const r = (k: string, v: string) => `<div class="r"><span class="k">${k}</span><span class="val">${v}</span></div>`;
 
   // Whole-business section: KPI strip + channel split (bar + legend) + monthly revenue trend graph.
-  // Flat leaf channels only — no "Direct to Consumer" roll-up, so the bars/legend
-  // sum to the real total ($370K / 100%) and match the channel count on the card.
-  const chanPie = svgPie(s.channelRows.map(c => ({ value: c.fy, color: c.color })), fmt(s.wholeFy));
-  const chanLegend = s.channelRows.map(c =>
-    `<div class="cr"><span class="dot" style="background:${c.color}"></span><span class="cn">${esc(c.name)}</span><span class="cv">${fmtFull(c.fy)}</span><span class="cp">${c.share.toFixed(0)}%</span></div>`
-  ).join("");
+  // Website Sales + Tradeshows roll up under a "Direct to Consumer" parent. The pie +
+  // top-level rows use the groups (so they sum to the real total / 100%); the two
+  // components show indented underneath with their $ only (no %), so they read as a
+  // breakdown of D2C and can never be misread as additional, additive channels.
+  const chanPie = svgPie(s.channelGroups.map(c => ({ value: c.fy, color: c.color })), fmt(s.wholeFy));
+  const chanLegend = s.channelGroups.map(c => {
+    const row = `<div class="cr"><span class="dot" style="background:${c.color}"></span><span class="cn">${esc(c.name)}</span><span class="cv">${fmtFull(c.fy)}</span><span class="cp">${c.share.toFixed(0)}%</span></div>`;
+    const kids = c.kids ? c.kids.map(k => `<div class="cr ck"><span class="dot sm" style="background:${k.color}"></span><span class="cn">${esc(k.name)}</span><span class="cv">${fmtFull(k.fy)}</span><span class="cp"></span></div>`).join("") : "";
+    return row + kids;
+  }).join("");
   const wholeSection = s.wholeFy > 0 ? `
   <div class="sec">
     <div class="h">Whole business · all channels</div>
     <div class="kpis">
       <div class="c"><div class="l">Total brand revenue · FY</div><div class="v">${fmt(s.wholeFy)}</div></div>
       <div class="c"><div class="l">${esc(s.monthLong)} · all channels</div><div class="v">${fmt(s.wholeMonth)}</div></div>
-      <div class="c"><div class="l">Channels</div><div class="v">${s.channelRows.length}</div></div>
+      <div class="c"><div class="l">Channels</div><div class="v">${s.channelGroups.length}</div></div>
       <div class="c"><div class="l">Digital share</div><div class="v">${s.digitalShare.toFixed(0)}%</div></div>
     </div>
     <div class="chanwrap">
@@ -367,6 +371,7 @@ export function snapshotHtml(s: Snapshot): string {
   const oppRows = opp.map(o => `<tr><td><span class="pos">#${o.position}</span> &nbsp;${esc(o.phrase)}</td><td class="r">${o.volume.toLocaleString()}</td><td class="r">${o.cpc ? "$" + o.cpc.toFixed(2) : "—"}</td></tr>`).join("");
   const aiBlock = s.aiInsight ? `<div class="ai"><div class="aitext">${cleanInsight(s.aiInsight).replace(/\n/g, "<br>")}</div></div>` : "";
   const seoBlock = opp.length ? `
+    <div class="h" style="margin-top:24px">SEO opportunities</div>
     <div class="seostat">SEMrush organic visibility: <strong>${s.seo.keywords.toLocaleString()}</strong> keywords · <strong>${Math.round(s.seo.traffic).toLocaleString()}</strong> est. visits/mo · <strong>${fmt(s.seo.value)}</strong> traffic value</div>
     <table class="optbl"><thead><tr><th>Opportunity to move &middot; ranks 4&ndash;20</th><th class="r">Searches/mo</th><th class="r">CPC</th></tr></thead><tbody>${oppRows}</tbody></table>` : "";
   const aiSection = (aiBlock || seoBlock) ? `
