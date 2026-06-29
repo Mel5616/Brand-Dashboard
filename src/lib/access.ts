@@ -1,12 +1,11 @@
 import { createAuthServerClient } from "./supabase/auth-server";
 import { createAdminClient } from "./supabase/admin";
+import { ALL_TABS, ADMIN_ONLY_TABS, type TabId } from "./tabs";
 
-// Tab ids must match the TABS in DashboardTabs.tsx
-export const ALL_TABS = ["brands", "shopify", "google-ads", "meta-ads", "tradeshows", "budget", "calendar", "content", "influencer"] as const;
-export type TabId = (typeof ALL_TABS)[number];
-
-// Tabs that expose cost / margin / budget — admin-only even if otherwise granted
-export const FINANCIAL_TABS: TabId[] = ["budget"];
+// Re-exported so existing importers keep working; the source of truth is lib/tabs.ts.
+export { ALL_TABS };
+export type { TabId };
+export const FINANCIAL_TABS: TabId[] = ADMIN_ONLY_TABS;
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "mel@coolkidz.com.au")
   .split(",").map(s => s.trim().toLowerCase()).filter(Boolean);

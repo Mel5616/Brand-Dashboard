@@ -143,11 +143,11 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
 // Sidebar grouping — how you market (top) vs where you sell (bottom).
 const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Overview", ids: ["brands", "insights", "report", "snapshot", "uppababy"] },
+  { label: "Revenue & Channels", ids: ["sales", "shopify", "tradeshows"] },
   { label: "Plan", ids: ["campaign-calendar", "calendar", "content", "events", "tasks", "design-requests"] },
   { label: "Operations", ids: ["budget", "new-products"] },
   { label: "Paid", ids: ["google-ads", "meta-ads"] },
   { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting"] },
-  { label: "Revenue & Channels", ids: ["sales", "shopify", "tradeshows"] },
 ];
 
 // Report-type pages collapse under a "Reports" dropdown in the sidebar.

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { TabSection } from "@/lib/tabs";
 
 type Row = {
   id: string; email: string; name: string; role: "admin" | "member";
@@ -8,10 +9,9 @@ type Row = {
   last_sign_in_at: string | null; created_at: string | null;
 };
 
-const pretty = (id: string) => id.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 const when = (s: string | null) => s ? new Date(s).toLocaleString("en-AU", { dateStyle: "medium", timeStyle: "short" }) : "—";
 
-export function UsersAdmin({ allTabs }: { allTabs: string[] }) {
+export function UsersAdmin({ sections, adminOnly }: { sections: TabSection[]; adminOnly: string[] }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [needsSetup, setNeedsSetup] = useState(false);
@@ -45,7 +45,7 @@ export function UsersAdmin({ allTabs }: { allTabs: string[] }) {
           </div>
         )}
 
-        {showCreate && <CreateUser allTabs={allTabs} onClose={() => setShowCreate(false)} onSaved={() => { setShowCreate(false); load(); }} />}
+        {showCreate && <CreateUser sections={sections} adminOnly={adminOnly} onClose={() => setShowCreate(false)} onSaved={() => { setShowCreate(false); load(); }} />}
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
@@ -64,7 +64,7 @@ export function UsersAdmin({ allTabs }: { allTabs: string[] }) {
               ) : rows.length === 0 && !needsSetup ? (
                 <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-300">No users yet.</td></tr>
               ) : rows.map(u => (
-                <UserRow key={u.id} u={u} allTabs={allTabs} open={editing === u.id}
+                <UserRow key={u.id} u={u} sections={sections} adminOnly={adminOnly} open={editing === u.id}
                   onToggle={() => setEditing(editing === u.id ? null : u.id)} onChanged={load} />
               ))}
             </tbody>
@@ -75,7 +75,7 @@ export function UsersAdmin({ allTabs }: { allTabs: string[] }) {
   );
 }
 
-function UserRow({ u, allTabs, open, onToggle, onChanged }: { u: Row; allTabs: string[]; open: boolean; onToggle: () => void; onChanged: () => void }) {
+function UserRow({ u, sections, adminOnly, open, onToggle, onChanged }: { u: Row; sections: TabSection[]; adminOnly: string[]; open: boolean; onToggle: () => void; onChanged: () => void }) {
   return (
     <>
       <tr className={u.disabled ? "opacity-50" : ""}>
@@ -91,25 +91,55 @@ function UserRow({ u, allTabs, open, onToggle, onChanged }: { u: Row; allTabs: s
         <td className="px-4 py-3 text-xs text-slate-500">{when(u.last_sign_in_at)}</td>
         <td className="px-4 py-3 text-right"><button onClick={onToggle} className="text-xs text-emerald-600 hover:underline">{open ? "Close" : "Manage"}</button></td>
       </tr>
-      {open && <tr><td colSpan={5} className="px-4 pb-4 bg-slate-50/60"><EditUser u={u} allTabs={allTabs} onChanged={onChanged} /></td></tr>}
+      {open && <tr><td colSpan={5} className="px-4 pb-4 bg-slate-50/60"><EditUser u={u} sections={sections} adminOnly={adminOnly} onChanged={onChanged} /></td></tr>}
     </>
   );
 }
 
-function TabPicker({ value, onChange, allTabs }: { value: string[]; onChange: (v: string[]) => void; allTabs: string[] }) {
+function TabPicker({ value, onChange, sections, adminOnly }: { value: string[]; onChange: (v: string[]) => void; sections: TabSection[]; adminOnly: string[] }) {
+  const grantable = sections.flatMap(s => s.tabs.map(t => t.id)).filter(id => !adminOnly.includes(id));
+  const allOn = grantable.every(id => value.includes(id));
+  function toggleSection(ids: string[], on: boolean) {
+    const set = new Set(value);
+    ids.filter(id => !adminOnly.includes(id)).forEach(id => on ? set.add(id) : set.delete(id));
+    onChange([...set]);
+  }
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-      {allTabs.map(t => (
-        <label key={t} className="flex items-center gap-2 text-xs text-slate-600">
-          <input type="checkbox" checked={value.includes(t)} onChange={e => onChange(e.target.checked ? [...value, t] : value.filter(x => x !== t))} />
-          {pretty(t)}
-        </label>
-      ))}
+    <div className="space-y-3">
+      <button type="button" onClick={() => onChange(allOn ? value.filter(v => adminOnly.includes(v)) : [...new Set([...value, ...grantable])])}
+        className="text-[11px] font-semibold text-emerald-600 hover:underline">{allOn ? "Clear all" : "Select all"}</button>
+      {sections.map(sec => {
+        const ids = sec.tabs.map(t => t.id);
+        const granIds = ids.filter(id => !adminOnly.includes(id));
+        const secOn = granIds.length > 0 && granIds.every(id => value.includes(id));
+        return (
+          <div key={sec.label}>
+            <div className="flex items-center gap-2 mb-1">
+              {granIds.length > 0 && (
+                <input type="checkbox" checked={secOn} onChange={e => toggleSection(ids, e.target.checked)} className="accent-emerald-500" />
+              )}
+              <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{sec.label}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5 ml-5">
+              {sec.tabs.map(t => {
+                const locked = adminOnly.includes(t.id);
+                return (
+                  <label key={t.id} className={`flex items-center gap-2 text-xs ${locked ? "text-slate-300" : "text-slate-600"}`} title={locked ? "Admin only" : undefined}>
+                    <input type="checkbox" disabled={locked} checked={!locked && value.includes(t.id)}
+                      onChange={e => onChange(e.target.checked ? [...value, t.id] : value.filter(x => x !== t.id))} />
+                    {t.label}{locked && <span className="text-[9px] uppercase text-slate-300">admin</span>}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-function EditUser({ u, allTabs, onChanged }: { u: Row; allTabs: string[]; onChanged: () => void }) {
+function EditUser({ u, sections, adminOnly, onChanged }: { u: Row; sections: TabSection[]; adminOnly: string[]; onChanged: () => void }) {
   const [role, setRole] = useState(u.role);
   const [tabs, setTabs] = useState<string[]>(u.allowed_tabs);
   const [name, setName] = useState(u.name);
@@ -156,7 +186,7 @@ function EditUser({ u, allTabs, onChanged }: { u: Row; allTabs: string[]; onChan
         {role !== "admin" && (
           <div>
             <label className="text-xs font-semibold text-slate-400 uppercase">Sections this user can see</label>
-            <div className="mt-1.5"><TabPicker value={tabs} onChange={setTabs} allTabs={allTabs} /></div>
+            <div className="mt-1.5"><TabPicker value={tabs} onChange={setTabs} sections={sections} adminOnly={adminOnly} /></div>
           </div>
         )}
         <div>
@@ -175,7 +205,7 @@ function EditUser({ u, allTabs, onChanged }: { u: Row; allTabs: string[]; onChan
   );
 }
 
-function CreateUser({ allTabs, onClose, onSaved }: { allTabs: string[]; onClose: () => void; onSaved: () => void }) {
+function CreateUser({ sections, adminOnly, onClose, onSaved }: { sections: TabSection[]; adminOnly: string[]; onClose: () => void; onSaved: () => void }) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [pw, setPw] = useState("");
@@ -211,7 +241,7 @@ function CreateUser({ allTabs, onClose, onSaved }: { allTabs: string[]; onClose:
           {role === "member" ? (
             <>
               <label className="text-xs font-semibold text-slate-400 uppercase">Sections this user can see</label>
-              <div className="mt-1.5"><TabPicker value={tabs} onChange={setTabs} allTabs={allTabs} /></div>
+              <div className="mt-1.5"><TabPicker value={tabs} onChange={setTabs} sections={sections} adminOnly={adminOnly} /></div>
             </>
           ) : <p className="text-xs text-slate-400">Admins can see every section.</p>}
         </div>
