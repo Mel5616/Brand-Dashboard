@@ -9,10 +9,10 @@ export type TabSection = { label: string; tabs: TabDef[] };
 // Order here = the order of the blue-heading groups in the sidebar.
 export const TAB_SECTIONS: TabSection[] = [
   { label: "Overview", tabs: [
-    { id: "brands", label: "Brands" },
+    { id: "brands", label: "Portfolio Overview" },
     { id: "insights", label: "Insights" },
     { id: "report", label: "Budget vs Actuals" },
-    { id: "snapshot", label: "Snapshot" },
+    { id: "snapshot", label: "Brand Snapshot" },
     { id: "uppababy", label: "UPPAbaby" },
   ] },
   { label: "Revenue & Channels", tabs: [

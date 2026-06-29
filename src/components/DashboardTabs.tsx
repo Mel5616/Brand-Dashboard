@@ -45,7 +45,7 @@ type TabId = "brands" | "insights" | "campaign-calendar" | "promotions" | "repor
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
-    id: "brands", label: "Brands",
+    id: "brands", label: "Portfolio Overview",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
   },
   {
@@ -65,7 +65,7 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
   },
   {
-    id: "snapshot", label: "Snapshot",
+    id: "snapshot", label: "Brand Snapshot",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a2 2 0 012-2h12a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V5z M8 7h8M8 11h8M8 15h5" /></svg>,
   },
   {
@@ -327,7 +327,6 @@ export function DashboardTabs({
   const filteredMeta     = brandFilter === "all" ? metaAds   : metaAds.filter((d: any) => d.brand_id === brandFilter);
   const filteredKlaviyo  = brandFilter === "all" ? klaviyo   : klaviyo.filter((d: any) => d.brand_id === brandFilter);
 
-  const topProducts = [...products].sort((a: any, b: any) => b.gross_sales - a.gross_sales).slice(0, 10);
 
   // FY-aware headline KPIs (recomputed from the filtered data so they track the toggle)
   const fyRevenue   = monthly.reduce((s: number, m: any) => s + (m.revenue ?? 0), 0);
@@ -746,42 +745,6 @@ export function DashboardTabs({
                 </div>
               </div>
 
-              {topProducts.length > 0 && (
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                  <h2 className="font-semibold text-gray-800 mb-1">Top Products Portfolio-Wide</h2>
-                  <p className="text-xs text-gray-400 mb-4">{fyLabel} gross sales across all brands</p>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr style={{ background: "#f8fafc" }}>
-                          <th className="text-left px-4 py-2.5 text-[10px] uppercase tracking-wider text-gray-400 font-semibold w-8">#</th>
-                          <th className="text-left px-4 py-2.5 text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Product</th>
-                          <th className="text-left px-4 py-2.5 text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Brand</th>
-                          <th className="text-right px-4 py-2.5 text-[10px] uppercase tracking-wider text-gray-400 font-semibold">Revenue</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-50">
-                        {topProducts.map((p: any, i: number) => {
-                          const brand = brands.find((b: any) => b.id === p.brand_id);
-                          return (
-                            <tr key={i} className="hover:bg-gray-50/60 cursor-pointer transition-colors" onClick={() => openBrand(p.brand_id)}>
-                              <td className="px-4 py-2.5 text-xs text-gray-400 font-medium">{i + 1}</td>
-                              <td className="px-4 py-2.5 text-slate-700 font-medium">{p.title}</td>
-                              <td className="px-4 py-2.5">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-2 h-2 rounded-full shrink-0" style={{ background: brand?.color ?? "#ccc" }} />
-                                  <span className="text-xs text-gray-500">{brand?.name ?? "—"}</span>
-                                </div>
-                              </td>
-                              <td className="px-4 py-2.5 text-right font-semibold text-slate-800">{fmt(p.gross_sales)}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
 
               <Leaderboard
                 brands={brands}
