@@ -37,6 +37,7 @@ export type SnapshotInput = {
   semrushMetrics: { brand_id: number; month_key: string; organic_keywords: number; organic_traffic: number; traffic_value: number }[];
   semrushKeywords: { brand_id: number; month_key: string; phrase: string; position: number; search_volume: number; cpc: number; url: string }[];
   note?: string;            // editable commentary rendered into the report
+  insightsOverride?: string; // edited "Insights and opportunities" text; replaces the AI version
 };
 
 // Rates may arrive as a fraction (0.515) or already as a percentage (51.5). Normalise to a percentage.
@@ -170,7 +171,9 @@ export function buildSnapshot(d: SnapshotInput) {
   ].filter(c => c.spend > 0);
 
   // ── AI insight + SEMrush organic opportunities ──────────────────────
-  const aiInsight = [...forBrand(d.brandInsights)].sort((a, b) => (b.generated_at || "").localeCompare(a.generated_at || ""))[0]?.content ?? "";
+  const aiInsight = (d.insightsOverride && d.insightsOverride.trim())
+    ? d.insightsOverride
+    : ([...forBrand(d.brandInsights)].sort((a, b) => (b.generated_at || "").localeCompare(a.generated_at || ""))[0]?.content ?? "");
   const smRows = forBrand(d.semrushKeywords);
   const smMonth = [...new Set(smRows.map(k => k.month_key))].sort().pop() ?? null;
   const opportunities = smRows
@@ -350,7 +353,7 @@ export function snapshotHtml(s: Snapshot): string {
   </div>` : "";
 
   // AI insights + SEMrush "opportunities to move" (striking-distance keywords).
-  const cleanInsight = (t: string) => esc(t).replace(/^#{1,6}\s*/gm, "").replace(/^\s*[-*]\s+/gm, "• ").replace(/\*\*(.+?)\*\*/g, "$1").trim().slice(0, 900);
+  const cleanInsight = (t: string) => esc(t).replace(/^#{1,6}\s*/gm, "").replace(/^\s*[-*]\s+/gm, "• ").replace(/\*\*(.+?)\*\*/g, "$1").trim().slice(0, 2000);
   const opp = s.seo.opportunities;
   const oppRows = opp.map(o => `<tr><td><span class="pos">#${o.position}</span> &nbsp;${esc(o.phrase)}</td><td class="r">${o.volume.toLocaleString()}</td><td class="r">${o.cpc ? "$" + o.cpc.toFixed(2) : "—"}</td></tr>`).join("");
   const aiBlock = s.aiInsight ? `<div class="ai"><div class="aitext">${cleanInsight(s.aiInsight).replace(/\n/g, "<br>")}</div></div>` : "";

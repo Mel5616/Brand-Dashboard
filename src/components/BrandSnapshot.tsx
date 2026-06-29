@@ -23,6 +23,12 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
   const [savedNote, setSavedNote] = useState("");
   const [noteState, setNoteState] = useState<"idle" | "loading" | "saving" | "saved" | "needsSetup" | "error">("idle");
 
+  // Editable AI insights. Pre-fills with the generated text; a saved edit replaces it in the report.
+  const aiDefault = useMemo(() => [...(data.brandInsights ?? [])].filter((i: any) => i.brand_id === brandId).sort((a: any, b: any) => (b.generated_at || "").localeCompare(a.generated_at || ""))[0]?.content ?? "", [data.brandInsights, brandId]);
+  const [insights, setInsights] = useState("");
+  const [savedInsights, setSavedInsights] = useState("");
+  const [insState, setInsState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
   // Email the report to the brand. Recipient is remembered per brand in localStorage.
   const [to, setTo] = useState("");
   const [sendState, setSendState] = useState<"idle" | "sending" | "sent" | "error">("idle");
@@ -39,7 +45,7 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
     setNoteState("loading");
     fetch(`/api/snapshot-notes?brand=${brand.id}&month=${month}`)
       .then(r => r.json())
-      .then(j => { if (cancelled) return; if (j.needsSetup) setNoteState("needsSetup"); else setNoteState("idle"); setNote(j.content ?? ""); setSavedNote(j.content ?? ""); })
+      .then(j => { if (cancelled) return; if (j.needsSetup) setNoteState("needsSetup"); else setNoteState("idle"); setNote(j.content ?? ""); setSavedNote(j.content ?? ""); setSavedInsights(j.insights ?? ""); setInsights((j.insights && j.insights.trim()) ? j.insights : aiDefault); })
       .catch(() => { if (!cancelled) setNoteState("error"); });
     return () => { cancelled = true; };
   }, [brand?.id, month]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -48,18 +54,30 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
     if (!brand) return;
     setNoteState("saving");
     try {
-      const res = await fetch("/api/snapshot-notes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brand_id: brand.id, month_key: month, content: note }) });
+      const res = await fetch("/api/snapshot-notes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brand_id: brand.id, month_key: month, content: note, insights: savedInsights }) });
       const j = await res.json();
       if (j.ok) { setSavedNote(note); setNoteState("saved"); setTimeout(() => setNoteState("idle"), 1800); }
       else setNoteState(j.needsSetup ? "needsSetup" : "error");
     } catch { setNoteState("error"); }
   }
 
+  async function saveInsights() {
+    if (!brand) return;
+    setInsState("saving");
+    try {
+      const res = await fetch("/api/snapshot-notes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brand_id: brand.id, month_key: month, content: savedNote, insights }) });
+      const j = await res.json();
+      if (j.ok && !j.insightsUnsupported) { setSavedInsights(insights); setInsState("saved"); setTimeout(() => setInsState("idle"), 1800); }
+      else setInsState("error");
+    } catch { setInsState("error"); }
+  }
+  function resetInsights() { setInsights(aiDefault); }
+
   // The saved note (not the in-progress edit) is what renders into the report.
   const html = useMemo(() => {
     if (!brand) return "";
-    return snapshotHtml(buildSnapshot({ brand, month, monthKeys, monthLabels, fyLabel, note: savedNote, ...data }));
-  }, [brand, month, monthKeys, monthLabels, fyLabel, savedNote, data]);
+    return snapshotHtml(buildSnapshot({ brand, month, monthKeys, monthLabels, fyLabel, note: savedNote, insightsOverride: savedInsights, ...data }));
+  }, [brand, month, monthKeys, monthLabels, fyLabel, savedNote, savedInsights, data]);
 
   const monthName = monthLabels[monthKeys.indexOf(month)] ?? month;
   const fileName = `${(brand?.name ?? "brand").replace(/\s+/g, "_")}_${monthName}_${fyLabel}_Snapshot.html`.replace(/[^\w.\-]/g, "");
@@ -94,6 +112,7 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
   if (!brand) return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">No brand to report on.</div>;
 
   const dirty = note !== savedNote;
+  const insDirty = insights !== (savedInsights || aiDefault);
 
   return (
     <div className="space-y-3">
@@ -116,6 +135,30 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
           </button>
         </div>
       </div>
+
+      {/* Insights editor — pre-filled with the AI text; a saved edit replaces it in the report. */}
+      {canEdit && noteState !== "needsSetup" && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 no-print">
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Insights & opportunities {savedInsights ? "· edited" : "· AI"}</label>
+            <div className="flex items-center gap-3">
+              {insState === "saved" && <span className="text-xs text-emerald-600 font-medium">Saved</span>}
+              {insState === "error" && <span className="text-xs text-red-500 font-medium">Save failed</span>}
+              <button onClick={resetInsights} disabled={insights === aiDefault} className="text-xs font-medium text-gray-500 hover:text-gray-700 disabled:opacity-40">Reset to AI</button>
+              <button onClick={saveInsights} disabled={!insDirty || insState === "saving"} className="text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 disabled:opacity-40 rounded-lg px-3.5 py-1.5 transition">
+                {insState === "saving" ? "Saving..." : "Save insights"}
+              </button>
+            </div>
+          </div>
+          <textarea
+            value={insights}
+            onChange={e => setInsights(e.target.value)}
+            placeholder="The AI-written insights appear here. Edit them and save to replace what shows in the report."
+            rows={7}
+            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 text-gray-700 leading-relaxed focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-y"
+          />
+        </div>
+      )}
 
       {/* Notes editor — saved text is rendered into the report's "Notes & commentary" block. */}
       {canEdit && (
