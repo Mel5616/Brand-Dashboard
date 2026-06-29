@@ -11,6 +11,25 @@ const hdr = (extra: Record<string, string> = {}) => ({ apikey: sbKey!, Authoriza
 const norm = (s: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 const toNum = (v: unknown) => { const s = String(v ?? "").replace(/[^0-9.\-]/g, ""); if (s === "") return 0; const n = Number(s); return Number.isFinite(n) ? n : 0; };
 
+// Update a single brand × channel budget for a FY (no delete) — inline edits.
+export async function PATCH(req: Request) {
+  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
+  if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
+  let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
+  const fy = String(b.fy || "2025-26");
+  let brand_id = b.brand_id;
+  if (brand_id == null && b.brand) {
+    const bRes = await fetch(`${sbUrl}/rest/v1/brands?select=id,name`, { headers: hdr(), cache: "no-store" });
+    const brands = bRes.ok ? await bRes.json() : [];
+    const n = norm(String(b.brand));
+    brand_id = brands.find((x: any) => { const bn = norm(x.name); return bn === n || bn.startsWith(n) || n.startsWith(bn); })?.id;
+  }
+  if (brand_id == null || !b.channel) return NextResponse.json({ ok: false, error: "brand + channel required" }, { status: 400 });
+  const row = { brand_id, channel: String(b.channel), annual_budget: toNum(b.budget), fy };
+  const res = await fetch(`${sbUrl}/rest/v1/marketing_budgets?on_conflict=brand_id,channel,fy`, { method: "POST", headers: hdr({ Prefer: "resolution=merge-duplicates,return=minimal" }), body: JSON.stringify(row) });
+  return NextResponse.json({ ok: res.ok }, { status: res.ok ? 200 : 500 });
+}
+
 export async function POST(req: Request) {
   if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });

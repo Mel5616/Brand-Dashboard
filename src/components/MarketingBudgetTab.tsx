@@ -68,11 +68,20 @@ const DONUT_OPTS: any = {
   },
 };
 
-export function MarketingBudgetTab({ brands, marketingBudgets, marketingActuals, googleAds, metaAds, monthly, targets = [], fyLabel = "FY 2025–26", fy = "2025-26", canEdit = false, monthKeys = DEFAULT_MONTH_KEYS, monthLabels = DEFAULT_MONTH_LABELS, latest = DEFAULT_MONTH_KEYS[DEFAULT_MONTH_KEYS.length - 1] }: Props) {
+export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marketingActuals, googleAds, metaAds, monthly, targets = [], fyLabel = "FY 2025–26", fy = "2025-26", canEdit = false, monthKeys = DEFAULT_MONTH_KEYS, monthLabels = DEFAULT_MONTH_LABELS, latest = DEFAULT_MONTH_KEYS[DEFAULT_MONTH_KEYS.length - 1] }: Props) {
+  // Only the selected financial year's budgets (older rows default to FY 2025-26).
+  const marketingBudgets = allBudgets.filter((b: any) => (b.fy ?? "2025-26") === fy);
   const MONTH_KEYS = monthKeys;
   const MONTH_LABELS = monthLabels;
   const [budgetMsg, setBudgetMsg] = useState("");
   const [budgetBusy, setBudgetBusy] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [editVals, setEditVals] = useState<Record<string, string>>({});
+
+  async function saveOneBudget(brand_id: number, channel: string, value: string) {
+    await fetch("/api/marketing-budget", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brand_id, channel, budget: value, fy }) }).catch(() => {});
+    setTimeout(() => window.location.reload(), 600);
+  }
 
   function parseBudgetCSV(text: string): Record<string, string>[] {
     const rows: string[][] = []; let row: string[] = [], cell = "", q = false;
@@ -280,6 +289,7 @@ export function MarketingBudgetTab({ brands, marketingBudgets, marketingActuals,
         {canEdit && (
           <div className="ml-auto flex items-center gap-2">
             {budgetMsg && <span className={`text-[11px] ${budgetMsg.startsWith("✓") ? "text-emerald-600" : "text-rose-500"}`}>{budgetMsg}</span>}
+            <button onClick={() => setShowEdit(s => !s)} className="text-xs font-medium text-slate-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3 py-1.5">{showEdit ? "Close edit" : "Edit budgets"}</button>
             <button onClick={downloadBudgetTemplate} className="text-xs font-medium text-slate-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3 py-1.5">Template</button>
             <label className={`text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-1.5 cursor-pointer ${budgetBusy ? "opacity-50" : ""}`}>
               {budgetBusy ? "Uploading…" : `Upload budget CSV · ${fyLabel}`}
@@ -288,6 +298,41 @@ export function MarketingBudgetTab({ brands, marketingBudgets, marketingActuals,
           </div>
         )}
       </div>
+
+      {canEdit && showEdit && (
+        <div className="bg-white rounded-2xl border border-emerald-200 shadow-sm p-4">
+          <p className="text-sm font-semibold text-slate-700 mb-1">Edit budgets · {fyLabel}</p>
+          <p className="text-[11px] text-gray-400 mb-3">Annual budget per brand × channel. Edit a value and click away to save (the page reloads). Use the CSV upload to add new rows.</p>
+          {marketingBudgets.length === 0 ? (
+            <p className="text-sm text-gray-400">No budget rows for {fyLabel} yet — upload a CSV to seed them.</p>
+          ) : (
+            <div className="overflow-x-auto max-h-[420px] overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-wide sticky top-0">
+                  <tr><th className="text-left font-semibold px-3 py-2">Brand</th><th className="text-left font-semibold px-3 py-2">Channel</th><th className="text-right font-semibold px-3 py-2">Annual budget $</th></tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {[...marketingBudgets].sort((a: any, c: any) => (brands.find((b: any) => b.id === a.brand_id)?.name || "").localeCompare(brands.find((b: any) => b.id === c.brand_id)?.name || "")).map((r: any) => {
+                    const key = `${r.brand_id}|${r.channel}`;
+                    return (
+                      <tr key={key}>
+                        <td className="px-3 py-1.5 font-medium text-slate-700">{brands.find((b: any) => b.id === r.brand_id)?.name ?? `#${r.brand_id}`}</td>
+                        <td className="px-3 py-1.5 text-slate-600">{r.channel}</td>
+                        <td className="px-3 py-1.5 text-right">
+                          <input defaultValue={r.annual_budget} inputMode="numeric"
+                            onChange={e => setEditVals(p => ({ ...p, [key]: e.target.value }))}
+                            onBlur={() => { if (editVals[key] !== undefined && Number(editVals[key]) !== Number(r.annual_budget)) saveOneBudget(r.brand_id, r.channel, editVals[key]); }}
+                            className="w-28 text-right text-sm border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       {selectedBudgetBrand ? (
         <BrandBudgetOverview
