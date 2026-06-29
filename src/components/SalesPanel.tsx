@@ -265,7 +265,24 @@ export function SalesPanel({
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {mix.map(({ b, bc, tot }) => {
                 const pos = sum(bc.filter(c => c.fy > 0).map(c => c.fy)) || 1;
-                const cols = bc.filter(c => c.fy > 0).sort((a, c) => c.fy - a.fy);
+                const cols = groupDirect(bc.filter(c => c.fy > 0));
+                const Row = ({ name, value, color, child }: { name: string; value: number; color: string; child?: boolean }) => {
+                  const pct = (value / pos) * 100;
+                  return (
+                    <div>
+                      <div className="flex items-center justify-between text-[11px] mb-1">
+                        <span className={`flex items-center gap-1.5 truncate min-w-0 ${child ? "text-slate-400" : "text-slate-600"}`}>
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
+                          <span className="truncate">{name}</span>
+                        </span>
+                        <span className="text-slate-400 shrink-0 ml-2"><span className={`font-semibold ${child ? "text-slate-500" : "text-slate-700"}`}>{fmt(value)}</span> · {pct.toFixed(0)}%</span>
+                      </div>
+                      <div className={`rounded-full bg-gray-100 ${child ? "h-1" : "h-1.5"}`}>
+                        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
+                      </div>
+                    </div>
+                  );
+                };
                 return (
                   <div key={b.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
                     <div className="flex items-baseline justify-between mb-3 pb-2 border-b border-gray-50">
@@ -273,23 +290,16 @@ export function SalesPanel({
                       <span className="text-sm font-bold text-slate-800 shrink-0">{fmt(tot)}</span>
                     </div>
                     <div className="space-y-2">
-                      {cols.map(c => {
-                        const pct = (c.fy / pos) * 100;
-                        return (
-                          <div key={c.name}>
-                            <div className="flex items-center justify-between text-[11px] mb-1">
-                              <span className="flex items-center gap-1.5 text-slate-600 truncate min-w-0">
-                                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: colorOf(c.name) }} />
-                                <span className="truncate">{c.name}</span>
-                              </span>
-                              <span className="text-slate-500 shrink-0 ml-2"><span className="font-semibold text-slate-700">{fmt(c.fy)}</span> · {pct.toFixed(0)}%</span>
+                      {cols.map(c => (
+                        <div key={c.name}>
+                          <Row name={c.name} value={c.fy} color={c.isGroup ? "#4f9d86" : colorOf(c.name)} />
+                          {c.isGroup && c.kids && (
+                            <div className="ml-3 mt-1.5 space-y-1.5 border-l border-gray-100 pl-3">
+                              {c.kids.map(k => <Row key={k.name} name={k.name} value={k.fy} color={colorOf(k.name)} child />)}
                             </div>
-                            <div className="h-1.5 rounded-full bg-gray-100">
-                              <div className="h-full rounded-full" style={{ width: `${pct}%`, background: colorOf(c.name) }} />
-                            </div>
-                          </div>
-                        );
-                      })}
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 );
