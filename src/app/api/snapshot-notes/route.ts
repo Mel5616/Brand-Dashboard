@@ -19,6 +19,8 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const brand = searchParams.get("brand"), month = searchParams.get("month");
   if (!brand || !month) return NextResponse.json({ ok: false, content: "" }, { status: 400 });
+  // Strict shapes so these can't inject PostgREST filters into the URL below.
+  if (!/^\d+$/.test(brand) || !/^\d{4}-\d{2}$/.test(month)) return NextResponse.json({ ok: false, content: "" }, { status: 400 });
   let res = await fetch(`${sbUrl}/rest/v1/snapshot_notes?brand_id=eq.${brand}&month_key=eq.${month}&select=content,insights`, { headers: headers(), cache: "no-store" });
   let text = await res.text();
   // Fall back if the insights column hasn't been added yet (keeps notes working pre-migration).

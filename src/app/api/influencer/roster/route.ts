@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAccess } from "@/lib/access";
 
 // Influencer master list (the roster). Names + contacts live here, one record
 // per handle. The team form auto-suggests from this; gift entries reference it.
@@ -39,6 +40,7 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   const handle = new URL(req.url).searchParams.get("handle");
   if (!handle) return NextResponse.json({ ok: false }, { status: 400 });

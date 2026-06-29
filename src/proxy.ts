@@ -7,6 +7,10 @@ import { NextResponse, type NextRequest } from "next/server";
 // through — per-route financial gating is enforced in the routes themselves.
 
 const PUBLIC = ["/login", "/auth", "/log-gift", "/p"];
+// The only /api endpoints reachable without a session: the public team gift form.
+// Everything else under /api now requires auth at the edge (defence in depth on top
+// of each route's own getAccess check).
+const PUBLIC_API = ["/api/influencer/products", "/api/influencer/roster", "/api/influencer/entries"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -28,9 +32,12 @@ export async function proxy(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
   const path = request.nextUrl.pathname;
-  const isPublic = path.startsWith("/api") || PUBLIC.some(p => path === p || path.startsWith(p + "/"));
+  const isPublic = PUBLIC.some(p => path === p || path.startsWith(p + "/"))
+    || PUBLIC_API.some(p => path === p || path.startsWith(p + "/"));
 
   if (!user && !isPublic) {
+    // API routes get a 401 (the client expects JSON); pages redirect to login.
+    if (path.startsWith("/api")) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", path);

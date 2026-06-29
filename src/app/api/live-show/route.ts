@@ -268,7 +268,7 @@ export async function GET(req: Request) {
   const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const brandsEnv = process.env.BRAND_SHOPIFY;
-  if (!showId || !sbUrl || !sbKey || !brandsEnv) return NextResponse.json({ live: false });
+  if (!showId || !/^\d+$/.test(showId) || !sbUrl || !sbKey || !brandsEnv) return NextResponse.json({ live: false });
 
   const sb = (path: string) =>
     fetch(`${sbUrl}/rest/v1/${path}`, { headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}` }, cache: "no-store" }).then(r => r.json());
@@ -326,7 +326,7 @@ export async function POST(req: Request) {
   let body: any;
   try { body = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   const { showId, target } = body || {};
-  if (!showId) return NextResponse.json({ ok: false }, { status: 400 });
+  if (!showId || !/^\d+$/.test(String(showId))) return NextResponse.json({ ok: false }, { status: 400 });
   const res = await fetch(`${sbUrl}/rest/v1/tradeshows?id=eq.${showId}`, {
     method: "PATCH",
     headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json", Prefer: "return=minimal" },

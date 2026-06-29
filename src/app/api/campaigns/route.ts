@@ -53,7 +53,7 @@ export async function PATCH(req: Request) {
   if (!b.id) return NextResponse.json({ ok: false }, { status: 400 });
   const fields = clean(b);
   fields.updated_at = new Date().toISOString();
-  const res = await fetch(`${sbUrl}/rest/v1/campaigns?id=eq.${b.id}`, { method: "PATCH", headers: headers({ Prefer: "return=representation" }), body: JSON.stringify(fields) });
+  const res = await fetch(`${sbUrl}/rest/v1/campaigns?id=eq.${encodeURIComponent(String(b.id))}`, { method: "PATCH", headers: headers({ Prefer: "return=representation" }), body: JSON.stringify(fields) });
   const text = await res.text();
   if (!res.ok) return NextResponse.json({ ok: false }, { status: 500 });
   return NextResponse.json({ ok: true, item: JSON.parse(text)[0] });
@@ -63,7 +63,7 @@ export async function DELETE(req: Request) {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   if (!b.id) return NextResponse.json({ ok: false }, { status: 400 });
-  const res = await fetch(`${sbUrl}/rest/v1/campaigns?id=eq.${b.id}`, { method: "DELETE", headers: headers() });
+  const res = await fetch(`${sbUrl}/rest/v1/campaigns?id=eq.${encodeURIComponent(String(b.id))}`, { method: "DELETE", headers: headers() });
   if (!res.ok) return NextResponse.json({ ok: false }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

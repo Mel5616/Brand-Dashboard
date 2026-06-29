@@ -98,7 +98,7 @@ export async function PATCH(req: Request) {
   for (const k of ["status", "content_url"]) if (b[k] !== undefined) fields[k] = b[k] || null;
   for (const k of ["reach", "engagements", "sales_value"]) if (b[k] !== undefined) fields[k] = b[k] === "" || b[k] == null ? null : Number(b[k]);
   if (Object.keys(fields).length === 0) return NextResponse.json({ ok: false }, { status: 400 });
-  const res = await fetch(`${sbUrl}/rest/v1/influencer_entries?id=eq.${b.id}`, { method: "PATCH", headers: headers({ Prefer: "return=minimal" }), body: JSON.stringify(fields) });
+  const res = await fetch(`${sbUrl}/rest/v1/influencer_entries?id=eq.${encodeURIComponent(String(b.id))}`, { method: "PATCH", headers: headers({ Prefer: "return=minimal" }), body: JSON.stringify(fields) });
   if (!res.ok) { const t = await res.text(); return NextResponse.json({ ok: false, needsSetup: missing(res.status, t) }, { status: 500 }); }
   return NextResponse.json({ ok: true });
 }
@@ -108,6 +108,6 @@ export async function DELETE(req: Request) {
   if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   const id = new URL(req.url).searchParams.get("id");
   if (!id) return NextResponse.json({ ok: false }, { status: 400 });
-  const res = await fetch(`${sbUrl}/rest/v1/influencer_entries?id=eq.${id}`, { method: "DELETE", headers: headers({ Prefer: "return=minimal" }) });
+  const res = await fetch(`${sbUrl}/rest/v1/influencer_entries?id=eq.${encodeURIComponent(id)}`, { method: "DELETE", headers: headers({ Prefer: "return=minimal" }) });
   return NextResponse.json({ ok: res.ok }, { status: res.ok ? 200 : 500 });
 }
