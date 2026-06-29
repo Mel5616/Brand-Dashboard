@@ -31,6 +31,21 @@ const norm = (s: string | null) => (s || "").toLowerCase().replace(/[^a-z0-9]/g,
 // AU financial year: starts 1 July. July 2026 onward = FY 2026-27.
 const fyStartYear = (s: string) => { const dt = d(s); return dt.getMonth() >= 6 ? dt.getFullYear() : dt.getFullYear() - 1; };
 
+// Split a product name into its base + colour, so colour variants can be grouped.
+// Handles "… Gift Tube - Beige" and "Boat Set (Blue)".
+function splitColour(name: string | null): { base: string; colour: string | null } {
+  const s = (name || "").trim();
+  if (!s) return { base: s, colour: null };
+  const par = s.match(/^(.*?)\s*\(([^()]+)\)\s*$/);
+  if (par) return { base: par[1].trim(), colour: par[2].trim() };
+  const i = s.lastIndexOf(" - ");
+  if (i > 0) {
+    const tail = s.slice(i + 3).trim();
+    if (tail && tail.split(/\s+/).length <= 3) return { base: s.slice(0, i).trim(), colour: tail };
+  }
+  return { base: s, colour: null };
+}
+
 export function PromotionalCalendar({ canEdit, brands, fy, month }: { canEdit: boolean; brands: Brand[]; fy: string; month: string }) {
   const [promos, setPromos] = useState<Promo[]>([]);
   const [lines, setLines] = useState<Line[]>([]);
@@ -263,10 +278,11 @@ function D2cPlan({ d2c, canEdit, brandF, tierF, statusF, onChanged }: { d2c: D2c
   const monthLabel = (k: string) => new Date(k + "-01T00:00:00").toLocaleDateString("en-AU", { month: "long", year: "numeric" });
 
   const [openMonths, setOpenMonths] = useState<Set<string>>(() => new Set(monthsOrder.slice(0, 1)));
+  const [groupColours, setGroupColours] = useState(true);
   const toggle = (k: string) => setOpenMonths(s => { const n = new Set(s); n.has(k) ? n.delete(k) : n.add(k); return n; });
 
-  async function setStatus(id: number, status: string) {
-    await fetch("/api/d2c", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status }) }).catch(() => {});
+  async function setStatus(ids: number[], status: string) {
+    await Promise.all(ids.map(id => fetch("/api/d2c", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status }) }).catch(() => {})));
     onChanged();
   }
 
@@ -276,12 +292,13 @@ function D2cPlan({ d2c, canEdit, brandF, tierF, statusF, onChanged }: { d2c: D2c
         {["todo", "planned", "live", "done", "skip"].map(s => (
           <span key={s} className={`px-2.5 py-1 rounded-full font-semibold ${STATUS_META[s].cls}`}>{STATUS_META[s].label}: {counts[s] || 0}</span>
         ))}
-        <div className="ml-auto flex gap-2">
+        <div className="ml-auto flex items-center gap-3">
+          <label className="flex items-center gap-1.5 text-slate-500 cursor-pointer"><input type="checkbox" checked={groupColours} onChange={e => setGroupColours(e.target.checked)} className="accent-emerald-500" /> Group colours</label>
           <button onClick={() => setOpenMonths(new Set(monthsOrder))} className="text-emerald-600 hover:underline">Expand all</button>
           <button onClick={() => setOpenMonths(new Set())} className="text-slate-400 hover:underline">Collapse all</button>
         </div>
       </div>
-      <p className="text-xs text-slate-400">Promos by month — open a month to see every sale, grouped by brand. Run the same on D2C for the same dates and set each status.</p>
+      <p className="text-xs text-slate-400">Promos by month — open a month to see every sale, grouped by brand. Colour variants of the same product are grouped. Run the same on D2C for the same dates and set each status.</p>
 
       {monthsOrder.length === 0 && <div className="bg-white rounded-2xl border border-gray-100 shadow-sm py-8 text-center text-slate-300 text-sm">No D2C promos.</div>}
 
@@ -310,7 +327,7 @@ function D2cPlan({ d2c, canEdit, brandF, tierF, statusF, onChanged }: { d2c: D2c
                 </thead>
                 <tbody>
                   {brandsIn.map(brand => (
-                    <BrandGroup key={brand} brand={brand} rows={list.filter(r => r.brand === brand)} canEdit={canEdit} setStatus={setStatus} />
+                    <BrandGroup key={brand} brand={brand} rows={list.filter(r => r.brand === brand)} canEdit={canEdit} setStatus={setStatus} groupColours={groupColours} />
                   ))}
                 </tbody>
               </table>
@@ -322,29 +339,56 @@ function D2cPlan({ d2c, canEdit, brandF, tierF, statusF, onChanged }: { d2c: D2c
   );
 }
 
-function BrandGroup({ brand, rows, canEdit, setStatus }: { brand: string; rows: D2c[]; canEdit: boolean; setStatus: (id: number, s: string) => void }) {
+type VGroup = { base: string; colours: string[]; ids: number[]; rows: D2c[]; rep: D2c };
+
+function buildGroups(rows: D2c[]): VGroup[] {
+  const map = new Map<string, VGroup>();
+  const order: string[] = [];
+  for (const r of rows) {
+    const { base, colour } = splitColour(r.product || r.sku);
+    const key = `${base}|${r.period_start}|${r.period_end}|${r.tier}|${r.promo_price}`;
+    let g = map.get(key);
+    if (!g) { g = { base, colours: [], ids: [], rows: [], rep: r }; map.set(key, g); order.push(key); }
+    g.rows.push(r); g.ids.push(r.id); if (colour) g.colours.push(colour);
+  }
+  return order.map(k => map.get(k)!);
+}
+
+function BrandGroup({ brand, rows, canEdit, setStatus, groupColours }: { brand: string; rows: D2c[]; canEdit: boolean; setStatus: (ids: number[], s: string) => void; groupColours: boolean }) {
+  const groups = groupColours ? buildGroups(rows) : rows.map(r => ({ base: r.product || r.sku || "—", colours: [], ids: [r.id], rows: [r], rep: r } as VGroup));
   return (
     <>
       <tr className="bg-slate-50/40"><td colSpan={8} className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-500">{brand}</td></tr>
-      {rows.map(r => (
-        <tr key={r.id} className={`border-t border-gray-50 ${r.status === "skip" ? "opacity-50" : ""}`}>
-          <td className="px-3 py-2 text-slate-700">{r.product || r.sku || "—"}</td>
-          <td className="px-3 py-2"><TierBadge t={r.tier} /></td>
-          <td className="px-3 py-2 text-slate-600 whitespace-nowrap">{fmt(r.period_start)} – {fmt(r.period_end)}</td>
-          <td className="px-3 py-2 text-right text-slate-400 line-through">{money(r.rrp)}</td>
-          <td className="px-3 py-2 text-right font-semibold text-slate-800">{money(r.promo_price)}</td>
-          <td className="px-3 py-2 text-right text-rose-500 font-medium">{pct(r.discount_rrp)}</td>
-          <td className="px-3 py-2 text-slate-400 text-xs">{r.retailers || "—"}</td>
-          <td className="px-3 py-2">
-            {canEdit ? (
-              <select value={r.status} onChange={e => setStatus(r.id, e.target.value)}
-                className={`text-xs font-semibold rounded-full px-2.5 py-1 border-0 cursor-pointer ${STATUS_META[r.status]?.cls || ""}`}>
-                {["todo", "planned", "live", "done", "skip"].map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
-              </select>
-            ) : <span className={`text-xs font-semibold rounded-full px-2.5 py-1 ${STATUS_META[r.status]?.cls || ""}`}>{STATUS_META[r.status]?.label}</span>}
-          </td>
-        </tr>
-      ))}
+      {groups.map(g => {
+        const r = g.rep;
+        const statuses = Array.from(new Set(g.rows.map(x => x.status)));
+        const unified = statuses.length === 1 ? statuses[0] : "";
+        const grouped = g.rows.length > 1;
+        return (
+          <tr key={g.ids[0]} className={`border-t border-gray-50 ${unified === "skip" ? "opacity-50" : ""}`}>
+            <td className="px-3 py-2 text-slate-700">
+              {g.base}
+              {grouped && <span className="ml-2 text-[10px] font-semibold text-slate-400">{g.colours.length || g.rows.length} colours</span>}
+              {grouped && g.colours.length > 0 && <div className="text-[11px] text-slate-400">{g.colours.join(", ")}</div>}
+            </td>
+            <td className="px-3 py-2"><TierBadge t={r.tier} /></td>
+            <td className="px-3 py-2 text-slate-600 whitespace-nowrap">{fmt(r.period_start)} – {fmt(r.period_end)}</td>
+            <td className="px-3 py-2 text-right text-slate-400 line-through">{money(r.rrp)}</td>
+            <td className="px-3 py-2 text-right font-semibold text-slate-800">{money(r.promo_price)}</td>
+            <td className="px-3 py-2 text-right text-rose-500 font-medium">{pct(r.discount_rrp)}</td>
+            <td className="px-3 py-2 text-slate-400 text-xs">{r.retailers || "—"}</td>
+            <td className="px-3 py-2">
+              {canEdit ? (
+                <select value={unified} onChange={e => setStatus(g.ids, e.target.value)}
+                  className={`text-xs font-semibold rounded-full px-2.5 py-1 border-0 cursor-pointer ${STATUS_META[unified]?.cls || "bg-slate-100 text-slate-400"}`}>
+                  {unified === "" && <option value="">Mixed</option>}
+                  {["todo", "planned", "live", "done", "skip"].map(s => <option key={s} value={s}>{STATUS_META[s].label}</option>)}
+                </select>
+              ) : <span className={`text-xs font-semibold rounded-full px-2.5 py-1 ${STATUS_META[unified]?.cls || "bg-slate-100 text-slate-400"}`}>{unified ? STATUS_META[unified].label : "Mixed"}</span>}
+            </td>
+          </tr>
+        );
+      })}
     </>
   );
 }
