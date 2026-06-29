@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { INFLUENCER_FY_MONTHS, INFLUENCER_FY_LABEL } from "@/lib/influencerFy";
+import { compactNum } from "@/lib/num";
 
 // Admin reporting for influencer gifting: brand × month cost spend vs budget.
 // Cost figures are shown here (this is your dashboard); the team form never does.
@@ -377,7 +378,7 @@ export function InfluencerTracker() {
                     <td className="py-1.5 px-2 text-slate-700 font-medium">{r.m?.name ?? <span className="text-gray-300">—</span>}</td>
                     <td className="py-1.5 px-2 text-slate-600">{r.handle}</td>
                     <td className="py-1.5 px-2 text-gray-500">{r.m?.platform ?? "—"}</td>
-                    <td className="py-1.5 px-2 text-right text-gray-500">{r.m?.followers != null ? Number(r.m.followers).toLocaleString("en-AU") : "—"}</td>
+                    <td className="py-1.5 px-2 text-right text-gray-500">{r.m?.followers != null ? compactNum(Number(r.m.followers)) : "—"}</td>
                     <td className="py-1.5 px-2 text-right text-gray-600">{r.gifts}</td>
                     <td className="py-1.5 px-2 text-right font-bold text-slate-800">{aud(r.value)}</td>
                     <td className="py-1.5 px-2 text-right text-gray-500">{r.reach ? compact(r.reach) : "—"}</td>

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { INFLUENCER_FY_MONTHS } from "@/lib/influencerFy";
+import { compactNum } from "@/lib/num";
 
 // Standalone gift-logging form for the marketing team. Shows RRP only — never
 // any cost. Cost is computed server-side when the entry is saved.
@@ -183,7 +184,7 @@ export default function LogGift() {
                   {handleMatches.map((i: any) => (
                     <button key={i.handle} onMouseDown={e => { e.preventDefault(); pickInfluencer(i); }} className="w-full text-left px-3 py-2 hover:bg-emerald-50 border-b border-gray-50 last:border-0">
                       <p className="text-sm text-slate-700">{i.handle}{i.name ? <span className="text-gray-400"> · {i.name}</span> : ""}</p>
-                      {(i.platform || i.followers) && <p className="text-[11px] text-gray-400">{[i.platform, i.followers ? `${Number(i.followers).toLocaleString("en-AU")} followers` : ""].filter(Boolean).join(" · ")}</p>}
+                      {(i.platform || i.followers) && <p className="text-[11px] text-gray-400">{[i.platform, i.followers ? `${compactNum(Number(i.followers))} followers` : ""].filter(Boolean).join(" · ")}</p>}
                     </button>
                   ))}
                 </div>
@@ -200,7 +201,7 @@ export default function LogGift() {
             </div>
             <div>
               <label className={label}>Followers</label>
-              <input value={f.followers ?? ""} onChange={e => set("followers", e.target.value)} placeholder="e.g. 45,000" className={input} />
+              <input value={f.followers ?? ""} onChange={e => set("followers", e.target.value)} placeholder="e.g. 45,000 or 67.6K" className={input} />
             </div>
           </div>
 

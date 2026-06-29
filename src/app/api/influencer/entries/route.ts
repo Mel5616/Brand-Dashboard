@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
+import { parseCount } from "@/lib/num";
 
 // Influencer gift entries. POST is called by the team's standalone form — it
 // looks up the product cost SERVER-SIDE, computes gifting cost (exact cost,
@@ -69,7 +70,7 @@ export async function POST(req: Request) {
   const influencer_cost = b.influencer_cost != null ? Number(b.influencer_cost) : 0;
   const row = {
     month_key: b.month_key, handle: b.handle || null, platform: b.platform || null,
-    followers: b.followers != null && b.followers !== "" ? Number(String(b.followers).replace(/[^0-9]/g, "")) : null,
+    followers: parseCount(b.followers),
     campaign: b.campaign || null, brand, style_code: b.style_code || null, product_name, rrp,
     gifting_cost, influencer_cost, total_cost: round(gifting_cost + influencer_cost),
   };

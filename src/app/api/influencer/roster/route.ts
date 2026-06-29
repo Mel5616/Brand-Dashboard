@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
+import { parseCount } from "@/lib/num";
 
 // Influencer master list (the roster). Names + contacts live here, one record
 // per handle. The team form auto-suggests from this; gift entries reference it.
@@ -31,7 +32,7 @@ export async function POST(req: Request) {
   // only send provided fields so a partial update doesn't wipe existing values
   const row: any = { handle, updated_at: new Date().toISOString() };
   for (const k of ["name", "platform", "contact", "notes"]) if (b[k] != null && b[k] !== "") row[k] = b[k];
-  if (b.followers != null && b.followers !== "") row.followers = Number(String(b.followers).replace(/[^0-9]/g, ""));
+  { const fc = parseCount(b.followers); if (fc != null) row.followers = fc; }
   const res = await fetch(`${sbUrl}/rest/v1/influencers?on_conflict=handle`, {
     method: "POST", headers: headers({ Prefer: "resolution=merge-duplicates,return=minimal" }), body: JSON.stringify(row),
   });

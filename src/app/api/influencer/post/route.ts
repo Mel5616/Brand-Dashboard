@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
+import { parseCount } from "@/lib/num";
 
 // Social team updates a gift's POST RESULTS (link, likes, reach, posted date, type).
 // Any logged-in user may use it; only engagement fields are touched — never cost or
@@ -20,10 +21,7 @@ export async function PATCH(req: Request) {
   if (b.status !== undefined) fields.status = b.status || null;
   if (b.posted_at !== undefined) fields.posted_at = b.posted_at || null;
   for (const k of ["likes", "reach"] as const) {
-    if (b[k] !== undefined) {
-      const n = b[k] === "" || b[k] == null ? null : Number(String(b[k]).replace(/[^0-9]/g, ""));
-      fields[k] = Number.isFinite(n as number) ? n : null;
-    }
+    if (b[k] !== undefined) fields[k] = parseCount(b[k]);
   }
   if (Object.keys(fields).length === 0) return NextResponse.json({ ok: false }, { status: 400 });
 
