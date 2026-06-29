@@ -164,6 +164,9 @@ export function buildSnapshot(d: SnapshotInput) {
   const monthBudget = mBudget(month);
   const otherSpend = sum(forBrand(d.marketingActuals).filter(a => a.month_key === month && a.channel !== "Google Advertising" && a.channel !== "Social Media (Meta)").map(a => a.spend));
   const mktSpend = gSpend + mSpend + otherSpend;
+  // MER = booked D2C revenue ÷ total marketing spend. The un-gameable efficiency
+  // number (platform-attributed ROAS overlaps across channels and can't be summed).
+  const mer = mktSpend > 0 ? monthRev / mktSpend : 0;
   // Financial year to date: spend across every month up to and including the selected one,
   // vs the monthly budget summed across those months (overrides honoured).
   const ytdSpend = sum(forBrand(d.googleAds).filter(r => monthsUpto.includes(r.month_key)).map(r => r.spend))
@@ -211,7 +214,7 @@ export function buildSnapshot(d: SnapshotInput) {
     monthRev, monthOrders, aov, ytdRev, fyRevTotal, monthTarget, fyTarget, targetMultiple, returnRate,
     google: { spend: gSpend, rev: gRev, roas: gRoas, revDelta: delta(gRev, gRevPrev), roasDelta: delta(gRoas, gPrev?.roas ?? 0), topCampaign },
     meta: { spend: mSpend, rev: mRev, roas: mRoas, cpa: mCpa, revDelta: delta(mRev, mPrev?.revenue ?? 0), roasDelta: delta(mRoas, mPrev && mPrev.spend > 0 ? mPrev.revenue / mPrev.spend : 0), cpaDelta: delta(mCpa, mCpaPrev) },
-    blendedRoas, blendedDelta: delta(blendedRoas, blendedPrev),
+    blendedRoas, blendedDelta: delta(blendedRoas, blendedPrev), mer,
     email,
     topProduct,
     seasonal, peakShare, peakMonthKey: topShare?.month_key,
@@ -392,7 +395,7 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
 .masthead .sub{font-size:12.5px;color:var(--grey);margin-top:7px;font-weight:500;}
 .stamp{text-align:right;font-size:11px;color:var(--grey);line-height:1.5;font-weight:500;}
 .stamp strong{color:var(--navy);font-weight:700;display:block;font-size:12px;}
-.hero{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);margin-top:22px;border:1px solid var(--line);}
+.hero{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);margin-top:22px;border:1px solid var(--line);}
 .hero .cell{background:var(--paper);padding:18px 20px;}
 .hero .lab{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--grey);font-weight:600;}
 .hero .big{font-size:34px;font-weight:800;color:var(--navy);letter-spacing:-.025em;line-height:1.05;margin-top:8px;}
@@ -481,8 +484,10 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
   <div class="hero pagebreak">
     <div class="cell"><div class="lab">D2C revenue YTD</div><div class="big">${fmt(s.ytdRev)}</div><div class="note">${ytdNote}</div></div>
     <div class="cell"><div class="lab">${esc(s.monthLong)} D2C revenue</div><div class="big">${fmtFull(s.monthRev)}</div><div class="note">${s.monthOrders} orders · ${fmtFull(s.aov)} average order value</div></div>
-    <div class="cell"><div class="lab">Blended paid ROAS · ${esc(s.monthLong)}</div><div class="big">${s.blendedRoas.toFixed(2)}×</div><div class="note">${s.blendedDelta != null ? `<span class="up">${s.blendedDelta >= 0 ? "+" : ""}${s.blendedDelta.toFixed(0)}%</span> on the prior month` : "blended Google and Meta"}</div></div>
+    <div class="cell"><div class="lab">MER · ${esc(s.monthLong)}</div><div class="big">${s.mer > 0 ? s.mer.toFixed(2) + "×" : "—"}</div><div class="note">booked D2C revenue ÷ total marketing spend</div></div>
+    <div class="cell"><div class="lab">Blended paid ROAS · ${esc(s.monthLong)}</div><div class="big">${s.blendedRoas.toFixed(2)}×</div><div class="note">platform-claimed · channel diagnostic only</div></div>
   </div>
+  <div class="seostat" style="margin-top:-6px">MER (revenue ÷ total spend) is the true efficiency measure. Per-platform ROAS (Google, Meta, email) is attributed inside each platform's own window, so those figures overlap and <strong>cannot be added together</strong>.</div>
 
   <div class="seasonal">
     <div class="copy"><div class="t">Where the year's revenue lands</div><div class="d">Share of the financial year's direct-to-consumer revenue by month. The navy bars are the peak.</div></div>
