@@ -28,6 +28,9 @@ const money = (n: number | null) => n == null ? "—" : "$" + n.toLocaleString("
 const pct = (n: number | null) => n == null ? "—" : `-${Math.round(Math.abs(n) * 100)}%`;
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const norm = (s: string | null) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+// AU financial year: starts 1 July. July 2026 onward = FY 2026-27.
+const fyStartYear = (s: string) => { const dt = d(s); return dt.getMonth() >= 6 ? dt.getFullYear() : dt.getFullYear() - 1; };
+const fyLabel = (y: number) => `FY ${y}-${String((y + 1) % 100).padStart(2, "0")}`;
 
 export function PromotionalCalendar({ canEdit, brands }: { canEdit: boolean; brands: Brand[] }) {
   const [promos, setPromos] = useState<Promo[]>([]);
@@ -40,6 +43,7 @@ export function PromotionalCalendar({ canEdit, brands }: { canEdit: boolean; bra
   const [tierF, setTierF] = useState("");
   const [retailerF, setRetailerF] = useState("");
   const [statusF, setStatusF] = useState("");
+  const [fyF, setFyF] = useState("");
   const [open, setOpen] = useState<number | null>(null);
 
   async function load() {
@@ -66,19 +70,32 @@ export function PromotionalCalendar({ canEdit, brands }: { canEdit: boolean; bra
     return byRetailer.length ? byRetailer : base;
   }
 
-  const retailers = useMemo(() => Array.from(new Set(lines.map(l => l.customer).filter(Boolean))) as string[], [lines]);
-  const promoBrands = useMemo(() => Array.from(new Set(promos.map(p => p.brand))).sort(), [promos]);
-  const fp = useMemo(() => promos.filter(p => (!brandF || p.brand === brandF) && (!tierF || String(p.tier) === tierF)), [promos, brandF, tierF]);
+  // Financial-year filter (global). Default to the current FY, or the earliest with data.
+  const inFY = (s: string | null) => !fyF || (!!s && String(fyStartYear(s)) === fyF);
+  const fyList = useMemo(() => Array.from(new Set([...promos.map(p => p.period_start), ...d2c.map(r => r.period_start)].map(fyStartYear))).sort((a, b) => a - b), [promos, d2c]);
+  useEffect(() => {
+    if (!fyF && fyList.length) {
+      const cur = fyStartYear(new Date().toISOString().slice(0, 10));
+      setFyF(String(fyList.includes(cur) ? cur : fyList[0]));
+    }
+  }, [fyList]); // eslint-disable-line react-hooks/exhaustive-deps
+  const promosFY = useMemo(() => promos.filter(p => inFY(p.period_start)), [promos, fyF]); // eslint-disable-line react-hooks/exhaustive-deps
+  const linesFY = useMemo(() => lines.filter(l => inFY(l.start_date)), [lines, fyF]); // eslint-disable-line react-hooks/exhaustive-deps
+  const d2cFY = useMemo(() => d2c.filter(r => inFY(r.period_start)), [d2c, fyF]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const retailers = useMemo(() => Array.from(new Set(linesFY.map(l => l.customer).filter(Boolean))) as string[], [linesFY]);
+  const promoBrands = useMemo(() => Array.from(new Set(promosFY.map(p => p.brand))).sort(), [promosFY]);
+  const fp = useMemo(() => promosFY.filter(p => (!brandF || p.brand === brandF) && (!tierF || String(p.tier) === tierF)), [promosFY, brandF, tierF]);
 
   // timeline span
   const { min, max, monthCols } = useMemo(() => {
-    if (!promos.length) return { min: new Date(), max: new Date(), monthCols: [] as { label: string; left: number }[] };
-    const ss = promos.map(p => +d(p.period_start)); const ee = promos.map(p => +d(p.period_end));
+    if (!promosFY.length) return { min: new Date(), max: new Date(), monthCols: [] as { label: string; left: number }[] };
+    const ss = promosFY.map(p => +d(p.period_start)); const ee = promosFY.map(p => +d(p.period_end));
     const mn = new Date(Math.min(...ss)); const mx = new Date(Math.max(...ee)); mn.setDate(1); mx.setMonth(mx.getMonth() + 1, 0);
     const span = +mx - +mn; const cols: { label: string; left: number }[] = []; const cur = new Date(mn);
     while (cur <= mx) { cols.push({ label: `${MONTHS[cur.getMonth()]}`, left: (+cur - +mn) / span * 100 }); cur.setMonth(cur.getMonth() + 1); }
     return { min: mn, max: mx, monthCols: cols };
-  }, [promos]);
+  }, [promosFY]);
   const span = +max - +min || 1;
   const pos = (s: string) => (+d(s) - +min) / span * 100;
   const byBrand = useMemo(() => {
@@ -108,6 +125,9 @@ export function PromotionalCalendar({ canEdit, brands }: { canEdit: boolean; bra
           <button onClick={() => setView("calendar")} className={`px-3 py-1.5 border-l border-gray-200 ${view === "calendar" ? "bg-emerald-500 text-white" : "text-slate-600"}`}>Calendar</button>
           <button onClick={() => setView("products")} className={`px-3 py-1.5 border-l border-gray-200 ${view === "products" ? "bg-emerald-500 text-white" : "text-slate-600"}`}>By product</button>
         </div>
+        <select value={fyF} onChange={e => setFyF(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white font-medium">
+          <option value="">All years</option>{fyList.map(y => <option key={y} value={String(y)}>{fyLabel(y)}</option>)}
+        </select>
         <select value={brandF} onChange={e => setBrandF(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white">
           <option value="">All brands</option>{promoBrands.map(b => <option key={b} value={b}>{b}</option>)}
         </select>
@@ -128,7 +148,7 @@ export function PromotionalCalendar({ canEdit, brands }: { canEdit: boolean; bra
       </div>
 
       {view === "d2c" ? (
-        <D2cPlan d2c={d2c} canEdit={canEdit} brandF={brandF} tierF={tierF} statusF={statusF} onChanged={load} />
+        <D2cPlan d2c={d2cFY} canEdit={canEdit} brandF={brandF} tierF={tierF} statusF={statusF} onChanged={load} />
       ) : view === "calendar" ? (
         <>
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 overflow-x-auto">
@@ -181,7 +201,7 @@ export function PromotionalCalendar({ canEdit, brands }: { canEdit: boolean; bra
           </div>
         </>
       ) : (
-        <ProductTable lines={lines} brandF={brandF} tierF={tierF} retailerF={retailerF} />
+        <ProductTable lines={linesFY} brandF={brandF} tierF={tierF} retailerF={retailerF} />
       )}
     </div>
   );
