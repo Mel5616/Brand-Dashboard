@@ -348,7 +348,7 @@ export function DashboardTabs({
 
   // ── Sidebar ──────────────────────────────────────────────────────────────────
   const Sidebar = () => (
-    <aside className="fixed top-[57px] left-0 w-[208px] h-[calc(100vh-57px)] bg-white border-r border-gray-200 flex flex-col z-10 overflow-y-auto">
+    <aside className="fixed top-[57px] left-0 w-[252px] h-[calc(100vh-57px)] bg-white border-r border-gray-200 flex flex-col z-10 overflow-y-auto">
       {/* Financial year + month selectors — global across all pages */}
       <div className="px-4 py-3 border-b border-gray-100 space-y-2.5">
         <div>
@@ -468,7 +468,7 @@ export function DashboardTabs({
     return (
       <>
         <Sidebar />
-        <div className="ml-[208px]">
+        <div className="ml-[252px]">
           <div className="flex justify-end mb-3">
             <button
               onClick={() => setActive("report")}
@@ -511,7 +511,7 @@ export function DashboardTabs({
   return (
     <>
       <Sidebar />
-      <div className="ml-[208px]">
+      <div className="ml-[252px]">
         <main className="max-w-screen-2xl mx-auto px-6 py-8 space-y-8">
 
           {/* ── Brands ── */}
