@@ -12,6 +12,15 @@ const STATUS: Record<string, { label: string; bg: string }> = {
   archived: { label: "Archived", bg: "#64748b" },
 };
 const lines = (s?: string | null) => (s || "").split(/\r?\n/).map(x => x.replace(/^[-*•\s]+/, "").trim()).filter(Boolean);
+const baseSku = (sku?: string | null) => { const s = String(sku || "").trim(); return s.includes("-") ? s.slice(0, s.lastIndexOf("-")) : s; };
+const dimOf = (m: any) => [m.length, m.width, m.height].every((v: any) => v != null) ? `${m.length} × ${m.width} × ${m.height} cm` : "";
+// Longest shared word-prefix across the colour names (the product title).
+function commonPrefix(names: string[]): string {
+  if (!names.length) return "";
+  const split = names.map(n => n.trim().split(/\s+/)); const out: string[] = [];
+  for (let i = 0; i < split[0].length; i++) { const w = split[0][i]; if (split.every(s => s[i] === w)) out.push(w); else break; }
+  return out.join(" ").trim() || names[0];
+}
 
 // Small spec icons matching the PDF data sheet.
 function SpecIcon({ name }: { name: string }) {
@@ -54,6 +63,18 @@ export default async function ProductShare({ params }: { params: Promise<{ token
 
   let brand: string | undefined, accent = "#C9A24B";
   if (p.brand_id != null) { const { data: b } = await sb.from("brands").select("name,color").eq("id", p.brand_id).single(); brand = b?.name ?? undefined; if (b?.color) accent = b.color; }
+
+  // Gather the whole colour line by base SKU (same logic as the PDF data sheet).
+  const base = baseSku(p.sku);
+  let members: any[] = [p];
+  if (base) {
+    const { data } = await sb.from("new_products").select("*").or(`sku.like.${base}-*,sku.eq.${base}`);
+    if (data && data.length) members = data;
+  }
+  members.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+  const groupTitle = commonPrefix(members.map(m => m.name)) || p.name;
+  const variantLabel = (name: string) => name.replace(groupTitle, "").trim() || name;
+  const multi = members.length > 1;
   const st = STATUS[p.status] ?? STATUS.coming_soon;
   const dims = [p.length, p.width, p.height].every((v: any) => v != null) ? `${p.length} × ${p.width} × ${p.height} cm` : null;
   const launch = p.launch_date ? new Date(p.launch_date + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" }) : null;
@@ -151,6 +172,33 @@ export default async function ProductShare({ params }: { params: Promise<{ token
             )}
           </div>
         </div>
+
+        {/* Colours — every variant in this product line */}
+        {multi && (
+          <div className="px-8 pb-8">
+            <Heading>Colours ({members.length})</Heading>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 print:grid-cols-4">
+              {members.map(m => {
+                const md = dimOf(m);
+                return (
+                  <div key={m.id} className={`rounded-lg border overflow-hidden ${m.id === p.id ? "border-slate-300 ring-1 ring-slate-200" : "border-slate-100"}`}>
+                    <div className="aspect-square bg-slate-50 grid place-items-center overflow-hidden">
+                      {m.attrs?.image_url
+                        ? <img src={m.attrs.image_url} alt={variantLabel(m.name)} className="w-full h-full object-cover" />
+                        : <span className="text-[10px] uppercase tracking-wide text-slate-300">No image</span>}
+                    </div>
+                    <div className="px-2.5 py-2">
+                      <p className="text-[12px] font-semibold text-slate-700 leading-tight">{variantLabel(m.name)}</p>
+                      {m.sku && <p className="text-[10px] text-slate-400 mt-0.5 truncate">{m.sku}</p>}
+                      {m.barcode && <p className="text-[10px] text-slate-400 truncate">{m.barcode}</p>}
+                      {md && <p className="text-[10px] text-slate-400 mt-0.5">{md}{m.weight != null ? ` · ${m.weight} kg` : ""}</p>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Footer band */}
         <footer className="px-8 py-3 text-[9px] tracking-[0.04em] text-slate-300" style={{ background: NAVY }}>
