@@ -11,7 +11,7 @@ type Brief = Record<string, string>;
 type Campaign = {
   id: string; horizon: string; campaign: string; brand: string; tier: string;
   owner: string; channel: string; status: string; key_date: string; end_date?: string; note: string;
-  sort_order: number; brief?: Brief;
+  sort_order: number; brief?: Brief; share_token?: string; image_url?: string | null;
 };
 type Maint = { id: string; name: string; tier: string; sort_order: number };
 
@@ -88,6 +88,9 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [imgBusy, setImgBusy] = useState(false);
+  const imgRef = useRef<HTMLInputElement>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<string | null>(null);
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
@@ -325,6 +328,28 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
     catch { setError("Could not copy. Select the text and copy it manually."); }
   }
 
+  async function uploadCampaignImage(item: Campaign, file: File | undefined) {
+    if (!file) return;
+    setImgBusy(true); setError(null);
+    try {
+      const fd = new FormData(); fd.append("file", file);
+      const j = await fetch(`/api/campaigns/${item.id}/image`, { method: "POST", body: fd }).then(r => r.json());
+      if (j.error) setError(j.error);
+      else setItems(prev => prev.map(it => it.id === item.id ? { ...it, ...(j.item || { image_url: j.url }) } as Campaign : it));
+    } catch { setError("Image upload failed."); }
+    setImgBusy(false);
+    if (imgRef.current) imgRef.current.value = "";
+  }
+
+  function copyShareLink(item: Campaign) {
+    if (!item.share_token) { setError("Save the campaign first, then copy its share link."); return; }
+    const url = `${window.location.origin}/c/${item.share_token}`;
+    const done = () => { setLinkCopied(true); setTimeout(() => setLinkCopied(false), 1500); };
+    if (navigator.clipboard?.writeText) { navigator.clipboard.writeText(url).then(done).catch(() => setError(`Couldn't copy — link: ${url}`)); return; }
+    try { const ta = document.createElement("textarea"); ta.value = url; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); document.body.removeChild(ta); done(); }
+    catch { setError(`Couldn't copy — link: ${url}`); }
+  }
+
   const cell = "w-full bg-transparent rounded px-1.5 py-1 text-sm text-slate-700 placeholder:text-gray-300 read-only:cursor-default focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400 motion-reduce:transition-none";
   const ro = !canEdit;
 
@@ -560,6 +585,11 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                   </>
                 )}
                 <button onClick={() => copyBrief(open)} className="text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3.5 py-1.5 transition motion-reduce:transition-none">{copied ? "Copied" : "Copy brief"}</button>
+                {canEdit && <>
+                  <input ref={imgRef} type="file" accept="image/*" className="hidden" onChange={e => uploadCampaignImage(open, e.target.files?.[0])} />
+                  <button onClick={() => imgRef.current?.click()} disabled={imgBusy} className="text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3.5 py-1.5 transition disabled:opacity-60 motion-reduce:transition-none">{imgBusy ? "Uploading…" : open.image_url ? "Replace image" : "Add image"}</button>
+                </>}
+                <button onClick={() => copyShareLink(open)} className="text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3.5 py-1.5 transition motion-reduce:transition-none">{linkCopied ? "Link copied" : "Copy share link"}</button>
                 <button onClick={() => window.print()} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-3.5 py-1.5 transition motion-reduce:transition-none">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
                   Export PDF
