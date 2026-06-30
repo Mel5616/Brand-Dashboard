@@ -169,7 +169,7 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
             const ready = g.members.every(m => m.long_description);
             const colours = g.members.map(m => variantLabel(m.name, g.title)).filter(Boolean);
             return (
-              <button key={g.key} onClick={() => setOpenKey(g.key)} className="text-left bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow hover:border-emerald-200 transition p-3">
+              <div key={g.key} role="button" tabIndex={0} onClick={() => setOpenKey(g.key)} onKeyDown={e => { if (e.key === "Enter") setOpenKey(g.key); }} className="cursor-pointer text-left bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow hover:border-emerald-200 transition p-3">
                 <div className="flex items-center justify-between mb-1.5">
                   {r.brand_id != null && BRAND_LOGOS[r.brand_id] ? <img src={BRAND_LOGOS[r.brand_id]} alt="" className="h-4 max-w-[64px] object-contain" /> : <span className="text-[10px] text-gray-400">—</span>}
                   <span className="text-[9px] font-semibold text-white rounded-full px-1.5 py-0.5" style={{ background: st.bg }}>{st.label}</span>
@@ -181,7 +181,13 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
                   <span className={`text-[10px] ${ready ? "text-emerald-500" : "text-amber-500"}`}>{ready ? "copy ready" : "needs copy"}</span>
                 </div>
                 {colours.length > 1 && <p className="text-[10px] text-gray-400 mt-0.5 truncate">{colours.join(", ")}</p>}
-              </button>
+                <div className="mt-2 pt-2 border-t border-gray-50 flex justify-end">
+                  <button onClick={e => { e.stopPropagation(); copyLink(r.share_token); }} className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 hover:text-emerald-600">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 11-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 115.656 5.656l-1.5 1.5" /></svg>
+                    Copy link
+                  </button>
+                </div>
+              </div>
             );
           })}
         </div>
