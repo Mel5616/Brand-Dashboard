@@ -199,12 +199,6 @@ export default async function ProductShare({ params }: { params: Promise<{ token
               </section>
             )}
 
-            {box.length > 0 && (
-              <section>
-                <Heading>What&apos;s in the box</Heading>
-                <ul className="space-y-1.5 text-[13px]">{box.map((f, i) => <li key={i} className="flex gap-2 text-slate-700"><span className="text-slate-300">•</span><span>{f}</span></li>)}</ul>
-              </section>
-            )}
           </div>
         </div>
 
@@ -237,6 +231,18 @@ export default async function ProductShare({ params }: { params: Promise<{ token
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* What's in the box — always last, in a light grey panel */}
+        {box.length > 0 && (
+          <div className="px-8 pb-8">
+            <div className="rounded-xl bg-slate-50 border border-slate-100 px-5 py-4 break-inside-avoid">
+              <Heading>What&apos;s in the box</Heading>
+              <ul className="columns-1 sm:columns-2 gap-x-8 text-[13px] print:columns-2">
+                {box.map((f, i) => <li key={i} className="flex gap-2 text-slate-700 mb-1.5 break-inside-avoid"><span className="text-slate-300">•</span><span>{f}</span></li>)}
+              </ul>
             </div>
           </div>
         )}
