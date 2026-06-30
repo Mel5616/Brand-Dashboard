@@ -5,7 +5,7 @@ import { fmtFull } from "@/lib/format";
 
 type Brand = { id: number; name: string };
 type Topup = { brand_id: number; month_key: string; channel: string; amount: number };
-type Actual = { brand_id: number; month_key: string; channel: string; spend: number; note?: string };
+type Actual = { brand_id: number; month_key: string; channel: string; spend: number; note?: string; invoice_url?: string | null };
 
 // Canonical marketing channels for the year (templates always offer all of these).
 const CHANNELS = ["Google Advertising", "Social Media (Meta)", "TikTok Ads", "Pinterest Ads", "Partnerships & Affiliates", "Influencer Marketing", "Klaviyo", "Shopify", "Photography", "Printing", "Events", "Giveaways"];
@@ -29,6 +29,31 @@ export function BudgetDataTools({ brands, marketingBudgets, monthKeys, fy, fyLab
   const [busy, setBusy] = useState("");
   const [msg, setMsg] = useState("");
   const [showExpenses, setShowExpenses] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
+  const [form, setForm] = useState({ brand_id: "", channel: CHANNELS[0], month_key: monthKeys[0], spend: "", note: "" });
+
+  async function addExpense() {
+    if (!form.brand_id || !form.channel || !form.month_key) { setMsg("Pick a brand, channel and month."); return; }
+    setAdding(true); setMsg("");
+    try {
+      let invoice_url: string | undefined;
+      if (invoiceFile) {
+        const fd = new FormData(); fd.append("file", invoiceFile);
+        const j = await fetch("/api/marketing-actuals/invoice", { method: "POST", body: fd }).then(r => r.json());
+        if (j.error) { setMsg(j.error); setAdding(false); return; }
+        invoice_url = j.url;
+      }
+      const row: Actual = { brand_id: Number(form.brand_id), month_key: form.month_key, channel: form.channel, spend: Number(form.spend) || 0, note: form.note, invoice_url };
+      const res = await fetch("/api/marketing-actuals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows: [row] }) }).then(r => r.json());
+      if (!res.ok) { setMsg(res.error || "Couldn't save the expense."); setAdding(false); return; }
+      setActuals(prev => [row, ...prev.filter(a => !(a.brand_id === row.brand_id && a.month_key === row.month_key && a.channel === row.channel))]);
+      setForm(f => ({ ...f, spend: "", note: "" })); setInvoiceFile(null);
+      setMsg("✓ Expense added.");
+    } catch { setMsg("Couldn't save the expense."); }
+    setAdding(false);
+  }
 
   useEffect(() => { fetch("/api/marketing-actuals").then(r => r.json()).then(j => setActuals(j.rows ?? [])).catch(() => {}); }, []);
 
@@ -172,11 +197,47 @@ export function BudgetDataTools({ brands, marketingBudgets, monthKeys, fy, fyLab
           <div className="flex flex-wrap gap-2">
             <button onClick={downloadExpensesTemplate} className={btn}>Download template (Excel)</button>
             <label className={up("exp")}>{busy === "exp" ? "Uploading…" : "Upload expenses"}<input type="file" accept=".xlsx,.xls" disabled={busy === "exp"} className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadExpenses(f); e.currentTarget.value = ""; }} /></label>
+            <button onClick={() => setShowAdd(s => !s)} className={btn}>{showAdd ? "Close" : "Add one + invoice"}</button>
             <button onClick={() => setShowExpenses(s => !s)} className={btn}>{showExpenses ? "Hide list" : `View list (${fyExpenses.length})`}</button>
           </div>
-          <p className="text-[10px] text-gray-400 mt-2">Columns: Month · Brand · Channel · Spend · Note. Re-uploading the same month/brand/channel overwrites it.</p>
+          <p className="text-[10px] text-gray-400 mt-2">Bulk via Excel, or add a single expense and attach its invoice (PDF). Re-using the same month/brand/channel overwrites it.</p>
         </div>
       </div>
+
+      {/* Add a single expense, with optional invoice */}
+      {showAdd && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-3">
+          <div className="grid sm:grid-cols-6 gap-2 items-end">
+            <label className="text-[11px] text-gray-500 sm:col-span-1">Brand
+              <select value={form.brand_id} onChange={e => setForm(f => ({ ...f, brand_id: e.target.value }))} className="w-full mt-0.5 text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white">
+                <option value="">—</option>
+                {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+            </label>
+            <label className="text-[11px] text-gray-500 sm:col-span-1">Channel
+              <select value={form.channel} onChange={e => setForm(f => ({ ...f, channel: e.target.value }))} className="w-full mt-0.5 text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white">
+                {CHANNELS.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </label>
+            <label className="text-[11px] text-gray-500 sm:col-span-1">Month
+              <select value={form.month_key} onChange={e => setForm(f => ({ ...f, month_key: e.target.value }))} className="w-full mt-0.5 text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white">
+                {monthKeys.map(mk => <option key={mk} value={mk}>{labelOf(mk)}</option>)}
+              </select>
+            </label>
+            <label className="text-[11px] text-gray-500 sm:col-span-1">Spend $
+              <input type="number" inputMode="decimal" value={form.spend} onChange={e => setForm(f => ({ ...f, spend: e.target.value }))} className="w-full mt-0.5 text-sm border border-gray-200 rounded-lg px-2 py-1.5" />
+            </label>
+            <label className="text-[11px] text-gray-500 sm:col-span-2">Note
+              <input value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="supplier / ref" className="w-full mt-0.5 text-sm border border-gray-200 rounded-lg px-2 py-1.5" />
+            </label>
+          </div>
+          <div className="flex items-center gap-3 mt-2 flex-wrap">
+            <label className={btn + " cursor-pointer"}>{invoiceFile ? `📎 ${invoiceFile.name.slice(0, 28)}` : "Attach invoice (PDF)"}<input type="file" accept="application/pdf,image/*" className="hidden" onChange={e => setInvoiceFile(e.target.files?.[0] ?? null)} /></label>
+            {invoiceFile && <button onClick={() => setInvoiceFile(null)} className="text-[11px] text-gray-400 hover:text-rose-500">remove</button>}
+            <button onClick={addExpense} disabled={adding} className="text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg px-4 py-1.5 disabled:opacity-50 ml-auto">{adding ? "Saving…" : "Save expense"}</button>
+          </div>
+        </div>
+      )}
 
       {showExpenses && (
         <div className="rounded-xl border border-gray-100 overflow-hidden">
@@ -186,7 +247,7 @@ export function BudgetDataTools({ brands, marketingBudgets, monthKeys, fy, fyLab
             <div className="overflow-x-auto max-h-[360px] overflow-y-auto">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-wide sticky top-0">
-                  <tr><th className="text-left font-semibold px-3 py-2">Month</th><th className="text-left font-semibold px-3 py-2">Brand</th><th className="text-left font-semibold px-3 py-2">Channel</th><th className="text-right font-semibold px-3 py-2">Spend</th><th className="text-left font-semibold px-3 py-2">Note</th><th className="px-3 py-2" /></tr>
+                  <tr><th className="text-left font-semibold px-3 py-2">Month</th><th className="text-left font-semibold px-3 py-2">Brand</th><th className="text-left font-semibold px-3 py-2">Channel</th><th className="text-right font-semibold px-3 py-2">Spend</th><th className="text-left font-semibold px-3 py-2">Note</th><th className="text-left font-semibold px-3 py-2">Invoice</th><th className="px-3 py-2" /></tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {fyExpenses.map((a, i) => (
@@ -195,7 +256,8 @@ export function BudgetDataTools({ brands, marketingBudgets, monthKeys, fy, fyLab
                       <td className="px-3 py-1.5 font-medium text-slate-700">{brandById.get(a.brand_id) ?? `#${a.brand_id}`}</td>
                       <td className="px-3 py-1.5 text-slate-600">{a.channel}</td>
                       <td className="px-3 py-1.5 text-right text-slate-700">{fmtFull(Number(a.spend) || 0)}</td>
-                      <td className="px-3 py-1.5 text-gray-400 truncate max-w-[220px]">{a.note}</td>
+                      <td className="px-3 py-1.5 text-gray-400 truncate max-w-[200px]">{a.note}</td>
+                      <td className="px-3 py-1.5">{a.invoice_url ? <a href={a.invoice_url} target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">📎 view</a> : <span className="text-gray-300">—</span>}</td>
                       <td className="px-3 py-1.5 text-right"><button onClick={() => deleteExpense(a)} className="text-rose-400 hover:text-rose-600 text-xs">✕</button></td>
                     </tr>
                   ))}

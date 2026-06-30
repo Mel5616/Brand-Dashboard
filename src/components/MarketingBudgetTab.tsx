@@ -91,7 +91,7 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
   }
 
   const [budgetBrand, setBudgetBrand] = useState<number | "all">("all");
-  const budgetBrandList = brands.filter((b: any) => b.live && marketingBudgets.some(mb => mb.brand_id === b.id));
+  const budgetBrandList = brands.filter((b: any) => marketingBudgets.some(mb => mb.brand_id === b.id));
 
   function getActual(brandId: number, channel: string): number {
     if (channel === "Google Advertising")  return googleAds.filter(r => r.brand_id === brandId).reduce((s, r) => s + r.spend, 0);
@@ -117,7 +117,7 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
 
   // Per-brand summaries
   const brandSummaries = brands
-    .filter(b => b.live)
+    .filter(b => marketingBudgets.some(mb => mb.brand_id === b.id))
     .map(brand => {
       const bRows  = marketingBudgets.filter(b => b.brand_id === brand.id);
       const budget = bRows.reduce((s, b) => s + fyBudgetFor(b.brand_id, b.channel, b.annual_budget), 0);

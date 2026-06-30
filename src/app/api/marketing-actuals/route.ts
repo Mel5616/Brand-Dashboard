@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   const rows = (Array.isArray(b.rows) ? b.rows : [])
     .filter((r: any) => r && r.brand_id != null && r.month_key && r.channel)
-    .map((r: any) => ({ brand_id: Number(r.brand_id), month_key: String(r.month_key), channel: String(r.channel), spend: Number(r.spend) || 0, note: r.note ? String(r.note).slice(0, 300) : "" }));
+    .map((r: any) => ({ brand_id: Number(r.brand_id), month_key: String(r.month_key), channel: String(r.channel), spend: Number(r.spend) || 0, note: r.note ? String(r.note).slice(0, 300) : "", ...(r.invoice_url ? { invoice_url: String(r.invoice_url) } : {}) }));
   if (!rows.length) return NextResponse.json({ ok: false, error: "No valid rows (need brand, month, channel)" }, { status: 400 });
   const res = await fetch(`${sbUrl}/rest/v1/marketing_actuals?on_conflict=brand_id,month_key,channel`, { method: "POST", headers: hdr({ Prefer: "resolution=merge-duplicates,return=minimal" }), body: JSON.stringify(rows) });
   const text = await res.text();
