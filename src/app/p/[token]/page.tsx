@@ -119,6 +119,7 @@ export default async function ProductShare({ params }: { params: Promise<{ token
   }
 
   const features = lines(p.features);
+  const featuresLong = features.length > 6; // long lists break out full-width into two columns
   const box = lines(p.whats_in_box);
   const body = lines((p.long_description || "").replace(/\n\n+/g, "\n"));
 
@@ -191,7 +192,7 @@ export default async function ProductShare({ params }: { params: Promise<{ token
               </section>
             )}
 
-            {features.length > 0 && (
+            {features.length > 0 && !featuresLong && (
               <section>
                 <Heading>Key features</Heading>
                 <ul className="space-y-1.5 text-[13px]">{features.map((f, i) => <li key={i} className="flex gap-2 text-slate-700"><span style={{ color: accent }} className="font-bold">✓</span><span>{f}</span></li>)}</ul>
@@ -206,6 +207,16 @@ export default async function ProductShare({ params }: { params: Promise<{ token
             )}
           </div>
         </div>
+
+        {/* Key features — full width in two columns when the list is long */}
+        {featuresLong && (
+          <div className="px-8 pb-7">
+            <Heading>Key features</Heading>
+            <ul className="columns-1 sm:columns-2 gap-x-8 text-[13px] print:columns-2">
+              {features.map((f, i) => <li key={i} className="flex gap-2 text-slate-700 mb-1.5 break-inside-avoid"><span style={{ color: accent }} className="font-bold">✓</span><span>{f}</span></li>)}
+            </ul>
+          </div>
+        )}
 
         {/* Colours — every variant in this product line */}
         {multi && (
