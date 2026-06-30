@@ -39,6 +39,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const logo = (p.brand_id != null && BRAND_LOGOS[p.brand_id]) ? `<img src="${encodeURI(BRAND_LOGOS[p.brand_id])}" style="height:30px;max-width:170px;object-fit:contain"/>` : `<span style="font-weight:700;font-size:16px;color:${NAVY}">${esc(brand || "Coolkidz Australia")}</span>`;
   const hero = members.find(m => m.attrs?.image_url)?.attrs?.image_url || p.attrs?.image_url;
   const launch = p.launch_date ? new Date(p.launch_date + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" }) : null;
+  const created = p.created_at ? new Date(p.created_at).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric", timeZone: "Australia/Melbourne" }) : "";
   const statusLabel = ({ coming_soon: "Coming soon", launching: "Launching", launched: "Available now", archived: "Archived" } as any)[p.status] || "Coming soon";
   const multi = members.length > 1;
 
@@ -96,7 +97,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
     <div style="display:grid;grid-template-columns:1.1fr 0.9fr;gap:10mm;padding:2mm 14mm 6mm">
       <div>
-        ${para ? `${h("Description")}<div style="color:#334155">${para}</div>` : ""}
+        ${(p.short_description || para) ? `${h("Description")}${p.short_description ? `<p style="color:#ea580c;font-style:italic;font-size:12px;line-height:1.45;margin:0 0 9px">${esc(p.short_description)}</p>` : ""}${para ? `<div style="color:#334155">${para}</div>` : ""}` : ""}
       </div>
       <div>
         ${specRows.length ? `${h("Specification data")}<table>${spec}</table>` : ""}
@@ -118,7 +119,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         <tbody>${variantRows}</tbody>
       </table></div>` : ""}
 
-    <div style="background:${NAVY};color:#cbd5e1;padding:6mm 14mm;font-size:9px;letter-spacing:.04em;margin-top:6mm">COOLKIDZ AUSTRALIA · PRODUCT DATA SHEET${p.sku ? " · " + esc(base || p.sku) : ""}</div>
+    <div style="background:${NAVY};color:#cbd5e1;padding:6mm 14mm;font-size:9px;letter-spacing:.04em;margin-top:6mm">Coolkidz Australia | New Product Submission${brand ? " | " + esc(brand) : ""}${created ? " | " + esc(created) : ""}</div>
     <script>window.onload=function(){window.print()}</script>
   </body></html>`;
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });
