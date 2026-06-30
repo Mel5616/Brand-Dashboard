@@ -580,7 +580,7 @@ export function DashboardTabs({
   return (
     <>
       <Sidebar />
-      <div className="ml-[288px]">
+      <div className="lg:ml-[288px]">
         <main className="max-w-screen-2xl mx-auto px-6 py-8 space-y-8">
 
           {/* ── Brands ── */}
