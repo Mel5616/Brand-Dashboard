@@ -7,10 +7,21 @@ type Period = "day" | "week" | "month";
 
 // Per-brand Shopify sales at a glance, switchable Day / Week / Month.
 // Week uses brand_weekly, Month uses brand_monthly. Daily has no synced table yet.
-export function ShopifyBrandSales({ brands, monthly, weekly, daily = [], months, latestI }: {
-  brands: any[]; monthly: any[]; weekly: any[]; daily?: any[]; months: string[]; latestI: number;
+export function ShopifyBrandSales({ brands, monthly, weekly, daily = [], months, latestI, canSync = false }: {
+  brands: any[]; monthly: any[]; weekly: any[]; daily?: any[]; months: string[]; latestI: number; canSync?: boolean;
 }) {
   const [period, setPeriod] = useState<Period>("month");
+  const [syncing, setSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState("");
+
+  async function refreshData() {
+    setSyncing(true); setSyncMsg("Starting…");
+    try {
+      const j = await fetch("/api/sync", { method: "POST" }).then(r => r.json());
+      if (j.ok) { setSyncMsg("Syncing… data refreshes in ~1–2 min"); setTimeout(() => window.location.reload(), 90_000); }
+      else { setSyncMsg(j.message ?? "Couldn’t start sync"); setSyncing(false); }
+    } catch { setSyncMsg("Error — try again"); setSyncing(false); }
+  }
   const live = brands.filter((b: any) => b.live);
 
   const curM = months[latestI], prevM = months[latestI - 1];
@@ -46,15 +57,25 @@ export function ShopifyBrandSales({ brands, monthly, weekly, daily = [], months,
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Brand sales <span className="font-normal text-gray-400 normal-case tracking-normal">· {periodLabel}{total > 0 ? ` · ${fmt(total)} total` : ""}</span></p>
         </div>
-        <div className="inline-flex rounded-lg border border-gray-200 overflow-hidden text-xs">
-          {(["day", "week", "month"] as Period[]).map(p => (
-            <button key={p} onClick={() => setPeriod(p)}
-              className={`px-3 py-1.5 capitalize transition ${period === p ? "bg-emerald-600 text-white font-semibold" : "text-gray-500 hover:bg-gray-50"}`}>
-              {p}
+        <div className="flex items-center gap-2">
+          {canSync && (
+            <button onClick={refreshData} disabled={syncing} title="Pull the latest Shopify data"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 rounded-lg px-3 py-1.5 disabled:opacity-60 transition">
+              <svg className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0A8.003 8.003 0 015.064 15m14.355 0H15" /></svg>
+              {syncing ? "Syncing…" : "Refresh data"}
             </button>
-          ))}
+          )}
+          <div className="inline-flex rounded-lg border border-gray-200 overflow-hidden text-xs">
+            {(["day", "week", "month"] as Period[]).map(p => (
+              <button key={p} onClick={() => setPeriod(p)}
+                className={`px-3 py-1.5 capitalize transition ${period === p ? "bg-emerald-600 text-white font-semibold" : "text-gray-500 hover:bg-gray-50"}`}>
+                {p}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
+      {syncMsg && <p className="text-[11px] text-gray-400 -mt-1 mb-2">{syncMsg}</p>}
 
       {period === "day" && !hasDaily ? (
         <div className="rounded-xl bg-amber-50 border border-amber-100 px-4 py-3 text-xs text-amber-800">
