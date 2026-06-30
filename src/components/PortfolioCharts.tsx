@@ -12,6 +12,18 @@ import { buildChannels, channelColor } from "@/lib/channels";
 ChartJS.register(BarElement, CategoryScale, LinearScale, LineElement, PointElement, Filler, Tooltip, Legend);
 
 const sum = (a: number[]) => a.reduce((s, v) => s + (v || 0), 0);
+const cum = (a: number[]) => a.reduce((acc: number[], v, i) => { acc.push((acc[i - 1] ?? 0) + v); return acc; }, []);
+
+// Tiny inline trend line for KPI cards (no axes/labels).
+export function Sparkline({ data, color = "#1e3a5f" }: { data: number[]; color?: string }) {
+  if (!data.some(v => v)) return null;
+  return (
+    <div className="h-7 mt-1.5">
+      <Line data={{ labels: data.map((_, i) => i), datasets: [{ data, borderColor: color, backgroundColor: color + "1f", borderWidth: 1.5, pointRadius: 0, fill: true, tension: 0.35 }] }}
+        options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { enabled: false } }, scales: { x: { display: false }, y: { display: false } }, elements: { line: { borderCapStyle: "round" } } }} />
+    </div>
+  );
+}
 
 // Whole-portfolio visuals for the overview: trend vs target, channel mix over time,
 // brand contribution, and the biggest YoY movers.
@@ -49,6 +61,18 @@ export function PortfolioCharts({ brands, tiers, monthly, targets, monthKeys, mo
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+      {/* Cumulative pacing (burn-up) — full width */}
+      <div className={card + " lg:col-span-2"}>
+        <h3 className="text-sm font-semibold text-slate-700">Cumulative pacing</h3>
+        <p className="text-xs text-gray-400 mb-3">{fyLabel} · revenue to date vs the target plan — above the line is ahead</p>
+        <div className="h-52">
+          <Line data={{ labels, datasets: [
+            { label: "Target plan", data: cum(monthlyTarget), borderColor: "#94a3b8", borderDash: [5, 4], borderWidth: 2, pointRadius: 0, fill: false, tension: 0.3 },
+            { label: "Revenue", data: cum(monthlyRev), borderColor: "#10b981", backgroundColor: "#10b9811f", borderWidth: 2, pointRadius: 0, fill: true, tension: 0.3 },
+          ] }} options={{ responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false }, plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 }, usePointStyle: true } }, tooltip: { callbacks: { label: (c: any) => ` ${c.dataset.label}: ${fmt(c.parsed.y ?? 0)}` } } }, scales: baseScales }} />
+        </div>
+      </div>
+
       {/* Revenue vs target */}
       <div className={card}>
         <h3 className="text-sm font-semibold text-slate-700">Revenue vs target</h3>

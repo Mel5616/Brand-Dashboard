@@ -19,7 +19,7 @@ import { InsightsPanel } from "./InsightsPanel";
 import { SocialPanel } from "./SocialPanel";
 import { SalesPanel } from "./SalesPanel";
 import { buildChannels, groupDirect, channelColor, momPct, DIGITAL_CHANNELS } from "@/lib/channels";
-import { PortfolioCharts } from "./PortfolioCharts";
+import { PortfolioCharts, Sparkline } from "./PortfolioCharts";
 import { SectionBar } from "./ui";
 import { ProductsTable } from "./ProductsTable";
 import { TradeshowAccordion } from "./TradeshowAccordion";
@@ -642,6 +642,11 @@ export function DashboardTabs({
                 const pos = ssum(visible.filter((c: any) => c.fy > 0).map((c: any) => c.fy)) || 1;
                 // Month-on-month on the whole visible book — sum every channel's series per month, then compare the selected month to the one before.
                 const totalSeries = monthKeys.map((_, i) => ssum(visible.map((c: any) => c.series[i] ?? 0)));
+                // Monthly series for the KPI sparklines
+                const spendSeries = monthKeys.map((mk: string) => ssum(googleAds.filter((r: any) => r.month_key === mk).map((r: any) => r.spend)) + ssum(metaAds.filter((r: any) => r.month_key === mk).map((r: any) => r.spend)) + (role === "admin" ? ssum(marketingActuals.filter((a: any) => a.month_key === mk && a.channel !== "Google Advertising" && a.channel !== "Social Media (Meta)").map((a: any) => a.spend)) : 0));
+                const merSeries = totalSeries.map((rev, i) => rev > 0 ? (spendSeries[i] / rev) * 100 : 0);
+                const digitalSeries = monthKeys.map((_, i) => ssum(visible.filter((c: any) => DIGITAL_CHANNELS.has(c.name)).map((c: any) => c.series[i] ?? 0)));
+                const shareSeries = totalSeries.map((rev, i) => rev > 0 ? (digitalSeries[i] / rev) * 100 : 0);
                 const revMom = momPct(totalSeries, latestI);
                 const momSub = revMom != null ? `${revMom >= 0 ? "▲" : "▼"} ${Math.abs(revMom).toFixed(0)}% vs ${prevLabel}` : undefined;
                 // Pace vs plan — digital revenue against digital target, cumulative through the selected month.
@@ -652,10 +657,10 @@ export function DashboardTabs({
                 const paceDelta = actToDate - tgtToDate;
                 const hasTarget = tgtToDate > 0;
                 const cards = [
-                  { label: role === "admin" ? "Total business revenue" : "Digital revenue", value: fmt(total), accent: "#1e3a5f", sub: momSub },
-                  { label: "Mktg % of sales", value: mer != null ? mer.toFixed(1) + "%" : "—", accent: "#f97316", sub: undefined as string | undefined },
-                  { label: "Digital share", value: Math.round(onlinePct) + "%", accent: "#10b981", sub: undefined as string | undefined },
-                  { label: "Channels", value: String(visible.length), accent: "#a855f7", sub: undefined as string | undefined },
+                  { label: role === "admin" ? "Total business revenue" : "Digital revenue", value: fmt(total), accent: "#1e3a5f", sub: momSub, spark: totalSeries as number[] | undefined },
+                  { label: "Mktg % of sales", value: mer != null ? mer.toFixed(1) + "%" : "—", accent: "#f97316", sub: undefined as string | undefined, spark: merSeries as number[] | undefined },
+                  { label: "Digital share", value: Math.round(onlinePct) + "%", accent: "#10b981", sub: undefined as string | undefined, spark: shareSeries as number[] | undefined },
+                  { label: "Channels", value: String(visible.length), accent: "#a855f7", sub: undefined as string | undefined, spark: undefined as number[] | undefined },
                 ];
                 return (
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
@@ -666,6 +671,7 @@ export function DashboardTabs({
                           <p className="text-[11px] font-medium text-gray-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full inline-block" style={{ background: c.accent }} />{c.label}</p>
                           <p className="text-2xl font-bold text-slate-800 mt-1 leading-none">{c.value}</p>
                           {c.sub && <p className={`text-[11px] mt-1 font-semibold ${c.sub.startsWith("▼") ? "text-red-500" : "text-emerald-500"}`}>{c.sub}</p>}
+                          {c.spark && <Sparkline data={c.spark} color={c.accent} />}
                         </div>
                       ))}
                     </div>
