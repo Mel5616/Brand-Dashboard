@@ -59,6 +59,16 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
     setBusy(""); setMsg(`Saved to ${open.members.length} colour${open.members.length === 1 ? "" : "s"}.`);
   }
 
+  // Auto-save the shared meta fields (status, launch date, brand) the moment they
+  // change, so they persist even if the drawer is closed without "Save to all".
+  async function saveMeta(partial: Record<string, any>) {
+    if (!open || !edit) return;
+    setEdit((e: any) => ({ ...e, ...partial }));
+    const res = await Promise.all(open.members.map(m => fetch(`/api/new-products/${m.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(partial) }).then(r => r.json())));
+    setProducts(prev => prev.map(p => { const u = res.find(x => x.product?.id === p.id); return u?.product ?? p; }));
+    setMsg("Saved.");
+  }
+
   async function draft() {
     if (!rep) return;
     setBusy("draft"); setMsg("");
@@ -189,13 +199,13 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
 
               <div className="flex flex-wrap items-center gap-2 text-sm">
                 {canEdit
-                  ? <select value={edit.status} onChange={e => setEdit({ ...edit, status: e.target.value })} className="text-xs font-semibold text-white rounded-full px-2.5 py-1" style={{ background: statusOf(edit.status).bg }}>{STATUSES.map(s => <option key={s.id} value={s.id} className="text-slate-700 bg-white">{s.label}</option>)}</select>
+                  ? <select value={edit.status} onChange={e => saveMeta({ status: e.target.value })} className="text-xs font-semibold text-white rounded-full px-2.5 py-1" style={{ background: statusOf(edit.status).bg }}>{STATUSES.map(s => <option key={s.id} value={s.id} className="text-slate-700 bg-white">{s.label}</option>)}</select>
                   : <span className="text-xs font-semibold text-white rounded-full px-2.5 py-1" style={{ background: statusOf(edit.status).bg }}>{statusOf(edit.status).label}</span>}
                 <span className="text-gray-400 text-xs">Launch</span>
-                <input type="date" value={edit.launch_date ? String(edit.launch_date).slice(0, 10) : ""} readOnly={!canEdit} onChange={e => setEdit({ ...edit, launch_date: e.target.value })} className="text-sm border border-gray-200 rounded-lg px-2 py-1" />
+                <input type="date" value={edit.launch_date ? String(edit.launch_date).slice(0, 10) : ""} readOnly={!canEdit} onChange={e => saveMeta({ launch_date: e.target.value || null })} className="text-sm border border-gray-200 rounded-lg px-2 py-1" />
                 <span className="text-gray-400 text-xs">Brand</span>
                 {canEdit
-                  ? <select value={edit.brand_id ?? ""} onChange={e => setEdit({ ...edit, brand_id: e.target.value === "" ? null : Number(e.target.value) })} className="text-sm border border-gray-200 rounded-lg px-2 py-1 bg-white">
+                  ? <select value={edit.brand_id ?? ""} onChange={e => saveMeta({ brand_id: e.target.value === "" ? null : Number(e.target.value) })} className="text-sm border border-gray-200 rounded-lg px-2 py-1 bg-white">
                       <option value="">— select —</option>
                       {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                     </select>
