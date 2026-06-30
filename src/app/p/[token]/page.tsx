@@ -11,6 +11,18 @@ const STATUS: Record<string, { label: string; bg: string }> = {
 };
 const lines = (s?: string | null) => (s || "").split(/\r?\n/).map(x => x.replace(/^[-*•\s]+/, "").trim()).filter(Boolean);
 
+// Small spec icons matching the PDF data sheet.
+function SpecIcon({ name }: { name: string }) {
+  const c = { width: 12, height: 12, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, className: "shrink-0" };
+  switch (name) {
+    case "Dimensions": return (<svg {...c}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></svg>);
+    case "Weight": return (<svg {...c}><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" /><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" /><path d="M7 21h10" /><path d="M12 3v18" /><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2" /></svg>);
+    case "SKU": return (<svg {...c}><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" /><line x1="7" y1="7" x2="7.01" y2="7" /></svg>);
+    case "Barcode": return (<svg {...c}><path d="M3 5v14" /><path d="M8 5v14" /><path d="M12 5v14" /><path d="M17 5v14" /><path d="M21 5v14" /></svg>);
+    default: return null;
+  }
+}
+
 // Public, token-protected product page (no login). Shared with the team / suppliers.
 export default async function ProductShare({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -43,10 +55,10 @@ export default async function ProductShare({ params }: { params: Promise<{ token
           <div className={`mt-6 ${p.attrs?.image_url ? "grid md:grid-cols-[1fr_300px] gap-8 items-start" : ""}`}>
             <div className={`${p.attrs?.image_url ? "order-2 md:order-1" : ""} space-y-6`}>
               <section className="grid grid-cols-2 gap-3 text-sm">
-                {p.sku && <div className="rounded-lg bg-slate-50 px-3 py-2"><p className="text-[10px] uppercase tracking-wide text-slate-400">SKU</p><p className="font-medium text-slate-700">{p.sku}</p></div>}
-                {p.barcode && <div className="rounded-lg bg-slate-50 px-3 py-2"><p className="text-[10px] uppercase tracking-wide text-slate-400">Barcode</p><p className="font-medium text-slate-700">{p.barcode}</p></div>}
-                {dims && <div className="rounded-lg bg-slate-50 px-3 py-2"><p className="text-[10px] uppercase tracking-wide text-slate-400">Dimensions</p><p className="font-medium text-slate-700">{dims}</p></div>}
-                {p.weight != null && <div className="rounded-lg bg-slate-50 px-3 py-2"><p className="text-[10px] uppercase tracking-wide text-slate-400">Weight</p><p className="font-medium text-slate-700">{p.weight} kg</p></div>}
+                {p.sku && <div className="rounded-lg bg-slate-50 px-3 py-2"><p className="text-[10px] uppercase tracking-wide text-slate-400 flex items-center gap-1"><SpecIcon name="SKU" />SKU</p><p className="font-medium text-slate-700">{p.sku}</p></div>}
+                {p.barcode && <div className="rounded-lg bg-slate-50 px-3 py-2"><p className="text-[10px] uppercase tracking-wide text-slate-400 flex items-center gap-1"><SpecIcon name="Barcode" />Barcode</p><p className="font-medium text-slate-700">{p.barcode}</p></div>}
+                {dims && <div className="rounded-lg bg-slate-50 px-3 py-2"><p className="text-[10px] uppercase tracking-wide text-slate-400 flex items-center gap-1"><SpecIcon name="Dimensions" />Dimensions</p><p className="font-medium text-slate-700">{dims}</p></div>}
+                {p.weight != null && <div className="rounded-lg bg-slate-50 px-3 py-2"><p className="text-[10px] uppercase tracking-wide text-slate-400 flex items-center gap-1"><SpecIcon name="Weight" />Weight</p><p className="font-medium text-slate-700">{p.weight} kg</p></div>}
               </section>
 
               {p.long_description && (

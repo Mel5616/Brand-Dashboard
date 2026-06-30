@@ -47,12 +47,21 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const feat = lines(p.features).map(x => `<li style="display:flex;gap:6px;margin-top:4px;list-style:none"><span style="color:${accent};font-weight:700">✓</span><span>${esc(x)}</span></li>`).join("");
   const box = lines(p.whats_in_box).map(x => `<li style="display:flex;gap:6px;margin-top:4px;list-style:none"><span style="color:#94a3b8">•</span><span>${esc(x)}</span></li>`).join("");
 
+  // Small inline icons for each spec label (stroke uses the surrounding text colour).
+  const svg = (paths: string) => `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:6px;flex-shrink:0">${paths}</svg>`;
+  const SPEC_ICON: Record<string, string> = {
+    Dimensions: svg('<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>'),
+    Weight: svg('<path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>'),
+    SKU: svg('<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>'),
+    Barcode: svg('<path d="M3 5v14"/><path d="M8 5v14"/><path d="M12 5v14"/><path d="M17 5v14"/><path d="M21 5v14"/>'),
+  };
+
   // Specification rows (shared specs; SKU/barcode shown here only for a single-colour product)
   const specRows: [string, string][] = [];
   if (dimOf(p)) specRows.push(["Dimensions", dimOf(p)]);
   if (p.weight != null) specRows.push(["Weight", `${p.weight} kg`]);
   if (!multi) { if (p.sku) specRows.push(["SKU", p.sku]); if (p.barcode) specRows.push(["Barcode", p.barcode]); }
-  const spec = specRows.map((r, i) => `<tr style="background:${i % 2 ? "#fff" : "#f8fafc"}"><td style="padding:6px 10px;color:${MUTE};border:1px solid ${LINE}">${esc(r[0])}</td><td style="padding:6px 10px;font-weight:600;border:1px solid ${LINE}">${esc(r[1])}</td></tr>`).join("");
+  const spec = specRows.map((r, i) => `<tr style="background:${i % 2 ? "#fff" : "#f8fafc"}"><td style="padding:6px 10px;color:${MUTE};border:1px solid ${LINE};white-space:nowrap">${SPEC_ICON[r[0]] || ""}${esc(r[0])}</td><td style="padding:6px 10px;font-weight:600;border:1px solid ${LINE}">${esc(r[1])}</td></tr>`).join("");
 
   const variantRows = members.map(m => `<tr>
     <td style="padding:4px 6px;border:1px solid ${LINE};width:44px;text-align:center">${m.attrs?.image_url ? `<img src="${esc(m.attrs.image_url)}" style="width:34px;height:34px;object-fit:contain;display:inline-block;background:#f8fafc;border-radius:3px"/>` : ""}</td>
@@ -101,10 +110,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         <thead><tr style="background:${NAVY};color:#fff">
           <th style="padding:7px 6px;width:44px"></th>
           <th style="padding:7px 9px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em">Colour</th>
-          <th style="padding:7px 9px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em">SKU</th>
-          <th style="padding:7px 9px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em">Barcode</th>
-          <th style="padding:7px 9px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em">Dimensions</th>
-          <th style="padding:7px 9px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em">Weight</th>
+          <th style="padding:7px 9px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">${SPEC_ICON.SKU}SKU</th>
+          <th style="padding:7px 9px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">${SPEC_ICON.Barcode}Barcode</th>
+          <th style="padding:7px 9px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">${SPEC_ICON.Dimensions}Dimensions</th>
+          <th style="padding:7px 9px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">${SPEC_ICON.Weight}Weight</th>
         </tr></thead>
         <tbody>${variantRows}</tbody>
       </table></div>` : ""}
