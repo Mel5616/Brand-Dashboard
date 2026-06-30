@@ -61,15 +61,37 @@ WEEK_LABELS = [_date.fromisoformat(w).strftime('%-d %b') for w in WEEK_STARTS]
 # ── Daily buckets: last 30 days (rolling), for the Shopify brand Day view ──────
 DAY_KEYS = [(_today - _td(days=i)).isoformat() for i in range(29, -1, -1)]
 
-MONTHS       = ['Jul 25','Aug 25','Sep 25','Oct 25','Nov 25','Dec 25','Jan 26','Feb 26','Mar 26','Apr 26','May 26','Jun 26']
-MONTH_KEYS   = ['2025-07','2025-08','2025-09','2025-10','2025-11','2025-12','2026-01','2026-02','2026-03','2026-04','2026-05','2026-06']
-MONTHS_PREV  = ['Jul 24','Aug 24','Sep 24','Oct 24','Nov 24','Dec 24','Jan 25','Feb 25','Mar 25','Apr 25','May 25','Jun 25']
-MONTH_KEYS_PREV = ['2024-07','2024-08','2024-09','2024-10','2024-11','2024-12','2025-01','2025-02','2025-03','2025-04','2025-05','2025-06']
+# ── Financial year (Australian FY: 1 Jul → 30 Jun), rolls forward automatically ─
+# The current FY starts in July; before July we are still in the FY that began
+# in the previous calendar year. Derived from "today" so the dashboard advances
+# into the next FY on 1 July with no code change.
+_fy_start_year = _today.year if _today.month >= 7 else _today.year - 1
 
-# Window end = end of the FY's last month, or today if the FY is still in progress.
-RANGE_END = '2026-06-30'
+def _fy_months(start_year):
+    """12 (label, key) pairs from Jul of start_year through Jun of start_year+1."""
+    pairs = []
+    for i in range(12):
+        total = 7 + i
+        d = _date(start_year + (total - 1) // 12, (total - 1) % 12 + 1, 1)
+        pairs.append((d.strftime('%b %y'), d.strftime('%Y-%m')))
+    return pairs
+
+_cur_fy_months  = _fy_months(_fy_start_year)
+_prev_fy_months = _fy_months(_fy_start_year - 1)
+MONTHS          = [lbl for lbl, _k in _cur_fy_months]
+MONTH_KEYS      = [_k  for _l, _k in _cur_fy_months]
+MONTHS_PREV     = [lbl for lbl, _k in _prev_fy_months]
+MONTH_KEYS_PREV = [_k  for _l, _k in _prev_fy_months]
+
+# Order / ad-spend fetch window: from the start of the previous FY (so YoY
+# compares have last year's data) through the end of the current FY, but never
+# past today — we don't fetch the future.
+FY_PREV_START = f'{_fy_start_year - 1}-07-01'
+_fy_end       = f'{_fy_start_year + 1}-06-30'
+RANGE_END     = min(_fy_end, _today.isoformat())
+
 # Index of the current/last reportable month within the FY (latest month_key <= today).
-# Lets the "last month" KPIs roll forward as the FY progresses instead of being pinned to May.
+# Lets the "last month" KPIs roll forward as the FY progresses instead of being pinned.
 _cur_key  = _today.strftime('%Y-%m')
 LAST_IDX  = max((i for i, k in enumerate(MONTH_KEYS) if k <= _cur_key), default=len(MONTH_KEYS) - 1)
 
@@ -170,7 +192,7 @@ def fetch_all_orders(domain, token):
         after = f', after: "{cursor}"' if cursor else ''
         q = f'''{{
           orders(first: 250{after},
-            query: "financial_status:paid created_at:>=2024-07-01 created_at:<={RANGE_END}",
+            query: "financial_status:paid created_at:>={FY_PREV_START} created_at:<={RANGE_END}",
             sortKey: CREATED_AT) {{
             edges {{
               cursor
@@ -210,7 +232,7 @@ def fetch_refunded_orders(domain, token):
         after = f', after: "{cursor}"' if cursor else ''
         q = f'''{{
           orders(first: 250{after},
-            query: "financial_status:refunded created_at:>=2024-07-01 created_at:<={RANGE_END}",
+            query: "financial_status:refunded created_at:>={FY_PREV_START} created_at:<={RANGE_END}",
             sortKey: CREATED_AT) {{
             edges {{
               cursor
@@ -675,17 +697,17 @@ def fetch_google_ads_metrics(customer_id, creds):
     access_token = _google_access_token(creds)
     cid = customer_id.replace('-', '')
 
-    query_full = '''
+    query_full = f'''
     SELECT segments.month, metrics.cost_micros, metrics.impressions,
            metrics.clicks, metrics.conversions_value
     FROM campaign
-    WHERE segments.date >= '2024-07-01' AND segments.date <= '2026-06-30'
+    WHERE segments.date >= '{FY_PREV_START}' AND segments.date <= '{RANGE_END}'
       AND campaign.status != 'REMOVED'
     '''
-    query_no_conv = '''
+    query_no_conv = f'''
     SELECT segments.month, metrics.cost_micros, metrics.impressions, metrics.clicks
     FROM campaign
-    WHERE segments.date >= '2024-07-01' AND segments.date <= '2026-06-30'
+    WHERE segments.date >= '{FY_PREV_START}' AND segments.date <= '{RANGE_END}'
       AND campaign.status != 'REMOVED'
     '''
 
@@ -741,19 +763,19 @@ def fetch_google_ads_campaigns(customer_id, creds):
     access_token = _google_access_token(creds)
     cid = customer_id.replace('-', '')
 
-    query_full = '''
+    query_full = f'''
     SELECT campaign.name, segments.month,
            metrics.cost_micros, metrics.impressions, metrics.clicks,
            metrics.conversions, metrics.conversions_value
     FROM campaign
-    WHERE segments.date >= '2024-07-01' AND segments.date <= '2026-06-30'
+    WHERE segments.date >= '{FY_PREV_START}' AND segments.date <= '{RANGE_END}'
       AND campaign.status != 'REMOVED'
     '''
-    query_no_conv = '''
+    query_no_conv = f'''
     SELECT campaign.name, segments.month,
            metrics.cost_micros, metrics.impressions, metrics.clicks
     FROM campaign
-    WHERE segments.date >= '2024-07-01' AND segments.date <= '2026-06-30'
+    WHERE segments.date >= '{FY_PREV_START}' AND segments.date <= '{RANGE_END}'
       AND campaign.status != 'REMOVED'
     '''
 
