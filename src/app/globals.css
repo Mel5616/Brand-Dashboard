@@ -28,8 +28,8 @@ body {
 /* Print: isolate the management report so "Download PDF" prints just that brand. */
 @media print {
   body * { visibility: hidden; }
-  #brand-report, #brand-report *, #brief-print, #brief-print * { visibility: visible; }
-  #brand-report, #brief-print { position: absolute; left: 0; top: 0; width: 100%; max-width: 100%; height: auto; max-height: none; overflow: visible; padding: 0; box-shadow: none; }
+  #brand-report, #brand-report *, #brief-print, #brief-print *, #product-sheet, #product-sheet * { visibility: visible; }
+  #brand-report, #brief-print, #product-sheet { position: absolute; left: 0; top: 0; width: 100%; max-width: 100%; height: auto; max-height: none; overflow: visible; padding: 0; box-shadow: none; }
   .no-print { display: none !important; }
   @page { margin: 12mm; size: A4 portrait; }
 }

@@ -35,7 +35,8 @@ const PRINT_CSS = `
 @media print {
   html, body { background: #fff !important; }
   .no-print { display: none !important; }
-  .sheet { box-shadow: none !important; border: none !important; border-radius: 0 !important; max-width: none !important; margin: 0 !important; }
+  main.sheet-wrap { min-height: 0 !important; padding: 0 !important; }
+  .sheet { box-shadow: none !important; border: none !important; border-radius: 0 !important; max-width: none !important; margin: 0 !important; overflow: visible !important; }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 }
 `;
@@ -69,19 +70,25 @@ export default async function ProductShare({ params }: { params: Promise<{ token
   const body = lines((p.long_description || "").replace(/\n\n+/g, "\n"));
 
   return (
-    <main className="min-h-screen bg-slate-100 py-8 px-4 print:p-0 print:bg-white">
+    <main className="sheet-wrap min-h-screen bg-slate-100 py-8 px-4 print:p-0 print:bg-white">
       <style dangerouslySetInnerHTML={{ __html: PRINT_CSS }} />
 
       <div className="max-w-[820px] mx-auto mb-4 flex justify-end no-print">
         <PrintButton />
       </div>
 
-      <article className="sheet max-w-[820px] mx-auto bg-white rounded-xl shadow-lg ring-1 ring-slate-200/70 overflow-hidden print:shadow-none print:ring-0 print:rounded-none print:max-w-none">
-        {/* Header — logo + sheet label */}
+      <article id="product-sheet" className="sheet max-w-[820px] mx-auto bg-white rounded-xl shadow-lg ring-1 ring-slate-200/70 overflow-hidden print:shadow-none print:ring-0 print:rounded-none print:max-w-none print:overflow-visible">
+        {/* Header — Coolkidz logo + sheet label */}
         <header className="px-8 pt-7 pb-4 flex items-center justify-between gap-4">
-          {p.brand_id != null && BRAND_LOGOS[p.brand_id]
-            ? <img src={BRAND_LOGOS[p.brand_id]} alt={brand ?? ""} className="h-7 max-w-[170px] object-contain" />
-            : <span className="font-bold text-base" style={{ color: NAVY }}>{brand ?? "Coolkidz Australia"}</span>}
+          <div className="flex items-center gap-3">
+            <img src="/logos/Coolkidz Logo.png" alt="Coolkidz Australia" className="h-7 w-auto object-contain" />
+            {p.brand_id != null && BRAND_LOGOS[p.brand_id] && (
+              <>
+                <span className="h-6 w-px bg-slate-200" />
+                <img src={BRAND_LOGOS[p.brand_id]} alt={brand ?? ""} className="h-6 max-w-[150px] object-contain" />
+              </>
+            )}
+          </div>
           <span className="text-[10px] tracking-[0.16em] uppercase text-slate-400">Product Data Sheet</span>
         </header>
 
@@ -105,7 +112,7 @@ export default async function ProductShare({ params }: { params: Promise<{ token
             {(p.short_description || body.length > 0) && (
               <section>
                 <Heading>Description</Heading>
-                {p.short_description && <p className="italic leading-relaxed mb-2.5" style={{ color: "#ea580c" }}>{p.short_description}</p>}
+                {p.short_description && <p className="italic leading-relaxed mb-2.5 text-[13px]" style={{ color: "#ea580c" }}>{p.short_description}</p>}
                 {body.length > 0 && <div className="space-y-2.5 text-slate-700 leading-relaxed text-[13px]">{body.map((para, i) => <p key={i}>{para}</p>)}</div>}
               </section>
             )}
