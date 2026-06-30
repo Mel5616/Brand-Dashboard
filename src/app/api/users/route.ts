@@ -41,16 +41,27 @@ export async function POST(req: Request) {
   if (access.role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   const email = String(b.email || "").trim().toLowerCase();
-  const password = String(b.password || "");
   if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return NextResponse.json({ ok: false, error: "Enter a valid email." }, { status: 400 });
-  if (password.length < 8) return NextResponse.json({ ok: false, error: "Password must be at least 8 characters." }, { status: 400 });
   const role = b.role === "admin" ? "admin" : "member";
   const allowed_tabs = role === "admin" ? [...ALL_TABS] : cleanTabs(b.allowed_tabs);
   const admin = createAdminClient();
-  const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
-  if (error || !data.user) return NextResponse.json({ ok: false, error: error?.message || "Could not create user." }, { status: 400 });
-  await admin.from("profiles").upsert({ id: data.user.id, role, allowed_tabs, name: b.name ? String(b.name).slice(0, 80) : null, disabled: false });
-  await logActivity({ userId: access.user!.id, email: access.user!.email, action: "create", target: "users", detail: { created: email, role } });
+  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://marketing.coolkidz.com.au";
+
+  let userId: string;
+  if (b.invite) {
+    // Invite: Supabase emails a link; the user sets their own password on /auth/set-password.
+    const { data, error } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo: `${site}/auth/callback?next=/auth/set-password` });
+    if (error || !data.user) return NextResponse.json({ ok: false, error: error?.message || "Could not send the invite (is email set up in Supabase?)." }, { status: 400 });
+    userId = data.user.id;
+  } else {
+    const password = String(b.password || "");
+    if (password.length < 8) return NextResponse.json({ ok: false, error: "Password must be at least 8 characters." }, { status: 400 });
+    const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
+    if (error || !data.user) return NextResponse.json({ ok: false, error: error?.message || "Could not create user." }, { status: 400 });
+    userId = data.user.id;
+  }
+  await admin.from("profiles").upsert({ id: userId, role, allowed_tabs, name: b.name ? String(b.name).slice(0, 80) : null, disabled: false });
+  await logActivity({ userId: access.user!.id, email: access.user!.email, action: "create", target: "users", detail: { created: email, role, invited: !!b.invite } });
   return NextResponse.json({ ok: true });
 }
 
@@ -68,6 +79,15 @@ export async function PATCH(req: Request) {
     const { error } = await admin.auth.admin.updateUserById(id, { password: String(b.password) });
     if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
     await logActivity({ userId: access.user!.id, email: access.user!.email, action: "update", target: "users", detail: { reset_password_for: id } });
+  }
+
+  // Reset 2FA: remove the user's enrolled authenticator factors so they re-enrol.
+  if (b.reset_mfa) {
+    try {
+      const { data: f } = await (admin.auth.admin as any).mfa.listFactors({ userId: id });
+      for (const factor of (f?.factors ?? [])) await (admin.auth.admin as any).mfa.deleteFactor({ id: factor.id, userId: id });
+      await logActivity({ userId: access.user!.id, email: access.user!.email, action: "update", target: "users", detail: { reset_2fa_for: id } });
+    } catch (e: any) { return NextResponse.json({ ok: false, error: e?.message || "Couldn't reset 2FA." }, { status: 400 }); }
   }
 
   const prof: any = {};

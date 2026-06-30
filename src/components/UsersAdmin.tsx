@@ -200,7 +200,8 @@ function EditUser({ u, sections, adminOnly, onChanged }: { u: Row; sections: Tab
             <button onClick={() => { if (pw.length >= 8) { call({ password: pw }); setPw(""); } else setMsg("Password must be at least 8 characters."); }} disabled={busy || pw.length < 8} className="text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 rounded-lg px-3 py-2">Set</button>
           </div>
         </div>
-        <div className="flex items-center gap-4 pt-1">
+        <div className="flex items-center gap-4 pt-1 flex-wrap">
+          <button onClick={() => { if (confirm("Reset this user's two-factor? They'll set it up again next time.")) call({ reset_mfa: true }); }} disabled={busy} className="text-xs text-slate-500 hover:underline">Reset 2FA</button>
           {!u.envAdmin && <button onClick={() => call({ disabled: !u.disabled })} disabled={busy} className="text-xs text-amber-600 hover:underline">{u.disabled ? "Re-enable account" : "Disable account"}</button>}
           {!u.envAdmin && <button onClick={remove} disabled={busy} className="text-xs text-rose-500 hover:underline">Delete account</button>}
         </div>
@@ -215,12 +216,14 @@ function CreateUser({ sections, adminOnly, onClose, onSaved }: { sections: TabSe
   const [pw, setPw] = useState("");
   const [role, setRole] = useState<"member" | "admin">("member");
   const [tabs, setTabs] = useState<string[]>([]);
+  const [invite, setInvite] = useState(true); // default: email them a link to set their own password
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
   async function create() {
     setBusy(true); setErr("");
-    const r = await fetch("/api/users", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, name, password: pw, role, allowed_tabs: tabs }) }).then(x => x.json()).catch(() => ({ ok: false }));
+    const body = invite ? { email, name, role, allowed_tabs: tabs, invite: true } : { email, name, password: pw, role, allowed_tabs: tabs };
+    const r = await fetch("/api/users", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(x => x.json()).catch(() => ({ ok: false }));
     setBusy(false);
     if (!r.ok) { setErr(r.error || "Could not create user."); return; }
     onSaved();
@@ -236,7 +239,11 @@ function CreateUser({ sections, adminOnly, onClose, onSaved }: { sections: TabSe
         <div className="space-y-3">
           <div><label className="text-xs font-semibold text-slate-400 uppercase">Email</label><input value={email} onChange={e => setEmail(e.target.value)} placeholder="name@coolkidz.com.au" className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2" /></div>
           <div><label className="text-xs font-semibold text-slate-400 uppercase">Display name</label><input value={name} onChange={e => setName(e.target.value)} placeholder="Optional" className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2" /></div>
-          <div><label className="text-xs font-semibold text-slate-400 uppercase">Password</label><input type="text" value={pw} onChange={e => setPw(e.target.value)} placeholder="8+ characters" className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2" /></div>
+          <label className="flex items-start gap-2 text-xs text-slate-600 cursor-pointer">
+            <input type="checkbox" checked={invite} onChange={e => setInvite(e.target.checked)} className="mt-0.5 accent-emerald-500" />
+            <span><span className="font-semibold">Send invite</span> — email them a link to set their own password (no link is sent until you click Send invite).</span>
+          </label>
+          {!invite && <div><label className="text-xs font-semibold text-slate-400 uppercase">Password</label><input type="text" value={pw} onChange={e => setPw(e.target.value)} placeholder="8+ characters" className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2" /></div>}
           <div><label className="text-xs font-semibold text-slate-400 uppercase">Role</label>
             <select value={role} onChange={e => setRole(e.target.value as any)} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white"><option value="member">Management (view only)</option><option value="admin">Admin (full access)</option></select>
           </div>
@@ -253,7 +260,7 @@ function CreateUser({ sections, adminOnly, onClose, onSaved }: { sections: TabSe
       {err && <p className="text-xs text-rose-500 mt-3">{err}</p>}
       <div className="mt-4 flex justify-end gap-2">
         <button onClick={onClose} className="text-sm text-slate-500 px-4 py-2">Cancel</button>
-        <button onClick={create} disabled={busy || !email || pw.length < 8} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 rounded-lg px-4 py-2">{busy ? "Creating…" : "Create user"}</button>
+        <button onClick={create} disabled={busy || !email || (!invite && pw.length < 8)} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 rounded-lg px-4 py-2">{busy ? (invite ? "Sending…" : "Creating…") : (invite ? "Send invite" : "Create with password")}</button>
       </div>
     </div>
   );

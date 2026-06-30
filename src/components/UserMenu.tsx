@@ -36,6 +36,7 @@ export function UserMenu({ email, role, minimal }: { email: string; role: string
               <a href="/admin/activity" className="block text-sm text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2">Activity log</a>
             </>
           )}
+          <a href="/security" className="block text-sm text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 mt-1">Two-factor (2FA)</a>
           <button onMouseDown={signOut} className="w-full text-left text-sm text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 mt-1">Sign out</button>
         </div>
       )}
