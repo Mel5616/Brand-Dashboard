@@ -59,10 +59,16 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
   const img: string | undefined = p.attrs?.image_url;
   const title = `${p.name} — Coolkidz Australia`;
   const description = p.short_description || "Product data sheet · Coolkidz Australia";
+  const url = `https://marketing.coolkidz.com.au/p/${token}`;
+  const type = img?.endsWith(".webp") ? "image/webp" : img?.endsWith(".png") ? "image/png" : "image/jpeg";
   return {
     title,
     description,
-    openGraph: { title, description, type: "website", siteName: "Coolkidz Australia", images: img ? [{ url: img }] : undefined },
+    alternates: { canonical: url },
+    openGraph: {
+      title, description, url, type: "website", siteName: "Coolkidz Australia",
+      images: img ? [{ url: img, width: 1200, height: 1200, type, alt: p.name }] : undefined,
+    },
     twitter: { card: img ? "summary_large_image" : "summary", title, description, images: img ? [img] : undefined },
   };
 }

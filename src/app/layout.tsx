@@ -13,6 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://marketing.coolkidz.com.au"),
   title: "Brand Dashboard — Coolkidz Australia",
   description: "Live Shopify sales dashboard for all Coolkidz brands",
 };
