@@ -268,8 +268,8 @@ export function DashboardTabs({
   semrushKeywords, semrushPages, brandInsights, instagramMedia, channelSales, shopifySources, eventbriteEvents, asanaTasks,
   role = "admin", allowedTabs, currentEmail, lastSync,
 }: Props) {
-  // Financial tabs (cost / margin / budget) are admin-only even if otherwise granted.
-  const FINANCIAL = ["budget", "influencer", "snapshot", "uppababy"];
+  // Financial tabs admin-only even if otherwise granted (budget is excluded: view-only is allowed).
+  const FINANCIAL = ["influencer", "snapshot", "uppababy"];
   // Tabs this user may open (admin → all). Filter the nav + guard the active tab.
   const visibleTabs = role === "admin"
     ? TABS

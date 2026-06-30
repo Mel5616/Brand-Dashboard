@@ -9,7 +9,7 @@ const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const hdr = { apikey: sbKey!, Authorization: `Bearer ${sbKey}` };
 
 export async function GET() {
-  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, rows: [] }, { status: 403 });
+  if (!(await getAccess()).role) return NextResponse.json({ ok: false, rows: [] }, { status: 401 }); // read: any signed-in user
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false, rows: [] }, { status: 500 });
   const [eRes, bRes] = await Promise.all([
     fetch(`${sbUrl}/rest/v1/influencer_entries?select=brand,month_key,total_cost,gifting_cost,influencer_cost`, { headers: hdr, cache: "no-store" }),

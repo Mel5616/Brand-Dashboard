@@ -9,7 +9,7 @@ const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const hdr = (extra: Record<string, string> = {}) => ({ apikey: sbKey!, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json", ...extra });
 
 export async function GET() {
-  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, topups: [] }, { status: 403 });
+  if (!(await getAccess()).role) return NextResponse.json({ ok: false, topups: [] }, { status: 401 }); // read: any signed-in user
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false, topups: [] }, { status: 500 });
   const res = await fetch(`${sbUrl}/rest/v1/budget_topups?select=*`, { headers: hdr(), cache: "no-store" });
   if (!res.ok) return NextResponse.json({ ok: true, topups: [] }); // table not set up yet → no top-ups

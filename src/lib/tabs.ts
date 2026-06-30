@@ -52,4 +52,5 @@ export const TAB_SECTIONS: TabSection[] = [
 export const ALL_TABS: string[] = TAB_SECTIONS.flatMap(s => s.tabs.map(t => t.id));
 
 // Cost / margin sections — admin-only, never shown to members even if granted.
-export const ADMIN_ONLY_TABS = ["budget", "influencer", "snapshot", "uppababy", "pa-budget", "pa-tracker"];
+// (Budget is excluded: it can be granted read-only; all its edit/export actions stay admin-gated.)
+export const ADMIN_ONLY_TABS = ["influencer", "snapshot", "uppababy", "pa-budget", "pa-tracker"];
