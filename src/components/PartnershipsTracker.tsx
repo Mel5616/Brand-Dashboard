@@ -2,6 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { INFLUENCER_FY_MONTHS } from "@/lib/influencerFy";
+import {
+  Chart as ChartJS, ArcElement, BarElement, CategoryScale, LinearScale,
+  LineElement, PointElement, Filler, Tooltip, Legend,
+} from "chart.js";
+import { Doughnut, Line, Bar } from "react-chartjs-2";
+
+ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, LineElement, PointElement, Filler, Tooltip, Legend);
+const PALETTE = ["#6366f1", "#14b8a6", "#f97316", "#e11d48", "#8b5cf6", "#0ea5e9", "#f59e0b", "#10b981", "#ec4899", "#64748b"];
+const STATUS_COLOR: Record<string, string> = { Planned: "#f59e0b", Sent: "#0ea5e9", Live: "#10b981", Done: "#8b5cf6" };
+const k$ = (n: number) => n >= 1000 ? `$${Math.round(n / 1000)}k` : `$${Math.round(n)}`;
 
 // Partnerships & Affiliates tracker (admin). Logs free product given to companies,
 // cost derived server-side from the shared product catalogue. Cost is visible here.
@@ -40,6 +50,29 @@ export function PartnershipsTracker() {
   const brands = useMemo(() => Array.from(new Set(entries.map(e => e.brand).filter(Boolean))) as string[], [entries]);
   const rows = entries.filter(e => !brandF || e.brand === brandF);
 
+  // Overview series (all partnerships, ignoring the brand filter)
+  const viz = useMemo(() => {
+    const byBrand: Record<string, number> = {}, byCompany: Record<string, number> = {}, byStatus: Record<string, number> = {};
+    const byMonth: Record<string, number> = {};
+    for (const e of entries) {
+      const c = Number(e.total_cost) || 0;
+      byBrand[e.brand || "—"] = (byBrand[e.brand || "—"] || 0) + c;
+      byCompany[e.company || "—"] = (byCompany[e.company || "—"] || 0) + c;
+      byStatus[e.status || "Planned"] = (byStatus[e.status || "Planned"] || 0) + 1;
+      byMonth[e.month_key] = (byMonth[e.month_key] || 0) + c;
+    }
+    const sortDesc = (o: Record<string, number>) => Object.entries(o).sort((a, b) => b[1] - a[1]);
+    return {
+      brand: sortDesc(byBrand),
+      company: sortDesc(byCompany).slice(0, 8),
+      status: STATUS.map(s => ({ s, n: byStatus[s] || 0 })),
+      month: INFLUENCER_FY_MONTHS.map(m => byMonth[m.key] || 0),
+    };
+  }, [entries]);
+  const totalCost = entries.reduce((s, e) => s + (Number(e.total_cost) || 0), 0);
+  const monthLabels = INFLUENCER_FY_MONTHS.map(m => m.labelShort);
+  const baseScales: any = { x: { grid: { display: false }, ticks: { font: { size: 10 }, color: "#9ca3af" } }, y: { ticks: { callback: (v: any) => k$(v), font: { size: 10 }, color: "#9ca3af" }, grid: { color: "#f3f4f6" } } };
+
   if (state === "loading") return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">Loading…</div>;
   if (state === "needsSetup") return <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-xl p-4">Run <code>add_partnerships.sql</code> in Supabase, then reload.</div>;
   if (state === "error") return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">Couldn’t load partnerships.</div>;
@@ -55,6 +88,50 @@ export function PartnershipsTracker() {
       </div>
 
       {adding && <AddForm products={products} onClose={() => setAdding(false)} onSaved={() => { setAdding(false); load(); }} />}
+
+      {/* Visual overview */}
+      {entries.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3">Spend by brand <span className="font-normal text-gray-400">· {k$(totalCost)} total</span></h3>
+            <div className="h-52">
+              <Bar data={{ labels: viz.brand.map(b => b[0]), datasets: [{ label: "Cost", data: viz.brand.map(b => b[1]), backgroundColor: viz.brand.map((_, i) => PALETTE[i % PALETTE.length]), borderRadius: 3 }] }}
+                options={{ indexAxis: "y" as const, responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c: any) => ` ${k$(c.parsed.x ?? 0)}` } } }, scales: { x: { ticks: { callback: (v: any) => k$(v), font: { size: 10 }, color: "#9ca3af" }, grid: { color: "#f3f4f6" } }, y: { grid: { display: false }, ticks: { font: { size: 10 }, color: "#6b7280" } } } }} />
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3">Monthly spend</h3>
+            <div className="h-52">
+              <Line data={{ labels: monthLabels, datasets: [{ label: "Cost", data: viz.month, borderColor: "#6366f1", backgroundColor: "#6366f122", borderWidth: 2, pointRadius: 2, fill: true, tension: 0.3 }] }}
+                options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c: any) => ` ${k$(c.parsed.y ?? 0)}` } } }, scales: baseScales }} />
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3">Top partners</h3>
+            <div className="h-52">
+              <Bar data={{ labels: viz.company.map(c => c[0]), datasets: [{ label: "Cost", data: viz.company.map(c => c[1]), backgroundColor: "#14b8a6", borderRadius: 3 }] }}
+                options={{ indexAxis: "y" as const, responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c: any) => ` ${k$(c.parsed.x ?? 0)}` } } }, scales: { x: { ticks: { callback: (v: any) => k$(v), font: { size: 10 }, color: "#9ca3af" }, grid: { color: "#f3f4f6" } }, y: { grid: { display: false }, ticks: { font: { size: 10 }, color: "#6b7280" } } } }} />
+            </div>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <h3 className="text-sm font-semibold text-slate-700 mb-3">Status breakdown</h3>
+            <div className="flex items-center gap-5">
+              <div className="shrink-0" style={{ width: 150, height: 150 }}>
+                <Doughnut data={{ labels: viz.status.map(s => s.s), datasets: [{ data: viz.status.map(s => s.n), backgroundColor: viz.status.map(s => STATUS_COLOR[s.s]), borderColor: "#fff", borderWidth: 2 }] }}
+                  options={{ responsive: true, maintainAspectRatio: false, cutout: "62%", plugins: { legend: { display: false } } }} />
+              </div>
+              <div className="flex-1 space-y-1.5">
+                {viz.status.map(s => (
+                  <div key={s.s} className="flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: STATUS_COLOR[s.s] }} />{s.s}</span>
+                    <span className="text-gray-400 font-medium">{s.n}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">
         <table className="w-full text-sm min-w-[820px]">

@@ -50,11 +50,11 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-sm">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-lg">⚡</span>
-          <h1 className="font-bold text-gray-800">Brand Command</h1>
+        <div className="flex justify-center mb-5">
+          <img src="/logos/Coolkidz Logo.png" alt="Coolkidz Australia" className="h-10 w-auto object-contain" />
         </div>
-        <p className="text-sm text-gray-400 mb-6">Coolkidz Australia dashboard</p>
+        <h1 className="text-2xl font-bold text-gray-800">Sign in</h1>
+        <p className="text-sm text-gray-400 mt-1 mb-6">Coolkidz staff only. Sign in with your work email and password.</p>
 
         {!mfa ? (
           <>
