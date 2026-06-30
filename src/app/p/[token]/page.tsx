@@ -13,7 +13,6 @@ const STATUS: Record<string, { label: string; bg: string }> = {
 };
 const lines = (s?: string | null) => (s || "").split(/\r?\n/).map(x => x.replace(/^[-*•\s]+/, "").trim()).filter(Boolean);
 const baseSku = (sku?: string | null) => { const s = String(sku || "").trim(); return s.includes("-") ? s.slice(0, s.lastIndexOf("-")) : s; };
-const dimOf = (m: any) => [m.length, m.width, m.height].every((v: any) => v != null) ? `${m.length} × ${m.width} × ${m.height} cm` : "";
 // Longest shared word-prefix across the colour names (the product title).
 function commonPrefix(names: string[]): string {
   if (!names.length) return "";
@@ -120,7 +119,9 @@ export default async function ProductShare({ params }: { params: Promise<{ token
               <h1 className="text-[22px] font-extrabold leading-tight" style={{ color: NAVY }}>{p.name}</h1>
               <span className="inline-block mt-2.5 text-white text-[11px] font-bold uppercase tracking-[0.07em] px-3.5 py-1.5 rounded-md" style={{ background: accent }}>{brand ?? "Coolkidz"}</span>
               <p className="mt-2 text-[11px] text-slate-500">
-                <span className="font-semibold" style={{ color: st.bg }}>{st.label}</span>{launch ? ` · launches ${launch}` : ""}
+                {launch
+                  ? <><span className="font-semibold text-slate-600">Launch Date:</span> {launch}</>
+                  : <span className="font-semibold" style={{ color: st.bg }}>{st.label}</span>}
               </p>
             </div>
             {(p.short_description || body.length > 0) && (
@@ -178,24 +179,20 @@ export default async function ProductShare({ params }: { params: Promise<{ token
           <div className="px-8 pb-8">
             <Heading>Colours ({members.length})</Heading>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 print:grid-cols-4">
-              {members.map(m => {
-                const md = dimOf(m);
-                return (
-                  <div key={m.id} className={`rounded-lg border overflow-hidden ${m.id === p.id ? "border-slate-300 ring-1 ring-slate-200" : "border-slate-100"}`}>
-                    <div className="aspect-square bg-slate-50 grid place-items-center overflow-hidden">
-                      {m.attrs?.image_url
-                        ? <img src={m.attrs.image_url} alt={variantLabel(m.name)} className="w-full h-full object-cover" />
-                        : <span className="text-[10px] uppercase tracking-wide text-slate-300">No image</span>}
-                    </div>
-                    <div className="px-2.5 py-2">
-                      <p className="text-[12px] font-semibold text-slate-700 leading-tight">{variantLabel(m.name)}</p>
-                      {m.sku && <p className="text-[10px] text-slate-400 mt-0.5 truncate">{m.sku}</p>}
-                      {m.barcode && <p className="text-[10px] text-slate-400 truncate">{m.barcode}</p>}
-                      {md && <p className="text-[10px] text-slate-400 mt-0.5">{md}{m.weight != null ? ` · ${m.weight} kg` : ""}</p>}
-                    </div>
+              {members.map(m => (
+                <div key={m.id} className={`rounded-lg border overflow-hidden ${m.id === p.id ? "border-slate-300 ring-1 ring-slate-200" : "border-slate-100"}`}>
+                  <div className="aspect-square bg-slate-50 grid place-items-center overflow-hidden">
+                    {m.attrs?.image_url
+                      ? <img src={m.attrs.image_url} alt={variantLabel(m.name)} className="w-full h-full object-cover" />
+                      : <span className="text-[10px] uppercase tracking-wide text-slate-300">No image</span>}
                   </div>
-                );
-              })}
+                  <div className="px-2.5 py-2">
+                    <p className="text-[12px] font-semibold text-slate-700 leading-tight">{variantLabel(m.name)}</p>
+                    {m.sku && <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1"><SpecIcon name="SKU" />{m.sku}</p>}
+                    {m.barcode && <p className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1"><SpecIcon name="Barcode" />{m.barcode}</p>}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
