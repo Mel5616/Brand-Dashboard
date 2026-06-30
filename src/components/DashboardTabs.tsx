@@ -539,6 +539,7 @@ export function DashboardTabs({
         <Sidebar />
         <div className="lg:ml-[288px]">
           <div className="flex justify-end mb-3">
+            {role === "admin" && (
             <button
               onClick={() => setActive("report")}
               className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-3.5 py-1.5 transition shadow-sm"
@@ -546,6 +547,7 @@ export function DashboardTabs({
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               Management Report (PDF)
             </button>
+            )}
           </div>
           <BrandPage
             brand={selectedBrand}
@@ -871,6 +873,7 @@ export function DashboardTabs({
                   <option value="all">All Brands (Portfolio)</option>
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
                 </select>
+                {role === "admin" && (
                 <button
                   onClick={() => window.print()}
                   className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-3.5 py-1.5 transition"
@@ -878,6 +881,7 @@ export function DashboardTabs({
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
                   Download PDF
                 </button>
+                )}
               </div>
               <BrandReport r={buildReport(brandFilter, {
                 brands, summaries, monthly, targets,
@@ -1333,7 +1337,7 @@ export function DashboardTabs({
                   <option value="all">All Brands</option>
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
                 </select>
-                {brandFilter !== "all" && (
+                {brandFilter !== "all" && role === "admin" && (
                   <button onClick={() => window.print()} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-3.5 py-1.5 transition">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
                     Download PDF

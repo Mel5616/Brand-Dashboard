@@ -86,7 +86,7 @@ function UserRow({ u, sections, adminOnly, open, onToggle, onChanged }: { u: Row
           {u.disabled && <span className="text-[10px] font-semibold text-rose-500 uppercase">Disabled</span>}
         </td>
         <td className="px-4 py-3">
-          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${u.role === "admin" ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-600"}`}>{u.role}</span>
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${u.role === "admin" ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-600"}`}>{u.role === "admin" ? "admin" : "management"}</span>
         </td>
         <td className="px-4 py-3 text-xs text-slate-500">{u.role === "admin" ? "All sections" : (u.allowed_tabs.length ? `${u.allowed_tabs.length} section${u.allowed_tabs.length > 1 ? "s" : ""}` : "None")}</td>
         <td className="px-4 py-3 text-xs text-slate-500">{when(u.last_sign_in_at)}</td>
@@ -177,7 +177,7 @@ function EditUser({ u, sections, adminOnly, onChanged }: { u: Row; sections: Tab
         <div>
           <label className="text-xs font-semibold text-slate-400 uppercase">Role</label>
           <select value={role} onChange={e => setRole(e.target.value as any)} disabled={u.envAdmin} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white">
-            <option value="member">Member</option>
+            <option value="member">Management (view only)</option>
             <option value="admin">Admin (full access)</option>
           </select>
           {u.envAdmin && <p className="text-[11px] text-slate-400 mt-1">This account is a permanent admin (set in environment).</p>}
@@ -238,7 +238,7 @@ function CreateUser({ sections, adminOnly, onClose, onSaved }: { sections: TabSe
           <div><label className="text-xs font-semibold text-slate-400 uppercase">Display name</label><input value={name} onChange={e => setName(e.target.value)} placeholder="Optional" className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2" /></div>
           <div><label className="text-xs font-semibold text-slate-400 uppercase">Password</label><input type="text" value={pw} onChange={e => setPw(e.target.value)} placeholder="8+ characters" className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2" /></div>
           <div><label className="text-xs font-semibold text-slate-400 uppercase">Role</label>
-            <select value={role} onChange={e => setRole(e.target.value as any)} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white"><option value="member">Member</option><option value="admin">Admin (full access)</option></select>
+            <select value={role} onChange={e => setRole(e.target.value as any)} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white"><option value="member">Management (view only)</option><option value="admin">Admin (full access)</option></select>
           </div>
         </div>
         <div>

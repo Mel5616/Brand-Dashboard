@@ -195,12 +195,12 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
                   <span className={`text-[10px] ${ready ? "text-emerald-500" : "text-amber-500"}`}>{ready ? "copy ready" : "needs copy"}</span>
                 </div>
                 {colours.length > 1 && <p className="text-[10px] text-gray-400 mt-0.5 truncate">{colours.join(", ")}</p>}
-                <div className="mt-2 pt-2 border-t border-gray-50 flex justify-end">
+                {canEdit && <div className="mt-2 pt-2 border-t border-gray-50 flex justify-end">
                   <button onClick={e => { e.stopPropagation(); copyLink(r.share_token); }} className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 hover:text-emerald-600">
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 11-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 115.656 5.656l-1.5 1.5" /></svg>
                     Copy link
                   </button>
-                </div>
+                </div>}
               </div>
             );
           })}
@@ -261,8 +261,8 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
 
               <div className="flex flex-wrap gap-2 pt-1">
                 {canEdit && <button onClick={save} disabled={busy === "save"} className="text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg px-4 py-2 disabled:opacity-60">{busy === "save" ? "Saving…" : `Save to all ${open.members.length > 1 ? open.members.length + " colours" : ""}`.trim()}</button>}
-                {rep && <a href={`/new-products/${rep.id}/print`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-slate-700 border border-gray-200 hover:bg-gray-50 rounded-lg px-4 py-2">PDF</a>}
-                {rep && <button onClick={() => copyLink(rep.share_token)} className="text-sm font-medium text-slate-700 border border-gray-200 hover:bg-gray-50 rounded-lg px-4 py-2">Copy share link</button>}
+                {rep && canEdit && <a href={`/new-products/${rep.id}/print`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-slate-700 border border-gray-200 hover:bg-gray-50 rounded-lg px-4 py-2">PDF</a>}
+                {rep && canEdit && <button onClick={() => copyLink(rep.share_token)} className="text-sm font-medium text-slate-700 border border-gray-200 hover:bg-gray-50 rounded-lg px-4 py-2">Copy share link</button>}
                 {canEdit && <button onClick={delGroup} className="text-sm font-medium text-red-500 hover:bg-red-50 rounded-lg px-3 py-2 ml-auto">Delete</button>}
               </div>
 
@@ -281,8 +281,8 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0 text-[11px]">
                         {canEdit && <button onClick={() => pickImage(m.id)} disabled={busy === "image:" + m.id} className="text-emerald-600 hover:underline disabled:opacity-60">{busy === "image:" + m.id ? "…" : m.attrs?.image_url ? "swap" : "image"}</button>}
-                        <a href={`/new-products/${m.id}/print`} target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:underline">PDF</a>
-                        <button onClick={() => copyLink(m.share_token, "Link copied.")} className="text-slate-500 hover:underline">link</button>
+                        {canEdit && <a href={`/new-products/${m.id}/print`} target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:underline">PDF</a>}
+                        {canEdit && <button onClick={() => copyLink(m.share_token, "Link copied.")} className="text-slate-500 hover:underline">link</button>}
                       </div>
                     </div>
                   ))}

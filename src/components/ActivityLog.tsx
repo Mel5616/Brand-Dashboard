@@ -47,6 +47,33 @@ export function ActivityLog() {
 
   const users = useMemo(() => Array.from(new Set(rows.map(r => r.user_email).filter(Boolean))) as string[], [rows]);
 
+  // Sessions: pair each sign-in with the next sign-out (or the user's last activity)
+  // to show login time, how long they stayed, and how many pages they viewed.
+  const sessions = useMemo(() => {
+    const byUser: Record<string, Row[]> = {};
+    rows.forEach(r => { const u = r.user_email || "?"; (byUser[u] ??= []).push(r); });
+    const out: { user: string; start: string; mins: number; views: number; ongoing: boolean }[] = [];
+    for (const [user, evs] of Object.entries(byUser)) {
+      const asc = [...evs].sort((a, b) => a.created_at.localeCompare(b.created_at));
+      for (let i = 0; i < asc.length; i++) {
+        if (asc[i].action !== "login") continue;
+        const start = asc[i].created_at;
+        let logout: string | null = null, lastSeen = start, views = 0;
+        for (let j = i + 1; j < asc.length; j++) {
+          if (asc[j].action === "login") break;
+          lastSeen = asc[j].created_at;
+          if (asc[j].action === "view") views++;
+          if (asc[j].action === "logout") { logout = asc[j].created_at; break; }
+        }
+        const end = logout ?? lastSeen;
+        const mins = Math.max(0, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 60000));
+        out.push({ user, start, mins, views, ongoing: logout == null });
+      }
+    }
+    return out.sort((a, b) => b.start.localeCompare(a.start)).slice(0, 40);
+  }, [rows]);
+  const dur = (m: number) => m < 1 ? "<1m" : m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`;
+
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="max-w-5xl mx-auto">
@@ -75,6 +102,28 @@ export function ActivityLog() {
         {needsSetup && (
           <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-xl p-4 mb-4">
             No activity yet, or the log table isn’t set up. Run <code>add_auth_activity.sql</code> in Supabase.
+          </div>
+        )}
+
+        {/* Sessions — sign-in time, time spent, pages viewed */}
+        {!needsSetup && sessions.length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden mb-4">
+            <div className="px-4 py-3 border-b border-gray-50"><h2 className="text-sm font-semibold text-slate-700">Sessions</h2><p className="text-[11px] text-gray-400">When each person signed in, how long they stayed, and how many pages they viewed.</p></div>
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 text-slate-400 text-xs uppercase tracking-wide">
+                <tr><th className="text-left font-semibold px-4 py-3">User</th><th className="text-left font-semibold px-4 py-3">Signed in</th><th className="text-left font-semibold px-4 py-3">Time spent</th><th className="text-left font-semibold px-4 py-3">Pages</th></tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {sessions.map((s, i) => (
+                  <tr key={i}>
+                    <td className="px-4 py-2.5 text-slate-700">{s.user}</td>
+                    <td className="px-4 py-2.5 text-xs text-slate-500 whitespace-nowrap">{when(s.start)}</td>
+                    <td className="px-4 py-2.5 text-slate-600">{dur(s.mins)}{s.ongoing && <span className="text-[10px] text-amber-500 ml-1.5">no sign-out</span>}</td>
+                    <td className="px-4 py-2.5 text-slate-500">{s.views}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 

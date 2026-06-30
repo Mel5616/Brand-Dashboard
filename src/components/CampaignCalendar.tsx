@@ -611,16 +611,16 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                     <a href={gcalUrl(open)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3.5 py-1.5 transition motion-reduce:transition-none">Google Calendar ↗</a>
                   </>
                 )}
-                <button onClick={() => copyBrief(open)} className="text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3.5 py-1.5 transition motion-reduce:transition-none">{copied ? "Copied" : "Copy brief"}</button>
                 {canEdit && <>
+                  <button onClick={() => copyBrief(open)} className="text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3.5 py-1.5 transition motion-reduce:transition-none">{copied ? "Copied" : "Copy brief"}</button>
                   <input ref={imgRef} type="file" accept="image/*" className="hidden" onChange={e => uploadCampaignImage(open, e.target.files?.[0])} />
                   <button onClick={() => imgRef.current?.click()} disabled={imgBusy} className="text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3.5 py-1.5 transition disabled:opacity-60 motion-reduce:transition-none">{imgBusy ? "Uploading…" : open.image_url ? "Replace image" : "Add image"}</button>
+                  <button onClick={() => copyShareLink(open)} className="text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3.5 py-1.5 transition motion-reduce:transition-none">{linkCopied ? "Link copied" : "Copy share link"}</button>
+                  <button onClick={() => window.print()} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-3.5 py-1.5 transition motion-reduce:transition-none">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
+                    Export PDF
+                  </button>
                 </>}
-                <button onClick={() => copyShareLink(open)} className="text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3.5 py-1.5 transition motion-reduce:transition-none">{linkCopied ? "Link copied" : "Copy share link"}</button>
-                <button onClick={() => window.print()} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-3.5 py-1.5 transition motion-reduce:transition-none">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
-                  Export PDF
-                </button>
               </div>
             </div>
           </div>
