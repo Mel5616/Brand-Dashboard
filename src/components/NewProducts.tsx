@@ -53,7 +53,7 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
   async function save() {
     if (!open || !edit) return;
     setBusy("save");
-    const payload = { long_description: edit.long_description, short_description: edit.short_description, whats_in_box: edit.whats_in_box, features: edit.features, status: edit.status, launch_date: edit.launch_date || null, brand_id: edit.brand_id ?? null };
+    const payload = { long_description: edit.long_description, short_description: edit.short_description, whats_in_box: edit.whats_in_box, features: edit.features, status: edit.status, launch_date: edit.launch_date || null, brand_id: edit.brand_id ?? null, wholesale_price: edit.wholesale_price === "" || edit.wholesale_price == null ? null : Number(edit.wholesale_price), rrp: edit.rrp === "" || edit.rrp == null ? null : Number(edit.rrp) };
     const res = await Promise.all(open.members.map(m => fetch(`/api/new-products/${m.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then(r => r.json())));
     setProducts(prev => prev.map(p => { const u = res.find(x => x.product?.id === p.id); return u?.product ?? p; }));
     setBusy(""); setMsg(`Saved to ${open.members.length} colour${open.members.length === 1 ? "" : "s"}.`);
@@ -210,6 +210,20 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
                       {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                     </select>
                   : <span className="text-sm text-slate-600">{brands.find(b => b.id === edit.brand_id)?.name ?? "—"}</span>}
+              </div>
+
+              {/* Pricing — shared across all colours. Saved on blur. */}
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <span className="text-gray-400 text-xs">Wholesale $</span>
+                <input type="number" inputMode="decimal" step="0.01" value={edit.wholesale_price ?? ""} readOnly={!canEdit}
+                  onChange={e => setEdit({ ...edit, wholesale_price: e.target.value })}
+                  onBlur={e => { if (canEdit) saveMeta({ wholesale_price: e.target.value === "" ? null : Number(e.target.value) }); }}
+                  placeholder="—" className="w-24 text-sm border border-gray-200 rounded-lg px-2 py-1" />
+                <span className="text-gray-400 text-xs">RRP $</span>
+                <input type="number" inputMode="decimal" step="0.01" value={edit.rrp ?? ""} readOnly={!canEdit}
+                  onChange={e => setEdit({ ...edit, rrp: e.target.value })}
+                  onBlur={e => { if (canEdit) saveMeta({ rrp: e.target.value === "" ? null : Number(e.target.value) }); }}
+                  placeholder="—" className="w-24 text-sm border border-gray-200 rounded-lg px-2 py-1" />
               </div>
 
               {canEdit && (

@@ -55,12 +55,18 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     Weight: svg('<path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>'),
     SKU: svg('<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>'),
     Barcode: svg('<path d="M3 5v14"/><path d="M8 5v14"/><path d="M12 5v14"/><path d="M17 5v14"/><path d="M21 5v14"/>'),
+    RRP: svg('<circle cx="12" cy="12" r="10"/><path d="M14.5 9a2.5 2.5 0 0 0-2.5-1.5h-.5a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4h-.5A2.5 2.5 0 0 1 9.5 15"/><path d="M12 6v1.5M12 16.5V18"/>'),
+    Wholesale: svg('<circle cx="12" cy="12" r="10"/><path d="M14.5 9a2.5 2.5 0 0 0-2.5-1.5h-.5a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4h-.5A2.5 2.5 0 0 1 9.5 15"/><path d="M12 6v1.5M12 16.5V18"/>'),
   };
+  const money = (n: any) => n == null ? "" : `$${Number(n).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  // Specification rows (shared specs; SKU/barcode shown here only for a single-colour product)
+  // Specification rows. Dimensions/weight/RRP/wholesale are shared across colours;
+  // SKU/barcode vary per colour so they show here only for a single-colour product.
   const specRows: [string, string][] = [];
   if (dimOf(p)) specRows.push(["Dimensions", dimOf(p)]);
   if (p.weight != null) specRows.push(["Weight", `${p.weight} kg`]);
+  if (p.rrp != null) specRows.push(["RRP", money(p.rrp)]);
+  if (p.wholesale_price != null) specRows.push(["Wholesale", money(p.wholesale_price)]);
   if (!multi) { if (p.sku) specRows.push(["SKU", p.sku]); if (p.barcode) specRows.push(["Barcode", p.barcode]); }
   const spec = specRows.map((r, i) => `<tr style="background:${i % 2 ? "#fff" : "#f8fafc"}"><td style="padding:6px 10px;color:${MUTE};border:1px solid ${LINE};white-space:nowrap">${SPEC_ICON[r[0]] || ""}${esc(r[0])}</td><td style="padding:6px 10px;font-weight:600;border:1px solid ${LINE}">${esc(r[1])}</td></tr>`).join("");
 
