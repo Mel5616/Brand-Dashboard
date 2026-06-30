@@ -7,6 +7,9 @@ type Brand = { id: number; name: string };
 type Topup = { brand_id: number; month_key: string; channel: string; amount: number };
 type Actual = { brand_id: number; month_key: string; channel: string; spend: number; note?: string };
 
+// Canonical marketing channels for the year (templates always offer all of these).
+const CHANNELS = ["Google Advertising", "Social Media (Meta)", "TikTok Ads", "Pinterest Ads", "Partnerships & Affiliates", "Influencer Marketing", "Klaviyo", "Shopify", "Photography", "Printing", "Events", "Giveaways"];
+
 // Human label for a month key, e.g. "2025-07" -> "Jul 25".
 const labelOf = (mk: string) => {
   const [y, m] = mk.split("-");
@@ -49,11 +52,17 @@ export function BudgetDataTools({ brands, marketingBudgets, monthKeys, fy, fyLab
 
   async function downloadBudgetTemplate() {
     const XLSX = await import("xlsx");
-    const rows = marketingBudgets.map(b => {
-      const row: Record<string, any> = { Brand: brandById.get(b.brand_id) ?? `#${b.brand_id}`, Channel: b.channel };
-      monthKeys.forEach(mk => { row[labelOf(mk)] = Math.round(monthBudget(b.brand_id, b.channel, mk, Number(b.annual_budget) || 0)); });
-      return row;
-    });
+    // One row per brand × every canonical channel (0 where there's no budget yet).
+    const budgetBrandIds = [...new Set(marketingBudgets.map(b => b.brand_id))];
+    const rows: Record<string, any>[] = [];
+    for (const bid of budgetBrandIds) {
+      for (const channel of CHANNELS) {
+        const annual = Number(marketingBudgets.find(b => b.brand_id === bid && b.channel === channel)?.annual_budget) || 0;
+        const row: Record<string, any> = { Brand: brandById.get(bid) ?? `#${bid}`, Channel: channel };
+        monthKeys.forEach(mk => { row[labelOf(mk)] = Math.round(monthBudget(bid, channel, mk, annual)); });
+        rows.push(row);
+      }
+    }
     const ws = XLSX.utils.json_to_sheet(rows, { header: ["Brand", "Channel", ...monthKeys.map(labelOf)] });
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Monthly budgets");
