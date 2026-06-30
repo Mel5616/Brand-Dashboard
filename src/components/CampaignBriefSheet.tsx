@@ -94,9 +94,9 @@ export function CampaignBriefSheet({ c }: { c: any }) {
 
   return (
     <article id="product-sheet" className="sheet max-w-[860px] mx-auto bg-white rounded-2xl shadow-lg ring-1 ring-slate-200/70 overflow-hidden print:shadow-none print:ring-0 print:rounded-none print:max-w-none print:overflow-visible">
-      {/* 1 · Banner hero */}
-      <div className="brief-banner relative w-full h-[200px] print:h-[120px] bg-slate-100 overflow-hidden">
-        {img ? <img src={img} alt={c.campaign || ""} className="w-full h-full object-cover" /> : <div className="w-full h-full grid place-items-center text-[11px] uppercase tracking-wide text-slate-300">No image</div>}
+      {/* 1 · Banner hero — full image (scaled to width, never cropped) */}
+      <div className="brief-banner relative w-full bg-slate-50 overflow-hidden">
+        {img ? <img src={img} alt={c.campaign || ""} className="block w-full h-auto print:max-h-[130px] print:object-contain print:mx-auto" /> : <div className="w-full h-[180px] grid place-items-center text-[11px] uppercase tracking-wide text-slate-300">No image</div>}
         {/* Floating pills (screen only — dropped into the block below for print) */}
         <div className="absolute top-3 left-4 print:hidden"><Pills status={c.status || "Planned"} tier={c.tier} statusDot={statusDot} statusTint={statusTint} /></div>
         <div className="absolute top-3 right-4 print:hidden"><OwnerPill owner={c.owner} missing={ownerMissing} /></div>
