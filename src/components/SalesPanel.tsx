@@ -57,6 +57,7 @@ export function SalesPanel({
   const isAdmin = role === "admin";
   const [busy, setBusy] = React.useState(false);
   const [msg, setMsg] = React.useState<string | null>(null);
+  const [mixView, setMixView] = React.useState<"month" | "fy">("fy"); // Channel-mix-by-brand period
   const fileRef = React.useRef<HTMLInputElement>(null);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -253,19 +254,27 @@ export function SalesPanel({
       </div>
 
       {scope === "all" && (() => {
+        const val = (c: any) => mixView === "month" ? (c.latest ?? 0) : c.fy;
         const mix = brands
-          .map(b => { const bc = computeChannels(b.id).filter(c => isAdmin || DIGITAL_CHANNELS.has(c.name)); return { b, bc, tot: sum(bc.map(c => c.fy)) }; })
+          .map(b => { const bc = computeChannels(b.id).filter(c => isAdmin || DIGITAL_CHANNELS.has(c.name)); return { b, bc, tot: sum(bc.map(val)) }; })
           .filter(x => x.tot > 0)
           .sort((a, b) => b.tot - a.tot);
         if (!mix.length) return null;
         return (
           <div>
-            <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Channel mix by brand</h3>
-            <p className="text-xs text-gray-400 mb-4">Where each brand&apos;s sales come from · full year</p>
+            <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Channel mix by brand</h3>
+              <div className="inline-flex bg-gray-100 rounded-lg p-0.5">
+                {(["month", "fy"] as const).map(v => (
+                  <button key={v} onClick={() => setMixView(v)} className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all ${mixView === v ? "bg-white shadow-sm text-slate-700" : "text-gray-400 hover:text-gray-600"}`}>{v === "fy" ? "Full Year" : "Monthly"}</button>
+                ))}
+              </div>
+            </div>
+            <p className="text-xs text-gray-400 mb-4">Where each brand&apos;s sales come from · {mixView === "month" ? latestLabel : "full year"}</p>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {mix.map(({ b, bc, tot }) => {
-                const pos = sum(bc.filter(c => c.fy > 0).map(c => c.fy)) || 1;
-                const cols = groupDirect(bc.filter(c => c.fy > 0));
+                const pos = sum(bc.filter(c => val(c) > 0).map(val)) || 1;
+                const cols = groupDirect(bc.filter(c => val(c) > 0));
                 const Row = ({ name, value, color, child }: { name: string; value: number; color: string; child?: boolean }) => {
                   const pct = (value / pos) * 100;
                   return (
@@ -292,10 +301,10 @@ export function SalesPanel({
                     <div className="space-y-2">
                       {cols.map(c => (
                         <div key={c.name}>
-                          <Row name={c.name} value={c.fy} color={c.isGroup ? "#4f9d86" : colorOf(c.name)} />
+                          <Row name={c.name} value={val(c)} color={c.isGroup ? "#4f9d86" : colorOf(c.name)} />
                           {c.isGroup && c.kids && (
                             <div className="ml-3 mt-1.5 space-y-1.5 border-l border-gray-100 pl-3">
-                              {c.kids.map(k => <Row key={k.name} name={k.name} value={k.fy} color={colorOf(k.name)} child />)}
+                              {c.kids.map(k => <Row key={k.name} name={k.name} value={val(k)} color={colorOf(k.name)} child />)}
                             </div>
                           )}
                         </div>
