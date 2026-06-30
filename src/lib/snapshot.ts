@@ -492,7 +492,7 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
     <div class="cell"><div class="lab">MER · ${esc(s.monthLong)}</div><div class="big">${s.mer > 0 ? s.mer.toFixed(2) + "×" : "—"}</div><div class="note">booked D2C revenue ÷ total marketing spend</div></div>
     <div class="cell"><div class="lab">Blended paid ROAS · ${esc(s.monthLong)}</div><div class="big">${s.blendedRoas.toFixed(2)}×</div><div class="note">platform-claimed · channel diagnostic only</div></div>
   </div>
-  <div class="seostat" style="margin-top:-6px">MER (revenue ÷ total spend) is the true efficiency measure. Per-platform ROAS (Google, Meta, email) is attributed inside each platform's own window, so those figures overlap and <strong>cannot be added together</strong>.</div>
+  <div class="seostat" style="margin-top:16px;margin-bottom:8px">MER (revenue ÷ total spend) is the true efficiency measure. Per-platform ROAS (Google, Meta, email) is attributed inside each platform's own window, so those figures overlap and <strong>cannot be added together</strong>.</div>
 
   <div class="seasonal">
     <div class="copy"><div class="t">Where the year's revenue lands</div><div class="d">Share of the financial year's direct-to-consumer revenue by month. The navy bars are the peak.</div></div>
