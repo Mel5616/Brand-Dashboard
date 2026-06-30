@@ -92,26 +92,16 @@ export default async function ProductShare({ params }: { params: Promise<{ token
           <span className="text-[10px] tracking-[0.16em] uppercase text-slate-400">Product Data Sheet</span>
         </header>
 
-        {/* Title block */}
-        <div className="px-8 grid md:grid-cols-2 gap-6 items-start print:grid-cols-2">
-          <div className="min-w-0">
-            <h1 className="text-[22px] font-extrabold leading-tight" style={{ color: NAVY }}>{p.name}</h1>
-            <span className="inline-block mt-2.5 text-white text-[11px] font-bold uppercase tracking-[0.07em] px-3.5 py-1.5 rounded-md" style={{ background: accent }}>{brand ?? "Coolkidz"}</span>
-            <p className="mt-2 text-[11px] text-slate-500">
-              <span className="font-semibold" style={{ color: st.bg }}>{st.label}</span>{launch ? ` · launches ${launch}` : ""}
-            </p>
-          </div>
-          {/* Square image placeholder — fills the column and always stays square */}
-          <div className="w-full aspect-square rounded-xl bg-slate-50 border border-slate-100 overflow-hidden grid place-items-center">
-            {p.attrs?.image_url
-              ? <img src={p.attrs.image_url} alt={p.name} className="w-full h-full object-cover" />
-              : <span className="text-[11px] uppercase tracking-[0.12em] text-slate-300">No image</span>}
-          </div>
-        </div>
-
-        {/* Body — description (left) + specs/features (right) */}
-        <div className="px-8 py-7 grid md:grid-cols-[1.1fr_0.9fr] gap-8 print:grid-cols-[1.1fr_0.9fr] print:gap-6">
-          <div>
+        {/* Body — title + description (left) · image + specs (right) */}
+        <div className="px-8 py-6 grid md:grid-cols-2 gap-8 items-start print:grid-cols-2 print:gap-6">
+          <div className="min-w-0 space-y-5">
+            <div>
+              <h1 className="text-[22px] font-extrabold leading-tight" style={{ color: NAVY }}>{p.name}</h1>
+              <span className="inline-block mt-2.5 text-white text-[11px] font-bold uppercase tracking-[0.07em] px-3.5 py-1.5 rounded-md" style={{ background: accent }}>{brand ?? "Coolkidz"}</span>
+              <p className="mt-2 text-[11px] text-slate-500">
+                <span className="font-semibold" style={{ color: st.bg }}>{st.label}</span>{launch ? ` · launches ${launch}` : ""}
+              </p>
+            </div>
             {(p.short_description || body.length > 0) && (
               <section>
                 <Heading>Description</Heading>
@@ -122,6 +112,12 @@ export default async function ProductShare({ params }: { params: Promise<{ token
           </div>
 
           <div className="space-y-5">
+            {/* Square image placeholder — fills the column and always stays square */}
+            <div className="w-full aspect-square rounded-xl bg-slate-50 border border-slate-100 overflow-hidden grid place-items-center">
+              {p.attrs?.image_url
+                ? <img src={p.attrs.image_url} alt={p.name} className="w-full h-full object-cover" />
+                : <span className="text-[11px] uppercase tracking-[0.12em] text-slate-300">No image</span>}
+            </div>
             {specRows.length > 0 && (
               <section>
                 <Heading>Specification data</Heading>
