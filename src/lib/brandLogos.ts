@@ -15,4 +15,5 @@ export const BRAND_LOGOS: Record<number, string> = {
   9:  "/logos/Coolkidz Logo.png",
   10: "/logos/Matchstick Monkey Logo.jpg",
   11: "/logos/Primary Logo - Red.png",
+  12: "/logos/Smartrike Logo.png",
 };
