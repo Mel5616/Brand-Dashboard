@@ -9,14 +9,25 @@ import { NextResponse } from "next/server";
 
 export const revalidate = 0;
 const API_VERSION = "2024-01";
-const AEST_OFFSET = 10; // hours; QLD has no DST, good enough for hour-of-day buckets
-const OPEN = 9, CLOSE = 17; // assumed show open hours (AEST) for "same point" pacing
+const MEL_TZ = "Australia/Melbourne"; // store timezone; DST-aware (AEST +10 / AEDT +11)
+const OPEN = 9, CLOSE = 17; // assumed show open hours (Melbourne) for "same point" pacing
+
+// Melbourne local calendar date 'YYYY-MM-DD' for a UTC ISO timestamp (DST-aware).
+function melDate(iso: string): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: MEL_TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
+}
+// Melbourne local hour as a float (e.g. 14.5) for a UTC ISO timestamp (DST-aware).
+function melHour(iso: string): number {
+  const p = new Intl.DateTimeFormat("en-GB", { timeZone: MEL_TZ, hourCycle: "h23", hour: "2-digit", minute: "2-digit" }).formatToParts(new Date(iso));
+  const h = Number(p.find(x => x.type === "hour")?.value ?? 0);
+  const m = Number(p.find(x => x.type === "minute")?.value ?? 0);
+  return (h % 24) + m / 60;
+}
 
 // Fraction of a show's selling hours elapsed at a given instant (0..1).
 function showFraction(iso: string, start: string, end: string): number {
-  const aest = new Date(new Date(iso).getTime() + AEST_OFFSET * 3600 * 1000);
-  const dateStr = aest.toISOString().slice(0, 10);
-  const hour = aest.getUTCHours() + aest.getUTCMinutes() / 60;
+  const dateStr = melDate(iso);
+  const hour = melHour(iso);
   const perDay = CLOSE - OPEN;
   const days: string[] = [];
   for (let d = new Date(start + "T00:00:00Z"); d <= new Date(end + "T00:00:00Z"); d = new Date(d.getTime() + 86400000)) {
@@ -100,10 +111,10 @@ async function computeShow(
   const state = (show.state || "").toLowerCase();
   // booth orders after this point in the show are excluded (cutoff < 1 only)
   const past = (iso?: string) => cutoff < 1 && (!iso || showFraction(iso, show.date_start, show.date_end) > cutoff);
-  // true only when the order lands on an actual show day (AEST)
-  const offShow = (iso?: string) => { if (!iso) return true; const od = new Date(new Date(iso).getTime() + AEST_OFFSET * 3600 * 1000).toISOString().slice(0, 10); return od < show.date_start || od > show.date_end; };
+  // true only when the order lands on an actual show day (Melbourne)
+  const offShow = (iso?: string) => { if (!iso) return true; const od = melDate(iso); return od < show.date_start || od > show.date_end; };
 
-  const aestDate = (iso: string) => new Date(new Date(iso).getTime() + AEST_OFFSET * 3600 * 1000).toISOString().slice(0, 10);
+  const aestDate = (iso: string) => melDate(iso);
 
   type Prod = { title: string; brand_id: number; revenue: number; qty: number };
   const productMap = new Map<string, Prod>();
@@ -118,7 +129,7 @@ async function computeShow(
   };
   const bucket = (iso: string | undefined, amt: number) => {
     if (!iso) return;
-    const h = (new Date(iso).getUTCHours() + AEST_OFFSET) % 24;
+    const h = Math.floor(melHour(iso)) % 24;
     byHour[h] += amt;
     const d = aestDate(iso);
     let arr = byHourByDay.get(d); if (!arr) { arr = new Array(24).fill(0); byHourByDay.set(d, arr); }

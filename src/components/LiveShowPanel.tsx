@@ -22,15 +22,15 @@ const STATE_ABBR: Record<string, string> = {
 };
 const stateAbbr = (s?: string) => s ? (STATE_ABBR[s.toLowerCase()] ?? s.slice(0, 3).toUpperCase()) : "";
 
-// Show open hours (AEST) used for pacing
+// Show open hours (Melbourne) used for pacing
 const OPEN = 9, CLOSE = 17;
 const hourLabel = (h: number) => { const ap = h < 12 ? "am" : "pm"; const hh = h % 12 === 0 ? 12 : h % 12; return `${hh}${ap}`; };
 
-// "Now" in Brisbane time (AEST, no DST) — good enough for show pacing nationwide
+// "Now" in Melbourne time (DST-aware, AEST/AEDT) — matches the store timezone
 function aestNow() {
   const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Australia/Brisbane", year: "numeric", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit", hour12: false,
+    timeZone: "Australia/Melbourne", year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23",
   }).formatToParts(new Date());
   const get = (t: string) => parts.find(p => p.type === t)?.value ?? "0";
   return { date: `${get("year")}-${get("month")}-${get("day")}`, hour: Number(get("hour")) + Number(get("minute")) / 60 };
@@ -411,7 +411,7 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
           <div className="flex gap-3">
             {data!.byDay!.map(d => {
               const dt = new Date(d.date + "T00:00:00");
-              const isToday = d.date === new Date(Date.now() + 10 * 3600 * 1000).toISOString().slice(0, 10);
+              const isToday = d.date === aestNow().date;
               return (
                 <div key={d.date} className={`flex-1 rounded-lg border px-3 py-2.5 ${isToday ? "border-emerald-200 bg-emerald-50/50" : "border-gray-100 bg-gray-50/60"}`}>
                   <p className="text-[11px] font-semibold text-slate-600">

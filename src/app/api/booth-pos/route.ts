@@ -57,9 +57,9 @@ export async function GET() {
     for (const n of pos) {
       const amt = Number(n.totalPriceSet?.shopMoney?.amount ?? 0);
       revenue += amt;
-      // Bucket by AEST date (+10h) — Shopify's created_at is UTC, so early-morning
-      // AEST show-day orders would otherwise fall into the previous calendar day.
-      const date = new Date(new Date(n.createdAt).getTime() + 10 * 3600 * 1000).toISOString().slice(0, 10);
+      // Bucket by Melbourne date (DST-aware) — Shopify's created_at is UTC, so
+      // early-morning show-day orders would otherwise fall into the previous day.
+      const date = new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Melbourne", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(n.createdAt));
       const d = byDay.get(date) ?? { date, revenue: 0, orders: 0 };
       d.revenue += amt;
       d.orders += 1;
