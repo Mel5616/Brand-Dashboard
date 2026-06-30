@@ -47,6 +47,10 @@ export function BrandBudgetOverview({
   const [topups, setTopups] = useState<{ brand_id: number; month_key: string; channel: string; amount: number }[]>([]);
   useEffect(() => { fetch("/api/budget-topups").then(r => r.json()).then(j => setTopups(j.topups ?? [])).catch(() => {}); }, []);
   const override = (channel: string, mk: string): number | null => { const t = topups.find(t => t.brand_id === bid && t.channel === channel && t.month_key === mk); return t ? (Number(t.amount) || 0) : null; };
+  // Influencer spend flows in automatically from the Influencer tracker (like Google/Meta).
+  const [inflSpend, setInflSpend] = useState<{ brand_id: number; month_key: string; spend: number }[]>([]);
+  useEffect(() => { fetch("/api/influencer/spend").then(r => r.json()).then(j => setInflSpend(j.rows ?? [])).catch(() => {}); }, []);
+  const influencerActual = (mk: string) => inflSpend.filter(r => r.brand_id === bid && r.month_key === mk).reduce((s, r) => s + r.spend, 0);
   // The budget for a channel in a given month: the override if set, else annual ÷ 12.
   const monthBudget = (channel: string, annual: number, mk: string) => { const o = override(channel, mk); return o != null ? o : annual / 12; };
 
@@ -71,6 +75,7 @@ export function BrandBudgetOverview({
   function actual(channel: string, mk: string): number {
     if (channel === "Google Advertising")  return googleAds.filter(r => r.brand_id === bid && r.month_key === mk).reduce((s, r) => s + r.spend, 0);
     if (channel === "Social Media (Meta)") return metaAds.filter(r => r.brand_id === bid && r.month_key === mk).reduce((s, r) => s + r.spend, 0);
+    if (channel === "Influencer Marketing") return influencerActual(mk) + marketingActuals.filter(a => a.brand_id === bid && a.channel === channel && a.month_key === mk).reduce((s, a) => s + a.spend, 0);
     return marketingActuals.filter(a => a.brand_id === bid && a.channel === channel && a.month_key === mk).reduce((s, a) => s + a.spend, 0);
   }
 

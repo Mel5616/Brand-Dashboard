@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { fmt } from "@/lib/format";
 import { BRAND_LOGOS } from "./BrandCard";
 
@@ -13,6 +14,13 @@ export function ShopifyBrandSales({ brands, monthly, weekly, daily = [], months,
   const [period, setPeriod] = useState<Period>("month");
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState("");
+  // Quietly refresh server data every 30 min (when the tab is visible) so the
+  // figures stay current after a scheduled sync without a manual reload.
+  const router = useRouter();
+  useEffect(() => {
+    const id = setInterval(() => { if (!document.hidden) router.refresh(); }, 30 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [router]);
 
   async function refreshData() {
     setSyncing(true); setSyncMsg("Starting…");

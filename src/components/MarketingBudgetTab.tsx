@@ -80,6 +80,8 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
   // Monthly budget values (budget_topups) — make budgets monthly-aware everywhere.
   const [topups, setTopups] = useState<any[]>([]);
   useEffect(() => { fetch("/api/budget-topups").then(r => r.json()).then(j => setTopups(j.topups ?? [])).catch(() => {}); }, []);
+  const [inflSpend, setInflSpend] = useState<{ brand_id: number; month_key: string; spend: number }[]>([]);
+  useEffect(() => { fetch("/api/influencer/spend").then(r => r.json()).then(j => setInflSpend(j.rows ?? [])).catch(() => {}); }, []);
   const topupVal = (bid: number, ch: string, mk: string) => { const t = topups.find(t => t.brand_id === bid && t.channel === ch && t.month_key === mk); return t ? Number(t.amount) || 0 : null; };
   const monthBudgetVal = (bid: number, ch: string, mk: string, annual: number) => { const o = topupVal(bid, ch, mk); return o != null ? o : annual / 12; };
   // FY budget for a brand × channel = sum of the 12 monthly values (equals annual when no monthly overrides).
@@ -96,6 +98,7 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
   function getActual(brandId: number, channel: string): number {
     if (channel === "Google Advertising")  return googleAds.filter(r => r.brand_id === brandId).reduce((s, r) => s + r.spend, 0);
     if (channel === "Social Media (Meta)") return metaAds.filter(r => r.brand_id === brandId).reduce((s, r) => s + r.spend, 0);
+    if (channel === "Influencer Marketing") return inflSpend.filter(r => r.brand_id === brandId && MONTH_KEYS.includes(r.month_key)).reduce((s, r) => s + r.spend, 0) + marketingActuals.filter(a => a.brand_id === brandId && a.channel === channel).reduce((s, a) => s + a.spend, 0);
     return marketingActuals.filter(a => a.brand_id === brandId && a.channel === channel).reduce((s, a) => s + a.spend, 0);
   }
 
@@ -104,6 +107,10 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
   const totalActual = marketingBudgets.reduce((s, b) => s + getActual(b.brand_id, b.channel), 0);
   const totalPct    = totalBudget > 0 ? (totalActual / totalBudget) * 100 : 0;
   const remaining   = totalBudget - totalActual;
+  // Run-rate forecast: full-year spend projected from the pace so far.
+  const elapsedIdx = MONTH_KEYS.indexOf(latest);
+  const monthsElapsed = elapsedIdx >= 0 ? elapsedIdx + 1 : 0;
+  const forecast = monthsElapsed > 0 && totalActual > 0 ? (totalActual / monthsElapsed) * 12 : null;
 
   // Channel totals
   const channels = [...new Set(marketingBudgets.map(b => b.channel))];
@@ -353,6 +360,14 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
           </div>
         ))}
       </div>
+
+      {/* Run-rate forecast */}
+      {forecast != null && (
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-3 flex items-center justify-between flex-wrap gap-2 text-sm">
+          <span className="text-gray-500">Run-rate forecast <span className="text-gray-300">· projected from {monthsElapsed} month{monthsElapsed === 1 ? "" : "s"} of spend</span></span>
+          <span className="font-semibold text-slate-800">On track for {fmtFull(forecast)} full year · <span className={forecast > totalBudget ? "text-rose-500" : "text-emerald-600"}>{forecast > totalBudget ? `${fmtFull(forecast - totalBudget)} over` : `${fmtFull(totalBudget - forecast)} under`} budget</span></span>
+        </div>
+      )}
 
       {/* Sales vs Spend line + Utilisation donut */}
       <div className="grid grid-cols-5 gap-6 print-stack">

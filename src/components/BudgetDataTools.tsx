@@ -31,7 +31,22 @@ export function BudgetDataTools({ brands, marketingBudgets, monthKeys, fy, fyLab
   const [showExpenses, setShowExpenses] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [reading, setReading] = useState(false);
   const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
+
+  // Read an attached invoice with Claude and pre-fill the amount/note.
+  async function readInvoice() {
+    if (!invoiceFile) return;
+    setReading(true); setMsg("");
+    try {
+      const fd = new FormData(); fd.append("file", invoiceFile);
+      const j = await fetch("/api/marketing-actuals/invoice/extract", { method: "POST", body: fd }).then(r => r.json());
+      if (j.error) { setMsg(j.error); setReading(false); return; }
+      setForm(f => ({ ...f, spend: j.amount != null ? String(j.amount) : f.spend, note: [j.supplier, j.date].filter(Boolean).join(" · ") || f.note }));
+      setMsg("✓ Read invoice — check the figures and save.");
+    } catch { setMsg("Couldn't read that invoice."); }
+    setReading(false);
+  }
   const [form, setForm] = useState({ brand_id: "", channel: CHANNELS[0], month_key: monthKeys[0], spend: "", note: "" });
 
   async function addExpense() {
@@ -233,6 +248,7 @@ export function BudgetDataTools({ brands, marketingBudgets, monthKeys, fy, fyLab
           </div>
           <div className="flex items-center gap-3 mt-2 flex-wrap">
             <label className={btn + " cursor-pointer"}>{invoiceFile ? `📎 ${invoiceFile.name.slice(0, 28)}` : "Attach invoice (PDF)"}<input type="file" accept="application/pdf,image/*" className="hidden" onChange={e => setInvoiceFile(e.target.files?.[0] ?? null)} /></label>
+            {invoiceFile && <button onClick={readInvoice} disabled={reading} className="text-[11px] font-medium text-emerald-600 hover:text-emerald-700 disabled:opacity-50">{reading ? "Reading…" : "✨ Read invoice"}</button>}
             {invoiceFile && <button onClick={() => setInvoiceFile(null)} className="text-[11px] text-gray-400 hover:text-rose-500">remove</button>}
             <button onClick={addExpense} disabled={adding} className="text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg px-4 py-1.5 disabled:opacity-50 ml-auto">{adding ? "Saving…" : "Save expense"}</button>
           </div>
