@@ -27,7 +27,7 @@ export function SyncStatus({ lastSync, isAdmin = true }: { lastSync: { finished_
   }
 
   const timeStr = lastSync?.finished_at
-    ? new Date(lastSync.finished_at).toLocaleString("en-AU", { timeZone: "Australia/Sydney", dateStyle: "short", timeStyle: "short" })
+    ? new Date(lastSync.finished_at).toLocaleString("en-AU", { timeZone: "Australia/Melbourne", dateStyle: "short", timeStyle: "short" })
     : "Never";
 
   const RefreshIcon = (
