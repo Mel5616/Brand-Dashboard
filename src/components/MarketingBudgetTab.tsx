@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BrandBudgetOverview } from "./BrandBudgetOverview";
+import { BudgetDataTools } from "./BudgetDataTools";
 import {
   Chart as ChartJS, ArcElement, CategoryScale, LinearScale,
   LineElement, PointElement, Filler, Tooltip, Legend,
@@ -73,50 +74,22 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
   const marketingBudgets = allBudgets.filter((b: any) => (b.fy ?? "2025-26") === fy);
   const MONTH_KEYS = monthKeys;
   const MONTH_LABELS = monthLabels;
-  const [budgetMsg, setBudgetMsg] = useState("");
-  const [budgetBusy, setBudgetBusy] = useState(false);
+  const [budgetMsg] = useState("");
   const [showEdit, setShowEdit] = useState(false);
   const [editVals, setEditVals] = useState<Record<string, string>>({});
+  // Monthly budget values (budget_topups) — make budgets monthly-aware everywhere.
+  const [topups, setTopups] = useState<any[]>([]);
+  useEffect(() => { fetch("/api/budget-topups").then(r => r.json()).then(j => setTopups(j.topups ?? [])).catch(() => {}); }, []);
+  const topupVal = (bid: number, ch: string, mk: string) => { const t = topups.find(t => t.brand_id === bid && t.channel === ch && t.month_key === mk); return t ? Number(t.amount) || 0 : null; };
+  const monthBudgetVal = (bid: number, ch: string, mk: string, annual: number) => { const o = topupVal(bid, ch, mk); return o != null ? o : annual / 12; };
+  // FY budget for a brand × channel = sum of the 12 monthly values (equals annual when no monthly overrides).
+  const fyBudgetFor = (bid: number, ch: string, annual: number) => MONTH_KEYS.reduce((s, mk) => s + monthBudgetVal(bid, ch, mk, annual), 0);
 
   async function saveOneBudget(brand_id: number, channel: string, value: string) {
     await fetch("/api/marketing-budget", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brand_id, channel, budget: value, fy }) }).catch(() => {});
     setTimeout(() => window.location.reload(), 600);
   }
 
-  function parseBudgetCSV(text: string): Record<string, string>[] {
-    const rows: string[][] = []; let row: string[] = [], cell = "", q = false;
-    for (let i = 0; i < text.length; i++) {
-      const c = text[i];
-      if (q) { if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += c; }
-      else if (c === '"') q = true;
-      else if (c === ",") { row.push(cell); cell = ""; }
-      else if (c === "\n" || c === "\r") { if (c === "\r" && text[i + 1] === "\n") i++; row.push(cell); rows.push(row); row = []; cell = ""; }
-      else cell += c;
-    }
-    if (cell !== "" || row.length) { row.push(cell); rows.push(row); }
-    const clean = rows.filter(r => r.some(c => c.trim() !== ""));
-    if (clean.length < 2) return [];
-    const headers = clean[0].map(h => h.trim().toLowerCase().replace(/\s*\(\$\)/, "").replace(/\s+/g, "_"));
-    return clean.slice(1).map(r => Object.fromEntries(headers.map((h, i) => [h, (r[i] ?? "").trim()])));
-  }
-  async function uploadBudget(file: File) {
-    setBudgetBusy(true); setBudgetMsg("");
-    try {
-      const parsed = parseBudgetCSV(await file.text());
-      const rows = parsed.map(r => ({ brand: r.brand, channel: r.channel, budget: r.budget ?? r.annual_budget }));
-      const valid = rows.filter(r => r.brand && r.channel);
-      if (!valid.length) { setBudgetMsg("No rows with brand + channel — check the headers."); setBudgetBusy(false); return; }
-      const res = await fetch("/api/marketing-budget", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows: valid, fy, replace: true }) }).then(r => r.json()).catch(() => ({ ok: false }));
-      setBudgetMsg(res.ok ? `✓ Loaded ${res.count} budget rows for ${fyLabel}${res.unmatched?.length ? ` (unmatched brands: ${res.unmatched.join(", ")})` : ""}. Reloading…` : (res.error || "Upload failed."));
-      if (res.ok) setTimeout(() => window.location.reload(), 1500);
-    } catch { setBudgetMsg("Couldn't read the file."); }
-    setBudgetBusy(false);
-  }
-  function downloadBudgetTemplate() {
-    const chans = ["Google Advertising", "Social Media (Meta)", "Klaviyo", "Influencer Marketing", "Photography", "Shopify"];
-    const csv = "brand,channel,budget\n" + brands.filter((b: any) => b.live).slice(0, 1).flatMap((b: any) => chans.map(c => `${b.name},${c},0`)).join("\n") + "\n";
-    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = `marketing_budget_${fy}.csv`; a.click();
-  }
   const [budgetBrand, setBudgetBrand] = useState<number | "all">("all");
   const budgetBrandList = brands.filter((b: any) => b.live && marketingBudgets.some(mb => mb.brand_id === b.id));
 
@@ -127,7 +100,7 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
   }
 
   // Portfolio totals
-  const totalBudget = marketingBudgets.reduce((s, b) => s + b.annual_budget, 0);
+  const totalBudget = marketingBudgets.reduce((s, b) => s + fyBudgetFor(b.brand_id, b.channel, b.annual_budget), 0);
   const totalActual = marketingBudgets.reduce((s, b) => s + getActual(b.brand_id, b.channel), 0);
   const totalPct    = totalBudget > 0 ? (totalActual / totalBudget) * 100 : 0;
   const remaining   = totalBudget - totalActual;
@@ -136,7 +109,7 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
   const channels = [...new Set(marketingBudgets.map(b => b.channel))];
   const channelTotals = channels.map(ch => ({
     channel: ch,
-    budget: marketingBudgets.filter(b => b.channel === ch).reduce((s, b) => s + b.annual_budget, 0),
+    budget: marketingBudgets.filter(b => b.channel === ch).reduce((s, b) => s + fyBudgetFor(b.brand_id, b.channel, b.annual_budget), 0),
     actual: brands.reduce((s, brand) =>
       marketingBudgets.some(b => b.brand_id === brand.id && b.channel === ch)
         ? s + getActual(brand.id, ch) : s, 0),
@@ -147,7 +120,7 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
     .filter(b => b.live)
     .map(brand => {
       const bRows  = marketingBudgets.filter(b => b.brand_id === brand.id);
-      const budget = bRows.reduce((s, b) => s + b.annual_budget, 0);
+      const budget = bRows.reduce((s, b) => s + fyBudgetFor(b.brand_id, b.channel, b.annual_budget), 0);
       const actual = bRows.reduce((s, b) => s + getActual(brand.id, b.channel), 0);
       return { brand, budget, actual };
     })
@@ -289,12 +262,7 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
         {canEdit && (
           <div className="ml-auto flex items-center gap-2">
             {budgetMsg && <span className={`text-[11px] ${budgetMsg.startsWith("✓") ? "text-emerald-600" : "text-rose-500"}`}>{budgetMsg}</span>}
-            <button onClick={() => setShowEdit(s => !s)} className="text-xs font-medium text-slate-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3 py-1.5">{showEdit ? "Close edit" : "Edit budgets"}</button>
-            <button onClick={downloadBudgetTemplate} className="text-xs font-medium text-slate-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3 py-1.5">Template</button>
-            <label className={`text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-1.5 cursor-pointer ${budgetBusy ? "opacity-50" : ""}`}>
-              {budgetBusy ? "Uploading…" : `Upload budget CSV · ${fyLabel}`}
-              <input type="file" accept=".csv,text/csv" disabled={budgetBusy} className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadBudget(f); e.currentTarget.value = ""; }} />
-            </label>
+            <button onClick={() => setShowEdit(s => !s)} className="text-xs font-medium text-slate-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3 py-1.5">{showEdit ? "Close edit" : "Quick edit (annual)"}</button>
           </div>
         )}
       </div>
@@ -350,6 +318,9 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
         />
       ) : (
       <>
+      {canEdit && (
+        <BudgetDataTools brands={brands} marketingBudgets={marketingBudgets} monthKeys={MONTH_KEYS} fy={fy} fyLabel={fyLabel} topups={topups} />
+      )}
       {/* KPI strip */}
       <div className="grid grid-cols-4 gap-4">
         {[
@@ -540,7 +511,7 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
       </div>
 
       <p className="text-center text-xs text-gray-300 pb-4">
-        Google &amp; Meta actuals are live API data · Other channels synced from Google Sheet
+        Google &amp; Meta actuals are live from the ad platforms · all other expenses are uploaded above
       </p>
       </>
       )}

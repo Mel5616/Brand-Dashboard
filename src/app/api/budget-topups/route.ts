@@ -20,6 +20,17 @@ export async function POST(req: Request) {
   if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false }, { status: 403 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
+
+  // Bulk import (monthly budget upload): { rows: [{ brand_id, month_key, channel, amount }] }
+  if (Array.isArray(b.rows)) {
+    const rows = b.rows
+      .filter((r: any) => r && r.brand_id != null && r.month_key && r.channel)
+      .map((r: any) => ({ brand_id: Number(r.brand_id), month_key: String(r.month_key), channel: String(r.channel), amount: Number(r.amount) || 0 }));
+    if (!rows.length) return NextResponse.json({ ok: false, error: "No valid rows" }, { status: 400 });
+    const res = await fetch(`${sbUrl}/rest/v1/budget_topups?on_conflict=brand_id,month_key,channel`, { method: "POST", headers: hdr({ Prefer: "resolution=merge-duplicates,return=minimal" }), body: JSON.stringify(rows) });
+    return NextResponse.json({ ok: res.ok, count: rows.length }, { status: res.ok ? 200 : 500 });
+  }
+
   if (b.brand_id == null || !b.month_key || !b.channel) return NextResponse.json({ ok: false }, { status: 400 });
   const row = { brand_id: b.brand_id, month_key: b.month_key, channel: b.channel, amount: Number(b.amount) || 0 };
   const res = await fetch(`${sbUrl}/rest/v1/budget_topups?on_conflict=brand_id,month_key,channel`, { method: "POST", headers: hdr({ Prefer: "resolution=merge-duplicates,return=minimal" }), body: JSON.stringify(row) });
