@@ -49,6 +49,24 @@ const PRINT_CSS = `
 }
 `;
 
+// Rich link preview (Open Graph / Twitter) so shared links show the product
+// image + name instead of the generic site card.
+export async function generateMetadata({ params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params;
+  const sb = await createClient();
+  const { data: p } = await sb.from("new_products").select("name, short_description, attrs").eq("share_token", token).single();
+  if (!p) return { title: "Product — Coolkidz Australia" };
+  const img: string | undefined = p.attrs?.image_url;
+  const title = `${p.name} — Coolkidz Australia`;
+  const description = p.short_description || "Product data sheet · Coolkidz Australia";
+  return {
+    title,
+    description,
+    openGraph: { title, description, type: "website", siteName: "Coolkidz Australia", images: img ? [{ url: img }] : undefined },
+    twitter: { card: img ? "summary_large_image" : "summary", title, description, images: img ? [img] : undefined },
+  };
+}
+
 // Public, token-protected product page (no login). Shared with the team / suppliers.
 // Styled to match the PDF data sheet and to print cleanly on A4.
 export default async function ProductShare({ params }: { params: Promise<{ token: string }> }) {
