@@ -7,7 +7,7 @@ import React, { useEffect, useRef, useState } from "react";
 // Each campaign carries a structured brief (JSONB). Admins edit; everyone can
 // view and export a brief to PDF. Australian English. Owners default to TBC.
 
-type Brief = Record<string, string>;
+type Brief = Record<string, any>; // mostly text fields; complianceFlags is { label, note }[]
 type Campaign = {
   id: string; horizon: string; campaign: string; brand: string; tier: string;
   owner: string; channel: string; status: string; key_date: string; end_date?: string; note: string;
@@ -155,7 +155,7 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
   // so a keystroke never re-renders the drawer (which was dropping focus → one
   // letter at a time). Inputs are uncontrolled (defaultValue), so the DOM keeps
   // whatever is typed regardless of re-renders.
-  const briefDraft = useRef<Record<string, Record<string, string>>>({});
+  const briefDraft = useRef<Record<string, Record<string, any>>>({});
   function saveText(id: string, field: keyof Campaign, value: string) {
     if (id.startsWith("temp-")) return;
     const key = id + String(field);
@@ -214,6 +214,14 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
     set.has(opt) ? set.delete(opt) : set.add(opt);
     const value = CHANNEL_OPTIONS.filter(o => set.has(o)).join(", ");
     const cur = { ...(briefDraft.current[item.id] ?? (item.brief as any) ?? {}), channels: value };
+    briefDraft.current[item.id] = cur;
+    setItems(prev => prev.map(it => (it.id === item.id ? { ...it, brief: { ...cur } } : it)));
+    if (item.id.startsWith("temp-")) return;
+    patch(item.id, { brief: { ...cur } } as Partial<Campaign>);
+  }
+  // Compliance flags — structured { label, note } rows stored in brief.complianceFlags.
+  function setFlags(item: Campaign, flags: { label: string; note: string }[]) {
+    const cur = { ...(briefDraft.current[item.id] ?? (item.brief as any) ?? {}), complianceFlags: flags };
     briefDraft.current[item.id] = cur;
     setItems(prev => prev.map(it => (it.id === item.id ? { ...it, brief: { ...cur } } : it)));
     if (item.id.startsWith("temp-")) return;
@@ -571,6 +579,25 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Compliance flags — structured "check before send" items */}
+              <div className="space-y-2 border-t border-gray-100 pt-4 mt-3">
+                <label className="block text-[11px] font-semibold uppercase tracking-widest text-amber-700">Compliance flags <span className="font-normal lowercase tracking-normal text-gray-300">· check before send</span></label>
+                {(open.brief?.complianceFlags ?? []).map((fl: any, i: number) => (
+                  <div key={i} className="flex gap-2 items-start rounded-lg bg-amber-50 border border-amber-200 p-2">
+                    <div className="flex-1 space-y-1">
+                      <input readOnly={ro} defaultValue={fl?.label ?? ""} placeholder="Label (e.g. GWP value claim)"
+                        onBlur={e => { const arr = [...(open.brief?.complianceFlags ?? [])]; arr[i] = { ...arr[i], label: e.target.value }; setFlags(open, arr); }}
+                        className="w-full bg-white/70 text-[13px] font-medium text-amber-900 rounded px-2 py-1 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400 read-only:cursor-default placeholder:text-amber-300" />
+                      <textarea readOnly={ro} defaultValue={fl?.note ?? ""} rows={2} placeholder="What to check, and why"
+                        onBlur={e => { const arr = [...(open.brief?.complianceFlags ?? [])]; arr[i] = { ...arr[i], note: e.target.value }; setFlags(open, arr); }}
+                        className="w-full bg-white/70 text-[13px] text-amber-900 rounded px-2 py-1 resize-y focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-400 read-only:cursor-default placeholder:text-amber-300" />
+                    </div>
+                    {canEdit && <button onClick={() => setFlags(open, (open.brief?.complianceFlags ?? []).filter((_: any, j: number) => j !== i))} className="text-amber-500 hover:text-amber-700 text-xs px-1" aria-label="Remove flag">✕</button>}
+                  </div>
+                ))}
+                {canEdit && <button onClick={() => setFlags(open, [...(open.brief?.complianceFlags ?? []), { label: "", note: "" }])} className="text-[13px] font-medium text-amber-700 hover:text-amber-800">+ Add compliance flag</button>}
               </div>
 
               {/* Footer */}
