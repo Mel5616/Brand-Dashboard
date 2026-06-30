@@ -1,6 +1,6 @@
 import { getAccess } from "@/lib/access";
 import { createClient } from "@/lib/supabase/server";
-import { BRAND_LOGOS } from "@/components/BrandCard";
+import { BRAND_LOGOS } from "@/lib/brandLogos";
 
 export const revalidate = 0;
 const esc = (s = "") => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");

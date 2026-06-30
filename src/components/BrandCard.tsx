@@ -1,21 +1,11 @@
 "use client";
 import { fmt } from "@/lib/format";
 import type { Brand, BrandSummary, BrandTarget } from "@/lib/db";
+import { BRAND_LOGOS } from "@/lib/brandLogos";
 
-export const BRAND_LOGOS: Record<number, string> = {
-  0:  "/logos/Nanit_Logo Lockup_Midnight Mist.svg",
-  1:  "/logos/MCC_logo_MAGIC_black_c.png",
-  2:  "/logos/hannie.jpg",
-  3:  "/logos/gaia-baby-logo.avif",
-  4:  "/logos/220420 Logo.jpg",
-  5:  "/logos/UPPAbaby Logo.jpg",
-  6:  "/logos/ZAZU logo_HR.jpg",
-  7:  "/logos/MiaMily_logo+flag_1.png",
-  8:  "/logos/Frida_logo_main.png",
-  9:  "/logos/Coolkidz Logo.png",
-  10: "/logos/Matchstick Monkey Logo.jpg",
-  11: "/logos/Primary Logo - Red.png",
-};
+// Single source of truth lives in a server-safe lib; re-exported here so existing
+// client importers (Leaderboard, NewProducts, ShopifyBrandSales) keep working.
+export { BRAND_LOGOS };
 
 // Per-brand logo size overrides (default is "w-28 h-12"). Use for logos that
 // render visually larger/smaller than the others at the same box size.

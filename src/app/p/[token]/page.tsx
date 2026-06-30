@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { BRAND_LOGOS } from "@/components/BrandCard";
+import { BRAND_LOGOS } from "@/lib/brandLogos";
 import { PrintButton } from "@/components/PrintButton";
 
 export const revalidate = 0;
