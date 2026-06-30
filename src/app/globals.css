@@ -28,8 +28,12 @@ body {
 /* Print: isolate the management report so "Download PDF" prints just that brand. */
 @media print {
   body * { visibility: hidden; }
-  #brand-report, #brand-report *, #brief-print, #brief-print *, #product-sheet, #product-sheet * { visibility: visible; }
-  #brand-report, #brief-print, #product-sheet { position: absolute; left: 0; top: 0; width: 100%; max-width: 100%; height: auto; max-height: none; overflow: visible; padding: 0; box-shadow: none; }
+  #brand-report, #brand-report *, #brief-print, #brief-print *, #product-sheet, #product-sheet *, #budget-report, #budget-report * { visibility: visible; }
+  #brand-report, #brief-print, #product-sheet, #budget-report { position: absolute; left: 0; top: 0; width: 100%; max-width: 100%; height: auto; max-height: none; overflow: visible; padding: 0; box-shadow: none; }
   .no-print { display: none !important; }
+  /* Budget report: stack the side-by-side grids and keep each card whole. */
+  #budget-report .print-stack { display: block !important; }
+  #budget-report .print-stack > * { width: 100% !important; max-width: 100% !important; margin-bottom: 12px; break-inside: avoid; }
+  #budget-report .bg-white { break-inside: avoid; }
   @page { margin: 12mm; size: A4 portrait; }
 }

@@ -253,10 +253,10 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
   const selectedBudgetBrand = budgetBrand !== "all" ? brands.find((b: any) => b.id === budgetBrand) : null;
 
   return (
-    <div className="max-w-screen-2xl mx-auto px-6 py-8 space-y-6">
+    <div id="budget-report" className="max-w-screen-2xl mx-auto px-6 py-8 space-y-6">
 
       {/* Brand selector — drill into a single brand's budget */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap no-print">
         {selectedBudgetBrand && (
           <button onClick={() => setBudgetBrand("all")} className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 mr-1">← All brands</button>
         )}
@@ -269,16 +269,18 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
           <option value="all">All Brands (portfolio)</option>
           {budgetBrandList.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
         </select>
-        {canEdit && (
-          <div className="ml-auto flex items-center gap-2">
-            {budgetMsg && <span className={`text-[11px] ${budgetMsg.startsWith("✓") ? "text-emerald-600" : "text-rose-500"}`}>{budgetMsg}</span>}
-            <button onClick={() => setShowEdit(s => !s)} className="text-xs font-medium text-slate-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3 py-1.5">{showEdit ? "Close edit" : "Quick edit (annual)"}</button>
-          </div>
-        )}
+        <div className="ml-auto flex items-center gap-2">
+          {budgetMsg && <span className={`text-[11px] ${budgetMsg.startsWith("✓") ? "text-emerald-600" : "text-rose-500"}`}>{budgetMsg}</span>}
+          {canEdit && <button onClick={() => setShowEdit(s => !s)} className="text-xs font-medium text-slate-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3 py-1.5">{showEdit ? "Close edit" : "Quick edit (annual)"}</button>}
+          <button onClick={() => window.print()} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-3.5 py-1.5 transition shadow-sm">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z" /></svg>
+            Print / Save as PDF
+          </button>
+        </div>
       </div>
 
       {canEdit && showEdit && (
-        <div className="bg-white rounded-2xl border border-emerald-200 shadow-sm p-4">
+        <div className="bg-white rounded-2xl border border-emerald-200 shadow-sm p-4 no-print">
           <p className="text-sm font-semibold text-slate-700 mb-1">Edit budgets · {fyLabel}</p>
           <p className="text-[11px] text-gray-400 mb-3">Annual budget per brand × channel. Edit a value and click away to save (the page reloads). Use the CSV upload to add new rows.</p>
           {marketingBudgets.length === 0 ? (
@@ -329,8 +331,13 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
       ) : (
       <>
       {canEdit && (
-        <BudgetDataTools brands={brands} marketingBudgets={marketingBudgets} monthKeys={MONTH_KEYS} fy={fy} fyLabel={fyLabel} topups={topups} />
+        <div className="no-print"><BudgetDataTools brands={brands} marketingBudgets={marketingBudgets} monthKeys={MONTH_KEYS} fy={fy} fyLabel={fyLabel} topups={topups} /></div>
       )}
+      {/* Print-only title */}
+      <div className="hidden print:block">
+        <h1 className="text-xl font-bold text-slate-800">Marketing Budget — {fyLabel}</h1>
+        <p className="text-xs text-gray-400">Portfolio · budget vs actual spend</p>
+      </div>
       {/* KPI strip */}
       <div className="grid grid-cols-4 gap-4">
         {[
@@ -348,7 +355,7 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
       </div>
 
       {/* Sales vs Spend line + Utilisation donut */}
-      <div className="grid grid-cols-5 gap-6">
+      <div className="grid grid-cols-5 gap-6 print-stack">
         <div className="col-span-3 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <h2 className="font-semibold text-gray-800 mb-0.5">Monthly sales vs marketing spend</h2>
           <p className="text-xs text-gray-400 mb-4">Sales (solid, left axis) · spend (dashed, right axis)</p>
@@ -394,7 +401,7 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
       </div>
 
       {/* Channel donuts */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-2 gap-6 print-stack">
         {[
           { title: "Marketing budget by channel", sub: `Planned ${fyLabel} budget across channels`, data: budgetDonutData, total: totalBudget, totals: channelTotals.map(c => c.budget) },
           { title: "Spend by channel",             sub: `Actual ${fyLabel} spend across channels`,  data: actualDonutData, total: totalActual, totals: channelTotals.map(c => c.actual) },
@@ -432,7 +439,7 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
       </div>
 
       {/* Portfolio visuals */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 print-stack">
         {/* Cumulative pacing */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <h2 className="font-semibold text-gray-800 mb-0.5">Cumulative pacing</h2>
