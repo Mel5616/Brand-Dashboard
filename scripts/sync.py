@@ -11,6 +11,21 @@ import json, ssl, urllib.request, urllib.parse, os
 from datetime import datetime, date as _date, timedelta as _td
 from collections import defaultdict
 
+# ── Store timezone ────────────────────────────────────────────────────────────
+# Shopify returns order createdAt in UTC, but the Shopify admin reports revenue
+# in the shop's local timezone. Bucket by the store-local date so our daily /
+# weekly / monthly figures reconcile with what Shopify shows.
+try:
+    from zoneinfo import ZoneInfo
+    STORE_TZ = ZoneInfo('Australia/Melbourne')  # AEST/AEDT, observes daylight saving
+except Exception:  # tzdata unavailable on the runner — fall back to fixed AEST (+10)
+    from datetime import timezone as _tz
+    STORE_TZ = _tz(_td(hours=10))
+
+def local_date(iso):
+    """UTC ISO timestamp (…Z) -> store-local calendar date 'YYYY-MM-DD'."""
+    return datetime.fromisoformat(iso.replace('Z', '+00:00')).astimezone(STORE_TZ).date().isoformat()
+
 # ── Config ────────────────────────────────────────────────────────────────────
 BASE_DIR     = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_PATH  = os.path.join(BASE_DIR, 'stores.config.json')
@@ -38,7 +53,7 @@ SUPABASE_ANON_KEY = os.environ.get('NEXT_PUBLIC_SUPABASE_ANON_KEY', '')
 SUPABASE_SVC_KEY  = os.environ.get('SUPABASE_SERVICE_ROLE_KEY', '')
 
 # ── Weekly buckets: last 13 weeks (rolling) ───────────────────────────────────
-_today     = _date.today()
+_today     = datetime.now(STORE_TZ).date()  # "today" in the store's timezone
 _cws       = _today - _td(days=_today.weekday())
 WEEK_STARTS = [(_cws - _td(weeks=i)).isoformat() for i in range(12, -1, -1)]
 WEEK_LABELS = [_date.fromisoformat(w).strftime('%-d %b') for w in WEEK_STARTS]
@@ -234,9 +249,10 @@ def compute_metrics(orders, refunded_orders=None, sales_start=None):
 
     for edge in orders:
         node  = edge['node']
-        if sales_start and node['createdAt'][:10] < sales_start:
+        day_k = local_date(node['createdAt'])
+        if sales_start and day_k < sales_start:
             continue  # brand only started selling on/after this date
-        ym    = node['createdAt'][:7]
+        ym    = day_k[:7]
         gross = float(node['totalPriceSet']['shopMoney']['amount'])
         tax   = float(node.get('totalTaxSet', {}).get('shopMoney', {}).get('amount', 0))
         amt   = (gross - tax) if tax > 0 else round(gross / 1.1, 2)
@@ -244,7 +260,6 @@ def compute_metrics(orders, refunded_orders=None, sales_start=None):
         monthly_rev[ym]   += amt
         monthly_count[ym] += 1
 
-        day_k = node['createdAt'][:10]
         d_obj = _date.fromisoformat(day_k)
         ws    = (d_obj - _td(days=d_obj.weekday())).isoformat()
         weekly_rev[ws]   += amt
@@ -280,9 +295,10 @@ def compute_metrics(orders, refunded_orders=None, sales_start=None):
     # Fully-refunded orders (separate query)
     for edge in (refunded_orders or []):
         node  = edge['node']
-        if sales_start and node['createdAt'][:10] < sales_start:
+        r_day = local_date(node['createdAt'])
+        if sales_start and r_day < sales_start:
             continue
-        ym    = node['createdAt'][:7]
+        ym    = r_day[:7]
         if ym not in MONTH_KEYS:
             continue
         gross = float(node['totalPriceSet']['shopMoney']['amount'])
@@ -343,8 +359,8 @@ def compute_coolkidz_split(ck_orders, start_dates=None):
     split = {}
     for idx, edge in enumerate(ck_orders):
         node = edge['node']
-        day  = node['createdAt'][:10]
-        ym   = node['createdAt'][:7]
+        day  = local_date(node['createdAt'])
+        ym   = day[:7]
         d    = _date.fromisoformat(day)
         ws   = (d - _td(days=d.weekday())).isoformat()
         for li in node.get('lineItems', {}).get('edges', []):
