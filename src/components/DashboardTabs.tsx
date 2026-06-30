@@ -279,6 +279,7 @@ export function DashboardTabs({
   const [reportsOpen, setReportsOpen] = useState<boolean>(() => REPORT_IDS.includes(firstTab));
   const [influencersOpen, setInfluencersOpen] = useState<boolean>(() => INFLUENCER_IDS.includes(firstTab));
   const [partnershipsOpen, setPartnershipsOpen] = useState<boolean>(() => PARTNERSHIP_IDS.includes(firstTab));
+  const [mobileNavOpen, setMobileNavOpen] = useState(false); // slide-in nav drawer on small screens
   // Activity tracking: record which tab/page the user is viewing.
   useEffect(() => {
     const label = TABS.find(t => t.id === active)?.label ?? active;
@@ -360,12 +361,33 @@ export function DashboardTabs({
     { label: "Tradeshows",         value: String(tradeshows.length), sub: `${tradeshows.filter((t: any) => new Date() < new Date(t.date_start)).length} upcoming` },
   ];
 
-  function openBrand(id: number) { setBrandFilter(id); setActive("brands"); }
-  function goHome() { setBrandFilter("all"); }
+  function openBrand(id: number) { setBrandFilter(id); setActive("brands"); setMobileNavOpen(false); }
+  function goHome() { setBrandFilter("all"); setMobileNavOpen(false); }
+  // Navigate to a tab and close the mobile drawer (no-op on desktop).
+  function go(id: TabId) { setActive(id); setMobileNavOpen(false); }
 
   // ── Sidebar ──────────────────────────────────────────────────────────────────
   const Sidebar = () => (
-    <aside className="fixed top-[57px] left-0 w-[288px] h-[calc(100vh-57px)] bg-white border-r border-gray-200 flex flex-col z-10 overflow-y-auto">
+    <>
+      {/* Mobile: hamburger button (hidden once the drawer is open) */}
+      <button
+        type="button"
+        onClick={() => setMobileNavOpen(true)}
+        aria-label="Open menu"
+        className={`lg:hidden fixed top-2.5 left-3 z-30 inline-flex items-center justify-center w-9 h-9 rounded-lg bg-white border border-gray-200 shadow-sm text-gray-700 hover:bg-gray-50 ${mobileNavOpen ? "opacity-0 pointer-events-none" : ""}`}
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+      </button>
+      {/* Mobile: backdrop behind the drawer */}
+      {mobileNavOpen && <div className="lg:hidden fixed left-0 right-0 bottom-0 top-[57px] bg-black/40 z-20" onClick={() => setMobileNavOpen(false)} />}
+    <aside className={`fixed top-[57px] left-0 w-[288px] h-[calc(100vh-57px)] bg-white border-r border-gray-200 flex flex-col z-20 lg:z-10 overflow-y-auto transform transition-transform duration-200 ease-out lg:translate-x-0 ${mobileNavOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"}`}>
+      {/* Mobile: close the drawer */}
+      <div className="lg:hidden flex justify-end px-2 pt-2">
+        <button type="button" onClick={() => setMobileNavOpen(false)} aria-label="Close menu"
+          className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
       {/* Financial year + month selectors — global across all pages */}
       <div className="px-4 py-3 border-b border-gray-100 space-y-2.5">
         <div>
@@ -420,7 +442,7 @@ export function DashboardTabs({
           const Btn = (tab: typeof TABS[number]) => {
             const isActive = active === tab.id && !(selectedBrand && active === "brands");
             return (
-              <button key={tab.id} onClick={() => setActive(tab.id)}
+              <button key={tab.id} onClick={() => go(tab.id)}
                 className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${
                   isActive ? "bg-emerald-50 text-emerald-600 font-semibold shadow-sm ring-1 ring-emerald-100" : "text-gray-500 hover:bg-gray-100/70 hover:text-gray-700"}`}>
                 {tab.icon}{tab.label}
@@ -494,7 +516,7 @@ export function DashboardTabs({
       )}
       {visibleTabs.some(t => t.id === "team") && (
         <div className="px-2 py-2 border-t border-gray-100">
-          <button onClick={() => setActive("team")}
+          <button onClick={() => go("team")}
             className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${
               active === "team" ? "bg-emerald-50 text-emerald-600 font-semibold ring-1 ring-emerald-100" : "bg-gray-50 text-gray-500 hover:bg-gray-100 hover:text-gray-700"}`}>
             {TABS.find(t => t.id === "team")!.icon}Team
@@ -505,6 +527,7 @@ export function DashboardTabs({
         <SyncStatus lastSync={lastSync ?? null} isAdmin={role === "admin"} />
       </div>
     </aside>
+    </>
   );
 
   // ── Brand page view ──────────────────────────────────────────────────────────
@@ -514,7 +537,7 @@ export function DashboardTabs({
     return (
       <>
         <Sidebar />
-        <div className="ml-[288px]">
+        <div className="lg:ml-[288px]">
           <div className="flex justify-end mb-3">
             <button
               onClick={() => setActive("report")}
