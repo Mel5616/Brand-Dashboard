@@ -710,6 +710,7 @@ export function DashboardTabs({
                 monthKeys={monthKeys} monthLabels={monthLabels} latestI={latestI}
                 channelSales={channelSales} tradeshows={tradeshows} tradeshowSales={tradeshowSales}
                 shopifySources={shopifySources} latest={LATEST} fyLabel={fyLabel}
+                googleAds={googleAds} metaAds={metaAds} marketingActuals={marketingActuals}
               />
 
               {/* Channel sales board — one card per channel so the split is clear at a glance */}

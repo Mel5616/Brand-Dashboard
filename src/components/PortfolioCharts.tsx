@@ -27,11 +27,25 @@ export function Sparkline({ data, color = "#1e3a5f" }: { data: number[]; color?:
 
 // Whole-portfolio visuals for the overview: trend vs target, channel mix over time,
 // brand contribution, and the biggest YoY movers.
-export function PortfolioCharts({ brands, tiers, monthly, targets, monthKeys, monthLabels, channelSales, tradeshows, tradeshowSales, shopifySources, latest, fyLabel }: any) {
+export function PortfolioCharts({ brands, tiers, monthly, targets, monthKeys, monthLabels, channelSales, tradeshows, tradeshowSales, shopifySources, latest, fyLabel, googleAds = [], metaAds = [], marketingActuals = [] }: any) {
   const labels = monthLabels;
 
   const monthlyRev = monthKeys.map((mk: string) => sum(monthly.filter((m: any) => m.month_key === mk).map((m: any) => m.revenue)));
   const monthlyTarget = monthKeys.map((mk: string) => sum(targets.filter((t: any) => t.month_key === mk).map((t: any) => t.revenue_target ?? 0)));
+  const monthlySpend = monthKeys.map((mk: string) =>
+    sum(googleAds.filter((r: any) => r.month_key === mk).map((r: any) => r.spend))
+    + sum(metaAds.filter((r: any) => r.month_key === mk).map((r: any) => r.spend))
+    + sum(marketingActuals.filter((a: any) => a.month_key === mk && a.channel !== "Google Advertising" && a.channel !== "Social Media (Meta)").map((a: any) => a.spend)));
+
+  // Tradeshow / expo contribution, derived from the channel build.
+  const trade = useMemo(() => {
+    const biz = buildChannels("all", { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest });
+    const t = biz.find((c: any) => c.name === "Tradeshows");
+    const totalFy = sum(biz.map((c: any) => c.fy));
+    const series = monthKeys.map((_: string, i: number) => t?.series?.[i] ?? 0);
+    const shows = (tradeshows ?? []).length;
+    return { fy: t?.fy ?? 0, pct: totalFy > 0 ? ((t?.fy ?? 0) / totalFy) * 100 : 0, series, shows };
+  }, [brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest]);
 
   // Per-brand FY revenue + YoY (prev_revenue is the same months a year earlier).
   const brandRows = useMemo(() => brands.map((b: any) => {
@@ -136,6 +150,33 @@ export function PortfolioCharts({ brands, tiers, monthly, targets, monthKeys, mo
             </div>
           </div>
         )}
+      </div>
+
+      {/* Marketing spend vs revenue */}
+      <div className={card}>
+        <h3 className="text-sm font-semibold text-slate-700">Marketing spend vs revenue</h3>
+        <p className="text-xs text-gray-400 mb-3">Monthly spend (bars, right) against revenue (line, left)</p>
+        <div className="h-56">
+          <Bar data={{ labels, datasets: [
+            { type: "line" as const, label: "Revenue", data: monthlyRev, borderColor: "#1e3a5f", backgroundColor: "transparent", borderWidth: 2, pointRadius: 0, tension: 0.3, yAxisID: "yRev", order: 1 },
+            { type: "bar" as const, label: "Marketing spend", data: monthlySpend, backgroundColor: "#f97316", borderRadius: 3, yAxisID: "ySpend", order: 2 },
+          ] as any }} options={{ responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false }, plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 }, usePointStyle: true } }, tooltip: { callbacks: { label: (c: any) => ` ${c.dataset.label}: ${fmt(c.parsed.y ?? 0)}` } } }, scales: { x: { grid: { display: false }, ticks: { font: { size: 10 }, color: "#9ca3af" } }, yRev: { position: "left", ticks: { callback: (v: any) => fmt(v), font: { size: 10 }, color: "#9ca3af" }, grid: { color: "#f3f4f6" } }, ySpend: { position: "right", ticks: { callback: (v: any) => fmt(v), font: { size: 10 }, color: "#9ca3af" }, grid: { display: false } } } }} />
+        </div>
+      </div>
+
+      {/* Tradeshow / expo contribution */}
+      <div className={card}>
+        <h3 className="text-sm font-semibold text-slate-700">Tradeshow contribution</h3>
+        <p className="text-xs text-gray-400 mb-3">{fyLabel} · expo &amp; booth revenue</p>
+        <div className="flex items-center gap-5 mb-3">
+          <div><p className="text-2xl font-bold text-slate-800">{fmt(trade.fy)}</p><p className="text-[11px] text-gray-400">tradeshow revenue</p></div>
+          <div><p className="text-2xl font-bold" style={{ color: channelColor("Tradeshows") }}>{trade.pct.toFixed(1)}%</p><p className="text-[11px] text-gray-400">of total revenue</p></div>
+          <div><p className="text-2xl font-bold text-slate-800">{trade.shows}</p><p className="text-[11px] text-gray-400">shows</p></div>
+        </div>
+        <div className="h-32">
+          <Bar data={{ labels, datasets: [{ label: "Tradeshows", data: trade.series, backgroundColor: channelColor("Tradeshows"), borderRadius: 3 }] }}
+            options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c: any) => ` ${fmt(c.parsed.y ?? 0)}` } } }, scales: baseScales }} />
+        </div>
       </div>
     </div>
   );
