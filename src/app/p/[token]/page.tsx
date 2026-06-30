@@ -93,17 +93,20 @@ export default async function ProductShare({ params }: { params: Promise<{ token
         </header>
 
         {/* Title block */}
-        <div className="px-8 flex items-start justify-between gap-6">
-          <div className="flex-1 min-w-0">
-            <h1 className="text-[28px] font-extrabold leading-tight" style={{ color: NAVY }}>{p.name}</h1>
+        <div className="px-8 grid md:grid-cols-2 gap-6 items-start print:grid-cols-2">
+          <div className="min-w-0">
+            <h1 className="text-[22px] font-extrabold leading-tight" style={{ color: NAVY }}>{p.name}</h1>
             <span className="inline-block mt-2.5 text-white text-[11px] font-bold uppercase tracking-[0.07em] px-3.5 py-1.5 rounded-md" style={{ background: accent }}>{brand ?? "Coolkidz"}</span>
             <p className="mt-2 text-[11px] text-slate-500">
               <span className="font-semibold" style={{ color: st.bg }}>{st.label}</span>{launch ? ` · launches ${launch}` : ""}
             </p>
           </div>
-          {p.attrs?.image_url && (
-            <img src={p.attrs.image_url} alt={p.name} className="w-[150px] h-[150px] shrink-0 object-contain rounded-lg bg-slate-50 border border-slate-100" />
-          )}
+          {/* Square image placeholder — fills the column and always stays square */}
+          <div className="w-full aspect-square rounded-xl bg-slate-50 border border-slate-100 overflow-hidden grid place-items-center">
+            {p.attrs?.image_url
+              ? <img src={p.attrs.image_url} alt={p.name} className="w-full h-full object-cover" />
+              : <span className="text-[11px] uppercase tracking-[0.12em] text-slate-300">No image</span>}
+          </div>
         </div>
 
         {/* Body — description (left) + specs/features (right) */}
