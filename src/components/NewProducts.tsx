@@ -29,6 +29,7 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
   const [edit, setEdit] = useState<any>(null);          // shared copy fields (from the representative)
   const [busy, setBusy] = useState("");
   const [msg, setMsg] = useState("");
+  const [brandFilter, setBrandFilter] = useState<number | "all">("all");
   const fileRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<HTMLInputElement>(null);
   const imgTarget = useRef<string | null>(null);        // which variant id an uploaded image is for
@@ -44,6 +45,11 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
   for (const p of products) { const k = groupKeyOf(p); (map.get(k) ?? map.set(k, []).get(k)!).push(p); }
   const groups = [...map.entries()].map(([key, members]) => ({ key, members, title: commonPrefix(members.map(m => m.name)) }))
     .sort((a, b) => a.title.localeCompare(b.title));
+
+  // Brand filter — only list brands that actually have products.
+  const brandName = new Map(brands.map(b => [b.id, b.name]));
+  const presentBrandIds = [...new Set(groups.map(g => g.members[0].brand_id).filter((x: any) => x != null))].sort((a, b) => (brandName.get(a) || "").localeCompare(brandName.get(b) || ""));
+  const visibleGroups = brandFilter === "all" ? groups : groups.filter(g => g.members[0].brand_id === brandFilter);
 
   const open = groups.find(g => g.key === openKey) || null;
   const rep = open?.members[0];
@@ -150,20 +156,28 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
     <div className="space-y-4">
       <input ref={imgRef} type="file" accept="image/*" onChange={uploadImage} className="hidden" />
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="text-xs text-gray-400">{groups.length} product line{groups.length === 1 ? "" : "s"}{msg && <span className="ml-2 text-emerald-500 font-medium">{msg}</span>}</div>
-        {canEdit && (
-          <div>
-            <input ref={fileRef} type="file" accept=".xlsx,.xls" onChange={handleFile} className="hidden" />
-            <button onClick={() => fileRef.current?.click()} disabled={busy === "import"} className="text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg px-4 py-2 disabled:opacity-60">{busy === "import" ? "Importing…" : "Upload Excel"}</button>
-          </div>
-        )}
+        <div className="text-xs text-gray-400">{visibleGroups.length}{brandFilter !== "all" ? ` of ${groups.length}` : ""} product line{visibleGroups.length === 1 ? "" : "s"}{msg && <span className="ml-2 text-emerald-500 font-medium">{msg}</span>}</div>
+        <div className="flex items-center gap-2">
+          {presentBrandIds.length > 1 && (
+            <select value={String(brandFilter)} onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))} className="text-sm border border-gray-200 rounded-lg px-2.5 py-2 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
+              <option value="all">All brands</option>
+              {presentBrandIds.map((id: any) => <option key={id} value={id}>{brandName.get(id) ?? `Brand ${id}`}</option>)}
+            </select>
+          )}
+          {canEdit && (
+            <>
+              <input ref={fileRef} type="file" accept=".xlsx,.xls" onChange={handleFile} className="hidden" />
+              <button onClick={() => fileRef.current?.click()} disabled={busy === "import"} className="text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg px-4 py-2 disabled:opacity-60">{busy === "import" ? "Importing…" : "Upload Excel"}</button>
+            </>
+          )}
+        </div>
       </div>
 
       {groups.length === 0 ? (
         <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-10 text-center text-sm text-gray-400">Upload your New Products Excel to get started.</div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {groups.map(g => {
+          {visibleGroups.map(g => {
             const r = g.members[0]; const st = statusOf(r.status);
             const img = g.members.find(m => m.attrs?.image_url)?.attrs?.image_url;
             const ready = g.members.every(m => m.long_description);
