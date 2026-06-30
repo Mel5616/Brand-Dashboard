@@ -29,7 +29,8 @@ function SpecIcon({ name }: { name: string }) {
     case "Weight": return (<svg {...c}><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" /><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" /><path d="M7 21h10" /><path d="M12 3v18" /><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2" /></svg>);
     case "SKU": return (<svg {...c}><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" /><line x1="7" y1="7" x2="7.01" y2="7" /></svg>);
     case "Barcode": return (<svg {...c}><path d="M3 5v14" /><path d="M8 5v14" /><path d="M12 5v14" /><path d="M17 5v14" /><path d="M21 5v14" /></svg>);
-    case "RRP": return (<svg {...c}><circle cx="12" cy="12" r="10" /><path d="M14.5 9a2.5 2.5 0 0 0-2.5-1.5h-.5a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4h-.5A2.5 2.5 0 0 1 9.5 15" /><path d="M12 6v1.5M12 16.5V18" /></svg>);
+    case "RRP":
+    case "Wholesale": return (<svg {...c}><circle cx="12" cy="12" r="10" /><path d="M14.5 9a2.5 2.5 0 0 0-2.5-1.5h-.5a2 2 0 0 0 0 4h1a2 2 0 0 1 0 4h-.5A2.5 2.5 0 0 1 9.5 15" /><path d="M12 6v1.5M12 16.5V18" /></svg>);
     default: return null;
   }
 }
@@ -110,7 +111,8 @@ export default async function ProductShare({ params }: { params: Promise<{ token
   const specRows: [string, string][] = [];
   if (dims) specRows.push(["Dimensions", dims]);
   if (p.weight != null) specRows.push(["Weight", `${p.weight} kg`]);
-  if (p.rrp != null) specRows.push(["RRP", money(p.rrp)]); // wholesale stays on the internal PDF only
+  if (p.rrp != null) specRows.push(["RRP", money(p.rrp)]);
+  if (p.wholesale_price != null) specRows.push(["Wholesale", money(p.wholesale_price)]);
   if (!multi) {
     if (p.sku) specRows.push(["SKU", p.sku]);
     if (p.barcode) specRows.push(["Barcode", p.barcode]);
