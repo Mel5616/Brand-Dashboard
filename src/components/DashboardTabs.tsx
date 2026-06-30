@@ -19,6 +19,7 @@ import { InsightsPanel } from "./InsightsPanel";
 import { SocialPanel } from "./SocialPanel";
 import { SalesPanel } from "./SalesPanel";
 import { buildChannels, groupDirect, channelColor, momPct, DIGITAL_CHANNELS } from "@/lib/channels";
+import { PortfolioCharts } from "./PortfolioCharts";
 import { SectionBar } from "./ui";
 import { ProductsTable } from "./ProductsTable";
 import { TradeshowAccordion } from "./TradeshowAccordion";
@@ -652,7 +653,7 @@ export function DashboardTabs({
                 const hasTarget = tgtToDate > 0;
                 const cards = [
                   { label: role === "admin" ? "Total business revenue" : "Digital revenue", value: fmt(total), accent: "#1e3a5f", sub: momSub },
-                  { label: role === "admin" ? "True MER" : "Digital MER", value: mer != null ? mer.toFixed(1) + "%" : "—", accent: "#f97316", sub: undefined as string | undefined },
+                  { label: "Mktg % of sales", value: mer != null ? mer.toFixed(1) + "%" : "—", accent: "#f97316", sub: undefined as string | undefined },
                   { label: "Digital share", value: Math.round(onlinePct) + "%", accent: "#10b981", sub: undefined as string | undefined },
                   { label: "Channels", value: String(visible.length), accent: "#a855f7", sub: undefined as string | undefined },
                 ];
@@ -696,6 +697,14 @@ export function DashboardTabs({
                   </div>
                 );
               })()}
+
+              {/* Portfolio trend, channel mix, brand contribution, top movers */}
+              <PortfolioCharts
+                brands={brands.filter((b: any) => b.live)} tiers={BRAND_TIERS} monthly={monthly} targets={targets}
+                monthKeys={monthKeys} monthLabels={monthLabels} latestI={latestI}
+                channelSales={channelSales} tradeshows={tradeshows} tradeshowSales={tradeshowSales}
+                shopifySources={shopifySources} latest={LATEST} fyLabel={fyLabel}
+              />
 
               {/* Channel sales board — one card per channel so the split is clear at a glance */}
               {(() => {
