@@ -20,7 +20,6 @@ export default async function Dashboard(props: { searchParams: Promise<{ preview
   const access = previewId ? await getAccessForUser(previewId) : real;
   const previewing = previewId && access.user ? access.user.email : null;
   const isAdmin = access.role === "admin";
-  const canSeeBudget = isAdmin || access.allowedTabs.includes("budget"); // budget is view-only for granted users
 
   if (!access.user || (access.role === "member" && access.allowedTabs.length === 0)) {
     return (
@@ -125,8 +124,8 @@ export default async function Dashboard(props: { searchParams: Promise<{ preview
         targets={targets}
         klaviyo={klaviyo}
         ga4={ga4}
-        marketingBudgets={canSeeBudget ? marketingBudgets : []}
-        marketingActuals={canSeeBudget ? marketingActuals : []}
+        marketingBudgets={marketingBudgets}
+        marketingActuals={marketingActuals}
         googleAdsCampaigns={googleAdsCampaigns}
         calendarEvents={calendarEvents}
         gscMetrics={gscMetrics}

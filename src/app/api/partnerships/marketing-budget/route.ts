@@ -10,7 +10,7 @@ const hdr = { apikey: sbKey!, Authorization: `Bearer ${sbKey}` };
 const CHANNEL = "Partnerships & Affiliates";
 
 export async function GET() {
-  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, rows: [] }, { status: 403 });
+  if (!(await getAccess()).role) return NextResponse.json({ ok: false, rows: [] }, { status: 401 }); // read: any signed-in user
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false, rows: [] }, { status: 500 });
   const ch = encodeURIComponent(CHANNEL);
   const [tRes, bRes] = await Promise.all([

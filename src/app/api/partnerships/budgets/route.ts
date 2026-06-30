@@ -10,7 +10,7 @@ const missing = (s: number, b: string) => s === 404 || /PGRST205|does not exist|
 
 export async function GET() {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false, budgets: [] }, { status: 500 });
-  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden", budgets: [] }, { status: 403 });
+  if (!(await getAccess()).role) return NextResponse.json({ ok: false, error: "unauthorised", budgets: [] }, { status: 401 }); // read: any signed-in user
   const res = await fetch(`${sbUrl}/rest/v1/partnership_budgets?select=*`, { headers: headers(), cache: "no-store" });
   const text = await res.text();
   if (!res.ok) return NextResponse.json({ ok: false, needsSetup: missing(res.status, text), budgets: [] });

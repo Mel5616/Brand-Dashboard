@@ -268,8 +268,9 @@ export function DashboardTabs({
   semrushKeywords, semrushPages, brandInsights, instagramMedia, channelSales, shopifySources, eventbriteEvents, asanaTasks,
   role = "admin", allowedTabs, currentEmail, lastSync,
 }: Props) {
-  // Financial tabs admin-only even if otherwise granted (budget is excluded: view-only is allowed).
-  const FINANCIAL = ["influencer", "snapshot", "uppababy"];
+  // No tab is hard-locked from members anymore — granted sections are viewable
+  // (read-only); each section keeps its own admin gate on edit/upload/export.
+  const FINANCIAL: string[] = [];
   // Tabs this user may open (admin → all). Filter the nav + guard the active tab.
   const visibleTabs = role === "admin"
     ? TABS
@@ -1596,14 +1597,14 @@ export function DashboardTabs({
             </>
           )}
 
-          {/* ── Partnerships & Affiliates (admin) ── */}
-          {active === "pa-budget" && role === "admin" && (
+          {/* ── Partnerships & Affiliates ── */}
+          {active === "pa-budget" && (
             <>
               <SectionBar title="Partnerships & Affiliates · Budget" />
               <PartnershipsBudget />
             </>
           )}
-          {active === "pa-tracker" && role === "admin" && (
+          {active === "pa-tracker" && (
             <>
               <SectionBar title="Partnerships & Affiliates · Tracker" />
               <PartnershipsTracker />

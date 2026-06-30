@@ -22,8 +22,8 @@ const sb = (path: string) => fetch(`${sbUrl}/rest/v1/${path}`, { headers: header
 
 export async function GET() {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false, entries: [] }, { status: 500 });
-  // cost data — admin only
-  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden", entries: [] }, { status: 403 });
+  // read: any signed-in user (Management view-only). The write handlers stay admin-only.
+  if (!(await getAccess()).role) return NextResponse.json({ ok: false, error: "unauthorised", entries: [] }, { status: 401 });
   const res = await sb(`influencer_entries?select=*&order=created_at.desc`);
   const text = await res.text();
   if (!res.ok) return NextResponse.json({ ok: false, needsSetup: missing(res.status, text), entries: [] });
