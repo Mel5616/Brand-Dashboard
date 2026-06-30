@@ -12,6 +12,14 @@ type Props = Omit<SnapshotInput, "brand" | "note"> & {
 
 export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, monthKeys, monthLabels, fyLabel, ...data }: Props) {
   const frameRef = useRef<HTMLIFrameElement>(null);
+  const [frameH, setFrameH] = useState(1680);
+  // Auto-size the iframe to its content so there's no fixed-height gap or clipping.
+  function fitFrame() {
+    const d = frameRef.current?.contentDocument;
+    if (!d) return;
+    const h = Math.max(d.body?.scrollHeight || 0, d.documentElement?.scrollHeight || 0);
+    if (h > 0) setFrameH(h + 4);
+  }
   const live = brands.filter(b => b.live !== false);
   // A snapshot is per brand — fall back to the first live brand when "all" is selected.
   const brandId = selected === "all" ? (live[0]?.id ?? brands[0]?.id) : selected;
@@ -116,6 +124,13 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
   }
 
   function printIt() { const win = frameRef.current?.contentWindow; if (win) { win.focus(); win.print(); } }
+
+  // Re-measure after the report renders (charts/SVG/fonts reflow) and on resize.
+  useEffect(() => {
+    const timers = [60, 400, 1200].map(ms => setTimeout(fitFrame, ms));
+    window.addEventListener("resize", fitFrame);
+    return () => { timers.forEach(clearTimeout); window.removeEventListener("resize", fitFrame); };
+  }, [html]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!brand) return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">No brand to report on.</div>;
 
@@ -233,7 +248,7 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
 
       {/* Rendered in an isolated iframe so the report's own styles match the sample exactly. */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <iframe ref={frameRef} title="snapshot" srcDoc={html} className="w-full" style={{ height: "1680px", border: 0 }} />
+        <iframe ref={frameRef} title="Performance snapshot" srcDoc={html} onLoad={fitFrame} className="w-full" style={{ height: `${frameH}px`, border: 0 }} />
       </div>
     </div>
   );
