@@ -4,14 +4,14 @@ import { useState, useEffect } from "react";
 import { BrandBudgetOverview } from "./BrandBudgetOverview";
 import { BudgetDataTools } from "./BudgetDataTools";
 import {
-  Chart as ChartJS, ArcElement, CategoryScale, LinearScale,
+  Chart as ChartJS, ArcElement, BarElement, CategoryScale, LinearScale,
   LineElement, PointElement, Filler, Tooltip, Legend,
 } from "chart.js";
-import { Doughnut, Line } from "react-chartjs-2";
+import { Doughnut, Line, Bar } from "react-chartjs-2";
 import { fmtFull, fmt } from "@/lib/format";
 import type { MarketingBudget, MarketingActual, GoogleAdsRow, MetaAdsRow, BrandMonthly } from "@/lib/db";
 
-ChartJS.register(ArcElement, CategoryScale, LinearScale, LineElement, PointElement, Filler, Tooltip, Legend);
+ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, LineElement, PointElement, Filler, Tooltip, Legend);
 
 const DEFAULT_MONTH_KEYS   = ["2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06"];
 const DEFAULT_MONTH_LABELS = ["Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr","May","Jun"];
@@ -139,6 +139,16 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
   const monthlyRevenue = MONTH_KEYS.map(mk =>
     monthly.filter(m => m.month_key === mk).reduce((s, m) => s + m.revenue, 0)
   );
+
+  // ── Portfolio visual series ─────────────────────────────────────────────────
+  const chanColor = (ch: string, i: number) => CHANNEL_COLORS[ch] ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length];
+  const monthlyBudgetTotals = MONTH_KEYS.map(mk => marketingBudgets.reduce((s, b) => s + monthBudgetVal(b.brand_id, b.channel, mk, b.annual_budget), 0));
+  const cumSeries = (arr: number[]) => arr.reduce((acc: number[], v, i) => { acc.push((acc[i - 1] ?? 0) + v); return acc; }, []);
+  const cumBudget = cumSeries(monthlyBudgetTotals);
+  const cumSpend = cumSeries(monthlySpend);
+  // monthly budget per channel (for the stacked mix)
+  const budgetByChannelMonth = channels.map(ch => MONTH_KEYS.map(mk => marketingBudgets.filter(b => b.channel === ch).reduce((s, b) => s + monthBudgetVal(b.brand_id, ch, mk, b.annual_budget), 0)));
+  const baseScales: any = { x: { grid: { display: false }, ticks: { font: { size: 10 }, color: "#9ca3af" } }, y: { ticks: { callback: (v: number) => fmt(v), font: { size: 10 }, color: "#9ca3af" }, grid: { color: "#f3f4f6" } } };
 
   // Donut data — budget by channel
   const budgetDonutData = {
@@ -419,6 +429,66 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Portfolio visuals */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Cumulative pacing */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h2 className="font-semibold text-gray-800 mb-0.5">Cumulative pacing</h2>
+          <p className="text-xs text-gray-400 mb-4">Spend to date vs the budget plan · above the line is ahead of plan</p>
+          <div className="h-56">
+            <Line
+              data={{ labels: MONTH_LABELS, datasets: [
+                { label: "Budget (plan)", data: cumBudget, borderColor: "#94a3b8", borderDash: [5, 4], borderWidth: 2, pointRadius: 0, fill: false, tension: 0.3 },
+                { label: "Actual", data: cumSpend, borderColor: "#2e4057", backgroundColor: "#2e405722", borderWidth: 2, pointRadius: 0, fill: true, tension: 0.3 },
+              ] }}
+              options={{ responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false }, plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 }, usePointStyle: true } }, tooltip: { callbacks: { label: (ctx: any) => ` ${ctx.dataset.label}: ${fmtFull(ctx.parsed.y ?? 0)}` } } }, scales: baseScales }}
+            />
+          </div>
+        </div>
+
+        {/* Monthly budget mix by channel */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h2 className="font-semibold text-gray-800 mb-0.5">Monthly budget mix by channel</h2>
+          <p className="text-xs text-gray-400 mb-4">How the planned spend shifts across the year</p>
+          <div className="h-56">
+            <Bar
+              data={{ labels: MONTH_LABELS, datasets: channels.map((ch, i) => ({ label: ch, data: budgetByChannelMonth[i], backgroundColor: chanColor(ch, i), borderRadius: 2, stack: "b" })) }}
+              options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx: any) => ` ${ctx.dataset.label}: ${fmtFull(ctx.parsed.y ?? 0)}` } } }, scales: { x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 }, color: "#9ca3af" } }, y: { stacked: true, ticks: { callback: (v: any) => fmt(v), font: { size: 10 }, color: "#9ca3af" }, grid: { color: "#f3f4f6" } } } }}
+            />
+          </div>
+        </div>
+
+        {/* Budget vs actual by brand */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h2 className="font-semibold text-gray-800 mb-0.5">Budget vs actual by brand</h2>
+          <p className="text-xs text-gray-400 mb-4">{fyLabel} to date</p>
+          <div style={{ height: Math.max(220, brandSummaries.length * 26) }}>
+            <Bar
+              data={{ labels: brandSummaries.map(b => b.brand.name), datasets: [
+                { label: "Budget", data: brandSummaries.map(b => b.budget), backgroundColor: "#e2e8f0", borderRadius: 3 },
+                { label: "Actual", data: brandSummaries.map(b => b.actual), backgroundColor: brandSummaries.map(b => b.brand.color), borderRadius: 3 },
+              ] }}
+              options={{ indexAxis: "y" as const, responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 }, usePointStyle: true } }, tooltip: { callbacks: { label: (ctx: any) => ` ${ctx.dataset.label}: ${fmtFull(ctx.parsed.x ?? 0)}` } } }, scales: { x: { ticks: { callback: (v: any) => fmt(v), font: { size: 10 }, color: "#9ca3af" }, grid: { color: "#f3f4f6" } }, y: { grid: { display: false }, ticks: { font: { size: 10 }, color: "#6b7280" } } } }}
+            />
+          </div>
+        </div>
+
+        {/* Budget vs actual by channel */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <h2 className="font-semibold text-gray-800 mb-0.5">Budget vs actual by channel</h2>
+          <p className="text-xs text-gray-400 mb-4">{fyLabel} to date</p>
+          <div style={{ height: Math.max(220, channelTotals.length * 26) }}>
+            <Bar
+              data={{ labels: channelTotals.map(c => c.channel), datasets: [
+                { label: "Budget", data: channelTotals.map(c => c.budget), backgroundColor: "#e2e8f0", borderRadius: 3 },
+                { label: "Actual", data: channelTotals.map(c => c.actual), backgroundColor: channelTotals.map((c, i) => chanColor(c.channel, i)), borderRadius: 3 },
+              ] }}
+              options={{ indexAxis: "y" as const, responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 }, usePointStyle: true } }, tooltip: { callbacks: { label: (ctx: any) => ` ${ctx.dataset.label}: ${fmtFull(ctx.parsed.x ?? 0)}` } } }, scales: { x: { ticks: { callback: (v: any) => fmt(v), font: { size: 10 }, color: "#9ca3af" }, grid: { color: "#f3f4f6" } }, y: { grid: { display: false }, ticks: { font: { size: 10 }, color: "#6b7280" } } } }}
+            />
+          </div>
+        </div>
       </div>
 
       {/* By-brand table */}
