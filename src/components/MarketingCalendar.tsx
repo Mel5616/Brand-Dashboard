@@ -67,9 +67,29 @@ export function MarketingCalendar({ events, brands }: Props) {
     .filter(c => /^\d{4}-\d{2}-\d{2}/.test(c.key_date || ""))
     .map(c => ({ uid: `campaign-${c.id}`, title: c.campaign || "Campaign", description: c.brief?.oneLiner || c.note || "", location: "", start_date: c.key_date.slice(0, 10), end_date: c.key_date.slice(0, 10), all_day: true, brand_id: brandIdByName(c.brand), _isCampaign: true }));
   // New-product launches (from the New Products tab) land on the calendar too.
-  const productEvents: any[] = products
-    .filter(p => /^\d{4}-\d{2}-\d{2}/.test(p.launch_date || ""))
-    .map(p => ({ uid: `product-${p.id}`, title: `${p.name} launch`, description: p.short_description || "", location: "", start_date: p.launch_date.slice(0, 10), end_date: p.launch_date.slice(0, 10), all_day: true, brand_id: p.brand_id ?? null, _isProduct: true }));
+  // Colours of one product line share a base SKU + launch date, so group them
+  // into a single launch event with the generic (colour-less) line name.
+  const baseSku = (sku?: string | null) => { const s = String(sku || "").trim(); return s.includes("-") ? s.slice(0, s.lastIndexOf("-")) : s; };
+  const commonPrefix = (names: string[]) => {
+    if (!names.length) return "";
+    const split = names.map(n => n.trim().split(/\s+/)); const out: string[] = [];
+    for (let i = 0; i < split[0].length; i++) { const w = split[0][i]; if (split.every(s => s[i] === w)) out.push(w); else break; }
+    return out.join(" ").trim() || names[0];
+  };
+  const launchProducts = products.filter(p => /^\d{4}-\d{2}-\d{2}/.test(p.launch_date || ""));
+  const lineGroups = new Map<string, any[]>();
+  for (const p of launchProducts) {
+    const date = p.launch_date.slice(0, 10);
+    const key = `${baseSku(p.sku) || p.name}|${date}`;
+    (lineGroups.get(key) ?? lineGroups.set(key, []).get(key)!).push(p);
+  }
+  const productEvents: any[] = [...lineGroups.values()].map(members => {
+    const m0 = members[0];
+    const date = m0.launch_date.slice(0, 10);
+    const name = members.length > 1 ? commonPrefix(members.map(x => x.name)) : m0.name;
+    const desc = members.length > 1 ? `${members.length} colours · ${m0.short_description || ""}`.trim() : (m0.short_description || "");
+    return { uid: `product-${baseSku(m0.sku) || m0.id}-${date}`, title: `${name} launch`, description: desc, location: "", start_date: date, end_date: date, all_day: true, brand_id: m0.brand_id ?? null, _isProduct: true };
+  });
   // Drop personal/travel noise that syncs in from the shared Apple Calendar.
   const isPersonal = (e: any) => /^\s*(flight|hotel|booking|boarding|check.?in|itinerary|car hire|rental)\b|booking number/i.test(`${e.title || ""} ${e.description || ""}`);
   const allEvents = [...events, ...campaignEvents, ...productEvents].filter(e => !isPersonal(e));
