@@ -103,11 +103,15 @@ export default async function ProductShare({ params }: { params: Promise<{ token
   const launch = p.launch_date ? new Date(p.launch_date + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" }) : null;
   const created = p.created_at ? new Date(p.created_at).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric", timeZone: "Australia/Melbourne" }) : "";
 
+  // For a colour line, dims/weight are shared; SKU + barcode vary per colour and
+  // are shown in the Colours grid, so only list them here for a single product.
   const specRows: [string, string][] = [];
   if (dims) specRows.push(["Dimensions", dims]);
   if (p.weight != null) specRows.push(["Weight", `${p.weight} kg`]);
-  if (p.sku) specRows.push(["SKU", p.sku]);
-  if (p.barcode) specRows.push(["Barcode", p.barcode]);
+  if (!multi) {
+    if (p.sku) specRows.push(["SKU", p.sku]);
+    if (p.barcode) specRows.push(["Barcode", p.barcode]);
+  }
 
   const features = lines(p.features);
   const box = lines(p.whats_in_box);
@@ -140,7 +144,7 @@ export default async function ProductShare({ params }: { params: Promise<{ token
         <div className="px-8 py-6 grid md:grid-cols-2 gap-8 items-start print:grid-cols-2 print:gap-6">
           <div className="min-w-0 space-y-5">
             <div>
-              <h1 className="text-[22px] font-extrabold leading-tight" style={{ color: NAVY }}>{p.name}</h1>
+              <h1 className="text-[22px] font-extrabold leading-tight" style={{ color: NAVY }}>{multi ? groupTitle : p.name}</h1>
               <span className="inline-block mt-2.5 text-white text-[11px] font-bold uppercase tracking-[0.07em] px-3.5 py-1.5 rounded-md" style={{ background: accent }}>{brand ?? "Coolkidz"}</span>
               <p className="mt-2 text-[11px] text-slate-500">
                 {launch
