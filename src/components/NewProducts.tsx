@@ -107,6 +107,27 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
     setProducts(prev => prev.filter(p => !open.members.some(m => m.id === p.id))); setOpenKey(null);
   }
 
+  // Copy a public share link. The Clipboard API is undefined/blocked in some
+  // browsers and webviews, so fall back to a hidden textarea + execCommand and
+  // only report success when a copy path actually worked.
+  async function copyLink(token: string | null | undefined, ok = "Share link copied.") {
+    if (!token) { setMsg("No share link for this product yet."); return; }
+    const url = `${window.location.origin}/p/${token}`;
+    try {
+      if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(url); setMsg(ok); return; }
+    } catch { /* fall through to the textarea fallback */ }
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = url; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      const done = document.execCommand("copy");
+      document.body.removeChild(ta);
+      setMsg(done ? ok : `Couldn't copy automatically — link: ${url}`);
+    } catch {
+      setMsg(`Couldn't copy automatically — link: ${url}`);
+    }
+  }
+
   if (needsSetup) return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
       <p className="text-sm text-gray-500 font-medium">New Products isn’t set up yet</p>
@@ -197,7 +218,7 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
               <div className="flex flex-wrap gap-2 pt-1">
                 {canEdit && <button onClick={save} disabled={busy === "save"} className="text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg px-4 py-2 disabled:opacity-60">{busy === "save" ? "Saving…" : `Save to all ${open.members.length > 1 ? open.members.length + " colours" : ""}`.trim()}</button>}
                 {rep && <a href={`/new-products/${rep.id}/print`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-slate-700 border border-gray-200 hover:bg-gray-50 rounded-lg px-4 py-2">PDF</a>}
-                {rep && <button onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/p/${rep.share_token}`); setMsg("Share link copied."); }} className="text-sm font-medium text-slate-700 border border-gray-200 hover:bg-gray-50 rounded-lg px-4 py-2">Copy share link</button>}
+                {rep && <button onClick={() => copyLink(rep.share_token)} className="text-sm font-medium text-slate-700 border border-gray-200 hover:bg-gray-50 rounded-lg px-4 py-2">Copy share link</button>}
                 {canEdit && <button onClick={delGroup} className="text-sm font-medium text-red-500 hover:bg-red-50 rounded-lg px-3 py-2 ml-auto">Delete</button>}
               </div>
 
@@ -217,7 +238,7 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
                       <div className="flex items-center gap-1.5 shrink-0 text-[11px]">
                         {canEdit && <button onClick={() => pickImage(m.id)} disabled={busy === "image:" + m.id} className="text-emerald-600 hover:underline disabled:opacity-60">{busy === "image:" + m.id ? "…" : m.attrs?.image_url ? "swap" : "image"}</button>}
                         <a href={`/new-products/${m.id}/print`} target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:underline">PDF</a>
-                        <button onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/p/${m.share_token}`); setMsg("Link copied."); }} className="text-slate-500 hover:underline">link</button>
+                        <button onClick={() => copyLink(m.share_token, "Link copied.")} className="text-slate-500 hover:underline">link</button>
                       </div>
                     </div>
                   ))}
