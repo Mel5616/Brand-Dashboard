@@ -57,14 +57,20 @@ export function UppababyReport({ brands, canUpload, month, monthKeys, monthLabel
     const rKeys = fyMonthKeys(rFy), rLabels = fyMonthLabels(rFy), rFyLabel = FY_LABEL[rFy] ?? fyLabel;
     const periodLabel = new Date(ry, (rm || 1) - 1, 1).toLocaleDateString("en-AU", { month: "long", year: "numeric" });
 
-    // UPPAbaby tradeshow (booth) sell-through for the same calendar-YTD window.
+    // The uploaded "Direct Sales" blends Website + Tradeshow. Use LIVE data only to
+    // derive the split %: booth sell-through vs total live D2C for the same YTD window.
+    // (Live differs slightly from the upload — order-created vs dispatch date — so we
+    // show a percentage split, not reconciled dollars.)
     const sum = (a: number[]) => a.reduce((s, v) => s + (v || 0), 0);
     const showMonth = (tid: string) => (data.tradeshows.find((t: any) => t.id === tid)?.date_start ?? "").slice(0, 7);
-    const inYtd = (mk: string) => mk >= `${ry}-01` && mk <= rMonth;
-    const tradeshowYtd = sum(data.tradeshowSales.filter((s: any) => s.brand_id === brand.id && inYtd(showMonth(s.tradeshow_id))).map((s: any) => s.revenue));
+    const calMonths: string[] = [];
+    for (let mo = 1; mo <= rm; mo++) calMonths.push(`${ry}-${String(mo).padStart(2, "0")}`);
+    const tradeshowLive = sum(data.tradeshowSales.filter((s: any) => s.brand_id === brand.id && calMonths.includes(showMonth(s.tradeshow_id))).map((s: any) => s.revenue));
+    const liveDirectTotal = sum(data.monthly.filter((m: any) => m.brand_id === brand.id && calMonths.includes(m.month_key)).map((m: any) => m.revenue));
+    const tradeshowShare = liveDirectTotal > 0 ? Math.min(1, tradeshowLive / liveDirectTotal) : null;
 
     const snap = buildSnapshot({ brand, month: rMonth, monthKeys: rKeys, monthLabels: rLabels, fyLabel: rFyLabel, note: "", ...data });
-    return uppababyHtml(u, snap, periodLabel, tradeshowYtd);
+    return uppababyHtml(u, snap, periodLabel, tradeshowShare);
   }, [brand, rows, fyLabel, data]);
 
   const periodLabel = useMemo(() => {
