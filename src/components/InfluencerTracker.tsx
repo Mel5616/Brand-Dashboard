@@ -46,7 +46,7 @@ alter table influencer_entries disable row level security;
 alter table influencer_budgets disable row level security;
 alter table influencers disable row level security;`;
 
-export function InfluencerTracker() {
+export function InfluencerTracker({ canEdit = false }: { canEdit?: boolean }) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [loading, setLoading] = useState(true);
@@ -230,8 +230,8 @@ export function InfluencerTracker() {
       </div>
 
       {/* Notable influencers overview (avatars, by likes) + product catalogue upload */}
-      <div className="grid lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      <div className={`grid gap-4 ${canEdit ? "lg:grid-cols-3" : ""}`}>
+        <div className={`${canEdit ? "lg:col-span-2" : ""} bg-white rounded-2xl border border-gray-100 shadow-sm p-5`}>
           <h3 className="text-sm font-semibold text-slate-700 mb-3">Notable influencers</h3>
           {(() => {
             const m = new Map<string, { handle: string; likes: number; spend: number }>();
@@ -252,7 +252,7 @@ export function InfluencerTracker() {
             );
           })()}
         </div>
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        {canEdit && <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <h3 className="text-sm font-semibold text-slate-700">Product catalogue</h3>
           <p className="text-[11px] text-gray-400 mt-0.5 mb-3">Upload a CSV to replace the gifting product list (used for cost &amp; ROI). Same template each time.</p>
           <label className={`block text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2 text-center cursor-pointer ${prodBusy ? "opacity-50" : ""}`}>
@@ -262,7 +262,7 @@ export function InfluencerTracker() {
           <button onClick={downloadTemplate} className="mt-2 w-full text-xs font-medium text-slate-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3 py-2">Download template</button>
           {prodMsg && <p className={`text-[11px] mt-2 ${prodMsg.startsWith("✓") ? "text-emerald-600" : "text-rose-500"}`}>{prodMsg}</p>}
           <p className="text-[10px] text-gray-300 mt-2">Columns: style_code, product_name, brand, cost_price, rrp</p>
-        </div>
+        </div>}
       </div>
 
       {/* Brand × month matrix */}
@@ -296,11 +296,13 @@ export function InfluencerTracker() {
                   <td className="py-1.5 px-2 text-slate-700 font-medium sticky left-0 bg-white">{b}</td>
                   {FY_MONTHS.map(m => {
                     const v = cell(b, m.key);
-                    if (view === "budget") return (
+                    if (view === "budget") return canEdit ? (
                       <td key={m.key} className="py-1 px-1 text-right">
                         <input defaultValue={budget[b]?.[m.key] ?? 0} onBlur={e => { const n = Number(e.target.value) || 0; if (n !== (budget[b]?.[m.key] ?? 0)) saveBudget(b, m.key, n); }}
                           className="w-14 text-right text-[11px] text-slate-600 bg-gray-50/60 border border-gray-100 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-emerald-300" />
                       </td>
+                    ) : (
+                      <td key={m.key} className={`py-1.5 px-2 text-right tabular-nums ${v === 0 ? "text-gray-300" : "text-slate-600"}`}>{v === 0 ? "—" : aud(v)}</td>
                     );
                     const over = view === "variance" && v < 0;
                     return <td key={m.key} className={`py-1.5 px-2 text-right tabular-nums ${v === 0 ? "text-gray-300" : view === "variance" ? (v < 0 ? "text-rose-500" : "text-emerald-600") : "text-slate-600"}`}>{v === 0 ? "—" : (view === "variance" && v > 0 ? "+" : "") + aud(v)}</td>;
@@ -320,7 +322,7 @@ export function InfluencerTracker() {
             )}
           </table>
         </div>
-        {view === "budget" && <p className="text-[10px] text-gray-400 mt-2">Click a cell to edit a brand’s monthly budget.</p>}
+        {view === "budget" && canEdit && <p className="text-[10px] text-gray-400 mt-2">Click a cell to edit a brand’s monthly budget.</p>}
       </div>
 
       {/* Results & ROI KPIs (once any results are entered) */}
@@ -345,7 +347,7 @@ export function InfluencerTracker() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
         <div className="flex items-baseline justify-between mb-3">
           <h3 className="text-sm font-semibold text-slate-700">Recent gifts</h3>
-          <span className="text-[11px] text-gray-400">click a row to add results</span>
+          {canEdit && <span className="text-[11px] text-gray-400">click a row to add results</span>}
         </div>
         {entries.length === 0 ? (
           <p className="text-sm text-gray-400 py-3 text-center">No gifts logged yet.</p>
@@ -363,7 +365,7 @@ export function InfluencerTracker() {
                 {entries.slice(0, 40).map(e => {
                   const cpm = cpmOf(e), roi = roiOf(e);
                   return (
-                    <tr key={e.id} className="border-t border-gray-50 hover:bg-emerald-50/40 cursor-pointer" onClick={() => setEditResult(e)}>
+                    <tr key={e.id} className={`border-t border-gray-50 ${canEdit ? "hover:bg-emerald-50/40 cursor-pointer" : ""}`} onClick={canEdit ? () => setEditResult(e) : undefined}>
                       <td className="py-1.5 px-2 text-gray-500">{new Date(e.month_key + "-01T00:00:00").toLocaleDateString("en-AU", { month: "short", year: "2-digit" })}</td>
                       <td className="py-1.5 px-2 text-slate-700">{e.handle}<span className="text-gray-400"> · {e.platform}</span></td>
                       <td className="py-1.5 px-2 text-slate-600">{e.brand}</td>
@@ -373,7 +375,7 @@ export function InfluencerTracker() {
                       <td className="py-1.5 px-2 text-right text-gray-500">{e.reach ? compact(e.reach) : "—"}</td>
                       <td className="py-1.5 px-2 text-right text-gray-500">{cpm != null ? aud(cpm) : "—"}</td>
                       <td className={`py-1.5 px-2 text-right font-semibold ${roi != null ? (roi >= 1 ? "text-emerald-600" : "text-amber-600") : "text-gray-300"}`}>{roi != null ? roi.toFixed(1) + "×" : "—"}</td>
-                      <td className="py-1.5 px-2 text-right"><button onClick={ev => { ev.stopPropagation(); del(e.id); }} className="text-gray-300 hover:text-rose-500" title="Delete">✕</button></td>
+                      <td className="py-1.5 px-2 text-right">{canEdit && <button onClick={ev => { ev.stopPropagation(); del(e.id); }} className="text-gray-300 hover:text-rose-500" title="Delete">✕</button>}</td>
                     </tr>
                   );
                 })}
@@ -464,7 +466,7 @@ export function InfluencerTracker() {
                     <td className="py-1.5 px-2 text-right font-semibold text-emerald-600">{r.sales > 0 && r.value > 0 ? (r.sales / r.value).toFixed(1) + "×" : "—"}</td>
                     <td className="py-1.5 px-2 text-gray-500 max-w-[200px] truncate" title={r.brands.join(", ")}>{r.brands.join(", ") || "—"}</td>
                     <td className="py-1.5 px-2 text-gray-500">{r.last ? new Date(r.last + "-01T00:00:00").toLocaleDateString("en-AU", { month: "short", year: "2-digit" }) : "—"}</td>
-                    <td className="py-1.5 px-2 text-right"><button onClick={() => setEditInf(r.m ?? { handle: r.handle })} className="text-emerald-500 hover:text-emerald-700 text-[11px]">edit</button></td>
+                    <td className="py-1.5 px-2 text-right">{canEdit && <button onClick={() => setEditInf(r.m ?? { handle: r.handle })} className="text-emerald-500 hover:text-emerald-700 text-[11px]">edit</button>}</td>
                   </tr>
                 ))}
               </tbody>

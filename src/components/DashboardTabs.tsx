@@ -1627,7 +1627,7 @@ export function DashboardTabs({
           )}
 
           {/* ── Influencer tracker ── */}
-          {active === "influencer" && <InfluencerTracker />}
+          {active === "influencer" && <InfluencerTracker canEdit={role === "admin"} />}
 
           {/* ── Gifting (team view: % of budget + RRP, no cost) ── */}
           {active === "gifting" && (
