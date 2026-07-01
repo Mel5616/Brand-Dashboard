@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { buildSnapshot, type SnapshotInput } from "@/lib/snapshot";
-import { buildUppababy, uppababyHtml, parseUppababyGrid, type UppaRow } from "@/lib/uppababy";
+import { buildUppababy, uppababyHtml, uppababyEmailSummary, parseUppababyGrid, type UppaRow } from "@/lib/uppababy";
 
 type Props = Omit<SnapshotInput, "brand" | "note"> & {
   brands: { id: number; name: string }[];
@@ -87,22 +87,46 @@ export function UppababyReport({ brands, canUpload, month, monthKeys, monthLabel
 
   const [linkMsg, setLinkMsg] = useState<string | null>(null);
   const [linking, setLinking] = useState(false);
+
+  // Create a frozen public share link and return its URL (or null on failure).
+  async function createShareUrl(): Promise<string | null> {
+    if (!html) return null;
+    const la = rows.length ? buildUppababy(rows).latestActual || 1 : 1;
+    const res = await fetch("/api/snapshot-share", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ html, brand_id: brand.id, brand: brand.name, month_key: `2026-${String(la).padStart(2, "0")}`, label: `UPPAbaby ${periodLabel} Sales Report`, expiryDays: 60 }),
+    }).then(r => r.json()).catch(() => ({ ok: false }));
+    if (!res.ok) { setLinkMsg(res.error === "forbidden" ? "Admins only." : res.needsSetup ? "Share not set up." : "Could not create link."); return null; }
+    return `${location.origin}/s/${res.token}`;
+  }
+
   async function copyLink() {
-    if (!html) return;
     setLinking(true); setLinkMsg(null);
-    try {
-      const la = rows.length ? buildUppababy(rows).latestActual || 1 : 1;
-      const res = await fetch("/api/snapshot-share", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ html, brand_id: brand.id, brand: brand.name, month_key: `2026-${String(la).padStart(2, "0")}`, label: `UPPAbaby ${periodLabel} Sales Report`, expiryDays: 60 }),
-      }).then(r => r.json());
-      if (!res.ok) { setLinkMsg(res.error === "forbidden" ? "Admins only." : res.needsSetup ? "Share not set up." : "Could not create link."); setLinking(false); return; }
-      const url = `${location.origin}/s/${res.token}`;
+    const url = await createShareUrl();
+    if (url) {
       let ok = false;
       try { await navigator.clipboard.writeText(url); ok = true; } catch { /* fall through */ }
       if (!ok) { const ta = document.createElement("textarea"); ta.value = url; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select(); try { ok = document.execCommand("copy"); } catch { /* ignore */ } document.body.removeChild(ta); }
       setLinkMsg(ok ? "Link copied ✓" : url);
-    } catch { setLinkMsg("Could not create link."); }
+    }
+    setLinking(false);
+  }
+
+  // Copy a rich, email-ready summary (image/branding + stats + link) to the clipboard.
+  async function copyEmail() {
+    setLinking(true); setLinkMsg(null);
+    const url = await createShareUrl();
+    if (url) {
+      const u = buildUppababy(rows);
+      const emailHtml = uppababyEmailSummary(u, url, periodLabel, location.origin);
+      const text = `UPPAbaby Monthly Report Summary — ${periodLabel}. View the full report: ${url}`;
+      let ok = false;
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ "text/html": new Blob([emailHtml], { type: "text/html" }), "text/plain": new Blob([text], { type: "text/plain" }) })]);
+        ok = true;
+      } catch { try { await navigator.clipboard.writeText(url); ok = true; } catch { /* ignore */ } }
+      setLinkMsg(ok ? "Email summary copied ✓ — paste into your email" : "Could not copy");
+    }
     setLinking(false);
   }
 
@@ -136,6 +160,10 @@ export function UppababyReport({ brands, canUpload, month, monthKeys, monthLabel
           {msg && <span className="text-xs text-gray-500">{msg}</span>}
           {linkMsg && <span className={`text-xs ${linkMsg.startsWith("Link copied") ? "text-emerald-600" : "text-gray-500"}`}>{linkMsg}</span>}
           {Upload}
+          <button onClick={copyEmail} disabled={linking} className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-700 bg-white border border-gray-200 hover:bg-gray-50 disabled:opacity-60 rounded-lg px-3.5 py-1.5 transition">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+            {linking ? "Creating…" : "Copy for email"}
+          </button>
           <button onClick={copyLink} disabled={linking} className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-700 bg-white border border-gray-200 hover:bg-gray-50 disabled:opacity-60 rounded-lg px-3.5 py-1.5 transition">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
             {linking ? "Creating…" : "Copy report link"}

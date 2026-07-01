@@ -91,6 +91,8 @@ export function buildUppababy(rows: UppaRow[]) {
 }
 
 // ── HTML ───────────────────────────────────────────────────────────────────
+// Flip to true once /public/uppababy-report-hero.jpg (the pram photo) is added.
+const HERO_ENABLED = false;
 const esc = (s: string) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const pctTag = (p: number | null) => p == null ? "" : `<span class="${p >= 0 ? "up" : "dn"}">${p >= 0 ? "▲" : "▼"} ${Math.abs(p * 100).toFixed(1)}%</span>`;
 const titleCase = (s: string) => s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
@@ -110,6 +112,30 @@ function svgCompare(s25: number[], s26: (number | null)[]): string {
   const ticks = MONTH_SHORT.map((m, i) => `<text x="${x(i).toFixed(1)}" y="${H - 7}" text-anchor="middle" font-size="8.5" fill="#94a3b8" font-weight="600">${m}</text>`).join("");
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block">
     ${line(s25, "#cbd5e1", 2)}${line(s26, "#0891b2", 2.6)}${dots(s26, "#0891b2")}${ticks}</svg>`;
+}
+
+// Compact, email-safe summary block (inline styles, table layout) to paste into an
+// email — a branded header, headline stats and a link through to the full report.
+export function uppababyEmailSummary(u: Uppa, shareUrl: string, periodLabel: string, origin: string): string {
+  const mi = (u.latestActual || 1) - 1;
+  const monthNow = u.monthly2026[mi] ?? 0;
+  const topCh = u.bestChannel ? titleCase(u.bestChannel.name) : "—";
+  const logo = `${origin}/logos/UPPAbaby%20Logo.jpg`;
+  // Optional hero photo — rendered only once the file exists at /public.
+  const heroImg = HERO_ENABLED ? `<tr><td style="padding:0;font-size:0;line-height:0"><img src="${origin}/uppababy-report-hero.jpg" alt="UPPAbaby" width="560" style="display:block;width:100%;max-width:560px;height:auto"></td></tr>` : "";
+  const stat = (label: string, val: string) => `<td style="padding:0 16px 0 0;vertical-align:top"><div style="font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#94a3b8;font-weight:bold">${label}</div><div style="font-size:18px;font-weight:800;color:#0f2330;margin-top:3px">${val}</div></td>`;
+  return `<table cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;max-width:560px;width:100%;font-family:Arial,Helvetica,sans-serif;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
+  ${heroImg}
+  <tr><td style="background:#0891b2;height:4px;font-size:0;line-height:0">&nbsp;</td></tr>
+  <tr><td style="padding:18px 22px 4px"><img src="${logo}" alt="UPPAbaby" height="24" style="height:24px;display:block"></td></tr>
+  <tr><td style="padding:6px 22px 0"><div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#0891b2;font-weight:bold">UPPAbaby Australia</div>
+    <div style="font-size:22px;font-weight:800;color:#0f2330;margin-top:5px;line-height:1.15">UPPAbaby Monthly Report Summary</div>
+    <div style="font-size:13px;color:#64748b;margin-top:4px">Sell-through by channel · ${esc(periodLabel)}</div></td></tr>
+  <tr><td style="padding:16px 22px 4px"><table cellpadding="0" cellspacing="0" role="presentation"><tr>
+    ${stat(`${esc(u.latestMonthLabel)} sales`, fmt(monthNow))}${stat("YTD 2026", fmt(u.total.ytd2026))}${stat("Top channel", topCh)}
+  </tr></table></td></tr>
+  <tr><td style="padding:18px 22px 24px"><a href="${shareUrl}" style="background:#0891b2;color:#ffffff;text-decoration:none;font-weight:bold;font-size:14px;padding:11px 20px;border-radius:8px;display:inline-block">View the full report &rarr;</a></td></tr>
+</table>`;
 }
 
 export function uppababyHtml(u: Uppa, snap: Snapshot, periodLabel: string, tradeshowShare: number | null = null): string {
