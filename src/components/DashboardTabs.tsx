@@ -282,6 +282,7 @@ export function DashboardTabs({
   const [influencersOpen, setInfluencersOpen] = useState<boolean>(() => INFLUENCER_IDS.includes(firstTab));
   const [partnershipsOpen, setPartnershipsOpen] = useState<boolean>(() => PARTNERSHIP_IDS.includes(firstTab));
   const [mobileNavOpen, setMobileNavOpen] = useState(false); // slide-in nav drawer on small screens
+  const [brandView, setBrandView] = useState<"month" | "fy">("fy"); // brand cards: selected month vs full year
   // Activity tracking: record which tab/page the user is viewing.
   useEffect(() => {
     const label = TABS.find(t => t.id === active)?.label ?? active;
@@ -742,9 +743,27 @@ export function DashboardTabs({
               })()}
 
               <div>
-                <div className="flex items-baseline justify-between mb-3">
+                <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
                   <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Brands — click to explore</h2>
-                  <span className="text-[11px] text-gray-400">{fyLabel} · whole business, all channels</span>
+                  <div className="flex items-center gap-2">
+                    <div className="inline-flex rounded-lg bg-gray-100 p-0.5 text-[11px] font-semibold">
+                      <button
+                        onClick={() => setBrandView("month")}
+                        className={`px-2.5 py-1 rounded-md transition ${brandView === "month" ? "bg-white text-gray-800 shadow-sm" : "text-gray-400"}`}
+                      >
+                        Month
+                      </button>
+                      <button
+                        onClick={() => setBrandView("fy")}
+                        className={`px-2.5 py-1 rounded-md transition ${brandView === "fy" ? "bg-white text-gray-800 shadow-sm" : "text-gray-400"}`}
+                      >
+                        Full year
+                      </button>
+                    </div>
+                    <span className="text-[11px] text-gray-400 hidden sm:inline">
+                      {brandView === "month" ? `${latestLabel} · all channels` : `${fyLabel} · whole business`}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Brand grid — grouped by tier if tiers configured */}
@@ -785,8 +804,13 @@ export function DashboardTabs({
                           const mRoas    = latestM && latestM.spend > 0 ? latestM.revenue / latestM.spend : 0;
                           const sum      = summaryMap[id];
 
-                          // Whole-business FY revenue across all channels — the brand's true size.
-                          const wholeRevenue = buildChannels(id, { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest: LATEST }).reduce((s: number, c: any) => s + (c.fy ?? 0), 0);
+                          // Whole-business revenue across all channels — FY total, or just the
+                          // selected month, depending on the Month / Full year toggle above.
+                          const chans        = buildChannels(id, { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest: LATEST });
+                          const fyWhole      = chans.reduce((s: number, c: any) => s + (c.fy ?? 0), 0);
+                          const monthWhole   = chans.reduce((s: number, c: any) => s + (c.latest ?? 0), 0);
+                          const wholeRevenue = brandView === "month" ? monthWhole : fyWhole;
+                          const wholeLabel   = brandView === "month" ? `${latestLabel} · all channels` : `${fyLabel} · all channels`;
                           // Small "vs target" bar stays as monthly D2C pacing (D2C detail lives on Shopify).
                           const moRev    = monthly.find((m: any) => m.brand_id === id && m.month_key === LATEST)?.revenue ?? 0;
                           const moTarget = target?.revenue_target ?? 0;
@@ -805,7 +829,7 @@ export function DashboardTabs({
                               target={target}
                               roasAlert={(gRoas > 0 && gRoas < 1.5) || (mRoas > 0 && mRoas < 1.5)}
                               wholeRevenue={wholeRevenue}
-                              wholeLabel={`${fyLabel} · all channels`}
+                              wholeLabel={wholeLabel}
                               pacePct={pacePct}
                             />
                           );
