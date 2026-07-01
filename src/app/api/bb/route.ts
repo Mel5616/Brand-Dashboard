@@ -68,18 +68,24 @@ export async function GET(req: Request) {
   const wf = periodWeeks.length === 1 ? `week_ending=eq.${periodWeeks[0]}` : `week_ending=in.(${periodWeeks.join(",")})`;
   const pwf = prevWeeks.length ? (prevWeeks.length === 1 ? `week_ending=eq.${prevWeeks[0]}` : `week_ending=in.(${prevWeeks.join(",")})`) : null;
 
-  const [statesRaw, brandsRaw, modelsRaw, pramStateRaw, storesRaw, weeklyTotals, stateTrend, brandTrend, modelTrend, storePrevRaw] = await Promise.all([
+  // The trend series never depend on the selected period/state — skip them on "light"
+  // requests (period/state switches) so only the period-specific queries run.
+  const light = sp.get("light") === "1";
+  const periodP = Promise.all([
     q(`bb_agg_state?${wf}`),
     q(`bb_agg_brand?${wf}${stateF}`),
     q(`bb_agg_model?${wf}${stateF}`),
     q(`bb_agg_model?${wf}&is_pram=eq.true`),
     q(`bb_agg_store?${wf}${stateF}`),
+    pwf ? q(`bb_agg_store?${pwf}${stateF}`) : Promise.resolve([]),
+  ]);
+  const trendP = light ? Promise.resolve([null, null, null, null]) : Promise.all([
     q(`bb_weekly_totals?order=week_ending.asc`),
     q(`bb_agg_state?order=week_ending.asc`),
     q(`bb_weekly_brand?order=week_ending.asc`),
     q(`bb_weekly_model?order=week_ending.asc`),
-    pwf ? q(`bb_agg_store?${pwf}${stateF}`) : Promise.resolve([]),
   ]);
+  const [[statesRaw, brandsRaw, modelsRaw, pramStateRaw, storesRaw, storePrevRaw], [weeklyTotals, stateTrend, brandTrend, modelTrend]] = await Promise.all([periodP, trendP]);
 
   const statesAgg = periodAgg(statesRaw || [], ["state"], lastWeek).sort((a, b) => b.cum_sales - a.cum_sales);
   const storesAgg = periodAgg(storesRaw || [], ["store", "state"], lastWeek).sort((a, b) => b.cum_sales - a.cum_sales);
@@ -116,7 +122,7 @@ export async function GET(req: Request) {
     models: periodAgg(modelsRaw || [], ["model"], lastWeek).map(m => ({ ...m, is_pram: m.is_pram })),
     stores: storesAgg,
     pramByState,
-    trends: { weekly: weeklyTotals || [], byState: stateTrend || [], byBrand: brandTrend || [], byModel: modelTrend || [] },
+    trends: light ? undefined : { weekly: weeklyTotals || [], byState: stateTrend || [], byBrand: brandTrend || [], byModel: modelTrend || [] },
     movers: { gainers: movers.slice(0, 6), decliners: [...movers].reverse().slice(0, 6), prevWeek: prevLast || null },
   });
 }

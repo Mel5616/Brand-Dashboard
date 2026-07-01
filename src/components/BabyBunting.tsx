@@ -48,14 +48,20 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
   const [summary, setSummary] = React.useState<{ weeks: string[]; rows: number; unmapped: string[] } | null>(null);
   const fileRef = React.useRef<HTMLInputElement>(null);
 
+  // Trend series are fetched once and cached; period/state switches request "light"
+  // (period-specific data only) and reuse the cached trends.
+  const dataRef = React.useRef<BBData | null>(null);
   const load = React.useCallback((p: string | null, s: string, m: string) => {
     setLoading(true);
+    const haveTrends = !!dataRef.current?.trends?.weekly?.length;
     const params = new URLSearchParams();
     params.set("mode", m);
     if (p) params.set("period", p);
     if (s && s !== "ALL") params.set("state", s);
+    if (haveTrends) params.set("light", "1");
     fetch("/api/bb?" + params.toString(), { cache: "no-store" }).then(r => r.json()).then((d: BBData) => {
-      setData(d); if (d.period) setPeriod(d.period); setLoading(false);
+      const merged = d.trends?.weekly?.length ? d : { ...d, trends: dataRef.current?.trends };
+      dataRef.current = merged; setData(merged); if (d.period) setPeriod(d.period); setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
   React.useEffect(() => { load(period, scope, mode); }, [scope, period, mode, load]);
@@ -116,6 +122,7 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
       setSummary({ weeks: [...new Set(loadedWeeks)].sort(), rows: totalRows, unmapped: [...allUnmapped] });
       setProgress(null);
       const latest = mode === "month" ? (loadedWeeks.sort().at(-1) ?? "").slice(0, 7) : loadedWeeks.sort().at(-1) ?? null;
+      dataRef.current = null;   // new weeks → refetch full trends
       setPeriod(latest || null);
       load(latest || null, scope, mode);
     } catch (e: any) { setProgress("✗ " + (e.message || "Upload failed")); }
