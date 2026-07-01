@@ -29,7 +29,7 @@ export function computeStats(media: InstagramMediaRow[], organic: InstagramOrgan
   const sharesSum = posts.reduce((s, m) => s + (m.shares || 0), 0);
   const hasReach = reachSum > 0;
   return {
-    n, followers, growth, hist, series: hist.slice(-6).map(d => d.followers),
+    n, followers, growth, newFollowers: prev > 0 ? followers - prev : null, hist, series: hist.slice(-6).map(d => d.followers),
     avgLikes: n ? likes / n : 0, avgComments: n ? comments / n : 0, avgEng, rate,
     hasReach, avgReach: n ? reachSum / n : 0, savedSum, sharesSum,
     reachRate: hasReach ? ((likes + comments + savedSum + sharesSum) / reachSum) * 100 : null,
@@ -383,6 +383,7 @@ export function SocialBrandDetail({
       {kpis === "full" && (
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
           <Card label="Followers" value={num(s.followers)} accent="#E1306C" />
+          <Card label="New followers" value={s.newFollowers == null ? "—" : `${s.newFollowers >= 0 ? "+" : "−"}${num(Math.abs(s.newFollowers))}`} accent="#22c55e" />
           <Card label="Eng. rate" value={s.rate > 0 ? s.rate.toFixed(1) + "%" : "—"} accent="#f59e0b" />
           <Card label="Avg likes / post" value={s.n ? num(s.avgLikes) : "—"} accent="#ef4444" />
           <Card label="Avg comments / post" value={s.n ? num(s.avgComments) : "—"} accent="#0ea5e9" />
