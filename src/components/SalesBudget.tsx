@@ -88,18 +88,19 @@ export function SalesBudget({ brands, salesBudget, channelSales, monthly, trades
     return m;
   }, [rowsInScope]);
 
-  // Actual revenue per channel per month from the live dashboard rollup.
-  const actualByCh = React.useMemo(() => {
+  // Actual revenue per channel per month from the live dashboard rollup. Some budget
+  // channels have no distinct live channel (they fold into Wholesale) — flag those.
+  const { actualByCh, mappedCh } = React.useMemo(() => {
     const chans = buildChannels(scope, { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest } as any);
     const byName: Record<string, any> = {};
     for (const c of chans) byName[norm(c.name)] = c;
-    const out: Record<string, number[]> = {};
+    const out: Record<string, number[]> = {}; const mapped = new Set<string>();
     for (const c of channels) {
-      const actualName = TO_ACTUAL[c] ?? c;
-      const ch = byName[norm(actualName)];
+      const ch = byName[norm(TO_ACTUAL[c] ?? c)];
+      if (ch) mapped.add(c);
       out[c] = monthKeys.map((_, i) => (ch ? ch.series[i] ?? 0 : 0));
     }
-    return out;
+    return { actualByCh: out, mappedCh: mapped };
   }, [scope, brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest, channels]);
 
   const elapsedIdx = Math.max(0, monthKeys.indexOf(latest));
@@ -110,12 +111,13 @@ export function SalesBudget({ brands, salesBudget, channelSales, monthly, trades
   const rows = channels.map(c => {
     const fyTarget = sumAll(targetByCh[c]);
     const tgtYtd = sumTo(targetByCh[c]);
-    const actYtd = sumTo(actualByCh[c]);
-    const pace = tgtYtd > 0 ? (actYtd / tgtYtd) * 100 : null;
-    const projFy = monthsElapsed > 0 ? (actYtd / monthsElapsed) * 12 : 0;
-    return { c, fyTarget, fy26: fy26ByCh[c] ?? 0, tgtYtd, actYtd, pace, projFy };
+    const mapped = mappedCh.has(c);
+    const actYtd = mapped ? sumTo(actualByCh[c]) : null;
+    const pace = mapped && tgtYtd > 0 && actYtd != null ? (actYtd / tgtYtd) * 100 : null;
+    const projFy = mapped && monthsElapsed > 0 && actYtd != null ? (actYtd / monthsElapsed) * 12 : null;
+    return { c, mapped, fyTarget, fy26: fy26ByCh[c] ?? 0, tgtYtd, actYtd, pace, projFy };
   });
-  const tot = rows.reduce((a, r) => ({ fyTarget: a.fyTarget + r.fyTarget, fy26: a.fy26 + r.fy26, tgtYtd: a.tgtYtd + r.tgtYtd, actYtd: a.actYtd + r.actYtd, projFy: a.projFy + r.projFy }), { fyTarget: 0, fy26: 0, tgtYtd: 0, actYtd: 0, projFy: 0 });
+  const tot = rows.reduce((a, r) => ({ fyTarget: a.fyTarget + r.fyTarget, fy26: a.fy26 + r.fy26, tgtYtd: a.tgtYtd + r.tgtYtd, actYtd: a.actYtd + (r.actYtd ?? 0), projFy: a.projFy + (r.projFy ?? 0) }), { fyTarget: 0, fy26: 0, tgtYtd: 0, actYtd: 0, projFy: 0 });
   const totPace = tot.tgtYtd > 0 ? (tot.actYtd / tot.tgtYtd) * 100 : null;
 
   const paceColor = (p: number | null) => p == null ? "text-gray-300" : p >= 98 ? "text-emerald-600" : p >= 85 ? "text-amber-600" : "text-rose-500";
@@ -232,7 +234,7 @@ export function SalesBudget({ brands, salesBudget, channelSales, monthly, trades
               <tbody>
                 {rows.map(r => {
                   const growth = r.fy26 > 0 ? ((r.fyTarget - r.fy26) / r.fy26) * 100 : null;
-                  const projPct = r.fyTarget > 0 ? (r.projFy / r.fyTarget) * 100 : null;
+                  const projPct = r.projFy != null && r.fyTarget > 0 ? (r.projFy / r.fyTarget) * 100 : null;
                   return (
                     <tr key={r.c} className="border-b border-gray-50">
                       <td className="py-2 pl-1"><span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full" style={{ background: channelColor(TO_ACTUAL[r.c] ?? r.c) }} /><span className="font-semibold text-slate-700">{r.c}</span></span></td>
@@ -255,14 +257,16 @@ export function SalesBudget({ brands, salesBudget, channelSales, monthly, trades
                         ) : (growth == null ? "—" : (growth >= 0 ? "+" : "") + Math.round(growth) + "%")}
                       </td>
                       <td className="py-2 text-right tabular-nums text-slate-500">{audFull(r.tgtYtd)}</td>
-                      <td className="py-2 text-right tabular-nums font-semibold text-slate-700">{audFull(r.actYtd)}</td>
+                      <td className="py-2 text-right tabular-nums font-semibold text-slate-700">{r.actYtd == null ? <span className="text-gray-300" title="No separate live channel — folds into Wholesale">—</span> : audFull(r.actYtd)}</td>
                       <td className="py-2 pl-4">
-                        <span className="flex items-center gap-2">
-                          <span className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden max-w-[90px]"><span className="block h-full rounded-full" style={{ width: `${Math.min(r.pace ?? 0, 100)}%`, background: paceBg(r.pace) }} /></span>
-                          <span className={`text-[11px] font-bold tabular-nums ${paceColor(r.pace)}`}>{r.pace == null ? "—" : Math.round(r.pace) + "%"}</span>
-                        </span>
+                        {r.actYtd == null ? <span className="text-[11px] text-gray-300">n/a</span> : (
+                          <span className="flex items-center gap-2">
+                            <span className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden max-w-[90px]"><span className="block h-full rounded-full" style={{ width: `${Math.min(r.pace ?? 0, 100)}%`, background: paceBg(r.pace) }} /></span>
+                            <span className={`text-[11px] font-bold tabular-nums ${paceColor(r.pace)}`}>{r.pace == null ? "—" : Math.round(r.pace) + "%"}</span>
+                          </span>
+                        )}
                       </td>
-                      <td className={`py-2 pr-1 text-right tabular-nums font-semibold ${projPct == null ? "text-gray-300" : projPct >= 98 ? "text-emerald-600" : projPct >= 85 ? "text-amber-600" : "text-rose-500"}`}>{audFull(r.projFy)}</td>
+                      <td className={`py-2 pr-1 text-right tabular-nums font-semibold ${r.projFy == null ? "text-gray-300" : projPct == null ? "text-gray-300" : projPct >= 98 ? "text-emerald-600" : projPct >= 85 ? "text-amber-600" : "text-rose-500"}`}>{r.projFy == null ? "—" : audFull(r.projFy)}</td>
                     </tr>
                   );
                 })}
@@ -282,6 +286,7 @@ export function SalesBudget({ brands, salesBudget, channelSales, monthly, trades
             </table>
             <p className="text-[10px] text-gray-400 mt-2">Pace = actual vs target for the {monthsElapsed} month{monthsElapsed === 1 ? "" : "s"} to {monthLabels[elapsedIdx] ?? "date"}. Proj. FY = run-rate (actual to date annualised). Actuals map budget channels to live sales channels; unmatched channels show as behind.
               {editable ? " Edit the FY27 Target or Growth % to adjust a target (splits evenly across the year and saves automatically)." : canEdit ? " Select a single brand to edit targets and expected growth." : ""}</p>
+            {rows.some(r => !r.mapped) && <p className="text-[10px] text-amber-600 mt-1">The Memo, Hatch Baby and Online Wholesale have no separate live sales channel (they roll into Wholesale in the actuals), so their pace shows n/a and their sales are counted under Wholesale.</p>}
           </div>
         </>
       ) : (
