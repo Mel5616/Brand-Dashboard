@@ -13,16 +13,32 @@ Run: python3 scripts/sync_instagram.py
 
 import json, ssl, urllib.request, urllib.parse, os, sys
 from calendar import monthrange
+from datetime import datetime
+try:
+    from zoneinfo import ZoneInfo
+    _TZ = ZoneInfo("Australia/Melbourne")
+except Exception:
+    _TZ = None
 
 BASE_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_PATH = os.path.join(BASE_DIR, 'stores.config.json')
 ENV_PATH    = os.path.join(BASE_DIR, '.env.local')
 
 API        = "https://graph.facebook.com/v20.0"
-MONTH_KEYS = [
-    "2025-07","2025-08","2025-09","2025-10","2025-11","2025-12",
-    "2026-01","2026-02","2026-03","2026-04","2026-05","2026-06",
-]
+
+# Current Australian financial year (Jul–Jun), rolling automatically. We only sync
+# months up to the current one so followers land in the real current month and build
+# a monthly history (needed for growth), instead of a single hardcoded point.
+_TODAY = datetime.now(_TZ) if _TZ else datetime.now()
+_FY_START = _TODAY.year if _TODAY.month >= 7 else _TODAY.year - 1
+def _fy_months(start_year):
+    out = []
+    for i in range(12):
+        mo = 7 + i
+        out.append(f"{start_year + (mo - 1) // 12}-{(mo - 1) % 12 + 1:02d}")
+    return out
+CUR_MK     = _TODAY.strftime("%Y-%m")
+MONTH_KEYS = [mk for mk in _fy_months(_FY_START) if mk <= CUR_MK]
 
 def load_env():
     if not os.path.exists(ENV_PATH):
@@ -121,27 +137,26 @@ def sync_brand(brand_id, name, ig_id, token):
     print(f"  {name} (@{ig_id}) ...", end=" ", flush=True)
 
     followers_now = fetch_followers(ig_id, token)
+
+    # Monthly metrics (reach/profile views/accounts engaged) per month — WITHOUT
+    # followers, so past months' follower snapshots are never overwritten.
     upserts = []
-
     for mk in MONTH_KEYS:
-        reach            = fetch_reach(ig_id, mk, token)
-        profile_views    = fetch_total_value_metric(ig_id, "profile_views",   mk, token)
-        accounts_engaged = fetch_total_value_metric(ig_id, "accounts_engaged", mk, token)
-
         upserts.append({
             "brand_id":         brand_id,
             "month_key":        mk,
-            "followers":        followers_now if mk == MONTH_KEYS[-1] else 0,
-            "reach":            reach,
-            "profile_views":    profile_views,
-            "accounts_engaged": accounts_engaged,
+            "reach":            fetch_reach(ig_id, mk, token),
+            "profile_views":    fetch_total_value_metric(ig_id, "profile_views",   mk, token),
+            "accounts_engaged": fetch_total_value_metric(ig_id, "accounts_engaged", mk, token),
         })
-
     if upserts:
         sb_upsert("instagram_organic", upserts, on_conflict="brand_id,month_key")
-        print(f"✓  {followers_now:,} followers")
-    else:
-        print("—  no data")
+
+    # Follower snapshot: record the current count against the CURRENT month only.
+    # Each month's sync leaves its own snapshot, building the history growth needs.
+    if followers_now > 0:
+        sb_upsert("instagram_organic", [{"brand_id": brand_id, "month_key": CUR_MK, "followers": followers_now}], on_conflict="brand_id,month_key")
+    print(f"✓  {followers_now:,} followers")
 
 def main():
     with open(CONFIG_PATH) as f:
