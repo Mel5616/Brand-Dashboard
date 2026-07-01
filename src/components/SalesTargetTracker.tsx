@@ -52,10 +52,19 @@ export function SalesTargetTracker({ brands, monthly, targets, monthKeys, monthL
     cumTarget.push(cumT);
   });
 
-  // Expected-to-date = cumulative target through the latest month → are we on pace?
-  const expectedToDate = cumTarget[latestIdx] ?? 0;
+  // Expected-to-date = full target for completed months + the current month pro-rated
+  // by days elapsed (so day 1 of a month isn't judged against the whole month's plan).
+  const now = new Date();
+  const curMk = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const monthFraction = latest === curMk ? Math.min(1, now.getDate() / daysInMonth) : 1;
+  const monthTargetLatest = [...ids].reduce((s, id) => s + targetFor(id, latest), 0);
+  const expectedToDate = (cumTarget[latestIdx] ?? 0) - monthTargetLatest * (1 - monthFraction);
   const paceDelta = totalActual - expectedToDate;
   const onPace = paceDelta >= 0;
+  // Marker for the chart: where the plan says we should be today.
+  const expectedPoint = monthKeys.map((_, i) => (i === latestIdx ? expectedToDate : null));
+  const proNote = monthFraction < 1 ? ` · plan pro-rated to day ${now.getDate()}/${daysInMonth}` : "";
 
   if (rows.length === 0) {
     return (
@@ -75,7 +84,7 @@ export function SalesTargetTracker({ brands, monthly, targets, monthKeys, monthL
           { label: `${fyLabel} Target`, value: fmt(totalTarget), sub: single ? liveBrands[0].name : "all brands" },
           { label: "Actual Sales", value: fmt(totalActual), sub: "ex-GST, FY to date" },
           { label: "% to Target", value: `${pct.toFixed(0)}%`, sub: `of ${fmt(totalTarget)}` },
-          { label: "Pace vs plan", value: `${onPace ? "+" : ""}${fmt(paceDelta)}`, sub: onPace ? "ahead of target" : "behind target", red: !onPace },
+          { label: "Pace vs plan", value: `${onPace ? "+" : ""}${fmt(paceDelta)}`, sub: (onPace ? "ahead of plan to date" : "behind plan to date") + proNote, red: !onPace },
         ].map(k => (
           <div key={k.label} className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3">
             <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">{k.label}</p>
@@ -97,6 +106,7 @@ export function SalesTargetTracker({ brands, monthly, targets, monthKeys, monthL
                 datasets: [
                   { label: "Target (cumulative)", data: cumTarget, borderColor: "#94a3b8", borderDash: [5, 4], borderWidth: 2, pointRadius: 0, fill: false, tension: 0.2 },
                   { label: "Actual (cumulative)", data: cumActual, borderColor: "#2dc8a5", backgroundColor: "#2dc8a520", borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: "#2dc8a5", fill: true, tension: 0.2, spanGaps: false },
+                  { label: "Plan to date", data: expectedPoint, borderColor: "#f59e0b", backgroundColor: "#f59e0b", pointRadius: 5, pointHoverRadius: 6, pointBackgroundColor: "#f59e0b", showLine: false, fill: false },
                 ],
               }}
               options={{
