@@ -6,8 +6,9 @@ import {
 } from "chart.js";
 import { Bar, Doughnut } from "react-chartjs-2";
 import { fmt, fmtFull } from "@/lib/format";
-import type { Brand, BrandMonthly } from "@/lib/db";
+import type { Brand, BrandMonthly, SalesBudgetRow } from "@/lib/db";
 import { buildChannels, groupDirect, momPct, DIGITAL_CHANNELS, channelColor as colorOf, type ChannelSaleRow } from "@/lib/channels";
+import { budgetByActualChannel } from "@/lib/salesBudget";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
 
@@ -36,7 +37,7 @@ type TradeshowSale = { tradeshow_id: string; brand_id: number; revenue: number }
 type ShopifySource = { brand_id: number; month_key: string; source: string; revenue: number };
 
 export function SalesPanel({
-  scope, brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, googleAds, metaAds, marketingActuals, role, monthKeys, monthLabels, latest, canUpload,
+  scope, brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, googleAds, metaAds, marketingActuals, salesBudget = [], role, monthKeys, monthLabels, latest, canUpload,
 }: {
   scope: number | "all";
   brands: Brand[];
@@ -48,6 +49,7 @@ export function SalesPanel({
   googleAds: { brand_id: number; month_key: string; spend: number }[];
   metaAds: { brand_id: number; month_key: string; spend: number }[];
   marketingActuals: { brand_id: number; month_key: string; channel: string; spend: number }[];
+  salesBudget?: SalesBudgetRow[];
   role: "admin" | "member";
   monthKeys: string[];
   monthLabels: string[];
@@ -125,6 +127,39 @@ export function SalesPanel({
   const mom = prevTotal > 0 ? ((monthTotal - prevTotal) / prevTotal) * 100 : null;
   const latestLabel = monthLabels[monthKeys.indexOf(latest)] ?? latest;
 
+  // Sales-budget pacing: targets rolled up by live channel name, for the scope.
+  const { target: tgtByCh, fy26: fy26ByCh } = budgetByActualChannel(salesBudget, scope, monthKeys);
+  const hasBudget = Object.keys(tgtByCh).length > 0;
+  const toDate = (arr: number[] = []) => sum(arr.slice(0, li + 1));
+  // Per row (a channel or a Direct-Sales group of kids): annual target, target-to-date, FY26.
+  const rowBudget = (c: any) => {
+    const names: string[] = c.isGroup ? c.kids.map((k: any) => k.name) : [c.name];
+    let annual = 0, td = 0, ly = 0;
+    for (const n of names) { const a = tgtByCh[n]; if (a) { annual += sum(a); td += toDate(a); } ly += fy26ByCh[n] ?? 0; }
+    return { annual, td, ly };
+  };
+  const totalTarget = Object.values(tgtByCh).reduce((s, a) => s + sum(a), 0);
+  const totalTargetTD = Object.values(tgtByCh).reduce((s, a) => s + toDate(a), 0);
+  const overallPace = totalTargetTD > 0 ? (fyTotal / totalTargetTD) * 100 : null;
+  const paceColor = (p: number | null) => p == null ? "text-gray-300" : p >= 98 ? "text-emerald-600" : p >= 85 ? "text-amber-600" : "text-rose-500";
+  const paceCell = (c: any) => {
+    const { td } = rowBudget(c);
+    if (td <= 0) return <span className="text-gray-300">—</span>;
+    const p = (toDate(c.series) / td) * 100;
+    return <span className={`font-semibold ${paceColor(p)}`}>{Math.round(p)}%</span>;
+  };
+  // FY target · vs-last-year growth · pace, as three <td>s (only when a budget exists).
+  const budgetCells = (c: any) => {
+    if (!hasBudget) return null;
+    const b = rowBudget(c);
+    const g = b.ly > 0 ? ((b.annual - b.ly) / b.ly) * 100 : null;
+    return (<>
+      <td>{b.annual > 0 ? fmt(b.annual) : <span className="text-gray-300">—</span>}</td>
+      <td className={g == null ? "text-gray-300" : g >= 0 ? "text-emerald-600" : "text-rose-500"}>{g == null ? "—" : (g >= 0 ? "+" : "") + Math.round(g) + "%"}</td>
+      <td>{paceCell(c)}</td>
+    </>);
+  };
+
   // MER = marketing spend / revenue (lower is better). True (all channels, wholesale) for the
   // Director; Digital (paid digital / digital revenue) for the team.
   const inScope = <T extends { brand_id: number }>(rows: T[]) => rows.filter(r => scope === "all" || r.brand_id === scope);
@@ -173,7 +208,9 @@ export function SalesPanel({
         <Card label={isAdmin ? "Total sales (FY)" : "Digital sales (FY)"} value={fmtFull(fyTotal)} accent="#1e3a5f" />
         <Card label={`${latestLabel} sales`} value={fmtFull(monthTotal)} sub={mom != null ? `${mom >= 0 ? "▲" : "▼"} ${Math.abs(mom).toFixed(0)}% vs prev` : undefined} accent="#10b981" />
         <Card label={merLabel} value={merValue != null ? merValue.toFixed(1) + "%" : "—"} sub={isAdmin ? "marketing spend ÷ all revenue" : "paid digital ÷ digital revenue"} accent="#f97316" />
-        <Card label="Channels" value={String(channels.length)} accent="#a855f7" />
+        {hasBudget
+          ? <Card label="FY sales target" value={fmtFull(totalTarget)} sub={overallPace != null ? `${Math.round(overallPace)}% paced to ${latestLabel}` : "targets set"} accent="#0ea5e9" />
+          : <Card label="Channels" value={String(channels.length)} accent="#a855f7" />}
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
@@ -210,12 +247,13 @@ export function SalesPanel({
 
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 overflow-x-auto">
         <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-0.5">Sales by channel</h3>
-        <p className="text-xs text-gray-400 mb-3">Full year and {latestLabel}, with month-on-month change</p>
+        <p className="text-xs text-gray-400 mb-3">Full year and {latestLabel}, with month-on-month change{hasBudget ? " and pacing vs the FY sales budget" : ""}</p>
         <table className="w-full text-sm">
           <thead>
             <tr className="text-[11px] text-gray-400 uppercase tracking-wide text-right border-b border-gray-100">
               <th className="text-left font-medium py-1.5">Channel</th>
               <th className="font-medium">FY total</th><th className="font-medium">Share</th><th className="font-medium">{latestLabel}</th>
+              {hasBudget && <><th className="font-medium">FY target</th><th className="font-medium">vs LY</th><th className="font-medium">Pace</th></>}
             </tr>
           </thead>
           <tbody>
@@ -227,6 +265,7 @@ export function SalesPanel({
                     <td className="font-bold">{fmt(c.fy)}</td>
                     <td className="font-semibold">{fyTotal > 0 ? ((c.fy / fyTotal) * 100).toFixed(1) : "0"}%</td>
                     <td className="font-semibold whitespace-nowrap">{fmt(c.latest)}<Mom series={c.series} idx={li} /></td>
+                    {budgetCells(c)}
                   </tr>
                   {c.kids!.map(k => (
                     <tr key={k.name} className="text-right border-b border-gray-50 text-slate-500">
@@ -234,6 +273,7 @@ export function SalesPanel({
                       <td>{fmt(k.fy)}</td>
                       <td>{fyTotal > 0 ? ((k.fy / fyTotal) * 100).toFixed(1) : "0"}%</td>
                       <td className="whitespace-nowrap">{fmt(k.latest)}<Mom series={k.series} idx={li} /></td>
+                      {budgetCells(k)}
                     </tr>
                   ))}
                 </React.Fragment>
@@ -243,11 +283,21 @@ export function SalesPanel({
                   <td className="font-semibold">{fmt(c.fy)}</td>
                   <td>{fyTotal > 0 ? ((c.fy / fyTotal) * 100).toFixed(1) : "0"}%</td>
                   <td className="whitespace-nowrap">{fmt(c.latest)}<Mom series={c.series} idx={li} /></td>
+                  {budgetCells(c)}
                 </tr>
               )
             ))}
             <tr className="text-right font-bold text-slate-800 border-t-2 border-gray-100">
               <td className="text-left py-2">Total</td><td>{fmt(fyTotal)}</td><td>100%</td><td>{fmt(monthTotal)}</td>
+              {hasBudget && (() => {
+                const lyTot = Object.values(fy26ByCh).reduce((s, v) => s + v, 0);
+                const g = lyTot > 0 ? ((totalTarget - lyTot) / lyTot) * 100 : null;
+                return (<>
+                  <td>{fmt(totalTarget)}</td>
+                  <td className={g == null ? "text-gray-300" : g >= 0 ? "text-emerald-600" : "text-rose-500"}>{g == null ? "—" : (g >= 0 ? "+" : "") + Math.round(g) + "%"}</td>
+                  <td className={paceColor(overallPace)}>{overallPace == null ? "—" : Math.round(overallPace) + "%"}</td>
+                </>);
+              })()}
             </tr>
           </tbody>
         </table>

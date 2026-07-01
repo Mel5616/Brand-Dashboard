@@ -3,14 +3,8 @@
 import React from "react";
 import type { Brand, SalesBudgetRow, ChannelSaleRow } from "@/lib/db";
 import { buildChannels, channelColor } from "@/lib/channels";
+import { BUDGET_TO_ACTUAL as TO_ACTUAL } from "@/lib/salesBudget";
 
-// Budget sheet channel name -> the channel name buildChannels produces for actuals.
-const TO_ACTUAL: Record<string, string> = {
-  "Direct / Website": "Website Sales", "Wholesale": "Wholesale", "Baby Bunting": "Baby Bunting",
-  "Amazon": "Amazon", "MarketPlace": "Marketplace", "Affiliate": "Affiliates",
-  "Partnerships": "Partnerships", "Specialty": "Specialty", "The Memo": "The Memo",
-  "Hatch Baby": "New Zealand", "Online Wholesale": "Online Wholesale",
-};
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 const aud = (n: number) => (Math.abs(n) >= 1_000_000 ? "$" + (n / 1_000_000).toFixed(2) + "M" : Math.abs(n) >= 1000 ? "$" + (n / 1000).toFixed(0) + "K" : "$" + Math.round(n).toLocaleString());
 const audFull = (n: number) => "$" + Math.round(n).toLocaleString("en-AU");
