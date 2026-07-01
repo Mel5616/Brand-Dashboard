@@ -23,8 +23,9 @@ from collections import defaultdict
 BASE_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_PATH = os.path.join(BASE_DIR, "stores.config.json")
 ENV_PATH    = os.path.join(BASE_DIR, ".env.local")
+from datetime import date as _date
 RANGE_START = "2025-07-01"
-RANGE_END   = "2026-06-30"
+RANGE_END   = _date.today().isoformat()   # rolls with today instead of a fixed end
 SOURCES     = ["faire", "Baby Bunting"]   # Shopify source_name values to break out
 CTX = ssl.create_default_context()
 
