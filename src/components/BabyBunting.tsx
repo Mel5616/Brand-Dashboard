@@ -28,7 +28,8 @@ function parseWeekEnding(v: any): string | null {
 
 type BBData = {
   ok: boolean; needsSetup?: boolean; weeks: string[]; week: string | null;
-  kpi?: any; states?: any[]; brands?: any[]; models?: any[]; stores?: any[];
+  mode?: "week" | "month"; period?: string | null; periods?: string[]; weekCount?: number;
+  kpi?: any; states?: any[]; brands?: any[]; models?: any[]; stores?: any[]; pramByState?: any[];
   trends?: { weekly: any[]; byState: any[]; byBrand: any[]; byModel: any[] };
   movers?: { gainers: any[]; decliners: any[]; prevWeek: string | null };
 };
@@ -39,23 +40,25 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
   const [data, setData] = React.useState<BBData | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [scope, setScope] = React.useState<string>("ALL");
-  const [week, setWeek] = React.useState<string | null>(null);
+  const [mode, setMode] = React.useState<"week" | "month">("week");
+  const [period, setPeriod] = React.useState<string | null>(null);
   const [modal, setModal] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
   const [progress, setProgress] = React.useState<string | null>(null);
   const [summary, setSummary] = React.useState<{ weeks: string[]; rows: number; unmapped: string[] } | null>(null);
   const fileRef = React.useRef<HTMLInputElement>(null);
 
-  const load = React.useCallback((w?: string | null, s?: string) => {
+  const load = React.useCallback((p: string | null, s: string, m: string) => {
     setLoading(true);
     const params = new URLSearchParams();
-    if (w) params.set("week", w);
+    params.set("mode", m);
+    if (p) params.set("period", p);
     if (s && s !== "ALL") params.set("state", s);
     fetch("/api/bb?" + params.toString(), { cache: "no-store" }).then(r => r.json()).then((d: BBData) => {
-      setData(d); if (d.week) setWeek(d.week); setLoading(false);
+      setData(d); if (d.period) setPeriod(d.period); setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
-  React.useEffect(() => { load(week, scope); }, [scope, week, load]);
+  React.useEffect(() => { load(period, scope, mode); }, [scope, period, mode, load]);
 
   // ── Parse one Baby Bunting export into DB rows ──────────────────────────────
   async function parseFile(file: File): Promise<{ week: string; rows: any[]; unmapped: Set<string> }> {
@@ -112,8 +115,9 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
       }
       setSummary({ weeks: [...new Set(loadedWeeks)].sort(), rows: totalRows, unmapped: [...allUnmapped] });
       setProgress(null);
-      setWeek(loadedWeeks.sort().at(-1) ?? null);
-      load(loadedWeeks.sort().at(-1), scope);
+      const latest = mode === "month" ? (loadedWeeks.sort().at(-1) ?? "").slice(0, 7) : loadedWeeks.sort().at(-1) ?? null;
+      setPeriod(latest || null);
+      load(latest || null, scope, mode);
     } catch (e: any) { setProgress("✗ " + (e.message || "Upload failed")); }
     setBusy(false);
     if (fileRef.current) fileRef.current.value = "";
@@ -139,7 +143,7 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
   const brandColor = (b: string) => ({ UPPAbaby: "#0e7490", WonderFold: "#0891b2", Zazu: "#0ea5e9", BabyChic: "#2563eb" } as any)[b] || "#94a3b8";
 
   const kpis = [
-    { l: "Week sales", v: fmtM(k.wk_sales), sub: `${fmtU(k.wk_units)} units`, hero: true },
+    { l: mode === "month" ? "Month sales" : "Week sales", v: fmtM(k.wk_sales), sub: `${fmtU(k.wk_units)} units`, hero: true },
     { l: "Rolling-year sales", v: fmtM(k.cum_sales), sub: `${fmtU(k.cum_units)} units · ex-tax` },
     { l: "Sell-through", v: sellThru.toFixed(0) + "%", sub: "rolling year" },
     { l: "Stock on hand", v: fmtM(k.soh_value), sub: `${fmtU(k.soh_units)} units` },
@@ -170,18 +174,25 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3">
-          <p className="text-xs text-gray-400">Retail partner analytics · rolling year, ex-tax</p>
-          <select value={week ?? ""} onChange={e => setWeek(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer">
-            {(() => {
-              const groups: { label: string; weeks: string[] }[] = [];
-              for (const w of data!.weeks) {
-                const label = new Date(String(w).slice(0, 7) + "-01T00:00:00").toLocaleDateString("en-AU", { month: "long", year: "numeric" });
-                (groups.find(g => g.label === label) ?? groups[groups.push({ label, weeks: [] }) - 1]).weeks.push(w);
-              }
-              return groups.map(g => <optgroup key={g.label} label={g.label}>{g.weeks.map(w => <option key={w} value={w}>Week ending {longDate(w)}</option>)}</optgroup>);
-            })()}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="inline-flex rounded-lg bg-gray-100 p-0.5 text-[11px] font-semibold">
+            {(["week", "month"] as const).map(m => (
+              <button key={m} onClick={() => { setMode(m); setPeriod(null); }} className={`px-3 py-1 rounded-md transition ${mode === m ? "bg-white text-gray-800 shadow-sm" : "text-gray-400"}`}>{m === "week" ? "Weekly" : "Monthly"}</button>
+            ))}
+          </div>
+          <select value={period ?? ""} onChange={e => setPeriod(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer">
+            {mode === "month"
+              ? (data!.periods || []).map(mk => <option key={mk} value={mk}>{new Date(mk + "-01T00:00:00").toLocaleDateString("en-AU", { month: "long", year: "numeric" })}</option>)
+              : (() => {
+                const groups: { label: string; weeks: string[] }[] = [];
+                for (const w of data!.weeks) {
+                  const label = new Date(String(w).slice(0, 7) + "-01T00:00:00").toLocaleDateString("en-AU", { month: "long", year: "numeric" });
+                  (groups.find(g => g.label === label) ?? groups[groups.push({ label, weeks: [] }) - 1]).weeks.push(w);
+                }
+                return groups.map(g => <optgroup key={g.label} label={g.label}>{g.weeks.map(w => <option key={w} value={w}>Week ending {longDate(w)}</option>)}</optgroup>);
+              })()}
           </select>
+          {mode === "month" && data!.weekCount ? <span className="text-[11px] text-gray-400">{data!.weekCount} weeks</span> : null}
         </div>
         {canUpload && <button onClick={() => setModal(true)} className="text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg px-4 py-2">↑ Upload weeks</button>}
       </div>
@@ -381,8 +392,8 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
       {/* Store movers — week on week */}
       {data!.movers && (data!.movers.gainers.length > 0 || data!.movers.decliners.length > 0) && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-1">Store movers <span className="font-normal text-gray-400 normal-case tracking-normal">· week-on-week{data!.movers.prevWeek ? ` vs ${longDate(data!.movers.prevWeek)}` : ""}</span></p>
-          <p className="text-xs text-gray-400 mb-3">Biggest swings in weekly sales</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-1">Store movers <span className="font-normal text-gray-400 normal-case tracking-normal">· {mode === "month" ? "month-on-month" : "week-on-week"}{data!.movers.prevWeek ? ` vs prev ${mode}` : ""}</span></p>
+          <p className="text-xs text-gray-400 mb-3">Biggest swings in {mode === "month" ? "monthly" : "weekly"} sales</p>
           <div className="grid sm:grid-cols-2 gap-5">
             {([["Gaining", data!.movers.gainers], ["Slowing", data!.movers.decliners]] as const).map(([title, list]) => (
               <div key={title}>
@@ -401,6 +412,49 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
           </div>
         </div>
       )}
+
+      {/* Pram sell-through by state + stores to watch */}
+      <div className="grid lg:grid-cols-2 gap-4">
+        {(data!.pramByState || []).length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] mb-1" style={{ color: PRAM_GOLD }}>● Pram sell-through by state</p>
+            <p className="text-xs text-gray-400 mb-3">Rolling year · where prams convert best</p>
+            {(() => {
+              const rows = (data!.pramByState || []).filter((r: any) => r.state !== "Online");
+              const max = Math.max(...rows.map((r: any) => num(r.sell_thru)), 0.01);
+              return <div className="space-y-2">{rows.map((r: any) => { const st = num(r.sell_thru) * 100; return (
+                <div key={r.state} className="flex items-center gap-3">
+                  <span className="text-xs font-semibold text-slate-600 w-12">{r.state}</span>
+                  <span className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden"><span className="block h-full rounded-full" style={{ width: `${Math.max(num(r.sell_thru) / max * 100, 2)}%`, background: PRAM_GOLD }} /></span>
+                  <span className="text-xs font-bold text-slate-700 tabular-nums w-10 text-right">{st.toFixed(0)}%</span>
+                  <span className="text-[11px] text-gray-400 w-16 text-right">{fmtM(num(r.cum_sales))}</span>
+                </div>
+              ); })}</div>;
+            })()}
+          </div>
+        )}
+        {(() => {
+          const wc = data!.weekCount || 1;
+          const watch = [...(data!.stores || [])]
+            .map((r: any) => { const rate = num(r.wk_sales) / wc; return { store: r.store, state: r.state, soh: num(r.soh_value), rate, cover: rate > 0 ? num(r.soh_value) / rate : (num(r.soh_value) > 0 ? 999 : 0) }; })
+            .filter((r: any) => r.soh > 8000 && r.cover >= 8)
+            .sort((a: any, b: any) => b.cover - a.cover).slice(0, 8);
+          if (!watch.length) return null;
+          return (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-1">Stores to watch <span className="font-normal text-gray-400 normal-case tracking-normal">· overstocked / slow</span></p>
+              <p className="text-xs text-gray-400 mb-3">High stock on hand vs recent sales rate (weeks of cover)</p>
+              <div className="space-y-1.5">{watch.map((r: any) => (
+                <div key={r.store} className="flex items-center gap-2 text-xs">
+                  <span className="font-semibold text-slate-700 flex-1 truncate">{r.store} <span className="text-gray-400 font-normal">· {r.state}</span></span>
+                  <span className="text-gray-500 tabular-nums">{fmtM(r.soh)} SOH</span>
+                  <span className="font-bold text-amber-600 tabular-nums w-16 text-right">{r.cover >= 999 ? "no sales" : Math.round(r.cover) + " wks"}</span>
+                </div>
+              ))}</div>
+            </div>
+          );
+        })()}
+      </div>
 
       {modal && <UploadModal {...{ setModal, handleFiles, fileRef, busy, progress, summary }} />}
     </div>
