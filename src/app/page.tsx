@@ -77,16 +77,18 @@ export default async function Dashboard(props: { searchParams: Promise<{ preview
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <AiInsightsPanel insight={aiInsight} />
-            <NotificationCenter
-              brands={brands}
-              summaries={summaries}
-              googleAds={googleAds}
-              metaAds={metaAds}
-              targets={targets}
-              marketingBudgets={isAdmin ? marketingBudgets : []}
-              marketingActuals={isAdmin ? marketingActuals : []}
-            />
+            {isAdmin && <AiInsightsPanel insight={aiInsight} />}
+            {isAdmin && (
+              <NotificationCenter
+                brands={brands}
+                summaries={summaries}
+                googleAds={googleAds}
+                metaAds={metaAds}
+                targets={targets}
+                marketingBudgets={marketingBudgets}
+                marketingActuals={marketingActuals}
+              />
+            )}
             <UserMenu email={real.user.email} role={real.role!} />
           </div>
         </div>

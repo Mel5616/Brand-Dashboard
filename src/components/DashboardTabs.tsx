@@ -590,7 +590,7 @@ export function DashboardTabs({
           {/* ── Brands ── */}
           {active === "brands" && (
             <>
-              {(() => {
+              {role === "admin" && (() => {
                 const risks: { sev: "red" | "amber"; text: string }[] = [];
                 const syncs = summaries.map((s: any) => s.synced_at).filter(Boolean).map((t: string) => Date.parse(t));
                 if (syncs.length) {
