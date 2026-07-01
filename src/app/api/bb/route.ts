@@ -39,7 +39,7 @@ export async function GET(req: Request) {
   const sp = new URL(req.url).searchParams;
   const state = sp.get("state");
   const stateF = state && state !== "ALL" ? `&state=eq.${encodeURIComponent(state)}` : "";
-  const mode = sp.get("mode") === "month" ? "month" : "week";
+  const mode = sp.get("mode") === "month" ? "month" : sp.get("mode") === "year" ? "year" : "week";
   const wanted = sp.get("period") || sp.get("week");
 
   const weeksRows = await q("bb_weekly_totals?select=week_ending&order=week_ending.desc");
@@ -49,7 +49,10 @@ export async function GET(req: Request) {
 
   // Resolve the selected period → its set of weeks + the "snapshot" (last) week.
   let period: string, periodWeeks: string[], lastWeek: string, prevWeeks: string[], periods: string[];
-  if (mode === "month") {
+  if (mode === "year") {
+    // Rolling year = the latest week's cum_* snapshot; no summing needed.
+    period = "year"; periodWeeks = [weeks[0]]; prevWeeks = []; periods = [];
+  } else if (mode === "month") {
     const months = [...new Set(weeks.map(w => String(w).slice(0, 7)))];  // desc
     period = wanted && months.includes(wanted) ? wanted : months[0];
     periodWeeks = weeks.filter(w => String(w).startsWith(period));

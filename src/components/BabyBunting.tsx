@@ -40,7 +40,7 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
   const [data, setData] = React.useState<BBData | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [scope, setScope] = React.useState<string>("ALL");
-  const [mode, setMode] = React.useState<"week" | "month">("week");
+  const [mode, setMode] = React.useState<"week" | "month" | "year">("week");
   const [period, setPeriod] = React.useState<string | null>(null);
   const [modal, setModal] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
@@ -150,7 +150,7 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
   const brandColor = (b: string) => ({ UPPAbaby: "#0e7490", WonderFold: "#0891b2", Zazu: "#0ea5e9", BabyChic: "#2563eb" } as any)[b] || "#94a3b8";
 
   const kpis = [
-    { l: mode === "month" ? "Month sales" : "Week sales", v: fmtM(k.wk_sales), sub: `${fmtU(k.wk_units)} units`, hero: true },
+    { l: mode === "year" ? "Full year sales" : mode === "month" ? "Month sales" : "Week sales", v: fmtM(mode === "year" ? k.cum_sales : k.wk_sales), sub: `${fmtU(mode === "year" ? k.cum_units : k.wk_units)} units${mode === "year" ? " · rolling" : ""}`, hero: true },
     { l: "Rolling-year sales", v: fmtM(k.cum_sales), sub: `${fmtU(k.cum_units)} units · ex-tax` },
     { l: "Sell-through", v: sellThru.toFixed(0) + "%", sub: "rolling year" },
     { l: "Stock on hand", v: fmtM(k.soh_value), sub: `${fmtU(k.soh_units)} units` },
@@ -183,10 +183,13 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
           <div className="inline-flex rounded-lg bg-gray-100 p-0.5 text-[11px] font-semibold">
-            {(["week", "month"] as const).map(m => (
-              <button key={m} onClick={() => { setMode(m); setPeriod(null); }} className={`px-3 py-1 rounded-md transition ${mode === m ? "bg-white text-gray-800 shadow-sm" : "text-gray-400"}`}>{m === "week" ? "Weekly" : "Monthly"}</button>
+            {(["week", "month", "year"] as const).map(m => (
+              <button key={m} onClick={() => { setMode(m); setPeriod(null); }} className={`px-3 py-1 rounded-md transition ${mode === m ? "bg-white text-gray-800 shadow-sm" : "text-gray-400"}`}>{m === "week" ? "Weekly" : m === "month" ? "Monthly" : "Full year"}</button>
             ))}
           </div>
+          {mode === "year" ? (
+            <span className="text-sm text-gray-600 font-medium">Rolling year <span className="text-gray-400 font-normal">· as at {longDate(data!.week)}</span></span>
+          ) : (
           <select value={period ?? ""} onChange={e => setPeriod(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer">
             {mode === "month"
               ? (data!.periods || []).map(mk => <option key={mk} value={mk}>{new Date(mk + "-01T00:00:00").toLocaleDateString("en-AU", { month: "long", year: "numeric" })}</option>)
@@ -197,6 +200,7 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
                 return recent.map(w => <option key={w} value={w}>Week ending {longDate(w)}</option>);
               })()}
           </select>
+          )}
           {mode === "month" && data!.weekCount ? <span className="text-[11px] text-gray-400">{data!.weekCount} weeks</span> : null}
         </div>
         {canUpload && <button onClick={() => setModal(true)} className="text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg px-4 py-2">↑ Upload weeks</button>}
