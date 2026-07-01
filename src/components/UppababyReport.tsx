@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { buildSnapshot, type SnapshotInput } from "@/lib/snapshot";
 import { buildUppababy, uppababyHtml, parseUppababyGrid, type UppaRow } from "@/lib/uppababy";
-import { fyMonthKeys, fyMonthLabels, FY_LABEL, type FY } from "@/lib/fy";
 
 type Props = Omit<SnapshotInput, "brand" | "note"> & {
   brands: { id: number; name: string }[];
@@ -49,12 +48,13 @@ export function UppababyReport({ brands, canUpload, month, monthKeys, monthLabel
   const html = useMemo(() => {
     if (!brand || !rows.length) return "";
     const u = buildUppababy(rows);
-    // Report period = the sell-through's latest actual month (may sit in the prior FY).
+    // The UPPAbaby report runs on CALENDAR year (Jan–Dec), so YTD = January to the
+    // latest actual month — not the financial year.
     const rMonth = `2026-${String(u.latestActual || 1).padStart(2, "0")}`;
     const [ry, rm] = rMonth.split("-").map(Number);
-    const rfyStart = rm >= 7 ? ry : ry - 1;
-    const rFy = `${rfyStart}-${String(rfyStart + 1).slice(2)}` as FY;
-    const rKeys = fyMonthKeys(rFy), rLabels = fyMonthLabels(rFy), rFyLabel = FY_LABEL[rFy] ?? fyLabel;
+    const rKeys = Array.from({ length: 12 }, (_, i) => `${ry}-${String(i + 1).padStart(2, "0")}`);
+    const rLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const rFyLabel = String(ry);
     const periodLabel = new Date(ry, (rm || 1) - 1, 1).toLocaleDateString("en-AU", { month: "long", year: "numeric" });
 
     // The uploaded "Direct Sales" blends Website + Tradeshow. Use LIVE data only to
