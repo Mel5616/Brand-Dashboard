@@ -159,7 +159,9 @@ def sync_brand(brand_id, name, ig_id, token):
         if mid not in kept:
             sb("DELETE", f"/rest/v1/instagram_media?brand_id=eq.{brand_id}&media_id=eq.{mid}", ctype=None)
             sb("DELETE", f"/storage/v1/object/{BUCKET}/{brand_id}/{mid}.jpg", ctype=None)
-    print(f"{len(rows)} posts ({new_imgs} new images)")
+    reach_n = sum(1 for r in rows if (r.get("reach") or 0) > 0)
+    ins_note = f"{reach_n} with reach" if reach_n else "no insights (check instagram_manage_insights permission)"
+    print(f"{len(rows)} posts ({new_imgs} new images, {ins_note})")
 
 def main():
     with open(CONFIG_PATH) as f:

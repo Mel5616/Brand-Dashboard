@@ -2,6 +2,7 @@
 
 import React from "react";
 import type { Brand, InstagramOrganicRow, InstagramMediaRow } from "@/lib/db";
+import { SOCIAL_TEAM, ownerOf, ownerColor } from "@/lib/socialOwners";
 
 const num = (n: number) => (n >= 1000 ? (n / 1000).toFixed(1) + "K" : Math.round(n).toLocaleString());
 const eng = (m: InstagramMediaRow) => (m.like_count || 0) + (m.comments_count || 0);
@@ -514,6 +515,18 @@ export function SocialPanel({
   const portMix = computeMix(allPosts);
   const mapItems = stats.map(r => ({ brand: r.b, followers: r.s.followers, rate: r.s.rate, n: r.s.n }));
 
+  // Team split: aggregate each owner's brands.
+  const byOwner = SOCIAL_TEAM.map(o => {
+    const list = stats.filter(r => ownerOf(r.b.id) === o.name);
+    const followers = list.reduce((x, r) => x + r.s.followers, 0);
+    const posts = list.reduce((x, r) => x + r.s.n, 0);
+    const totalEng = list.reduce((x, r) => x + r.s.avgEng * r.s.n, 0);
+    const rate = followers ? list.reduce((x, r) => x + r.s.rate * r.s.followers, 0) / followers : 0;
+    return { ...o, list, followers, posts, avgEng: posts ? totalEng / posts : 0, rate };
+  }).filter(o => o.list.length > 0);
+  const rateLeader = [...byOwner].sort((a, b) => b.rate - a.rate)[0]?.name;
+  const unassigned = stats.filter(r => !ownerOf(r.b.id)).map(r => r.b);
+
   return (
     <div className="space-y-4">
       {/* Hero KPIs */}
@@ -525,6 +538,44 @@ export function SocialPanel({
         <HeroKpi label="Posts synced" value={String(totalPosts)} sub="across portfolio" accent="#8b5cf6" />
         <HeroKpi label="Follower growth" value={portGrowth != null ? (portGrowth >= 0 ? "+" : "") + portGrowth.toFixed(1) + "%" : "—"} sub={portGrowth != null ? "month on month" : "needs 2+ months"} accent="#10b981" />
       </div>
+
+      {/* Team split — who runs what and how they're performing */}
+      {byOwner.length > 0 && (
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400 mb-2 px-1">Team · who runs what</p>
+          <div className="grid md:grid-cols-2 gap-4">
+            {byOwner.map(o => (
+              <div key={o.name} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4" style={{ borderTop: `3px solid ${o.color}` }}>
+                <div className="flex items-center gap-2.5 mb-3">
+                  <span className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0" style={{ background: o.color }}>{o.name[0]}</span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-slate-800 flex items-center gap-2">{o.name}
+                      {o.name === rateLeader && <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 rounded-full px-1.5 py-0.5">▲ Top engagement</span>}
+                    </p>
+                    <p className="text-[11px] text-gray-400">{o.list.length} brands · {o.posts} posts</p>
+                  </div>
+                </div>
+                <div className="flex items-stretch divide-x divide-gray-100 mb-3">
+                  <Stat label="Followers" value={num(o.followers)} />
+                  <Stat label="Eng. rate" value={o.rate > 0 ? o.rate.toFixed(2) + "%" : "—"} />
+                  <Stat label="⌀ Eng / post" value={num(o.avgEng)} />
+                  <Stat label="Posts" value={String(o.posts)} />
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {o.list.sort((a, b) => b.s.followers - a.s.followers).map(r => (
+                    <button key={r.b.id} onClick={() => onSelectBrand(r.b.id)} className="flex items-center gap-1.5 text-[11px] font-medium text-slate-600 bg-gray-50 hover:bg-gray-100 rounded-full pl-1.5 pr-2.5 py-1">
+                      <span className="w-2 h-2 rounded-full" style={{ background: r.b.color }} />{r.b.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          {unassigned.length > 0 && (
+            <p className="text-[11px] text-gray-400 mt-2 px-1">Not assigned to a team member: {unassigned.map(b => b.name).join(", ")} — tell me who runs these and I'll add them.</p>
+          )}
+        </div>
+      )}
 
       {/* Leaderboard + engagement map */}
       <div className="grid lg:grid-cols-2 gap-4">
@@ -600,6 +651,7 @@ export function SocialPanel({
                 </span>
               </button>
               <div className="flex items-center gap-4">
+                {ownerOf(b.id) && <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-semibold text-white rounded-full pl-1 pr-2.5 py-1" style={{ background: ownerColor(ownerOf(b.id)!) }}><span className="w-4 h-4 rounded-full bg-white/25 inline-flex items-center justify-center text-[9px]">{ownerOf(b.id)![0]}</span>{ownerOf(b.id)}</span>}
                 {s.series.length >= 2 && <span className="hidden md:block" title="Follower trend"><Sparkline data={s.series} color={b.color} /></span>}
                 <div className="flex items-stretch divide-x divide-gray-100">
                   <Stat label="⌀ Likes" value={num(s.avgLikes)} />
