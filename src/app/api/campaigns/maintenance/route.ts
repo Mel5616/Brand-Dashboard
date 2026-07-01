@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAccess } from "@/lib/access";
 
 // Campaign Calendar — maintenance brands (no-spend) CRUD via the service role.
 
@@ -27,6 +28,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   const row = { name: b.name ?? "", tier: b.tier ?? "C", sort_order: b.sort_order ?? 0 };
@@ -37,6 +39,7 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
+  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   if (!b.id) return NextResponse.json({ ok: false }, { status: 400 });
@@ -50,6 +53,7 @@ export async function PATCH(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   if (!b.id) return NextResponse.json({ ok: false }, { status: 400 });

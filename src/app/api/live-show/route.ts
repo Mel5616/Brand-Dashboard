@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAccess } from "@/lib/access";
 
 // Live show-day feed: real-time Shopify revenue for a tradeshow.
 // Reads the show + participating brands from Supabase, then queries each
@@ -331,6 +332,7 @@ export async function GET(req: Request) {
 
 // Save a per-show booth revenue target (shared across devices).
 export async function POST(req: Request) {
+  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });

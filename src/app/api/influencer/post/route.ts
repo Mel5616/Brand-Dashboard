@@ -11,7 +11,7 @@ const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export async function DELETE(req: Request) {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
-  if (!(await getAccess()).user) return NextResponse.json({ ok: false, error: "auth" }, { status: 401 });
+  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   const id = new URL(req.url).searchParams.get("id");
   if (!id) return NextResponse.json({ ok: false }, { status: 400 });
   const res = await fetch(`${sbUrl}/rest/v1/influencer_entries?id=eq.${encodeURIComponent(id)}`, {
@@ -23,7 +23,7 @@ export async function DELETE(req: Request) {
 
 export async function PATCH(req: Request) {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
-  if (!(await getAccess()).user) return NextResponse.json({ ok: false, error: "auth" }, { status: 401 });
+  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   if (!b.id) return NextResponse.json({ ok: false }, { status: 400 });
 

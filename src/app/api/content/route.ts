@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAccess } from "@/lib/access";
 
 // Content planner CRUD — reads/writes the content_items table in the main
 // Supabase project via the service role. Resilient to the table not existing
@@ -30,6 +31,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   if (b.brand_id == null || !b.title) return NextResponse.json({ ok: false }, { status: 400 });
@@ -45,6 +47,7 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
+  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   if (!b.id) return NextResponse.json({ ok: false }, { status: 400 });
@@ -57,6 +60,7 @@ export async function PATCH(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   const id = new URL(req.url).searchParams.get("id");
   if (!id) return NextResponse.json({ ok: false }, { status: 400 });

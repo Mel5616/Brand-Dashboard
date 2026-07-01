@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAccess } from "@/lib/access";
 
 // Phase 2 — AI drafting for the content planner. Generates channel-aware,
 // on-brand copy with Claude (same ANTHROPIC_API_KEY as the weekly brief).
@@ -19,6 +20,7 @@ const CHANNEL_BRIEF: Record<string, string> = {
 };
 
 export async function POST(req: Request) {
+  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) return NextResponse.json({ ok: false, error: "no_api_key" }, { status: 500 });
 

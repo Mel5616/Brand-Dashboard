@@ -7,7 +7,7 @@ const BUCKET = "campaign-images";
 
 // Upload a campaign hero image to Supabase Storage (public bucket) and store the URL.
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  if (!(await getAccess()).role) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
+  if ((await getAccess()).role !== "admin") return NextResponse.json({ error: "Admins only" }, { status: 403 });
   const { id } = await params;
   let file: File | null = null;
   try { file = (await req.formData()).get("file") as File | null; } catch { /* ignore */ }

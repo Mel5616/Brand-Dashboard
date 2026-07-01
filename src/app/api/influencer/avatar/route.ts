@@ -8,7 +8,7 @@ export const revalidate = 0;
 const BUCKET = "influencer-avatars";
 
 export async function POST(req: Request) {
-  if (!(await getAccess()).user) return NextResponse.json({ error: "auth" }, { status: 401 });
+  if ((await getAccess()).role !== "admin") return NextResponse.json({ error: "forbidden" }, { status: 403 });
   let form: FormData;
   try { form = await req.formData(); } catch { return NextResponse.json({ error: "Bad form" }, { status: 400 }); }
   const file = form.get("file") as File | null;

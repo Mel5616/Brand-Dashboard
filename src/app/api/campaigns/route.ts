@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
+import { getAccess } from "@/lib/access";
 
-// Campaign Calendar CRUD — reads/writes the campaigns table in the main Supabase
-// project via the service role (auth is enforced by the app middleware, so any
-// logged-in team member can edit). Resilient to the table not existing yet.
+// Campaign Calendar CRUD — reads/writes the campaigns table via the service role.
+// GET is any signed-in user (Management can view); writes are admin-only.
 
 export const revalidate = 0;
 
 const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const requireAdmin = async () => (await getAccess()).role === "admin";
 
 function headers(extra: Record<string, string> = {}) {
   return { apikey: sbKey!, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json", ...extra };
@@ -37,6 +38,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
+  if (!(await requireAdmin())) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   const row = clean(b);
   if (!row.horizon) return NextResponse.json({ ok: false, message: "Missing horizon" }, { status: 400 });
@@ -49,6 +51,7 @@ export async function POST(req: Request) {
 
 export async function PATCH(req: Request) {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
+  if (!(await requireAdmin())) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   if (!b.id) return NextResponse.json({ ok: false }, { status: 400 });
   const fields = clean(b);
@@ -61,6 +64,7 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
+  if (!(await requireAdmin())) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   if (!b.id) return NextResponse.json({ ok: false }, { status: 400 });
   const res = await fetch(`${sbUrl}/rest/v1/campaigns?id=eq.${encodeURIComponent(String(b.id))}`, { method: "DELETE", headers: headers() });
