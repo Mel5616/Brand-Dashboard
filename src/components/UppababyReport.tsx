@@ -80,10 +80,26 @@ export function UppababyReport({ brands, canUpload, month, monthKeys, monthLabel
   }, [rows, month]);
 
   function printIt() { const w = frameRef.current?.contentWindow; if (w) { w.focus(); w.print(); } }
-  function download() {
-    const blob = new Blob([html], { type: "text/html" }); const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = `UPPAbaby_${periodLabel.replace(/\s+/g, "_")}_Sales_Report.html`; a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 500);
+
+  const [linkMsg, setLinkMsg] = useState<string | null>(null);
+  const [linking, setLinking] = useState(false);
+  async function copyLink() {
+    if (!html) return;
+    setLinking(true); setLinkMsg(null);
+    try {
+      const la = rows.length ? buildUppababy(rows).latestActual || 1 : 1;
+      const res = await fetch("/api/snapshot-share", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ html, brand_id: brand.id, brand: brand.name, month_key: `2026-${String(la).padStart(2, "0")}`, label: `UPPAbaby ${periodLabel} Sales Report`, expiryDays: 60 }),
+      }).then(r => r.json());
+      if (!res.ok) { setLinkMsg(res.error === "forbidden" ? "Admins only." : res.needsSetup ? "Share not set up." : "Could not create link."); setLinking(false); return; }
+      const url = `${location.origin}/s/${res.token}`;
+      let ok = false;
+      try { await navigator.clipboard.writeText(url); ok = true; } catch { /* fall through */ }
+      if (!ok) { const ta = document.createElement("textarea"); ta.value = url; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select(); try { ok = document.execCommand("copy"); } catch { /* ignore */ } document.body.removeChild(ta); }
+      setLinkMsg(ok ? "Link copied ✓" : url);
+    } catch { setLinkMsg("Could not create link."); }
+    setLinking(false);
   }
 
   const Upload = canUpload ? (
@@ -114,10 +130,11 @@ export function UppababyReport({ brands, canUpload, month, monthKeys, monthLabel
         <span className="text-xs text-gray-400">{rows.length} data points · {periodLabel}</span>
         <div className="flex items-center gap-2">
           {msg && <span className="text-xs text-gray-500">{msg}</span>}
+          {linkMsg && <span className={`text-xs ${linkMsg.startsWith("Link copied") ? "text-emerald-600" : "text-gray-500"}`}>{linkMsg}</span>}
           {Upload}
-          <button onClick={download} className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3.5 py-1.5 transition">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
-            Download HTML
+          <button onClick={copyLink} disabled={linking} className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-700 bg-white border border-gray-200 hover:bg-gray-50 disabled:opacity-60 rounded-lg px-3.5 py-1.5 transition">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+            {linking ? "Creating…" : "Copy report link"}
           </button>
           <button onClick={printIt} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-3.5 py-1.5 transition shadow-sm">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2z" /></svg>
