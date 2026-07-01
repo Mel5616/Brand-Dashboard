@@ -133,7 +133,7 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
 .mast .sub{font-size:12.5px;color:var(--grey);margin-top:7px;font-weight:500;}
 .stamp{text-align:right;font-size:11px;color:var(--grey);line-height:1.5;font-weight:500;}
 .stamp strong{color:var(--ink);font-weight:700;display:block;font-size:12px;}
-.hero{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);margin-top:22px;border:1px solid var(--line);}
+.hero{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);margin-top:22px;border:1px solid var(--line);}
 .hero .c{background:var(--paper);padding:17px 20px;}
 .hero .l{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--grey);font-weight:600;}
 .hero .big{font-size:31px;font-weight:800;color:var(--teal-d);letter-spacing:-.025em;line-height:1.05;margin-top:7px;}
@@ -199,7 +199,14 @@ table.cmp th.cy{box-shadow:inset 0 -1px 0 var(--line);}
     <div class="stamp"><strong>Coolkidz Australia</strong>Official AU distributor<br>Prepared ${esc(periodLabel)}</div>
   </div>
 
-  <div class="hero">
+  ${(() => {
+    const mi = (u.latestActual || 1) - 1;
+    const monthNow = u.monthly2026[mi] ?? 0;
+    const monthPrev = u.monthly2025[mi] ?? 0;
+    const monthPct = monthPrev > 0 ? (monthNow - monthPrev) / monthPrev : null;
+    return `<div class="hero">
+    <div class="c"><div class="l">${esc(u.latestMonthLabel)} 2026 sales</div><div class="big">${fmt(monthNow)}</div><div class="note">${pctTag(monthPct) || "—"} vs ${esc(u.latestMonthLabel)} 2025</div></div>`;
+  })()}
     <div class="c"><div class="l">Total sales · YTD 2026</div><div class="big">${fmt(u.total.ytd2026)}</div><div class="note">through ${esc(u.latestMonthLabel)} 2026</div></div>
     <div class="c"><div class="l">vs YTD 2025</div><div class="big">${u.totalDelta >= 0 ? "+" : "−"}${fmt(Math.abs(u.totalDelta))}</div><div class="note">${pctTag(u.totalPct) || "—"} on last year</div></div>
     <div class="c"><div class="l">2025 full year</div><div class="big">${fmt(u.total.full2025)}</div><div class="note">all channels</div></div>
