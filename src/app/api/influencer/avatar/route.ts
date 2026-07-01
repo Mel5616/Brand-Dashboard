@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAccess } from "@/lib/access";
+import { canManage } from "@/lib/access";
 import { createClient } from "@/lib/supabase/server";
 
 // Upload an influencer profile photo to Supabase Storage and store it on the roster
@@ -8,7 +8,7 @@ export const revalidate = 0;
 const BUCKET = "influencer-avatars";
 
 export async function POST(req: Request) {
-  if ((await getAccess()).role !== "admin") return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  if (!(await canManage("gifting"))) return NextResponse.json({ error: "forbidden" }, { status: 403 });
   let form: FormData;
   try { form = await req.formData(); } catch { return NextResponse.json({ error: "Bad form" }, { status: 400 }); }
   const file = form.get("file") as File | null;

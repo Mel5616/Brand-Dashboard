@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAccess } from "@/lib/access";
+import { getAccess, canManage } from "@/lib/access";
 import { parseCount } from "@/lib/num";
 
 // Partnerships & affiliates: free product given to companies/affiliates. Cost is
@@ -24,7 +24,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
-  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
+  if (!(await canManage("pa-tracker"))) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   if (!b.month_key) return NextResponse.json({ ok: false, error: "month required" }, { status: 400 });
 
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
 
 export async function PATCH(req: Request) {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
-  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
+  if (!(await canManage("pa-tracker"))) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   if (!b.id) return NextResponse.json({ ok: false }, { status: 400 });
   const fields: Record<string, any> = {};
@@ -83,7 +83,7 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
-  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
+  if (!(await canManage("pa-tracker"))) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   const id = new URL(req.url).searchParams.get("id");
   if (!id) return NextResponse.json({ ok: false }, { status: 400 });
   const res = await fetch(`${sbUrl}/rest/v1/partnership_entries?id=eq.${encodeURIComponent(id)}`, { method: "DELETE", headers: headers({ Prefer: "return=minimal" }) });

@@ -56,3 +56,13 @@ export async function getAccessForUser(userId: string): Promise<Access> {
     return { user: null, role: null, allowedTabs: [] };
   }
 }
+
+// May the current user WRITE within a given section? Admins always can. A view-only
+// member can write only in a tracker they've been explicitly granted — this is how
+// Social Media / Marketing get "view everything, but still log influencers/affiliates"
+// without opening up budget uploads, PDF exports, or anything else.
+export async function canManage(tab: TabId): Promise<boolean> {
+  const a = await getAccess();
+  if (a.role === "admin") return true;
+  return a.role === "member" && a.allowedTabs.includes(tab);
+}
