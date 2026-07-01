@@ -307,7 +307,10 @@ export function DashboardTabs({
   // FY-derived month range + headline month, shared with every page
   const monthKeys   = fyMonthKeys(fy);
   const monthLabels = fyMonthLabels(fy);
-  const presentKeys = monthly.map((m: any) => m.month_key);
+  // Only months with real revenue count as "present" — the sync seeds zero-revenue
+  // placeholder rows for every future month, which would otherwise make the last
+  // FY month look like the latest.
+  const presentKeys = monthly.filter((m: any) => (m.revenue ?? 0) > 0).map((m: any) => m.month_key);
   const fyLatest    = fyLatestMonth(fy, presentKeys);
   const fyLatestIdx = Math.max(0, monthKeys.indexOf(fyLatest));
   // Months you can step back to (up to the latest with data)
@@ -315,7 +318,7 @@ export function DashboardTabs({
 
   // Chosen "current month" — defaults to the latest, resets when FY changes
   const [monthSel, setMonthSel] = useState<string>(fyLatest);
-  useEffect(() => { setMonthSel(fyLatestMonth(fy, monthly.map((m: any) => m.month_key))); }, [fy]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setMonthSel(fyLatestMonth(fy, monthly.filter((m: any) => (m.revenue ?? 0) > 0).map((m: any) => m.month_key))); }, [fy]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const wholeYear   = monthSel === "all"; // "Full Year" — aggregate the whole FY
   const LATEST      = (!wholeYear && monthOptions.includes(monthSel)) ? monthSel : fyLatest;
