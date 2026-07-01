@@ -15,6 +15,8 @@ export const SOCIAL_OWNERS: Record<number, string> = {
   6: "Alicia",  // ZAZU
   10: "Alicia", // Matchstick Monkey
   3: "Alicia",  // Gaia Baby
+  1: "Alicia",  // Magic
+  7: "Alicia",  // MiaMily
 };
 
 // Display order + accent colour per owner.
