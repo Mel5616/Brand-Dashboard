@@ -251,7 +251,6 @@ table.cmp th.cy{box-shadow:inset 0 -1px 0 var(--line);}
       <span><i class="teal"></i>Website · <strong>${webPct}%</strong> · ${fmt(webAmt)}</span>
       <span><i class="amber"></i>Tradeshow · <strong>${tsPct}%</strong> · ${fmt(tsAmt)}</span>
     </div>
-    <div class="dt-note">Direct Sales of <strong>${fmtFull(direct)}</strong> (from the uploaded report, blending website + tradeshow). The split is estimated from live sales, so the channel share is indicative — live is by order-created date, the report by dispatch date.</div>
   </div>`; })()}
 
   <div class="sec">
