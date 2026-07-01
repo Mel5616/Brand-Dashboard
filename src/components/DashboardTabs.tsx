@@ -381,8 +381,8 @@ export function DashboardTabs({
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
       </button>
       {/* Mobile: backdrop behind the drawer */}
-      {mobileNavOpen && <div className="lg:hidden fixed left-0 right-0 bottom-0 top-[57px] bg-black/40 z-20" onClick={() => setMobileNavOpen(false)} />}
-    <aside className={`fixed top-[57px] left-0 w-[288px] h-[calc(100vh-57px)] bg-white border-r border-gray-200 flex flex-col z-20 lg:z-10 overflow-y-auto transform transition-transform duration-200 ease-out lg:translate-x-0 ${mobileNavOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"}`}>
+      {mobileNavOpen && <div className="lg:hidden fixed left-0 right-0 bottom-0 top-[70px] bg-black/40 z-20" onClick={() => setMobileNavOpen(false)} />}
+    <aside className={`fixed top-[70px] left-0 w-[288px] h-[calc(100vh-70px)] bg-white border-r border-gray-200 flex flex-col z-20 lg:z-10 overflow-y-auto transform transition-transform duration-200 ease-out lg:translate-x-0 ${mobileNavOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"}`}>
       {/* Mobile: close the drawer */}
       <div className="lg:hidden flex justify-end px-2 pt-2">
         <button type="button" onClick={() => setMobileNavOpen(false)} aria-label="Close menu"

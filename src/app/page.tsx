@@ -68,12 +68,13 @@ export default async function Dashboard(props: { searchParams: Promise<{ preview
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100/60">
-      <header className="bg-white/80 backdrop-blur-md border-b border-gray-200/70 sticky top-0 z-20 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
-        <div className="max-w-screen-2xl mx-auto pr-6 pl-16 lg:px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3.5">
-            <img src="/logos/Coolkidz Logo.png" alt="Coolkidz Australia" className="h-6 w-auto" />
-            <div className="hidden sm:block pl-3.5 border-l border-gray-200">
-              <h1 className="font-semibold text-gray-800 text-sm leading-tight">Coolkidz Australia Marketing Dashboard</h1>
+      <header className="bg-white border-b-2 border-slate-200 sticky top-0 z-20 shadow-sm">
+        <div className="max-w-screen-2xl mx-auto pr-6 pl-16 lg:px-6 h-[68px] flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <img src="/logos/Coolkidz Logo.png" alt="Coolkidz Australia" className="h-8 w-auto" />
+            <div className="hidden sm:block pl-4 border-l border-slate-200">
+              <h1 className="font-bold text-slate-800 text-[15px] leading-tight">Marketing Dashboard</h1>
+              <p className="text-[11px] text-slate-400 leading-tight">Coolkidz Australia</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
