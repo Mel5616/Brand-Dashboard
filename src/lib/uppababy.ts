@@ -78,7 +78,16 @@ export function buildUppababy(rows: UppaRow[]) {
   }).filter((x): x is NonNullable<typeof x> => x != null);
   const anyPartial = quarters.some(q => q.partial);
 
-  return { channels, total, totalDelta, totalPct, latestActual, latestMonthLabel: MONTH_SHORT[latestActual - 1] ?? "", monthly2025, monthly2026, quarters, anyPartial };
+  // Latest actual month, per channel — for the "top channel this month" visual.
+  const monthChannels = UPPA_CHANNELS.map(ch => {
+    const value = at(ch, 2026, latestActual)?.value ?? 0;
+    const prev = at(ch, 2025, latestActual)?.value ?? 0;
+    return { name: ch, value, prev, pct: prev > 0 ? (value - prev) / prev : null };
+  }).sort((a, b) => b.value - a.value);
+  const monthTotalVal = sum(monthChannels.map(c => c.value));
+  const bestChannel = monthTotalVal > 0 ? monthChannels[0] : null;
+
+  return { channels, total, totalDelta, totalPct, latestActual, latestMonthLabel: MONTH_SHORT[latestActual - 1] ?? "", monthly2025, monthly2026, quarters, anyPartial, monthChannels, monthTotalVal, bestChannel };
 }
 
 // ── HTML ───────────────────────────────────────────────────────────────────
@@ -153,6 +162,21 @@ table.cmp th.cy{box-shadow:inset 0 -1px 0 var(--line);}
 .r{display:flex;justify-content:space-between;align-items:baseline;gap:12px;}
 .r .k{font-size:12px;color:var(--grey);font-weight:500;}
 .r .val{font-size:14px;font-weight:700;color:var(--ink);}
+.topch{border:1px solid var(--line);border-left:4px solid var(--teal);padding:16px 18px;background:var(--wash);}
+.topch.is-direct{border-left-color:#15803d;background:#f0fdf4;}
+.topch-lead{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:13px;}
+.topch-name{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-.01em;}
+.topch.is-direct .topch-name{color:#15803d;}
+.topch-sub{font-size:12px;color:var(--grey);font-weight:600;margin-top:3px;}
+.topch-flag{font-size:10.5px;font-weight:800;color:#15803d;background:#dcfce7;border:1px solid #bbf7d0;border-radius:999px;padding:5px 12px;white-space:nowrap;text-transform:uppercase;letter-spacing:.05em;}
+.bars{display:flex;flex-direction:column;gap:7px;}
+.bar-row{display:flex;align-items:center;gap:10px;}
+.bar-lab{font-size:11.5px;font-weight:600;color:var(--ink);width:104px;flex-shrink:0;}
+.bar-track{flex:1;height:16px;background:#e2e8f0;border-radius:4px;overflow:hidden;}
+.bar-fill{display:block;height:100%;background:#94a3b8;border-radius:4px;}
+.bar-fill.best{background:var(--teal);}
+.bar-fill.best.direct{background:#16a34a;}
+.bar-val{font-size:11.5px;font-weight:700;color:var(--ink);width:92px;text-align:right;flex-shrink:0;}
 .foot{margin-top:24px;border-top:1px solid var(--line);padding-top:12px;font-size:10px;color:var(--grey);line-height:1.55;font-weight:500;}
 .foot strong{color:var(--ink);}
 @media print{body{background:#fff;padding:0;}.page{box-shadow:none;max-width:none;padding:30px 34px;}@page{size:A4;margin:12mm;}.sec{break-inside:avoid;}}
@@ -169,6 +193,27 @@ table.cmp th.cy{box-shadow:inset 0 -1px 0 var(--line);}
     <div class="c"><div class="l">vs YTD 2025</div><div class="big">${u.totalDelta >= 0 ? "+" : "−"}${fmt(Math.abs(u.totalDelta))}</div><div class="note">${pctTag(u.totalPct) || "—"} on last year</div></div>
     <div class="c"><div class="l">2025 full year</div><div class="big">${fmt(u.total.full2025)}</div><div class="note">all channels</div></div>
   </div>
+
+  ${u.bestChannel ? (() => {
+    const b = u.bestChannel;
+    const isDirect = b.name === "DIRECT SALES";
+    const share = u.monthTotalVal > 0 ? Math.round((b.value / u.monthTotalVal) * 100) : 0;
+    const barMax = Math.max(...u.monthChannels.map(c => c.value), 1);
+    const bars = u.monthChannels.filter(c => c.value > 0).map(c => {
+      const w = (c.value / barMax) * 100;
+      const best = c.name === b.name;
+      return `<div class="bar-row"><span class="bar-lab">${titleCase(c.name)}</span><span class="bar-track"><span class="bar-fill${best ? " best" : ""}${best && isDirect ? " direct" : ""}" style="width:${w.toFixed(1)}%"></span></span><span class="bar-val">${fmtFull(c.value)}</span></div>`;
+    }).join("");
+    return `<div class="sec">
+    <div class="h">Top channel · ${esc(u.latestMonthLabel)} 2026</div>
+    <div class="topch${isDirect ? " is-direct" : ""}">
+      <div class="topch-lead">
+        <div><div class="topch-name">${titleCase(b.name)}${isDirect ? " 🎉" : ""}</div><div class="topch-sub">${fmtFull(b.value)} · ${share}% of the month${b.pct != null ? ` · ${pctTag(b.pct)} vs ${esc(u.latestMonthLabel)} 2025` : ""}</div></div>
+        ${isDirect ? `<div class="topch-flag">Direct led the month</div>` : ""}
+      </div>
+      <div class="bars">${bars}</div>
+    </div>
+  </div>` ; })() : ""}
 
   <div class="sec">
     <div class="h">Sales by channel · year to date (through ${esc(u.latestMonthLabel)})</div>
