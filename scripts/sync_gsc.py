@@ -42,10 +42,20 @@ BASE_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_PATH = os.path.join(BASE_DIR, "stores.config.json")
 ENV_PATH    = os.path.join(BASE_DIR, ".env.local")
 
-MONTH_KEYS = [
-    "2025-07","2025-08","2025-09","2025-10","2025-11","2025-12",
-    "2026-01","2026-02","2026-03","2026-04","2026-05","2026-06",
-]
+# Current Australian financial year (Jul-Jun), rolling automatically up to the
+# current month, so metrics keep landing after the FY rolls over.
+try:
+    from zoneinfo import ZoneInfo
+    _TZ = ZoneInfo("Australia/Melbourne")
+except Exception:
+    _TZ = None
+from datetime import datetime as _dt
+_TODAY = _dt.now(_TZ) if _TZ else _dt.now()
+_FY_START = _TODAY.year if _TODAY.month >= 7 else _TODAY.year - 1
+def _fy_months(sy):
+    return [f"{sy + (7 + i - 1) // 12}-{(7 + i - 1) % 12 + 1:02d}" for i in range(12)]
+_CUR_MK = _TODAY.strftime("%Y-%m")
+MONTH_KEYS = [mk for mk in _fy_months(_FY_START) if mk <= _CUR_MK]
 TOP_QUERIES = 30
 
 def load_env():
