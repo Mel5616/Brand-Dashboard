@@ -86,6 +86,40 @@ function FollowerTrend({ hist, color }: { hist: { month_key: string; followers: 
   );
 }
 
+// Posts per month (last 6) — renders from post dates alone, so it fills the
+// insights column even before there's multi-month follower history for a trend.
+function PostingActivity({ posts, color }: { posts: InstagramMediaRow[]; color: string }) {
+  const byMonth = new Map<string, { posts: number; eng: number }>();
+  for (const m of posts) {
+    if (!m.posted_at) continue;
+    const mk = m.posted_at.slice(0, 7);
+    const c = byMonth.get(mk) ?? { posts: 0, eng: 0 };
+    c.posts++; c.eng += eng(m); byMonth.set(mk, c);
+  }
+  const rows = [...byMonth.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(-6);
+  if (!rows.length) return null;
+  const max = Math.max(...rows.map(r => r[1].posts), 1);
+  const mShort = (mk: string) => new Date(mk + "-01T00:00:00").toLocaleDateString("en-AU", { month: "short" });
+  const total = rows.reduce((s, r) => s + r[1].posts, 0);
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+      <div className="flex items-baseline justify-between mb-3">
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Posting activity</p>
+        <p className="text-[11px] text-gray-400">{total} posts · last {rows.length} mo.</p>
+      </div>
+      <div className="flex items-end gap-3 h-24">
+        {rows.map(([mk, c]) => (
+          <div key={mk} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+            <span className="text-[10px] font-bold text-slate-600">{c.posts}</span>
+            <div className="w-full rounded-t" style={{ height: `${Math.max((c.posts / max) * 100, 6)}%`, background: color }} />
+            <span className="text-[9px] text-gray-400">{mShort(mk)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="text-center px-3 first:pl-0">
@@ -240,7 +274,7 @@ export function SocialBrandDetail({
               </div>
             </div>
             <div className="w-[300px] rounded-[2.5rem] bg-slate-900 p-2.5 shadow-xl">
-              <div className="relative rounded-[2rem] bg-white overflow-hidden h-[560px]">
+              <div className="relative rounded-[2rem] bg-white overflow-hidden h-[520px]">
                 <div className="absolute top-0 inset-x-0 z-10 flex justify-center pointer-events-none"><div className="w-28 h-5 bg-slate-900 rounded-b-2xl" /></div>
                 <div className="h-full overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   <div className="sticky top-0 z-[5] bg-white/95 backdrop-blur border-b border-gray-100 px-3 pt-5 pb-2 flex items-center gap-2.5">
@@ -266,6 +300,8 @@ export function SocialBrandDetail({
             </div>
 
             <FollowerTrend hist={histAsc} color={brand.color} />
+
+            <PostingActivity posts={posts} color={brand.color} />
 
             {mix.length > 0 && (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
