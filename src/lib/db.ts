@@ -243,6 +243,7 @@ export async function getDashboardData() {
     { data: shopifySources },
     { data: eventbriteEvents },
     { data: asanaTasks },
+    { data: salesBudget },
   ] = await Promise.all([
     db.from("brands").select("*").order("id"),
     db.from("brand_summary").select("*"),
@@ -280,6 +281,7 @@ export async function getDashboardData() {
     db.from("shopify_source_sales").select("*"),
     db.from("eventbrite_events").select("*").order("start_at", { ascending: false }),
     db.from("asana_tasks").select("*").order("due_on", { ascending: true }),
+    db.from("sales_budget").select("*"),
   ]);
 
   return {
@@ -319,6 +321,7 @@ export async function getDashboardData() {
     shopifySources: (shopifySources ?? []) as ShopifySourceRow[],
     eventbriteEvents: (eventbriteEvents ?? []) as EventbriteEvent[],
     asanaTasks: (asanaTasks ?? []) as AsanaTask[],
+    salesBudget: (salesBudget ?? []) as SalesBudgetRow[],
   };
 }
 
@@ -329,6 +332,7 @@ export type EventbriteEvent = { event_id: string; name: string | null; start_at:
 export type ChannelSaleRow = { month_key: string; brand: string; customer_group: string; register: string; value: number; is_online: boolean };
 export type ShopifySourceRow = { brand_id: number; month_key: string; source: string; revenue: number };
 
+export type SalesBudgetRow = { brand_id: number; channel: string; month_key: string; target: number; fy26_actual: number };
 export type InstagramMediaRow = { brand_id: number; media_id: string; caption: string | null; media_type: string | null; permalink: string | null; posted_at: string | null; like_count: number; comments_count: number; reach?: number | null; saved?: number | null; shares?: number | null; plays?: number | null; image_url: string | null };
 
 export type SemrushKeywordRow = { brand_id: number; month_key: string; phrase: string; position: number; search_volume: number; cpc: number; traffic_pct: number; url: string };

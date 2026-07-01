@@ -44,7 +44,7 @@ export default async function Dashboard(props: { searchParams: Promise<{ preview
     weekLabels, lastSync, googleAds, metaAds, metaAdsPlatform,
     instagramOrganic, targets, klaviyo, ga4, marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, aiInsight,
     gscMetrics, gscQueries, gscInsights, semrushMetrics, semrushCompetitors,
-    semrushKeywords, semrushPages, brandInsights, instagramMedia, channelSales, shopifySources, eventbriteEvents, asanaTasks,
+    semrushKeywords, semrushPages, brandInsights, instagramMedia, channelSales, shopifySources, eventbriteEvents, asanaTasks, salesBudget,
   } = await getDashboardData();
 
   const boothFunnel = await getBoothFunnel();
@@ -144,6 +144,7 @@ export default async function Dashboard(props: { searchParams: Promise<{ preview
         shopifySources={shopifySources}
         eventbriteEvents={eventbriteEvents}
         asanaTasks={asanaTasks}
+        salesBudget={salesBudget}
         boothFunnel={boothFunnel}
         kpis={kpis}
       />

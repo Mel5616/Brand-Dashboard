@@ -19,6 +19,7 @@ import { SeoPanel } from "./SeoPanel";
 import { InsightsPanel } from "./InsightsPanel";
 import { SocialPanel } from "./SocialPanel";
 import { SalesPanel } from "./SalesPanel";
+import { SalesBudget } from "./SalesBudget";
 import { buildChannels, groupDirect, channelColor, momPct, DIGITAL_CHANNELS } from "@/lib/channels";
 import { PortfolioCharts, Sparkline } from "./PortfolioCharts";
 import { SectionBar } from "./ui";
@@ -45,7 +46,7 @@ import { ShopifyInsights } from "./ShopifyInsights";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "brands" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "uppababy" | "sales" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "events" | "tasks" | "design-requests" | "new-products" | "budget" | "calendar" | "content" | "influencer" | "gifting" | "pa-budget" | "pa-tracker" | "team";
+type TabId = "brands" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "uppababy" | "sales" | "sales-budget" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "events" | "tasks" | "design-requests" | "new-products" | "budget" | "calendar" | "content" | "influencer" | "gifting" | "pa-budget" | "pa-tracker" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -79,6 +80,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
     id: "sales", label: "Sales by Channel",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3v18h18M7 14l4-4 3 3 5-6" /></svg>,
+  },
+  {
+    id: "sales-budget", label: "Sales Budget",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V9m4 8V5m4 12v-6M4 21h16a1 1 0 001-1V4a1 1 0 00-1-1H4a1 1 0 00-1 1v16a1 1 0 001 1z" /></svg>,
   },
   {
     id: "shopify", label: "Shopify",
@@ -161,7 +166,7 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
 // Sidebar grouping — how you market (top) vs where you sell (bottom).
 const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Overview", ids: ["brands", "insights", "report", "snapshot", "social-report", "uppababy"] },
-  { label: "Revenue & Channels", ids: ["sales", "shopify", "tradeshows"] },
+  { label: "Revenue & Channels", ids: ["sales", "sales-budget", "shopify", "tradeshows"] },
   { label: "Plan", ids: ["campaign-calendar", "promotions", "calendar", "content", "events", "tasks", "design-requests"] },
   { label: "Operations", ids: ["budget", "new-products"] },
   { label: "Paid", ids: ["google-ads", "meta-ads"] },
@@ -252,6 +257,7 @@ interface Props {
   shopifySources: any[];
   eventbriteEvents: any[];
   asanaTasks: any[];
+  salesBudget: any[];
   boothFunnel: any;
   kpis: { label: string; value: string; sub: string }[];
   role?: "admin" | "member";
@@ -267,7 +273,7 @@ export function DashboardTabs({
   instagramOrganic, targets, klaviyo, ga4,
   marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, boothFunnel, kpis,
   gscMetrics, gscQueries, gscInsights, semrushMetrics, semrushCompetitors,
-  semrushKeywords, semrushPages, brandInsights, instagramMedia, channelSales, shopifySources, eventbriteEvents, asanaTasks,
+  semrushKeywords, semrushPages, brandInsights, instagramMedia, channelSales, shopifySources, eventbriteEvents, asanaTasks, salesBudget,
   role = "admin", allowedTabs, currentEmail, lastSync,
 }: Props) {
   // No tab is hard-locked from members anymore — granted sections are viewable
@@ -1018,6 +1024,26 @@ export function DashboardTabs({
           )}
 
           {/* ── Sales by channel (wider business, monthly upload + live online) ── */}
+          {active === "sales-budget" && (
+            <>
+              <SectionBar title="Sales Budget" />
+              <SalesBudget
+                brands={brands}
+                salesBudget={salesBudget}
+                channelSales={channelSales}
+                monthly={monthly}
+                tradeshows={tradeshows}
+                tradeshowSales={tradeshowSales}
+                shopifySources={shopifySources}
+                monthKeys={monthKeys}
+                monthLabels={monthLabels}
+                latest={LATEST}
+                fyLabel={fyLabel}
+                canEdit={role === "admin"}
+              />
+            </>
+          )}
+
           {active === "sales" && (
             <>
               <SectionBar title="Sales by channel" />
