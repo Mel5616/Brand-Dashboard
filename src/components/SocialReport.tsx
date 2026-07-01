@@ -2,10 +2,11 @@
 
 import React from "react";
 import type { Brand, InstagramOrganicRow, InstagramMediaRow } from "@/lib/db";
-import { computeStats, computeMix, weekdayStats, hashtagStats, postType, num, eng } from "./SocialPanel";
+import { computeStats, computeMix, weekdayStats, hashtagStats, num, eng } from "./SocialPanel";
 import { SOCIAL_TEAM, ownerOf, ownerColor } from "@/lib/socialOwners";
 
 const WD_ORDER = [1, 2, 3, 4, 5, 6, 0];
+const longMonth = (mk: string) => new Date(mk + "-01T00:00:00").toLocaleDateString("en-AU", { month: "long", year: "numeric" });
 
 export function SocialReport({
   brands, instagramOrganic, instagramMedia,
@@ -14,13 +15,32 @@ export function SocialReport({
   instagramOrganic: InstagramOrganicRow[];
   instagramMedia: InstagramMediaRow[];
 }) {
-  const withPosts = brands.filter(b => instagramMedia.some(m => m.brand_id === b.id));
-  const stats = withPosts.map(b => ({ b, s: computeStats(instagramMedia, instagramOrganic, b.id) }));
-  const allPosts = instagramMedia.filter(m => withPosts.some(b => b.id === m.brand_id));
+  const [period, setPeriod] = React.useState("all");
+  const [summary, setSummary] = React.useState<string | null>(null);
+  const [aiBusy, setAiBusy] = React.useState(false);
+  const [aiErr, setAiErr] = React.useState<string | null>(null);
+
+  // Period options: every month that has posts or follower data.
+  const periodMonths = React.useMemo(() => {
+    const set = new Set<string>();
+    for (const m of instagramMedia) if (m.posted_at) set.add(m.posted_at.slice(0, 7));
+    for (const d of instagramOrganic) if ((d.followers ?? 0) > 0) set.add(d.month_key);
+    return [...set].sort((a, b) => b.localeCompare(a));
+  }, [instagramMedia, instagramOrganic]);
+  const periodLabel = period === "all" ? "All time (rolling)" : longMonth(period);
+
+  // Scope the data to the selected period. Media → posts in that month; organic →
+  // everything up to and including that month, so "followers as of" and growth work.
+  const mediaP = period === "all" ? instagramMedia : instagramMedia.filter(m => (m.posted_at || "").slice(0, 7) === period);
+  const organicP = period === "all" ? instagramOrganic : instagramOrganic.filter(d => d.month_key <= period);
+
+  const roster = brands.filter(b => instagramMedia.some(m => m.brand_id === b.id));
+  const stats = roster.map(b => ({ b, s: computeStats(mediaP, organicP, b.id) }));
+  const allPosts = mediaP.filter(m => roster.some(b => b.id === m.brand_id));
 
   const totalFollowers = stats.reduce((x, r) => x + r.s.followers, 0);
-  const totalReach = withPosts.reduce((sum, b) => {
-    const l = [...instagramOrganic].filter(d => d.brand_id === b.id).sort((a, c) => c.month_key.localeCompare(a.month_key))[0];
+  const totalReach = roster.reduce((sum, b) => {
+    const l = [...organicP].filter(d => d.brand_id === b.id).sort((a, c) => c.month_key.localeCompare(a.month_key))[0];
     return sum + (l?.reach ?? 0);
   }, 0);
   const totalPosts = allPosts.length;
@@ -28,7 +48,7 @@ export function SocialReport({
   const avgEngAll = totalPosts ? allPosts.reduce((x, m) => x + eng(m), 0) / totalPosts : 0;
 
   const byMonthF = new Map<string, number>();
-  for (const d of instagramOrganic) if ((d.followers ?? 0) > 0) byMonthF.set(d.month_key, (byMonthF.get(d.month_key) ?? 0) + d.followers);
+  for (const d of organicP) if ((d.followers ?? 0) > 0) byMonthF.set(d.month_key, (byMonthF.get(d.month_key) ?? 0) + d.followers);
   const fMonths = [...byMonthF.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   const portGrowth = fMonths.length >= 2 && fMonths.at(-2)![1] > 0 ? ((fMonths.at(-1)![1] - fMonths.at(-2)![1]) / fMonths.at(-2)![1]) * 100 : null;
 
@@ -51,29 +71,59 @@ export function SocialReport({
   const topPosts = [...allPosts].filter(m => eng(m) > 0).sort((a, b) => eng(b) - eng(a)).slice(0, 6);
   const brandById = new Map(brands.map(b => [b.id, b]));
   const hasReach = allPosts.some(m => (m.reach || 0) > 0);
-
   const generated = new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
 
-  if (!withPosts.length) {
+  async function generateSummary() {
+    setAiBusy(true); setAiErr(null);
+    const payload = {
+      period: periodLabel,
+      totalFollowers: Math.round(totalFollowers), followerGrowthPct: portGrowth != null ? +portGrowth.toFixed(1) : null,
+      avgEngagementRatePct: +wRate.toFixed(2), avgEngagementPerPost: Math.round(avgEngAll), postsInPeriod: totalPosts,
+      team: byOwner.map(o => ({ owner: o.name, brands: o.list.length, followers: Math.round(o.followers), engagementRatePct: +o.rate.toFixed(2), avgEngPerPost: Math.round(o.avgEng), posts: o.posts })),
+      topBrands: ranked.slice(0, 4).map(r => ({ brand: r.b.name, owner: ownerOf(r.b.id), followers: Math.round(r.s.followers), engagementRatePct: +r.s.rate.toFixed(2), growthPct: r.s.growth != null ? +r.s.growth.toFixed(1) : null })),
+      needsAttention: ranked.slice(-2).map(r => ({ brand: r.b.name, owner: ownerOf(r.b.id), engagementRatePct: +r.s.rate.toFixed(2), posts: r.s.n })),
+      bestFormat: bestFormat ? { format: bestFormat.type, avgEng: Math.round(bestFormat.avg) } : null,
+      bestDay: bestDay ? { day: bestDay.day, avgEng: Math.round(bestDay.avg) } : null,
+      topHashtags: tags.map(t => t.tag),
+    };
+    try {
+      const r = await fetch("/api/social-report/summary", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then(x => x.json());
+      if (r.ok) setSummary(r.summary);
+      else setAiErr(r.error === "no_api_key" ? "AI key not configured (ANTHROPIC_API_KEY)." : "Couldn't generate summary. Try again.");
+    } catch { setAiErr("Couldn't reach the AI service."); }
+    setAiBusy(false);
+  }
+
+  if (!roster.length) {
     return <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-10 text-center text-sm text-gray-400">No Instagram data synced yet — the report will populate after the next sync.</div>;
   }
 
   const kpis = [
-    { label: "Total followers", value: num(totalFollowers), sub: `${withPosts.length} brands`, color: "#E1306C" },
-    { label: "Reach (latest mo.)", value: num(totalReach), sub: "all brands", color: "#3b82f6" },
+    { label: "Total followers", value: num(totalFollowers), sub: `${roster.length} brands`, color: "#E1306C" },
+    { label: period === "all" ? "Reach (latest mo.)" : "Reach", value: num(totalReach), sub: "all brands", color: "#3b82f6" },
     { label: "Avg eng. rate", value: wRate > 0 ? wRate.toFixed(2) + "%" : "—", sub: "follower-weighted", color: "#f59e0b" },
     { label: "Avg eng. / post", value: num(avgEngAll), sub: "likes + comments", color: "#ef4444" },
-    { label: "Posts synced", value: String(totalPosts), sub: "across portfolio", color: "#8b5cf6" },
+    { label: "Posts", value: String(totalPosts), sub: period === "all" ? "synced" : "this month", color: "#8b5cf6" },
     { label: "Follower growth", value: portGrowth != null ? (portGrowth >= 0 ? "+" : "") + portGrowth.toFixed(1) + "%" : "—", sub: portGrowth != null ? "month on month" : "needs 2+ months", color: "#10b981" },
   ];
 
   return (
     <div className="space-y-4">
       {/* Toolbar (not printed) */}
-      <div className="no-print flex items-center justify-between">
-        <p className="text-xs text-gray-400">A one-page overview of Instagram performance across the portfolio.</p>
-        <button onClick={() => window.print()} className="text-xs font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-4 py-2">🖨 Print / Save PDF</button>
+      <div className="no-print flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-semibold text-gray-500">Period</label>
+          <select value={period} onChange={e => { setPeriod(e.target.value); setSummary(null); }} className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
+            <option value="all">All time (rolling)</option>
+            {periodMonths.map(mk => <option key={mk} value={mk}>{longMonth(mk)}</option>)}
+          </select>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={generateSummary} disabled={aiBusy} className="text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 rounded-lg px-4 py-2">{aiBusy ? "Generating…" : summary ? "↻ Regenerate summary" : "✨ Generate AI summary"}</button>
+          <button onClick={() => window.print()} className="text-xs font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-4 py-2">🖨 Print / Save PDF</button>
+        </div>
       </div>
+      {aiErr && <p className="no-print text-xs text-rose-500">{aiErr}</p>}
 
       <div id="social-report" className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8 space-y-6 text-slate-800">
         {/* Header */}
@@ -82,7 +132,7 @@ export function SocialReport({
             <img src="/logos/Coolkidz Logo.png" alt="Coolkidz" className="h-9 w-auto" />
             <div className="pl-3 border-l border-gray-200">
               <h1 className="text-xl font-extrabold text-slate-900 leading-tight">Social Media Report</h1>
-              <p className="text-xs text-gray-400">Instagram · Coolkidz Australia portfolio</p>
+              <p className="text-xs text-gray-400">Instagram · Coolkidz Australia · {periodLabel}</p>
             </div>
           </div>
           <div className="text-right">
@@ -90,6 +140,14 @@ export function SocialReport({
             <p className="text-sm font-bold text-slate-700">{generated}</p>
           </div>
         </div>
+
+        {/* AI executive summary */}
+        {summary && (
+          <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700 mb-2">✨ Executive summary</p>
+            <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{summary}</div>
+          </div>
+        )}
 
         {/* KPIs */}
         <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
@@ -213,7 +271,7 @@ export function SocialReport({
 
         {/* Footer */}
         <div className="border-t border-gray-200 pt-3 text-center">
-          <p className="text-[10px] text-gray-400">Coolkidz Australia · Social Media Report · {generated}{portGrowth == null ? " · follower-growth trends populate once a second month of data is synced" : ""}</p>
+          <p className="text-[10px] text-gray-400">Coolkidz Australia · Social Media Report · {periodLabel} · generated {generated}</p>
         </div>
       </div>
     </div>
