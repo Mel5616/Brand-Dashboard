@@ -382,18 +382,18 @@ export function SocialBrandDetail({
     <div className="space-y-4">
       {kpis === "full" && (
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-          <Card label="Followers" value={num(s.followers)} accent="#E1306C" />
-          <Card label="New followers" value={s.newFollowers == null ? "—" : `${s.newFollowers >= 0 ? "+" : "−"}${num(Math.abs(s.newFollowers))}`} accent="#22c55e" />
-          <Card label="Eng. rate" value={s.rate > 0 ? s.rate.toFixed(1) + "%" : "—"} accent="#f59e0b" />
-          <Card label="Avg likes / post" value={s.n ? num(s.avgLikes) : "—"} accent="#ef4444" />
-          <Card label="Avg comments / post" value={s.n ? num(s.avgComments) : "—"} accent="#0ea5e9" />
-          <Card label="Reach (latest mo.)" value={latest?.reach ? num(latest.reach) : "—"} accent="#3b82f6" />
-          <Card label="Accounts engaged" value={latest?.accounts_engaged ? num(latest.accounts_engaged) : "—"} accent="#10b981" />
+          <Card label="Followers" value={num(s.followers)} accent="#0e7490" />
+          <Card label="New followers" value={s.newFollowers == null ? "—" : `${s.newFollowers >= 0 ? "+" : "−"}${num(Math.abs(s.newFollowers))}`} accent="#14b8a6" />
+          <Card label="Eng. rate" value={s.rate > 0 ? s.rate.toFixed(1) + "%" : "—"} accent="#0891b2" />
+          <Card label="Avg likes / post" value={s.n ? num(s.avgLikes) : "—"} accent="#0ea5e9" />
+          <Card label="Avg comments / post" value={s.n ? num(s.avgComments) : "—"} accent="#2563eb" />
+          <Card label="Reach (latest mo.)" value={latest?.reach ? num(latest.reach) : "—"} accent="#06b6d4" />
+          <Card label="Accounts engaged" value={latest?.accounts_engaged ? num(latest.accounts_engaged) : "—"} accent="#0d9488" />
           {s.hasReach && <>
-            <Card label="Avg reach / post" value={num(s.avgReach)} accent="#2563eb" />
-            <Card label="Reach eng. rate" value={s.reachRate!.toFixed(1) + "%"} accent="#d946ef" />
-            <Card label="Avg saves / post" value={num(s.n ? s.savedSum / s.n : 0)} accent="#0d9488" />
-            <Card label="Avg shares / post" value={num(s.n ? s.sharesSum / s.n : 0)} accent="#e11d48" />
+            <Card label="Avg reach / post" value={num(s.avgReach)} accent="#0891b2" />
+            <Card label="Reach eng. rate" value={s.reachRate!.toFixed(1) + "%"} accent="#0ea5e9" />
+            <Card label="Avg saves / post" value={num(s.n ? s.savedSum / s.n : 0)} accent="#14b8a6" />
+            <Card label="Avg shares / post" value={num(s.n ? s.sharesSum / s.n : 0)} accent="#2563eb" />
           </>}
         </div>
       )}
@@ -532,12 +532,12 @@ export function SocialPanel({
     <div className="space-y-4">
       {/* Hero KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-        <HeroKpi label="Total followers" value={num(totalFollowers)} sub={`${withPosts.length} brands`} accent="#E1306C" />
-        <HeroKpi label="Reach (latest mo.)" value={num(totalReach)} sub="all brands" accent="#3b82f6" />
-        <HeroKpi label="Avg eng. rate" value={wRate > 0 ? wRate.toFixed(2) + "%" : "—"} sub="follower-weighted" accent="#f59e0b" />
-        <HeroKpi label="Avg eng. / post" value={num(avgEngAll)} sub="likes + comments" accent="#ef4444" />
-        <HeroKpi label="Posts synced" value={String(totalPosts)} sub="across portfolio" accent="#8b5cf6" />
-        <HeroKpi label="Follower growth" value={portGrowth != null ? (portGrowth >= 0 ? "+" : "") + portGrowth.toFixed(1) + "%" : "—"} sub={portGrowth != null ? "month on month" : "needs 2+ months"} accent="#10b981" />
+        <HeroKpi label="Total followers" value={num(totalFollowers)} sub={`${withPosts.length} brands`} accent="#0e7490" />
+        <HeroKpi label="Reach (latest mo.)" value={num(totalReach)} sub="all brands" accent="#0891b2" />
+        <HeroKpi label="Avg eng. rate" value={wRate > 0 ? wRate.toFixed(2) + "%" : "—"} sub="follower-weighted" accent="#0ea5e9" />
+        <HeroKpi label="Avg eng. / post" value={num(avgEngAll)} sub="likes + comments" accent="#2563eb" />
+        <HeroKpi label="Posts synced" value={String(totalPosts)} sub="across portfolio" accent="#06b6d4" />
+        <HeroKpi label="Follower growth" value={portGrowth != null ? (portGrowth >= 0 ? "+" : "") + portGrowth.toFixed(1) + "%" : "—"} sub={portGrowth != null ? "month on month" : "needs 2+ months"} accent="#14b8a6" />
       </div>
 
       {/* Team split — who runs what and how they're performing */}
@@ -622,7 +622,7 @@ export function SocialPanel({
 
       {/* What works: format + best day + hashtags */}
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-        <FormatBars mix={portMix} color="#7c3aed" />
+        <FormatBars mix={portMix} color="#0891b2" />
         <WeekdayCard posts={allPosts} color="#0ea5e9" />
         <HashtagCard posts={allPosts} />
       </div>

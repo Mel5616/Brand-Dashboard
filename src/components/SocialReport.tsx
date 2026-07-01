@@ -99,12 +99,12 @@ export function SocialReport({
   }
 
   const kpis = [
-    { label: "Total followers", value: num(totalFollowers), sub: `${roster.length} brands`, color: "#E1306C" },
-    { label: period === "all" ? "Reach (latest mo.)" : "Reach", value: num(totalReach), sub: "all brands", color: "#3b82f6" },
-    { label: "Avg eng. rate", value: wRate > 0 ? wRate.toFixed(2) + "%" : "—", sub: "follower-weighted", color: "#f59e0b" },
-    { label: "Avg eng. / post", value: num(avgEngAll), sub: "likes + comments", color: "#ef4444" },
-    { label: "Posts", value: String(totalPosts), sub: period === "all" ? "synced" : "this month", color: "#8b5cf6" },
-    { label: "Follower growth", value: portGrowth != null ? (portGrowth >= 0 ? "+" : "") + portGrowth.toFixed(1) + "%" : "—", sub: portGrowth != null ? "month on month" : "needs 2+ months", color: "#10b981" },
+    { label: "Total followers", value: num(totalFollowers), sub: `${roster.length} brands`, color: "#0e7490" },
+    { label: period === "all" ? "Reach (latest mo.)" : "Reach", value: num(totalReach), sub: "all brands", color: "#0891b2" },
+    { label: "Avg eng. rate", value: wRate > 0 ? wRate.toFixed(2) + "%" : "—", sub: "follower-weighted", color: "#0ea5e9" },
+    { label: "Avg eng. / post", value: num(avgEngAll), sub: "likes + comments", color: "#2563eb" },
+    { label: "Posts", value: String(totalPosts), sub: period === "all" ? "synced" : "this month", color: "#06b6d4" },
+    { label: "Follower growth", value: portGrowth != null ? (portGrowth >= 0 ? "+" : "") + portGrowth.toFixed(1) + "%" : "—", sub: portGrowth != null ? "month on month" : "needs 2+ months", color: "#14b8a6" },
   ];
 
   return (
@@ -113,13 +113,13 @@ export function SocialReport({
       <div className="no-print flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <label className="text-xs font-semibold text-gray-500">Period</label>
-          <select value={period} onChange={e => { setPeriod(e.target.value); setSummary(null); }} className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
+          <select value={period} onChange={e => { setPeriod(e.target.value); setSummary(null); }} className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer">
             <option value="all">All time (rolling)</option>
             {periodMonths.map(mk => <option key={mk} value={mk}>{longMonth(mk)}</option>)}
           </select>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={generateSummary} disabled={aiBusy} className="text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 rounded-lg px-4 py-2">{aiBusy ? "Generating…" : summary ? "↻ Regenerate summary" : "✨ Generate AI summary"}</button>
+          <button onClick={generateSummary} disabled={aiBusy} className="text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-50 rounded-lg px-4 py-2">{aiBusy ? "Generating…" : summary ? "↻ Regenerate summary" : "✨ Generate AI summary"}</button>
           <button onClick={() => window.print()} className="text-xs font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-4 py-2">🖨 Print / Save PDF</button>
         </div>
       </div>
@@ -143,8 +143,8 @@ export function SocialReport({
 
         {/* AI executive summary */}
         {summary && (
-          <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700 mb-2">✨ Executive summary</p>
+          <div className="rounded-xl border border-teal-100 bg-teal-50/50 p-4">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-teal-700 mb-2">✨ Executive summary</p>
             <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{summary}</div>
           </div>
         )}

@@ -92,7 +92,7 @@ export function buildUppababy(rows: UppaRow[]) {
 
 // ── HTML ───────────────────────────────────────────────────────────────────
 // Flip to true once /public/uppababy-report-hero.jpg (the pram photo) is added.
-const HERO_ENABLED = false;
+const HERO_ENABLED = true;
 const esc = (s: string) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const pctTag = (p: number | null) => p == null ? "" : `<span class="${p >= 0 ? "up" : "dn"}">${p >= 0 ? "▲" : "▼"} ${Math.abs(p * 100).toFixed(1)}%</span>`;
 const titleCase = (s: string) => s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());

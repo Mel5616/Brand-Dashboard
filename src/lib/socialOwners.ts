@@ -22,8 +22,8 @@ export const SOCIAL_OWNERS: Record<number, string> = {
 
 // Display order + accent colour per owner.
 export const SOCIAL_TEAM: { name: string; color: string }[] = [
-  { name: "Nicky", color: "#6366f1" },
-  { name: "Alicia", color: "#ec4899" },
+  { name: "Nicky", color: "#2563eb" },   // blue
+  { name: "Alicia", color: "#0891b2" },  // teal
 ];
 
 export const ownerOf = (brandId: number): string | null => SOCIAL_OWNERS[brandId] ?? null;
