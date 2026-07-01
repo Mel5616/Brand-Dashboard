@@ -1,11 +1,11 @@
 "use client";
 
 import React from "react";
-import { Chart as ChartJS, CategoryScale, LinearScale, LineElement, PointElement, Filler, Tooltip, Legend } from "chart.js";
-import { Line } from "react-chartjs-2";
+import { Chart as ChartJS, CategoryScale, LinearScale, LineElement, BarElement, PointElement, Filler, Tooltip, Legend } from "chart.js";
+import { Line, Bar } from "react-chartjs-2";
 import { STORE_STATE, NON_STORE_LOCATIONS, resolveState, COLS, classifyBrand, classifyModel, isPram, MODEL_ORDER } from "@/lib/bbMappings";
 
-ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, Filler, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, LineElement, BarElement, PointElement, Filler, Tooltip, Legend);
 
 const PRAM_GOLD = "#b8954a";
 const fmtM = (n: number) => (Math.abs(n) >= 1e6 ? "$" + (n / 1e6).toFixed(2) + "M" : Math.abs(n) >= 1e3 ? "$" + (n / 1e3).toFixed(0) + "K" : "$" + Math.round(n).toLocaleString());
@@ -29,8 +29,11 @@ function parseWeekEnding(v: any): string | null {
 type BBData = {
   ok: boolean; needsSetup?: boolean; weeks: string[]; week: string | null;
   kpi?: any; states?: any[]; brands?: any[]; models?: any[]; stores?: any[];
-  trends?: { weekly: any[]; byState: any[] };
+  trends?: { weekly: any[]; byState: any[]; byBrand: any[]; byModel: any[] };
+  movers?: { gainers: any[]; decliners: any[]; prevWeek: string | null };
 };
+
+const monthLabel = (mk: string) => new Date(mk + "-01T00:00:00").toLocaleDateString("en-AU", { month: "short", year: "2-digit" });
 
 export function BabyBunting({ canUpload }: { canUpload: boolean }) {
   const [data, setData] = React.useState<BBData | null>(null);
@@ -145,6 +148,23 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
 
   const weekly = data!.trends?.weekly ?? [];
   const trendReady = weekly.length >= 2;
+
+  // Monthly sales (sum this-week figures within each calendar month).
+  const monthly = (() => {
+    const m = new Map<string, number>();
+    for (const w of weekly) { const mk = String(w.week_ending).slice(0, 7); m.set(mk, (m.get(mk) ?? 0) + num(w.wk_sales)); }
+    return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  })();
+  const momPct = monthly.length >= 2 && monthly.at(-2)![1] > 0 ? ((monthly.at(-1)![1] - monthly.at(-2)![1]) / monthly.at(-2)![1]) * 100 : null;
+
+  // Pram lines over time (network) from the model trend view.
+  const modelTrend = data!.trends?.byModel ?? [];
+  const pramWeekly = (() => {
+    const m = new Map<string, { wk: number; cum: number; soh: number }>();
+    for (const r of modelTrend) if (r.is_pram) { const c = m.get(r.week_ending) ?? { wk: 0, cum: 0, soh: 0 }; c.wk += num(r.wk_sales); c.cum += num(r.cum_units); c.soh += num(r.soh_units); m.set(r.week_ending, c); }
+    return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  })();
+  const pramModelsNow = [...(data!.models || [])].filter((m: any) => m.is_pram && num(m.cum_sales) > 0).sort((a: any, b: any) => num(b.cum_sales) - num(a.cum_sales));
 
   return (
     <div className="space-y-4">
@@ -296,6 +316,83 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-center text-xs text-gray-400">Weekly-trend and month-on-month charts unlock automatically once a second week is loaded.</div>
+      )}
+
+      {/* Monthly trend */}
+      {monthly.length >= 2 && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="flex items-baseline justify-between mb-3">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Month-on-month sales <span className="font-normal text-gray-400 normal-case tracking-normal">· network, ex-tax</span></p>
+            {momPct != null && <p className={`text-[11px] font-bold ${momPct >= 0 ? "text-emerald-600" : "text-rose-500"}`}>{momPct >= 0 ? "▲" : "▼"} {Math.abs(momPct).toFixed(0)}% vs prior month</p>}
+          </div>
+          <div className="h-52">
+            <Bar data={{ labels: monthly.map(([mk]) => monthLabel(mk)), datasets: [{ label: "Monthly sales", data: monthly.map(([, v]) => v), backgroundColor: "#0891b2", borderRadius: 4, maxBarThickness: 46 }] }}
+              options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c: any) => " " + fmtFull(c.parsed.y ?? 0) } } }, scales: { x: { grid: { display: false }, ticks: { font: { size: 10 }, color: "#9ca3af" } }, y: { ticks: { callback: (v: any) => fmtM(v), font: { size: 10 }, color: "#9ca3af" }, grid: { color: "#f3f4f6" } } } }} />
+          </div>
+        </div>
+      )}
+
+      {/* Pram tracking */}
+      {(pramWeekly.length >= 2 || pramModelsNow.length > 0) && (
+        <div className="grid lg:grid-cols-2 gap-4">
+          {pramWeekly.length >= 2 && (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] mb-1" style={{ color: PRAM_GOLD }}>● Pram sales &amp; sell-through</p>
+              <p className="text-xs text-gray-400 mb-3">Weekly pram sales vs rolling sell-through</p>
+              <div className="h-52">
+                <Line data={{
+                  labels: pramWeekly.map(([w]) => longDate(w)),
+                  datasets: [
+                    { label: "Pram weekly sales", data: pramWeekly.map(([, v]) => v.wk), borderColor: PRAM_GOLD, backgroundColor: PRAM_GOLD + "22", borderWidth: 2.5, pointRadius: 1, tension: 0.3, fill: true, yAxisID: "y" },
+                    { label: "Sell-through %", data: pramWeekly.map(([, v]) => (v.cum + v.soh > 0 ? (v.cum / (v.cum + v.soh)) * 100 : null)), borderColor: "#0891b2", borderDash: [5, 4], borderWidth: 2, pointRadius: 0, tension: 0.3, yAxisID: "y1" },
+                  ],
+                }} options={{ responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false }, plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 }, usePointStyle: true } }, tooltip: { callbacks: { label: (c: any) => ` ${c.dataset.label}: ${c.dataset.yAxisID === "y1" ? (c.parsed.y ?? 0).toFixed(0) + "%" : fmtFull(c.parsed.y ?? 0)}` } } }, scales: { x: { grid: { display: false }, ticks: { font: { size: 9 }, color: "#9ca3af", maxTicksLimit: 12 } }, y: { position: "left", ticks: { callback: (v: any) => fmtM(v), font: { size: 10 }, color: "#9ca3af" }, grid: { color: "#f3f4f6" } }, y1: { position: "right", min: 0, ticks: { callback: (v: any) => v + "%", font: { size: 10 }, color: "#cbd5e1" }, grid: { display: false } } } }} />
+              </div>
+            </div>
+          )}
+          {pramModelsNow.length > 0 && (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] mb-1" style={{ color: PRAM_GOLD }}>● Pram model mix</p>
+              <p className="text-xs text-gray-400 mb-3">Rolling year · {scope === "ALL" ? "network" : scope}</p>
+              {(() => {
+                const tot = pramModelsNow.reduce((s: number, m: any) => s + num(m.cum_sales), 0) || 1;
+                const max = Math.max(...pramModelsNow.map((m: any) => num(m.cum_sales)), 1);
+                return <div className="space-y-2">{pramModelsNow.map((m: any) => (
+                  <div key={m.model} className="flex items-center gap-3">
+                    <span className="text-xs font-semibold text-slate-600 w-24 truncate">{m.model}</span>
+                    <span className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden"><span className="block h-full rounded-full" style={{ width: `${Math.max(num(m.cum_sales) / max * 100, 1)}%`, background: PRAM_GOLD }} /></span>
+                    <span className="text-xs font-bold text-slate-700 tabular-nums w-16 text-right">{fmtM(num(m.cum_sales))}</span>
+                    <span className="text-[11px] text-gray-400 w-9 text-right">{Math.round(num(m.cum_sales) / tot * 100)}%</span>
+                  </div>
+                ))}</div>;
+              })()}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Store movers — week on week */}
+      {data!.movers && (data!.movers.gainers.length > 0 || data!.movers.decliners.length > 0) && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-1">Store movers <span className="font-normal text-gray-400 normal-case tracking-normal">· week-on-week{data!.movers.prevWeek ? ` vs ${longDate(data!.movers.prevWeek)}` : ""}</span></p>
+          <p className="text-xs text-gray-400 mb-3">Biggest swings in weekly sales</p>
+          <div className="grid sm:grid-cols-2 gap-5">
+            {([["Gaining", data!.movers.gainers], ["Slowing", data!.movers.decliners]] as const).map(([title, list]) => (
+              <div key={title}>
+                <p className={`text-[11px] font-bold uppercase tracking-wider mb-2 ${title === "Gaining" ? "text-emerald-600" : "text-rose-500"}`}>{title === "Gaining" ? "▲" : "▼"} {title}</p>
+                <div className="space-y-1.5">
+                  {list.filter((m: any) => title === "Gaining" ? m.delta > 0 : m.delta < 0).map((m: any) => (
+                    <div key={m.store} className="flex items-center gap-2 text-xs">
+                      <span className="font-semibold text-slate-700 flex-1 truncate">{m.store} <span className="text-gray-400 font-normal">· {m.state}</span></span>
+                      <span className="text-gray-500 tabular-nums">{fmtM(m.now)}</span>
+                      <span className={`font-bold tabular-nums w-20 text-right ${m.delta >= 0 ? "text-emerald-600" : "text-rose-500"}`}>{m.delta >= 0 ? "+" : "−"}{fmtM(Math.abs(m.delta))}{m.pct != null ? ` (${m.pct >= 0 ? "+" : ""}${Math.round(m.pct)}%)` : ""}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {modal && <UploadModal {...{ setModal, handleFiles, fileRef, busy, progress, summary }} />}

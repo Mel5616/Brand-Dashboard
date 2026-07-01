@@ -27,14 +27,26 @@ export async function GET(req: Request) {
   if (!weeks.length) return NextResponse.json({ ok: true, weeks: [], week: null });
   const week = sp.get("week") && weeks.includes(sp.get("week")!) ? sp.get("week")! : weeks[0];
 
-  const [statesRaw, brandsRaw, modelsRaw, storesRaw, weeklyTotals, stateTrend] = await Promise.all([
+  const prevWeek = weeks[weeks.indexOf(week) + 1] ?? null;   // weeks are desc → next index is the prior week
+  const [statesRaw, brandsRaw, modelsRaw, storesRaw, weeklyTotals, stateTrend, brandTrend, modelTrend, storeNow, storePrev] = await Promise.all([
     q(`bb_agg_state?week_ending=eq.${week}&order=cum_sales.desc`),
     q(`bb_agg_brand?week_ending=eq.${week}${stateF}`),
     q(`bb_agg_model?week_ending=eq.${week}${stateF}`),
     q(`bb_agg_store?week_ending=eq.${week}${stateF}&order=cum_sales.desc`),
     q(`bb_weekly_totals?order=week_ending.asc`),
     q(`bb_agg_state?order=week_ending.asc`),
+    q(`bb_weekly_brand?order=week_ending.asc`),
+    q(`bb_weekly_model?order=week_ending.asc`),
+    q(`bb_agg_store?week_ending=eq.${week}${stateF}`),
+    prevWeek ? q(`bb_agg_store?week_ending=eq.${prevWeek}${stateF}`) : Promise.resolve([]),
   ]);
+
+  // Week-on-week store movers: this week's wk_sales vs the prior week's, per store.
+  const prevMap = new Map<string, number>((storePrev || []).map((r: any) => [String(r.store), num(r.wk_sales)] as [string, number]));
+  const movers = (storeNow || []).map((r: any) => {
+    const now = num(r.wk_sales), prev = prevMap.get(r.store) ?? 0;
+    return { store: r.store, state: r.state, now, prev, delta: now - prev, pct: prev > 0 ? ((now - prev) / prev) * 100 : null };
+  }).filter((m: any) => m.now > 0 || m.prev > 0).sort((a: any, b: any) => b.delta - a.delta);
 
   // Sum brand/model across states when viewing All AU (views are per state × …).
   const rollup = (rows: any[], key: string, extra: string[] = []) => {
@@ -69,7 +81,8 @@ export async function GET(req: Request) {
     brands: rollup(brandsRaw || [], "brand"),
     models: rollup(modelsRaw || [], "model", ["is_pram"]),
     stores: storesRaw || [],
-    trends: { weekly: weeklyTotals || [], byState: stateTrend || [] },
+    trends: { weekly: weeklyTotals || [], byState: stateTrend || [], byBrand: brandTrend || [], byModel: modelTrend || [] },
+    movers: { gainers: movers.slice(0, 6), decliners: [...movers].reverse().slice(0, 6), prevWeek },
   });
 }
 
