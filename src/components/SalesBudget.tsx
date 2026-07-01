@@ -30,18 +30,40 @@ export function SalesBudget({ brands, salesBudget, channelSales, monthly, trades
   const [view, setView] = React.useState<"pacing" | "grid">("pacing");
   const [busy, setBusy] = React.useState(false);
   const [msg, setMsg] = React.useState("");
+  // Local copy so inline edits reflect immediately; reseed if the server data changes.
+  const [budgetRows, setBudgetRows] = React.useState<SalesBudgetRow[]>(salesBudget);
+  React.useEffect(() => setBudgetRows(salesBudget), [salesBudget]);
+  const editable = canEdit && scope !== "all";
 
   const budgetBrands = React.useMemo(() => {
-    const ids = new Set(salesBudget.map(r => r.brand_id));
+    const ids = new Set(budgetRows.map(r => r.brand_id));
     return brands.filter(b => ids.has(b.id));
-  }, [brands, salesBudget]);
+  }, [brands, budgetRows]);
 
-  const rowsInScope = React.useMemo(() => salesBudget.filter(r => scope === "all" || r.brand_id === scope), [salesBudget, scope]);
+  const rowsInScope = React.useMemo(() => budgetRows.filter(r => scope === "all" || r.brand_id === scope), [budgetRows, scope]);
   const channels = React.useMemo(() => {
-    const set = new Map<string, number>();  // channel -> FY total (for ordering)
-    for (const r of rowsInScope) set.set(r.channel, (set.get(r.channel) ?? 0) + (r.target || 0));
-    return [...set.entries()].filter(([, v]) => v > 0.5).sort((a, b) => b[1] - a[1]).map(([c]) => c);
+    const t = new Map<string, number>(), f = new Map<string, number>();
+    const seenF = new Set<string>();
+    for (const r of rowsInScope) {
+      t.set(r.channel, (t.get(r.channel) ?? 0) + (r.target || 0));
+      const k = `${r.brand_id}|${r.channel}`;
+      if (!seenF.has(k)) { seenF.add(k); f.set(r.channel, (f.get(r.channel) ?? 0) + (r.fy26_actual || 0)); }
+    }
+    return [...new Set([...t.keys(), ...f.keys()])]
+      .filter(c => (t.get(c) ?? 0) > 0.5 || (f.get(c) ?? 0) > 0.5)
+      .sort((a, b) => (t.get(b) ?? 0) - (t.get(a) ?? 0));
   }, [rowsInScope]);
+
+  // Set a channel's full-year target for the selected brand (even monthly split) and persist.
+  async function saveTarget(brandId: number, channel: string, annual: number) {
+    const monthly = Math.round((annual / 12) * 100) / 100;
+    const fy26 = budgetRows.find(r => r.brand_id === brandId && r.channel === channel)?.fy26_actual ?? 0;
+    const newRows = monthKeys.map(mk => ({ brand_id: brandId, channel, month_key: mk, target: monthly, fy26_actual: fy26 }));
+    setBudgetRows(prev => [...prev.filter(r => !(r.brand_id === brandId && r.channel === channel)), ...newRows]);
+    setMsg("");
+    const res = await fetch("/api/sales-budget", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows: newRows }) }).then(r => r.json()).catch(() => ({ ok: false }));
+    if (!res.ok) setMsg("Couldn't save that target — try again.");
+  }
 
   // target[channel][monthIdx]
   const targetByCh = React.useMemo(() => {
@@ -134,7 +156,7 @@ export function SalesBudget({ brands, salesBudget, channelSales, monthly, trades
     setBusy(false);
   }
 
-  if (!salesBudget.length) {
+  if (!budgetRows.length) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 max-w-xl">
         <h2 className="font-semibold text-gray-800">Sales budget not loaded yet</h2>
@@ -214,9 +236,24 @@ export function SalesBudget({ brands, salesBudget, channelSales, monthly, trades
                   return (
                     <tr key={r.c} className="border-b border-gray-50">
                       <td className="py-2 pl-1"><span className="flex items-center gap-2"><span className="w-2 h-2 rounded-full" style={{ background: channelColor(TO_ACTUAL[r.c] ?? r.c) }} /><span className="font-semibold text-slate-700">{r.c}</span></span></td>
-                      <td className="py-2 text-right tabular-nums font-semibold text-slate-800">{audFull(r.fyTarget)}</td>
+                      <td className="py-2 text-right tabular-nums font-semibold text-slate-800">
+                        {editable ? (
+                          <input key={`t-${r.c}-${Math.round(r.fyTarget)}`} defaultValue={Math.round(r.fyTarget)}
+                            onBlur={e => { const v = Number(String(e.target.value).replace(/[^0-9.]/g, "")); if (isFinite(v) && Math.round(v) !== Math.round(r.fyTarget)) saveTarget(scope as number, r.c, v); }}
+                            className="w-24 text-right bg-emerald-50/50 border border-emerald-100 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-emerald-300" />
+                        ) : audFull(r.fyTarget)}
+                      </td>
                       <td className="py-2 text-right tabular-nums text-slate-500">{r.fy26 > 0 ? audFull(r.fy26) : "—"}</td>
-                      <td className={`py-2 text-right tabular-nums ${growth == null ? "text-gray-300" : growth >= 0 ? "text-emerald-600" : "text-rose-500"}`}>{growth == null ? "—" : (growth >= 0 ? "+" : "") + Math.round(growth) + "%"}</td>
+                      <td className={`py-2 text-right tabular-nums ${growth == null ? "text-gray-300" : growth >= 0 ? "text-emerald-600" : "text-rose-500"}`}>
+                        {editable && r.fy26 > 0 ? (
+                          <span className="inline-flex items-center gap-0.5">
+                            <input key={`g-${r.c}-${growth == null ? "" : Math.round(growth)}`} defaultValue={growth == null ? "" : Math.round(growth)}
+                              onBlur={e => { const g = Number(String(e.target.value).replace(/[^0-9.-]/g, "")); if (isFinite(g)) saveTarget(scope as number, r.c, r.fy26 * (1 + g / 100)); }}
+                              className="w-12 text-right bg-emerald-50/50 border border-emerald-100 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-emerald-300" />
+                            <span className="text-gray-400">%</span>
+                          </span>
+                        ) : (growth == null ? "—" : (growth >= 0 ? "+" : "") + Math.round(growth) + "%")}
+                      </td>
                       <td className="py-2 text-right tabular-nums text-slate-500">{audFull(r.tgtYtd)}</td>
                       <td className="py-2 text-right tabular-nums font-semibold text-slate-700">{audFull(r.actYtd)}</td>
                       <td className="py-2 pl-4">
@@ -243,7 +280,8 @@ export function SalesBudget({ brands, salesBudget, channelSales, monthly, trades
                 </tr>
               </tfoot>
             </table>
-            <p className="text-[10px] text-gray-400 mt-2">Pace = actual vs target for the {monthsElapsed} month{monthsElapsed === 1 ? "" : "s"} to {monthLabels[elapsedIdx] ?? "date"}. Proj. FY = run-rate (actual to date annualised). Actuals map budget channels to live sales channels; unmatched channels show as behind.</p>
+            <p className="text-[10px] text-gray-400 mt-2">Pace = actual vs target for the {monthsElapsed} month{monthsElapsed === 1 ? "" : "s"} to {monthLabels[elapsedIdx] ?? "date"}. Proj. FY = run-rate (actual to date annualised). Actuals map budget channels to live sales channels; unmatched channels show as behind.
+              {editable ? " Edit the FY27 Target or Growth % to adjust a target (splits evenly across the year and saves automatically)." : canEdit ? " Select a single brand to edit targets and expected growth." : ""}</p>
           </div>
         </>
       ) : (
