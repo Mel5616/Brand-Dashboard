@@ -329,7 +329,7 @@ export type EventbriteEvent = { event_id: string; name: string | null; start_at:
 export type ChannelSaleRow = { month_key: string; brand: string; customer_group: string; register: string; value: number; is_online: boolean };
 export type ShopifySourceRow = { brand_id: number; month_key: string; source: string; revenue: number };
 
-export type InstagramMediaRow = { brand_id: number; media_id: string; caption: string | null; media_type: string | null; permalink: string | null; posted_at: string | null; like_count: number; comments_count: number; image_url: string | null };
+export type InstagramMediaRow = { brand_id: number; media_id: string; caption: string | null; media_type: string | null; permalink: string | null; posted_at: string | null; like_count: number; comments_count: number; reach?: number | null; saved?: number | null; shares?: number | null; plays?: number | null; image_url: string | null };
 
 export type SemrushKeywordRow = { brand_id: number; month_key: string; phrase: string; position: number; search_volume: number; cpc: number; traffic_pct: number; url: string };
 export type SemrushPageRow = { brand_id: number; month_key: string; url: string; keywords: number; traffic: number };

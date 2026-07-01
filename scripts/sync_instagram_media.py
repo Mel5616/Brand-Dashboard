@@ -12,9 +12,16 @@ Table (run once in Supabase):
     brand_id int not null, media_id text not null,
     caption text, media_type text, permalink text, posted_at timestamptz,
     like_count int default 0, comments_count int default 0,
+    reach int default 0, saved int default 0, shares int default 0, plays int default 0,
     image_url text, synced_at timestamptz default now(),
     primary key (brand_id, media_id));
   alter table instagram_media disable row level security;
+
+  -- If the table already exists, add the new insight columns:
+  alter table instagram_media add column if not exists reach  int default 0;
+  alter table instagram_media add column if not exists saved  int default 0;
+  alter table instagram_media add column if not exists shares int default 0;
+  alter table instagram_media add column if not exists plays  int default 0;
 
 Also needs a public Storage bucket named 'instagram' (the script creates it).
 
@@ -69,6 +76,29 @@ def ig_get(path, params, token):
     with urllib.request.urlopen(url, context=CTX, timeout=25) as r:
         return json.loads(r.read().decode())
 
+# Per-post insights (reach, saves, shares, reel plays). Metric availability varies
+# by media type and API version, and the call fails wholesale if ANY metric is
+# invalid — so we try the richest set first and fall back to progressively smaller
+# sets, returning whatever we can get.
+def media_insights(mid, media_type, token):
+    if media_type == "VIDEO":
+        attempts = [["reach", "saved", "shares", "plays"], ["reach", "saved", "shares"], ["reach", "saved"], ["reach"]]
+    else:
+        attempts = [["reach", "saved", "shares"], ["reach", "saved"], ["reach"]]
+    for metrics in attempts:
+        try:
+            data = ig_get(f"{mid}/insights", {"metric": ",".join(metrics)}, token)
+        except urllib.error.HTTPError:
+            continue
+        except Exception:
+            return {}
+        out = {}
+        for item in data.get("data", []):
+            vals = item.get("values") or []
+            out[item["name"]] = int((vals[0].get("value") if vals else 0) or 0)
+        return out
+    return {}
+
 def public_url(path):
     return f"{URL}/storage/v1/object/public/{BUCKET}/{path}"
 
@@ -113,12 +143,16 @@ def sync_brand(brand_id, name, ig_id, token):
                 img_url = cache_image(src, f"{brand_id}/{mid}.jpg")
                 if img_url:
                     new_imgs += 1
+        ins = media_insights(mid, m.get("media_type"), token)  # refresh every run — reach/saves grow over time
         rows.append({
             "brand_id": brand_id, "media_id": mid, "caption": (m.get("caption") or "")[:2000],
             "media_type": m.get("media_type"), "permalink": m.get("permalink"),
             "posted_at": m.get("timestamp"), "like_count": int(m.get("like_count", 0) or 0),
             "comments_count": int(m.get("comments_count", 0) or 0), "image_url": img_url,
+            "reach": ins.get("reach", 0), "saved": ins.get("saved", 0),
+            "shares": ins.get("shares", 0), "plays": ins.get("plays", 0),
         })
+        time.sleep(0.05)
     upsert(rows)
     # Prune posts no longer in the recent set (rows + cached images)
     for mid in have:

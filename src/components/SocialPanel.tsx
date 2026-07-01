@@ -22,7 +22,19 @@ function computeStats(media: InstagramMediaRow[], organic: InstagramOrganicRow[]
   const growth = prev > 0 ? ((followers - prev) / prev) * 100 : null;
   const avgEng = n ? (likes + comments) / n : 0;
   const rate = followers > 0 && n ? (avgEng / followers) * 100 : 0;
-  return { n, followers, growth, hist, series: hist.slice(-6).map(d => d.followers), avgLikes: n ? likes / n : 0, avgComments: n ? comments / n : 0, avgEng, rate };
+  // Per-post insights (only meaningful once the media-insights sync has run).
+  const reachSum = posts.reduce((s, m) => s + (m.reach || 0), 0);
+  const savedSum = posts.reduce((s, m) => s + (m.saved || 0), 0);
+  const sharesSum = posts.reduce((s, m) => s + (m.shares || 0), 0);
+  const hasReach = reachSum > 0;
+  return {
+    n, followers, growth, hist, series: hist.slice(-6).map(d => d.followers),
+    avgLikes: n ? likes / n : 0, avgComments: n ? comments / n : 0, avgEng, rate,
+    hasReach, avgReach: n ? reachSum / n : 0, savedSum, sharesSum,
+    reachRate: hasReach ? ((likes + comments + savedSum + sharesSum) / reachSum) * 100 : null,
+    saveRate: hasReach ? (savedSum / reachSum) * 100 : null,
+    shareRate: hasReach ? (sharesSum / reachSum) * 100 : null,
+  };
 }
 
 function computeMix(posts: InstagramMediaRow[]) {
@@ -248,8 +260,8 @@ function PostTile({ m, top }: { m: InstagramMediaRow; top?: boolean }) {
       <div className="p-2.5">
         <p className="text-[11px] text-slate-600 leading-snug line-clamp-2 min-h-[2.2em]">{m.caption || "—"}</p>
         <div className="flex items-center justify-between mt-1.5 text-[10px] text-gray-400">
-          <span>♥ {num(m.like_count || 0)} · 💬 {num(m.comments_count || 0)}</span>
-          <span>{shortDate(m.posted_at)}</span>
+          <span>♥ {num(m.like_count || 0)} · 💬 {num(m.comments_count || 0)}{(m.saved || 0) > 0 ? ` · 🔖 ${num(m.saved!)}` : ""}</span>
+          <span>{(m.reach || 0) > 0 ? `${num(m.reach!)} reached` : shortDate(m.posted_at)}</span>
         </div>
       </div>
     </a>
@@ -302,7 +314,8 @@ function HighlightPost({ title, tone, m }: { title: string; tone: "up" | "down";
         <div className="p-3 min-w-0 flex flex-col justify-center">
           <p className={`text-[10px] font-bold uppercase tracking-wider ${tone === "up" ? "text-emerald-600" : "text-amber-600"}`}>{tone === "up" ? "★ " : ""}{title}</p>
           <p className="text-[11px] text-slate-600 leading-snug line-clamp-2 mt-0.5">{m.caption || "—"}</p>
-          <p className="text-xs font-bold text-slate-800 mt-1">♥ {num(m.like_count || 0)} · 💬 {num(m.comments_count || 0)} <span className="font-normal text-gray-400">· {postType(m).replace(/s$/, "")} · {shortDate(m.posted_at)}</span></p>
+          <p className="text-xs font-bold text-slate-800 mt-1">♥ {num(m.like_count || 0)} · 💬 {num(m.comments_count || 0)}{(m.saved || 0) > 0 ? <> · 🔖 {num(m.saved!)}</> : null}{(m.shares || 0) > 0 ? <> · ↗ {num(m.shares!)}</> : null}</p>
+          <p className="text-[10px] text-gray-400 mt-0.5">{(m.reach || 0) > 0 ? `${num(m.reach!)} reached · ` : ""}{postType(m).replace(/s$/, "")} · {shortDate(m.posted_at)}</p>
         </div>
       </div>
     </a>
@@ -374,6 +387,12 @@ export function SocialBrandDetail({
           <Card label="Avg comments / post" value={s.n ? num(s.avgComments) : "—"} accent="#0ea5e9" />
           <Card label="Reach (latest mo.)" value={latest?.reach ? num(latest.reach) : "—"} accent="#3b82f6" />
           <Card label="Accounts engaged" value={latest?.accounts_engaged ? num(latest.accounts_engaged) : "—"} accent="#10b981" />
+          {s.hasReach && <>
+            <Card label="Avg reach / post" value={num(s.avgReach)} accent="#2563eb" />
+            <Card label="Reach eng. rate" value={s.reachRate!.toFixed(1) + "%"} accent="#d946ef" />
+            <Card label="Avg saves / post" value={num(s.n ? s.savedSum / s.n : 0)} accent="#0d9488" />
+            <Card label="Avg shares / post" value={num(s.n ? s.sharesSum / s.n : 0)} accent="#e11d48" />
+          </>}
         </div>
       )}
       {kpis === "engagement" && posts.length > 0 && (
