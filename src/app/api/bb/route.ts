@@ -81,6 +81,7 @@ export async function GET(req: Request) {
     q(`bb_agg_model?${wf}&is_pram=eq.true`),
     q(`bb_agg_store?${wf}${stateF}`),
     pwf ? q(`bb_agg_store?${pwf}${stateF}`) : Promise.resolve([]),
+    q(`bb_agg_variant?week_ending=eq.${lastWeek}`),
   ]);
   const trendP = light ? Promise.resolve([null, null, null, null]) : Promise.all([
     q(`bb_weekly_totals?order=week_ending.asc`),
@@ -88,7 +89,18 @@ export async function GET(req: Request) {
     q(`bb_weekly_brand?order=week_ending.asc`),
     q(`bb_weekly_model?order=week_ending.asc`),
   ]);
-  const [[statesRaw, brandsRaw, modelsRaw, pramStateRaw, storesRaw, storePrevRaw], [weeklyTotals, stateTrend, brandTrend, modelTrend]] = await Promise.all([periodP, trendP]);
+  const [[statesRaw, brandsRaw, modelsRaw, pramStateRaw, storesRaw, storePrevRaw, variantRaw], [weeklyTotals, stateTrend, brandTrend, modelTrend]] = await Promise.all([periodP, trendP]);
+
+  // Best-selling colourways per current key pram (rolling-year units), strollers only.
+  const KEY_MODELS = ["Vista", "Cruz", "Minu"];
+  const colours: Record<string, any[]> = {};
+  for (const km of KEY_MODELS) {
+    const vs = (variantRaw || [])
+      .filter((v: any) => v.model === km && /STROLLER|PRAM/i.test(v.description || "") && num(v.cum_units) > 0)
+      .sort((a: any, b: any) => num(b.cum_units) - num(a.cum_units)).slice(0, 8)
+      .map((v: any) => ({ code: v.supplier_code, description: v.description, cum_units: num(v.cum_units), cum_sales: num(v.cum_sales) }));
+    if (vs.length) colours[km] = vs;
+  }
 
   const statesAgg = periodAgg(statesRaw || [], ["state"], lastWeek).sort((a, b) => b.cum_sales - a.cum_sales);
   const storesAgg = periodAgg(storesRaw || [], ["store", "state"], lastWeek).sort((a, b) => b.cum_sales - a.cum_sales);
@@ -124,7 +136,7 @@ export async function GET(req: Request) {
     brands: periodAgg(brandsRaw || [], ["brand"], lastWeek),
     models: periodAgg(modelsRaw || [], ["model"], lastWeek).map(m => ({ ...m, is_pram: m.is_pram })),
     stores: storesAgg,
-    pramByState,
+    pramByState, colours,
     trends: light ? undefined : { weekly: weeklyTotals || [], byState: stateTrend || [], byBrand: brandTrend || [], byModel: modelTrend || [] },
     movers: { gainers: movers.slice(0, 6), decliners: [...movers].reverse().slice(0, 6), prevWeek: prevLast || null },
   });

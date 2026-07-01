@@ -29,12 +29,19 @@ function parseWeekEnding(v: any): string | null {
 type BBData = {
   ok: boolean; needsSetup?: boolean; weeks: string[]; week: string | null;
   mode?: "week" | "month"; period?: string | null; periods?: string[]; weekCount?: number;
-  kpi?: any; states?: any[]; brands?: any[]; models?: any[]; stores?: any[]; pramByState?: any[];
+  kpi?: any; states?: any[]; brands?: any[]; models?: any[]; stores?: any[]; pramByState?: any[]; colours?: Record<string, any[]>;
   trends?: { weekly: any[]; byState: any[]; byBrand: any[]; byModel: any[] };
   movers?: { gainers: any[]; decliners: any[]; prevWeek: string | null };
 };
 
 const monthLabel = (mk: string) => new Date(mk + "-01T00:00:00").toLocaleDateString("en-AU", { month: "short", year: "2-digit" });
+
+// Readable colourway from a SKU description (strip brand/model/boilerplate).
+function colourLabel(desc: string): string {
+  const s = (desc || "").replace(/UPPABABY/gi, "").replace(/\b(VISTA|CRUZ|MINU)\b/gi, "").replace(/\bV[23]\b/gi, "")
+    .replace(/\bSTROLLER\b|\bPRAM\b/gi, "").replace(/-?\s*ONLINE ONLY/gi, "").replace(/[-/()]/g, " ").replace(/\s+/g, " ").trim();
+  return (s ? s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) : desc).slice(0, 34);
+}
 
 export function BabyBunting({ canUpload }: { canUpload: boolean }) {
   const [data, setData] = React.useState<BBData | null>(null);
@@ -464,6 +471,33 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
           );
         })()}
       </div>
+
+      {/* Best-selling colours per key pram */}
+      {data!.colours && Object.keys(data!.colours).length > 0 && (
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400 mb-2 px-1">Best-selling colours <span className="font-normal normal-case tracking-normal">· current key prams · rolling-year units</span></p>
+          <div className="grid md:grid-cols-3 gap-4">
+            {["Vista", "Cruz", "Minu"].filter(m => (data!.colours![m] || []).length).map(model => {
+              const rows = data!.colours![model];
+              const max = Math.max(...rows.map((r: any) => num(r.cum_units)), 1);
+              return (
+                <div key={model} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4" style={{ borderTop: `3px solid ${PRAM_GOLD}` }}>
+                  <p className="text-sm font-bold text-slate-800 mb-3">{model}</p>
+                  <div className="space-y-2">
+                    {rows.map((r: any) => (
+                      <div key={r.code} className="flex items-center gap-2" title={r.description}>
+                        <span className="text-[11px] text-slate-600 w-28 truncate">{colourLabel(r.description)}</span>
+                        <span className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden"><span className="block h-full rounded-full" style={{ width: `${Math.max(num(r.cum_units) / max * 100, 3)}%`, background: PRAM_GOLD }} /></span>
+                        <span className="text-[11px] font-bold text-slate-700 tabular-nums w-8 text-right">{fmtU(num(r.cum_units))}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {modal && <UploadModal {...{ setModal, handleFiles, fileRef, busy, progress, summary }} />}
     </div>

@@ -120,30 +120,29 @@ export function classifyBrand(desc: string): string {
   return 'Other';
 }
 
-// Product line. Order also drives the "Sales by product" matrix rows.
-// V3 = current model, V2 = previous, (legacy) = older/oldest.
+// Product line. Current model vs (legacy) — the V2/older generation.
+// Vista: legacy = UPV2, everything else current. Cruz/Minu: current = V3, else legacy.
 export const MODEL_ORDER = [
-  'Vista V3','Vista V2','Vista (legacy)','Cruz V3','Cruz V2','Cruz (legacy)',
-  'Minu V3','Minu V2','Minu (legacy)','Ridge','RumbleSeat','Bassinet','Accessory','Wagon',
+  'Vista','Vista (legacy)','Cruz','Cruz (legacy)','Minu','Minu (legacy)',
+  'Ridge','RumbleSeat','Bassinet','Accessory','Wagon',
 ] as const;
 
 // Pram lines = the highlighted supplier-code columns from the BB report.
 export const PRAM_MODELS = new Set<string>([
-  'Vista V3','Vista V2','Vista (legacy)','Cruz V3','Cruz V2','Cruz (legacy)',
-  'Minu V3','Minu V2','Minu (legacy)','Ridge','RumbleSeat',
+  'Vista','Vista (legacy)','Cruz','Cruz (legacy)','Minu','Minu (legacy)','Ridge','RumbleSeat',
 ]);
+
+// The current-generation key prams — used for the best-selling-colours breakdown.
+export const KEY_PRAMS = ['Vista', 'Cruz', 'Minu'] as const;
 
 export function classifyModel(desc: string, brand: string): string {
   const d = desc.toUpperCase();
-  if (d.includes('VISTA V3') || d.includes('VISTA 2023')) return 'Vista V3';
-  if (d.includes('VISTA V2')) return 'Vista V2';
-  if (d.includes('VISTA')) return 'Vista (legacy)';
-  if (d.includes('CRUZ V3')) return 'Cruz V3';   // current (UPC3)
-  if (d.includes('CRUZ V2')) return 'Cruz V2';   // previous (UPC2)
-  if (d.includes('CRUZ')) return 'Cruz (legacy)';
-  if (d.includes('MINU V3')) return 'Minu V3';   // current (UPM3)
-  if (d.includes('MINU V2')) return 'Minu V2';   // previous (UPM2)
-  if (d.includes('MINU')) return 'Minu (legacy)';
+  if (d.includes('VISTA V2')) return 'Vista (legacy)';   // UPV2 = legacy
+  if (d.includes('VISTA')) return 'Vista';               // anything else Vista = current
+  if (d.includes('CRUZ V3')) return 'Cruz';              // UPC3 = current
+  if (d.includes('CRUZ')) return 'Cruz (legacy)';        // V2 / 2017-18 = legacy
+  if (d.includes('MINU V3')) return 'Minu';              // UPM3 = current
+  if (d.includes('MINU')) return 'Minu (legacy)';        // V2 / older = legacy
   if (d.includes('RIDGE')) return 'Ridge';
   if (d.includes('RUMBLESEAT')) return 'RumbleSeat';
   if (d.includes('BASSINET')) return 'Bassinet';
