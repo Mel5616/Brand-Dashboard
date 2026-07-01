@@ -9,9 +9,10 @@ import { Line, Bar } from "react-chartjs-2";
 import { fmt, fmtFull } from "@/lib/format";
 import type {
   Brand, BrandSummary, BrandMonthly, BrandWeekly, BrandProduct,
-  GoogleAdsRow, GoogleAdsCampaignRow, MetaAdsRow, MetaAdsPlatformRow, InstagramOrganicRow,
+  GoogleAdsRow, GoogleAdsCampaignRow, MetaAdsRow, MetaAdsPlatformRow, InstagramOrganicRow, InstagramMediaRow,
   WeekLabel, BrandTarget, KlaviyoRow, GA4Row, MarketingBudget, MarketingActual,
 } from "@/lib/db";
+import { SocialBrandDetail } from "./SocialPanel";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Filler, Tooltip, Legend);
 
@@ -173,6 +174,8 @@ interface Props {
   metaAds: MetaAdsRow[];
   metaAdsPlatform: MetaAdsPlatformRow[];
   instagramOrganic: InstagramOrganicRow[];
+  instagramOrganicAll?: InstagramOrganicRow[];
+  instagramMedia?: InstagramMediaRow[];
   targets: BrandTarget[];
   klaviyo: KlaviyoRow[];
   ga4: GA4Row[];
@@ -189,7 +192,7 @@ interface Props {
 
 export function BrandPage({
   brand, summary, monthly, weekly, weekLabels, products,
-  googleAds, metaAds, metaAdsPlatform, instagramOrganic,
+  googleAds, metaAds, metaAdsPlatform, instagramOrganic, instagramOrganicAll, instagramMedia,
   targets, klaviyo, ga4, marketingBudgets, marketingActuals, googleAdsCampaigns,
   monthKeys = DEFAULT_MONTH_KEYS, monthLabels = DEFAULT_MONTH_LABELS,
   latest, prevMonth, fyLabel = "FY 2025–26", brandInsight = null,
@@ -971,6 +974,18 @@ export function BrandPage({
           <div className="bg-white border-b border-gray-100 p-10 text-center">
             <p className="text-sm text-gray-400 font-medium">Instagram organic not yet connected for {brand.name}</p>
             <p className="text-xs text-gray-300 mt-1.5">Add <code className="bg-gray-100 px-1 rounded">instagramAccountId</code> to stores.config.json, then run <code className="bg-gray-100 px-1 rounded">python3 scripts/sync_instagram.py</code></p>
+          </div>
+        )}
+
+        {/* Rich Instagram content: engagement, phone feed, best/worst, trend, mix */}
+        {(instagramMedia?.some(m => m.brand_id === brand.id)) && (
+          <div className="bg-slate-50/60 border-b border-gray-100 p-4 sm:p-6">
+            <SocialBrandDetail
+              brand={brand}
+              instagramOrganic={instagramOrganicAll ?? instagramOrganic}
+              instagramMedia={instagramMedia ?? []}
+              kpis="engagement"
+            />
           </div>
         )}
 

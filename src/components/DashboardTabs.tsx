@@ -567,6 +567,8 @@ export function DashboardTabs({
             metaAds={metaAds}
             metaAdsPlatform={metaAdsPlatform}
             instagramOrganic={instagramOrganic}
+            instagramOrganicAll={instagramOrganicAll}
+            instagramMedia={instagramMedia}
             targets={targets}
             klaviyo={klaviyo}
             ga4={ga4}
