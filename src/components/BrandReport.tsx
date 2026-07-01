@@ -12,7 +12,7 @@ import type { ReportData, ChannelSlice } from "@/lib/report";
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, ArcElement, Tooltip, Legend);
 
 const pctS = (n: number) => `${(n * 100).toFixed(1)}%`;
-const CH_COLORS = ["#1e3a5f", "#10b981", "#f97316", "#92400e", "#3b82f6", "#22c55e", "#a855f7", "#ec4899", "#14b8a6"];
+const CH_COLORS = ["#0e7490", "#10b981", "#0ea5e9", "#92400e", "#3b82f6", "#22c55e", "#a855f7", "#ec4899", "#14b8a6"];
 const chColor = (i: number) => CH_COLORS[i % CH_COLORS.length];
 
 function Card({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent?: string }) {
@@ -65,16 +65,16 @@ export function BrandReport({ r }: { r: ReportData }) {
 
   const headline = [
     { label: "ROAS", value: r.roas != null ? `${r.roas.toFixed(1)}×` : "—", sub: "sales per $1 marketing", accent: "#10b981" },
-    { label: "Forecast (full year)", value: r.forecast != null ? fmtFull(r.forecast) : "—", sub: r.forecastPctOfTarget != null ? `${pctS(r.forecastPctOfTarget)} of target at current pace` : "—", accent: "#1e3a5f" },
+    { label: "Forecast (full year)", value: r.forecast != null ? fmtFull(r.forecast) : "—", sub: r.forecastPctOfTarget != null ? `${pctS(r.forecastPctOfTarget)} of target at current pace` : "—", accent: "#0e7490" },
     { label: "Share of portfolio", value: pctS(r.shareOfPortfolio), sub: "of total company sales", accent: "#14b8a6" },
-    { label: "Momentum", value: r.momentumPct != null ? `${r.momentumPct >= 0 ? "▲" : "▼"} ${Math.abs(r.momentumPct * 100).toFixed(0)}%` : "—", sub: r.momentumMonth ? `MoM · ${r.momentumMonth}` : "—", accent: "#f97316" },
+    { label: "Momentum", value: r.momentumPct != null ? `${r.momentumPct >= 0 ? "▲" : "▼"} ${Math.abs(r.momentumPct * 100).toFixed(0)}%` : "—", sub: r.momentumMonth ? `MoM · ${r.momentumMonth}` : "—", accent: "#0ea5e9" },
   ];
   const kpis = [
     { label: "Sales target FY", value: fmtFull(r.salesTargetFY), accent: "#10b981" },
     { label: "Actual sales YTD", value: fmtFull(r.actualSalesYTD), sub: `${pctS(r.pctToTarget)} to target`, accent: "#10b981" },
-    { label: "Marketing budget FY", value: fmtFull(r.marketingBudgetFY), accent: "#1e3a5f" },
-    { label: "Spend YTD", value: fmtFull(r.spendYTD), sub: `${pctS(r.pctBudgetUsed)} of budget used`, accent: "#1e3a5f" },
-    { label: "Mktg % of sales", value: pctS(r.mktgPctOfSales), accent: "#1e3a5f" },
+    { label: "Marketing budget FY", value: fmtFull(r.marketingBudgetFY), accent: "#0e7490" },
+    { label: "Spend YTD", value: fmtFull(r.spendYTD), sub: `${pctS(r.pctBudgetUsed)} of budget used`, accent: "#0e7490" },
+    { label: "Mktg % of sales", value: pctS(r.mktgPctOfSales), accent: "#0e7490" },
   ];
 
   return (
@@ -101,8 +101,8 @@ export function BrandReport({ r }: { r: ReportData }) {
             data={{
               labels: r.months.map(m => m.label),
               datasets: [
-                { label: "Sales", data: r.months.map(m => m.sales || null), borderColor: "#84cc16", backgroundColor: "#84cc16", tension: 0.4, yAxisID: "y", pointRadius: 0, borderWidth: 2 },
-                { label: "Marketing spend", data: r.months.map(m => m.spend || null), borderColor: "#1e3a5f", borderDash: [5, 4], tension: 0.4, yAxisID: "y1", pointRadius: 0, borderWidth: 2 },
+                { label: "Sales", data: r.months.map(m => m.sales || null), borderColor: "#0891b2", backgroundColor: "#0891b2", tension: 0.4, yAxisID: "y", pointRadius: 0, borderWidth: 2 },
+                { label: "Marketing spend", data: r.months.map(m => m.spend || null), borderColor: "#0e7490", borderDash: [5, 4], tension: 0.4, yAxisID: "y1", pointRadius: 0, borderWidth: 2 },
               ],
             }}
             options={{
@@ -126,7 +126,7 @@ export function BrandReport({ r }: { r: ReportData }) {
           <div className="flex items-center gap-5">
             <div className="relative w-32 h-32 shrink-0">
               <Doughnut
-                data={{ labels: ["Spent", "Remaining"], datasets: [{ data: [r.spendYTD, Math.max(0, remaining)], backgroundColor: ["#1e3a5f", "#e5e7eb"], borderWidth: 0 }] }}
+                data={{ labels: ["Spent", "Remaining"], datasets: [{ data: [r.spendYTD, Math.max(0, remaining)], backgroundColor: ["#0e7490", "#e5e7eb"], borderWidth: 0 }] }}
                 options={{ cutout: "70%", plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.label}: ${fmt(c.parsed as number)}` } } } }}
               />
               <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -152,7 +152,7 @@ export function BrandReport({ r }: { r: ReportData }) {
             <Bar
               data={{
                 labels: ["Prior yr actual", "Target", "Actual"],
-                datasets: [{ data: [r.priorYearActual, r.salesTargetFY, r.actualSalesYTD], backgroundColor: ["#cbd5e1", "#1e3a5f", "#84cc16"], borderRadius: 4, barThickness: 22 }],
+                datasets: [{ data: [r.priorYearActual, r.salesTargetFY, r.actualSalesYTD], backgroundColor: ["#cbd5e1", "#0e7490", "#0891b2"], borderRadius: 4, barThickness: 22 }],
               }}
               options={{
                 indexAxis: "y", responsive: true, maintainAspectRatio: false,

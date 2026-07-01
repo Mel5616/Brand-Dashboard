@@ -390,7 +390,7 @@ export function snapshotHtml(s: Snapshot): string {
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--navy:#2D4977;--blue:#6691AB;--blue-soft:#BDD4E7;--blue-wash:#Eaf1f7;--ink:#1c2733;--grey:#6a7787;--line:#e4e9ef;--up:#2f8d68;--paper:#fff;--bg:#eef1f5;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;}
+:root{--navy:#0e7490;--blue:#0891b2;--blue-soft:#7dd3e8;--blue-wash:#ecfeff;--ink:#1c2733;--grey:#6a7787;--line:#e4e9ef;--up:#2f8d68;--paper:#fff;--bg:#eef1f5;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smoothing:antialiased;}
 .page{max-width:860px;margin:0 auto;background:var(--paper);box-shadow:0 6px 30px rgba(20,30,50,.10);padding:42px 46px 30px;}
