@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { buildSnapshot, type SnapshotInput } from "@/lib/snapshot";
 import { buildUppababy, uppababyHtml, parseUppababyGrid, type UppaRow } from "@/lib/uppababy";
+import { fyMonthKeys, fyMonthLabels, FY_LABEL, type FY } from "@/lib/fy";
 
 type Props = Omit<SnapshotInput, "brand" | "note"> & {
   brands: { id: number; name: string }[];
@@ -45,16 +46,32 @@ export function UppababyReport({ brands, canUpload, month, monthKeys, monthLabel
     if (fileRef.current) fileRef.current.value = "";
   }
 
-  const periodLabel = useMemo(() => {
-    const [y, mm] = month.split("-").map(Number);
-    return new Date(y, (mm || 1) - 1, 1).toLocaleDateString("en-AU", { month: "long", year: "numeric" });
-  }, [month]);
-
   const html = useMemo(() => {
     if (!brand || !rows.length) return "";
-    const snap = buildSnapshot({ brand, month, monthKeys, monthLabels, fyLabel, note: "", ...data });
-    return uppababyHtml(buildUppababy(rows), snap, periodLabel);
-  }, [brand, rows, month, monthKeys, monthLabels, fyLabel, data, periodLabel]);
+    const u = buildUppababy(rows);
+    // Report period = the sell-through's latest actual month (may sit in the prior FY).
+    const rMonth = `2026-${String(u.latestActual || 1).padStart(2, "0")}`;
+    const [ry, rm] = rMonth.split("-").map(Number);
+    const rfyStart = rm >= 7 ? ry : ry - 1;
+    const rFy = `${rfyStart}-${String(rfyStart + 1).slice(2)}` as FY;
+    const rKeys = fyMonthKeys(rFy), rLabels = fyMonthLabels(rFy), rFyLabel = FY_LABEL[rFy] ?? fyLabel;
+    const periodLabel = new Date(ry, (rm || 1) - 1, 1).toLocaleDateString("en-AU", { month: "long", year: "numeric" });
+
+    // UPPAbaby tradeshow (booth) sell-through for the same calendar-YTD window.
+    const sum = (a: number[]) => a.reduce((s, v) => s + (v || 0), 0);
+    const showMonth = (tid: string) => (data.tradeshows.find((t: any) => t.id === tid)?.date_start ?? "").slice(0, 7);
+    const inYtd = (mk: string) => mk >= `${ry}-01` && mk <= rMonth;
+    const tradeshowYtd = sum(data.tradeshowSales.filter((s: any) => s.brand_id === brand.id && inYtd(showMonth(s.tradeshow_id))).map((s: any) => s.revenue));
+
+    const snap = buildSnapshot({ brand, month: rMonth, monthKeys: rKeys, monthLabels: rLabels, fyLabel: rFyLabel, note: "", ...data });
+    return uppababyHtml(u, snap, periodLabel, tradeshowYtd);
+  }, [brand, rows, fyLabel, data]);
+
+  const periodLabel = useMemo(() => {
+    if (!rows.length) { const [y, mm] = month.split("-").map(Number); return new Date(y, (mm || 1) - 1, 1).toLocaleDateString("en-AU", { month: "long", year: "numeric" }); }
+    const la = buildUppababy(rows).latestActual || 1;
+    return new Date(2026, la - 1, 1).toLocaleDateString("en-AU", { month: "long", year: "numeric" });
+  }, [rows, month]);
 
   function printIt() { const w = frameRef.current?.contentWindow; if (w) { w.focus(); w.print(); } }
   function download() {

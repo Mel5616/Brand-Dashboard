@@ -338,6 +338,9 @@ export function DashboardTabs({
   // Followers/engagement are a current-state metric (not FY-scoped): keep the full
   // history so the Social tab can always show the latest count, even early in a new FY.
   const instagramOrganicAll = instagramOrganic;
+  // Unfiltered copies for the UPPAbaby report — it covers the uploaded sell-through
+  // period (through the last complete month), which may sit in the prior FY.
+  const rawMonthly = monthly, rawTargets = targets, rawGoogleAds = googleAds, rawMetaAds = metaAds, rawKlaviyo = klaviyo, rawGoogleAdsCampaigns = googleAdsCampaigns;
   monthly          = inFy(monthly);
   googleAds        = inFy(googleAds);
   metaAds          = inFy(metaAds);
@@ -1007,14 +1010,14 @@ export function DashboardTabs({
                 monthKeys={monthKeys}
                 monthLabels={monthLabels}
                 fyLabel={fyLabel}
-                monthly={monthly}
-                targets={targets}
-                googleAds={googleAds}
-                metaAds={metaAds}
-                klaviyo={klaviyo}
+                monthly={rawMonthly}
+                targets={rawTargets}
+                googleAds={rawGoogleAds}
+                metaAds={rawMetaAds}
+                klaviyo={rawKlaviyo}
                 products={products}
                 summaries={summaries}
-                googleAdsCampaigns={googleAdsCampaigns}
+                googleAdsCampaigns={rawGoogleAdsCampaigns}
                 brandsAll={brands}
                 channelSales={channelSales}
                 tradeshows={tradeshows}

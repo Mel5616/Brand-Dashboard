@@ -112,7 +112,7 @@ function svgCompare(s25: number[], s26: (number | null)[]): string {
     ${line(s25, "#cbd5e1", 2)}${line(s26, "#0891b2", 2.6)}${dots(s26, "#0891b2")}${ticks}</svg>`;
 }
 
-export function uppababyHtml(u: Uppa, snap: Snapshot, periodLabel: string): string {
+export function uppababyHtml(u: Uppa, snap: Snapshot, periodLabel: string, tradeshowYtd = 0): string {
   const ch = (c: typeof u.channels[number]) => `<tr><td class="cn">${titleCase(c.name)}</td><td>${fmtFull(c.ytd2025)}</td><td class="cy">${fmtFull(c.ytd2026)}</td><td class="${c.delta >= 0 ? "up" : "dn"}">${c.delta >= 0 ? "+" : "−"}${fmtFull(Math.abs(c.delta))}</td><td class="${(c.pct ?? 0) >= 0 ? "up" : "dn"}">${pctTag(c.pct)}</td></tr>`;
   const q = (x: typeof u.quarters[number]) => `<tr><td class="cn">${x.label}${x.partial ? "<span style='color:var(--grey);font-weight:600'> · to date</span>" : ""}</td><td>${fmtFull(x.t2025)}</td><td class="cy">${fmtFull(x.t2026)}</td><td class="${x.delta >= 0 ? "up" : "dn"}">${x.delta >= 0 ? "+" : "−"}${fmtFull(Math.abs(x.delta))}</td><td>${pctTag(x.pct)}</td></tr>`;
   const m = snap; // marketing numbers reused from the Snapshot computation
@@ -176,7 +176,11 @@ table.cmp th.cy{box-shadow:inset 0 -1px 0 var(--line);}
 .bar-fill{display:block;height:100%;background:#94a3b8;border-radius:4px;}
 .bar-fill.best{background:var(--teal);}
 .bar-fill.best.direct{background:#16a34a;}
+.bar-fill.dtd{background:var(--teal);}
+.bar-fill.booth{background:#f59e0b;}
 .bar-val{font-size:11.5px;font-weight:700;color:var(--ink);width:92px;text-align:right;flex-shrink:0;}
+.dt-note{font-size:11.5px;color:var(--grey);margin-top:11px;font-weight:600;}
+.dt-note strong{color:var(--ink);}
 .foot{margin-top:24px;border-top:1px solid var(--line);padding-top:12px;font-size:10px;color:var(--grey);line-height:1.55;font-weight:500;}
 .foot strong{color:var(--ink);}
 @media print{body{background:#fff;padding:0;}.page{box-shadow:none;max-width:none;padding:30px 34px;}@page{size:A4;margin:12mm;}.sec{break-inside:avoid;}}
@@ -221,6 +225,21 @@ table.cmp th.cy{box-shadow:inset 0 -1px 0 var(--line);}
     <tbody>${u.channels.map(ch).join("")}<tr class="tot"><td class="cn">Total</td><td>${fmtFull(u.total.ytd2025)}</td><td class="cy">${fmtFull(u.total.ytd2026)}</td><td class="${u.totalDelta >= 0 ? "up" : "dn"}">${u.totalDelta >= 0 ? "+" : "−"}${fmtFull(Math.abs(u.totalDelta))}</td><td>${pctTag(u.totalPct)}</td></tr></tbody></table>
     <div class="trend"><div class="tl">Monthly sales · 2025 vs 2026</div>${svgCompare(u.monthly2025, u.monthly2026)}<div class="lgnd"><span><i style="background:#cbd5e1"></i>2025</span><span><i style="background:#0891b2"></i>2026</span></div></div>
   </div>
+
+  ${(() => {
+    const direct = u.channels.find(c => c.name === "DIRECT SALES")?.ytd2026 ?? 0;
+    if (direct <= 0 && tradeshowYtd <= 0) return "";
+    const combined = direct + tradeshowYtd;
+    const boothShare = combined > 0 ? Math.round((tradeshowYtd / combined) * 100) : 0;
+    const mx = Math.max(direct, tradeshowYtd, 1);
+    return `<div class="sec">
+    <div class="h">Direct vs Tradeshow · year to date</div>
+    <div class="bars">
+      <div class="bar-row"><span class="bar-lab">Direct · online</span><span class="bar-track"><span class="bar-fill dtd" style="width:${(direct / mx * 100).toFixed(1)}%"></span></span><span class="bar-val">${fmtFull(direct)}</span></div>
+      <div class="bar-row"><span class="bar-lab">Tradeshow · booth</span><span class="bar-track"><span class="bar-fill booth" style="width:${(tradeshowYtd / mx * 100).toFixed(1)}%"></span></span><span class="bar-val">${fmtFull(tradeshowYtd)}</span></div>
+    </div>
+    <div class="dt-note">Coolkidz-run own-channel sell-through <strong>${fmtFull(combined)}</strong> · booth events contributed <strong>${boothShare}%</strong> of it.</div>
+  </div>`; })()}
 
   <div class="sec">
     <div class="h">Quarterly comparison</div>
