@@ -106,9 +106,9 @@ export function TeamGiftingPanel() {
       {/* Social performance KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Kpi label="Posts live" value={String(data.social.posts)} accent="#1c2733" />
-        <Kpi label="Total likes" value={compact(data.social.likes)} accent="#e1306c" />
-        <Kpi label="Total reach" value={compact(data.social.reach)} accent="#5b86b0" />
-        <Kpi label="Avg engagement" value={avgEng != null ? avgEng.toFixed(1) + "%" : "—"} accent="#4f9d86" />
+        <Kpi label="Total likes" value={compact(data.social.likes)} accent="#0e7490" />
+        <Kpi label="Total reach" value={compact(data.social.reach)} accent="#0891b2" />
+        <Kpi label="Avg engagement" value={avgEng != null ? avgEng.toFixed(1) + "%" : "—"} accent="#14b8a6" />
       </div>
 
       {/* Notable users — top influencers by likes */}

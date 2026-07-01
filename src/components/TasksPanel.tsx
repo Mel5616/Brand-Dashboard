@@ -48,10 +48,10 @@ export function TasksPanel({ tasks, brands, currentEmail }: { tasks: AsanaTask[]
 
   const waiting = open.filter(t => isWaiting(t.status)).length;
   const kpis = [
-    { label: "Open tasks", value: String(open.length), accent: "#1e3a5f" },
+    { label: "Open tasks", value: String(open.length), accent: "#0e7490" },
     { label: "Waiting approval", value: String(waiting), accent: "#dc2626" },
-    { label: "Due this week", value: String(dueSoon), accent: "#f97316" },
-    { label: "Completed", value: String(done.length), accent: "#10b981" },
+    { label: "Due this week", value: String(dueSoon), accent: "#0ea5e9" },
+    { label: "Completed", value: String(done.length), accent: "#14b8a6" },
   ];
 
   // Tasks assigned to the logged-in user that are awaiting their approval — pinned to the top.

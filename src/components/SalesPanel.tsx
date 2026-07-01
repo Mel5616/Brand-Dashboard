@@ -205,12 +205,12 @@ export function SalesPanel({
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card label={isAdmin ? "Total sales (FY)" : "Digital sales (FY)"} value={fmtFull(fyTotal)} accent="#1e3a5f" />
-        <Card label={`${latestLabel} sales`} value={fmtFull(monthTotal)} sub={mom != null ? `${mom >= 0 ? "▲" : "▼"} ${Math.abs(mom).toFixed(0)}% vs prev` : undefined} accent="#10b981" />
-        <Card label={merLabel} value={merValue != null ? merValue.toFixed(1) + "%" : "—"} sub={isAdmin ? "marketing spend ÷ all revenue" : "paid digital ÷ digital revenue"} accent="#f97316" />
+        <Card label={isAdmin ? "Total sales (FY)" : "Digital sales (FY)"} value={fmtFull(fyTotal)} accent="#0e7490" />
+        <Card label={`${latestLabel} sales`} value={fmtFull(monthTotal)} sub={mom != null ? `${mom >= 0 ? "▲" : "▼"} ${Math.abs(mom).toFixed(0)}% vs prev` : undefined} accent="#14b8a6" />
+        <Card label={merLabel} value={merValue != null ? merValue.toFixed(1) + "%" : "—"} sub={isAdmin ? "marketing spend ÷ all revenue" : "paid digital ÷ digital revenue"} accent="#0ea5e9" />
         {hasBudget
           ? <Card label="FY sales target" value={fmtFull(totalTarget)} sub={overallPace != null ? `${Math.round(overallPace)}% paced to ${latestLabel}` : "targets set"} accent="#0ea5e9" />
-          : <Card label="Channels" value={String(channels.length)} accent="#a855f7" />}
+          : <Card label="Channels" value={String(channels.length)} accent="#06b6d4" />}
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">

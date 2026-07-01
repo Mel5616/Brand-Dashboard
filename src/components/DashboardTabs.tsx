@@ -680,10 +680,10 @@ export function DashboardTabs({
                 const paceDelta = actToDate - tgtToDate;
                 const hasTarget = tgtToDate > 0;
                 const cards = [
-                  { label: role === "admin" ? "Total business revenue" : "Digital revenue", value: fmt(total), accent: "#1e3a5f", sub: momSub, spark: totalSeries as number[] | undefined },
-                  { label: "Mktg % of sales", value: mer != null ? mer.toFixed(1) + "%" : "—", accent: "#f97316", sub: undefined as string | undefined, spark: merSeries as number[] | undefined },
-                  { label: "Digital share", value: Math.round(onlinePct) + "%", accent: "#10b981", sub: undefined as string | undefined, spark: shareSeries as number[] | undefined },
-                  { label: "Channels", value: String(visible.length), accent: "#a855f7", sub: undefined as string | undefined, spark: undefined as number[] | undefined },
+                  { label: role === "admin" ? "Total business revenue" : "Digital revenue", value: fmt(total), accent: "#0e7490", sub: momSub, spark: totalSeries as number[] | undefined },
+                  { label: "Mktg % of sales", value: mer != null ? mer.toFixed(1) + "%" : "—", accent: "#0ea5e9", sub: undefined as string | undefined, spark: merSeries as number[] | undefined },
+                  { label: "Digital share", value: Math.round(onlinePct) + "%", accent: "#14b8a6", sub: undefined as string | undefined, spark: shareSeries as number[] | undefined },
+                  { label: "Channels", value: String(visible.length), accent: "#06b6d4", sub: undefined as string | undefined, spark: undefined as number[] | undefined },
                 ];
                 return (
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">

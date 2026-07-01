@@ -75,9 +75,9 @@ export function SeoPanel({
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          <Card label="Organic clicks (latest mo.)" value={num(tot.clicks)} accent="#10b981" sub="Search Console" />
-          <Card label="Est. traffic value / mo" value={fmtAud(tot.val)} accent="#f59e0b" sub="SEMrush, AU" />
-          <Card label="Brands with SEO" value={String(rows.length)} accent="#8b5cf6" />
+          <Card label="Organic clicks (latest mo.)" value={num(tot.clicks)} accent="#14b8a6" sub="Search Console" />
+          <Card label="Est. traffic value / mo" value={fmtAud(tot.val)} accent="#0891b2" sub="SEMrush, AU" />
+          <Card label="Brands with SEO" value={String(rows.length)} accent="#06b6d4" />
         </div>
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 overflow-x-auto">
           <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-0.5">Organic search leaderboard</h3>
@@ -146,10 +146,10 @@ export function SeoPanel({
       {sem && (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Card label="Organic keywords" value={sem.organic_keywords.toLocaleString()} accent="#6366f1" sub="SEMrush, AU" />
+            <Card label="Organic keywords" value={sem.organic_keywords.toLocaleString()} accent="#2563eb" sub="SEMrush, AU" />
             <Card label="Est. monthly traffic" value={num(sem.organic_traffic)} accent="#3b82f6" sub="SEMrush" />
-            <Card label="Traffic value / mo" value={fmtAud(sem.traffic_value)} accent="#f59e0b" sub="ad-equivalent cost" />
-            <Card label="SEMrush rank" value={sem.semrush_rank ? sem.semrush_rank.toLocaleString() : "—"} accent="#8b5cf6" sub="lower is stronger" />
+            <Card label="Traffic value / mo" value={fmtAud(sem.traffic_value)} accent="#0891b2" sub="ad-equivalent cost" />
+            <Card label="SEMrush rank" value={sem.semrush_rank ? sem.semrush_rank.toLocaleString() : "—"} accent="#06b6d4" sub="lower is stronger" />
           </div>
           {comps.length > 0 && (
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 overflow-x-auto">
@@ -250,10 +250,10 @@ export function SeoPanel({
 
       {hasGsc && latest && (<>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card label={`Clicks (${monthLabels[li]})`} value={latest.clicks.toLocaleString()} accent="#10b981" sub={<Delta now={latest.clicks} prev={prev?.clicks ?? 0} />} />
+        <Card label={`Clicks (${monthLabels[li]})`} value={latest.clicks.toLocaleString()} accent="#14b8a6" sub={<Delta now={latest.clicks} prev={prev?.clicks ?? 0} />} />
         <Card label="Impressions" value={num(latest.impressions)} accent="#3b82f6" sub={<Delta now={latest.impressions} prev={prev?.impressions ?? 0} />} />
-        <Card label="CTR" value={latest.ctr.toFixed(1) + "%"} accent="#8b5cf6" sub={<Delta now={latest.ctr} prev={prev?.ctr ?? 0} />} />
-        <Card label="Avg position" value={latest.position.toFixed(1)} accent="#f59e0b" sub={<Delta now={latest.position} prev={prev?.position ?? 0} invert />} />
+        <Card label="CTR" value={latest.ctr.toFixed(1) + "%"} accent="#06b6d4" sub={<Delta now={latest.ctr} prev={prev?.ctr ?? 0} />} />
+        <Card label="Avg position" value={latest.position.toFixed(1)} accent="#0891b2" sub={<Delta now={latest.position} prev={prev?.position ?? 0} invert />} />
       </div>
 
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">

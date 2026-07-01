@@ -64,9 +64,9 @@ export function EmailBrandDetail({
   }
 
   const kpisTop = [
-    { label: "Email Revenue (FY)", value: fmtFull(revenue), accent: "#10b981" },
+    { label: "Email Revenue (FY)", value: fmtFull(revenue), accent: "#14b8a6" },
     { label: "Subscribers", value: subscribers > 0 ? subscribers.toLocaleString() : "—", accent: "#0ea5e9" },
-    { label: "Email Orders (FY)", value: orders.toLocaleString(), accent: "#1e3a5f" },
+    { label: "Email Orders (FY)", value: orders.toLocaleString(), accent: "#0e7490" },
     { label: "% of Total Revenue", value: storeRev > 0 ? pctOfRev.toFixed(1) + "%" : "—", accent: "#14b8a6" },
   ];
   const kpisBot = [

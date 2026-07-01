@@ -64,14 +64,14 @@ export function BrandReport({ r }: { r: ReportData }) {
   const remaining = r.marketingBudgetFY - r.spendYTD;
 
   const headline = [
-    { label: "ROAS", value: r.roas != null ? `${r.roas.toFixed(1)}×` : "—", sub: "sales per $1 marketing", accent: "#10b981" },
+    { label: "ROAS", value: r.roas != null ? `${r.roas.toFixed(1)}×` : "—", sub: "sales per $1 marketing", accent: "#14b8a6" },
     { label: "Forecast (full year)", value: r.forecast != null ? fmtFull(r.forecast) : "—", sub: r.forecastPctOfTarget != null ? `${pctS(r.forecastPctOfTarget)} of target at current pace` : "—", accent: "#0e7490" },
     { label: "Share of portfolio", value: pctS(r.shareOfPortfolio), sub: "of total company sales", accent: "#14b8a6" },
     { label: "Momentum", value: r.momentumPct != null ? `${r.momentumPct >= 0 ? "▲" : "▼"} ${Math.abs(r.momentumPct * 100).toFixed(0)}%` : "—", sub: r.momentumMonth ? `MoM · ${r.momentumMonth}` : "—", accent: "#0ea5e9" },
   ];
   const kpis = [
-    { label: "Sales target FY", value: fmtFull(r.salesTargetFY), accent: "#10b981" },
-    { label: "Actual sales YTD", value: fmtFull(r.actualSalesYTD), sub: `${pctS(r.pctToTarget)} to target`, accent: "#10b981" },
+    { label: "Sales target FY", value: fmtFull(r.salesTargetFY), accent: "#14b8a6" },
+    { label: "Actual sales YTD", value: fmtFull(r.actualSalesYTD), sub: `${pctS(r.pctToTarget)} to target`, accent: "#14b8a6" },
     { label: "Marketing budget FY", value: fmtFull(r.marketingBudgetFY), accent: "#0e7490" },
     { label: "Spend YTD", value: fmtFull(r.spendYTD), sub: `${pctS(r.pctBudgetUsed)} of budget used`, accent: "#0e7490" },
     { label: "Mktg % of sales", value: pctS(r.mktgPctOfSales), accent: "#0e7490" },

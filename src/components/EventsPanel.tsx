@@ -25,10 +25,10 @@ export function EventsPanel({ events, brands }: { events: EventbriteEvent[]; bra
   const fillPct = cap > 0 ? Math.round((ticketsSold / cap) * 100) : null;
 
   const kpis = [
-    { label: "Upcoming events", value: String(upcoming.length), accent: "#1e3a5f" },
-    { label: "Tickets sold", value: ticketsSold.toLocaleString(), accent: "#10b981" },
-    { label: "Ticket revenue", value: fmt(revenue), accent: "#f97316" },
-    { label: "Capacity filled", value: fillPct != null ? fillPct + "%" : "—", accent: "#a855f7" },
+    { label: "Upcoming events", value: String(upcoming.length), accent: "#0e7490" },
+    { label: "Tickets sold", value: ticketsSold.toLocaleString(), accent: "#14b8a6" },
+    { label: "Ticket revenue", value: fmt(revenue), accent: "#0ea5e9" },
+    { label: "Capacity filled", value: fillPct != null ? fillPct + "%" : "—", accent: "#06b6d4" },
   ];
 
   const dateOf = (s: string | null) => s ? new Date(s).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "—";
