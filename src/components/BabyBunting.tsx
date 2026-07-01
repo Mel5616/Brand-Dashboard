@@ -173,7 +173,14 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
         <div className="flex items-center gap-3">
           <p className="text-xs text-gray-400">Retail partner analytics · rolling year, ex-tax</p>
           <select value={week ?? ""} onChange={e => setWeek(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer">
-            {data!.weeks.map(w => <option key={w} value={w}>Week ending {longDate(w)}</option>)}
+            {(() => {
+              const groups: { label: string; weeks: string[] }[] = [];
+              for (const w of data!.weeks) {
+                const label = new Date(String(w).slice(0, 7) + "-01T00:00:00").toLocaleDateString("en-AU", { month: "long", year: "numeric" });
+                (groups.find(g => g.label === label) ?? groups[groups.push({ label, weeks: [] }) - 1]).weeks.push(w);
+              }
+              return groups.map(g => <optgroup key={g.label} label={g.label}>{g.weeks.map(w => <option key={w} value={w}>Week ending {longDate(w)}</option>)}</optgroup>);
+            })()}
           </select>
         </div>
         {canUpload && <button onClick={() => setModal(true)} className="text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg px-4 py-2">↑ Upload weeks</button>}
