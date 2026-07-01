@@ -9,7 +9,7 @@ const TO_ACTUAL: Record<string, string> = {
   "Direct / Website": "Website Sales", "Wholesale": "Wholesale", "Baby Bunting": "Baby Bunting",
   "Amazon": "Amazon", "MarketPlace": "Marketplace", "Affiliate": "Affiliates",
   "Partnerships": "Partnerships", "Specialty": "Specialty", "The Memo": "The Memo",
-  "Hatch Baby": "Hatch Baby", "Online Wholesale": "Online Wholesale",
+  "Hatch Baby": "New Zealand", "Online Wholesale": "Online Wholesale",
 };
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 const aud = (n: number) => (Math.abs(n) >= 1_000_000 ? "$" + (n / 1_000_000).toFixed(2) + "M" : Math.abs(n) >= 1000 ? "$" + (n / 1000).toFixed(0) + "K" : "$" + Math.round(n).toLocaleString());
@@ -286,7 +286,10 @@ export function SalesBudget({ brands, salesBudget, channelSales, monthly, trades
             </table>
             <p className="text-[10px] text-gray-400 mt-2">Pace = actual vs target for the {monthsElapsed} month{monthsElapsed === 1 ? "" : "s"} to {monthLabels[elapsedIdx] ?? "date"}. Proj. FY = run-rate (actual to date annualised). Actuals map budget channels to live sales channels; unmatched channels show as behind.
               {editable ? " Edit the FY27 Target or Growth % to adjust a target (splits evenly across the year and saves automatically)." : canEdit ? " Select a single brand to edit targets and expected growth." : ""}</p>
-            {rows.some(r => !r.mapped) && <p className="text-[10px] text-amber-600 mt-1">The Memo, Hatch Baby and Online Wholesale have no separate live sales channel (they roll into Wholesale in the actuals), so their pace shows n/a and their sales are counted under Wholesale.</p>}
+            {(() => {
+              const un = rows.filter(r => !r.mapped).map(r => r.c);
+              return un.length ? <p className="text-[10px] text-amber-600 mt-1">{un.join(", ")} {un.length === 1 ? "has" : "have"} no separate live sales channel yet, so pace shows n/a until those sales report under their own channel.</p> : null;
+            })()}
           </div>
         </>
       ) : (
