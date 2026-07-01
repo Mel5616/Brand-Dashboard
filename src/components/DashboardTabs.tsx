@@ -8,6 +8,7 @@ import { EmailChart } from "./EmailChart";
 import { EmailBrandDetail } from "./EmailBrandDetail";
 import { BrandReport } from "./BrandReport";
 import { buildReport } from "@/lib/report";
+import { SocialReport } from "./SocialReport";
 import { GoogleCampaignTable, MetaPlatformBreakdown } from "./ChannelBrandDetail";
 import { CampaignCalendar } from "./CampaignCalendar";
 import { PromotionalCalendar } from "./PromotionalCalendar";
@@ -44,7 +45,7 @@ import { ShopifyInsights } from "./ShopifyInsights";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "brands" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "uppababy" | "sales" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "events" | "tasks" | "design-requests" | "new-products" | "budget" | "calendar" | "content" | "influencer" | "gifting" | "pa-budget" | "pa-tracker" | "team";
+type TabId = "brands" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "uppababy" | "sales" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "events" | "tasks" | "design-requests" | "new-products" | "budget" | "calendar" | "content" | "influencer" | "gifting" | "pa-budget" | "pa-tracker" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -159,7 +160,7 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
 
 // Sidebar grouping — how you market (top) vs where you sell (bottom).
 const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
-  { label: "Overview", ids: ["brands", "insights", "report", "snapshot", "uppababy"] },
+  { label: "Overview", ids: ["brands", "insights", "report", "snapshot", "social-report", "uppababy"] },
   { label: "Revenue & Channels", ids: ["sales", "shopify", "tradeshows"] },
   { label: "Plan", ids: ["campaign-calendar", "promotions", "calendar", "content", "events", "tasks", "design-requests"] },
   { label: "Operations", ids: ["budget", "new-products"] },
@@ -168,7 +169,7 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
 ];
 
 // Report-type pages collapse under a "Reports" dropdown in the sidebar.
-const REPORT_IDS: TabId[] = ["report", "snapshot", "uppababy"];
+const REPORT_IDS: TabId[] = ["report", "snapshot", "social-report", "uppababy"];
 // Influencer pages collapse under an "Influencers" dropdown in the sidebar.
 const INFLUENCER_IDS: TabId[] = ["influencer", "gifting"];
 // Partnerships pages collapse under a "Partnerships & Affiliates" dropdown.
@@ -971,6 +972,14 @@ export function DashboardTabs({
                 semrushMetrics={semrushMetrics}
                 semrushKeywords={semrushKeywords}
               />
+            </>
+          )}
+
+          {/* ── Social media report (portfolio Instagram overview, print/PDF) ── */}
+          {active === "social-report" && (
+            <>
+              <SectionBar title="Social Media Report" />
+              <SocialReport brands={brands} instagramOrganic={instagramOrganicAll} instagramMedia={instagramMedia} />
             </>
           )}
 

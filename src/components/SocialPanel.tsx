@@ -4,15 +4,15 @@ import React from "react";
 import type { Brand, InstagramOrganicRow, InstagramMediaRow } from "@/lib/db";
 import { SOCIAL_TEAM, ownerOf, ownerColor } from "@/lib/socialOwners";
 
-const num = (n: number) => (n >= 1000 ? (n / 1000).toFixed(1) + "K" : Math.round(n).toLocaleString());
-const eng = (m: InstagramMediaRow) => (m.like_count || 0) + (m.comments_count || 0);
-const postType = (m: InstagramMediaRow) => (m.media_type === "VIDEO" ? "Reels" : m.media_type === "CAROUSEL_ALBUM" ? "Carousels" : "Photos");
+export const num = (n: number) => (n >= 1000 ? (n / 1000).toFixed(1) + "K" : Math.round(n).toLocaleString());
+export const eng = (m: InstagramMediaRow) => (m.like_count || 0) + (m.comments_count || 0);
+export const postType = (m: InstagramMediaRow) => (m.media_type === "VIDEO" ? "Reels" : m.media_type === "CAROUSEL_ALBUM" ? "Carousels" : "Photos");
 const shortDate = (s: string | null) => (s ? new Date(s).toLocaleDateString("en-AU", { day: "numeric", month: "short" }) : "");
 const mLabel = (mk: string) => new Date(mk + "-01T00:00:00").toLocaleDateString("en-AU", { month: "short", year: "2-digit" });
 const WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 // ── Data helpers ────────────────────────────────────────────────────────────
-function computeStats(media: InstagramMediaRow[], organic: InstagramOrganicRow[], id: number) {
+export function computeStats(media: InstagramMediaRow[], organic: InstagramOrganicRow[], id: number) {
   const posts = media.filter(m => m.brand_id === id);
   const n = posts.length;
   const likes = posts.reduce((s, m) => s + (m.like_count || 0), 0);
@@ -38,7 +38,7 @@ function computeStats(media: InstagramMediaRow[], organic: InstagramOrganicRow[]
   };
 }
 
-function computeMix(posts: InstagramMediaRow[]) {
+export function computeMix(posts: InstagramMediaRow[]) {
   const groups: Record<string, number[]> = { Photos: [], Reels: [], Carousels: [] };
   for (const m of posts) groups[postType(m)].push(eng(m));
   return (["Reels", "Photos", "Carousels"] as const)
@@ -46,13 +46,13 @@ function computeMix(posts: InstagramMediaRow[]) {
     .filter(g => g.n > 0);
 }
 
-function weekdayStats(posts: InstagramMediaRow[]) {
+export function weekdayStats(posts: InstagramMediaRow[]) {
   const b = Array.from({ length: 7 }, () => ({ n: 0, eng: 0 }));
   for (const m of posts) { if (!m.posted_at) continue; const d = new Date(m.posted_at).getDay(); b[d].n++; b[d].eng += eng(m); }
   return b.map((x, i) => ({ day: WD[i], n: x.n, avg: x.n ? x.eng / x.n : 0 }));
 }
 
-function hashtagStats(posts: InstagramMediaRow[]) {
+export function hashtagStats(posts: InstagramMediaRow[]) {
   const map = new Map<string, { tag: string; n: number; eng: number }>();
   for (const m of posts) {
     const tags = (m.caption || "").match(/#[\p{L}\p{N}_]+/gu) || [];
