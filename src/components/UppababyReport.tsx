@@ -69,7 +69,11 @@ export function UppababyReport({ brands, canUpload, month, monthKeys, monthLabel
     const liveDirectTotal = sum(data.monthly.filter((m: any) => m.brand_id === brand.id && calMonths.includes(m.month_key)).map((m: any) => m.revenue));
     const tradeshowShare = liveDirectTotal > 0 ? Math.min(1, tradeshowLive / liveDirectTotal) : null;
 
-    const snap = buildSnapshot({ brand, month: rMonth, monthKeys: rKeys, monthLabels: rLabels, fyLabel: rFyLabel, note: "", ...data });
+    // Scope monthly/targets to the calendar year so YTD sums only Jan→latest of 2026
+    // (data is unfiltered, and the snapshot would otherwise fold in other years).
+    const monthlyCY = data.monthly.filter((m: any) => rKeys.includes(m.month_key));
+    const targetsCY = data.targets.filter((t: any) => rKeys.includes(t.month_key));
+    const snap = buildSnapshot({ brand, month: rMonth, monthKeys: rKeys, monthLabels: rLabels, fyLabel: rFyLabel, note: "", ...data, monthly: monthlyCY, targets: targetsCY });
     return uppababyHtml(u, snap, periodLabel, tradeshowShare);
   }, [brand, rows, fyLabel, data]);
 
