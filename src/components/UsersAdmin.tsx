@@ -177,7 +177,7 @@ function EditUser({ u, sections, adminOnly, onChanged }: { u: Row; sections: Tab
         <div>
           <label className="text-xs font-semibold text-slate-400 uppercase">Role</label>
           <select value={role} onChange={e => setRole(e.target.value as any)} disabled={u.envAdmin} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white">
-            <option value="member">Management (view only)</option>
+            <option value="member">User (view only)</option>
             <option value="admin">Admin (full access)</option>
           </select>
           {u.envAdmin && <p className="text-[11px] text-slate-400 mt-1">This account is a permanent admin (set in environment).</p>}
@@ -245,7 +245,7 @@ function CreateUser({ sections, adminOnly, onClose, onSaved }: { sections: TabSe
           </label>
           {!invite && <div><label className="text-xs font-semibold text-slate-400 uppercase">Password</label><input type="text" value={pw} onChange={e => setPw(e.target.value)} placeholder="8+ characters" className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2" /></div>}
           <div><label className="text-xs font-semibold text-slate-400 uppercase">Role</label>
-            <select value={role} onChange={e => setRole(e.target.value as any)} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white"><option value="member">Management (view only)</option><option value="admin">Admin (full access)</option></select>
+            <select value={role} onChange={e => setRole(e.target.value as any)} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white"><option value="member">User (view only)</option><option value="admin">Admin (full access)</option></select>
           </div>
         </div>
         <div>
