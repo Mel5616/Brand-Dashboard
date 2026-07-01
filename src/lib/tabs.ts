@@ -19,6 +19,7 @@ export const TAB_SECTIONS: TabSection[] = [
   { label: "Revenue & Channels", tabs: [
     { id: "sales", label: "Sales by Channel" },
     { id: "sales-budget", label: "Sales Budget" },
+    { id: "baby-bunting", label: "Baby Bunting" },
     { id: "shopify", label: "Shopify" },
     { id: "tradeshows", label: "Tradeshows" },
   ] },

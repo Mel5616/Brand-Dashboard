@@ -20,6 +20,7 @@ import { InsightsPanel } from "./InsightsPanel";
 import { SocialPanel } from "./SocialPanel";
 import { SalesPanel } from "./SalesPanel";
 import { SalesBudget } from "./SalesBudget";
+import { BabyBunting } from "./BabyBunting";
 import { buildChannels, groupDirect, channelColor, momPct, DIGITAL_CHANNELS } from "@/lib/channels";
 import { PortfolioCharts, Sparkline } from "./PortfolioCharts";
 import { SectionBar } from "./ui";
@@ -46,7 +47,7 @@ import { ShopifyInsights } from "./ShopifyInsights";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "brands" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "uppababy" | "sales" | "sales-budget" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "events" | "tasks" | "design-requests" | "new-products" | "budget" | "calendar" | "content" | "influencer" | "gifting" | "pa-budget" | "pa-tracker" | "team";
+type TabId = "brands" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "uppababy" | "sales" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "events" | "tasks" | "design-requests" | "new-products" | "budget" | "calendar" | "content" | "influencer" | "gifting" | "pa-budget" | "pa-tracker" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -88,6 +89,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
     id: "sales-budget", label: "Sales Budget",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V9m4 8V5m4 12v-6M4 21h16a1 1 0 001-1V4a1 1 0 00-1-1H4a1 1 0 00-1 1v16a1 1 0 001 1z" /></svg>,
+  },
+  {
+    id: "baby-bunting", label: "Baby Bunting",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 2.3c-.6.6-.2 1.7.7 1.7H17M9 21a1 1 0 11-2 0 1 1 0 012 0zm8 0a1 1 0 11-2 0 1 1 0 012 0z" /></svg>,
   },
   {
     id: "shopify", label: "Shopify",
@@ -170,7 +175,7 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
 // Sidebar grouping — how you market (top) vs where you sell (bottom).
 const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Overview", ids: ["brands", "insights", "report", "snapshot", "social-report", "uppababy"] },
-  { label: "Revenue & Channels", ids: ["sales", "sales-budget", "shopify", "tradeshows"] },
+  { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows"] },
   { label: "Plan", ids: ["campaign-calendar", "promotions", "calendar", "content", "events", "tasks", "design-requests"] },
   { label: "Operations", ids: ["budget", "new-products"] },
   { label: "Paid", ids: ["google-ads", "meta-ads"] },
@@ -1051,6 +1056,13 @@ export function DashboardTabs({
                 fyLabel={fyLabel}
                 canEdit={role === "admin"}
               />
+            </>
+          )}
+
+          {active === "baby-bunting" && (
+            <>
+              <SectionBar title="Baby Bunting · Sell-Through" />
+              <BabyBunting canUpload={role === "admin"} />
             </>
           )}
 
