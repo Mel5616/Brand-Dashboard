@@ -27,7 +27,7 @@ function Card({ label, value, accent }: { label: string; value: string; accent?:
   );
 }
 
-function PostTile({ m }: { m: InstagramMediaRow }) {
+function PostTile({ m, top }: { m: InstagramMediaRow; top?: boolean }) {
   const date = m.posted_at ? new Date(m.posted_at).toLocaleDateString("en-AU", { day: "numeric", month: "short" }) : "";
   return (
     <a href={m.permalink ?? "#"} target="_blank" rel="noopener noreferrer" className="group block rounded-xl overflow-hidden border border-gray-100 bg-white shadow-sm hover:shadow-md transition motion-reduce:transition-none">
@@ -35,6 +35,7 @@ function PostTile({ m }: { m: InstagramMediaRow }) {
         {m.image_url
           ? <img src={m.image_url} alt={m.caption?.slice(0, 60) ?? "Instagram post"} loading="lazy" className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300 motion-reduce:transition-none" />
           : <div className="w-full h-full flex items-center justify-center text-gray-300 text-2xl">▦</div>}
+        {top && <span className="absolute top-2 left-2 text-[10px] font-bold text-white bg-gradient-to-r from-amber-500 to-rose-500 rounded-full px-2 py-0.5 shadow-sm">★ Top</span>}
         {m.media_type === "VIDEO" && <span className="absolute top-2 right-2 text-white text-xs bg-black/40 rounded px-1.5">▶</span>}
         {m.media_type === "CAROUSEL_ALBUM" && <span className="absolute top-2 right-2 text-white text-xs bg-black/40 rounded px-1.5">▦</span>}
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent p-2 flex items-center gap-3 text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition motion-reduce:transition-none">
@@ -67,16 +68,22 @@ export function SocialPanel({
     [...instagramOrganic].filter(d => d.brand_id === id && (d.followers ?? 0) > 0)
       .sort((a, b) => b.month_key.localeCompare(a.month_key))[0]?.followers ?? 0;
 
-  // Engagement summary from a brand's synced posts: averages + engagement rate.
+  // Engagement summary from a brand's synced posts: averages + engagement rate,
+  // plus follower count and month-on-month follower growth from full history.
   const brandStats = (id: number) => {
     const posts = instagramMedia.filter(m => m.brand_id === id);
     const n = posts.length;
     const likes = posts.reduce((s, m) => s + (m.like_count || 0), 0);
     const comments = posts.reduce((s, m) => s + (m.comments_count || 0), 0);
-    const followers = latestFollowers(id);
+    const hist = [...instagramOrganic]
+      .filter(d => d.brand_id === id && (d.followers ?? 0) > 0)
+      .sort((a, b) => a.month_key.localeCompare(b.month_key));
+    const followers = hist.at(-1)?.followers ?? 0;
+    const prev = hist.at(-2)?.followers ?? 0;
+    const growth = prev > 0 ? ((followers - prev) / prev) * 100 : null;
     const avgEng = n ? (likes + comments) / n : 0;
     const rate = followers > 0 && n ? (avgEng / followers) * 100 : 0;
-    return { n, followers, avgLikes: n ? likes / n : 0, avgComments: n ? comments / n : 0, rate };
+    return { n, followers, growth, avgLikes: n ? likes / n : 0, avgComments: n ? comments / n : 0, rate };
   };
 
   // ── Portfolio view ──────────────────────────────────────────────────────
@@ -93,20 +100,28 @@ export function SocialPanel({
             .sort((x, y) => new Date(y.posted_at ?? 0).getTime() - new Date(x.posted_at ?? 0).getTime())
             .slice(0, 15);
           const s = brandStats(b.id);
+          const topId = posts.reduce((best: string | null, m) => (best && eng(posts.find(p => p.media_id === best)!) >= eng(m) ? best : m.media_id), null as string | null);
           return (
             <div key={b.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
               {/* Brand header: prominent followers + engagement stats */}
               <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
                 <button onClick={() => onSelectBrand(b.id)} className="flex items-center gap-2.5 group min-w-0">
-                  <span className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0" style={{ background: b.color }}>{b.name[0]}</span>
+                  <span className="p-[2px] rounded-full shrink-0 bg-gradient-to-tr from-amber-400 via-rose-500 to-purple-600">
+                    <span className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold ring-2 ring-white" style={{ background: b.color }}>{b.name[0]}</span>
+                  </span>
                   <span className="min-w-0">
                     <span className="flex items-center gap-1.5">
                       <span className="text-sm font-bold text-slate-800 group-hover:text-emerald-600 truncate">{b.name}</span>
                       <span className="text-[11px] text-emerald-500 font-medium opacity-0 group-hover:opacity-100 whitespace-nowrap">Open →</span>
                     </span>
-                    <span className="flex items-baseline gap-1">
-                      <span className="text-lg font-extrabold text-slate-900 leading-none tabular-nums">{num(s.followers)}</span>
+                    <span className="flex items-baseline gap-1.5">
+                      <span className="text-xl font-extrabold text-slate-900 leading-none tabular-nums">{num(s.followers)}</span>
                       <span className="text-[11px] text-gray-400 font-medium">followers</span>
+                      {s.growth != null && Math.abs(s.growth) >= 0.05 && (
+                        <span className={`text-[10px] font-bold tabular-nums ${s.growth >= 0 ? "text-emerald-600" : "text-rose-500"}`}>
+                          {s.growth >= 0 ? "▲" : "▼"} {Math.abs(s.growth).toFixed(1)}%
+                        </span>
+                      )}
                     </span>
                   </span>
                 </button>
@@ -121,7 +136,7 @@ export function SocialPanel({
               <div className="flex gap-3 overflow-x-auto pb-1 snap-x [scrollbar-width:thin] [scrollbar-color:#e5e7eb_transparent]">
                 {posts.map(m => (
                   <div key={m.media_id} className="snap-start shrink-0 w-40 sm:w-44">
-                    <PostTile m={m} />
+                    <PostTile m={m} top={m.media_id === topId && eng(m) > 0} />
                   </div>
                 ))}
               </div>

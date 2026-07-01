@@ -321,6 +321,9 @@ export function DashboardTabs({
 
   // Restrict month-keyed datasets to the selected FY before anything renders
   const inFy = (rows: any[]) => rows.filter((r: any) => monthKeys.includes(r.month_key));
+  // Followers/engagement are a current-state metric (not FY-scoped): keep the full
+  // history so the Social tab can always show the latest count, even early in a new FY.
+  const instagramOrganicAll = instagramOrganic;
   monthly          = inFy(monthly);
   googleAds        = inFy(googleAds);
   metaAds          = inFy(metaAds);
@@ -1549,7 +1552,7 @@ export function DashboardTabs({
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
                 </select>
               </div>
-              <SocialPanel scope={brandFilter} brands={brands} instagramOrganic={instagramOrganic} instagramMedia={instagramMedia} monthKeys={monthKeys} onSelectBrand={setBrandFilter} />
+              <SocialPanel scope={brandFilter} brands={brands} instagramOrganic={instagramOrganicAll} instagramMedia={instagramMedia} monthKeys={monthKeys} onSelectBrand={setBrandFilter} />
             </>
           )}
 
