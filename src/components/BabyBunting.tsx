@@ -39,8 +39,9 @@ const monthLabel = (mk: string) => new Date(mk + "-01T00:00:00").toLocaleDateStr
 // Readable colourway from a SKU description (strip brand/model/boilerplate).
 function colourLabel(desc: string): string {
   const s = (desc || "").replace(/UPPABABY/gi, "").replace(/\b(VISTA|CRUZ|MINU)\b/gi, "").replace(/\bV[23]\b/gi, "")
-    .replace(/\bSTROLLER\b|\bPRAM\b/gi, "").replace(/-?\s*ONLINE ONLY/gi, "").replace(/[-/()]/g, " ").replace(/\s+/g, " ").trim();
-  return (s ? s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) : desc).slice(0, 34);
+    .replace(/WITH BASSINET|BASSINET|STROLLER|PRAM|RUMBLE SEAT|\bWITH\b/gi, "").replace(/-?\s*ONLINE ONLY/gi, "")
+    .replace(/[-/()]/g, " ").replace(/\s+/g, " ").trim();
+  return (s ? s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) : desc).slice(0, 32);
 }
 
 export function BabyBunting({ canUpload }: { canUpload: boolean }) {

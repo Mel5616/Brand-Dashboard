@@ -135,17 +135,22 @@ export const PRAM_MODELS = new Set<string>([
 // The current-generation key prams — used for the best-selling-colours breakdown.
 export const KEY_PRAMS = ['Vista', 'Cruz', 'Minu'] as const;
 
+const ACCESSORY_RE = /ADAPTER|CUP HOLDER|SNACK TRAY|TRAVEL BAG|PIGGYBACK|RIDE-ALONG|BUMPER BAR|INFANT COVER|RAIN COVER|CAR SEAT/i;
+
 export function classifyModel(desc: string, brand: string): string {
   const d = desc.toUpperCase();
-  if (d.includes('VISTA V2')) return 'Vista (legacy)';   // UPV2 = legacy
-  if (d.includes('VISTA')) return 'Vista';               // anything else Vista = current
-  if (d.includes('CRUZ V3')) return 'Cruz';              // UPC3 = current
-  if (d.includes('CRUZ')) return 'Cruz (legacy)';        // V2 / 2017-18 = legacy
-  if (d.includes('MINU V3')) return 'Minu';              // UPM3 = current
-  if (d.includes('MINU')) return 'Minu (legacy)';        // V2 / older = legacy
+  // Components & accessories first — they usually name a model (e.g. "VISTA V3 RUMBLE SEAT").
+  if (d.includes('RUMBLE')) return 'RumbleSeat';
   if (d.includes('RIDGE')) return 'Ridge';
-  if (d.includes('RUMBLESEAT')) return 'RumbleSeat';
-  if (d.includes('BASSINET')) return 'Bassinet';
+  if (ACCESSORY_RE.test(d)) return 'Accessory';
+  if (d.includes('BASSINET') && !d.includes('WITH BASSINET')) return 'Bassinet';  // standalone, not "stroller with bassinet"
+  // Prams. Vista: legacy = UPV2, else current. Cruz/Minu: current = V3, else legacy.
+  if (d.includes('VISTA V2')) return 'Vista (legacy)';
+  if (d.includes('VISTA')) return 'Vista';
+  if (d.includes('CRUZ V3')) return 'Cruz';
+  if (d.includes('CRUZ')) return 'Cruz (legacy)';
+  if (d.includes('MINU V3')) return 'Minu';
+  if (d.includes('MINU')) return 'Minu (legacy)';
   if (brand === 'WonderFold') return 'Wagon';
   return 'Accessory';
 }

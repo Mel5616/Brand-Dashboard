@@ -96,7 +96,7 @@ export async function GET(req: Request) {
   const colours: Record<string, any[]> = {};
   for (const km of KEY_MODELS) {
     const vs = (variantRaw || [])
-      .filter((v: any) => v.model === km && /STROLLER|PRAM/i.test(v.description || "") && num(v.cum_units) > 0)
+      .filter((v: any) => v.model === km && num(v.cum_units) > 0)
       .sort((a: any, b: any) => num(b.cum_units) - num(a.cum_units)).slice(0, 8)
       .map((v: any) => ({ code: v.supplier_code, description: v.description, cum_units: num(v.cum_units), cum_sales: num(v.cum_sales) }));
     if (vs.length) colours[km] = vs;
