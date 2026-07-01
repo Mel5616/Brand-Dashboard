@@ -184,12 +184,10 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
             {mode === "month"
               ? (data!.periods || []).map(mk => <option key={mk} value={mk}>{new Date(mk + "-01T00:00:00").toLocaleDateString("en-AU", { month: "long", year: "numeric" })}</option>)
               : (() => {
-                const groups: { label: string; weeks: string[] }[] = [];
-                for (const w of data!.weeks) {
-                  const label = new Date(String(w).slice(0, 7) + "-01T00:00:00").toLocaleDateString("en-AU", { month: "long", year: "numeric" });
-                  (groups.find(g => g.label === label) ?? groups[groups.push({ label, weeks: [] }) - 1]).weeks.push(w);
-                }
-                return groups.map(g => <optgroup key={g.label} label={g.label}>{g.weeks.map(w => <option key={w} value={w}>Week ending {longDate(w)}</option>)}</optgroup>);
+                // Only the last ~6 weeks are selectable weekly — older history lives in Monthly.
+                const cutoff = new Date(data!.weeks[0]); cutoff.setDate(cutoff.getDate() - 44);
+                const recent = data!.weeks.filter(w => new Date(w) >= cutoff);
+                return recent.map(w => <option key={w} value={w}>Week ending {longDate(w)}</option>);
               })()}
           </select>
           {mode === "month" && data!.weekCount ? <span className="text-[11px] text-gray-400">{data!.weekCount} weeks</span> : null}
