@@ -643,12 +643,14 @@ export function DashboardTabs({
                 const biz = buildChannels("all", { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest: LATEST });
                 if (!biz.length) return null;
                 const ssum = (a: number[]) => a.reduce((s, v) => s + (v || 0), 0);
-                const visible = role === "admin" ? biz : biz.filter((c: any) => DIGITAL_CHANNELS.has(c.name));
+                // Business Overview shows the complete channel book to everyone who can open
+                // this section (view-only members included) — edit/upload/export stay admin-gated.
+                const visible = biz;
                 const total = ssum(visible.map((c: any) => c.fy));
                 const gSpend = ssum(googleAds.map((r: any) => r.spend));
                 const mSpend = ssum(metaAds.map((r: any) => r.spend));
                 const oSpend = ssum(marketingActuals.filter((a: any) => a.channel !== "Google Advertising" && a.channel !== "Social Media (Meta)").map((a: any) => a.spend));
-                const merSpend = role === "admin" ? gSpend + mSpend + oSpend : gSpend + mSpend;
+                const merSpend = gSpend + mSpend + oSpend;
                 const mer = total > 0 ? (merSpend / total) * 100 : null;
                 const online = biz.find((c: any) => DIGITAL_CHANNELS.has(c.name) && c.name === "Website Sales");
                 const onlinePct = total > 0 ? (ssum(biz.filter((c: any) => DIGITAL_CHANNELS.has(c.name)).map((c: any) => c.fy)) / ssum(biz.map((c: any) => c.fy))) * 100 : 0;
@@ -656,7 +658,7 @@ export function DashboardTabs({
                 // Month-on-month on the whole visible book — sum every channel's series per month, then compare the selected month to the one before.
                 const totalSeries = monthKeys.map((_, i) => ssum(visible.map((c: any) => c.series[i] ?? 0)));
                 // Monthly series for the KPI sparklines
-                const spendSeries = monthKeys.map((mk: string) => ssum(googleAds.filter((r: any) => r.month_key === mk).map((r: any) => r.spend)) + ssum(metaAds.filter((r: any) => r.month_key === mk).map((r: any) => r.spend)) + (role === "admin" ? ssum(marketingActuals.filter((a: any) => a.month_key === mk && a.channel !== "Google Advertising" && a.channel !== "Social Media (Meta)").map((a: any) => a.spend)) : 0));
+                const spendSeries = monthKeys.map((mk: string) => ssum(googleAds.filter((r: any) => r.month_key === mk).map((r: any) => r.spend)) + ssum(metaAds.filter((r: any) => r.month_key === mk).map((r: any) => r.spend)) + ssum(marketingActuals.filter((a: any) => a.month_key === mk && a.channel !== "Google Advertising" && a.channel !== "Social Media (Meta)").map((a: any) => a.spend)));
                 const merSeries = totalSeries.map((rev, i) => rev > 0 ? (spendSeries[i] / rev) * 100 : 0);
                 const digitalSeries = monthKeys.map((_, i) => ssum(visible.filter((c: any) => DIGITAL_CHANNELS.has(c.name)).map((c: any) => c.series[i] ?? 0)));
                 const shareSeries = totalSeries.map((rev, i) => rev > 0 ? (digitalSeries[i] / rev) * 100 : 0);
@@ -670,14 +672,14 @@ export function DashboardTabs({
                 const paceDelta = actToDate - tgtToDate;
                 const hasTarget = tgtToDate > 0;
                 const cards = [
-                  { label: role === "admin" ? "Total business revenue" : "Digital revenue", value: fmt(total), accent: "#0e7490", sub: momSub, spark: totalSeries as number[] | undefined },
+                  { label: "Total business revenue", value: fmt(total), accent: "#0e7490", sub: momSub, spark: totalSeries as number[] | undefined },
                   { label: "Mktg % of sales", value: mer != null ? mer.toFixed(1) + "%" : "—", accent: "#0ea5e9", sub: undefined as string | undefined, spark: merSeries as number[] | undefined },
                   { label: "Digital share", value: Math.round(onlinePct) + "%", accent: "#14b8a6", sub: undefined as string | undefined, spark: shareSeries as number[] | undefined },
                   { label: "Channels", value: String(visible.length), accent: "#06b6d4", sub: undefined as string | undefined, spark: undefined as number[] | undefined },
                 ];
                 return (
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-3">{role === "admin" ? "Business overview" : "Digital overview"} <span className="font-normal text-gray-400 normal-case tracking-normal">· {fyLabel}, all channels{role === "admin" ? "" : " (digital)"}</span></p>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-3">Business overview <span className="font-normal text-gray-400 normal-case tracking-normal">· {fyLabel}, all channels</span></p>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                       {cards.map(c => (
                         <div key={c.label} className="bg-gray-50/60 rounded-xl px-4 py-3">
@@ -730,7 +732,7 @@ export function DashboardTabs({
               {(() => {
                 const biz = buildChannels("all", { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest: LATEST });
                 if (!biz.length) return null;
-                const visible = role === "admin" ? biz : biz.filter((c: any) => DIGITAL_CHANNELS.has(c.name));
+                const visible = biz;
                 const chans = [...visible].sort((a: any, b: any) => (b.fy ?? 0) - (a.fy ?? 0));
                 const total = visible.reduce((s: number, c: any) => s + Math.max(0, c.fy ?? 0), 0) || 1;
                 return (
