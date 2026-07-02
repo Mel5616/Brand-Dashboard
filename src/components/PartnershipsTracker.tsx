@@ -30,24 +30,39 @@ const mon = (k: string) => new Date(k + "-01T00:00:00").toLocaleDateString("en-A
 const STATUS = ["Planned", "Sent", "Live", "Done"];
 const statusCls = (s: string | null) => ({ Live: "bg-emerald-100 text-emerald-700", Sent: "bg-sky-100 text-sky-700", Planned: "bg-amber-100 text-amber-700", Done: "bg-violet-100 text-violet-700" } as Record<string, string>)[s || ""] || "bg-slate-100 text-slate-500";
 
-export function PartnershipsTracker({ brandNames = [] }: { brandNames?: string[] }) {
+const BUDGET_KEY = { brand: "__ALL__", month_key: "total" };  // sentinel row = overall partnerships budget
+
+export function PartnershipsTracker({ brandNames = [], admin = false }: { brandNames?: string[]; admin?: boolean }) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [budget, setBudget] = useState<number>(0);
+  const [budgetEdit, setBudgetEdit] = useState(false);
+  const [budgetDraft, setBudgetDraft] = useState("");
   const [state, setState] = useState<"loading" | "ready" | "needsSetup" | "error">("loading");
   const [adding, setAdding] = useState(false);
   const [brandF, setBrandF] = useState("");
   const [editEntry, setEditEntry] = useState<Entry | null>(null);
 
   async function load() {
-    const [e, p] = await Promise.all([
+    const [e, p, bg] = await Promise.all([
       fetch("/api/partnerships/entries", { cache: "no-store" }).then(r => r.json()).catch(() => ({ ok: false })),
       fetch("/api/influencer/products").then(r => r.json()).catch(() => ({ products: [] })),
+      fetch("/api/partnerships/budgets", { cache: "no-store" }).then(r => r.json()).catch(() => ({ budgets: [] })),
     ]);
     if (e.needsSetup) { setState("needsSetup"); return; }
     if (!e.ok) { setState("error"); return; }
-    setEntries(e.entries || []); setProducts(p.products || []); setState("ready");
+    setEntries(e.entries || []); setProducts(p.products || []);
+    const bRow = (bg.budgets || []).find((r: any) => r.brand === BUDGET_KEY.brand && r.month_key === BUDGET_KEY.month_key);
+    setBudget(Number(bRow?.budget) || 0);
+    setState("ready");
   }
   useEffect(() => { load(); }, []);
+
+  async function saveBudget() {
+    const n = Number(budgetDraft.replace(/[^0-9.]/g, "")) || 0;
+    setBudget(n); setBudgetEdit(false);
+    await fetch("/api/partnerships/budgets", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...BUDGET_KEY, budget: n }) }).catch(() => {});
+  }
 
   const brands = useMemo(() => Array.from(new Set(entries.map(e => e.brand).filter(Boolean))) as string[], [entries]);
   const rows = entries.filter(e => !brandF || e.brand === brandF);
@@ -127,6 +142,40 @@ export function PartnershipsTracker({ brandNames = [] }: { brandNames?: string[]
               <p className="text-[11px] text-gray-400">{k.sub}</p>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Budget vs spend (gifted expense against the partnerships budget) */}
+      {(budget > 0 || admin) && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <div className="flex items-baseline justify-between mb-2">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Partnerships budget</p>
+            {budgetEdit ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400">$</span>
+                <input autoFocus value={budgetDraft} onChange={e => setBudgetDraft(e.target.value)} onKeyDown={e => { if (e.key === "Enter") saveBudget(); if (e.key === "Escape") setBudgetEdit(false); }} inputMode="decimal" placeholder="e.g. 20000" className="w-28 text-sm border border-gray-200 rounded px-2 py-1" />
+                <button onClick={saveBudget} className="text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded px-2.5 py-1">Save</button>
+                <button onClick={() => setBudgetEdit(false)} className="text-xs text-gray-400">Cancel</button>
+              </div>
+            ) : (
+              <span className="text-xs text-gray-500">
+                {aud(totalCost)} of {budget > 0 ? aud(budget) : "—"} spent
+                {admin && <button onClick={() => { setBudgetDraft(budget ? String(budget) : ""); setBudgetEdit(true); }} className="ml-2 text-[10px] text-emerald-600 hover:underline">{budget > 0 ? "edit" : "set budget"}</button>}
+              </span>
+            )}
+          </div>
+          {budget > 0 && (() => {
+            const pct = Math.min(100, (totalCost / budget) * 100);
+            const over = totalCost > budget;
+            return (
+              <>
+                <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full ${over ? "bg-rose-500" : pct > 85 ? "bg-amber-400" : "bg-emerald-500"}`} style={{ width: `${pct}%` }} />
+                </div>
+                <p className="text-[11px] text-gray-400 mt-1">{pct.toFixed(0)}% used · {over ? <span className="text-rose-500 font-semibold">{aud(totalCost - budget)} over</span> : `${aud(budget - totalCost)} remaining`} · gifted expense only (sales excluded)</p>
+              </>
+            );
+          })()}
         </div>
       )}
 

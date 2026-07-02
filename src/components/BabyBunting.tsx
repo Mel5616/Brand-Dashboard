@@ -419,6 +419,45 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
         </div>
       )}
 
+      {/* Weeks of stock cover — SOH ÷ average weekly run-rate (rolling year ÷ 52) */}
+      {(() => {
+        const cover = [...(data!.models || [])]
+          .filter((m: any) => m.is_pram && num(m.cum_units) > 0)
+          .map((m: any) => {
+            const avgWk = num(m.cum_units) / 52;
+            const weeks = avgWk > 0 ? num(m.soh_units) / avgWk : null;
+            return { model: m.model, soh: num(m.soh_units), weeks };
+          })
+          .filter(r => r.weeks != null)
+          .sort((a, b) => (a.weeks! - b.weeks!));
+        if (!cover.length) return null;
+        const band = (w: number) => w < 4
+          ? { label: "Low — reorder", cls: "bg-rose-100 text-rose-700", bar: "#e11d48" }
+          : w < 8 ? { label: "Watch", cls: "bg-amber-100 text-amber-700", bar: "#f59e0b" }
+          : w > 26 ? { label: "Overstock", cls: "bg-sky-100 text-sky-700", bar: "#0ea5e9" }
+          : { label: "Healthy", cls: "bg-emerald-100 text-emerald-700", bar: "#10b981" };
+        const maxW = Math.max(12, ...cover.map(c => Math.min(52, c.weeks!)));
+        return (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-1">Weeks of stock cover · prams</p>
+            <p className="text-xs text-gray-400 mb-3">Stock on hand ÷ average weekly sales (rolling year). Under 4 weeks = reorder risk.</p>
+            <div className="space-y-1.5">
+              {cover.map(c => {
+                const b = band(c.weeks!);
+                return (
+                  <div key={c.model} className="flex items-center gap-3">
+                    <span className="text-xs font-semibold text-slate-600 w-28 truncate">{c.model}</span>
+                    <span className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden"><span className="block h-full rounded-full" style={{ width: `${Math.min(100, (Math.min(52, c.weeks!) / maxW) * 100)}%`, background: b.bar }} /></span>
+                    <span className="text-xs font-bold text-slate-700 tabular-nums w-14 text-right">{c.weeks! >= 52 ? "52+" : c.weeks!.toFixed(1)} wk</span>
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full w-24 text-center ${b.cls}`}>{b.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Pram tracking */}
       {(pramWeekly.length >= 2 || pramModelsNow.length > 0) && (
         <div className="grid lg:grid-cols-2 gap-4">

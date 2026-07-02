@@ -101,6 +101,10 @@ export function TradeshowAccordion({
   const topStateEntry = Object.entries(stateTotals).sort((a, b) => b[1] - a[1])[0];
   const hasVisuals = totalRevAll > 0;
 
+  // Best-performing show this FY (by synced revenue), for the season rollup KPI.
+  const topShowEntry = [...revByShow.entries()].sort((a, b) => b[1] - a[1])[0];
+  const topShow = topShowEntry ? fyShows.find(t => t.id === topShowEntry[0]) : undefined;
+
   function dateRange(ts: Tradeshow) {
     const s = new Date(ts.date_start + "T00:00:00");
     const e = new Date(ts.date_end + "T00:00:00");
@@ -294,10 +298,11 @@ export function TradeshowAccordion({
       {view === "all" && (
       <div className="space-y-4">
       {/* Summary strip */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {[
           { label: "Upcoming", value: upcoming.length.toString(), sub: liveCount > 0 ? `${liveCount} live now` : "shows scheduled" },
           { label: "Tradeshow Revenue", value: fmtFull(totalRevAll), sub: "ex-GST, all shows" },
+          { label: "Top Show", value: topShow ? topShow.name.replace(/ Baby Expo$/, "") : "—", sub: topShowEntry ? fmtK(topShowEntry[1]) : "no sales yet" },
           { label: "Top State", value: topStateEntry ? stateLabel(topStateEntry[0]) : "—", sub: topStateEntry ? fmtK(topStateEntry[1]) : "no sales yet" },
           { label: "Top Brand", value: brandRows[0]?.brand.name ?? "—", sub: brandRows[0] ? fmtK(brandRows[0].rev) : "no sales yet" },
         ].map(s => (
