@@ -205,7 +205,7 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
     for (const r of modelTrend) if (r.is_pram) { const c = m.get(r.week_ending) ?? { wk: 0, cum: 0, soh: 0 }; c.wk += num(r.wk_sales); c.cum += num(r.cum_units); c.soh += num(r.soh_units); m.set(r.week_ending, c); }
     return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   })();
-  const pramModelsNow = [...(data!.models || [])].filter((m: any) => m.is_pram && num(m.cum_sales) > 0).sort((a: any, b: any) => num(b.cum_sales) - num(a.cum_sales));
+  const pramModelsNow = [...(data!.models || [])].filter((m: any) => m.is_pram && num(m.cum_sales) > 0 && !/\(legacy\)/i.test(m.model)).sort((a: any, b: any) => num(b.cum_sales) - num(a.cum_sales));
 
   return (
     <div className="space-y-4">
@@ -352,6 +352,7 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
               const ordered = [...MODEL_ORDER.filter(m => byModel.has(m)), ...(data!.models || []).map((m: any) => m.model).filter((m: string) => !MODEL_ORDER.includes(m as any))];
               return [...new Set(ordered)].map(name => {
                 const m: any = byModel.get(name); if (!m) return null;
+                if (/\(legacy\)/i.test(name as string)) return null;   // legacy prams hidden from line items (still in totals)
                 if (num(m.cum_sales) <= 0 && num(m.wk_units) <= 0 && num(m.cum_units) <= 0) return null;   // hide dead lines
                 const st = num(m.sell_thru) * 100;
                 return (
