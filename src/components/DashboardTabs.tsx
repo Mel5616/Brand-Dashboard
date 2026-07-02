@@ -611,6 +611,11 @@ export function DashboardTabs({
                   if (ageH > 30) risks.push({ sev: "red", text: `Data sync is ${Math.round(ageH)}h old — it may have failed` });
                   else if (ageH > 20) risks.push({ sev: "amber", text: `Data sync is ${Math.round(ageH)}h old` });
                 }
+                // Complete weeks only (a week whose end date has passed), oldest→newest,
+                // so a partial current week doesn't look like a crash.
+                const todayStr = new Date().toISOString().slice(0, 10);
+                const completeWeeks = [...weekLabels].sort((a: any, b: any) => a.week_start.localeCompare(b.week_start))
+                  .filter((w: any) => { const e = new Date(w.week_start + "T00:00:00"); e.setDate(e.getDate() + 7); return e.toISOString().slice(0, 10) <= todayStr; });
                 brands.filter((b: any) => b.live).forEach((b: any) => {
                   const actual = monthly.find((x: any) => x.brand_id === b.id && x.month_key === LATEST)?.revenue ?? 0;
                   const tgt = targets.find((t: any) => t.brand_id === b.id && t.month_key === LATEST)?.revenue_target ?? 0;
@@ -619,6 +624,13 @@ export function DashboardTabs({
                   if (m && m.spend > 1000 && m.revenue / m.spend < 1) risks.push({ sev: "red", text: `${b.name} Meta ROAS ${(m.revenue / m.spend).toFixed(1)}× — under 1×` });
                   const g = googleAds.find((x: any) => x.brand_id === b.id && x.month_key === LATEST);
                   if (g && g.spend > 1000 && (g.roas ?? 0) < 1) risks.push({ sev: "red", text: `${b.name} Google ROAS ${(g.roas ?? 0).toFixed(1)}× — under 1×` });
+                  // Anomaly: latest complete week's Shopify sales down sharply vs the trailing 3-week average.
+                  if (completeWeeks.length >= 4) {
+                    const rev = (w: any) => weekly.find((x: any) => x.brand_id === b.id && x.week_start === w.week_start)?.revenue ?? 0;
+                    const last = rev(completeWeeks[completeWeeks.length - 1]);
+                    const base = (rev(completeWeeks[completeWeeks.length - 2]) + rev(completeWeeks[completeWeeks.length - 3]) + rev(completeWeeks[completeWeeks.length - 4])) / 3;
+                    if (base > 2000 && last < base * 0.55) risks.push({ sev: last < base * 0.4 ? "red" : "amber", text: `${b.name} weekly sales down ${Math.round((1 - last / base) * 100)}% vs recent average` });
+                  }
                 });
                 risks.sort((a, b) => (a.sev === b.sev ? 0 : a.sev === "red" ? -1 : 1));
                 return (
