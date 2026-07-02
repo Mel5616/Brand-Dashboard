@@ -9,8 +9,9 @@ export function UserMenu({ email, role, minimal }: { email: string; role: string
     try {
       await fetch("/api/activity", { method: "POST", headers: { "Content-Type": "application/json" }, keepalive: true, body: JSON.stringify({ action: "logout" }) });
     } catch { /* best-effort */ }
-    await createClient().auth.signOut();
-    window.location.href = "/login";
+    try { await createClient().auth.signOut(); } catch { /* best-effort — server route clears the cookie */ }
+    // Server route clears the SSR auth cookie and redirects to /login.
+    window.location.href = "/api/signout";
   }
   const initial = (email[0] || "?").toUpperCase();
 
