@@ -431,7 +431,7 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
         // Model-level (current pram lines only — reorder doesn't apply to legacy).
         const models = [...(data!.models || [])]
           .filter((m: any) => m.is_pram && num(m.cum_units) > 0 && !/\(legacy\)/i.test(m.model))
-          .map((m: any) => ({ name: m.model, weeks: weeksOf(num(m.soh_units), num(m.cum_units)) }))
+          .map((m: any) => ({ name: m.model, weeks: weeksOf(num(m.soh_units), num(m.cum_units)), soh: num(m.soh_units) }))
           .filter(r => r.weeks != null).sort((a, b) => a.weeks! - b.weeks!);
         if (!models.length) return null;
         const modelOptions = models.map(m => m.name);
@@ -439,7 +439,7 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
         // Colour-level rows for the selected model.
         const rows = drill
           ? (data!.colours![coverModel] || [])
-              .map((v: any) => ({ name: colourLabel(v.description), weeks: weeksOf(num(v.soh_units), num(v.cum_units)) }))
+              .map((v: any) => ({ name: colourLabel(v.description), weeks: weeksOf(num(v.soh_units), num(v.cum_units)), soh: num(v.soh_units) }))
               .filter((r: any) => r.weeks != null).sort((a: any, b: any) => a.weeks! - b.weeks!)
           : models;
         const maxW = Math.max(12, ...rows.map((r: any) => Math.min(52, r.weeks!)));
@@ -460,6 +460,7 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
                   <div key={c.name + i} className="flex items-center gap-3">
                     <span className="text-xs font-semibold text-slate-600 w-28 truncate">{c.name}</span>
                     <span className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden"><span className="block h-full rounded-full" style={{ width: `${Math.min(100, (Math.min(52, c.weeks!) / maxW) * 100)}%`, background: b.bar }} /></span>
+                    <span className="text-[11px] text-gray-400 tabular-nums w-20 text-right">{Math.round(c.soh).toLocaleString()} in stock</span>
                     <span className="text-xs font-bold text-slate-700 tabular-nums w-14 text-right">{c.weeks! >= 52 ? "52+" : c.weeks!.toFixed(1)} wk</span>
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full w-24 text-center ${b.cls}`}>{b.label}</span>
                   </div>
