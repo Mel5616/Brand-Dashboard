@@ -102,13 +102,15 @@ export async function GET(req: Request) {
   const [[statesRaw, brandsRaw, modelsRaw, pramStateRaw, storesRaw, storePrevRaw, variantRaw], [weeklyTotals, stateTrend, brandTrend, modelTrend]] = await Promise.all([periodP, trendP]);
 
   // Best-selling colourways per current key pram (rolling-year units), strollers only.
-  const KEY_MODELS = ["Vista", "Cruz", "Minu"];
+  // Per-colour rollup for every current pram model (feeds the best-selling-colours
+  // panel and the per-colour weeks-of-cover drill-down). soh_units drives cover.
   const colours: Record<string, any[]> = {};
-  for (const km of KEY_MODELS) {
+  const pramModels = new Set<string>((variantRaw || []).filter((v: any) => v.is_pram).map((v: any) => v.model));
+  for (const km of pramModels) {
     const vs = (variantRaw || [])
       .filter((v: any) => v.model === km && num(v.cum_units) > 0)
-      .sort((a: any, b: any) => num(b.cum_units) - num(a.cum_units)).slice(0, 8)
-      .map((v: any) => ({ code: v.supplier_code, description: v.description, cum_units: num(v.cum_units), cum_sales: num(v.cum_sales) }));
+      .sort((a: any, b: any) => num(b.cum_units) - num(a.cum_units)).slice(0, 12)
+      .map((v: any) => ({ code: v.supplier_code, description: v.description, cum_units: num(v.cum_units), cum_sales: num(v.cum_sales), soh_units: num(v.soh_units) }));
     if (vs.length) colours[km] = vs;
   }
 
