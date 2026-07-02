@@ -233,9 +233,9 @@ table.cmp th.cy{box-shadow:inset 0 -1px 0 var(--line);}
     return `<div class="hero">
     <div class="c"><div class="l">${esc(u.latestMonthLabel)} 2026 sales</div><div class="big">${fmt(monthNow)}</div><div class="note">${pctTag(monthPct) || "—"} vs ${esc(u.latestMonthLabel)} 2025</div></div>`;
   })()}
+    <div class="c"><div class="l">2025 full year</div><div class="big">${fmt(u.total.full2025)}</div><div class="note">all channels</div></div>
     <div class="c"><div class="l">Total sales · YTD 2026</div><div class="big">${fmt(u.total.ytd2026)}</div><div class="note">through ${esc(u.latestMonthLabel)} 2026</div></div>
     <div class="c"><div class="l">vs YTD 2025</div><div class="big">${u.totalDelta >= 0 ? "+" : "−"}${fmt(Math.abs(u.totalDelta))}</div><div class="note">${pctTag(u.totalPct) || "—"} on last year</div></div>
-    <div class="c"><div class="l">2025 full year</div><div class="big">${fmt(u.total.full2025)}</div><div class="note">all channels</div></div>
   </div>
 
   ${u.bestChannel ? (() => {
