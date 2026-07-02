@@ -103,7 +103,7 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
       if (!store || !has(sup) || !has(desc)) continue;                                    // not a product row
       const description = String(desc).trim();
       const brand = classifyBrand(description);
-      const model = classifyModel(description, brand);
+      const model = classifyModel(description, brand, has(sup) ? String(sup).trim() : "");
       if (!(store in STORE_STATE) && !NON_STORE_LOCATIONS.includes(store)) unmapped.add(store);
       rows.push({
         week_ending: wk, store, state: resolveState(store), code: String(c0).trim(),
@@ -422,7 +422,8 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
       {/* Weeks of stock cover — SOH ÷ average weekly run-rate (rolling year ÷ 52) */}
       {(() => {
         const cover = [...(data!.models || [])]
-          .filter((m: any) => m.is_pram && num(m.cum_units) > 0)
+          // Current pram lines only — reorder risk doesn't apply to legacy/discontinued models.
+          .filter((m: any) => m.is_pram && num(m.cum_units) > 0 && !/\(legacy\)/i.test(m.model))
           .map((m: any) => {
             const avgWk = num(m.cum_units) / 52;
             const weeks = avgWk > 0 ? num(m.soh_units) / avgWk : null;

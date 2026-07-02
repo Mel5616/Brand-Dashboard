@@ -137,20 +137,23 @@ export const KEY_PRAMS = ['Vista', 'Cruz', 'Minu'] as const;
 
 const ACCESSORY_RE = /ADAPTER|CUP HOLDER|SNACK TRAY|TRAVEL BAG|PIGGYBACK|RIDE-ALONG|BUMPER BAR|INFANT COVER|RAIN COVER|CAR SEAT/i;
 
-export function classifyModel(desc: string, brand: string): string {
+export function classifyModel(desc: string, brand: string, code = ''): string {
   const d = desc.toUpperCase();
+  const c = (code || '').toUpperCase();
   // Components & accessories first — they usually name a model (e.g. "VISTA V3 RUMBLE SEAT").
   if (d.includes('RUMBLE')) return 'RumbleSeat';
   if (d.includes('RIDGE')) return 'Ridge';
   if (ACCESSORY_RE.test(d)) return 'Accessory';
   if (d.includes('BASSINET') && !d.includes('WITH BASSINET')) return 'Bassinet';  // standalone, not "stroller with bassinet"
-  // Prams. Vista: legacy = UPV2, else current. Cruz/Minu: current = V3, else legacy.
-  if (d.includes('VISTA V2')) return 'Vista (legacy)';
-  if (d.includes('VISTA')) return 'Vista';
-  if (d.includes('CRUZ V3')) return 'Cruz';
-  if (d.includes('CRUZ')) return 'Cruz (legacy)';
-  if (d.includes('MINU V3')) return 'Minu';
-  if (d.includes('MINU')) return 'Minu (legacy)';
+  // Prams — CURRENT vs LEGACY is decided by the supplier code, which is authoritative:
+  //   UPV3* = current Vista, UPC3* = current Cruz, UPM3* = current Minu; everything
+  //   else in that family (UPV2/UPV17/UPV18, UPC2/17/18, UPM2/…) is legacy.
+  // Fall back to the description only when no code is present (e.g. "VISTA V2").
+  const ver = (cur: RegExp, current: string, legacy: string, descV2: RegExp) =>
+    c ? (cur.test(c) ? current : legacy) : (descV2.test(d) ? legacy : current);
+  if (d.includes('VISTA') || /^UPV[0-9]/.test(c)) return ver(/^UPV3/, 'Vista', 'Vista (legacy)', /VISTA V2|VISTA 201[0-9]/);
+  if (d.includes('CRUZ')  || /^UPC[0-9]/.test(c)) return ver(/^UPC3/, 'Cruz',  'Cruz (legacy)',  /CRUZ (V2|201[0-9])/);
+  if (d.includes('MINU')  || /^UPM[0-9]/.test(c)) return ver(/^UPM3/, 'Minu',  'Minu (legacy)',  /MINU V2|MINU 201[0-9]/);
   if (brand === 'WonderFold') return 'Wagon';
   return 'Accessory';
 }
