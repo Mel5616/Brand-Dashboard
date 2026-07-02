@@ -310,8 +310,6 @@ export function DashboardTabs({
   const [brandFilter, setBrandFilter] = useState<number | "all">("all");
   const [brandPeriod, setBrandPeriod] = useState<BrandPeriod>("monthly");
   const [fy, setFy] = useState<FY>(currentFY());
-  // Tradeshows tab: which storefront's shows to view (UPPAbaby vs Coolkidz Website)
-  const [tsStore, setTsStore] = useState<"uppababy" | "coolkidz">("uppababy");
 
   // FY-derived month range + headline month, shared with every page
   const monthKeys   = fyMonthKeys(fy);
@@ -1607,36 +1605,14 @@ export function DashboardTabs({
           {/* ── Tradeshows ── */}
           {active === "tradeshows" && (
             <div className="space-y-8">
-              {/* Storefront switch: UPPAbaby shows vs the Coolkidz Website shows */}
-              <div className="inline-flex bg-gray-100 rounded-lg p-0.5">
-                {([["uppababy", "UPPAbaby"], ["coolkidz", "Coolkidz Website"]] as const).map(([id, label]) => (
-                  <button
-                    key={id}
-                    onClick={() => setTsStore(id)}
-                    className={`px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all ${tsStore === id ? "bg-white shadow-sm text-slate-700" : "text-gray-400 hover:text-gray-600"}`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
               <TradeshowAccordion
                 tradeshows={tradeshows}
                 tradeshowBrands={tradeshowBrands}
                 tradeshowSales={tradeshowSales}
                 brands={brands}
                 monthKeys={monthKeys}
-                store={tsStore}
               />
-              {tsStore === "uppababy" ? (
-                <BoothFunnel data={boothFunnel} />
-              ) : (
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-center">
-                  <p className="text-sm font-semibold text-slate-700">QR scan tracking — coming soon</p>
-                  <p className="text-xs text-gray-400 mt-1 max-w-md mx-auto">
-                    Live sales for the Coolkidz Website booth are shown above. The QR scan funnel appears here once the Coolkidz expo app is connected.
-                  </p>
-                </div>
-              )}
+              <BoothFunnel data={boothFunnel} />
             </div>
           )}
 

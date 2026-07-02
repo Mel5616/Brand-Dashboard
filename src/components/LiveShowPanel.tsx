@@ -203,7 +203,16 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
 
     const onlineCmpDelta = compare && compare.onlineTotal > 0 ? ((data.onlineTotal - compare.onlineTotal) / compare.onlineTotal) * 100 : null;
     const arrow = (d: number) => d >= 0 ? "▲" : "▼";
-    const rowsHtml = data.rows.map(r => `<tr><td>${esc(r.name)}</td><td class="r">${aud(r.boothRevenue)}</td><td class="r">${r.boothOrders}</td><td class="r">${r.onlineRevenue > 0 ? "+" + aud(r.onlineRevenue) : "—"}</td><td class="r"><b>${aud(r.boothRevenue + r.onlineRevenue)}</b></td></tr>`).join("");
+    const rowsHtml = [
+      { label: "UPPAbaby", rows: data.rows.filter(r => r.brand_id === 5) },
+      { label: "Coolkidz Brands", rows: data.rows.filter(r => r.brand_id !== 5) },
+    ].filter(g => g.rows.length > 0).map(g => {
+      const gBooth = g.rows.reduce((s, r) => s + r.boothRevenue, 0);
+      const gOnline = g.rows.reduce((s, r) => s + r.onlineRevenue, 0);
+      const header = `<tr><td style="font-weight:700;background:#f1f5f9">${esc(g.label)}</td><td class="r" style="font-weight:700;background:#f1f5f9">${aud(gBooth)}</td><td class="r" style="background:#f1f5f9"></td><td class="r" style="background:#f1f5f9">${gOnline > 0 ? "+" + aud(gOnline) : "—"}</td><td class="r" style="font-weight:700;background:#f1f5f9">${aud(gBooth + gOnline)}</td></tr>`;
+      const body = g.rows.map(r => `<tr><td style="padding-left:16px">${esc(r.name)}</td><td class="r">${aud(r.boothRevenue)}</td><td class="r">${r.boothOrders}</td><td class="r">${r.onlineRevenue > 0 ? "+" + aud(r.onlineRevenue) : "—"}</td><td class="r"><b>${aud(r.boothRevenue + r.onlineRevenue)}</b></td></tr>`).join("");
+      return header + body;
+    }).join("");
     const pacingHtml = target ? `<p><b>Expo Stand target:</b> ${aud(target)} — ${pct.toFixed(0)}% achieved${finished ? (booth >= target ? " ✓ hit" : ` (${aud(target - booth)} short)`) : ""}</p>` : "";
     const peakHtml = peakHour != null ? `<p><b>Peak hour:</b> ${hourLabel(peakHour)}–${hourLabel(peakHour + 1)} (${aud(byHour[peakHour])})</p>` : "";
 
@@ -382,23 +391,42 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
               <span className="w-16 text-right text-[10px] font-semibold uppercase tracking-wide text-gray-400">Online {data?.show?.state ? `→ ${stateAbbr(data.show.state)}` : ""}</span>
               <span className="w-16 text-right text-[10px] font-semibold uppercase tracking-wide text-gray-500">Total</span>
             </div>
-            {data.rows.map(r => (
-              <div key={r.brand_id} className="flex items-center gap-3">
-                <span className="text-xs text-slate-600 w-28 truncate flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full" style={{ background: colorOf(r.brand_id) }} />
-                  {r.name}
-                </span>
-                <div className="flex-1 h-5 bg-gray-50 rounded overflow-hidden flex">
-                  <div className="h-full transition-all duration-700" style={{ width: `${Math.max(2, (r.boothRevenue / maxRev) * 100)}%`, background: colorOf(r.brand_id) }} title="Booth" />
-                  {r.onlineRevenue > 0 && (
-                    <div className="h-full transition-all duration-700 opacity-40" style={{ width: `${(r.onlineRevenue / maxRev) * 100}%`, background: colorOf(r.brand_id) }} title="Online (to state)" />
-                  )}
+            {/* Group into UPPAbaby and the Coolkidz brands so both track side by side */}
+            {[
+              { label: "UPPAbaby", rows: data.rows.filter(r => r.brand_id === 5) },
+              { label: "Coolkidz Brands", rows: data.rows.filter(r => r.brand_id !== 5) },
+            ].filter(g => g.rows.length > 0).map(g => {
+              const gBooth = g.rows.reduce((s, r) => s + r.boothRevenue, 0);
+              const gOnline = g.rows.reduce((s, r) => s + r.onlineRevenue, 0);
+              return (
+                <div key={g.label} className="space-y-2.5 pt-1">
+                  {/* Group subtotal header */}
+                  <div className="flex items-center gap-3 border-t border-gray-100 pt-2">
+                    <span className="flex-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">{g.label}</span>
+                    <span className="w-16 text-right text-[11px] font-semibold text-slate-500 tabular-nums">{aud(gBooth)}</span>
+                    <span className="w-16 text-right text-[11px] text-gray-400 tabular-nums">{gOnline > 0 ? `+${aud(gOnline)}` : "—"}</span>
+                    <span className="w-16 text-right text-[11px] font-bold text-slate-700 tabular-nums">{aud(gBooth + gOnline)}</span>
+                  </div>
+                  {g.rows.map(r => (
+                    <div key={r.brand_id} className="flex items-center gap-3">
+                      <span className="text-xs text-slate-600 w-28 truncate flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full" style={{ background: colorOf(r.brand_id) }} />
+                        {r.name}
+                      </span>
+                      <div className="flex-1 h-5 bg-gray-50 rounded overflow-hidden flex">
+                        <div className="h-full transition-all duration-700" style={{ width: `${Math.max(2, (r.boothRevenue / maxRev) * 100)}%`, background: colorOf(r.brand_id) }} title="Booth" />
+                        {r.onlineRevenue > 0 && (
+                          <div className="h-full transition-all duration-700 opacity-40" style={{ width: `${(r.onlineRevenue / maxRev) * 100}%`, background: colorOf(r.brand_id) }} title="Online (to state)" />
+                        )}
+                      </div>
+                      <span className="text-xs font-semibold text-slate-600 w-16 text-right tabular-nums">{aud(r.boothRevenue)}</span>
+                      <span className="text-[11px] text-gray-400 w-16 text-right tabular-nums">{r.onlineRevenue > 0 ? `+${aud(r.onlineRevenue)}` : "—"}</span>
+                      <span className="text-xs font-bold text-slate-800 w-16 text-right tabular-nums">{aud(r.boothRevenue + r.onlineRevenue)}</span>
+                    </div>
+                  ))}
                 </div>
-                <span className="text-xs font-semibold text-slate-600 w-16 text-right tabular-nums">{aud(r.boothRevenue)}</span>
-                <span className="text-[11px] text-gray-400 w-16 text-right tabular-nums">{r.onlineRevenue > 0 ? `+${aud(r.onlineRevenue)}` : "—"}</span>
-                <span className="text-xs font-bold text-slate-800 w-16 text-right tabular-nums">{aud(r.boothRevenue + r.onlineRevenue)}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
         <p className="text-[10px] text-gray-400 mt-3">Solid = expo stand (POS + till + QR) · faded = online orders shipping to {data?.show?.state ?? "the state"} during the show.</p>
