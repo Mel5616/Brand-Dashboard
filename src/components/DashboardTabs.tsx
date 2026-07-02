@@ -174,7 +174,8 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
 
 // Sidebar grouping — how you market (top) vs where you sell (bottom).
 const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
-  { label: "Overview", ids: ["brands", "insights", "report", "snapshot", "social-report", "uppababy"] },
+  { label: "Overview", ids: ["brands", "insights"] },
+  { label: "Reports", ids: ["report", "snapshot", "social-report", "uppababy"] },
   { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows"] },
   { label: "Plan", ids: ["campaign-calendar", "promotions", "calendar", "content", "events", "tasks", "design-requests"] },
   { label: "Operations", ids: ["budget", "new-products"] },
@@ -182,8 +183,6 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting", "pa-budget", "pa-tracker"] },
 ];
 
-// Report-type pages collapse under a "Reports" dropdown in the sidebar.
-const REPORT_IDS: TabId[] = ["report", "snapshot", "social-report", "uppababy"];
 // Influencer pages collapse under an "Influencers" dropdown in the sidebar.
 const INFLUENCER_IDS: TabId[] = ["influencer", "gifting"];
 // Partnerships pages collapse under a "Partnerships & Affiliates" dropdown.
@@ -294,7 +293,6 @@ export function DashboardTabs({
     : TABS.filter(t => (allowedTabs ?? []).includes(t.id) && !FINANCIAL.includes(t.id));
   const firstTab = (visibleTabs[0]?.id ?? "brands") as TabId;
   const [active, setActive] = useState<TabId>(firstTab);
-  const [reportsOpen, setReportsOpen] = useState<boolean>(() => REPORT_IDS.includes(firstTab));
   const [influencersOpen, setInfluencersOpen] = useState<boolean>(() => INFLUENCER_IDS.includes(firstTab));
   const [partnershipsOpen, setPartnershipsOpen] = useState<boolean>(() => PARTNERSHIP_IDS.includes(firstTab));
   const [mobileNavOpen, setMobileNavOpen] = useState(false); // slide-in nav drawer on small screens
@@ -477,12 +475,10 @@ export function DashboardTabs({
               </button>
             );
           };
-          const reportActive = REPORT_IDS.includes(active);
           const inflActive = INFLUENCER_IDS.includes(active);
           const paActive = PARTNERSHIP_IDS.includes(active);
           return groups.map(g => {
-            const flatTabs = g.tabs.filter(t => !REPORT_IDS.includes(t.id as TabId) && !INFLUENCER_IDS.includes(t.id as TabId) && !PARTNERSHIP_IDS.includes(t.id as TabId));
-            const reportTabs = g.tabs.filter(t => REPORT_IDS.includes(t.id as TabId));
+            const flatTabs = g.tabs.filter(t => !INFLUENCER_IDS.includes(t.id as TabId) && !PARTNERSHIP_IDS.includes(t.id as TabId));
             const inflTabs = g.tabs.filter(t => INFLUENCER_IDS.includes(t.id as TabId));
             const paTabs = g.tabs.filter(t => PARTNERSHIP_IDS.includes(t.id as TabId));
             return (
@@ -490,17 +486,6 @@ export function DashboardTabs({
                 <p className="bg-slate-700 text-white rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] mb-1.5 shadow-sm">{g.label}</p>
                 <div className="space-y-0.5">
                   {flatTabs.map(Btn)}
-                  {reportTabs.length > 0 && (
-                    <>
-                      <button onClick={() => setReportsOpen(o => !o)}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${reportActive ? "text-emerald-600 font-semibold" : "text-gray-500 hover:bg-gray-100/70 hover:text-gray-700"}`}>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                        Reports
-                        <svg className={`ml-auto w-3.5 h-3.5 transition-transform ${reportsOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                      </button>
-                      {reportsOpen && <div className="ml-3 pl-1.5 border-l border-gray-200 space-y-0.5">{reportTabs.map(Btn)}</div>}
-                    </>
-                  )}
                   {inflTabs.length > 0 && (
                     <>
                       <button onClick={() => setInfluencersOpen(o => !o)}
