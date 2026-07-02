@@ -20,26 +20,26 @@ function fmtDay(d: string) {
   return dt.toLocaleDateString("en-AU", { day: "numeric", month: "short" });
 }
 
-// Test POS orders are excluded via the go-live cutoff in /api/booth-pos
-// (2026-06-20), so the live feed shows only real booth sales from then.
-const POS_IS_TEST = false;
-
 export function BoothFunnel({ data }: { data: BoothFunnelData }) {
   const { totals, shows, daily, hasRows } = data;
 
-  // Live UPPAbaby Shopify POS — fetched on demand when this tab opens
+  // Live Shopify POS — UPPAbaby store + Coolkidz booth till, fetched on demand
   const [pos, setPos] = useState<PosLive | null>(null);
+  const [posCk, setPosCk] = useState<PosLive | null>(null);
   const [posLoading, setPosLoading] = useState(true);
   useEffect(() => {
     let alive = true;
-    fetch("/api/booth-pos")
-      .then(r => r.json())
-      .then((d: PosLive) => { if (alive) { setPos(d); setPosLoading(false); } })
-      .catch(() => { if (alive) setPosLoading(false); });
+    Promise.all([
+      fetch("/api/booth-pos").then(r => r.json()).catch(() => null),
+      fetch("/api/booth-pos?store=coolkidz").then(r => r.json()).catch(() => null),
+    ]).then(([u, c]: [PosLive | null, PosLive | null]) => {
+      if (!alive) return;
+      setPos(u); setPosCk(c); setPosLoading(false);
+    });
     return () => { alive = false; };
   }, []);
 
-  if (!hasRows && !(pos && pos.orders > 0)) {
+  if (!hasRows && !(pos && pos.orders > 0) && !(posCk && posCk.orders > 0)) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">
         <div className="text-4xl mb-3">📲</div>
@@ -62,13 +62,14 @@ export function BoothFunnel({ data }: { data: BoothFunnelData }) {
   const mergedDaily = (() => {
     const map = new Map<string, { date: string; revenue: number; orders: number }>();
     for (const d of daily) map.set(d.date, { date: d.date, revenue: d.revenue, orders: d.orders });
-    for (const d of pos?.daily ?? []) {
+    for (const d of [...(pos?.daily ?? []), ...(posCk?.daily ?? [])]) {
       const cur = map.get(d.date) ?? { date: d.date, revenue: 0, orders: 0 };
       cur.revenue += d.revenue; cur.orders += d.orders;
       map.set(d.date, cur);
     }
     return [...map.values()].sort((a, b) => a.date.localeCompare(b.date));
   })();
+  const totalExpoRevenue = totals.revenue + (pos?.revenue ?? 0) + (posCk?.revenue ?? 0);
   const hasRevenue = mergedDaily.some(d => d.revenue > 0);
 
   return (
@@ -91,33 +92,34 @@ export function BoothFunnel({ data }: { data: BoothFunnelData }) {
         </div>
       </div>
 
-      {/* Live POS + combined total */}
-      <div>
-        <div className="flex items-center gap-2 mb-1.5 px-0.5 flex-wrap">
-          <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-[0.18em]">Shopify POS (UPPAbaby · live)</p>
-          {!posLoading && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" title="Live" />}
-          {POS_IS_TEST && (
-            <span className="text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">⚠ Test data — not real sales</span>
-          )}
-        </div>
-        {POS_IS_TEST && (
-          <p className="text-[11px] text-amber-600 mb-2 px-0.5">These POS figures are sample/test orders, not confirmed booth sales. They’re excluded from real revenue until live.</p>
-        )}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-          <div className={`rounded-xl border shadow-sm px-4 py-3 ${POS_IS_TEST ? "border-amber-200 bg-amber-50/40" : "bg-white border-gray-100"}`}>
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">POS Orders {POS_IS_TEST && <span className="text-amber-500">· test</span>}</p>
-            <p className="text-xl font-bold mt-1 text-slate-700">{posLoading ? "…" : num(pos?.orders ?? 0)}</p>
+      {/* Live POS — UPPAbaby + Coolkidz booth tills */}
+      {([
+        { label: "Shopify POS (UPPAbaby · live)", d: pos },
+        { label: "Shopify POS (Coolkidz brands · live)", d: posCk },
+      ] as const).map(sec => (
+        <div key={sec.label}>
+          <div className="flex items-center gap-2 mb-1.5 px-0.5 flex-wrap">
+            <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-[0.18em]">{sec.label}</p>
+            {!posLoading && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" title="Live" />}
           </div>
-          <div className={`rounded-xl border shadow-sm px-4 py-3 ${POS_IS_TEST ? "border-amber-200 bg-amber-50/40" : "bg-white border-gray-100"}`}>
-            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">POS Revenue {POS_IS_TEST && <span className="text-amber-500">· test</span>}</p>
-            <p className="text-xl font-bold mt-1 text-slate-700">{posLoading ? "…" : aud(pos?.revenue ?? 0)}</p>
-          </div>
-          <div className="rounded-xl border border-emerald-100 shadow-sm px-4 py-3 bg-gradient-to-br from-emerald-50/70 to-white">
-            <p className="text-[10px] font-semibold text-emerald-400 uppercase tracking-widest">Total Expo Stand Revenue</p>
-            <p className="text-xl font-bold mt-1 text-emerald-600">{posLoading ? "…" : aud(totals.revenue + (pos?.revenue ?? 0))}</p>
-            <p className="text-[10px] text-gray-400">QR + POS{POS_IS_TEST ? " (incl. test)" : ""}</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl border shadow-sm px-4 py-3 bg-white border-gray-100">
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">POS Orders</p>
+              <p className="text-xl font-bold mt-1 text-slate-700">{posLoading ? "…" : num(sec.d?.orders ?? 0)}</p>
+            </div>
+            <div className="rounded-xl border shadow-sm px-4 py-3 bg-white border-gray-100">
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">POS Revenue</p>
+              <p className="text-xl font-bold mt-1 text-slate-700">{posLoading ? "…" : aud(sec.d?.revenue ?? 0)}</p>
+            </div>
           </div>
         </div>
+      ))}
+
+      {/* Combined total — QR + both POS tills */}
+      <div className="rounded-xl border border-emerald-100 shadow-sm px-4 py-3 bg-gradient-to-br from-emerald-50/70 to-white">
+        <p className="text-[10px] font-semibold text-emerald-400 uppercase tracking-widest">Total Expo Stand Revenue</p>
+        <p className="text-2xl font-bold mt-1 text-emerald-600">{posLoading ? "…" : aud(totalExpoRevenue)}</p>
+        <p className="text-[10px] text-gray-400">QR + UPPAbaby POS + Coolkidz POS</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

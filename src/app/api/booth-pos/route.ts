@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 
-// Live UPPAbaby Shopify POS query for booth orders. Called on demand from the
-// Tradeshows tab so it doesn't add latency to other pages. POS orders are
-// distinct from QR booth orders, so they can be summed for total booth revenue.
+// Live Shopify POS query for booth orders. Called on demand from the Tradeshows
+// tab so it doesn't add latency to other pages. POS orders are distinct from QR
+// booth orders, so they can be summed for total booth revenue.
+//   default / ?store=uppababy → UPPAbaby store (UPPABABY_SHOPIFY_* env)
+//   ?store=coolkidz           → Coolkidz booth till (brand id 9 in BRAND_SHOPIFY)
 
 export const revalidate = 0;
 
@@ -11,9 +13,21 @@ const API_VERSION = "2024-01";
 // test POS orders are excluded. Real booth sales start here.
 const POS_GO_LIVE = "2026-06-20";
 
-export async function GET() {
-  const domain = process.env.UPPABABY_SHOPIFY_DOMAIN;
-  const token = process.env.UPPABABY_SHOPIFY_TOKEN;
+// Resolve the store credentials for the requested storefront.
+function storeCreds(store: string): { domain?: string; token?: string } {
+  if (store === "coolkidz") {
+    try {
+      const stores = JSON.parse(process.env.BRAND_SHOPIFY || "[]");
+      const ck = stores.find((s: any) => s.id === 9);
+      return { domain: ck?.domain, token: ck?.token };
+    } catch { return {}; }
+  }
+  return { domain: process.env.UPPABABY_SHOPIFY_DOMAIN, token: process.env.UPPABABY_SHOPIFY_TOKEN };
+}
+
+export async function GET(req: Request) {
+  const store = new URL(req.url).searchParams.get("store") || "uppababy";
+  const { domain, token } = storeCreds(store);
   if (!domain || !token) {
     return NextResponse.json({ ok: false, orders: 0, revenue: 0, daily: [] });
   }
