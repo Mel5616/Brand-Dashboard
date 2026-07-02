@@ -36,7 +36,7 @@ export function PartnershipsTracker() {
   const [state, setState] = useState<"loading" | "ready" | "needsSetup" | "error">("loading");
   const [adding, setAdding] = useState(false);
   const [brandF, setBrandF] = useState("");
-  const [editing, setEditing] = useState<number | null>(null);
+  const [editEntry, setEditEntry] = useState<Entry | null>(null);
 
   async function load() {
     const [e, p] = await Promise.all([
@@ -88,10 +88,17 @@ export function PartnershipsTracker() {
           <option value="">All brands</option>{brands.sort().map(b => <option key={b} value={b}>{b}</option>)}
         </select>
         <span className="text-[11px] text-gray-400">{rows.length} partnership{rows.length === 1 ? "" : "s"}</span>
-        <button onClick={() => setAdding(a => !a)} className="ml-auto text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2">{adding ? "Close" : "+ Add partnership"}</button>
+        <button onClick={() => { setEditEntry(null); setAdding(a => !a); }} className="ml-auto text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2">{adding ? "Close" : "+ Add partnership"}</button>
       </div>
 
-      {adding && <AddForm products={products} onClose={() => setAdding(false)} onSaved={() => { setAdding(false); load(); }} />}
+      {(adding || editEntry) && (
+        <PartnershipForm
+          products={products}
+          entry={editEntry}
+          onClose={() => { setAdding(false); setEditEntry(null); }}
+          onSaved={() => { setAdding(false); setEditEntry(null); load(); }}
+        />
+      )}
 
       {/* KPI strip: gifted expense vs sales revenue */}
       {entries.length > 0 && (
@@ -168,7 +175,7 @@ export function PartnershipsTracker() {
           </thead>
           <tbody className="divide-y divide-gray-50">
             {rows.map(e => (
-              <Row key={e.id} e={e} open={editing === e.id} onToggle={() => setEditing(editing === e.id ? null : e.id)} onChanged={load} />
+              <Row key={e.id} e={e} onEdit={() => { setAdding(false); setEditEntry(e); }} />
             ))}
             {rows.length === 0 && <tr><td colSpan={11} className="px-4 py-8 text-center text-slate-300">No partnerships logged yet.</td></tr>}
           </tbody>
@@ -178,86 +185,61 @@ export function PartnershipsTracker() {
   );
 }
 
-function Row({ e, open, onToggle, onChanged }: { e: Entry; open: boolean; onToggle: () => void; onChanged: () => void }) {
-  const [status, setStatus] = useState(e.status || "Planned");
-  const [code, setCode] = useState(e.affiliate_code || "");
-  const [url, setUrl] = useState(e.content_url || "");
-  const [name, setName] = useState(e.contact_name || "");
-  const [email, setEmail] = useState(e.email || "");
-  const [address, setAddress] = useState(e.address || "");
-  const [busy, setBusy] = useState(false);
+function Row({ e, onEdit }: { e: Entry; onEdit: () => void }) {
   const isSale = e.kind === "sale";
   const items = e.items && e.items.length ? e.items : null;
   const productTitle = items ? items.map(i => `${i.product_name ?? "Product"} ×${i.qty}`).join("\n") : (e.product_name ?? "");
   const productLabel = items && items.length > 1 ? `${items[0].product_name ?? "Product"} +${items.length - 1} more` : (e.product_name || "—");
-  async function save() { setBusy(true); await fetch("/api/partnerships/entries", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: e.id, status, affiliate_code: code, content_url: url, contact_name: name, email, address }) }).catch(() => {}); setBusy(false); onToggle(); onChanged(); }
-  async function remove() { if (!window.confirm(`Remove this partnership (${e.company || "—"})?`)) return; setBusy(true); await fetch(`/api/partnerships/entries?id=${e.id}`, { method: "DELETE" }).catch(() => {}); setBusy(false); onChanged(); }
   return (
-    <>
-      <tr className="hover:bg-slate-50/50">
-        <td className="px-3 py-2 text-gray-500 whitespace-nowrap">{mon(e.month_key)}</td>
-        <td className="px-3 py-2 font-medium text-slate-700">{e.company || "—"}{e.contact_name ? <span className="block text-[11px] font-normal text-gray-400">{e.contact_name}</span> : null}</td>
-        <td className="px-3 py-2 text-slate-600">{e.brand || "—"}</td>
-        <td className="px-3 py-2 text-slate-600 max-w-[240px] truncate" title={productTitle}>{productLabel}</td>
-        <td className="px-3 py-2 text-right text-slate-700">{e.qty ?? 1}</td>
-        <td className="px-3 py-2"><span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${isSale ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-600"}`}>{isSale ? "Sale" : "Free"}</span></td>
-        <td className="px-3 py-2 text-right font-semibold text-slate-800">{isSale ? (Number(e.total_cost) ? aud(e.total_cost) : "—") : aud(e.total_cost)}</td>
-        <td className="px-3 py-2 text-right font-semibold text-emerald-700">{isSale ? aud(e.revenue) : "—"}</td>
-        <td className="px-3 py-2 text-violet-700 font-mono text-[11px]">{e.affiliate_code || "—"}</td>
-        <td className="px-3 py-2"><span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusCls(e.status)}`}>{e.status || "Planned"}</span></td>
-        <td className="px-3 py-2 text-right"><button onClick={onToggle} className="text-xs text-emerald-600 hover:underline">{open ? "Close" : "Edit"}</button></td>
-      </tr>
-      {open && (
-        <tr><td colSpan={11} className="px-3 pb-3 bg-slate-50/60">
-          {items && items.length > 1 && (
-            <div className="pt-2 text-[11px] text-slate-500">
-              <span className="font-semibold text-slate-400 uppercase tracking-wide">Products:</span>{" "}
-              {items.map((i, n) => <span key={n}>{n > 0 ? " · " : ""}{i.product_name ?? "Product"} ×{i.qty}</span>)}
-            </div>
-          )}
-          <div className="flex flex-wrap items-end gap-2 pt-2">
-            <div><label className="text-[10px] font-semibold text-slate-400 uppercase block">Status</label>
-              <select value={status} onChange={ev => setStatus(ev.target.value)} className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white">{STATUS.map(s => <option key={s}>{s}</option>)}</select></div>
-            <div><label className="text-[10px] font-semibold text-slate-400 uppercase block">Contact name</label>
-              <input value={name} onChange={ev => setName(ev.target.value)} className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 w-40" /></div>
-            <div><label className="text-[10px] font-semibold text-slate-400 uppercase block">Email</label>
-              <input value={email} onChange={ev => setEmail(ev.target.value)} className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 w-48" /></div>
-            <div className="flex-1 min-w-[180px]"><label className="text-[10px] font-semibold text-slate-400 uppercase block">Address</label>
-              <input value={address} onChange={ev => setAddress(ev.target.value)} className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 w-full" /></div>
-            <div><label className="text-[10px] font-semibold text-slate-400 uppercase block">Affiliate code</label>
-              <input value={code} onChange={ev => setCode(ev.target.value)} className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 w-36" /></div>
-            <div className="flex-1 min-w-[200px]"><label className="text-[10px] font-semibold text-slate-400 uppercase block">Post / content link</label>
-              <input value={url} onChange={ev => setUrl(ev.target.value)} placeholder="https://…" className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 w-full" /></div>
-            <button onClick={save} disabled={busy} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 rounded-lg px-4 py-1.5">Save</button>
-            <button onClick={remove} disabled={busy} className="text-xs text-rose-500 hover:underline px-2">Delete</button>
-          </div>
-        </td></tr>
-      )}
-    </>
+    <tr className="hover:bg-slate-50/50">
+      <td className="px-3 py-2 text-gray-500 whitespace-nowrap">{mon(e.month_key)}</td>
+      <td className="px-3 py-2 font-medium text-slate-700">{e.company || "—"}{e.contact_name ? <span className="block text-[11px] font-normal text-gray-400">{e.contact_name}</span> : null}</td>
+      <td className="px-3 py-2 text-slate-600">{e.brand || "—"}</td>
+      <td className="px-3 py-2 text-slate-600 max-w-[240px] truncate" title={productTitle}>{productLabel}</td>
+      <td className="px-3 py-2 text-right text-slate-700">{e.qty ?? 1}</td>
+      <td className="px-3 py-2"><span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${isSale ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-600"}`}>{isSale ? "Sale" : "Free"}</span></td>
+      <td className="px-3 py-2 text-right font-semibold text-slate-800">{isSale ? (Number(e.total_cost) ? aud(e.total_cost) : "—") : aud(e.total_cost)}</td>
+      <td className="px-3 py-2 text-right font-semibold text-emerald-700">{isSale ? aud(e.revenue) : "—"}</td>
+      <td className="px-3 py-2 text-violet-700 font-mono text-[11px]">{e.affiliate_code || "—"}</td>
+      <td className="px-3 py-2"><span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusCls(e.status)}`}>{e.status || "Planned"}</span></td>
+      <td className="px-3 py-2 text-right"><button onClick={onEdit} className="text-xs text-emerald-600 hover:underline">Edit</button></td>
+    </tr>
   );
 }
 
-type Line = { key: number; search: string; picked: Product | null; brand: string; rrp: string; qty: string; salePrice: string };
-const blankLine = (key: number): Line => ({ key, search: "", picked: null, brand: "", rrp: "", qty: "1", salePrice: "" });
+type Line = { key: number; style_code: string | null; search: string; picked: Product | null; brand: string; rrp: string; qty: string; salePrice: string };
+const blankLine = (key: number): Line => ({ key, style_code: null, search: "", picked: null, brand: "", rrp: "", qty: "1", salePrice: "" });
+// Reconstruct editable lines from a saved entry's items (or its legacy single product).
+function linesFromEntry(e: Entry): Line[] {
+  const src: Item[] = e.items && e.items.length ? e.items
+    : [{ style_code: e.style_code, product_name: e.product_name, brand: e.brand, qty: e.qty ?? 1, rrp: e.rrp, unit_cost: null, line_cost: null, sale_price: null, line_revenue: null }];
+  return src.map((i, k) => ({
+    key: k, style_code: i.style_code ?? null, search: i.product_name ?? "", picked: null,
+    brand: i.brand ?? "", rrp: i.rrp != null ? String(i.rrp) : "", qty: String(i.qty ?? 1),
+    salePrice: i.sale_price != null ? String(i.sale_price) : (i.rrp != null ? String(i.rrp) : ""),
+  }));
+}
 
-function AddForm({ products, onClose, onSaved }: { products: Product[]; onClose: () => void; onSaved: () => void }) {
-  const [company, setCompany] = useState("");
-  const [contactName, setContactName] = useState("");
-  const [email, setEmail] = useState("");
-  const [address, setAddress] = useState("");
-  const [kind, setKind] = useState<"gift" | "sale">("gift");
-  const [code, setCode] = useState("");
-  const [cash, setCash] = useState("");
-  const [month, setMonth] = useState(INFLUENCER_FY_MONTHS[0].key);
-  const [status, setStatus] = useState("Planned");
+function PartnershipForm({ products, entry, onClose, onSaved, onDeleted }: { products: Product[]; entry?: Entry | null; onClose: () => void; onSaved: () => void; onDeleted?: () => void }) {
+  const [company, setCompany] = useState(entry?.company ?? "");
+  const [contactName, setContactName] = useState(entry?.contact_name ?? "");
+  const [email, setEmail] = useState(entry?.email ?? "");
+  const [address, setAddress] = useState(entry?.address ?? "");
+  const [kind, setKind] = useState<"gift" | "sale">(entry?.kind === "sale" ? "sale" : "gift");
+  const [code, setCode] = useState(entry?.affiliate_code ?? "");
+  const [url, setUrl] = useState(entry?.content_url ?? "");
+  const [cash, setCash] = useState(entry?.cash_fee != null ? String(entry.cash_fee) : "");
+  const [month, setMonth] = useState(entry?.month_key ?? INFLUENCER_FY_MONTHS[0].key);
+  const [status, setStatus] = useState(entry?.status ?? "Planned");
   const [busy, setBusy] = useState(false);
-  const [nextKey, setNextKey] = useState(1);
-  const [lines, setLines] = useState<Line[]>([blankLine(0)]);
+  const initLines = entry ? linesFromEntry(entry) : [blankLine(0)];
+  const [nextKey, setNextKey] = useState(initLines.length);
+  const [lines, setLines] = useState<Line[]>(initLines);
 
   function setLine(key: number, patch: Partial<Line>) { setLines(ls => ls.map(l => l.key === key ? { ...l, ...patch } : l)); }
   function addLine() { setLines(ls => [...ls, blankLine(nextKey)]); setNextKey(k => k + 1); }
   function removeLine(key: number) { setLines(ls => ls.length > 1 ? ls.filter(l => l.key !== key) : ls); }
-  function pick(key: number, p: Product) { setLine(key, { picked: p, search: p.product_name, brand: p.brand || "", rrp: p.rrp != null ? String(p.rrp) : "", salePrice: p.rrp != null ? String(p.rrp) : "" }); }
+  function pick(key: number, p: Product) { setLine(key, { picked: p, style_code: p.style_code, search: p.product_name, brand: p.brand || "", rrp: p.rrp != null ? String(p.rrp) : "", salePrice: p.rrp != null ? String(p.rrp) : "" }); }
 
   const lineValid = (l: Line) => !!(l.picked || (l.brand && l.rrp));
   const validLines = lines.filter(lineValid);
@@ -266,19 +248,31 @@ function AddForm({ products, onClose, onSaved }: { products: Product[]; onClose:
   async function save() {
     setBusy(true);
     const items = validLines.map(l => ({
-      style_code: l.picked?.style_code || null,
+      style_code: l.picked?.style_code ?? l.style_code ?? null,
       product_name: l.picked?.product_name || l.search || null,
       brand: l.brand, qty: l.qty, rrp: l.rrp,
       sale_price: kind === "sale" ? (l.salePrice || l.rrp) : null,
     }));
-    await fetch("/api/partnerships/entries", { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ month_key: month, company, contact_name: contactName, email, address, kind, items, cash_fee: cash, affiliate_code: code, status }) }).catch(() => {});
+    const payload: any = { month_key: month, company, contact_name: contactName, email, address, kind, items, cash_fee: cash, affiliate_code: code, content_url: url, status };
+    if (entry) payload.id = entry.id;
+    await fetch("/api/partnerships/entries", { method: entry ? "PATCH" : "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload) }).catch(() => {});
     setBusy(false); onSaved();
+  }
+  async function remove() {
+    if (!entry || !window.confirm(`Remove this partnership (${entry.company || "—"})?`)) return;
+    setBusy(true);
+    await fetch(`/api/partnerships/entries?id=${entry.id}`, { method: "DELETE" }).catch(() => {});
+    setBusy(false); (onDeleted ?? onSaved)();
   }
   const inp = "w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-400";
   const lbl = "text-[10px] font-semibold text-slate-400 uppercase";
   return (
     <div className="bg-white rounded-2xl border border-emerald-200 shadow-sm p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-bold text-slate-700">{entry ? "Edit partnership" : "Add partnership"}</h3>
+        {entry && <span className="text-[11px] text-gray-400">{mon(entry.month_key)} · {entry.company || "—"}</span>}
+      </div>
       {/* Sale vs Free */}
       <div className="inline-flex bg-gray-100 rounded-lg p-0.5 mb-3">
         {([["gift", "Free product"], ["sale", "Sale"]] as const).map(([id, label]) => (
@@ -328,11 +322,13 @@ function AddForm({ products, onClose, onSaved }: { products: Product[]; onClose:
         <div><label className={lbl}>Cash fee (optional, excl GST)</label><input value={cash} onChange={e => setCash(e.target.value)} inputMode="decimal" placeholder="$0" className={inp} /></div>
         <div><label className={lbl}>Affiliate / discount code</label><input value={code} onChange={e => setCode(e.target.value)} placeholder="optional" className={inp} /></div>
         <div><label className={lbl}>Status</label><select value={status} onChange={e => setStatus(e.target.value)} className={inp + " bg-white"}>{STATUS.map(s => <option key={s}>{s}</option>)}</select></div>
+        <div className="md:col-span-3"><label className={lbl}>Post / content link</label><input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://… (optional)" className={inp} /></div>
       </div>
 
-      <div className="flex justify-end gap-2 mt-3">
-        <button onClick={onClose} className="text-sm text-slate-500 px-3 py-1.5">Cancel</button>
-        <button onClick={save} disabled={!valid || busy} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 rounded-lg px-4 py-1.5">{busy ? "Saving…" : "Add partnership"}</button>
+      <div className="flex items-center gap-2 mt-3">
+        {entry && <button onClick={remove} disabled={busy} className="text-xs text-rose-500 hover:underline mr-auto">Delete</button>}
+        <button onClick={onClose} className="text-sm text-slate-500 px-3 py-1.5 ml-auto">Cancel</button>
+        <button onClick={save} disabled={!valid || busy} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 rounded-lg px-4 py-1.5">{busy ? "Saving…" : entry ? "Save changes" : "Add partnership"}</button>
       </div>
       <p className="text-[10px] text-gray-300 mt-2">{kind === "sale" ? "Sale — revenue is the sale price × qty across all products (income)." : "Free — cost is each product's catalogue cost × qty plus any cash fee, tracked against budget (expense)."}</p>
     </div>

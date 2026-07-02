@@ -58,12 +58,9 @@ async function resolveLine(raw: any): Promise<{ style_code: string | null; produ
   };
 }
 
-export async function POST(req: Request) {
-  if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
-  if (!(await canManage("pa-tracker"))) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
-  let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
-  if (!b.month_key) return NextResponse.json({ ok: false, error: "month required" }, { status: 400 });
-
+// Build a full row (product line items, costs, revenue) from a form payload —
+// shared by create (POST) and full edit (PATCH with items).
+async function computeRow(b: any) {
   const kind = b.kind === "sale" ? "sale" : "gift";
   // Accept an items[] array (multi-product) or fall back to a single legacy product.
   const rawItems: any[] = Array.isArray(b.items) && b.items.length
@@ -85,7 +82,7 @@ export async function POST(req: Request) {
   // Gifts are spend (cost + any cash fee). Sales are income — the only spend is a cash fee, if any.
   const total_cost = kind === "gift" ? round(gifting_cost + cash_fee) : round(cash_fee);
 
-  const row = {
+  return {
     month_key: b.month_key, company: b.company || null, brand, kind,
     contact_name: b.contact_name || null, email: b.email || null, address: b.address || null,
     style_code: items.length === 1 ? items[0].style_code : null, product_name, qty: totalQty, rrp,
@@ -93,6 +90,15 @@ export async function POST(req: Request) {
     affiliate_code: b.affiliate_code ? String(b.affiliate_code).slice(0, 120) : null,
     status: b.status || null,
   };
+}
+
+export async function POST(req: Request) {
+  if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
+  if (!(await canManage("pa-tracker"))) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
+  let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
+  if (!b.month_key) return NextResponse.json({ ok: false, error: "month required" }, { status: 400 });
+
+  const row = await computeRow(b);
   const res = await fetch(`${sbUrl}/rest/v1/partnership_entries`, { method: "POST", headers: headers({ Prefer: "return=minimal" }), body: JSON.stringify(row) });
   if (!res.ok) { const t = await res.text(); return NextResponse.json({ ok: false, needsSetup: missing(res.status, t) }, { status: 500 }); }
   return NextResponse.json({ ok: true });
@@ -103,8 +109,16 @@ export async function PATCH(req: Request) {
   if (!(await canManage("pa-tracker"))) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   if (!b.id) return NextResponse.json({ ok: false }, { status: 400 });
-  const fields: Record<string, any> = {};
-  for (const k of ["company", "status", "content_url", "affiliate_code", "contact_name", "email", "address"]) if (b[k] !== undefined) fields[k] = b[k] || null;
+  let fields: Record<string, any> = {};
+  if (Array.isArray(b.items)) {
+    // Full edit: recompute product lines, cost and revenue from the payload.
+    if (!b.month_key) return NextResponse.json({ ok: false, error: "month required" }, { status: 400 });
+    fields = await computeRow(b);
+    if (b.content_url !== undefined) fields.content_url = b.content_url || null;
+  } else {
+    // Lightweight inline edit: only the whitelisted simple fields.
+    for (const k of ["company", "status", "content_url", "affiliate_code", "contact_name", "email", "address"]) if (b[k] !== undefined) fields[k] = b[k] || null;
+  }
   if (Object.keys(fields).length === 0) return NextResponse.json({ ok: false }, { status: 400 });
   const res = await fetch(`${sbUrl}/rest/v1/partnership_entries?id=eq.${encodeURIComponent(String(b.id))}`, { method: "PATCH", headers: headers({ Prefer: "return=minimal" }), body: JSON.stringify(fields) });
   return NextResponse.json({ ok: res.ok }, { status: res.ok ? 200 : 500 });
