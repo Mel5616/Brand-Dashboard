@@ -5,9 +5,9 @@ name: Sync dashboard data
 # button (workflow_dispatch via the GitHub API).
 on:
   schedule:
-    # Hourly through the business day (07:00–18:00 AEST = 21:00–08:00 UTC), so the
-    # dashboard is never more than ~1 hour stale; plus the original twice-daily.
-    - cron: "0 21-23,0-8 * * *"
+    # Every 3 hours, around the clock (8×/day). UTC 00/03/06/09/12/15/18/21 =
+    # AEST 10:00/13:00/16:00/19:00/22:00/01:00/04:00/07:00.
+    - cron: "0 */3 * * *"
   workflow_dispatch: {}
 
 concurrency:
