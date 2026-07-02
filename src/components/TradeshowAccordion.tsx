@@ -310,6 +310,15 @@ export function TradeshowAccordion({
       </div>
 
       {/* Visuals: sales-by-state map + top brands */}
+      {!hasVisuals && fyShows.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 text-center">
+          <p className="text-sm font-semibold text-slate-700">No tradeshow sales in this financial year yet</p>
+          <p className="text-xs text-gray-400 mt-1">
+            {fyShows.length} show{fyShows.length > 1 ? "s" : ""} scheduled but none have recorded sales.
+            The Sales by State map and top-brands chart appear once shows start selling — or switch the year selector at the top of the dashboard to a past financial year.
+          </p>
+        </div>
+      )}
       {hasVisuals && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Australia sales heat map */}
