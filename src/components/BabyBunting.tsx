@@ -4,6 +4,7 @@ import React from "react";
 import { Chart as ChartJS, CategoryScale, LinearScale, LineElement, BarElement, PointElement, Filler, Tooltip, Legend } from "chart.js";
 import { Line, Bar } from "react-chartjs-2";
 import { STORE_STATE, NON_STORE_LOCATIONS, resolveState, COLS, classifyBrand, classifyModel, isPram, MODEL_ORDER } from "@/lib/bbMappings";
+import { AustraliaMap } from "./AustraliaMap";
 
 ChartJS.register(CategoryScale, LinearScale, LineElement, BarElement, PointElement, Filler, Tooltip, Legend);
 
@@ -13,6 +14,11 @@ const fmtFull = (n: number) => "$" + Math.round(n).toLocaleString("en-AU");
 const fmtU = (n: number) => (Math.abs(n) >= 1000 ? (n / 1000).toFixed(1) + "K" : Math.round(n).toLocaleString());
 const num = (v: any) => { if (v == null) return 0; const n = Number(String(v).replace(/[^0-9.-]/g, "")); return isFinite(n) ? n : 0; };
 const STATE_ORDER = ["NSW", "VIC", "QLD", "WA", "SA", "ACT", "TAS", "Online"];
+// BB uses short state codes; AustraliaMap keys on the full province name.
+const STATE_FULLNAME: Record<string, string> = {
+  NSW: "New South Wales", VIC: "Victoria", QLD: "Queensland", WA: "Western Australia",
+  SA: "South Australia", ACT: "Australian Capital Territory", TAS: "Tasmania", NT: "Northern Territory",
+};
 const longDate = (d: string | null) => (d ? new Date(d + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "");
 
 // Excel date at M4 → ISO. Handles Date objects, dd/mm/yyyy strings, and serials.
@@ -235,6 +241,36 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
           <button key={t} onClick={() => setScope(t)} className={`text-xs font-semibold rounded-lg px-3 py-1 transition ${scope === t ? "bg-teal-600 text-white" : "bg-gray-100 text-gray-500 hover:text-gray-700"}`}>{t === "ALL" ? "All AU" : t}</button>
         ))}
       </div>
+
+      {/* Sales heat map (All AU only) */}
+      {scope === "ALL" && (() => {
+        const valueByState: Record<string, number> = {};
+        let online = 0;
+        (data!.states || []).forEach((r: any) => {
+          const v = num(r.cum_sales);
+          if (r.state === "Online") { online += v; return; }
+          const full = STATE_FULLNAME[r.state];
+          if (full) valueByState[full] = (valueByState[full] ?? 0) + v;
+        });
+        const maxState = Math.max(1, ...Object.values(valueByState));
+        return (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-1">Sales heat map</p>
+                <p className="text-xs text-gray-400 mb-3">Baby Bunting sell-through by state · rolling year · ex-tax</p>
+              </div>
+              {online > 0 && (
+                <div className="text-right shrink-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Online / DC</p>
+                  <p className="text-sm font-bold text-slate-700">{fmtM(online)}</p>
+                </div>
+              )}
+            </div>
+            <AustraliaMap valueByState={valueByState} max={maxState} fmt={fmtM} />
+          </div>
+        );
+      })()}
 
       <div className="grid lg:grid-cols-2 gap-4">
         {/* State bars / top stores */}
