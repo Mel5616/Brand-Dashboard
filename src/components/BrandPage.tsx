@@ -585,7 +585,7 @@ export function BrandPage({
         <div className="grid grid-cols-4 divide-x divide-gray-100 border-b border-gray-100 shadow-sm">
           <KpiCard
             label={`${fyLabel} Revenue`}
-            value={fmt(summary?.fy_revenue ?? 0)}
+            value={fmt(fyRevenue)}
             spark={revMonthly}
             hero
             heroColor={brand.color}
@@ -637,7 +637,7 @@ export function BrandPage({
             <p className="text-white/60 text-[10px] uppercase tracking-[0.2em] mb-3">{latestLbl} · Targets &amp; Pacing</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {latestTarget.revenue_target > 0 && (
-                <PacingBar current={summary?.last_month_rev ?? 0} target={latestTarget.revenue_target} label="Revenue" />
+                <PacingBar current={latestRev} target={latestTarget.revenue_target} label="Revenue" />
               )}
               {latestTarget.google_spend_target > 0 && (
                 <PacingBar current={latestAds?.spend ?? 0} target={latestTarget.google_spend_target} label="Google Spend" />
