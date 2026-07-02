@@ -33,7 +33,7 @@ function parseWeekEnding(v: any): string | null {
 }
 
 type BBData = {
-  ok: boolean; needsSetup?: boolean; weeks: string[]; week: string | null;
+  ok: boolean; needsSetup?: boolean; transient?: boolean; weeks: string[]; week: string | null;
   mode?: "week" | "month"; period?: string | null; periods?: string[]; weekCount?: number;
   kpi?: any; states?: any[]; brands?: any[]; models?: any[]; stores?: any[]; pramByState?: any[]; colours?: Record<string, any[]>;
   trends?: { weekly: any[]; byState: any[]; byBrand: any[]; byModel: any[] };
@@ -148,6 +148,18 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
   }
 
   if (loading && !data) return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center text-sm text-gray-400">Loading Baby Bunting…</div>;
+
+  // Transient error (timeout / 5xx) — the data is there, the fetch just hiccuped.
+  // Offer a retry instead of the (misleading) "needs setup" message.
+  if (data?.transient) {
+    return (
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 max-w-xl text-center">
+        <h2 className="font-semibold text-gray-800">Couldn’t load Baby Bunting data</h2>
+        <p className="text-sm text-gray-500 mt-1">A momentary hiccup reading the data — your sell-through is still there. Try again.</p>
+        <button onClick={() => load(period, scope, mode)} disabled={loading} className="mt-4 text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-50 rounded-lg px-4 py-2">{loading ? "Retrying…" : "Retry"}</button>
+      </div>
+    );
+  }
 
   if (data?.needsSetup || (data && !data.weeks.length)) {
     return (

@@ -63,7 +63,13 @@ export function PartnershipsTracker({ brandNames = [] }: { brandNames?: string[]
     const byMonth: Record<string, number> = {};
     for (const e of entries) {
       const c = Number(e.total_cost) || 0;
-      byBrand[e.brand || "—"] = (byBrand[e.brand || "—"] || 0) + c;
+      // Spend-by-brand: attribute each product line's cost to its own brand so a
+      // mixed-brand entry ("Frida, Nanit") splits across both bars.
+      if (e.items && e.items.length) {
+        for (const it of e.items) byBrand[it.brand || "—"] = (byBrand[it.brand || "—"] || 0) + (Number(it.line_cost) || 0);
+      } else {
+        byBrand[e.brand || "—"] = (byBrand[e.brand || "—"] || 0) + c;
+      }
       byCompany[e.company || "—"] = (byCompany[e.company || "—"] || 0) + c;
       byStatus[e.status || "Planned"] = (byStatus[e.status || "Planned"] || 0) + 1;
       byMonth[e.month_key] = (byMonth[e.month_key] || 0) + c;

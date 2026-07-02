@@ -42,8 +42,18 @@ export async function GET(req: Request) {
   const mode = sp.get("mode") === "month" ? "month" : sp.get("mode") === "year" ? "year" : "week";
   const wanted = sp.get("period") || sp.get("week");
 
-  const weeksRows = await q("bb_weekly_totals?select=week_ending&order=week_ending.desc");
-  if (weeksRows == null) return NextResponse.json({ ok: false, needsSetup: true, weeks: [] });
+  // Fetch the week list directly so we can tell a genuinely-missing table apart
+  // from a transient error (timeout / 5xx) — only the former is "needs setup".
+  const weeksRes = await fetch(`${sbUrl}/rest/v1/bb_weekly_totals?select=week_ending&order=week_ending.desc`, { headers: H(), cache: "no-store" });
+  if (!weeksRes.ok) {
+    const t = await weeksRes.text();
+    const notSetup = weeksRes.status === 404 || /PGRST205|does not exist|schema cache/i.test(t);
+    return NextResponse.json(
+      { ok: false, needsSetup: notSetup, transient: !notSetup, weeks: [] },
+      { status: notSetup ? 200 : 503 },
+    );
+  }
+  const weeksRows = JSON.parse((await weeksRes.text()) || "[]");
   const weeks: string[] = weeksRows.map((r: any) => r.week_ending);   // desc
   if (!weeks.length) return NextResponse.json({ ok: true, weeks: [], week: null });
 
