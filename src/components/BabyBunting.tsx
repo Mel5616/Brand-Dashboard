@@ -36,12 +36,15 @@ type BBData = {
 
 const monthLabel = (mk: string) => new Date(mk + "-01T00:00:00").toLocaleDateString("en-AU", { month: "short", year: "2-digit" });
 
-// Readable colourway from a SKU description (strip brand/model/boilerplate).
+// UPPAbaby colourways are named after people — show just the name.
+const UPPA_NAMES = ["Jake", "Liam", "Greyson", "Evelyn", "Owen", "Nori", "Savannah", "Ada", "James", "Dillan", "Dylan", "Stella", "Gwen", "Anthony", "Emmett", "Taylor", "Jordan", "Noa", "Bryce", "Declan", "Reed", "Alice", "Hazel", "William", "Theo", "Kate", "Sasha", "Gregory", "Lucy", "Finn", "Aria", "Gemma", "Ridley", "Robby", "Maxwell", "Beckett", "Sierra", "Kendall", "Rylie", "Hazlen"];
 function colourLabel(desc: string): string {
-  const s = (desc || "").replace(/UPPABABY/gi, "").replace(/\b(VISTA|CRUZ|MINU)\b/gi, "").replace(/\bV[23]\b/gi, "")
-    .replace(/WITH BASSINET|BASSINET|STROLLER|PRAM|RUMBLE SEAT|\bWITH\b/gi, "").replace(/-?\s*ONLINE ONLY/gi, "")
-    .replace(/[-/()]/g, " ").replace(/\s+/g, " ").trim();
-  return (s ? s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) : desc).slice(0, 32);
+  const U = (desc || "").toUpperCase();
+  for (const n of UPPA_NAMES) if (new RegExp(`\\b${n.toUpperCase()}\\b`).test(U)) return n;
+  // fallback: last real word (parenthetical names, unknowns)
+  const w = (desc || "").replace(/-?\s*ONLINE ONLY.*/i, "").replace(/[()]/g, " ").trim().split(/\s+/).filter(x => /^[A-Za-z]{3,}$/.test(x));
+  const last = w[w.length - 1];
+  return last ? last[0].toUpperCase() + last.slice(1).toLowerCase() : (desc || "").slice(0, 20);
 }
 
 export function BabyBunting({ canUpload }: { canUpload: boolean }) {
@@ -300,6 +303,7 @@ export function BabyBunting({ canUpload }: { canUpload: boolean }) {
               const ordered = [...MODEL_ORDER.filter(m => byModel.has(m)), ...(data!.models || []).map((m: any) => m.model).filter((m: string) => !MODEL_ORDER.includes(m as any))];
               return [...new Set(ordered)].map(name => {
                 const m: any = byModel.get(name); if (!m) return null;
+                if (num(m.cum_sales) <= 0 && num(m.wk_units) <= 0 && num(m.cum_units) <= 0) return null;   // hide dead lines
                 const st = num(m.sell_thru) * 100;
                 return (
                   <tr key={name} className="border-b border-gray-50" style={m.is_pram ? { background: PRAM_GOLD + "10" } : undefined}>
