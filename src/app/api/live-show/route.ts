@@ -147,6 +147,57 @@ async function computeShow(
   const addDayBooth  = (iso: string | undefined, amt: number, o: number) => { if (iso) { const c = dayCur(iso); c.booth += amt; c.boothOrders += o; } };
   const addDayOnline = (iso: string | undefined, amt: number, o: number) => { if (iso) { const c = dayCur(iso); c.online += amt; c.onlineOrders += o; } };
 
+  // Coolkidz Website shows: every participating brand sells through the ONE Coolkidz
+  // store (id 9), so we query that store alone and split each order's line items to a
+  // brand (vendor / Brand_ tag). POS = expo stand, online shipping to the show state
+  // (on an actual show day) = online. No per-brand own-store queries, no QR yet.
+  const coolkidzOnly = (show.store || "uppababy") === "coolkidz";
+  let rows: any[] = [];
+
+  if (coolkidzOnly) {
+    const ck = storeById.get(9);
+    const perBrand = new Map<number, { posRev: number; posOrders: number; webRev: number; webOrders: number }>();
+    if (ck) {
+      const edges = await shopifyOrders(ck.domain, ck.token,
+        `financial_status:paid created_at:>=${since} created_at:<=${until}`,
+        `createdAt sourceName shippingAddress { province } lineItems(first: 50) { edges { node { title sku quantity originalTotalSet { shopMoney { amount } } product { vendor tags } } } }`);
+      for (const e of edges) {
+        const n = e.node;
+        const createdAt = n.createdAt;
+        const isPos = (n.sourceName || "").toLowerCase() === "pos";
+        if (isPos) {
+          if (past(createdAt) || offShow(createdAt)) continue;
+        } else {
+          if ((n.shippingAddress?.province || "").toLowerCase() !== state) continue;
+          const od = createdAt ? aestDate(createdAt) : "";
+          if (!(od >= show.date_start && od <= show.date_end)) continue;
+        }
+        const seen = new Set<number>();
+        let orderBooth = 0, orderOnline = 0;
+        for (const li of n.lineItems.edges) {
+          const it = li.node; const p = it.product || {};
+          const bid = coolkidzBrandId(it.title || "", p.vendor || "", p.tags || []);
+          if (bid == null || !brandIds.includes(bid)) continue;
+          const amt = Math.round((Number(it.originalTotalSet?.shopMoney?.amount ?? 0) / 1.1) * 100) / 100;
+          const cur = perBrand.get(bid) ?? { posRev: 0, posOrders: 0, webRev: 0, webOrders: 0 };
+          if (isPos) { cur.posRev += amt; if (!seen.has(bid)) cur.posOrders += 1; orderBooth += amt; }
+          else { cur.webRev += amt; if (!seen.has(bid)) cur.webOrders += 1; orderOnline += amt; }
+          seen.add(bid);
+          perBrand.set(bid, cur);
+          if (detail) { addProduct(it.sku, it.title || "Unknown", bid, amt, Number(it.quantity ?? 1), createdAt); bucket(createdAt, amt); }
+        }
+        if (detail) { if (orderBooth > 0) addDayBooth(createdAt, orderBooth, 1); if (orderOnline > 0) addDayOnline(createdAt, orderOnline, 1); }
+      }
+    }
+    rows = brandIds.filter(id => id !== 9).map(id => {
+      const b = perBrand.get(id) ?? { posRev: 0, posOrders: 0, webRev: 0, webOrders: 0 };
+      return {
+        brand_id: id, name: storeById.get(id)?.name ?? `Brand ${id}`,
+        boothRevenue: round(b.posRev), boothOrders: b.posOrders,
+        onlineRevenue: round(b.webRev), onlineOrders: b.webOrders,
+      };
+    });
+  } else {
   // Coolkidz booth till — split per brand (date-only)
   const ck = storeById.get(9);
   const ckByBrand = new Map<number, { rev: number; orders: number }>();
@@ -219,7 +270,7 @@ async function computeShow(
     };
   }));
 
-  const rows = [...results];
+  rows = [...results];
 
   // QR-scanned booth orders (separate booth_events Supabase) within the window
   if (boothCreds.url && boothCreds.key) {
@@ -233,6 +284,7 @@ async function computeShow(
       if (detail) for (const e of qrRows) { bucket(e.created_at, Number(e.value ?? 0)); addDayBooth(e.created_at, Number(e.value ?? 0), 1); }
       if (qrRev > 0) rows.push({ brand_id: -1, name: "QR Expo Stand (scanned)", boothRevenue: round(qrRev), boothOrders: qrRows.length, onlineRevenue: 0, onlineOrders: 0 });
     } catch { /* booth project unavailable — skip QR */ }
+  }
   }
 
   rows.sort((a, b) => (b.boothRevenue + b.onlineRevenue) - (a.boothRevenue + a.onlineRevenue));
@@ -308,7 +360,7 @@ export async function GET(req: Request) {
   // Previous comparable show (same name, earlier date) — for a vs-last-time badge
   let compare: { name: string; date_start: string; boothTotal: number; showTotal: number; onlineTotal: number; samePoint: boolean; atFraction: number } | null = null;
   if (wantCompare) {
-    const prevShows = await sb(`tradeshows?name=eq.${encodeURIComponent(show.name)}&date_start=lt.${show.date_start}&order=date_start.desc&limit=1&select=id,name,date_start,date_end,state`);
+    const prevShows = await sb(`tradeshows?name=eq.${encodeURIComponent(show.name)}&date_start=lt.${show.date_start}&store=eq.${encodeURIComponent(show.store || "uppababy")}&order=date_start.desc&limit=1&select=id,name,date_start,date_end,state,store`);
     const prev = prevShows?.[0];
     if (prev) {
       const prevBrands = await sb(`tradeshow_brands?tradeshow_id=eq.${prev.id}&select=brand_id`);

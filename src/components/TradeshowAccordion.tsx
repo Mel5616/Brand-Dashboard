@@ -42,16 +42,18 @@ function stateLabel(fullName: string) {
 }
 
 export function TradeshowAccordion({
-  tradeshows, tradeshowBrands, tradeshowSales, brands, monthKeys,
+  tradeshows, tradeshowBrands, tradeshowSales, brands, monthKeys, store = "uppababy",
 }: {
   tradeshows: Tradeshow[];
   tradeshowBrands: { tradeshow_id: string; brand_id: number }[];
   tradeshowSales: TradeshowSale[];
   brands: Brand[];
   monthKeys?: string[]; // restrict to shows whose start month is in the selected FY
+  store?: string;       // which storefront's shows to show (uppababy | coolkidz)
 }) {
-  // Keep only shows that fall within the selected financial year
-  const fyShows = monthKeys ? tradeshows.filter(t => monthKeys.includes(t.date_start.slice(0, 7))) : tradeshows;
+  // Keep only the selected storefront's shows, then those in the selected financial year
+  const storeShows = tradeshows.filter(t => (t.store ?? "uppababy") === store);
+  const fyShows = monthKeys ? storeShows.filter(t => monthKeys.includes(t.date_start.slice(0, 7))) : storeShows;
   const sorted = [...fyShows].sort((a, b) => a.date_start.localeCompare(b.date_start));
 
   const upcoming = sorted.filter(t => showStatus(t) !== "past");          // live + upcoming, soonest first

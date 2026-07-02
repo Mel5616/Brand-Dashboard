@@ -62,6 +62,9 @@ export type Tradeshow = {
   date_end: string;
   state: string;
   location: string;
+  // Which storefront runs this show. "uppababy" = each brand's own store + Coolkidz till;
+  // "coolkidz" = all sales through the Coolkidz Website store, split per brand.
+  store?: string;
 };
 
 export type TradeshowSale = {
