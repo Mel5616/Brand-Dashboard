@@ -16,10 +16,12 @@ const k$ = (n: number) => n >= 1000 ? `$${Math.round(n / 1000)}k` : `$${Math.rou
 // Partnerships & Affiliates tracker (admin). Logs free product given to companies,
 // cost derived server-side from the shared product catalogue. Cost is visible here.
 
+type Item = { style_code: string | null; product_name: string | null; brand: string | null; qty: number; rrp: number | null; unit_cost: number | null; line_cost: number | null; sale_price: number | null; line_revenue: number | null };
 type Entry = {
   id: number; month_key: string; company: string | null; brand: string | null; style_code: string | null;
   product_name: string | null; qty: number | null; rrp: number | null; gifting_cost: number | null;
   cash_fee: number | null; total_cost: number | null; affiliate_code: string | null; status: string | null; content_url: string | null;
+  kind: string | null; revenue: number | null; contact_name: string | null; email: string | null; address: string | null; items: Item[] | null;
 };
 type Product = { style_code: string; product_name: string; brand: string; rrp: number | null };
 
@@ -70,6 +72,8 @@ export function PartnershipsTracker() {
     };
   }, [entries]);
   const totalCost = entries.reduce((s, e) => s + (Number(e.total_cost) || 0), 0);
+  const totalRevenue = entries.reduce((s, e) => s + (Number(e.revenue) || 0), 0);
+  const saleCount = entries.filter(e => e.kind === "sale").length;
   const monthLabels = INFLUENCER_FY_MONTHS.map(m => m.labelShort);
   const baseScales: any = { x: { grid: { display: false }, ticks: { font: { size: 10 }, color: "#9ca3af" } }, y: { ticks: { callback: (v: any) => k$(v), font: { size: 10 }, color: "#9ca3af" }, grid: { color: "#f3f4f6" } } };
 
@@ -88,6 +92,24 @@ export function PartnershipsTracker() {
       </div>
 
       {adding && <AddForm products={products} onClose={() => setAdding(false)} onSaved={() => { setAdding(false); load(); }} />}
+
+      {/* KPI strip: gifted expense vs sales revenue */}
+      {entries.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { label: "Gifted (expense)", value: aud(totalCost), sub: `${entries.length - saleCount} free`, accent: "#e11d48" },
+            { label: "Sales revenue", value: aud(totalRevenue), sub: `${saleCount} sale${saleCount === 1 ? "" : "s"}`, accent: "#10b981" },
+            { label: "Net", value: aud(totalRevenue - totalCost), sub: "revenue − expense", accent: "#6366f1" },
+            { label: "Partnerships", value: String(entries.length), sub: "logged", accent: "#0ea5e9" },
+          ].map(k => (
+            <div key={k.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-4 py-3">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: k.accent }} />{k.label}</p>
+              <p className="text-xl font-bold text-slate-800 mt-1">{k.value}</p>
+              <p className="text-[11px] text-gray-400">{k.sub}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Visual overview */}
       {entries.length > 0 && (
@@ -139,7 +161,8 @@ export function PartnershipsTracker() {
             <tr>
               <th className="text-left font-semibold px-3 py-3">Month</th><th className="text-left font-semibold px-3 py-3">Company</th>
               <th className="text-left font-semibold px-3 py-3">Brand</th><th className="text-left font-semibold px-3 py-3">Product</th>
-              <th className="text-right font-semibold px-3 py-3">Qty</th><th className="text-right font-semibold px-3 py-3">Cost</th>
+              <th className="text-right font-semibold px-3 py-3">Qty</th><th className="text-left font-semibold px-3 py-3">Type</th>
+              <th className="text-right font-semibold px-3 py-3">Cost</th><th className="text-right font-semibold px-3 py-3">Revenue</th>
               <th className="text-left font-semibold px-3 py-3">Code</th><th className="text-left font-semibold px-3 py-3">Status</th><th className="px-3 py-3"></th>
             </tr>
           </thead>
@@ -147,7 +170,7 @@ export function PartnershipsTracker() {
             {rows.map(e => (
               <Row key={e.id} e={e} open={editing === e.id} onToggle={() => setEditing(editing === e.id ? null : e.id)} onChanged={load} />
             ))}
-            {rows.length === 0 && <tr><td colSpan={9} className="px-4 py-8 text-center text-slate-300">No partnerships logged yet.</td></tr>}
+            {rows.length === 0 && <tr><td colSpan={11} className="px-4 py-8 text-center text-slate-300">No partnerships logged yet.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -159,27 +182,48 @@ function Row({ e, open, onToggle, onChanged }: { e: Entry; open: boolean; onTogg
   const [status, setStatus] = useState(e.status || "Planned");
   const [code, setCode] = useState(e.affiliate_code || "");
   const [url, setUrl] = useState(e.content_url || "");
+  const [name, setName] = useState(e.contact_name || "");
+  const [email, setEmail] = useState(e.email || "");
+  const [address, setAddress] = useState(e.address || "");
   const [busy, setBusy] = useState(false);
-  async function save() { setBusy(true); await fetch("/api/partnerships/entries", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: e.id, status, affiliate_code: code, content_url: url }) }).catch(() => {}); setBusy(false); onToggle(); onChanged(); }
+  const isSale = e.kind === "sale";
+  const items = e.items && e.items.length ? e.items : null;
+  const productTitle = items ? items.map(i => `${i.product_name ?? "Product"} ×${i.qty}`).join("\n") : (e.product_name ?? "");
+  const productLabel = items && items.length > 1 ? `${items[0].product_name ?? "Product"} +${items.length - 1} more` : (e.product_name || "—");
+  async function save() { setBusy(true); await fetch("/api/partnerships/entries", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: e.id, status, affiliate_code: code, content_url: url, contact_name: name, email, address }) }).catch(() => {}); setBusy(false); onToggle(); onChanged(); }
   async function remove() { if (!window.confirm(`Remove this partnership (${e.company || "—"})?`)) return; setBusy(true); await fetch(`/api/partnerships/entries?id=${e.id}`, { method: "DELETE" }).catch(() => {}); setBusy(false); onChanged(); }
   return (
     <>
       <tr className="hover:bg-slate-50/50">
         <td className="px-3 py-2 text-gray-500 whitespace-nowrap">{mon(e.month_key)}</td>
-        <td className="px-3 py-2 font-medium text-slate-700">{e.company || "—"}</td>
+        <td className="px-3 py-2 font-medium text-slate-700">{e.company || "—"}{e.contact_name ? <span className="block text-[11px] font-normal text-gray-400">{e.contact_name}</span> : null}</td>
         <td className="px-3 py-2 text-slate-600">{e.brand || "—"}</td>
-        <td className="px-3 py-2 text-slate-600 max-w-[240px] truncate" title={e.product_name ?? ""}>{e.product_name || "—"}</td>
+        <td className="px-3 py-2 text-slate-600 max-w-[240px] truncate" title={productTitle}>{productLabel}</td>
         <td className="px-3 py-2 text-right text-slate-700">{e.qty ?? 1}</td>
-        <td className="px-3 py-2 text-right font-semibold text-slate-800">{aud(e.total_cost)}</td>
+        <td className="px-3 py-2"><span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${isSale ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-600"}`}>{isSale ? "Sale" : "Free"}</span></td>
+        <td className="px-3 py-2 text-right font-semibold text-slate-800">{isSale ? (Number(e.total_cost) ? aud(e.total_cost) : "—") : aud(e.total_cost)}</td>
+        <td className="px-3 py-2 text-right font-semibold text-emerald-700">{isSale ? aud(e.revenue) : "—"}</td>
         <td className="px-3 py-2 text-violet-700 font-mono text-[11px]">{e.affiliate_code || "—"}</td>
         <td className="px-3 py-2"><span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusCls(e.status)}`}>{e.status || "Planned"}</span></td>
         <td className="px-3 py-2 text-right"><button onClick={onToggle} className="text-xs text-emerald-600 hover:underline">{open ? "Close" : "Edit"}</button></td>
       </tr>
       {open && (
-        <tr><td colSpan={9} className="px-3 pb-3 bg-slate-50/60">
+        <tr><td colSpan={11} className="px-3 pb-3 bg-slate-50/60">
+          {items && items.length > 1 && (
+            <div className="pt-2 text-[11px] text-slate-500">
+              <span className="font-semibold text-slate-400 uppercase tracking-wide">Products:</span>{" "}
+              {items.map((i, n) => <span key={n}>{n > 0 ? " · " : ""}{i.product_name ?? "Product"} ×{i.qty}</span>)}
+            </div>
+          )}
           <div className="flex flex-wrap items-end gap-2 pt-2">
             <div><label className="text-[10px] font-semibold text-slate-400 uppercase block">Status</label>
               <select value={status} onChange={ev => setStatus(ev.target.value)} className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white">{STATUS.map(s => <option key={s}>{s}</option>)}</select></div>
+            <div><label className="text-[10px] font-semibold text-slate-400 uppercase block">Contact name</label>
+              <input value={name} onChange={ev => setName(ev.target.value)} className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 w-40" /></div>
+            <div><label className="text-[10px] font-semibold text-slate-400 uppercase block">Email</label>
+              <input value={email} onChange={ev => setEmail(ev.target.value)} className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 w-48" /></div>
+            <div className="flex-1 min-w-[180px]"><label className="text-[10px] font-semibold text-slate-400 uppercase block">Address</label>
+              <input value={address} onChange={ev => setAddress(ev.target.value)} className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 w-full" /></div>
             <div><label className="text-[10px] font-semibold text-slate-400 uppercase block">Affiliate code</label>
               <input value={code} onChange={ev => setCode(ev.target.value)} className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 w-36" /></div>
             <div className="flex-1 min-w-[200px]"><label className="text-[10px] font-semibold text-slate-400 uppercase block">Post / content link</label>
@@ -193,55 +237,104 @@ function Row({ e, open, onToggle, onChanged }: { e: Entry; open: boolean; onTogg
   );
 }
 
+type Line = { key: number; search: string; picked: Product | null; brand: string; rrp: string; qty: string; salePrice: string };
+const blankLine = (key: number): Line => ({ key, search: "", picked: null, brand: "", rrp: "", qty: "1", salePrice: "" });
+
 function AddForm({ products, onClose, onSaved }: { products: Product[]; onClose: () => void; onSaved: () => void }) {
   const [company, setCompany] = useState("");
-  const [search, setSearch] = useState("");
-  const [picked, setPicked] = useState<Product | null>(null);
-  const [qty, setQty] = useState("1");
-  const [rrp, setRrp] = useState("");
-  const [brand, setBrand] = useState("");
+  const [contactName, setContactName] = useState("");
+  const [email, setEmail] = useState("");
+  const [address, setAddress] = useState("");
+  const [kind, setKind] = useState<"gift" | "sale">("gift");
   const [code, setCode] = useState("");
   const [cash, setCash] = useState("");
   const [month, setMonth] = useState(INFLUENCER_FY_MONTHS[0].key);
   const [status, setStatus] = useState("Planned");
   const [busy, setBusy] = useState(false);
-  const matches = search.trim().length < 2 ? [] : products.filter(p => `${p.product_name} ${p.style_code} ${p.brand}`.toLowerCase().includes(search.toLowerCase())).slice(0, 8);
-  function pick(p: Product) { setPicked(p); setSearch(p.product_name); setBrand(p.brand || ""); setRrp(p.rrp != null ? String(p.rrp) : ""); }
-  const valid = company.trim() && (picked || (brand && rrp));
+  const [nextKey, setNextKey] = useState(1);
+  const [lines, setLines] = useState<Line[]>([blankLine(0)]);
+
+  function setLine(key: number, patch: Partial<Line>) { setLines(ls => ls.map(l => l.key === key ? { ...l, ...patch } : l)); }
+  function addLine() { setLines(ls => [...ls, blankLine(nextKey)]); setNextKey(k => k + 1); }
+  function removeLine(key: number) { setLines(ls => ls.length > 1 ? ls.filter(l => l.key !== key) : ls); }
+  function pick(key: number, p: Product) { setLine(key, { picked: p, search: p.product_name, brand: p.brand || "", rrp: p.rrp != null ? String(p.rrp) : "", salePrice: p.rrp != null ? String(p.rrp) : "" }); }
+
+  const lineValid = (l: Line) => !!(l.picked || (l.brand && l.rrp));
+  const validLines = lines.filter(lineValid);
+  const valid = company.trim() && validLines.length > 0;
+
   async function save() {
     setBusy(true);
+    const items = validLines.map(l => ({
+      style_code: l.picked?.style_code || null,
+      product_name: l.picked?.product_name || l.search || null,
+      brand: l.brand, qty: l.qty, rrp: l.rrp,
+      sale_price: kind === "sale" ? (l.salePrice || l.rrp) : null,
+    }));
     await fetch("/api/partnerships/entries", { method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ month_key: month, company, brand, style_code: picked?.style_code || null, product_name: picked?.product_name || search || null, qty, rrp, cash_fee: cash, affiliate_code: code, status }) }).catch(() => {});
+      body: JSON.stringify({ month_key: month, company, contact_name: contactName, email, address, kind, items, cash_fee: cash, affiliate_code: code, status }) }).catch(() => {});
     setBusy(false); onSaved();
   }
   const inp = "w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-400";
+  const lbl = "text-[10px] font-semibold text-slate-400 uppercase";
   return (
     <div className="bg-white rounded-2xl border border-emerald-200 shadow-sm p-4">
-      <div className="grid md:grid-cols-2 gap-3">
-        <div><label className="text-[10px] font-semibold text-slate-400 uppercase">Company</label><input value={company} onChange={e => setCompany(e.target.value)} placeholder="e.g. Baby Boutique Co" className={inp} /></div>
-        <div><label className="text-[10px] font-semibold text-slate-400 uppercase">Month</label>
-          <select value={month} onChange={e => setMonth(e.target.value)} className={inp + " bg-white"}>{INFLUENCER_FY_MONTHS.map(m => <option key={m.key} value={m.key}>{m.label}</option>)}</select></div>
-        <div className="md:col-span-2 relative">
-          <label className="text-[10px] font-semibold text-slate-400 uppercase">Product</label>
-          <input value={search} onChange={e => { setSearch(e.target.value); setPicked(null); }} placeholder="Search name or SKU…" className={inp} />
-          {matches.length > 0 && !picked && (
-            <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
-              {matches.map(p => <button key={p.style_code} onClick={() => pick(p)} className="block w-full text-left text-sm px-3 py-2 hover:bg-emerald-50"><span className="text-slate-700">{p.product_name}</span><span className="text-gray-400 text-xs"> · {p.brand} · {aud(p.rrp)}</span></button>)}
-            </div>
-          )}
-        </div>
-        <div><label className="text-[10px] font-semibold text-slate-400 uppercase">Qty</label><input value={qty} onChange={e => setQty(e.target.value)} inputMode="numeric" className={inp} /></div>
-        <div><label className="text-[10px] font-semibold text-slate-400 uppercase">Brand</label><input value={brand} onChange={e => setBrand(e.target.value)} placeholder="auto from product" className={inp} /></div>
-        <div><label className="text-[10px] font-semibold text-slate-400 uppercase">RRP (incl GST)</label><input value={rrp} onChange={e => setRrp(e.target.value)} inputMode="decimal" placeholder="$" className={inp} /></div>
-        <div><label className="text-[10px] font-semibold text-slate-400 uppercase">Cash fee (optional, excl GST)</label><input value={cash} onChange={e => setCash(e.target.value)} inputMode="decimal" placeholder="$0" className={inp} /></div>
-        <div><label className="text-[10px] font-semibold text-slate-400 uppercase">Affiliate / discount code</label><input value={code} onChange={e => setCode(e.target.value)} placeholder="optional" className={inp} /></div>
-        <div><label className="text-[10px] font-semibold text-slate-400 uppercase">Status</label><select value={status} onChange={e => setStatus(e.target.value)} className={inp + " bg-white"}>{STATUS.map(s => <option key={s}>{s}</option>)}</select></div>
+      {/* Sale vs Free */}
+      <div className="inline-flex bg-gray-100 rounded-lg p-0.5 mb-3">
+        {([["gift", "Free product"], ["sale", "Sale"]] as const).map(([id, label]) => (
+          <button key={id} onClick={() => setKind(id)} className={`px-3.5 py-1.5 rounded-md text-xs font-semibold transition-all ${kind === id ? "bg-white shadow-sm text-slate-700" : "text-gray-400 hover:text-gray-600"}`}>{label}</button>
+        ))}
+        <span className="self-center px-2 text-[11px] text-gray-400">{kind === "sale" ? "counts as revenue" : "counts as expense"}</span>
       </div>
+
+      <div className="grid md:grid-cols-2 gap-3">
+        <div><label className={lbl}>Company</label><input value={company} onChange={e => setCompany(e.target.value)} placeholder="e.g. Baby Boutique Co" className={inp} /></div>
+        <div><label className={lbl}>Month</label>
+          <select value={month} onChange={e => setMonth(e.target.value)} className={inp + " bg-white"}>{INFLUENCER_FY_MONTHS.map(m => <option key={m.key} value={m.key}>{m.label}</option>)}</select></div>
+        <div><label className={lbl}>Contact name</label><input value={contactName} onChange={e => setContactName(e.target.value)} placeholder="optional" className={inp} /></div>
+        <div><label className={lbl}>Email</label><input value={email} onChange={e => setEmail(e.target.value)} placeholder="optional" type="email" className={inp} /></div>
+        <div className="md:col-span-2"><label className={lbl}>Address</label><input value={address} onChange={e => setAddress(e.target.value)} placeholder="optional — where to ship" className={inp} /></div>
+      </div>
+
+      {/* Product line items */}
+      <div className="mt-4">
+        <label className={lbl}>Products</label>
+        <div className="space-y-2 mt-1">
+          {lines.map(l => {
+            const matches = l.search.trim().length < 2 || l.picked ? [] : products.filter(p => `${p.product_name} ${p.style_code} ${p.brand}`.toLowerCase().includes(l.search.toLowerCase())).slice(0, 8);
+            return (
+              <div key={l.key} className="flex flex-wrap md:flex-nowrap items-start gap-2 bg-slate-50/60 rounded-lg p-2">
+                <div className="relative flex-1 min-w-[200px]">
+                  <input value={l.search} onChange={e => setLine(l.key, { search: e.target.value, picked: null })} placeholder="Search product name or SKU…" className={inp} />
+                  {matches.length > 0 && (
+                    <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
+                      {matches.map(p => <button key={p.style_code} onClick={() => pick(l.key, p)} className="block w-full text-left text-sm px-3 py-2 hover:bg-emerald-50"><span className="text-slate-700">{p.product_name}</span><span className="text-gray-400 text-xs"> · {p.brand} · {aud(p.rrp)}</span></button>)}
+                    </div>
+                  )}
+                </div>
+                <input value={l.brand} onChange={e => setLine(l.key, { brand: e.target.value })} placeholder="Brand" className={inp + " md:w-28"} title="Brand (auto from product)" />
+                <input value={l.qty} onChange={e => setLine(l.key, { qty: e.target.value })} inputMode="numeric" placeholder="Qty" className={inp + " md:w-16"} title="Qty" />
+                <input value={l.rrp} onChange={e => setLine(l.key, { rrp: e.target.value })} inputMode="decimal" placeholder="RRP $" className={inp + " md:w-24"} title="RRP incl GST" />
+                {kind === "sale" && <input value={l.salePrice} onChange={e => setLine(l.key, { salePrice: e.target.value })} inputMode="decimal" placeholder="Sale $" className={inp + " md:w-24"} title="Sale price incl GST (per unit)" />}
+                <button onClick={() => removeLine(l.key)} disabled={lines.length === 1} className="text-rose-400 hover:text-rose-600 disabled:opacity-30 px-2 py-2 text-lg leading-none" title="Remove product">×</button>
+              </div>
+            );
+          })}
+        </div>
+        <button onClick={addLine} className="mt-2 text-xs font-semibold text-emerald-600 hover:underline">+ Add another product</button>
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-3 mt-4">
+        <div><label className={lbl}>Cash fee (optional, excl GST)</label><input value={cash} onChange={e => setCash(e.target.value)} inputMode="decimal" placeholder="$0" className={inp} /></div>
+        <div><label className={lbl}>Affiliate / discount code</label><input value={code} onChange={e => setCode(e.target.value)} placeholder="optional" className={inp} /></div>
+        <div><label className={lbl}>Status</label><select value={status} onChange={e => setStatus(e.target.value)} className={inp + " bg-white"}>{STATUS.map(s => <option key={s}>{s}</option>)}</select></div>
+      </div>
+
       <div className="flex justify-end gap-2 mt-3">
         <button onClick={onClose} className="text-sm text-slate-500 px-3 py-1.5">Cancel</button>
         <button onClick={save} disabled={!valid || busy} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 rounded-lg px-4 py-1.5">{busy ? "Saving…" : "Add partnership"}</button>
       </div>
-      <p className="text-[10px] text-gray-300 mt-2">Cost is the product cost × qty (from the shared catalogue) plus any cash fee, tracked against budget.</p>
+      <p className="text-[10px] text-gray-300 mt-2">{kind === "sale" ? "Sale — revenue is the sale price × qty across all products (income)." : "Free — cost is each product's catalogue cost × qty plus any cash fee, tracked against budget (expense)."}</p>
     </div>
   );
 }
