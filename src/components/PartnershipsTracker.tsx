@@ -30,7 +30,7 @@ const mon = (k: string) => new Date(k + "-01T00:00:00").toLocaleDateString("en-A
 const STATUS = ["Planned", "Sent", "Live", "Done"];
 const statusCls = (s: string | null) => ({ Live: "bg-emerald-100 text-emerald-700", Sent: "bg-sky-100 text-sky-700", Planned: "bg-amber-100 text-amber-700", Done: "bg-violet-100 text-violet-700" } as Record<string, string>)[s || ""] || "bg-slate-100 text-slate-500";
 
-export function PartnershipsTracker() {
+export function PartnershipsTracker({ brandNames = [] }: { brandNames?: string[] }) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "needsSetup" | "error">("loading");
@@ -51,6 +51,11 @@ export function PartnershipsTracker() {
 
   const brands = useMemo(() => Array.from(new Set(entries.map(e => e.brand).filter(Boolean))) as string[], [entries]);
   const rows = entries.filter(e => !brandF || e.brand === brandF);
+  // Brand dropdown options: the company's brands + any extra brands the catalogue knows about.
+  const brandOptions = useMemo(
+    () => Array.from(new Set([...brandNames, ...products.map(p => p.brand)].filter(Boolean))).sort() as string[],
+    [brandNames, products],
+  );
 
   // Overview series (all partnerships, ignoring the brand filter)
   const viz = useMemo(() => {
@@ -94,6 +99,7 @@ export function PartnershipsTracker() {
       {(adding || editEntry) && (
         <PartnershipForm
           products={products}
+          brandOptions={brandOptions}
           entry={editEntry}
           onClose={() => { setAdding(false); setEditEntry(null); }}
           onSaved={() => { setAdding(false); setEditEntry(null); load(); }}
@@ -220,7 +226,7 @@ function linesFromEntry(e: Entry): Line[] {
   }));
 }
 
-function PartnershipForm({ products, entry, onClose, onSaved, onDeleted }: { products: Product[]; entry?: Entry | null; onClose: () => void; onSaved: () => void; onDeleted?: () => void }) {
+function PartnershipForm({ products, brandOptions = [], entry, onClose, onSaved, onDeleted }: { products: Product[]; brandOptions?: string[]; entry?: Entry | null; onClose: () => void; onSaved: () => void; onDeleted?: () => void }) {
   const [company, setCompany] = useState(entry?.company ?? "");
   const [contactName, setContactName] = useState(entry?.contact_name ?? "");
   const [email, setEmail] = useState(entry?.email ?? "");
@@ -306,7 +312,10 @@ function PartnershipForm({ products, entry, onClose, onSaved, onDeleted }: { pro
                     </div>
                   )}
                 </div>
-                <input value={l.brand} onChange={e => setLine(l.key, { brand: e.target.value })} placeholder="Brand" className={inp + " md:w-28"} title="Brand (auto from product)" />
+                <select value={l.brand} onChange={e => setLine(l.key, { brand: e.target.value })} className={inp + " md:w-32 bg-white"} title="Brand">
+                  <option value="">Brand…</option>
+                  {(l.brand && !brandOptions.includes(l.brand) ? [l.brand, ...brandOptions] : brandOptions).map(b => <option key={b} value={b}>{b}</option>)}
+                </select>
                 <input value={l.qty} onChange={e => setLine(l.key, { qty: e.target.value })} inputMode="numeric" placeholder="Qty" className={inp + " md:w-16"} title="Qty" />
                 <input value={l.rrp} onChange={e => setLine(l.key, { rrp: e.target.value })} inputMode="decimal" placeholder="RRP $" className={inp + " md:w-24"} title="RRP incl GST" />
                 {kind === "sale" && <input value={l.salePrice} onChange={e => setLine(l.key, { salePrice: e.target.value })} inputMode="decimal" placeholder="Sale $" className={inp + " md:w-24"} title="Sale price incl GST (per unit)" />}

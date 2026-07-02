@@ -1696,7 +1696,7 @@ export function DashboardTabs({
           {active === "pa-tracker" && (
             <>
               <SectionBar title="Partnerships & Affiliates · Tracker" />
-              <PartnershipsTracker />
+              <PartnershipsTracker brandNames={brands.map((b: any) => b.name)} />
             </>
           )}
 

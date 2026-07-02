@@ -68,8 +68,9 @@ async function computeRow(b: any) {
     : [{ style_code: b.style_code, product_name: b.product_name, brand: b.brand, qty: b.qty, rrp: b.rrp, sale_price: b.sale_price }];
   const items = await Promise.all(rawItems.map(resolveLine));
 
+  // Distinct brands across the line items feed the entry's brand (e.g. "Frida, Nanit").
   const brands = Array.from(new Set(items.map(i => i.brand).filter(Boolean)));
-  const brand = brands.length === 1 ? brands[0] : (brands.length > 1 ? "Multiple" : null);
+  const brand = brands.length ? brands.join(", ") : null;
   const totalQty = items.reduce((s, i) => s + i.qty, 0);
   const product_name = items.length === 1
     ? items[0].product_name
