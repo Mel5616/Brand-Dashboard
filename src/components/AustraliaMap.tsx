@@ -13,34 +13,92 @@ const STATES: StateGeo[] = [
   { code: "ACT", name: "Australian Capital Territory", cx: 859.4, cy: 366.2, paths: ["M859.465,364.085c0.477-0.211,0.986-0.236,1.393,0.184c0.205,0.209,0.298,0.559,0.294,0.952c-0.008,0.394-0.108,0.846-0.258,1.283c-0.299,0.87-0.823,1.673-1.317,1.867c-0.493,0.192-0.85,0.109-1.137-0.111c-0.286-0.221-0.507-0.576-0.661-0.916c-0.154-0.336-0.195-0.782-0.11-1.207c0.086-0.423,0.297-0.825,0.586-1.137C858.547,364.689,858.99,364.294,859.465,364.085L859.465,364.085z"] },
 ];
 
+// Blue → teal choropleth ramp (matches the dashboard palette).
+// intensity 0 → pale blue, 1 → deep teal.
+function heatFill(intensity: number) {
+  const stops: [number, [number, number, number]][] = [
+    [0, [219, 234, 254]],   // blue-100
+    [0.5, [56, 189, 218]],  // cyan-400-ish
+    [1, [13, 110, 148]],    // deep teal-blue
+  ];
+  const t = Math.max(0, Math.min(1, intensity));
+  let lo = stops[0], hi = stops[stops.length - 1];
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (t >= stops[i][0] && t <= stops[i + 1][0]) { lo = stops[i]; hi = stops[i + 1]; break; }
+  }
+  const span = hi[0] - lo[0] || 1;
+  const f = (t - lo[0]) / span;
+  const rgb = lo[1].map((c, i) => Math.round(c + (hi[1][i] - c) * f));
+  return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+}
+
+// State codes that are large enough to label on the map itself. The tiny,
+// clustered east-coast states (VIC, TAS, ACT) are labelled only in the legend
+// beside the map so nothing overlaps.
+const ON_MAP_LABELS = new Set(["WA", "NT", "SA", "QLD", "NSW"]);
+
 export function AustraliaMap({ valueByState, max, fmt }: { valueByState: Record<string, number>; max: number; fmt: (n: number) => string }) {
+  const ranked = [...STATES]
+    .map(s => ({ ...s, val: valueByState[s.name] ?? 0 }))
+    .sort((a, b) => b.val - a.val);
+
   return (
-    <svg viewBox="772 282 118 112" className="w-full h-auto max-h-[340px]" xmlns="http://www.w3.org/2000/svg">
-      {STATES.map(s => {
-        const val = valueByState[s.name] ?? 0;
-        const intensity = max > 0 ? val / max : 0;
-        const active = val > 0;
-        const fill = active ? `rgba(99,102,241,${(0.18 + 0.82 * intensity).toFixed(3)})` : "#eef1f6";
-        const light = active && intensity > 0.55;
-        const showLabel = s.code !== "ACT";
-        return (
-          <g key={s.code}>
-            <g fill={fill} stroke="#ffffff" strokeWidth={0.5} strokeLinejoin="round">
-              {s.paths.map((d, i) => <path key={i} d={d} />)}
-              <title>{s.name}: {fmt(val)}</title>
-            </g>
-            {showLabel && (
-              <text x={s.cx} y={s.cy} textAnchor="middle" pointerEvents="none"
-                fill={light ? "#ffffff" : "#475569"} style={{ fontSize: 4, fontWeight: 700 }}>
-                {s.code}
-                <tspan x={s.cx} dy={4.6} style={{ fontSize: 3.2, fontWeight: 600 }} fill={light ? "rgba(255,255,255,0.9)" : "#94a3b8"}>
-                  {active ? fmt(val) : "—"}
-                </tspan>
-              </text>
-            )}
-          </g>
-        );
-      })}
-    </svg>
+    <div className="flex flex-col sm:flex-row items-center gap-4">
+      {/* Map */}
+      <svg viewBox="770 280 122 116" className="w-full sm:w-3/5 h-auto max-h-[320px]" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="au-shadow" x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow dx="0" dy="1.1" stdDeviation="1" floodColor="#0f172a" floodOpacity="0.14" />
+          </filter>
+        </defs>
+        <g filter="url(#au-shadow)">
+          {STATES.map(s => {
+            const val = valueByState[s.name] ?? 0;
+            const intensity = max > 0 ? val / max : 0;
+            const active = val > 0;
+            const fill = active ? heatFill(intensity) : "#eef2f7";
+            const light = active && intensity > 0.45;
+            return (
+              <g key={s.code}>
+                <g fill={fill} stroke="#ffffff" strokeWidth={0.7} strokeLinejoin="round">
+                  {s.paths.map((d, i) => <path key={i} d={d} />)}
+                  <title>{s.name}: {fmt(val)}</title>
+                </g>
+                {ON_MAP_LABELS.has(s.code) && (
+                  <text x={s.cx} y={s.cy} textAnchor="middle" pointerEvents="none"
+                    fill={light ? "#ffffff" : "#334155"} style={{ fontSize: 4.2, fontWeight: 800, letterSpacing: 0.2 }}>
+                    {s.code}
+                    <tspan x={s.cx} dy={4.4} style={{ fontSize: 3.2, fontWeight: 600 }} fill={light ? "rgba(255,255,255,0.92)" : "#94a3b8"}>
+                      {active ? fmt(val) : "—"}
+                    </tspan>
+                  </text>
+                )}
+              </g>
+            );
+          })}
+        </g>
+      </svg>
+
+      {/* Ranked legend — carries values for every state, including the tiny east-coast ones */}
+      <div className="w-full sm:w-2/5 space-y-1.5">
+        {ranked.map(s => {
+          const intensity = max > 0 ? s.val / max : 0;
+          const active = s.val > 0;
+          return (
+            <div key={s.code} className="flex items-center gap-2.5">
+              <span className="w-3 h-3 rounded-full flex-shrink-0 ring-1 ring-black/5"
+                style={{ background: active ? heatFill(intensity) : "#eef2f7" }} />
+              <span className="text-xs font-semibold text-slate-600 w-9 flex-shrink-0">{s.code}</span>
+              <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full rounded-full" style={{ width: `${active ? Math.max(6, intensity * 100) : 0}%`, background: heatFill(intensity) }} />
+              </div>
+              <span className={`text-xs w-12 text-right flex-shrink-0 tabular-nums ${active ? "font-semibold text-slate-700" : "text-gray-300"}`}>
+                {active ? fmt(s.val) : "—"}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
