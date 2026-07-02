@@ -220,6 +220,12 @@ export function BrandPage({
   const mayOrds   = monthlyRows.find(m => m.month_key === LATEST)?.orders  ?? 0;
   const aprOrds   = monthlyRows.find(m => m.month_key === PREV_MO)?.orders ?? 0;
   const may25Ords = monthlyRows.find(m => m.month_key === PREV_YR)?.orders ?? 0;
+  // Revenue for the selected FY's latest month / prior month / prior-year month.
+  // (Derived from the FY-scoped monthly rows, NOT the precomputed summary — the
+  // summary is anchored to the live calendar month, which breaks on FY rollover.)
+  const latestRev = monthlyRows.find(m => m.month_key === LATEST)?.revenue  ?? 0;
+  const prevRev   = monthlyRows.find(m => m.month_key === PREV_MO)?.revenue ?? 0;
+  const prevYrRev = monthlyRows.find(m => m.month_key === PREV_YR)?.revenue ?? 0;
 
   // ── Weekly data ─────────────────────────────────────────────────────────
   const sortedWeeks = [...weekLabels].sort((a, b) => a.week_start.localeCompare(b.week_start));
@@ -241,16 +247,16 @@ export function BrandPage({
   const aovSpark    = isWeekly ? aovWeekly : aovMonthly;
   const chartLabels = isWeekly ? sortedWeeks.map(w => w.label) : MONTH_LABELS;
 
-  const currentRev      = isWeekly ? (latestWkD?.revenue ?? 0) : (summary?.last_month_rev ?? 0);
-  const currentRevPrev  = isWeekly ? pctOf(latestWkD?.revenue ?? 0, prevWkD?.revenue ?? 0) : (summary?.mom_growth ?? null);
-  const currentRevYear  = isWeekly ? null : (summary?.yoy_growth ?? null);
-  const currentOrds     = isWeekly ? (latestWkD?.orders ?? 0) : (summary?.last_month_orders ?? 0);
+  const currentRev      = isWeekly ? (latestWkD?.revenue ?? 0) : latestRev;
+  const currentRevPrev  = isWeekly ? pctOf(latestWkD?.revenue ?? 0, prevWkD?.revenue ?? 0) : pctOf(latestRev, prevRev);
+  const currentRevYear  = isWeekly ? null : pctOf(latestRev, prevYrRev);
+  const currentOrds     = isWeekly ? (latestWkD?.orders ?? 0) : mayOrds;
   const currentOrdsPrev = isWeekly ? pctOf(latestWkD?.orders ?? 0, prevWkD?.orders ?? 0) : pctOf(mayOrds, aprOrds);
   const currentOrdsYear = isWeekly ? null : pctOf(mayOrds, may25Ords);
   const currentAov      = isWeekly
     ? (latestWkD && latestWkD.orders > 0 ? latestWkD.revenue / latestWkD.orders : 0)
-    : (summary?.aov ?? 0);
-  const periodLabel = isWeekly ? `Wk ${lastWk?.label ?? ""}` : (summary?.last_month_label ?? "Last Month");
+    : (mayOrds > 0 ? latestRev / mayOrds : 0);
+  const periodLabel = isWeekly ? `Wk ${lastWk?.label ?? ""}` : latestLbl;
 
   // ── Bar chart ───────────────────────────────────────────────────────────
   const barData = {
@@ -376,7 +382,9 @@ export function BrandPage({
   const fyRevTarget   = brandTargets.reduce((s, t) => s + (t.revenue_target ?? 0), 0);
 
   // ── Brand-level summary KPIs ──────────────────────────────────────────────
-  const fyRevenue          = summary?.fy_revenue ?? 0;
+  // FY revenue is summed from the selected FY's monthly rows (not summary.fy_revenue,
+  // which the sync anchors to the current calendar FY and collapses on rollover).
+  const fyRevenue          = revMonthly.reduce((s, v) => s + v, 0);
   const fyTotalOtherActual = actualsRows?.reduce((s, a) => s + a.spend, 0) ?? 0;
   const fyTotalSpend       = (fyGoogleActual ?? 0) + (fyMetaActual ?? 0) + fyTotalOtherActual;
   const fyBudget           = budgets.reduce((s, b) => s + b.annual_budget, 0);
@@ -384,7 +392,7 @@ export function BrandPage({
   const mktgPctOfSales     = fyRevenue > 0 ? (fyTotalSpend / fyRevenue) * 100 : 0;
   const portfolioFyRev     = monthly.filter(m => MONTH_KEYS.includes(m.month_key)).reduce((s, m) => s + m.revenue, 0);
   const shareOfPortfolio   = portfolioFyRev > 0 ? (fyRevenue / portfolioFyRev) * 100 : 0;
-  const monthsWithData     = monthlyRows.filter(m => m.revenue > 0).length;
+  const monthsWithData     = revMonthly.filter(v => v > 0).length;
   const forecastFullYear   = monthsWithData > 0 ? (fyRevenue / monthsWithData) * 12 : 0;
   const paceVsTarget       = fyRevTarget > 0 ? (forecastFullYear / fyRevTarget) * 100 : null;
   const targetVsActual     = fyRevTarget > 0 ? (fyRevenue / fyRevTarget) * 100 : null;
