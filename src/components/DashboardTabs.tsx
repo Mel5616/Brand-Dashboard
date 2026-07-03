@@ -35,6 +35,7 @@ import { MarketingCalendar } from "./MarketingCalendar";
 import { BriefingEngine } from "./BriefingEngine";
 import { ShopifyBrandSales } from "./ShopifyBrandSales";
 import { NewProducts } from "./NewProducts";
+import { ProductInfo } from "./ProductInfo";
 import { InfluencerTracker } from "./InfluencerTracker";
 import { TeamGiftingPanel } from "./TeamGiftingPanel";
 import { TeamPanel } from "./TeamPanel";
@@ -48,7 +49,7 @@ import { ShopifyInsights } from "./ShopifyInsights";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "brands" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "uppababy" | "sales" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "budget" | "calendar" | "content" | "influencer" | "gifting" | "pa-budget" | "pa-tracker" | "team";
+type TabId = "brands" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "uppababy" | "sales" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "budget" | "calendar" | "content" | "influencer" | "gifting" | "pa-budget" | "pa-tracker" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -144,6 +145,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
   },
   {
+    id: "product-info", label: "Product Information",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+  },
+  {
     id: "budget", label: "Budget",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   },
@@ -183,7 +188,7 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Reports", ids: ["report", "snapshot", "social-report", "uppababy"] },
   { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows"] },
   { label: "Plan", ids: ["show-deals", "campaign-calendar", "promotions", "calendar", "content", "events", "tasks", "design-requests"] },
-  { label: "Operations", ids: ["budget", "new-products"] },
+  { label: "Operations", ids: ["budget", "new-products", "product-info"] },
   { label: "Paid", ids: ["google-ads", "meta-ads"] },
   { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting", "pa-budget", "pa-tracker"] },
 ];
@@ -1662,6 +1667,14 @@ export function DashboardTabs({
             <>
               <SectionBar title="New Products" />
               <NewProducts brands={brands} canEdit={role === "admin"} />
+            </>
+          )}
+
+          {/* ── Product Information — brand fact sheets (Operations) ── */}
+          {active === "product-info" && (
+            <>
+              <SectionBar title="Product Information" />
+              <ProductInfo brandNames={brands.map((b: any) => b.name)} admin={role === "admin"} />
             </>
           )}
 
