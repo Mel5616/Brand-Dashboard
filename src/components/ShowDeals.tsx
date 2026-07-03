@@ -75,12 +75,12 @@ export function ShowDeals({ tradeshows, brands }: { tradeshows: Tradeshow[]; bra
   }
   useEffect(() => { setShareUrl(""); setCopied(false); }, [showId]);
   async function share() {
+    if (shareUrl) { setShareUrl(""); return; }   // toggle the panel closed
     const r = await fetch("/api/deals/share", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ show_id: showId }) }).then(x => x.json()).catch(() => null);
-    if (r?.token) {
-      const url = `${window.location.origin}/deals/${r.token}`;
-      setShareUrl(url);
-      try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2500); } catch { /* clipboard blocked */ }
-    }
+    if (r?.token) setShareUrl(`${window.location.origin}/deals/${r.token}`);
+  }
+  async function copyLink() {
+    try { await navigator.clipboard.writeText(shareUrl); setCopied(true); setTimeout(() => setCopied(false), 2500); } catch { /* clipboard blocked */ }
   }
 
   function printSheet() {
@@ -134,15 +134,17 @@ export function ShowDeals({ tradeshows, brands }: { tradeshows: Tradeshow[]; bra
           ) : <><b className="text-slate-600">{marginFloor}%</b><button onClick={() => { setFloorDraft(String(marginFloor)); setFloorEdit(true); }} className="text-emerald-600 hover:underline">edit</button></>}</span>
         )}
         <div className="ml-auto flex items-center gap-2">
-          {canManage && <button onClick={share} className="text-xs font-semibold text-teal-700 border border-teal-200 bg-teal-50 rounded-lg px-3 py-2 hover:bg-teal-100">{copied ? "✓ Link copied" : "🔗 Share link"}</button>}
+          {canManage && <button onClick={share} className="text-xs font-semibold text-teal-700 border border-teal-200 bg-teal-50 rounded-lg px-3 py-2 hover:bg-teal-100">🔗 Share link</button>}
           <button onClick={printSheet} className="text-xs font-semibold text-slate-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50">⤓ Print</button>
           {canManage && <button onClick={() => setEditing(editing === "new" ? null : "new")} className="text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2">{editing === "new" ? "Close" : "+ Add deal"}</button>}
         </div>
       </div>
       {shareUrl && (
-        <div className="flex items-center gap-2 text-xs bg-teal-50 border border-teal-100 rounded-lg px-3 py-2">
-          <span className="text-teal-700 font-semibold">Shareable deal sheet:</span>
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="text-teal-700 underline truncate">{shareUrl}</a>
+        <div className="flex flex-wrap items-center gap-2 text-xs bg-teal-50 border border-teal-100 rounded-lg px-3 py-2">
+          <span className="text-teal-700 font-semibold shrink-0">Shareable deal sheet:</span>
+          <span className="text-slate-500 truncate flex-1 min-w-[160px]">{shareUrl}</span>
+          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-md px-3 py-1">View ↗</a>
+          <button onClick={copyLink} className="shrink-0 font-semibold text-teal-700 border border-teal-300 rounded-md px-3 py-1 hover:bg-teal-100">{copied ? "✓ Copied" : "Copy link"}</button>
         </div>
       )}
 
