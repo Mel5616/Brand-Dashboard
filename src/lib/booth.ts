@@ -49,19 +49,25 @@ export async function getBoothFunnel(): Promise<BoothFunnel> {
   if (rows.length === 0) return EMPTY;
 
   // ── Per show ────────────────────────────────────────────────────────────
-  const byShow = new Map<string, BoothShowRow>();
+  // Group by the stable show_handle, not show_name — a show renamed in the expo app
+  // (e.g. "PBC Melbourne" → "PBC - Melbourne") keeps one handle but two names, and we
+  // don't want it splitting into two rows. Display name = the most recent one seen.
+  const byShow = new Map<string, BoothShowRow & { _ts: string }>();
   for (const r of rows) {
-    const s = byShow.get(r.show_name) ?? { show_name: r.show_name, scans: 0, checkouts: 0, orders: 0, revenue: 0, conversion: 0, start: "", end: "" };
+    const key = r.show_handle || r.show_name;
+    const s = byShow.get(key) ?? { show_name: r.show_name, scans: 0, checkouts: 0, orders: 0, revenue: 0, conversion: 0, start: "", end: "", _ts: "" };
     if (r.event_type === "scan") s.scans++;
     else if (r.event_type === "checkout_started") s.checkouts++;
     else if (r.event_type === "order") { s.orders++; s.revenue += Number(r.value) || 0; }
-    const d = String(r.created_at).slice(0, 10);
+    const ts = String(r.created_at);
+    const d = ts.slice(0, 10);
     if (!s.start || d < s.start) s.start = d;
     if (!s.end || d > s.end) s.end = d;
-    byShow.set(r.show_name, s);
+    if (ts >= s._ts) { s._ts = ts; s.show_name = r.show_name; }   // display name = latest
+    byShow.set(key, s);
   }
   const shows = [...byShow.values()]
-    .map(s => ({ ...s, conversion: s.scans > 0 ? Math.round((s.orders / s.scans) * 100) : 0 }))
+    .map(({ _ts, ...s }) => ({ ...s, conversion: s.scans > 0 ? Math.round((s.orders / s.scans) * 100) : 0 }))
     .sort((a, b) => b.revenue - a.revenue);
 
   // ── Totals ──────────────────────────────────────────────────────────────
