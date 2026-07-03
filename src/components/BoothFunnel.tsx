@@ -138,12 +138,32 @@ export function BoothFunnel({ data }: { data: BoothFunnelData }) {
         </div>
       ))}
 
-      {/* Combined total — QR + both POS tills */}
-      <div className="rounded-xl border border-emerald-100 shadow-sm px-4 py-3 bg-gradient-to-br from-emerald-50/70 to-white">
-        <p className="text-[10px] font-semibold text-emerald-400 uppercase tracking-widest">Total Expo Stand Revenue</p>
-        <p className="text-2xl font-bold mt-1 text-emerald-600">{posLoading ? "…" : aud(totalExpoRevenue)}</p>
-        <p className="text-[10px] text-gray-400">QR + UPPAbaby POS + Coolkidz POS</p>
-      </div>
+      {/* Breakdown by stand + combined total. UPPAbaby stand = QR + UPPAbaby POS; Coolkidz stand = Coolkidz POS. */}
+      {(() => {
+        const uppaRev = qr.revenue + (pos?.revenue ?? 0);
+        const uppaOrd = qr.orders + (pos?.orders ?? 0);
+        const ckRev = posCk?.revenue ?? 0;
+        const ckOrd = posCk?.orders ?? 0;
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="rounded-xl border border-gray-100 shadow-sm px-4 py-3 bg-white">
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">UPPAbaby Stand</p>
+              <p className="text-xl font-bold mt-1 text-slate-700">{posLoading ? "…" : aud(uppaRev)}</p>
+              <p className="text-[10px] text-gray-400">{num(uppaOrd)} orders · QR + UPPAbaby POS</p>
+            </div>
+            <div className="rounded-xl border border-gray-100 shadow-sm px-4 py-3 bg-white">
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Coolkidz Stand</p>
+              <p className="text-xl font-bold mt-1 text-slate-700">{posLoading ? "…" : aud(ckRev)}</p>
+              <p className="text-[10px] text-gray-400">{num(ckOrd)} orders · Coolkidz POS</p>
+            </div>
+            <div className="rounded-xl border border-emerald-100 shadow-sm px-4 py-3 bg-gradient-to-br from-emerald-50/70 to-white">
+              <p className="text-[10px] font-semibold text-emerald-400 uppercase tracking-widest">Total Expo Stand Revenue</p>
+              <p className="text-xl font-bold mt-1 text-emerald-600">{posLoading ? "…" : aud(totalExpoRevenue)}</p>
+              <p className="text-[10px] text-gray-400">both stands combined</p>
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Per-show table */}
