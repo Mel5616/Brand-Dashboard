@@ -98,8 +98,7 @@ export default async function DealSheet({ params }: { params: Promise<{ token: s
                     return (
                       <section key={brand}>
                         <div className="flex items-center gap-3 pb-2.5 mb-4 border-b-2" style={{ borderColor: accent + "33" }}>
-                          {logo && <img src={logo} alt={brand} className="h-7 w-auto max-w-[130px] object-contain" />}
-                          <span className="text-lg font-bold" style={{ color: accent }}>{brand}</span>
+                          {logo ? <img src={logo} alt={brand} className="h-8 w-auto max-w-[150px] object-contain" /> : <span className="text-lg font-bold" style={{ color: accent }}>{brand}</span>}
                         </div>
 
                         <div className="space-y-3">
