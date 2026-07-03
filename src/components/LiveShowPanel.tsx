@@ -281,7 +281,7 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
       <h2>By Brand</h2>
       <table><thead><tr><th>Brand</th><th class="r">Expo Stand</th><th class="r">Orders</th><th class="r">Online to state</th><th class="r">Total</th></tr></thead><tbody>${rowsHtml}</tbody></table>
       </div>
-      <p class="meta">Expo Stand = POS + Coolkidz till + QR scans · Online = website orders shipping to ${esc(s.state ?? "the state")} during the show · all figures ex-GST · Brand Command.</p>
+      <p class="meta">Expo Stand = UPPAbaby POS + Coolkidz till + QR scans · Online = website orders shipping to ${esc(s.state ?? "the state")} during the show · all figures ex-GST · Brand Command.</p>
       <script>window.onload=function(){window.print();}</script>
       </body></html>`;
     const w = window.open("", "_blank");
@@ -315,7 +315,7 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
               )}
             </div>
             <p className="text-xs text-white/85">Expo Stand · {data?.boothOrders ?? 0} orders</p>
-            <p className="text-[10px] text-white/65">POS + Coolkidz till + QR</p>
+            <p className="text-[10px] text-white/65">UPPAbaby POS + Coolkidz till + QR</p>
           </div>
           <div className="opacity-90">
             <p className="text-2xl font-semibold tabular-nums">{loading ? "…" : aud(data?.onlineTotal ?? 0)}</p>
