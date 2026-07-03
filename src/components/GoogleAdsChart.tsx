@@ -68,12 +68,31 @@ export function GoogleAdsChart({ brands, data, monthKeys = DEFAULT_MONTH_KEYS, m
     ? latestRows.filter(d => d.spend > 0).reduce((s, d) => s + d.roas * d.spend, 0) / totalSpend
     : 0;
 
-  const kpis = [
-    { label: `${latestLbl} Spend`, value: fmtFull(totalSpend) },
-    { label: `${latestLbl} Revenue`, value: fmtFull(totalRevenue) },
-    { label: "Avg ROAS",    value: avgRoas.toFixed(2) + "x" },
-    { label: "Clicks",      value: totalClicks.toLocaleString() },
-    { label: "Impressions", value: (totalImpr / 1000).toFixed(0) + "K" },
+  // Previous month, for month-on-month deltas (skipped in whole-FY mode).
+  const latestIdx = MONTH_KEYS.indexOf(latestKey);
+  const prevKey = !wholeYear && latestIdx > 0 ? MONTH_KEYS[latestIdx - 1] : null;
+  const prevLbl = prevKey ? (() => { const [y, m] = prevKey.split("-"); return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("en-AU", { month: "short" }); })() : "";
+  const prevRows = prevKey ? data.filter(d => d.month_key === prevKey) : [];
+  const prevSpend = prevRows.reduce((s, d) => s + d.spend, 0);
+  const prevRevenue = prevRows.reduce((s, d) => s + d.roas * d.spend, 0);
+  const prevClicks = prevRows.reduce((s, d) => s + d.clicks, 0);
+  const prevImpr = prevRows.reduce((s, d) => s + d.impressions, 0);
+  const prevRoas = prevSpend > 0 ? prevRevenue / prevSpend : 0;
+  const pct = (cur: number, prev: number) => prev > 0 ? ((cur - prev) / prev) * 100 : null;
+
+  // Narrative helpers — best / worst performer + active brand count this period.
+  const nameOf = (id: number) => brands.find(b => b.id === id)?.name ?? `Brand ${id}`;
+  const rankable = latestRows.filter(d => d.spend > 50);
+  const best  = [...rankable].sort((a, b) => b.roas - a.roas)[0];
+  const worst = [...rankable].filter(d => d.spend > 300).sort((a, b) => a.roas - b.roas)[0];
+  const activeCount = latestRows.filter(d => d.spend > 0).length;
+
+  const kpis: { label: string; value: string; delta: number | null; goodUp: boolean; roas?: boolean }[] = [
+    { label: `${latestLbl} Spend`,   value: fmtFull(totalSpend),   delta: pct(totalSpend, prevSpend),   goodUp: false },
+    { label: `${latestLbl} Revenue`, value: fmtFull(totalRevenue), delta: pct(totalRevenue, prevRevenue), goodUp: true },
+    { label: "Blended ROAS",         value: avgRoas.toFixed(2) + "x", delta: pct(avgRoas, prevRoas),     goodUp: true, roas: true },
+    { label: "Clicks",               value: totalClicks.toLocaleString(), delta: pct(totalClicks, prevClicks), goodUp: false },
+    { label: "Impressions",          value: (totalImpr / 1000).toFixed(0) + "K", delta: pct(totalImpr, prevImpr), goodUp: false },
   ];
 
   const metricLabels: { id: Metric; label: string }[] = [
@@ -109,12 +128,27 @@ export function GoogleAdsChart({ brands, data, monthKeys = DEFAULT_MONTH_KEYS, m
         </div>
       </div>
 
-      {/* KPI strip */}
-      <div className="grid grid-cols-5 gap-3 mb-5">
+      {/* Plain-English read of the period */}
+      <div className="rounded-lg bg-slate-50 border border-slate-100 px-4 py-2.5 mb-4 text-[13px] leading-relaxed text-slate-600">
+        <span className="font-semibold text-slate-800">{wholeYear ? "This financial year" : latestLbl}:</span>{" "}
+        spent {fmtFull(totalSpend)} across {activeCount} brand{activeCount === 1 ? "" : "s"} and drove {fmtFull(totalRevenue)} in tracked sales — a blended{" "}
+        <span className={avgRoas >= 1 ? "text-emerald-600 font-semibold" : "text-rose-600 font-semibold"}>{avgRoas.toFixed(2)}× ROAS</span>{" "}
+        (every $1 of ad spend returned ${avgRoas.toFixed(2)}).
+        {best && <> Strongest: <span className="font-semibold text-slate-700">{nameOf(best.brand_id)}</span> at {best.roas.toFixed(1)}×.</>}
+        {worst && worst.roas < 1 && <> Watch: <span className="font-semibold text-rose-600">{nameOf(worst.brand_id)}</span> at {worst.roas.toFixed(1)}× (under break-even).</>}
+      </div>
+
+      {/* KPI strip with month-on-month movement */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
         {kpis.map(k => (
           <div key={k.label} className="bg-gray-50 rounded-lg px-3 py-2">
-            <p className="text-xs text-gray-400">{k.label}</p>
-            <p className="font-bold text-gray-900">{k.value}</p>
+            <p className="text-[11px] text-gray-400">{k.label}</p>
+            <p className={`font-bold ${k.roas ? (avgRoas >= 1 ? "text-emerald-600" : "text-rose-600") : "text-gray-900"}`}>{k.value}</p>
+            {k.delta != null && (
+              <p className={`text-[10px] font-semibold ${k.goodUp ? (k.delta >= 0 ? "text-emerald-500" : "text-rose-500") : "text-gray-400"}`}>
+                {k.delta >= 0 ? "▲" : "▼"} {Math.abs(k.delta).toFixed(0)}% vs {prevLbl}
+              </p>
+            )}
           </div>
         ))}
       </div>
@@ -134,6 +168,20 @@ export function GoogleAdsChart({ brands, data, monthKeys = DEFAULT_MONTH_KEYS, m
           }}
         />
       </div>
+
+      {/* What the chart is showing */}
+      <p className="text-[11px] text-gray-400 mt-2">
+        {(() => {
+          const d: Record<Metric, string> = {
+            spend: "how much each brand spent on Google Ads",
+            revenue: "sales Google Ads is credited with driving (spend × ROAS)",
+            roas: "return on ad spend — sales per $1 spent (higher is better; under 1× loses money)",
+            clicks: "clicks to each brand's site",
+            impressions: "how often ads were shown",
+          };
+          return `Each bar is a month, stacked by brand — showing ${d[metric]}. Tap a metric above to switch the view.`;
+        })()}
+      </p>
 
       {/* Brand legend */}
       <div className="flex flex-wrap gap-3 mt-4 text-xs">
