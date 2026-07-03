@@ -51,18 +51,34 @@ export function ProductInfo({ brandNames = [], admin = false }: { brandNames?: s
   if (state === "needsSetup") return <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-xl p-4">Run <code>add_product_fact_sheets.sql</code> in Supabase, then reload.</div>;
   if (state === "error") return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">Couldn’t load fact sheets.</div>;
 
-  const Row = ({ s }: { s: Sheet }) => (
-    <tr className="hover:bg-slate-50/50">
-      <td className="px-4 py-3 font-medium text-slate-700">{s.brand_name}{s.status === "archived" && <span className="ml-2 text-[10px] font-semibold text-gray-400 uppercase">archived</span>}</td>
-      <td className="px-4 py-3 text-slate-500">{fmtDate(s.last_updated)}</td>
-      <td className="px-4 py-3 text-slate-500">v{s.version}</td>
-      <td className="px-4 py-3 text-right whitespace-nowrap">
-        {s.html_url && <a href={`/api/fact-sheets/view?id=${s.id}`} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-teal-700 border border-teal-200 bg-teal-50 rounded-lg px-3 py-1.5 hover:bg-teal-100 mr-2">Open</a>}
-        {s.pdf_url && <a href={s.pdf_url} target="_blank" rel="noopener noreferrer" download className="text-xs font-semibold text-slate-600 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 mr-2">Download PDF</a>}
-        {admin && <button onClick={() => remove(s.id, s.brand_name)} className="text-xs text-rose-400 hover:underline">Delete</button>}
-      </td>
-    </tr>
-  );
+  // A live, scaled-down preview of a sheet's HTML rendered into a card thumbnail.
+  const Card = ({ s }: { s: Sheet }) => {
+    const view = `/api/fact-sheets/view?id=${s.id}`;
+    return (
+      <div className="w-[220px]">
+        <div className="rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+          <a href={view} target="_blank" rel="noopener noreferrer" className="block relative bg-slate-50 border-b border-gray-100 group" style={{ width: 220, height: 311 }}>
+            {s.html_url ? (
+              <iframe src={view} title={`${s.brand_name} fact sheet`} loading="lazy" scrolling="no" tabIndex={-1} aria-hidden
+                className="absolute top-0 left-0 border-0 pointer-events-none" style={{ width: 794, height: 1123, transform: "scale(0.277)", transformOrigin: "top left" }} />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">PDF only</div>
+            )}
+            <span className="absolute inset-0 group-hover:bg-slate-900/5 transition-colors" />
+          </a>
+          <div className="px-3 py-2">
+            <p className="font-semibold text-sm text-slate-700 truncate">{s.brand_name}{s.status === "archived" && <span className="ml-1 text-[9px] text-gray-400 uppercase">arch</span>}</p>
+            <p className="text-[11px] text-gray-400">v{s.version} · {fmtDate(s.last_updated)}</p>
+            <div className="flex items-center gap-3 mt-1.5">
+              {s.html_url && <a href={view} target="_blank" rel="noopener noreferrer" className="text-[11px] font-semibold text-teal-700 hover:underline">Open</a>}
+              {s.pdf_url && <a href={s.pdf_url} target="_blank" rel="noopener noreferrer" download className="text-[11px] font-semibold text-slate-500 hover:underline">PDF</a>}
+              {admin && <button onClick={() => remove(s.id, s.brand_name)} className="text-[11px] text-rose-400 hover:underline ml-auto">Delete</button>}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -94,18 +110,27 @@ export function ProductInfo({ brandNames = [], admin = false }: { brandNames?: s
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">
-        <table className="w-full text-sm min-w-[560px]">
-          <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-wide">
-            <tr><th className="text-left font-semibold px-4 py-3">Brand</th><th className="text-left font-semibold px-4 py-3">Last updated</th><th className="text-left font-semibold px-4 py-3">Version</th><th className="px-4 py-3"></th></tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {current.map(s => <Row key={s.id} s={s} />)}
-            {showArchived && archived.map(s => <Row key={s.id} s={s} />)}
-            {current.length === 0 && !showArchived && <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-300">No fact sheets uploaded yet.</td></tr>}
-          </tbody>
-        </table>
-      </div>
+      {/* Thumbnail previews grouped by brand */}
+      {(() => {
+        const shown = showArchived ? [...current, ...archived] : current;
+        if (shown.length === 0) return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center text-slate-300">No fact sheets uploaded yet.</div>;
+        const brands = Array.from(new Set(shown.map(s => s.brand_name))).sort();
+        return (
+          <div className="space-y-6">
+            {brands.map(b => (
+              <div key={b}>
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">{b}</span>
+                  <span className="flex-1 h-px bg-slate-100" />
+                </div>
+                <div className="flex flex-wrap gap-4">
+                  {shown.filter(s => s.brand_name === b).map(s => <Card key={s.id} s={s} />)}
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
     </div>
   );
 }
