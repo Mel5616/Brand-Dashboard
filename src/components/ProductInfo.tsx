@@ -51,35 +51,6 @@ export function ProductInfo({ brandNames = [], admin = false }: { brandNames?: s
   if (state === "needsSetup") return <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-xl p-4">Run <code>add_product_fact_sheets.sql</code> in Supabase, then reload.</div>;
   if (state === "error") return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">Couldn’t load fact sheets.</div>;
 
-  // A live, scaled-down preview of a sheet's HTML rendered into a card thumbnail.
-  const Card = ({ s }: { s: Sheet }) => {
-    const view = `/api/fact-sheets/view?id=${s.id}`;
-    return (
-      <div className="w-[220px]">
-        <div className="rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-          <a href={view} target="_blank" rel="noopener noreferrer" className="block relative bg-slate-50 border-b border-gray-100 group" style={{ width: 220, height: 311 }}>
-            {s.html_url ? (
-              <iframe src={view} title={`${s.brand_name} fact sheet`} loading="lazy" scrolling="no" tabIndex={-1} aria-hidden
-                className="absolute top-0 left-0 border-0 pointer-events-none" style={{ width: 794, height: 1123, transform: "scale(0.277)", transformOrigin: "top left" }} />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">PDF only</div>
-            )}
-            <span className="absolute inset-0 group-hover:bg-slate-900/5 transition-colors" />
-          </a>
-          <div className="px-3 py-2">
-            <p className="font-semibold text-sm text-slate-700 truncate">{s.brand_name}{s.status === "archived" && <span className="ml-1 text-[9px] text-gray-400 uppercase">arch</span>}</p>
-            <p className="text-[11px] text-gray-400">v{s.version} · {fmtDate(s.last_updated)}</p>
-            <div className="flex items-center gap-3 mt-1.5">
-              {s.html_url && <a href={view} target="_blank" rel="noopener noreferrer" className="text-[11px] font-semibold text-teal-700 hover:underline">Open</a>}
-              {s.pdf_url && <a href={s.pdf_url} target="_blank" rel="noopener noreferrer" download className="text-[11px] font-semibold text-slate-500 hover:underline">PDF</a>}
-              {admin && <button onClick={() => remove(s.id, s.brand_name)} className="text-[11px] text-rose-400 hover:underline ml-auto">Delete</button>}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -110,27 +81,78 @@ export function ProductInfo({ brandNames = [], admin = false }: { brandNames?: s
         </div>
       )}
 
-      {/* Thumbnail previews grouped by brand */}
+      {/* Per-product thumbnail previews, grouped by brand */}
       {(() => {
         const shown = showArchived ? [...current, ...archived] : current;
         if (shown.length === 0) return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center text-slate-300">No fact sheets uploaded yet.</div>;
         const brands = Array.from(new Set(shown.map(s => s.brand_name))).sort();
         return (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {brands.map(b => (
               <div key={b}>
                 <div className="flex items-center gap-3 mb-3">
                   <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">{b}</span>
                   <span className="flex-1 h-px bg-slate-100" />
                 </div>
-                <div className="flex flex-wrap gap-4">
-                  {shown.filter(s => s.brand_name === b).map(s => <Card key={s.id} s={s} />)}
-                </div>
+                {shown.filter(s => s.brand_name === b).map(s => (
+                  <div key={s.id} className="mb-5">
+                    <div className="flex flex-wrap items-center gap-3 text-[12px] text-gray-400 mb-2.5">
+                      <span>v{s.version} · {fmtDate(s.last_updated)}{s.status === "archived" ? " · archived" : ""}</span>
+                      {s.html_url && <a href={`/api/fact-sheets/view?id=${s.id}`} target="_blank" rel="noopener noreferrer" className="font-semibold text-teal-700 hover:underline">Open full sheet</a>}
+                      {s.pdf_url && <a href={s.pdf_url} target="_blank" rel="noopener noreferrer" download className="font-semibold text-slate-500 hover:underline">PDF</a>}
+                      {admin && <button onClick={() => remove(s.id, s.brand_name)} className="text-rose-400 hover:underline ml-auto">Delete</button>}
+                    </div>
+                    <SheetThumbs sheet={s} />
+                  </div>
+                ))}
               </div>
             ))}
           </div>
         );
       })()}
+    </div>
+  );
+}
+
+// Splits a fact sheet's HTML into per-product page thumbnails. The sheet is one
+// product per A4 .page; we isolate each page (with the shared <style>) and render
+// it scaled into an iframe, with the product name (.pname) underneath.
+function SheetThumbs({ sheet }: { sheet: Sheet }) {
+  const [pages, setPages] = useState<{ name: string; html: string }[] | null>(null);
+  const [err, setErr] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    if (!sheet.html_url) { setPages([]); return; }
+    fetch(`/api/fact-sheets/view?id=${sheet.id}`).then(r => r.text()).then(txt => {
+      if (!alive) return;
+      try {
+        const doc = new DOMParser().parseFromString(txt, "text/html");
+        const styles = Array.from(doc.querySelectorAll("style")).map(s => s.outerHTML).join("");
+        const ps = Array.from(doc.querySelectorAll(".page")).map(p => ({
+          name: (p.querySelector(".pname")?.textContent || "").trim(),
+          html: `<!doctype html><html><head><meta charset="utf-8">${styles}</head><body style="margin:0">${(p as HTMLElement).outerHTML}</body></html>`,
+        }));
+        setPages(ps);
+      } catch { setErr(true); }
+    }).catch(() => { if (alive) setErr(true); });
+    return () => { alive = false; };
+  }, [sheet.id, sheet.html_url]);
+
+  if (sheet.html_url && pages === null && !err) return <p className="text-xs text-gray-300 py-2">Loading previews…</p>;
+  if (err) return <p className="text-xs text-gray-300 py-2">Couldn’t load previews{sheet.pdf_url ? " — PDF available above." : "."}</p>;
+  if (pages && pages.length === 0) return <p className="text-xs text-gray-300 py-2">No page previews{sheet.pdf_url ? " (PDF available above)." : "."}</p>;
+
+  return (
+    <div className="flex flex-wrap gap-4">
+      {pages!.map((pg, i) => (
+        <div key={i} className="w-[180px]">
+          <a href={`/api/fact-sheets/view?id=${sheet.id}`} target="_blank" rel="noopener noreferrer" className="block relative bg-white border border-gray-100 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow" style={{ width: 180, height: 255 }}>
+            <iframe srcDoc={pg.html} title={pg.name || `Page ${i + 1}`} loading="lazy" scrolling="no" tabIndex={-1} aria-hidden
+              className="absolute top-0 left-0 border-0 pointer-events-none" style={{ width: 794, height: 1123, transform: "scale(0.2267)", transformOrigin: "top left" }} />
+          </a>
+          <p className="text-[11.5px] font-medium text-slate-600 mt-1.5 leading-snug line-clamp-2">{pg.name || `Page ${i + 1}`}</p>
+        </div>
+      ))}
     </div>
   );
 }
