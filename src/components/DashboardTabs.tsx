@@ -26,6 +26,7 @@ import { PortfolioCharts, Sparkline } from "./PortfolioCharts";
 import { SectionBar } from "./ui";
 import { ProductsTable } from "./ProductsTable";
 import { TradeshowAccordion } from "./TradeshowAccordion";
+import { ShowDeals } from "./ShowDeals";
 import { BrandCard, type BrandPeriod } from "./BrandCard";
 import { Leaderboard } from "./Leaderboard";
 import { BrandPage } from "./BrandPage";
@@ -47,7 +48,7 @@ import { ShopifyInsights } from "./ShopifyInsights";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "brands" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "uppababy" | "sales" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "events" | "tasks" | "design-requests" | "new-products" | "budget" | "calendar" | "content" | "influencer" | "gifting" | "pa-budget" | "pa-tracker" | "team";
+type TabId = "brands" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "uppababy" | "sales" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "budget" | "calendar" | "content" | "influencer" | "gifting" | "pa-budget" | "pa-tracker" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -123,6 +124,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
   },
   {
+    id: "show-deals", label: "Show Deals",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5a1.99 1.99 0 011.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.99 1.99 0 013 12V7a4 4 0 014-4z" /></svg>,
+  },
+  {
     id: "events", label: "Tune Up Days",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>,
   },
@@ -176,7 +181,7 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
 const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Overview", ids: ["brands", "insights"] },
   { label: "Reports", ids: ["report", "snapshot", "social-report", "uppababy"] },
-  { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows"] },
+  { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows", "show-deals"] },
   { label: "Plan", ids: ["campaign-calendar", "promotions", "calendar", "content", "events", "tasks", "design-requests"] },
   { label: "Operations", ids: ["budget", "new-products"] },
   { label: "Paid", ids: ["google-ads", "meta-ads"] },
@@ -1626,6 +1631,14 @@ export function DashboardTabs({
               />
               <BoothFunnel data={boothFunnel} />
             </div>
+          )}
+
+          {/* ── Show Deals ── */}
+          {active === "show-deals" && (
+            <>
+              <SectionBar title="Show Deals" />
+              <ShowDeals tradeshows={tradeshows} brands={brands} />
+            </>
           )}
 
           {/* ── Events (Eventbrite — tickets sold, capacity, revenue) ── */}
