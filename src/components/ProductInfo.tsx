@@ -57,7 +57,7 @@ export function ProductInfo({ brandNames = [], admin = false }: { brandNames?: s
       <td className="px-4 py-3 text-slate-500">{fmtDate(s.last_updated)}</td>
       <td className="px-4 py-3 text-slate-500">v{s.version}</td>
       <td className="px-4 py-3 text-right whitespace-nowrap">
-        {s.html_url && <a href={s.html_url} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-teal-700 border border-teal-200 bg-teal-50 rounded-lg px-3 py-1.5 hover:bg-teal-100 mr-2">Open</a>}
+        {s.html_url && <a href={`/api/fact-sheets/view?id=${s.id}`} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-teal-700 border border-teal-200 bg-teal-50 rounded-lg px-3 py-1.5 hover:bg-teal-100 mr-2">Open</a>}
         {s.pdf_url && <a href={s.pdf_url} target="_blank" rel="noopener noreferrer" download className="text-xs font-semibold text-slate-600 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 mr-2">Download PDF</a>}
         {admin && <button onClick={() => remove(s.id, s.brand_name)} className="text-xs text-rose-400 hover:underline">Delete</button>}
       </td>
