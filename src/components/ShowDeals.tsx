@@ -45,6 +45,8 @@ export function ShowDeals({ tradeshows, brands }: { tradeshows: Tradeshow[]; bra
   const [editing, setEditing] = useState<Deal | null | "new">(null);
   const [floorEdit, setFloorEdit] = useState(false);
   const [floorDraft, setFloorDraft] = useState("");
+  const [shareUrl, setShareUrl] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const show = shows.find(s => s.id === showId);
   const brandNames = brands.map(b => b.name);
@@ -71,6 +73,15 @@ export function ShowDeals({ tradeshows, brands }: { tradeshows: Tradeshow[]; bra
     await fetch(`/api/deals?id=${id}`, { method: "DELETE" }).catch(() => {});
     load();
   }
+  useEffect(() => { setShareUrl(""); setCopied(false); }, [showId]);
+  async function share() {
+    const r = await fetch("/api/deals/share", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ show_id: showId }) }).then(x => x.json()).catch(() => null);
+    if (r?.token) {
+      const url = `${window.location.origin}/deals/${r.token}`;
+      setShareUrl(url);
+      try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2500); } catch { /* clipboard blocked */ }
+    }
+  }
 
   function printSheet() {
     if (!show) return;
@@ -84,7 +95,8 @@ export function ShowDeals({ tradeshows, brands }: { tradeshows: Tradeshow[]; bra
       else if (d.discount_type === "pct_off") offer = `${d.discount_value}% off${d.show_price ? ` — now ${aud(d.show_price)}` : ""}`;
       else if (d.discount_type === "amount_off") offer = `${aud(d.discount_value)} off${d.show_price ? ` — now ${aud(d.show_price)}` : ""}`;
       else if (d.discount_type === "fixed_price") offer = `Show price ${aud(d.show_price)}${d.rrp ? ` (RRP ${aud(d.rrp)})` : ""}`;
-      return `<tr><td><b>${esc(who)}</b></td><td>${esc(offer)}</td></tr>`;
+      const extra = [d.range_label ? `Colours: ${esc(d.range_label)}` : "", d.gift_label && d.mechanic !== "gwp" ? `Includes (free): ${esc(d.gift_label)}` : ""].filter(Boolean).join("<br>");
+      return `<tr><td><b>${esc(who)}</b></td><td>${esc(offer)}${extra ? `<div style="color:#64748b;font-size:11px;margin-top:3px">${extra}</div>` : ""}</td></tr>`;
     };
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(show.name)} — Deal Sheet</title>
       <style>@page{size:A4;margin:14mm}*{-webkit-print-color-adjust:exact}body{font:13px -apple-system,Segoe UI,Roboto,sans-serif;color:#1e293b}
@@ -122,10 +134,17 @@ export function ShowDeals({ tradeshows, brands }: { tradeshows: Tradeshow[]; bra
           ) : <><b className="text-slate-600">{marginFloor}%</b><button onClick={() => { setFloorDraft(String(marginFloor)); setFloorEdit(true); }} className="text-emerald-600 hover:underline">edit</button></>}</span>
         )}
         <div className="ml-auto flex items-center gap-2">
-          <button onClick={printSheet} className="text-xs font-semibold text-slate-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50">⤓ Deal sheet</button>
+          {canManage && <button onClick={share} className="text-xs font-semibold text-teal-700 border border-teal-200 bg-teal-50 rounded-lg px-3 py-2 hover:bg-teal-100">{copied ? "✓ Link copied" : "🔗 Share link"}</button>}
+          <button onClick={printSheet} className="text-xs font-semibold text-slate-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50">⤓ Print</button>
           {canManage && <button onClick={() => setEditing(editing === "new" ? null : "new")} className="text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2">{editing === "new" ? "Close" : "+ Add deal"}</button>}
         </div>
       </div>
+      {shareUrl && (
+        <div className="flex items-center gap-2 text-xs bg-teal-50 border border-teal-100 rounded-lg px-3 py-2">
+          <span className="text-teal-700 font-semibold">Shareable deal sheet:</span>
+          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="text-teal-700 underline truncate">{shareUrl}</a>
+        </div>
+      )}
 
       {editing !== null && (
         <DealForm show={show!} deal={editing === "new" ? null : editing} brandNames={brandNames} products={products}
@@ -224,10 +243,10 @@ function DealForm({ show, deal, brandNames, products, admin, marginFloor, onClos
     setBusy(true); setErr("");
     const body: any = {
       id: deal?.id, show_id: show.id, brand, scope,
-      product_code: isProductScope ? productCode : null, product_name: isProductScope ? (search || null) : null, range_label: scope === "range" ? rangeLabel : null,
+      product_code: isProductScope ? productCode : null, product_name: isProductScope ? (search || null) : null, range_label: rangeLabel || null,
       mechanic, discount_type: mechanic === "discount" ? dtype : null, discount_value: mechanic === "discount" ? dval : null,
       rrp, cost_price: cost, show_price: dtype === "fixed_price" ? fixedShow : showPrice,
-      gift_label: mechanic === "gwp" ? giftLabel : null, gift_value: mechanic === "gwp" ? giftValue : null, gift_cost: mechanic === "gwp" ? giftCost : null, gift_qty: giftQty,
+      gift_label: giftLabel || null, gift_value: mechanic === "gwp" ? giftValue : null, gift_cost: mechanic === "gwp" ? giftCost : null, gift_qty: giftQty,
       gwp_trigger: mechanic === "gwp" ? trigger : null, min_spend: trigger === "min_spend" ? minSpend : null, auto_add: autoAdd, stock_cap: stockCap,
       valid_from: validFrom, valid_to: validTo, channel, stackable,
       status, approved_by: approvedBy || null, notes,
@@ -273,6 +292,14 @@ function DealForm({ show, deal, brandNames, products, admin, marginFloor, onClos
         <div><label className={lbl}>Range label</label><input value={rangeLabel} onChange={e => setRangeLabel(e.target.value)} placeholder="e.g. Bubba's range" className={inp} /></div>
       ) : (
         <p className="text-[11px] text-gray-400">Applies across the whole {brand} range — show prices resolve per SKU from the product master.</p>
+      )}
+
+      {/* Colours + bundle contents (shown on the deal sheet) */}
+      {isProductScope && (
+        <div className="grid md:grid-cols-2 gap-3">
+          <div><label className={lbl}>Colours / variants</label><input value={rangeLabel} onChange={e => setRangeLabel(e.target.value)} placeholder="e.g. Greyson, Evelyn, Ada" className={inp} /></div>
+          {mechanic === "discount" && <div><label className={lbl}>Bundle includes — free (comma-separated)</label><input value={giftLabel} onChange={e => setGiftLabel(e.target.value)} placeholder="e.g. Cup Holder, Snack Tray, Parent Organiser" className={inp} /></div>}
+        </div>
       )}
 
       {/* Mechanic */}
