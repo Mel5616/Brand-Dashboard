@@ -23,21 +23,30 @@ function fmtDay(d: string) {
 export function BoothFunnel({ data }: { data: BoothFunnelData }) {
   const { totals, shows, daily, hasRows } = data;
 
-  // Live Shopify POS — UPPAbaby store + Coolkidz booth till, fetched on demand
+  // Show picker: "all" = cumulative since go-live, else scope everything to one show.
+  const [showSel, setShowSel] = useState<string>("all");
+  const sel = showSel === "all" ? null : shows.find(s => s.show_name === showSel) ?? null;
+
+  // Live Shopify POS — UPPAbaby store + Coolkidz booth till. Scoped to the selected
+  // show's date window when one is picked, else cumulative since go-live.
   const [pos, setPos] = useState<PosLive | null>(null);
   const [posCk, setPosCk] = useState<PosLive | null>(null);
   const [posLoading, setPosLoading] = useState(true);
   useEffect(() => {
     let alive = true;
+    setPosLoading(true);
+    const p = new URLSearchParams();
+    if (sel) { p.set("since", sel.start); p.set("until", sel.end); }
+    const p2 = new URLSearchParams(p); p2.set("store", "coolkidz");
     Promise.all([
-      fetch("/api/booth-pos").then(r => r.json()).catch(() => null),
-      fetch("/api/booth-pos?store=coolkidz").then(r => r.json()).catch(() => null),
+      fetch(`/api/booth-pos?${p.toString()}`).then(r => r.json()).catch(() => null),
+      fetch(`/api/booth-pos?${p2.toString()}`).then(r => r.json()).catch(() => null),
     ]).then(([u, c]: [PosLive | null, PosLive | null]) => {
       if (!alive) return;
       setPos(u); setPosCk(c); setPosLoading(false);
     });
     return () => { alive = false; };
-  }, []);
+  }, [showSel, sel?.start, sel?.end]);
 
   if (!hasRows && !(pos && pos.orders > 0) && !(posCk && posCk.orders > 0)) {
     return (
@@ -49,12 +58,14 @@ export function BoothFunnel({ data }: { data: BoothFunnelData }) {
     );
   }
 
+  // QR funnel figures — the selected show's row, or the cumulative totals.
+  const qr = sel ?? totals;
   const kpis = [
-    { label: "QR Scans",        value: num(totals.scans),       color: "#6366f1" },
-    { label: "Checkouts Started", value: num(totals.checkouts), color: "#0891b2" },
-    { label: "Paid Orders",     value: num(totals.orders),      color: "#10b981" },
-    { label: "Revenue (AUD)",   value: aud(totals.revenue),     color: "#0f172a" },
-    { label: "Scan → Order",    value: `${totals.conversion}%`, color: "#f59e0b" },
+    { label: "QR Scans",        value: num(qr.scans),       color: "#6366f1" },
+    { label: "Checkouts Started", value: num(qr.checkouts), color: "#0891b2" },
+    { label: "Paid Orders",     value: num(qr.orders),      color: "#10b981" },
+    { label: "Revenue (AUD)",   value: aud(qr.revenue),     color: "#0f172a" },
+    { label: "Scan → Order",    value: `${qr.conversion}%`, color: "#f59e0b" },
   ];
 
   // Revenue-by-day must combine QR booth_events (daily) with live Shopify POS
@@ -67,16 +78,28 @@ export function BoothFunnel({ data }: { data: BoothFunnelData }) {
       cur.revenue += d.revenue; cur.orders += d.orders;
       map.set(d.date, cur);
     }
-    return [...map.values()].sort((a, b) => a.date.localeCompare(b.date));
+    let arr = [...map.values()].sort((a, b) => a.date.localeCompare(b.date));
+    if (sel) arr = arr.filter(d => d.date >= sel.start && d.date <= sel.end);   // scope chart to the show
+    return arr;
   })();
-  const totalExpoRevenue = totals.revenue + (pos?.revenue ?? 0) + (posCk?.revenue ?? 0);
+  const totalExpoRevenue = qr.revenue + (pos?.revenue ?? 0) + (posCk?.revenue ?? 0);
   const hasRevenue = mergedDaily.some(d => d.revenue > 0);
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="font-semibold text-gray-800">Expo Stand Funnel</h2>
-        <p className="text-xs text-gray-400 mt-0.5">Live QR expo stand data — scan → checkout → paid order</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h2 className="font-semibold text-gray-800">Expo Stand Funnel</h2>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {sel ? `${sel.show_name} · ${sel.start === sel.end ? sel.start : `${sel.start} → ${sel.end}`}` : "Live QR expo stand data — scan → checkout → paid order"}
+          </p>
+        </div>
+        {shows.length > 0 && (
+          <select value={showSel} onChange={e => setShowSel(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white">
+            <option value="all">All shows (cumulative)</option>
+            {shows.map(s => <option key={s.show_name} value={s.show_name}>{s.show_name}</option>)}
+          </select>
+        )}
       </div>
 
       {/* KPI row — QR funnel */}

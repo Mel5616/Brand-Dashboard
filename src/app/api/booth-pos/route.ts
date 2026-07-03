@@ -26,13 +26,19 @@ function storeCreds(store: string): { domain?: string; token?: string } {
 }
 
 export async function GET(req: Request) {
-  const store = new URL(req.url).searchParams.get("store") || "uppababy";
+  const sp = new URL(req.url).searchParams;
+  const store = sp.get("store") || "uppababy";
   const { domain, token } = storeCreds(store);
   if (!domain || !token) {
     return NextResponse.json({ ok: false, orders: 0, revenue: 0, daily: [] });
   }
 
-  const since = POS_GO_LIVE;
+  // Optional show window (YYYY-MM-DD) to scope POS to a single expo; else since go-live.
+  const rawSince = sp.get("since");
+  const rawUntil = sp.get("until");
+  const iso = (v: string | null) => v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+  const since = iso(rawSince) || POS_GO_LIVE;
+  const until = iso(rawUntil);
 
   // Paginate so high-volume POS isn't truncated at the 250 page cap.
   // source_name:pos filters server-side so web orders never crowd out POS.
@@ -41,8 +47,11 @@ export async function GET(req: Request) {
     let cursor: string | null = null;
     for (let page = 0; page < 8; page++) {
       const after: string = cursor ? `, after: "${cursor}"` : "";
+      // Pad the end by a day so AEST show-day orders near the UTC boundary aren't clipped.
+      const untilPad = until ? new Date(new Date(until + "T00:00:00Z").getTime() + 86400000).toISOString().slice(0, 10) : null;
+      const untilQ = untilPad ? ` created_at:<=${untilPad}` : "";
       const query = `{
-        orders(first: 250${after}, query: "financial_status:paid source_name:pos created_at:>=${since}", sortKey: CREATED_AT, reverse: true) {
+        orders(first: 250${after}, query: "financial_status:paid source_name:pos created_at:>=${since}${untilQ}", sortKey: CREATED_AT, reverse: true) {
           edges { cursor node { sourceName createdAt totalPriceSet { shopMoney { amount } } } }
           pageInfo { hasNextPage }
         }

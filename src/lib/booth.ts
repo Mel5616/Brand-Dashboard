@@ -14,6 +14,8 @@ export type BoothShowRow = {
   orders: number;
   revenue: number;
   conversion: number; // orders / scans %
+  start: string;      // first event date (YYYY-MM-DD) — used to scope POS to this show
+  end: string;        // last event date
 };
 
 export type BoothDaily = { date: string; revenue: number; orders: number; scans: number };
@@ -49,10 +51,13 @@ export async function getBoothFunnel(): Promise<BoothFunnel> {
   // ── Per show ────────────────────────────────────────────────────────────
   const byShow = new Map<string, BoothShowRow>();
   for (const r of rows) {
-    const s = byShow.get(r.show_name) ?? { show_name: r.show_name, scans: 0, checkouts: 0, orders: 0, revenue: 0, conversion: 0 };
+    const s = byShow.get(r.show_name) ?? { show_name: r.show_name, scans: 0, checkouts: 0, orders: 0, revenue: 0, conversion: 0, start: "", end: "" };
     if (r.event_type === "scan") s.scans++;
     else if (r.event_type === "checkout_started") s.checkouts++;
     else if (r.event_type === "order") { s.orders++; s.revenue += Number(r.value) || 0; }
+    const d = String(r.created_at).slice(0, 10);
+    if (!s.start || d < s.start) s.start = d;
+    if (!s.end || d > s.end) s.end = d;
     byShow.set(r.show_name, s);
   }
   const shows = [...byShow.values()]
