@@ -69,6 +69,7 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
   const [kioskPage, setKioskPage] = useState(0);           // auto-rotating kiosk page
   const compareFetched = useRef(false);
   const lastTotalRef = useRef(0);
+  const touchX = useRef<number | null>(null); // kiosk swipe start
   const colorOf = (id: number) => brands.find(b => b.id === id)?.color ?? "#6366f1";
 
   useEffect(() => {
@@ -361,9 +362,70 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
         const sellers = (data?.topProducts ?? []).slice(0, 6);
         const feed = (data?.recent ?? []).slice(0, 8);
         const pages: string[] = ["totals", ...(brandRows.length ? ["brands"] : []), ...(sellers.length ? ["sellers"] : []), ...(feed.length ? ["live"] : [])];
-        const idx = pages.length ? kioskPage % pages.length : 0;
-        const page = pages[idx] ?? "totals";
+        const idx = pages.length ? (((kioskPage % pages.length) + pages.length) % pages.length) : 0;
         const maxBrand = Math.max(1, ...brandRows.map(r => r.boothRevenue + r.onlineRevenue));
+        const renderPage = (pg: string) => {
+          if (pg === "totals") return (
+            <div className="text-center">
+              <p className="text-white/50 uppercase tracking-[0.25em] text-xs">Total Sales · {data?.showOrders ?? 0} orders</p>
+              <p className="font-black leading-none tabular-nums my-2" style={{ fontSize: "clamp(3.5rem,20vw,9rem)" }}>{aud(data?.showTotal ?? 0)}</p>
+              {cmpDelta != null && <p className={`text-base ${cmpDelta >= 0 ? "text-emerald-300" : "text-rose-300"}`}>{cmpDelta >= 0 ? "▲" : "▼"} {Math.abs(cmpDelta).toFixed(0)}% vs last {compare?.name?.replace(/Baby Expo/i, "").trim()}</p>}
+              {projectedToday != null && <p className="text-emerald-400 text-lg mt-1.5 font-semibold">On pace for {aud(projectedToday)} today</p>}
+              <div className="grid grid-cols-3 gap-3 mt-10 max-w-md mx-auto">
+                <div><p className="text-2xl font-bold tabular-nums">{aud(booth)}</p><p className="text-white/50 uppercase text-[10px] tracking-wider mt-1">Expo</p></div>
+                <div><p className="text-2xl font-bold tabular-nums">{aud(data?.onlineTotal ?? 0)}</p><p className="text-white/50 uppercase text-[10px] tracking-wider mt-1">Online</p></div>
+                <div><p className="text-2xl font-bold tabular-nums">{aud(aov)}</p><p className="text-white/50 uppercase text-[10px] tracking-wider mt-1">Avg order</p></div>
+              </div>
+            </div>
+          );
+          if (pg === "brands") return (
+            <div>
+              <p className="uppercase tracking-[0.2em] text-white/40 text-sm mb-6 text-center">Top brands</p>
+              <div className="space-y-4 max-w-lg mx-auto w-full">
+                {brandRows.map(r => { const v = r.boothRevenue + r.onlineRevenue; return (
+                  <div key={r.brand_id}>
+                    <div className="flex items-center gap-3 mb-1.5">
+                      <span className="w-3 h-3 rounded-full shrink-0" style={{ background: colorOf(r.brand_id) }} />
+                      <span className="flex-1 min-w-0 truncate text-lg">{r.name}</span>
+                      <span className="shrink-0 text-lg font-bold tabular-nums">{aud(v)}</span>
+                    </div>
+                    <div className="h-2.5 bg-white/10 rounded-full overflow-hidden"><div className="h-full rounded-full" style={{ width: `${Math.max(3, (v / maxBrand) * 100)}%`, background: colorOf(r.brand_id) }} /></div>
+                  </div>
+                ); })}
+              </div>
+            </div>
+          );
+          if (pg === "sellers") return (
+            <div>
+              <p className="uppercase tracking-[0.2em] text-white/40 text-sm mb-6 text-center">Top sellers</p>
+              <div className="space-y-4 max-w-lg mx-auto w-full">
+                {sellers.map((p, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <span className="text-white/30 shrink-0 w-7 text-2xl font-black leading-tight">{i + 1}</span>
+                    <span className="flex-1 min-w-0 text-lg leading-snug">{p.title.replace(/^UPPAbaby /i, "")}</span>
+                    <span className="shrink-0 text-lg font-bold tabular-nums leading-tight">{aud(p.revenue)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+          if (pg === "live") return (
+            <div>
+              <p className="uppercase tracking-[0.2em] text-white/40 text-sm mb-6 text-center flex items-center justify-center gap-2"><span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />Just sold</p>
+              <div className="space-y-2.5 max-w-lg mx-auto w-full">
+                {feed.map((r, i) => (
+                  <div key={i} className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3">
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: r.brand_id === -1 ? "#818cf8" : colorOf(r.brand_id) }} />
+                    <span className="text-xl font-bold tabular-nums shrink-0">{aud(r.amount)}</span>
+                    <span className="flex-1 min-w-0 truncate text-white/70">{r.label}</span>
+                    <span className="shrink-0 text-white/40 text-sm">{relTime(r.at)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+          return null;
+        };
         return (
           <div className="fixed inset-0 z-[60] text-white flex flex-col overflow-hidden" style={{ background: "linear-gradient(160deg,#0f172a,#134e4a)" }}>
             {/* Top bar */}
@@ -375,67 +437,17 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
               <button onClick={() => setKiosk(false)} className="shrink-0 text-white/60 hover:text-white text-sm border border-white/20 rounded-lg px-3 py-2">Exit ✕</button>
             </div>
 
-            {/* Page body */}
-            <div className="flex-1 min-h-0 px-6 pb-4 flex flex-col justify-center overflow-y-auto">
-              {page === "totals" && (
-                <div className="text-center">
-                  <p className="text-white/50 uppercase tracking-[0.25em] text-xs">Total Sales · {data?.showOrders ?? 0} orders</p>
-                  <p className="font-black leading-none tabular-nums my-2" style={{ fontSize: "clamp(3.5rem,20vw,9rem)" }}>{aud(data?.showTotal ?? 0)}</p>
-                  {cmpDelta != null && <p className={`text-base ${cmpDelta >= 0 ? "text-emerald-300" : "text-rose-300"}`}>{cmpDelta >= 0 ? "▲" : "▼"} {Math.abs(cmpDelta).toFixed(0)}% vs last {compare?.name?.replace(/Baby Expo/i, "").trim()}</p>}
-                  {projectedToday != null && <p className="text-emerald-400 text-lg mt-1.5 font-semibold">On pace for {aud(projectedToday)} today</p>}
-                  <div className="grid grid-cols-3 gap-3 mt-10 max-w-md mx-auto">
-                    <div><p className="text-2xl font-bold tabular-nums">{aud(booth)}</p><p className="text-white/50 uppercase text-[10px] tracking-wider mt-1">Expo</p></div>
-                    <div><p className="text-2xl font-bold tabular-nums">{aud(data?.onlineTotal ?? 0)}</p><p className="text-white/50 uppercase text-[10px] tracking-wider mt-1">Online</p></div>
-                    <div><p className="text-2xl font-bold tabular-nums">{aud(aov)}</p><p className="text-white/50 uppercase text-[10px] tracking-wider mt-1">Avg order</p></div>
+            {/* Page body — swipeable sliding track */}
+            <div className="flex-1 min-h-0 overflow-hidden"
+              onTouchStart={e => { touchX.current = e.touches[0].clientX; }}
+              onTouchEnd={e => { if (touchX.current == null) return; const dx = e.changedTouches[0].clientX - touchX.current; if (Math.abs(dx) > 50) setKioskPage(idx + (dx < 0 ? 1 : -1)); touchX.current = null; }}>
+              <div className="flex h-full transition-transform duration-500 ease-out" style={{ width: `${pages.length * 100}%`, transform: `translateX(-${idx * (100 / pages.length)}%)` }}>
+                {pages.map(pg => (
+                  <div key={pg} className="h-full overflow-y-auto flex flex-col justify-center px-6 py-4" style={{ width: `${100 / pages.length}%` }}>
+                    {renderPage(pg)}
                   </div>
-                </div>
-              )}
-              {page === "brands" && (
-                <div>
-                  <p className="uppercase tracking-[0.2em] text-white/40 text-sm mb-6 text-center">Top brands</p>
-                  <div className="space-y-4 max-w-lg mx-auto w-full">
-                    {brandRows.map(r => { const v = r.boothRevenue + r.onlineRevenue; return (
-                      <div key={r.brand_id}>
-                        <div className="flex items-center gap-3 mb-1.5">
-                          <span className="w-3 h-3 rounded-full shrink-0" style={{ background: colorOf(r.brand_id) }} />
-                          <span className="flex-1 min-w-0 truncate text-lg">{r.name}</span>
-                          <span className="shrink-0 text-lg font-bold tabular-nums">{aud(v)}</span>
-                        </div>
-                        <div className="h-2.5 bg-white/10 rounded-full overflow-hidden"><div className="h-full rounded-full" style={{ width: `${Math.max(3, (v / maxBrand) * 100)}%`, background: colorOf(r.brand_id) }} /></div>
-                      </div>
-                    ); })}
-                  </div>
-                </div>
-              )}
-              {page === "sellers" && (
-                <div>
-                  <p className="uppercase tracking-[0.2em] text-white/40 text-sm mb-6 text-center">Top sellers</p>
-                  <div className="space-y-4 max-w-lg mx-auto w-full">
-                    {sellers.map((p, i) => (
-                      <div key={i} className="flex items-center gap-3">
-                        <span className="text-white/30 shrink-0 w-7 text-2xl font-black">{i + 1}</span>
-                        <span className="flex-1 min-w-0 truncate text-lg">{p.title.replace(/^UPPAbaby /i, "")}</span>
-                        <span className="shrink-0 text-lg font-bold tabular-nums">{aud(p.revenue)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {page === "live" && (
-                <div>
-                  <p className="uppercase tracking-[0.2em] text-white/40 text-sm mb-6 text-center flex items-center justify-center gap-2"><span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />Just sold</p>
-                  <div className="space-y-2.5 max-w-lg mx-auto w-full">
-                    {feed.map((r, i) => (
-                      <div key={i} className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3">
-                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: r.brand_id === -1 ? "#818cf8" : colorOf(r.brand_id) }} />
-                        <span className="text-xl font-bold tabular-nums shrink-0">{aud(r.amount)}</span>
-                        <span className="flex-1 min-w-0 truncate text-white/70">{r.label}</span>
-                        <span className="shrink-0 text-white/40 text-sm">{relTime(r.at)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+                ))}
+              </div>
             </div>
 
             {/* Page dots */}
