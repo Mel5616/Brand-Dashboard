@@ -379,18 +379,20 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
             <div>
               <p className="uppercase tracking-[0.2em] text-white/40 text-xs mb-3">Top brands</p>
               {[...(data?.rows ?? [])].filter(r => r.brand_id !== -1).sort((a, b) => (b.boothRevenue + b.onlineRevenue) - (a.boothRevenue + a.onlineRevenue)).slice(0, 5).map(r => (
-                <div key={r.brand_id} className="flex items-center justify-between gap-3 mb-2.5">
-                  <span className="flex items-center gap-3 min-w-0"><span className="w-3 h-3 rounded-full shrink-0" style={{ background: colorOf(r.brand_id) }} /><span className="text-base sm:text-lg truncate">{r.name}</span></span>
-                  <span className="text-base sm:text-lg font-bold tabular-nums shrink-0">{aud(r.boothRevenue + r.onlineRevenue)}</span>
+                <div key={r.brand_id} className="flex items-center gap-3 mb-2.5">
+                  <span className="w-3 h-3 rounded-full shrink-0" style={{ background: colorOf(r.brand_id) }} />
+                  <span className="flex-1 min-w-0 truncate text-base sm:text-lg">{r.name}</span>
+                  <span className="shrink-0 text-base sm:text-lg font-bold tabular-nums">{aud(r.boothRevenue + r.onlineRevenue)}</span>
                 </div>
               ))}
             </div>
             <div>
               <p className="uppercase tracking-[0.2em] text-white/40 text-xs mb-3">Top sellers</p>
               {(data?.topProducts ?? []).slice(0, 5).map((p, i) => (
-                <div key={i} className="flex items-center justify-between gap-3 mb-2.5">
-                  <span className="flex items-center gap-3 min-w-0"><span className="text-white/40 shrink-0 w-4">{i + 1}</span><span className="text-base sm:text-lg truncate">{p.title}</span></span>
-                  <span className="text-base sm:text-lg font-bold tabular-nums shrink-0">{aud(p.revenue)}</span>
+                <div key={i} className="flex items-center gap-3 mb-2.5">
+                  <span className="text-white/40 shrink-0 w-4">{i + 1}</span>
+                  <span className="flex-1 min-w-0 truncate text-base sm:text-lg">{p.title.replace(/^UPPAbaby /i, "")}</span>
+                  <span className="shrink-0 text-base sm:text-lg font-bold tabular-nums">{aud(p.revenue)}</span>
                 </div>
               ))}
             </div>
