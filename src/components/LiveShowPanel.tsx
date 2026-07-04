@@ -66,10 +66,8 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
   const [daySel, setDaySel] = useState<string>("all"); // "all" or a show-day date
   const [toast, setToast] = useState<string | null>(null); // milestone / target celebration
   const [kiosk, setKiosk] = useState(false);               // fullscreen big-screen mode
-  const [kioskPage, setKioskPage] = useState(0);           // auto-rotating kiosk page
   const compareFetched = useRef(false);
   const lastTotalRef = useRef(0);
-  const touchX = useRef<number | null>(null); // kiosk swipe start
   const colorOf = (id: number) => brands.find(b => b.id === id)?.color ?? "#6366f1";
 
   useEffect(() => {
@@ -177,8 +175,6 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
     lastTotalRef.current = t;
   }, [data?.showTotal, target]);
   useEffect(() => { if (!toast) return; const id = setTimeout(() => setToast(null), 6000); return () => clearTimeout(id); }, [toast]);
-  // Kiosk auto-rotates through its pages every 8s (modulo handles the page count).
-  useEffect(() => { if (!kiosk) return; const id = setInterval(() => setKioskPage(p => p + 1), 8000); return () => clearInterval(id); }, [kiosk]);
 
   // Sales-by-hour range
   const byHour = data?.byHour ?? [];
@@ -362,7 +358,6 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
         const sellers = (data?.topProducts ?? []).slice(0, 6);
         const feed = (data?.recent ?? []).slice(0, 8);
         const pages: string[] = ["totals", ...(brandRows.length ? ["brands"] : []), ...(sellers.length ? ["sellers"] : []), ...(feed.length ? ["live"] : [])];
-        const idx = pages.length ? (((kioskPage % pages.length) + pages.length) % pages.length) : 0;
         const maxBrand = Math.max(1, ...brandRows.map(r => r.boothRevenue + r.onlineRevenue));
         const renderPage = (pg: string) => {
           if (pg === "totals") return (
@@ -437,27 +432,12 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
               <button onClick={() => setKiosk(false)} className="shrink-0 text-white/60 hover:text-white text-sm border border-white/20 rounded-lg px-3 py-2">Exit ✕</button>
             </div>
 
-            {/* Page body — swipeable sliding track */}
-            <div className="flex-1 min-h-0 overflow-hidden"
-              onTouchStart={e => { touchX.current = e.touches[0].clientX; }}
-              onTouchEnd={e => { if (touchX.current == null) return; const dx = e.changedTouches[0].clientX - touchX.current; if (Math.abs(dx) > 50) setKioskPage(idx + (dx < 0 ? 1 : -1)); touchX.current = null; }}>
-              <div className="flex h-full transition-transform duration-500 ease-out" style={{ width: `${pages.length * 100}%`, transform: `translateX(-${idx * (100 / pages.length)}%)` }}>
-                {pages.map(pg => (
-                  <div key={pg} className="h-full overflow-y-auto flex flex-col justify-center px-6 py-4" style={{ width: `${100 / pages.length}%` }}>
-                    {renderPage(pg)}
-                  </div>
-                ))}
-              </div>
+            {/* Body — single scrollable view, all sections stacked */}
+            <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-2 pb-10 space-y-12">
+              {pages.map((pg, i) => (
+                <div key={pg} className={i === 0 ? "" : "border-t border-white/10 pt-10"}>{renderPage(pg)}</div>
+              ))}
             </div>
-
-            {/* Page dots */}
-            {pages.length > 1 && (
-              <div className="flex justify-center gap-2 pb-7 shrink-0">
-                {pages.map((pg, i) => (
-                  <button key={pg} onClick={() => setKioskPage(i)} className={`h-2.5 rounded-full transition-all ${i === idx ? "w-7 bg-emerald-400" : "w-2.5 bg-white/25"}`} aria-label={pg} />
-                ))}
-              </div>
-            )}
           </div>
         );
       })()}
