@@ -33,9 +33,10 @@ function calcShow(mechanic: string, dtype: string, rrp: number, dval: number, fi
 }
 
 export function ShowDeals({ tradeshows, brands }: { tradeshows: Tradeshow[]; brands: Brand[] }) {
-  const shows = useMemo(() => [...tradeshows].sort((a, b) => a.date_start.localeCompare(b.date_start)), [tradeshows]);
-  const nextShow = shows.find(s => s.date_end >= new Date().toISOString().slice(0, 10)) ?? shows[shows.length - 1];
-  const [showId, setShowId] = useState<string>(nextShow?.id ?? "");
+  // Only current + upcoming shows — deals start from the live expo, not old ones.
+  const today = new Date().toISOString().slice(0, 10);
+  const shows = useMemo(() => [...tradeshows].filter(s => s.date_end >= today).sort((a, b) => a.date_start.localeCompare(b.date_start)), [tradeshows, today]);
+  const [showId, setShowId] = useState<string>(shows[0]?.id ?? "");
   const [deals, setDeals] = useState<Deal[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [marginFloor, setMarginFloor] = useState(20);
