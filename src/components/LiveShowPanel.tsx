@@ -66,6 +66,7 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
   const [daySel, setDaySel] = useState<string>("all"); // "all" or a show-day date
   const [toast, setToast] = useState<string | null>(null); // milestone / target celebration
   const [kiosk, setKiosk] = useState(false);               // fullscreen big-screen mode
+  const [confetti, setConfetti] = useState(false);         // celebratory burst on big-screen open
   const compareFetched = useRef(false);
   const lastTotalRef = useRef(0);
   const colorOf = (id: number) => brands.find(b => b.id === id)?.color ?? "#6366f1";
@@ -175,6 +176,8 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
     lastTotalRef.current = t;
   }, [data?.showTotal, target]);
   useEffect(() => { if (!toast) return; const id = setTimeout(() => setToast(null), 6000); return () => clearTimeout(id); }, [toast]);
+  // Confetti burst when the big screen opens on a live show.
+  useEffect(() => { if (kiosk && live) { setConfetti(true); const t = setTimeout(() => setConfetti(false), 3500); return () => clearTimeout(t); } }, [kiosk, live]);
 
   // Sales-by-hour range
   const byHour = data?.byHour ?? [];
@@ -347,10 +350,13 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
     <div className={`rounded-xl overflow-hidden border ${live ? "border-emerald-200" : "border-slate-200"}`}>
       {/* Milestone / target celebration toast */}
       {toast && (
-        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[70] px-6 py-3 rounded-2xl bg-white shadow-2xl border border-emerald-200 text-lg font-bold text-slate-800" style={{ animation: "bounce 0.6s" }}>
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[80] px-6 py-3 rounded-2xl bg-white shadow-2xl border border-emerald-200 text-lg font-bold text-slate-800" style={{ animation: "bounce 0.6s" }}>
           {toast}
         </div>
       )}
+
+      {/* Confetti burst on big-screen open */}
+      {confetti && <Confetti />}
 
       {/* Big-screen / kiosk mode — phone-first, auto-rotating pages */}
       {kiosk && (() => {
@@ -735,6 +741,36 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// Lightweight, dependency-free confetti burst (DOM pieces + CSS fall animation).
+function Confetti() {
+  const [pieces] = useState(() => {
+    const colors = ["#6366f1", "#0891b2", "#f59e0b", "#e11d48", "#10b981", "#7c3aed", "#0d9488", "#ec4899"];
+    return Array.from({ length: 90 }, (_, i) => ({
+      left: Math.random() * 100,
+      delay: Math.random() * 0.5,
+      dur: 2.4 + Math.random() * 2,
+      w: 6 + Math.random() * 7,
+      h: 8 + Math.random() * 8,
+      rot: Math.random() * 360,
+      color: colors[i % colors.length],
+      round: Math.random() > 0.6,
+    }));
+  });
+  return (
+    <div className="fixed inset-0 z-[75] pointer-events-none overflow-hidden">
+      <style dangerouslySetInnerHTML={{ __html: "@keyframes cfz{to{transform:translateY(108vh) rotate(760deg);opacity:0}}" }} />
+      {pieces.map((p, i) => (
+        <span key={i} style={{
+          position: "absolute", left: `${p.left}%`, top: "-20px",
+          width: p.w, height: p.round ? p.w : p.h, background: p.color,
+          borderRadius: p.round ? "50%" : 2, opacity: 0.95, transform: `rotate(${p.rot}deg)`,
+          animation: `cfz ${p.dur}s cubic-bezier(.25,.6,.4,1) ${p.delay}s forwards`,
+        }} />
+      ))}
     </div>
   );
 }
