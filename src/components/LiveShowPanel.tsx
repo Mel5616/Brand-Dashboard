@@ -354,45 +354,43 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
 
       {/* Big-screen / kiosk mode — a stand-facing live display */}
       {kiosk && (
-        <div className="fixed inset-0 z-[60] text-white flex flex-col p-8 lg:p-12 overflow-auto" style={{ background: "linear-gradient(135deg,#0f172a,#134e4a)" }}>
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-emerald-400 font-bold uppercase tracking-[0.25em] flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />Live · {data?.show?.name}</p>
-              {timeLeft && <p className="text-white/50 mt-1">{timeLeft} · updated {ago}s ago</p>}
+        <div className="fixed inset-0 z-[60] text-white flex flex-col p-5 sm:p-8 lg:p-12 overflow-auto" style={{ background: "linear-gradient(135deg,#0f172a,#134e4a)" }}>
+          <div className="flex justify-between items-start gap-3">
+            <div className="min-w-0">
+              <p className="text-emerald-400 font-bold uppercase tracking-[0.2em] text-sm sm:text-base flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" /><span className="truncate">Live · {data?.show?.name}</span></p>
+              {timeLeft && <p className="text-white/50 mt-1 text-sm">{timeLeft} · updated {ago}s ago</p>}
             </div>
-            <button onClick={() => setKiosk(false)} className="text-white/60 hover:text-white text-sm border border-white/20 rounded-lg px-4 py-2">Exit ✕</button>
+            <button onClick={() => setKiosk(false)} className="shrink-0 text-white/60 hover:text-white text-sm border border-white/20 rounded-lg px-3 py-2">Exit ✕</button>
           </div>
 
-          <div className="flex-1 flex flex-col items-center justify-center py-6">
-            <p className="text-white/50 uppercase tracking-[0.3em] text-sm">Total Sales · {data?.showOrders ?? 0} orders</p>
-            <p className="font-black leading-none tabular-nums" style={{ fontSize: "clamp(4rem,16vw,11rem)" }}>{aud(data?.showTotal ?? 0)}</p>
-            {projectedToday != null && <p className="text-emerald-400 text-2xl mt-3 font-semibold">On pace for {aud(projectedToday)} today</p>}
-            {cmpDelta != null && <p className={`text-lg mt-1 ${cmpDelta >= 0 ? "text-emerald-300" : "text-rose-300"}`}>{cmpDelta >= 0 ? "▲" : "▼"} {Math.abs(cmpDelta).toFixed(0)}% vs last {compare?.name?.replace(/Baby Expo/i, "").trim()}</p>}
-            <div className="flex flex-wrap justify-center gap-x-12 gap-y-4 mt-8 text-center">
-              <div><p className="text-4xl font-bold tabular-nums">{aud(booth)}</p><p className="text-white/50 uppercase text-xs tracking-wider mt-1">Expo Stand</p></div>
-              <div><p className="text-4xl font-bold tabular-nums">{aud(data?.onlineTotal ?? 0)}</p><p className="text-white/50 uppercase text-xs tracking-wider mt-1">Online</p></div>
-              <div><p className="text-4xl font-bold tabular-nums">{aud(aov)}</p><p className="text-white/50 uppercase text-xs tracking-wider mt-1">Avg order</p></div>
+          <div className="flex-1 flex flex-col items-center justify-center py-6 text-center">
+            <p className="text-white/50 uppercase tracking-[0.25em] text-xs sm:text-sm">Total Sales · {data?.showOrders ?? 0} orders</p>
+            <p className="font-black leading-none tabular-nums" style={{ fontSize: "clamp(3.2rem,15vw,11rem)" }}>{aud(data?.showTotal ?? 0)}</p>
+            {projectedToday != null && <p className="text-emerald-400 text-lg sm:text-2xl mt-3 font-semibold">On pace for {aud(projectedToday)} today</p>}
+            {cmpDelta != null && <p className={`text-base sm:text-lg mt-1 ${cmpDelta >= 0 ? "text-emerald-300" : "text-rose-300"}`}>{cmpDelta >= 0 ? "▲" : "▼"} {Math.abs(cmpDelta).toFixed(0)}% vs last {compare?.name?.replace(/Baby Expo/i, "").trim()}</p>}
+            <div className="grid grid-cols-3 gap-3 sm:gap-10 mt-6 sm:mt-8 w-full max-w-xl">
+              <div><p className="text-xl sm:text-4xl font-bold tabular-nums">{aud(booth)}</p><p className="text-white/50 uppercase text-[10px] sm:text-xs tracking-wider mt-1">Expo Stand</p></div>
+              <div><p className="text-xl sm:text-4xl font-bold tabular-nums">{aud(data?.onlineTotal ?? 0)}</p><p className="text-white/50 uppercase text-[10px] sm:text-xs tracking-wider mt-1">Online</p></div>
+              <div><p className="text-xl sm:text-4xl font-bold tabular-nums">{aud(aov)}</p><p className="text-white/50 uppercase text-[10px] sm:text-xs tracking-wider mt-1">Avg order</p></div>
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
+          <div className="grid md:grid-cols-2 gap-6 lg:gap-16">
             <div>
               <p className="uppercase tracking-[0.2em] text-white/40 text-xs mb-3">Top brands</p>
               {[...(data?.rows ?? [])].filter(r => r.brand_id !== -1).sort((a, b) => (b.boothRevenue + b.onlineRevenue) - (a.boothRevenue + a.onlineRevenue)).slice(0, 5).map(r => (
-                <div key={r.brand_id} className="flex items-center gap-3 mb-2.5">
-                  <span className="w-3 h-3 rounded-full shrink-0" style={{ background: colorOf(r.brand_id) }} />
-                  <span className="flex-1 text-lg truncate">{r.name}</span>
-                  <span className="text-lg font-bold tabular-nums">{aud(r.boothRevenue + r.onlineRevenue)}</span>
+                <div key={r.brand_id} className="flex items-center justify-between gap-3 mb-2.5">
+                  <span className="flex items-center gap-3 min-w-0"><span className="w-3 h-3 rounded-full shrink-0" style={{ background: colorOf(r.brand_id) }} /><span className="text-base sm:text-lg truncate">{r.name}</span></span>
+                  <span className="text-base sm:text-lg font-bold tabular-nums shrink-0">{aud(r.boothRevenue + r.onlineRevenue)}</span>
                 </div>
               ))}
             </div>
             <div>
               <p className="uppercase tracking-[0.2em] text-white/40 text-xs mb-3">Top sellers</p>
               {(data?.topProducts ?? []).slice(0, 5).map((p, i) => (
-                <div key={i} className="flex items-center gap-3 mb-2.5">
-                  <span className="text-white/40 w-4">{i + 1}</span>
-                  <span className="flex-1 text-lg truncate">{p.title}</span>
-                  <span className="text-lg font-bold tabular-nums">{aud(p.revenue)}</span>
+                <div key={i} className="flex items-center justify-between gap-3 mb-2.5">
+                  <span className="flex items-center gap-3 min-w-0"><span className="text-white/40 shrink-0 w-4">{i + 1}</span><span className="text-base sm:text-lg truncate">{p.title}</span></span>
+                  <span className="text-base sm:text-lg font-bold tabular-nums shrink-0">{aud(p.revenue)}</span>
                 </div>
               ))}
             </div>
