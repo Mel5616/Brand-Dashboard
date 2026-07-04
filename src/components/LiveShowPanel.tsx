@@ -533,14 +533,17 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Just sold</span>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {data!.recent!.slice(0, 10).map((r, i) => (
-              <div key={i} className="shrink-0 flex items-center gap-2 bg-white border border-gray-100 rounded-full pl-2 pr-3 py-1 shadow-sm">
-                <span className="w-2 h-2 rounded-full" style={{ background: r.brand_id === -1 ? "#6366f1" : colorOf(r.brand_id) }} />
-                <span className="text-xs font-semibold text-slate-700 whitespace-nowrap">{aud(r.amount)}</span>
-                <span className="text-[11px] text-gray-400 whitespace-nowrap">{r.label} · {relTime(r.at)}</span>
-              </div>
-            ))}
+          <style dangerouslySetInnerHTML={{ __html: "@keyframes ls-ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}" }} />
+          <div className="overflow-hidden">
+            <div className="flex gap-2 w-max hover:[animation-play-state:paused]" style={{ animation: `ls-ticker ${Math.max(18, (data!.recent!.slice(0, 10).length) * 4)}s linear infinite` }}>
+              {[...data!.recent!.slice(0, 10), ...data!.recent!.slice(0, 10)].map((r, i) => (
+                <div key={i} className="shrink-0 flex items-center gap-2 bg-white border border-gray-100 rounded-full pl-2 pr-3 py-1 shadow-sm">
+                  <span className="w-2 h-2 rounded-full" style={{ background: r.brand_id === -1 ? "#6366f1" : colorOf(r.brand_id) }} />
+                  <span className="text-xs font-semibold text-slate-700 whitespace-nowrap">{aud(r.amount)}</span>
+                  <span className="text-[11px] text-gray-400 whitespace-nowrap">{r.label} · {relTime(r.at)}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
