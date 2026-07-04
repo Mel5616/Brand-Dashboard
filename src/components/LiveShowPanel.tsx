@@ -63,7 +63,10 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const [daySel, setDaySel] = useState<string>("all"); // "all" or a show-day date
+  const [toast, setToast] = useState<string | null>(null); // milestone / target celebration
+  const [kiosk, setKiosk] = useState(false);               // fullscreen big-screen mode
   const compareFetched = useRef(false);
+  const lastTotalRef = useRef(0);
   const colorOf = (id: number) => brands.find(b => b.id === id)?.color ?? "#6366f1";
 
   useEffect(() => {
@@ -120,6 +123,37 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
 
   // Compare delta (booth vs booth)
   const cmpDelta = compare && compare.boothTotal > 0 ? ((booth - compare.boothTotal) / compare.boothTotal) * 100 : null;
+
+  // ── Live show-day extras: AOV, end-of-day projection, time left ──────────
+  const aov = (data?.showOrders ?? 0) > 0 ? data!.showTotal / data!.showOrders : 0;
+  const nowT = aestNow();
+  const todayRow = data?.byDay?.find(d => d.date === nowT.date);
+  const todayTotal = todayRow?.total ?? (data?.showTotal ?? 0);
+  const dayFrac = Math.min(1, Math.max(0, (nowT.hour - OPEN) / (CLOSE - OPEN)));
+  const projectedToday = live && !finished && dayFrac > 0.06 && dayFrac < 1 ? Math.round(todayTotal / dayFrac) : null;
+  const minsLeft = Math.max(0, Math.round((CLOSE - nowT.hour) * 60));
+  const timeLeft = !live ? null
+    : nowT.hour < OPEN ? `opens in ${Math.round((OPEN - nowT.hour) * 10) / 10}h`
+    : nowT.hour >= CLOSE ? "closed for today"
+    : `${Math.floor(minsLeft / 60)}h ${String(minsLeft % 60).padStart(2, "0")}m of selling left today`;
+
+  // Contribution split (POS+till vs QR vs online) for the donut.
+  const qrRow = (data?.rows ?? []).find(r => r.brand_id === -1);
+  const qrRev = qrRow?.boothRevenue ?? 0;
+  const posTillRev = Math.max(0, (data?.boothTotal ?? 0) - qrRev);
+  const onlineRev = data?.onlineTotal ?? 0;
+
+  // Milestone + target celebrations when the total ticks past a threshold.
+  useEffect(() => {
+    const t = data?.showTotal ?? 0;
+    const prev = lastTotalRef.current;
+    if (prev > 0 && t > prev) {
+      if (target && prev < target && t >= target) setToast(`🎯 Target smashed — ${aud(t)}!`);
+      else { const ms = [25000, 50000, 75000, 100000, 125000, 150000, 200000, 250000, 300000]; const c = ms.find(m => prev < m && t >= m); if (c) setToast(`🎉 ${aud(c)} passed!`); }
+    }
+    lastTotalRef.current = t;
+  }, [data?.showTotal, target]);
+  useEffect(() => { if (!toast) return; const id = setTimeout(() => setToast(null), 6000); return () => clearTimeout(id); }, [toast]);
 
   // Sales-by-hour range
   const byHour = data?.byHour ?? [];
@@ -290,6 +324,61 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
 
   return (
     <div className={`rounded-xl overflow-hidden border ${live ? "border-emerald-200" : "border-slate-200"}`}>
+      {/* Milestone / target celebration toast */}
+      {toast && (
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[70] px-6 py-3 rounded-2xl bg-white shadow-2xl border border-emerald-200 text-lg font-bold text-slate-800" style={{ animation: "bounce 0.6s" }}>
+          {toast}
+        </div>
+      )}
+
+      {/* Big-screen / kiosk mode — a stand-facing live display */}
+      {kiosk && (
+        <div className="fixed inset-0 z-[60] text-white flex flex-col p-8 lg:p-12 overflow-auto" style={{ background: "linear-gradient(135deg,#0f172a,#134e4a)" }}>
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-emerald-400 font-bold uppercase tracking-[0.25em] flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />Live · {data?.show?.name}</p>
+              {timeLeft && <p className="text-white/50 mt-1">{timeLeft} · updated {ago}s ago</p>}
+            </div>
+            <button onClick={() => setKiosk(false)} className="text-white/60 hover:text-white text-sm border border-white/20 rounded-lg px-4 py-2">Exit ✕</button>
+          </div>
+
+          <div className="flex-1 flex flex-col items-center justify-center py-6">
+            <p className="text-white/50 uppercase tracking-[0.3em] text-sm">Total Sales · {data?.showOrders ?? 0} orders</p>
+            <p className="font-black leading-none tabular-nums" style={{ fontSize: "clamp(4rem,16vw,11rem)" }}>{aud(data?.showTotal ?? 0)}</p>
+            {projectedToday != null && <p className="text-emerald-400 text-2xl mt-3 font-semibold">On pace for {aud(projectedToday)} today</p>}
+            {cmpDelta != null && <p className={`text-lg mt-1 ${cmpDelta >= 0 ? "text-emerald-300" : "text-rose-300"}`}>{cmpDelta >= 0 ? "▲" : "▼"} {Math.abs(cmpDelta).toFixed(0)}% vs last {compare?.name?.replace(/Baby Expo/i, "").trim()}</p>}
+            <div className="flex flex-wrap justify-center gap-x-12 gap-y-4 mt-8 text-center">
+              <div><p className="text-4xl font-bold tabular-nums">{aud(booth)}</p><p className="text-white/50 uppercase text-xs tracking-wider mt-1">Expo Stand</p></div>
+              <div><p className="text-4xl font-bold tabular-nums">{aud(data?.onlineTotal ?? 0)}</p><p className="text-white/50 uppercase text-xs tracking-wider mt-1">Online</p></div>
+              <div><p className="text-4xl font-bold tabular-nums">{aud(aov)}</p><p className="text-white/50 uppercase text-xs tracking-wider mt-1">Avg order</p></div>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
+            <div>
+              <p className="uppercase tracking-[0.2em] text-white/40 text-xs mb-3">Top brands</p>
+              {[...(data?.rows ?? [])].filter(r => r.brand_id !== -1).sort((a, b) => (b.boothRevenue + b.onlineRevenue) - (a.boothRevenue + a.onlineRevenue)).slice(0, 5).map(r => (
+                <div key={r.brand_id} className="flex items-center gap-3 mb-2.5">
+                  <span className="w-3 h-3 rounded-full shrink-0" style={{ background: colorOf(r.brand_id) }} />
+                  <span className="flex-1 text-lg truncate">{r.name}</span>
+                  <span className="text-lg font-bold tabular-nums">{aud(r.boothRevenue + r.onlineRevenue)}</span>
+                </div>
+              ))}
+            </div>
+            <div>
+              <p className="uppercase tracking-[0.2em] text-white/40 text-xs mb-3">Top sellers</p>
+              {(data?.topProducts ?? []).slice(0, 5).map((p, i) => (
+                <div key={i} className="flex items-center gap-3 mb-2.5">
+                  <span className="text-white/40 w-4">{i + 1}</span>
+                  <span className="flex-1 text-lg truncate">{p.title}</span>
+                  <span className="text-lg font-bold tabular-nums">{aud(p.revenue)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Banner — both figures */}
       <div className={`px-5 py-4 text-white bg-gradient-to-r ${live ? "from-emerald-500 to-teal-500" : "from-slate-600 to-slate-500"}`}>
         <div className="flex items-center justify-between flex-wrap gap-2">
@@ -298,6 +387,7 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
             <span className="text-[11px] font-bold uppercase tracking-[0.2em]">{live ? "Live · Show Day" : "Show Report"}</span>
           </div>
           <div className="flex items-center gap-3">
+            {live && <button onClick={() => setKiosk(true)} disabled={!data} className="text-[10px] font-semibold bg-white/15 hover:bg-white/25 disabled:opacity-40 rounded px-2 py-1 transition-colors">⛶ Big screen</button>}
             <button onClick={downloadPdf} disabled={!data} className="text-[10px] font-semibold bg-white/15 hover:bg-white/25 disabled:opacity-40 rounded px-2 py-1 transition-colors">⤓ PDF</button>
             <p className="text-[10px] text-white/70">
               {loading ? "loading…" : live ? `updated ${ago}s ago` : "snapshot from Shopify"}
@@ -333,6 +423,13 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
             vs {compare!.name}, {new Date(compare!.date_start + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" })}
             {compare!.samePoint ? " at the same point" : ""} — expo stand {aud(compare!.boothTotal)}
           </p>
+        )}
+        {!loading && (
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-1 mt-2.5 pt-2.5 border-t border-white/15 text-[11px] text-white/80">
+            <span><span className="font-bold text-white">{aud(aov)}</span> avg order</span>
+            {projectedToday != null && <span>On pace for <span className="font-bold text-white">{aud(projectedToday)}</span> today</span>}
+            {timeLeft && <span>⏱ {timeLeft}</span>}
+          </div>
         )}
       </div>
 
@@ -375,6 +472,38 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
           </button>
         )}
       </div>
+
+      {/* Contribution split — where the day's revenue came from */}
+      {!loading && (posTillRev + qrRev + onlineRev) > 0 && (() => {
+        const parts = [
+          { label: "POS + till", v: posTillRev, c: "#0e7490" },
+          { label: "QR scans", v: qrRev, c: "#6366f1" },
+          { label: "Online → " + stateAbbr(data?.show?.state), v: onlineRev, c: "#f59e0b" },
+        ].filter(p => p.v > 0);
+        const tot = parts.reduce((s, p) => s + p.v, 0) || 1;
+        let acc = 0;
+        const stops = parts.map(p => { const a = acc; acc += (p.v / tot) * 360; return `${p.c} ${a}deg ${acc}deg`; }).join(", ");
+        return (
+          <div className="bg-white border-b border-gray-100 px-5 py-4 flex items-center gap-5">
+            <div className="relative w-20 h-20 shrink-0 rounded-full" style={{ background: `conic-gradient(${stops})` }}>
+              <span className="absolute inset-[9px] rounded-full bg-white" />
+            </div>
+            <div className="flex-1">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-2">Contribution</p>
+              <div className="flex flex-wrap gap-x-5 gap-y-1.5">
+                {parts.map(p => (
+                  <div key={p.label} className="flex items-center gap-1.5 text-xs">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ background: p.c }} />
+                    <span className="text-slate-600">{p.label}</span>
+                    <span className="font-bold text-slate-800">{aud(p.v)}</span>
+                    <span className="text-gray-400">({Math.round((p.v / tot) * 100)}%)</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Per-brand running totals (booth, with online shown alongside) */}
       <div className="bg-white px-5 py-4">
