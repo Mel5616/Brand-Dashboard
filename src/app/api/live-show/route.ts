@@ -275,7 +275,7 @@ async function computeShow(
     const c = byDayMap.get(d);
     const booth = round(c?.booth ?? 0), online = round(c?.online ?? 0);
     const boothOrders = c?.boothOrders ?? 0, onlineOrders = c?.onlineOrders ?? 0;
-    return { date: d, booth, boothOrders, online, onlineOrders, total: booth + online, orders: boothOrders + onlineOrders };
+    return { date: d, booth, boothOrders, online, onlineOrders, total: booth, orders: boothOrders };
   }) : [];
 
   // Per-day hour buckets + top sellers, so the UI can filter by Saturday/Sunday
@@ -289,7 +289,9 @@ async function computeShow(
   const brandHours = detail ? Object.fromEntries([...brandByHour.entries()].map(([id, arr]) => [id, arr.map(round)])) : {};
   return {
     rows, boothTotal, boothOrders, onlineTotal, onlineOrders,
-    showTotal: boothTotal + onlineTotal, showOrders: boothOrders + onlineOrders,
+    // Tradeshow total = expo stand only. Online-to-state orders are normal ecommerce
+    // (regular customers), not booth sales, so they're kept out of the tradeshow total.
+    showTotal: boothTotal, showOrders: boothOrders,
     topProducts,
     byHour: detail ? byHour.map(round) : [],
     byDay, perDay, recent: recentSorted, scans, brandHours,

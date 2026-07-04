@@ -114,7 +114,7 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
     setEditing(false);
   };
 
-  const maxRev = Math.max(1, ...(data?.rows ?? []).map(r => r.boothRevenue + r.onlineRevenue));
+  const maxRev = Math.max(1, ...(data?.rows ?? []).map(r => r.boothRevenue));
 
   // Pacing
   const booth = data?.boothTotal ?? 0;
@@ -144,7 +144,6 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
   const qrRow = (data?.rows ?? []).find(r => r.brand_id === -1);
   const qrRev = qrRow?.boothRevenue ?? 0;
   const posTillRev = Math.max(0, (data?.boothTotal ?? 0) - qrRev);
-  const onlineRev = data?.onlineTotal ?? 0;
 
   // QR scan → sale conversion, and the brand surging in the current hour.
   const scans = data?.scans ?? 0;
@@ -227,7 +226,6 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
     const cmpChart = compare ? (() => {
       const metrics = [
         { name: "Expo Stand", a: booth, b: compare.boothTotal },
-        { name: "Online Expo Sales", a: data.onlineTotal, b: compare.onlineTotal },
       ];
       const prevLab = trunc(`${compare.name.replace(/Baby Expo/i, "").trim()} ${fmtDate(compare.date_start)}`, 20);
       const W = 540, colGap = 28, colW = (W - colGap) / 2, barH = 12, valW = 62, barMax = colW - valW;
@@ -262,16 +260,14 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
       return `<svg viewBox="0 0 ${W} ${y}" width="100%" style="max-width:540px">${body}</svg>`;
     })() : "";
 
-    const onlineCmpDelta = compare && compare.onlineTotal > 0 ? ((data.onlineTotal - compare.onlineTotal) / compare.onlineTotal) * 100 : null;
     const arrow = (d: number) => d >= 0 ? "▲" : "▼";
     const rowsHtml = [
       { label: "UPPAbaby", rows: data.rows.filter(r => r.brand_id === 5) },
       { label: "Coolkidz Brands", rows: data.rows.filter(r => r.brand_id !== 5) },
     ].filter(g => g.rows.length > 0).map(g => {
       const gBooth = g.rows.reduce((s, r) => s + r.boothRevenue, 0);
-      const gOnline = g.rows.reduce((s, r) => s + r.onlineRevenue, 0);
-      const header = `<tr><td style="font-weight:700;background:#f1f5f9">${esc(g.label)}</td><td class="r" style="font-weight:700;background:#f1f5f9">${aud(gBooth)}</td><td class="r" style="background:#f1f5f9"></td><td class="r" style="background:#f1f5f9">${gOnline > 0 ? "+" + aud(gOnline) : "—"}</td><td class="r" style="font-weight:700;background:#f1f5f9">${aud(gBooth + gOnline)}</td></tr>`;
-      const body = g.rows.map(r => `<tr><td style="padding-left:16px">${esc(r.name)}</td><td class="r">${aud(r.boothRevenue)}</td><td class="r">${r.boothOrders}</td><td class="r">${r.onlineRevenue > 0 ? "+" + aud(r.onlineRevenue) : "—"}</td><td class="r"><b>${aud(r.boothRevenue + r.onlineRevenue)}</b></td></tr>`).join("");
+      const header = `<tr><td style="font-weight:700;background:#f1f5f9">${esc(g.label)}</td><td class="r" style="font-weight:700;background:#f1f5f9">${aud(gBooth)}</td><td class="r" style="font-weight:700;background:#f1f5f9"></td></tr>`;
+      const body = g.rows.map(r => `<tr><td style="padding-left:16px">${esc(r.name)}</td><td class="r"><b>${aud(r.boothRevenue)}</b></td><td class="r">${r.boothOrders}</td></tr>`).join("");
       return header + body;
     }).join("");
     const pacingHtml = target ? `<p><b>Expo Stand target:</b> ${aud(target)} — ${pct.toFixed(0)}% achieved${finished ? (booth >= target ? " ✓ hit" : ` (${aud(target - booth)} short)`) : ""}</p>` : "";
@@ -282,7 +278,6 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
       <h2>vs ${esc(compare.name)} · ${fmtDate(compare.date_start)}${compare.samePoint ? " (same point in the show)" : ""}</h2>
       <table style="margin-bottom:10px"><thead><tr><th>Metric</th><th class="r">This show</th><th class="r">${esc(trunc(compare.name.replace(/Baby Expo/i, "").trim(), 16))}</th><th class="r">Change</th></tr></thead><tbody>
         <tr><td>Expo Stand</td><td class="r">${aud(booth)}</td><td class="r">${aud(compare.boothTotal)}</td><td class="r" style="color:${(cmpDelta ?? 0) >= 0 ? "#059669" : "#e11d48"}">${cmpDelta != null ? arrow(cmpDelta) + " " + Math.abs(cmpDelta).toFixed(0) + "%" : "—"}</td></tr>
-        <tr><td>Online Expo Sales</td><td class="r">${aud(data.onlineTotal)}</td><td class="r">${aud(compare.onlineTotal)}</td><td class="r" style="color:${(onlineCmpDelta ?? 0) >= 0 ? "#059669" : "#e11d48"}">${onlineCmpDelta != null ? arrow(onlineCmpDelta) + " " + Math.abs(onlineCmpDelta).toFixed(0) + "%" : "—"}</td></tr>
       </tbody></table>
       ${cmpChart}
       </div>` : "";
@@ -291,8 +286,8 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
     const byDaySection = pdfByDay.length > 1 ? `
       <div class="sec">
       <h2>Sales by day</h2>
-      <table><thead><tr><th>Day</th><th class="r">Expo Stand</th><th class="r">Online to state</th><th class="r">Total</th><th class="r">Orders</th></tr></thead><tbody>
-      ${pdfByDay.map(d => `<tr><td>${new Date(d.date + "T00:00:00").toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "short" })}</td><td class="r">${aud(d.booth)}</td><td class="r">${d.online > 0 ? "+" + aud(d.online) : "—"}</td><td class="r"><b>${aud(d.total)}</b></td><td class="r">${d.orders}</td></tr>`).join("")}
+      <table><thead><tr><th>Day</th><th class="r">Expo Stand</th><th class="r">Orders</th></tr></thead><tbody>
+      ${pdfByDay.map(d => `<tr><td>${new Date(d.date + "T00:00:00").toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "short" })}</td><td class="r"><b>${aud(d.booth)}</b></td><td class="r">${d.boothOrders}</td></tr>`).join("")}
       </tbody></table>
       </div>` : "";
 
@@ -329,9 +324,7 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
         <div class="head-r"><b>Expo Report</b><br>${new Date().toLocaleString("en-AU", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" })}</div>
       </div>
       <div class="cards">
-        <div class="card"><p class="big">${aud(booth)}</p><p class="lbl">Expo Stand · ${data.boothOrders} orders</p></div>
-        <div class="card"><p class="big">${aud(data.onlineTotal)}</p><p class="lbl">Online Expo Sales · ${data.onlineOrders} orders</p></div>
-        <div class="card accent"><p class="big">${aud(data.showTotal)}</p><p class="lbl">Total Sales · ${data.showOrders} orders</p></div>
+        <div class="card accent"><p class="big">${aud(booth)}</p><p class="lbl">Tradeshow Sales · ${data.boothOrders} orders</p></div>
       </div>
       ${(pacingHtml || peakHtml) ? `<p class="pace">${[pacingHtml, peakHtml].filter(Boolean).map(x => x.replace(/<\/?p>/g, "")).join(" &nbsp;·&nbsp; ")}</p>` : ""}
       ${cmpSection}
@@ -340,9 +333,9 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
       ${topChart ? `<div class="sec"><h2>Top 5 sellers · expo stand</h2>${topChart}</div>` : ""}
       <div class="sec">
       <h2>By Brand</h2>
-      <table><thead><tr><th>Brand</th><th class="r">Expo Stand</th><th class="r">Orders</th><th class="r">Online to state</th><th class="r">Total</th></tr></thead><tbody>${rowsHtml}</tbody></table>
+      <table><thead><tr><th>Brand</th><th class="r">Expo Stand</th><th class="r">Orders</th></tr></thead><tbody>${rowsHtml}</tbody></table>
       </div>
-      <p class="meta">Expo Stand = UPPAbaby POS + Coolkidz till + QR scans · Online = website orders shipping to ${esc(s.state ?? "the state")} during the show · all figures ex-GST · Brand Command.</p>
+      <p class="meta">Tradeshow Sales = UPPAbaby POS + Coolkidz till + QR scans. Online orders shipping to ${esc(s.state ?? "the state")} are excluded (regular ecommerce, not tradeshow) · all figures ex-GST · Brand Command.</p>
       <script>window.onload=function(){window.print();}</script>
       </body></html>`;
     const w = window.open("", "_blank");
@@ -376,8 +369,8 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
               {cmpDelta != null && <p className={`text-base ${cmpDelta >= 0 ? "text-emerald-300" : "text-rose-300"}`}>{cmpDelta >= 0 ? "▲" : "▼"} {Math.abs(cmpDelta).toFixed(0)}% vs last {compare?.name?.replace(/Baby Expo/i, "").trim()}</p>}
               {projectedToday != null && <p className="text-emerald-400 text-lg mt-1.5 font-semibold">On pace for {aud(projectedToday)} today</p>}
               <div className="grid grid-cols-3 gap-3 mt-10 max-w-md mx-auto">
-                <div><p className="text-2xl font-bold tabular-nums">{aud(booth)}</p><p className="text-white/50 uppercase text-[10px] tracking-wider mt-1">Expo</p></div>
-                <div><p className="text-2xl font-bold tabular-nums">{aud(data?.onlineTotal ?? 0)}</p><p className="text-white/50 uppercase text-[10px] tracking-wider mt-1">Online</p></div>
+                <div><p className="text-2xl font-bold tabular-nums">{aud(booth)}</p><p className="text-white/50 uppercase text-[10px] tracking-wider mt-1">Expo Stand</p></div>
+                <div><p className="text-2xl font-bold tabular-nums">{data?.showOrders ?? 0}</p><p className="text-white/50 uppercase text-[10px] tracking-wider mt-1">Orders</p></div>
                 <div><p className="text-2xl font-bold tabular-nums">{aud(aov)}</p><p className="text-white/50 uppercase text-[10px] tracking-wider mt-1">Avg order</p></div>
               </div>
             </div>
@@ -476,18 +469,8 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
                 </span>
               )}
             </div>
-            <p className="text-xs text-white/85">Expo Stand · {data?.boothOrders ?? 0} orders</p>
-            <p className="text-[10px] text-white/65">UPPAbaby POS + Coolkidz till + QR</p>
-          </div>
-          <div className="opacity-90">
-            <p className="text-2xl font-semibold tabular-nums">{loading ? "…" : aud(data?.onlineTotal ?? 0)}</p>
-            <p className="text-xs text-white/85">Online Expo Sales · {data?.onlineOrders ?? 0} orders</p>
-            <p className="text-[10px] text-white/65">website orders to {data?.show?.state ?? "state"} during the show</p>
-          </div>
-          <div className="border-l border-white/25 pl-6">
-            <p className="text-2xl font-bold tabular-nums">{loading ? "…" : aud(data?.showTotal ?? 0)}</p>
-            <p className="text-xs text-white/85">Total Sales · {data?.showOrders ?? 0} orders</p>
-            <p className="text-[10px] text-white/65">expo stand + online, for the day</p>
+            <p className="text-xs text-white/85">Tradeshow Sales · {data?.boothOrders ?? 0} orders</p>
+            <p className="text-[10px] text-white/65">UPPAbaby POS + Coolkidz till + QR (booth only)</p>
           </div>
         </div>
         {cmpDelta != null && (
@@ -548,11 +531,10 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
       </div>
 
       {/* Contribution split — where the day's revenue came from */}
-      {!loading && (posTillRev + qrRev + onlineRev) > 0 && (() => {
+      {!loading && (posTillRev + qrRev) > 0 && (() => {
         const parts = [
           { label: "POS + till", v: posTillRev, c: "#0e7490" },
           { label: "QR scans", v: qrRev, c: "#6366f1" },
-          { label: "Online → " + stateAbbr(data?.show?.state), v: onlineRev, c: "#f59e0b" },
         ].filter(p => p.v > 0);
         const tot = parts.reduce((s, p) => s + p.v, 0) || 1;
         let acc = 0;
@@ -612,9 +594,7 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
             <div className="flex items-center gap-3 pb-1">
               <span className="w-28 text-[10px] font-semibold uppercase tracking-wide text-gray-400">Brand</span>
               <span className="flex-1" />
-              <span className="w-16 text-right text-[10px] font-semibold uppercase tracking-wide text-gray-400">Expo Stand</span>
-              <span className="w-16 text-right text-[10px] font-semibold uppercase tracking-wide text-gray-400">Online {data?.show?.state ? `→ ${stateAbbr(data.show.state)}` : ""}</span>
-              <span className="w-16 text-right text-[10px] font-semibold uppercase tracking-wide text-gray-500">Total</span>
+              <span className="w-20 text-right text-[10px] font-semibold uppercase tracking-wide text-gray-500">Expo Stand</span>
             </div>
             {/* Group into UPPAbaby and the Coolkidz brands so both track side by side */}
             {[
@@ -622,15 +602,12 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
               { label: "Coolkidz Brands", rows: data.rows.filter(r => r.brand_id !== 5) },
             ].filter(g => g.rows.length > 0).map(g => {
               const gBooth = g.rows.reduce((s, r) => s + r.boothRevenue, 0);
-              const gOnline = g.rows.reduce((s, r) => s + r.onlineRevenue, 0);
               return (
                 <div key={g.label} className="space-y-2.5 pt-1">
                   {/* Group subtotal header */}
                   <div className="flex items-center gap-3 border-t border-gray-100 pt-2">
                     <span className="flex-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">{g.label}</span>
-                    <span className="w-16 text-right text-[11px] font-semibold text-slate-500 tabular-nums">{aud(gBooth)}</span>
-                    <span className="w-16 text-right text-[11px] text-gray-400 tabular-nums">{gOnline > 0 ? `+${aud(gOnline)}` : "—"}</span>
-                    <span className="w-16 text-right text-[11px] font-bold text-slate-700 tabular-nums">{aud(gBooth + gOnline)}</span>
+                    <span className="w-20 text-right text-[11px] font-bold text-slate-700 tabular-nums">{aud(gBooth)}</span>
                   </div>
                   {g.rows.map(r => (
                     <div key={r.brand_id} className="flex items-center gap-3">
@@ -639,14 +616,9 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
                         {r.name}
                       </span>
                       <div className="flex-1 h-5 bg-gray-50 rounded overflow-hidden flex">
-                        <div className="h-full transition-all duration-700" style={{ width: `${Math.max(2, (r.boothRevenue / maxRev) * 100)}%`, background: colorOf(r.brand_id) }} title="Booth" />
-                        {r.onlineRevenue > 0 && (
-                          <div className="h-full transition-all duration-700 opacity-40" style={{ width: `${(r.onlineRevenue / maxRev) * 100}%`, background: colorOf(r.brand_id) }} title="Online (to state)" />
-                        )}
+                        <div className="h-full transition-all duration-700" style={{ width: `${Math.max(2, (r.boothRevenue / maxRev) * 100)}%`, background: colorOf(r.brand_id) }} title="Expo stand" />
                       </div>
-                      <span className="text-xs font-semibold text-slate-600 w-16 text-right tabular-nums">{aud(r.boothRevenue)}</span>
-                      <span className="text-[11px] text-gray-400 w-16 text-right tabular-nums">{r.onlineRevenue > 0 ? `+${aud(r.onlineRevenue)}` : "—"}</span>
-                      <span className="text-xs font-bold text-slate-800 w-16 text-right tabular-nums">{aud(r.boothRevenue + r.onlineRevenue)}</span>
+                      <span className="text-xs font-bold text-slate-800 w-20 text-right tabular-nums">{aud(r.boothRevenue)}</span>
                     </div>
                   ))}
                 </div>
@@ -654,13 +626,13 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
             })}
           </div>
         )}
-        <p className="text-[10px] text-gray-400 mt-3">Solid = expo stand (POS + till + QR) · faded = online orders shipping to {data?.show?.state ?? "the state"} during the show.</p>
+        <p className="text-[10px] text-gray-400 mt-3">Expo stand = POS + Coolkidz till + QR. Online orders shipping to {data?.show?.state ?? "the state"} are excluded (they’re regular ecommerce, not tradeshow sales).</p>
       </div>
 
       {/* Sales by day (multi-day shows) */}
       {(data?.byDay?.length ?? 0) > 1 && (
         <div className="bg-white border-t border-gray-100 px-5 py-4">
-          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-3">Sales by Day · stand + online</h3>
+          <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-3">Sales by Day · expo stand</h3>
           <div className="flex gap-3">
             {data!.byDay!.map(d => {
               const dt = new Date(d.date + "T00:00:00");
@@ -671,9 +643,8 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
                     {dt.toLocaleDateString("en-AU", { weekday: "long" })} <span className="text-gray-400 font-normal">{dt.toLocaleDateString("en-AU", { day: "numeric", month: "short" })}</span>
                     {isToday && <span className="ml-1 text-[9px] font-bold text-emerald-600 uppercase">· today</span>}
                   </p>
-                  <p className="text-lg font-bold text-slate-800 tabular-nums mt-0.5">{aud(d.total)}</p>
-                  <p className="text-[10px] text-gray-400">{d.orders} orders · total</p>
-                  <p className="text-[10px] text-gray-400 mt-1">Stand {aud(d.booth)} · Online {aud(d.online)}</p>
+                  <p className="text-lg font-bold text-slate-800 tabular-nums mt-0.5">{aud(d.booth)}</p>
+                  <p className="text-[10px] text-gray-400">{d.boothOrders} orders · expo stand</p>
                 </div>
               );
             })}
