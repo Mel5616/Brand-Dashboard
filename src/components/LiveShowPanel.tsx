@@ -66,7 +66,8 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
   const [daySel, setDaySel] = useState<string>("all"); // "all" or a show-day date
   const [toast, setToast] = useState<string | null>(null); // milestone / target celebration
   const [kiosk, setKiosk] = useState(false);               // fullscreen big-screen mode
-  const [confetti, setConfetti] = useState(false);         // celebratory burst on big-screen open
+  const [confetti, setConfetti] = useState(false);         // celebratory burst
+  const [confettiKey, setConfettiKey] = useState(0);       // bump to re-fire the burst
   const compareFetched = useRef(false);
   const lastTotalRef = useRef(0);
   const colorOf = (id: number) => brands.find(b => b.id === id)?.color ?? "#6366f1";
@@ -170,14 +171,16 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
     const t = data?.showTotal ?? 0;
     const prev = lastTotalRef.current;
     if (prev > 0 && t > prev) {
-      if (target && prev < target && t >= target) setToast(`🎯 Target smashed — ${aud(t)}!`);
-      else { const ms = [25000, 50000, 75000, 100000, 125000, 150000, 200000, 250000, 300000]; const c = ms.find(m => prev < m && t >= m); if (c) setToast(`🎉 ${aud(c)} passed!`); }
+      if (target && prev < target && t >= target) { setToast(`🎯 Target smashed — ${aud(t)}!`); setConfettiKey(k => k + 1); setConfetti(true); }
+      else { const ms = [25000, 50000, 75000, 100000, 125000, 150000, 200000, 250000, 300000]; const c = ms.find(m => prev < m && t >= m); if (c) { setToast(`🎉 ${aud(c)} passed!`); setConfettiKey(k => k + 1); setConfetti(true); } }
     }
     lastTotalRef.current = t;
   }, [data?.showTotal, target]);
   useEffect(() => { if (!toast) return; const id = setTimeout(() => setToast(null), 6000); return () => clearTimeout(id); }, [toast]);
   // Confetti burst when the big screen opens on a live show.
-  useEffect(() => { if (kiosk && live) { setConfetti(true); const t = setTimeout(() => setConfetti(false), 3500); return () => clearTimeout(t); } }, [kiosk, live]);
+  useEffect(() => { if (kiosk && live) { setConfettiKey(k => k + 1); setConfetti(true); } }, [kiosk, live]);
+  // Auto-clear the burst ~3.5s after each firing (confettiKey bumps re-arm the timer).
+  useEffect(() => { if (!confetti) return; const t = setTimeout(() => setConfetti(false), 3500); return () => clearTimeout(t); }, [confetti, confettiKey]);
 
   // Sales-by-hour range
   const byHour = data?.byHour ?? [];
@@ -355,8 +358,8 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
         </div>
       )}
 
-      {/* Confetti burst on big-screen open */}
-      {confetti && <Confetti />}
+      {/* Confetti burst — big-screen open, target hit, milestone passed */}
+      {confetti && <Confetti key={confettiKey} />}
 
       {/* Big-screen / kiosk mode — phone-first, auto-rotating pages */}
       {kiosk && (() => {
