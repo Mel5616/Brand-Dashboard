@@ -547,10 +547,10 @@ def fetch_state_orders(domain, token, state, date_start, date_end):
         for e in data.get('edges', []):
             node = e['node']
             is_pos    = (node.get('sourceName') or '').lower() == 'pos'
-            province  = (node.get('shippingAddress') or {}).get('province', '')
-            # POS orders are in-person booth sales — always count during show dates.
-            # Web orders count only if shipping to the show's state (online proxy).
-            if not is_pos and province.lower() != state.lower():
+            # Only in-person booth (POS) sales count as tradeshow revenue. Online
+            # orders shipping to the show's state are regular ecommerce customers,
+            # not booth attendees, so they're excluded (matches the live panel).
+            if not is_pos:
                 continue
             gross = float(node['totalPriceSet']['shopMoney']['amount'])
             tax   = float(node.get('totalTaxSet', {}).get('shopMoney', {}).get('amount', 0))
@@ -634,10 +634,11 @@ def sync_tradeshows(config, all_brands):
     if tb_rows:
         sb_upsert('tradeshow_brands', tb_rows, on_conflict='tradeshow_id,brand_id')
 
-    # Each brand's tradeshow total = its OWN Shopify store's orders shipping to
-    # the show's state during the show dates  +  its share of the Coolkidz booth
-    # till (Coolkidz website orders on the show dates, split per brand by
-    # vendor / Brand_<Name> tag, no shipping province needed).
+    # Each brand's tradeshow total = its OWN Shopify store's in-person POS (booth)
+    # orders during the show dates  +  its share of the Coolkidz booth till
+    # (Coolkidz website orders on the show dates, split per brand by
+    # vendor / Brand_<Name> tag). Online orders shipping to the show's state are
+    # regular ecommerce, not booth sales, so they're excluded (matches live panel).
     coolkidz   = next((b for b in all_brands if b['name'] == 'Coolkidz Australia'), None)
     brand_by_id = {b['id']: b for b in all_brands}
 
@@ -661,8 +662,8 @@ def sync_tradeshows(config, all_brands):
             br = brand_by_id.get(bid)
             ck_r, ck_o = ck_show.get(bid, (0, 0))
             own_r = own_o = 0
-            # Brand's own store: online orders shipping to the show's state during
-            # the dates (skip Coolkidz itself — that's the booth till above).
+            # Brand's own store: in-person POS (booth) orders on the show dates
+            # only (skip Coolkidz itself — that's the booth till above).
             if br and br['name'] != 'Coolkidz Australia' and br.get('token') and br.get('domain'):
                 try:
                     own_r, own_o = fetch_state_orders(br['domain'], br['token'], state, date_start, date_end)
