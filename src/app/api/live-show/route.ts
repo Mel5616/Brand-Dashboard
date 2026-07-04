@@ -122,6 +122,15 @@ async function computeShow(
   const productMapByDay = new Map<string, Map<string, Prod>>();
   const byHour = new Array(24).fill(0);
   const byHourByDay = new Map<string, number[]>();
+  // Recent orders for the "just sold" ticker (order-level, newest first).
+  const recent: { at: string; label: string; brand_id: number; amount: number; kind: string }[] = [];
+  // Per-brand revenue by hour, so the client can surface "top mover this hour".
+  const brandByHour = new Map<number, number[]>();
+  const addBrandHour = (id: number, iso: string | undefined, amt: number) => {
+    if (!iso) return; const h = Math.floor(melHour(iso)) % 24;
+    let arr = brandByHour.get(id); if (!arr) { arr = new Array(24).fill(0); brandByHour.set(id, arr); }
+    arr[h] += amt;
+  };
   const addProduct = (sku: string | null | undefined, title: string, brandId: number, exRev: number, qty: number, iso?: string) => {
     const key = sku && sku.trim() ? `sku:${sku.trim()}` : `t:${title}`;
     const bump = (m: Map<string, Prod>) => { const cur = m.get(key) ?? { title, brand_id: brandId, revenue: 0, qty: 0 }; cur.revenue += exRev; cur.qty += qty; m.set(key, cur); };
@@ -158,19 +167,22 @@ async function computeShow(
       const seen = new Set<number>();
       const createdAt = e.node.createdAt;
       if (past(createdAt) || offShow(createdAt)) continue;
-      let orderRev = 0;
+      let orderRev = 0, firstBid = -1;
       for (const li of e.node.lineItems.edges) {
         const it = li.node; const p = it.product || {};
         const bid = coolkidzBrandId(it.title || "", p.vendor || "", p.tags || []);
         if (bid == null) continue;
+        if (firstBid < 0) firstBid = bid;
         const amt = Math.round((Number(it.originalTotalSet?.shopMoney?.amount ?? 0) / 1.1) * 100) / 100;
         orderRev += amt;
         const cur = ckByBrand.get(bid) ?? { rev: 0, orders: 0 };
         cur.rev += amt;
         if (!seen.has(bid)) { cur.orders += 1; seen.add(bid); }
         ckByBrand.set(bid, cur);
+        addBrandHour(bid, createdAt, amt);
         if (detail) { addProduct(it.sku, it.title || "Unknown", bid, amt, Number(it.quantity ?? 1), createdAt); bucket(createdAt, amt); }
       }
+      if (orderRev > 0) recent.push({ at: createdAt, label: "Coolkidz till", brand_id: firstBid, amount: round(orderRev), kind: "stand" });
       if (detail && orderRev > 0) addDayBooth(createdAt, orderRev, 1);
     }
   }
@@ -191,6 +203,8 @@ async function computeShow(
         if ((n.sourceName || "").toLowerCase() === "pos") {
           if (past(n.createdAt) || offShow(n.createdAt)) continue;
           posRev += rev; posOrders += 1;
+          recent.push({ at: n.createdAt, label: name, brand_id: id, amount: round(rev), kind: "stand" });
+          addBrandHour(id, n.createdAt, rev);
           if (detail) {
             bucket(n.createdAt, rev);
             addDayBooth(n.createdAt, rev, 1);
@@ -206,6 +220,8 @@ async function computeShow(
           const od = aestDate(n.createdAt);
           if (od >= show.date_start && od <= show.date_end) {
             webRev += rev; webOrders += 1;
+            recent.push({ at: n.createdAt, label: name + " · online", brand_id: id, amount: round(rev), kind: "online" });
+            addBrandHour(id, n.createdAt, rev);
             if (detail) addDayOnline(n.createdAt, rev, 1);
           }
         }
@@ -221,15 +237,20 @@ async function computeShow(
 
   const rows = [...results];
 
-  // QR-scanned booth orders (separate booth_events Supabase) within the window
+  // QR-scanned booth orders + scan count (separate booth_events Supabase) within the window
+  let scans = 0;
   if (boothCreds.url && boothCreds.key) {
     try {
-      const qr = await fetch(
-        `${boothCreds.url}/rest/v1/booth_events?event_type=eq.order&created_at=gte.${since}T00:00:00Z&created_at=lte.${until}T23:59:59Z&select=value,created_at`,
-        { headers: { apikey: boothCreds.key, Authorization: `Bearer ${boothCreds.key}` }, cache: "no-store" },
-      ).then(r => r.json());
+      const [qr, scanRows] = await Promise.all([
+        fetch(`${boothCreds.url}/rest/v1/booth_events?event_type=eq.order&created_at=gte.${since}T00:00:00Z&created_at=lte.${until}T23:59:59Z&select=value,created_at`,
+          { headers: { apikey: boothCreds.key, Authorization: `Bearer ${boothCreds.key}` }, cache: "no-store" }).then(r => r.json()),
+        fetch(`${boothCreds.url}/rest/v1/booth_events?event_type=eq.scan&created_at=gte.${since}T00:00:00Z&created_at=lte.${until}T23:59:59Z&select=created_at`,
+          { headers: { apikey: boothCreds.key, Authorization: `Bearer ${boothCreds.key}` }, cache: "no-store" }).then(r => r.json()),
+      ]);
       const qrRows = (qr || []).filter((e: any) => !past(e.created_at) && !offShow(e.created_at));
+      scans = ((scanRows || []) as any[]).filter((e: any) => !past(e.created_at) && !offShow(e.created_at)).length;
       const qrRev = qrRows.reduce((s: number, e: any) => s + Number(e.value ?? 0), 0);
+      for (const e of qrRows) { recent.push({ at: e.created_at, label: "QR expo stand", brand_id: -1, amount: round(Number(e.value ?? 0)), kind: "qr" }); addBrandHour(-1, e.created_at, Number(e.value ?? 0)); }
       if (detail) for (const e of qrRows) { bucket(e.created_at, Number(e.value ?? 0)); addDayBooth(e.created_at, Number(e.value ?? 0), 1); }
       if (qrRev > 0) rows.push({ brand_id: -1, name: "QR Expo Stand (scanned)", boothRevenue: round(qrRev), boothOrders: qrRows.length, onlineRevenue: 0, onlineOrders: 0 });
     } catch { /* booth project unavailable — skip QR */ }
@@ -264,12 +285,14 @@ async function computeShow(
     topProducts: [...(productMapByDay.get(d)?.values() ?? [])].map(p => ({ ...p, revenue: round(p.revenue) })).sort((a, b) => b.revenue - a.revenue).slice(0, 8),
   })) : [];
 
+  const recentSorted = detail ? [...recent].sort((a, b) => (b.at || "").localeCompare(a.at || "")).slice(0, 12) : [];
+  const brandHours = detail ? Object.fromEntries([...brandByHour.entries()].map(([id, arr]) => [id, arr.map(round)])) : {};
   return {
     rows, boothTotal, boothOrders, onlineTotal, onlineOrders,
     showTotal: boothTotal + onlineTotal, showOrders: boothOrders + onlineOrders,
     topProducts,
     byHour: detail ? byHour.map(round) : [],
-    byDay, perDay,
+    byDay, perDay, recent: recentSorted, scans, brandHours,
   };
 }
 

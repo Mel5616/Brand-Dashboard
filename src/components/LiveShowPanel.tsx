@@ -9,6 +9,7 @@ type Compare = { name: string; date_start: string; boothTotal: number; showTotal
 type LiveData = {
   live: boolean; boothTotal: number; boothOrders: number; showTotal: number; showOrders: number; onlineTotal: number; onlineOrders: number;
   rows: Row[]; updatedAt: string; topProducts?: Prod[]; byHour?: number[]; byDay?: { date: string; booth: number; boothOrders: number; online: number; onlineOrders: number; total: number; orders: number }[]; perDay?: { date: string; byHour: number[]; topProducts: Prod[] }[]; compare?: Compare | null; target?: number | null;
+  recent?: { at: string; label: string; brand_id: number; amount: number; kind: string }[]; scans?: number; brandHours?: Record<string, number[]>;
   show?: { name?: string; state?: string; date_start?: string; date_end?: string };
 };
 
@@ -142,6 +143,26 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
   const qrRev = qrRow?.boothRevenue ?? 0;
   const posTillRev = Math.max(0, (data?.boothTotal ?? 0) - qrRev);
   const onlineRev = data?.onlineTotal ?? 0;
+
+  // QR scan → sale conversion, and the brand surging in the current hour.
+  const scans = data?.scans ?? 0;
+  const qrOrders = qrRow?.boothOrders ?? 0;
+  const scanConv = scans > 0 ? (qrOrders / scans) * 100 : null;
+  const brandName = (id: number) => id === -1 ? "QR stand" : (brands.find(b => b.id === id)?.name ?? (data?.rows ?? []).find(r => r.brand_id === id)?.name ?? `Brand ${id}`);
+  const topMover = (() => {
+    const h = Math.floor(nowT.hour);
+    let best: { id: number; amt: number } | null = null;
+    for (const [idStr, arr] of Object.entries(data?.brandHours ?? {})) {
+      const amt = (arr as number[])[h] || 0;
+      if (amt > 0 && (!best || amt > best.amt)) best = { id: Number(idStr), amt };
+    }
+    return best;
+  })();
+  // "N min ago" for the just-sold ticker.
+  const relTime = (iso: string) => {
+    const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+    return mins < 1 ? "just now" : mins < 60 ? `${mins}m ago` : `${Math.floor(mins / 60)}h ${mins % 60}m ago`;
+  };
 
   // Milestone + target celebrations when the total ticks past a threshold.
   useEffect(() => {
@@ -428,6 +449,8 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
           <div className="flex flex-wrap items-center gap-x-6 gap-y-1 mt-2.5 pt-2.5 border-t border-white/15 text-[11px] text-white/80">
             <span><span className="font-bold text-white">{aud(aov)}</span> avg order</span>
             {projectedToday != null && <span>On pace for <span className="font-bold text-white">{aud(projectedToday)}</span> today</span>}
+            {scanConv != null && <span>{scans} scans · <span className="font-bold text-white">{scanConv.toFixed(0)}%</span> → sale</span>}
+            {topMover && <span>🔥 <span className="font-bold text-white">{brandName(topMover.id)}</span> hot this hour</span>}
             {timeLeft && <span>⏱ {timeLeft}</span>}
           </div>
         )}
@@ -504,6 +527,25 @@ export function LiveShowPanel({ showId, brands, live = true }: { showId: string;
           </div>
         );
       })()}
+
+      {/* Just sold — live order ticker */}
+      {live && (data?.recent?.length ?? 0) > 0 && (
+        <div className="bg-slate-50 border-b border-gray-100 px-5 py-2.5">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Just sold</span>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {data!.recent!.slice(0, 10).map((r, i) => (
+              <div key={i} className="shrink-0 flex items-center gap-2 bg-white border border-gray-100 rounded-full pl-2 pr-3 py-1 shadow-sm">
+                <span className="w-2 h-2 rounded-full" style={{ background: r.brand_id === -1 ? "#6366f1" : colorOf(r.brand_id) }} />
+                <span className="text-xs font-semibold text-slate-700 whitespace-nowrap">{aud(r.amount)}</span>
+                <span className="text-[11px] text-gray-400 whitespace-nowrap">{r.label} · {relTime(r.at)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Per-brand running totals (booth, with online shown alongside) */}
       <div className="bg-white px-5 py-4">
