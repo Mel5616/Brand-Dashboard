@@ -81,6 +81,20 @@ export async function PATCH(req: Request) {
     await logActivity({ userId: access.user!.id, email: access.user!.email, action: "update", target: "users", detail: { reset_password_for: id } });
   }
 
+  // Send password reset: email the user a link to set a new password themselves.
+  if (b.send_reset) {
+    const { data: got } = await admin.auth.admin.getUserById(id);
+    const email = got?.user?.email;
+    if (!email) return NextResponse.json({ ok: false, error: "User not found." }, { status: 400 });
+    const site = process.env.NEXT_PUBLIC_SITE_URL || "https://marketing.coolkidz.com.au";
+    const { createClient } = await import("@supabase/supabase-js");
+    const anon = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+    const { error } = await anon.auth.resetPasswordForEmail(email, { redirectTo: `${site}/auth/callback?next=/auth/set-password` });
+    if (error) return NextResponse.json({ ok: false, error: error.message || "Couldn't send the reset email (is email set up in Supabase?)." }, { status: 400 });
+    await logActivity({ userId: access.user!.id, email: access.user!.email, action: "update", target: "users", detail: { sent_password_reset_to: email } });
+    return NextResponse.json({ ok: true, message: `Password reset link sent to ${email}.` });
+  }
+
   // Reset 2FA: remove the user's enrolled authenticator factors so they re-enrol.
   if (b.reset_mfa) {
     try {

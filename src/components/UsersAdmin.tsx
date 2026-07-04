@@ -156,7 +156,7 @@ function EditUser({ u, sections, adminOnly, onChanged }: { u: Row; sections: Tab
     const r = await fetch("/api/users", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: u.id, ...body }) }).then(x => x.json()).catch(() => ({ ok: false }));
     setBusy(false);
     if (!r.ok) { setMsg(r.error || "Failed."); return; }
-    setMsg("Saved."); onChanged();
+    setMsg(r.message || "Saved."); onChanged();
   }
   async function remove() {
     if (!confirm(`Delete ${u.email}? This removes their account.`)) return;
@@ -196,6 +196,10 @@ function EditUser({ u, sections, adminOnly, onChanged }: { u: Row; sections: Tab
         <div>
           <label className="text-xs font-semibold text-slate-400 uppercase">Reset password</label>
           <div className="flex gap-2 mt-1">
+            <button onClick={() => { if (confirm(`Email ${u.email} a link to set a new password?`)) call({ send_reset: true }); }} disabled={busy} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 rounded-lg px-3 py-2">Email reset link</button>
+          </div>
+          <div className="flex gap-2 mt-2 items-center">
+            <span className="text-[11px] text-gray-400">or set one directly:</span>
             <input type="text" value={pw} onChange={e => setPw(e.target.value)} placeholder="New password (8+ chars)" className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2" />
             <button onClick={() => { if (pw.length >= 8) { call({ password: pw }); setPw(""); } else setMsg("Password must be at least 8 characters."); }} disabled={busy || pw.length < 8} className="text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 rounded-lg px-3 py-2">Set</button>
           </div>
