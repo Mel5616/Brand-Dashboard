@@ -118,24 +118,30 @@ export function ProductInfo({ brandNames = [], admin = false }: { brandNames?: s
 // product per A4 .page; we isolate each page (with the shared <style>) and render
 // it scaled into an iframe, with the product name (.pname) underneath.
 function SheetThumbs({ sheet }: { sheet: Sheet }) {
-  const [pages, setPages] = useState<{ name: string; html: string }[] | null>(null);
+  const [pages, setPages] = useState<{ name: string; html: string; url: string }[] | null>(null);
   const [err, setErr] = useState(false);
   useEffect(() => {
     let alive = true;
+    let urls: string[] = [];
     if (!sheet.html_url) { setPages([]); return; }
     fetch(`/api/fact-sheets/view?id=${sheet.id}`).then(r => r.text()).then(txt => {
       if (!alive) return;
       try {
         const doc = new DOMParser().parseFromString(txt, "text/html");
         const styles = Array.from(doc.querySelectorAll("style")).map(s => s.outerHTML).join("");
-        const ps = Array.from(doc.querySelectorAll(".page")).map(p => ({
-          name: (p.querySelector(".pname")?.textContent || "").trim(),
-          html: `<!doctype html><html><head><meta charset="utf-8">${styles}</head><body style="margin:0">${(p as HTMLElement).outerHTML}</body></html>`,
-        }));
+        const ps = Array.from(doc.querySelectorAll(".page")).map(p => {
+          // Each page becomes its own standalone, openable document (blob URL) so the
+          // thumbnail links to that single product's sheet, not the whole deck.
+          const name = (p.querySelector(".pname")?.textContent || "").trim();
+          const html = `<!doctype html><html lang="en-AU"><head><meta charset="utf-8"><title>${name || "Fact sheet"}</title>${styles}</head><body style="margin:0">${(p as HTMLElement).outerHTML}</body></html>`;
+          const url = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+          urls.push(url);
+          return { name, html, url };
+        });
         setPages(ps);
       } catch { setErr(true); }
     }).catch(() => { if (alive) setErr(true); });
-    return () => { alive = false; };
+    return () => { alive = false; urls.forEach(u => URL.revokeObjectURL(u)); };
   }, [sheet.id, sheet.html_url]);
 
   if (sheet.html_url && pages === null && !err) return <p className="text-xs text-gray-300 py-2">Loading previews…</p>;
@@ -146,7 +152,7 @@ function SheetThumbs({ sheet }: { sheet: Sheet }) {
     <div className="flex flex-wrap gap-4">
       {pages!.map((pg, i) => (
         <div key={i} className="w-[180px]">
-          <a href={`/api/fact-sheets/view?id=${sheet.id}`} target="_blank" rel="noopener noreferrer" className="block relative bg-white border border-gray-100 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow" style={{ width: 180, height: 255 }}>
+          <a href={pg.url} target="_blank" rel="noopener noreferrer" className="block relative bg-white border border-gray-100 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow" style={{ width: 180, height: 255 }}>
             <iframe srcDoc={pg.html} title={pg.name || `Page ${i + 1}`} loading="lazy" scrolling="no" tabIndex={-1} aria-hidden
               className="absolute top-0 left-0 border-0 pointer-events-none" style={{ width: 794, height: 1123, transform: "scale(0.2267)", transformOrigin: "top left" }} />
           </a>
