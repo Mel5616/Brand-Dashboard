@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { SalesChart } from "./SalesChart";
 import { GoogleAdsChart } from "./GoogleAdsChart";
 import { MetaAdsChart } from "./MetaAdsChart";
+import { PinterestAdsChart } from "./PinterestAdsChart";
 import { AdsDailyRange } from "./AdsDailyRange";
 import { EmailChart } from "./EmailChart";
 import { EmailBrandDetail } from "./EmailBrandDetail";
@@ -50,7 +51,7 @@ import { ShopifyInsights } from "./ShopifyInsights";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "uppababy" | "sales" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "budget" | "calendar" | "content" | "influencer" | "gifting" | "pa-budget" | "pa-tracker" | "team";
+type TabId = "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "uppababy" | "sales" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "budget" | "calendar" | "content" | "influencer" | "gifting" | "pa-budget" | "pa-tracker" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -112,6 +113,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
     id: "meta-ads", label: "Meta Ads",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905a3.61 3.61 0 01-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" /></svg>,
+  },
+  {
+    id: "pinterest-ads", label: "Pinterest Ads",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19c-.5 1.5-1 3-1 3m1-3c.7-2.5 1.2-4.5 1.5-6M12 3a7 7 0 00-3 13.3M10.5 13c.4.6 1.1 1 2 1 2 0 3.5-2 3.5-4.5S14.5 5 12 5" /></svg>,
   },
   {
     id: "email", label: "Email",
@@ -194,7 +199,7 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows"] },
   { label: "Plan", ids: ["show-deals", "campaign-calendar", "promotions", "calendar", "content", "events", "tasks", "design-requests"] },
   { label: "Operations", ids: ["budget", "new-products", "product-info"] },
-  { label: "Paid", ids: ["google-ads", "meta-ads"] },
+  { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads"] },
   { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting", "pa-budget", "pa-tracker"] },
 ];
 
@@ -258,6 +263,7 @@ interface Props {
   weekLabels: any[];
   googleAds: any[];
   metaAds: any[];
+  pinterestAds: any[];
   metaAdsPlatform: any[];
   instagramOrganic: any[];
   targets: any[];
@@ -292,7 +298,7 @@ interface Props {
 export function DashboardTabs({
   brands, summaries, monthly, weekly, brandDaily, products,
   tradeshows, tradeshowBrands, tradeshowSales,
-  weekLabels, googleAds, metaAds, metaAdsPlatform,
+  weekLabels, googleAds, metaAds, pinterestAds, metaAdsPlatform,
   instagramOrganic, targets, klaviyo, ga4,
   marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, boothFunnel, kpis,
   gscMetrics, gscQueries, gscInsights, semrushMetrics, semrushCompetitors,
@@ -384,6 +390,7 @@ export function DashboardTabs({
   monthly          = inFy(monthly);
   googleAds        = inFy(googleAds);
   metaAds          = inFy(metaAds);
+  pinterestAds     = inFy(pinterestAds);
   metaAdsPlatform  = inFy(metaAdsPlatform);
   instagramOrganic = inFy(instagramOrganic);
   targets          = inFy(targets);
@@ -405,6 +412,7 @@ export function DashboardTabs({
   const filteredProducts = brandFilter === "all" ? products  : products.filter((p: any) => p.brand_id === brandFilter);
   const filteredAds      = brandFilter === "all" ? googleAds : googleAds.filter((d: any) => d.brand_id === brandFilter);
   const filteredMeta     = brandFilter === "all" ? metaAds   : metaAds.filter((d: any) => d.brand_id === brandFilter);
+  const filteredPinterest = brandFilter === "all" ? pinterestAds : pinterestAds.filter((d: any) => d.brand_id === brandFilter);
   const filteredKlaviyo  = brandFilter === "all" ? klaviyo   : klaviyo.filter((d: any) => d.brand_id === brandFilter);
 
 
@@ -1491,6 +1499,26 @@ export function DashboardTabs({
               {brandFilter !== "all" && (
                 <MetaPlatformBreakdown rows={metaAdsPlatform} brandId={brandFilter as number} fyLabel={fyLabel} />
               )}
+            </>
+          )}
+
+          {/* ── Pinterest Ads ── */}
+          {active === "pinterest-ads" && (
+            <>
+              <SectionBar title="Pinterest Ads" />
+              <div className="flex items-center gap-2 mb-2">
+                <select
+                  value={brandFilter === "all" ? "all" : String(brandFilter)}
+                  onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
+                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                >
+                  <option value="all">All Brands</option>
+                  {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
+                </select>
+              </div>
+              <PinterestAdsChart key={fy} brands={filteredBrands} data={filteredPinterest} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} wholeYear={wholeYear} />
+
+              <AdsDailyRange platform="pinterest" brandFilter={brandFilter} accent="#E60023" />
             </>
           )}
 

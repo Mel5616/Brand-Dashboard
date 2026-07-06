@@ -25,13 +25,17 @@ const META_METRICS: Metric[] = [
   { id: "purchases", label: "Purchases", kind: "count" },
   { id: "reach", label: "Reach", kind: "count" },
 ];
+const PINTEREST_METRICS: Metric[] = [
+  ...GOOGLE_METRICS,
+  { id: "purchases", label: "Conversions", kind: "count" },
+];
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 const compact = (n: number) => n >= 1_000_000 ? (n / 1e6).toFixed(1) + "M" : n >= 1_000 ? (n / 1e3).toFixed(1) + "K" : String(Math.round(n));
 
 export function AdsDailyRange({ platform, brandFilter, accent }:
-  { platform: "google" | "meta"; brandFilter: "all" | number; accent: string }) {
-  const metrics = platform === "meta" ? META_METRICS : GOOGLE_METRICS;
+  { platform: "google" | "meta" | "pinterest"; brandFilter: "all" | number; accent: string }) {
+  const metrics = platform === "meta" ? META_METRICS : platform === "pinterest" ? PINTEREST_METRICS : GOOGLE_METRICS;
   const today = useMemo(() => new Date(), []);
   const [from, setFrom] = useState(() => iso(new Date(today.getTime() - 29 * 864e5)));
   const [to, setTo] = useState(() => iso(today));
@@ -89,6 +93,8 @@ export function AdsDailyRange({ platform, brandFilter, accent }:
     ...(platform === "meta" ? [
       { label: "Purchases", value: tot.purchases.toLocaleString("en-AU") },
       { label: "Reach", value: compact(tot.reach) },
+    ] : platform === "pinterest" ? [
+      { label: "Conversions", value: tot.purchases.toLocaleString("en-AU") },
     ] : []),
   ];
 
@@ -154,7 +160,7 @@ export function AdsDailyRange({ platform, brandFilter, accent }:
           {state === "loading" ? (
             <div className="h-40 flex items-center justify-center text-sm text-gray-400">Loading…</div>
           ) : byDay.length === 0 ? (
-            <div className="h-40 flex items-center justify-center text-sm text-gray-400">No {platform === "meta" ? "Meta" : "Google"} data for {from} → {to}.</div>
+            <div className="h-40 flex items-center justify-center text-sm text-gray-400">No {platform === "meta" ? "Meta" : platform === "pinterest" ? "Pinterest" : "Google"} data for {from} → {to}.</div>
           ) : (
             <div>
               <div className="flex items-end gap-[2px] h-40 border-b border-gray-100" title={`${mDef.label} per day`}>

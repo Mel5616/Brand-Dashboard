@@ -108,6 +108,17 @@ export type MetaAdsRow = {
   revenue: number;
 };
 
+export type PinterestAdsRow = {
+  brand_id: number;
+  month_key: string;
+  spend: number;
+  impressions: number;
+  clicks: number;
+  purchases: number;
+  revenue: number;
+  roas: number;
+};
+
 export type MetaAdsPlatformRow = {
   brand_id: number;
   month_key: string;
@@ -223,6 +234,7 @@ export async function getDashboardData() {
     { data: syncLog },
     { data: googleAds },
     { data: metaAds },
+    { data: pinterestAds },
     { data: metaAdsPlatform },
     { data: instagramOrganic },
     { data: targets },
@@ -261,6 +273,7 @@ export async function getDashboardData() {
     db.from("sync_log").select("*").order("started_at", { ascending: false }).limit(1),
     db.from("google_ads").select("*").order("month_key"),
     db.from("meta_ads").select("*").order("month_key"),
+    db.from("pinterest_ads").select("*").order("month_key"),
     db.from("meta_ads_platform").select("brand_id,month_key,platform,spend,impressions,clicks,purchases,revenue,reach").order("month_key"),
     db.from("instagram_organic").select("brand_id,month_key,followers,reach,profile_views,accounts_engaged").order("month_key"),
     db.from("brand_targets").select("*").order("month_key"),
@@ -301,6 +314,7 @@ export async function getDashboardData() {
     lastSync: syncLog?.[0] ?? null,
     googleAds: (googleAds ?? []) as GoogleAdsRow[],
     metaAds: (metaAds ?? []) as MetaAdsRow[],
+    pinterestAds: (pinterestAds ?? []) as PinterestAdsRow[],
     metaAdsPlatform: (metaAdsPlatform ?? []) as MetaAdsPlatformRow[],
     instagramOrganic: (instagramOrganic ?? []) as InstagramOrganicRow[],
     targets: (targets ?? []) as BrandTarget[],

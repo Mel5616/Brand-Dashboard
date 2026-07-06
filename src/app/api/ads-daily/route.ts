@@ -18,15 +18,18 @@ export async function GET(req: Request) {
   if (!(await getAccess()).role) return NextResponse.json({ ok: false, error: "auth" }, { status: 401 });
 
   const url = new URL(req.url);
-  const platform = url.searchParams.get("platform") === "meta" ? "meta" : "google";
+  const p = url.searchParams.get("platform");
+  const platform = p === "meta" ? "meta" : p === "pinterest" ? "pinterest" : "google";
   const from = url.searchParams.get("from") || "";
   const to = url.searchParams.get("to") || "";
   const brand = url.searchParams.get("brand"); // omitted / "all" → every brand
   if (!DATE.test(from) || !DATE.test(to)) return NextResponse.json({ ok: false, error: "bad range" }, { status: 400 });
 
-  const table = platform === "meta" ? "meta_ads_daily" : "google_ads_daily";
+  const table = platform === "meta" ? "meta_ads_daily" : platform === "pinterest" ? "pinterest_ads_daily" : "google_ads_daily";
   const cols = platform === "meta"
     ? "brand_id,date,spend,impressions,clicks,purchases,revenue,reach"
+    : platform === "pinterest"
+    ? "brand_id,date,spend,impressions,clicks,purchases,revenue"
     : "brand_id,date,spend,impressions,clicks,revenue";
   let q = `${sbUrl}/rest/v1/${table}?select=${cols}&date=gte.${from}&date=lte.${to}&order=date`;
   if (brand && brand !== "all" && /^\d+$/.test(brand)) q += `&brand_id=eq.${brand}`;

@@ -41,7 +41,7 @@ export default async function Dashboard(props: { searchParams: Promise<{ preview
   const {
     brands, summaries, monthly, weekly, brandDaily, products,
     tradeshows, tradeshowBrands, tradeshowSales,
-    weekLabels, lastSync, googleAds, metaAds, metaAdsPlatform,
+    weekLabels, lastSync, googleAds, metaAds, pinterestAds, metaAdsPlatform,
     instagramOrganic, targets, klaviyo, ga4, marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, aiInsight,
     gscMetrics, gscQueries, gscInsights, semrushMetrics, semrushCompetitors,
     semrushKeywords, semrushPages, brandInsights, instagramMedia, channelSales, shopifySources, eventbriteEvents, asanaTasks, salesBudget,
@@ -122,6 +122,7 @@ export default async function Dashboard(props: { searchParams: Promise<{ preview
         weekLabels={weekLabels}
         googleAds={googleAds}
         metaAds={metaAds}
+        pinterestAds={pinterestAds}
         metaAdsPlatform={metaAdsPlatform}
         instagramOrganic={instagramOrganic}
         targets={targets}
