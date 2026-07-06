@@ -8,6 +8,7 @@ import { PinterestAdsChart } from "./PinterestAdsChart";
 import { AdsDailyRange } from "./AdsDailyRange";
 import { CommandPalette } from "./CommandPalette";
 import { SyncStatusPanel } from "./SyncStatusPanel";
+import { GoogleCampaignsTable } from "./GoogleCampaignsTable";
 import { EmailChart } from "./EmailChart";
 import { EmailBrandDetail } from "./EmailBrandDetail";
 import { BrandReport } from "./BrandReport";
@@ -1340,6 +1341,19 @@ export function DashboardTabs({
               <GoogleAdsChart key={fy} brands={filteredBrands} data={filteredAds} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} wholeYear={wholeYear} />
 
               <AdsDailyRange platform="google" brandFilter={brandFilter} accent="#4285F4" />
+
+              {/* Per-campaign breakdown for the selected brand */}
+              {brandFilter !== "all" && (() => {
+                const brandCamps = googleAdsCampaigns.filter((c: any) => c.brand_id === brandFilter);
+                if (!brandCamps.some((c: any) => c.month_key === LATEST)) return null;
+                const bname = brands.find((b: any) => b.id === brandFilter)?.name ?? "";
+                return (
+                  <div className="mt-4">
+                    <SectionBar title={`${bname} · Google Ads · Campaigns · ${latestLabel}`} />
+                    <GoogleCampaignsTable campaigns={brandCamps} latest={LATEST} prev={PREV_MO} />
+                  </div>
+                );
+              })()}
 
               {/* Brand KPI cards — only when all brands shown */}
               {brandFilter === "all" && (() => {

@@ -13,6 +13,7 @@ import type {
   WeekLabel, BrandTarget, KlaviyoRow, GA4Row, MarketingBudget, MarketingActual,
 } from "@/lib/db";
 import { SocialBrandDetail } from "./SocialPanel";
+import { GoogleCampaignsTable } from "./GoogleCampaignsTable";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Filler, Tooltip, Legend);
 
@@ -857,62 +858,7 @@ export function BrandPage({
         {hasCampaigns && (
           <>
             <SectionHeader title={`${brand.name}  ·  Google Ads  ·  Campaigns  ·  ${latestLbl}`} />
-            <div className="bg-white border-b border-gray-100 overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr style={{ background: "#f8fafc" }}>
-                    {["Campaign", "Spend", "vs Apr", "Clicks", "Conversions", "Conv Value", "ROAS"].map(h => (
-                      <th key={h} className={`${h === "Campaign" ? "text-left" : "text-right"} px-5 py-3 text-[10px] uppercase tracking-[0.15em] text-gray-400 font-semibold`}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {campLatest.map(c => {
-                    const prev     = campPrev.find(p => p.campaign_name === c.campaign_name);
-                    const spendChg = prev && prev.spend > 0 ? ((c.spend - prev.spend) / prev.spend) * 100 : null;
-                    const roas     = c.spend > 0 ? c.conv_value / c.spend : 0;
-                    return (
-                      <tr key={c.campaign_name} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="px-5 py-2.5 text-slate-700 font-medium max-w-xs truncate">{c.campaign_name}</td>
-                        <td className="px-5 py-2.5 text-right text-slate-600 whitespace-nowrap">{fmtFull(c.spend)}</td>
-                        <td className="px-5 py-2.5 text-right whitespace-nowrap">
-                          {spendChg !== null ? (
-                            <span className={`text-xs font-semibold ${spendChg >= 0 ? "text-emerald-500" : "text-red-500"}`}>
-                              {spendChg >= 0 ? "+" : ""}{spendChg.toFixed(1)}%
-                            </span>
-                          ) : <span className="text-gray-300 text-xs">—</span>}
-                        </td>
-                        <td className="px-5 py-2.5 text-right text-slate-600">{c.clicks.toLocaleString()}</td>
-                        <td className="px-5 py-2.5 text-right text-slate-600">{c.conversions > 0 ? c.conversions.toFixed(1) : "—"}</td>
-                        <td className="px-5 py-2.5 text-right text-slate-600 whitespace-nowrap">{c.conv_value > 0 ? fmtFull(c.conv_value) : "—"}</td>
-                        <td className="px-5 py-2.5 text-right font-semibold text-slate-700">{roas > 0 ? `${roas.toFixed(1)}×` : "—"}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-gray-200">
-                    <td className="px-5 pt-2 pb-3 text-xs font-semibold text-gray-500">Total</td>
-                    <td className="px-5 pt-2 pb-3 text-right font-bold text-slate-800 whitespace-nowrap">
-                      {fmtFull(campLatest.reduce((s, c) => s + c.spend, 0))}
-                    </td>
-                    <td />
-                    <td className="px-5 pt-2 pb-3 text-right font-bold text-slate-800">
-                      {campLatest.reduce((s, c) => s + c.clicks, 0).toLocaleString()}
-                    </td>
-                    <td className="px-5 pt-2 pb-3 text-right font-bold text-slate-800">
-                      {campLatest.reduce((s, c) => s + c.conversions, 0).toFixed(1)}
-                    </td>
-                    <td className="px-5 pt-2 pb-3 text-right font-bold text-slate-800 whitespace-nowrap">
-                      {fmtFull(campLatest.reduce((s, c) => s + c.conv_value, 0))}
-                    </td>
-                    <td className="px-5 pt-2 pb-3 text-right font-bold text-slate-800">
-                      {(() => { const s = campLatest.reduce((a, c) => a + c.spend, 0); const v = campLatest.reduce((a, c) => a + c.conv_value, 0); return s > 0 ? `${(v/s).toFixed(1)}×` : "—"; })()}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+            <GoogleCampaignsTable campaigns={campRows} latest={LATEST} prev={PREV_MO} />
           </>
         )}
 
