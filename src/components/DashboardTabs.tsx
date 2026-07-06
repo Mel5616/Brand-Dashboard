@@ -315,6 +315,23 @@ export function DashboardTabs({
   const [influencersOpen, setInfluencersOpen] = useState<boolean>(() => INFLUENCER_IDS.includes(firstTab));
   const [partnershipsOpen, setPartnershipsOpen] = useState<boolean>(() => PARTNERSHIP_IDS.includes(firstTab));
   const [mobileNavOpen, setMobileNavOpen] = useState(false); // slide-in nav drawer on small screens
+  // Sidebar section groups the user has collapsed. Default: all open ("auto open").
+  // Persisted to localStorage so a collapsed group stays collapsed across reloads.
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("sidebarCollapsedGroups");
+      if (raw) setCollapsedGroups(new Set(JSON.parse(raw) as string[]));
+    } catch { /* ignore */ }
+  }, []);
+  function toggleGroup(label: string) {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label); else next.add(label);
+      try { localStorage.setItem("sidebarCollapsedGroups", JSON.stringify([...next])); } catch { /* ignore */ }
+      return next;
+    });
+  }
   const [brandView, setBrandView] = useState<"month" | "fy">("fy"); // brand cards: selected month vs full year
   // Activity tracking: record which tab/page the user is viewing.
   useEffect(() => {
@@ -502,9 +519,15 @@ export function DashboardTabs({
             const flatTabs = g.tabs.filter(t => !INFLUENCER_IDS.includes(t.id as TabId) && !PARTNERSHIP_IDS.includes(t.id as TabId));
             const inflTabs = g.tabs.filter(t => INFLUENCER_IDS.includes(t.id as TabId));
             const paTabs = g.tabs.filter(t => PARTNERSHIP_IDS.includes(t.id as TabId));
+            const collapsed = collapsedGroups.has(g.label);
             return (
               <div key={g.label} className="mb-2">
-                <p className="bg-slate-700 text-white rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] mb-1.5 shadow-sm">{g.label}</p>
+                <button onClick={() => toggleGroup(g.label)}
+                  className="w-full flex items-center justify-between bg-slate-700 text-white rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] mb-1.5 shadow-sm hover:bg-slate-600 transition-colors">
+                  <span>{g.label}</span>
+                  <svg className={`w-3 h-3 transition-transform ${collapsed ? "-rotate-90" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                {!collapsed && (
                 <div className="space-y-0.5">
                   {flatTabs.map(Btn)}
                   {inflTabs.length > 0 && (
@@ -530,6 +553,7 @@ export function DashboardTabs({
                     </>
                   )}
                 </div>
+                )}
               </div>
             );
           });
