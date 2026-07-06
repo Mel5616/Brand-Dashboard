@@ -1247,7 +1247,9 @@ export function DashboardTabs({
                   .map((b: any) => {
                     const history = MK_ALL.map(mk => googleAds.find((d: any) => d.brand_id === b.id && d.month_key === mk));
                     const spendSpark  = history.map(r => r?.spend ?? 0);
-                    const revSpark    = history.map(r => r ? r.spend * r.roas : 0);
+                    // Google's actual reported revenue; older rows fall back to spend × ROAS.
+                    const gRev        = (r: any) => r ? (r.revenue ?? r.spend * r.roas) : 0;
+                    const revSpark    = history.map(gRev);
                     const roasSpark   = history.map(r => r?.roas ?? 0);
                     const clicksSpark = history.map(r => r?.clicks ?? 0);
                     const imprSpark   = history.map(r => r?.impressions ?? 0);
@@ -1259,8 +1261,8 @@ export function DashboardTabs({
                       ? { spend: fySpend, clicks: fySum(clicksSpark), impressions: fySum(imprSpark), roas: fySpend > 0 ? fySum(revSpark) / fySpend : 0 }
                       : monthCur;
                     if (wholeYear && cur.spend === 0) return null;
-                    const revenue = wholeYear ? fySum(revSpark) : monthCur.spend * monthCur.roas;
-                    const prevRev = prev ? prev.spend * prev.roas : 0;
+                    const revenue = wholeYear ? fySum(revSpark) : gRev(monthCur);
+                    const prevRev = gRev(prev);
                     return {
                       brand: b, cur, prev, revenue,
                       spendSpark, revSpark, roasSpark, clicksSpark, imprSpark,

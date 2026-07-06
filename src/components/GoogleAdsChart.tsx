@@ -20,7 +20,12 @@ export type GoogleAdsRow = {
   impressions: number;
   clicks: number;
   roas: number;
+  revenue?: number;
 };
+
+// Google's actual reported conversion revenue when synced; older rows that only
+// stored the rounded ROAS ratio fall back to spend × ROAS.
+export const gAdsRevenue = (d: GoogleAdsRow) => d.revenue ?? d.roas * d.spend;
 
 type Metric = "spend" | "revenue" | "clicks" | "impressions" | "roas";
 
@@ -51,7 +56,7 @@ export function GoogleAdsChart({ brands, data, monthKeys = DEFAULT_MONTH_KEYS, m
     const values = MONTH_KEYS.map(mk => {
       const row = rows.find(r => r.month_key === mk);
       if (!row) return 0;
-      return metric === "revenue" ? row.roas * row.spend : row[metric] ?? 0;
+      return metric === "revenue" ? gAdsRevenue(row) : row[metric] ?? 0;
     });
     return { label: brand.name, data: values, backgroundColor: brand.color, stack: metric === "roas" ? undefined : "s" };
   });
@@ -61,11 +66,11 @@ export function GoogleAdsChart({ brands, data, monthKeys = DEFAULT_MONTH_KEYS, m
   const latestLbl = wholeYear ? "FY" : (() => { const [y, m] = latestKey.split("-"); return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("en-AU", { month: "short" }); })();
   const latestRows   = wholeYear ? data : data.filter(d => d.month_key === latestKey);
   const totalSpend   = latestRows.reduce((s, d) => s + d.spend, 0);
-  const totalRevenue = latestRows.reduce((s, d) => s + d.roas * d.spend, 0);
+  const totalRevenue = latestRows.reduce((s, d) => s + gAdsRevenue(d), 0);
   const totalClicks  = latestRows.reduce((s, d) => s + d.clicks, 0);
   const totalImpr    = latestRows.reduce((s, d) => s + d.impressions, 0);
   const avgRoas      = totalSpend > 0
-    ? latestRows.filter(d => d.spend > 0).reduce((s, d) => s + d.roas * d.spend, 0) / totalSpend
+    ? latestRows.filter(d => d.spend > 0).reduce((s, d) => s + gAdsRevenue(d), 0) / totalSpend
     : 0;
 
   // Previous month, for month-on-month deltas (skipped in whole-FY mode).
@@ -74,7 +79,7 @@ export function GoogleAdsChart({ brands, data, monthKeys = DEFAULT_MONTH_KEYS, m
   const prevLbl = prevKey ? (() => { const [y, m] = prevKey.split("-"); return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("en-AU", { month: "short" }); })() : "";
   const prevRows = prevKey ? data.filter(d => d.month_key === prevKey) : [];
   const prevSpend = prevRows.reduce((s, d) => s + d.spend, 0);
-  const prevRevenue = prevRows.reduce((s, d) => s + d.roas * d.spend, 0);
+  const prevRevenue = prevRows.reduce((s, d) => s + gAdsRevenue(d), 0);
   const prevClicks = prevRows.reduce((s, d) => s + d.clicks, 0);
   const prevImpr = prevRows.reduce((s, d) => s + d.impressions, 0);
   const prevRoas = prevSpend > 0 ? prevRevenue / prevSpend : 0;
@@ -174,7 +179,7 @@ export function GoogleAdsChart({ brands, data, monthKeys = DEFAULT_MONTH_KEYS, m
         {(() => {
           const d: Record<Metric, string> = {
             spend: "how much each brand spent on Google Ads",
-            revenue: "sales Google Ads is credited with driving (spend × ROAS)",
+            revenue: "conversion revenue Google Ads reports for the period (its own attribution)",
             roas: "return on ad spend — sales per $1 spent (higher is better; under 1× loses money)",
             clicks: "clicks to each brand's site",
             impressions: "how often ads were shown",

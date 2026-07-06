@@ -756,6 +756,7 @@ def fetch_google_ads_metrics(customer_id, creds):
             'impressions': m.get('impressions', 0),
             'clicks':      m.get('clicks', 0),
             'roas':        roas,
+            'revenue':     round(conv, 2),   # Google's actual reported conversion value
         })
     return rows
 
@@ -849,7 +850,8 @@ def sync_google_ads(config):
         try:
             rows = fetch_google_ads_metrics(cid, creds)
             db_rows = [{'brand_id': bid, 'month_key': r['month_key'], 'spend': r['spend'],
-                        'impressions': r['impressions'], 'clicks': r['clicks'], 'roas': r['roas']} for r in rows]
+                        'impressions': r['impressions'], 'clicks': r['clicks'], 'roas': r['roas'],
+                        'revenue': r['revenue']} for r in rows]
             sb_upsert('google_ads', db_rows, on_conflict='brand_id,month_key')
 
             camp_rows = fetch_google_ads_campaigns(cid, creds)

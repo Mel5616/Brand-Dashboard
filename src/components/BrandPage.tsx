@@ -292,12 +292,15 @@ export function BrandPage({
   const roasSpark   = MONTH_KEYS.map(mk => adsRows.find(d => d.month_key === mk)?.roas        ?? 0);
   const clicksSpark = MONTH_KEYS.map(mk => adsRows.find(d => d.month_key === mk)?.clicks      ?? 0);
   const imprSpark   = MONTH_KEYS.map(mk => adsRows.find(d => d.month_key === mk)?.impressions ?? 0);
-  const gRevSpark   = MONTH_KEYS.map(mk => { const r = adsRows.find(d => d.month_key === mk); return r ? r.roas * r.spend : 0; });
+  // Prefer Google's actual reported conversion revenue; fall back to spend × ROAS
+  // for older rows synced before the revenue column existed.
+  const gRev        = (r: any) => r ? (r.revenue ?? r.roas * r.spend) : 0;
+  const gRevSpark   = MONTH_KEYS.map(mk => gRev(adsRows.find(d => d.month_key === mk)));
   const latestAds   = adsRows.find(d => d.month_key === LATEST);
   const prevAds     = adsRows.find(d => d.month_key === PREV_MO);
   const hasAds      = adsRows.length > 0;
-  const latestGRev  = (latestAds?.roas ?? 0) * (latestAds?.spend ?? 0);
-  const prevGRev    = (prevAds?.roas  ?? 0) * (prevAds?.spend  ?? 0);
+  const latestGRev  = gRev(latestAds);
+  const prevGRev    = gRev(prevAds);
 
   // ── Google Ads Campaigns ─────────────────────────────────────────────────
   const campRows     = googleAdsCampaigns.filter(c => c.brand_id === brand.id);

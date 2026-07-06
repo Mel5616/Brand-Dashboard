@@ -16,7 +16,7 @@ export type SnapshotInput = {
   fyLabel: string;          // e.g. "FY2025-26"
   monthly: { brand_id: number; month_key: string; revenue: number; orders: number }[];
   targets: { brand_id: number; month_key: string; revenue_target: number }[];
-  googleAds: { brand_id: number; month_key: string; spend: number; roas: number }[];
+  googleAds: { brand_id: number; month_key: string; spend: number; roas: number; revenue?: number }[];
   metaAds: { brand_id: number; month_key: string; spend: number; revenue: number; purchases: number }[];
   klaviyo: { brand_id: number; month_key: string; revenue: number; open_rate: number; click_rate: number; emails_sent?: number; list_size?: number; unsubscribes?: number; orders?: number; flow_revenue?: number; campaign_revenue?: number; bounces?: number; spam_complaints?: number }[];
   products: { brand_id: number; title: string; gross_sales: number }[];
@@ -79,8 +79,9 @@ export function buildSnapshot(d: SnapshotInput) {
   // ── Google Ads ──────────────────────────────────────────────────────
   const gNow = at(forBrand(d.googleAds), month);
   const gPrev = at(forBrand(d.googleAds), prevMonth);
-  const gSpend = gNow?.spend ?? 0, gRoas = gNow?.roas ?? 0, gRev = gRoas * gSpend;
-  const gRevPrev = (gPrev?.roas ?? 0) * (gPrev?.spend ?? 0);
+  const gSpend = gNow?.spend ?? 0, gRoas = gNow?.roas ?? 0;
+  const gRev = gNow?.revenue ?? gRoas * gSpend;                    // Google's reported revenue (fallback: spend × ROAS)
+  const gRevPrev = gPrev?.revenue ?? (gPrev?.roas ?? 0) * (gPrev?.spend ?? 0);
   const gCampaigns = forBrand(d.googleAdsCampaigns).filter(c => c.month_key === month && c.spend > 100)
     .map(c => ({ name: c.campaign_name, roas: c.spend > 0 ? c.conv_value / c.spend : 0 }))
     .sort((a, b) => b.roas - a.roas);
