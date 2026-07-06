@@ -47,3 +47,7 @@ node_modules
 .env.local
 .next
 credentials.json
+
+# never commit config backups (contain secrets)
+stores.config.json.*
+*.bak

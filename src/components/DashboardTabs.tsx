@@ -6,6 +6,7 @@ import { GoogleAdsChart } from "./GoogleAdsChart";
 import { MetaAdsChart } from "./MetaAdsChart";
 import { PinterestAdsChart } from "./PinterestAdsChart";
 import { AdsDailyRange } from "./AdsDailyRange";
+import { CommandPalette } from "./CommandPalette";
 import { EmailChart } from "./EmailChart";
 import { EmailBrandDetail } from "./EmailBrandDetail";
 import { BrandReport } from "./BrandReport";
@@ -339,6 +340,28 @@ export function DashboardTabs({
       return next;
     });
   }
+  // Pinned tabs — your daily-check favourites, floated to the top. Persisted.
+  const [pinned, setPinned] = useState<string[]>([]);
+  useEffect(() => {
+    try { const raw = localStorage.getItem("sidebarPinnedTabs"); if (raw) setPinned(JSON.parse(raw) as string[]); } catch { /* ignore */ }
+  }, []);
+  function togglePin(id: string) {
+    setPinned(prev => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
+      try { localStorage.setItem("sidebarPinnedTabs", JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }
+  // ⌘K command palette — jump to any tab or brand.
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPaletteOpen(o => !o); }
+      else if (e.key === "Escape") setPaletteOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   const [brandView, setBrandView] = useState<"month" | "fy">("fy"); // brand cards: selected month vs full year
   // Activity tracking: record which tab/page the user is viewing.
   useEffect(() => {
@@ -438,6 +461,15 @@ export function DashboardTabs({
   function goHome() { setBrandFilter("all"); setMobileNavOpen(false); }
   // Navigate to a tab and close the mobile drawer (no-op on desktop).
   function go(id: TabId) { setActive(id); setMobileNavOpen(false); }
+  // Tabs (with their sidebar group) for the ⌘K palette.
+  const paletteTabs = visibleTabs.map(t => ({ id: t.id, label: t.label, group: TAB_GROUPS.find(g => g.ids.includes(t.id as TabId))?.label }));
+  const commandPalette = (
+    <CommandPalette
+      open={paletteOpen} onClose={() => setPaletteOpen(false)}
+      tabs={paletteTabs} brands={brands as any}
+      onPickTab={(id) => go(id as TabId)} onPickBrand={(id) => openBrand(id)}
+    />
+  );
 
   // ── Sidebar ──────────────────────────────────────────────────────────────────
   const Sidebar = () => (
@@ -514,17 +546,39 @@ export function DashboardTabs({
           ].filter(g => g.tabs.length > 0);
           const Btn = (tab: typeof TABS[number]) => {
             const isActive = active === tab.id && !(selectedBrand && (active === "brands" || active === "summary"));
+            const isPinned = pinned.includes(tab.id);
             return (
-              <button key={tab.id} onClick={() => go(tab.id)}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${
-                  isActive ? "bg-emerald-50 text-emerald-600 font-semibold shadow-sm ring-1 ring-emerald-100" : "text-gray-500 hover:bg-gray-100/70 hover:text-gray-700"}`}>
-                {tab.icon}{tab.label}
-              </button>
+              <div key={tab.id} className="group/row relative flex items-center">
+                <button onClick={() => go(tab.id)}
+                  className={`flex-1 min-w-0 flex items-center gap-2.5 pl-3 pr-8 py-2 rounded-lg text-sm transition-all ${
+                    isActive ? "bg-emerald-50 text-emerald-600 font-semibold shadow-sm ring-1 ring-emerald-100" : "text-gray-500 hover:bg-gray-100/70 hover:text-gray-700"}`}>
+                  {tab.icon}<span className="truncate">{tab.label}</span>
+                </button>
+                <button onClick={(e) => { e.stopPropagation(); togglePin(tab.id); }} title={isPinned ? "Unpin" : "Pin to top"}
+                  className={`absolute right-1.5 p-1 rounded transition-opacity ${isPinned ? "text-amber-400" : "text-gray-300 opacity-0 group-hover/row:opacity-100 hover:text-amber-400"}`}>
+                  <svg className="w-3.5 h-3.5" fill={isPinned ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.048 2.927c.3-.921 1.603-.921 1.902 0l1.716 5.28a1 1 0 00.95.69h5.552c.969 0 1.371 1.24.588 1.81l-4.49 3.263a1 1 0 00-.364 1.118l1.716 5.28c.3.922-.755 1.688-1.539 1.118l-4.49-3.263a1 1 0 00-1.175 0l-4.49 3.263c-.783.57-1.838-.196-1.539-1.118l1.717-5.28a1 1 0 00-.365-1.118L2.02 10.707c-.783-.57-.38-1.81.588-1.81h5.553a1 1 0 00.95-.69l1.716-5.28z" /></svg>
+                </button>
+              </div>
             );
           };
+          const pinnedTabs = pinned.map(id => TABS.find(t => t.id === id)).filter((t): t is typeof TABS[number] => !!t && visIds.has(t.id));
+          const searchTrigger = (
+            <button onClick={() => setPaletteOpen(true)}
+              className="w-full flex items-center gap-2 px-3 py-2 mb-2 rounded-lg text-sm text-gray-400 bg-gray-50 hover:bg-gray-100 border border-gray-100 transition-colors">
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              <span className="flex-1 text-left">Search…</span>
+              <kbd className="text-[10px] border border-gray-200 rounded px-1.5 py-0.5">⌘K</kbd>
+            </button>
+          );
+          const pinnedBlock = pinnedTabs.length > 0 ? (
+            <div className="mb-2">
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-500 px-2.5 mb-1.5">★ Pinned</p>
+              <div className="space-y-0.5">{pinnedTabs.map(Btn)}</div>
+            </div>
+          ) : null;
           const inflActive = INFLUENCER_IDS.includes(active);
           const paActive = PARTNERSHIP_IDS.includes(active);
-          return groups.map(g => {
+          return (<>{searchTrigger}{pinnedBlock}{groups.map(g => {
             const flatTabs = g.tabs.filter(t => !INFLUENCER_IDS.includes(t.id as TabId) && !PARTNERSHIP_IDS.includes(t.id as TabId));
             const inflTabs = g.tabs.filter(t => INFLUENCER_IDS.includes(t.id as TabId));
             const paTabs = g.tabs.filter(t => PARTNERSHIP_IDS.includes(t.id as TabId));
@@ -565,7 +619,7 @@ export function DashboardTabs({
                 )}
               </div>
             );
-          });
+          })}</>);
         })()}
       </nav>
       {selectedBrand && (
@@ -603,6 +657,7 @@ export function DashboardTabs({
   if (selectedBrand && (active === "brands" || active === "summary")) {
     return (
       <>
+        {commandPalette}
         <Sidebar />
         <div className="lg:ml-[288px]">
           <div className="flex justify-end mb-3">
@@ -650,6 +705,7 @@ export function DashboardTabs({
   // ── All-brands tab view ──────────────────────────────────────────────────────
   return (
     <>
+      {commandPalette}
       <Sidebar />
       <div className="lg:ml-[288px]">
         <main className="max-w-screen-2xl mx-auto px-6 py-8 space-y-8">
