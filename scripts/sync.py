@@ -745,7 +745,9 @@ def fetch_google_ads_metrics(customer_id, creds):
         monthly[ym]['conv_value']  += float(met.get('conversionsValue', 0))
 
     rows = []
-    for mk in MONTH_KEYS:
+    # Emit both the previous and current FY (the query already fetches both), so the
+    # revenue column stays populated across last year's history, not just this FY.
+    for mk in MONTH_KEYS_PREV + MONTH_KEYS:
         m    = monthly.get(mk, {})
         spend = round(m.get('spend', 0), 2)
         conv  = m.get('conv_value', 0)
