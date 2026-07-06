@@ -49,9 +49,13 @@ import { ShopifyInsights } from "./ShopifyInsights";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "brands" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "uppababy" | "sales" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "budget" | "calendar" | "content" | "influencer" | "gifting" | "pa-budget" | "pa-tracker" | "team";
+type TabId = "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "uppababy" | "sales" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "budget" | "calendar" | "content" | "influencer" | "gifting" | "pa-budget" | "pa-tracker" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
+  {
+    id: "summary", label: "Summary",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" /></svg>,
+  },
   {
     id: "brands", label: "Portfolio Overview",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
@@ -184,7 +188,7 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
 
 // Sidebar grouping — how you market (top) vs where you sell (bottom).
 const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
-  { label: "Overview", ids: ["brands", "insights"] },
+  { label: "Overview", ids: ["summary", "brands", "insights"] },
   { label: "Reports", ids: ["report", "snapshot", "social-report", "uppababy"] },
   { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows"] },
   { label: "Plan", ids: ["show-deals", "campaign-calendar", "promotions", "calendar", "content", "events", "tasks", "design-requests"] },
@@ -298,9 +302,14 @@ export function DashboardTabs({
   // (read-only); each section keeps its own admin gate on edit/upload/export.
   const FINANCIAL: string[] = [];
   // Tabs this user may open (admin → all). Filter the nav + guard the active tab.
+  // Summary + Portfolio Overview were one section ("brands"); anyone granted
+  // "brands" keeps access to both halves without needing a separate grant.
+  const effectiveTabs = (allowedTabs ?? []).includes("brands")
+    ? [...(allowedTabs ?? []), "summary"]
+    : (allowedTabs ?? []);
   const visibleTabs = role === "admin"
     ? TABS
-    : TABS.filter(t => (allowedTabs ?? []).includes(t.id) && !FINANCIAL.includes(t.id));
+    : TABS.filter(t => effectiveTabs.includes(t.id) && !FINANCIAL.includes(t.id));
   const firstTab = (visibleTabs[0]?.id ?? "brands") as TabId;
   const [active, setActive] = useState<TabId>(firstTab);
   const [influencersOpen, setInfluencersOpen] = useState<boolean>(() => INFLUENCER_IDS.includes(firstTab));
@@ -397,7 +406,9 @@ export function DashboardTabs({
     { label: "Tradeshows",         value: String(tradeshows.length), sub: `${tradeshows.filter((t: any) => new Date() < new Date(t.date_start)).length} upcoming` },
   ];
 
-  function openBrand(id: number) { setBrandFilter(id); setActive("brands"); setMobileNavOpen(false); }
+  // Open the full brand page from the Summary cards or the Leaderboard, keeping
+  // whichever Overview tab the user was on so "back" returns them there.
+  function openBrand(id: number) { setBrandFilter(id); if (active !== "summary" && active !== "brands") setActive("brands"); setMobileNavOpen(false); }
   function goHome() { setBrandFilter("all"); setMobileNavOpen(false); }
   // Navigate to a tab and close the mobile drawer (no-op on desktop).
   function go(id: TabId) { setActive(id); setMobileNavOpen(false); }
@@ -476,7 +487,7 @@ export function DashboardTabs({
             { label: "More", tabs: visibleTabs.filter(t => !grouped.has(t.id) && t.id !== "team") }, // ungrouped tabs (Team is pinned at the bottom)
           ].filter(g => g.tabs.length > 0);
           const Btn = (tab: typeof TABS[number]) => {
-            const isActive = active === tab.id && !(selectedBrand && active === "brands");
+            const isActive = active === tab.id && !(selectedBrand && (active === "brands" || active === "summary"));
             return (
               <button key={tab.id} onClick={() => go(tab.id)}
                 className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${
@@ -556,7 +567,7 @@ export function DashboardTabs({
   // ── Brand page view ──────────────────────────────────────────────────────────
   // Only the Brands tab opens the full brand detail page; on a channel tab,
   // picking a brand filters that channel in place instead of bouncing here.
-  if (selectedBrand && active === "brands") {
+  if (selectedBrand && (active === "brands" || active === "summary")) {
     return (
       <>
         <Sidebar />
@@ -611,7 +622,8 @@ export function DashboardTabs({
         <main className="max-w-screen-2xl mx-auto px-6 py-8 space-y-8">
 
           {/* ── Brands ── */}
-          {active === "brands" && (
+          {/* ── Summary: needs-attention banner + brand tier cards ── */}
+          {active === "summary" && (
             <>
               {role === "admin" && (() => {
                 const risks: { sev: "red" | "amber"; text: string }[] = [];
@@ -660,7 +672,12 @@ export function DashboardTabs({
                   </div>
                 );
               })()}
+              </>
+            )}
 
+          {/* ── Portfolio Overview: business + channel analytics ── */}
+          {active === "brands" && (
+            <>
               {(() => {
                 const biz = buildChannels("all", { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest: LATEST });
                 if (!biz.length) return null;
@@ -777,7 +794,12 @@ export function DashboardTabs({
                   </div>
                 );
               })()}
+              </>
+            )}
 
+          {/* ── Summary (cont.): brand tier cards ── */}
+          {active === "summary" && (
+            <>
               <div>
                 <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
                   <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Brands — click to explore</h2>
@@ -875,7 +897,12 @@ export function DashboardTabs({
                   ));
                 })()}
               </div>
+              </>
+            )}
 
+          {/* ── Portfolio Overview (cont.): DTC KPIs + leaderboard ── */}
+          {active === "brands" && (
+            <>
               <div>
                 <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Direct to Consumer</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
