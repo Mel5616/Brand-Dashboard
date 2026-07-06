@@ -25,8 +25,11 @@ ENV_PATH     = os.path.join(BASE_DIR, '.env.local')
 API_VERSION = "v20.0"
 DATE_START  = "2024-07-01"
 # End of the window = today (rolls automatically instead of stopping at a fixed date).
-from datetime import date as _date
+from datetime import date as _date, timedelta as _timedelta
 DATE_END    = _date.today().isoformat()
+# Day-level data is only pulled for a rolling ~18-month window (covers this FY plus
+# the previous one) to keep the row count and API pagination sane.
+DAILY_START = (_date.today() - _timedelta(days=550)).isoformat()
 
 def load_env():
     if not os.path.exists(ENV_PATH):
@@ -72,15 +75,16 @@ def meta_get(url):
     with urllib.request.urlopen(req, context=ctx, timeout=30) as r:
         return json.loads(r.read().decode())
 
-def fetch_insights(account_id, access_token, breakdowns=None):
-    """Fetch monthly account-level insights, auto-paginate."""
+def fetch_insights(account_id, access_token, breakdowns=None, time_increment="monthly", since=DATE_START):
+    """Fetch account-level insights, auto-paginate. time_increment="monthly" (default)
+    or 1 for day-level rows; `since` narrows the window (daily uses a shorter window)."""
     params = {
         "fields":         "spend,impressions,clicks,reach,actions,action_values",
-        "time_increment": "monthly",
-        "time_range":     json.dumps({"since": DATE_START, "until": DATE_END}),
+        "time_increment": time_increment,
+        "time_range":     json.dumps({"since": since, "until": DATE_END}),
         "level":          "account",
         "access_token":   access_token,
-        "limit":          100,
+        "limit":          500,
     }
     if breakdowns:
         params["breakdowns"] = breakdowns
@@ -148,6 +152,24 @@ def sync_brand(brand_id, name, account_id, access_token):
     if upserts:
         sb_upsert("meta_ads", upserts, on_conflict="brand_id,month_key")
 
+    # Day-level rows for the custom (daily) date-range view.
+    daily_upserts = []
+    try:
+        for row in fetch_insights(account_id, access_token, time_increment=1, since=DAILY_START):
+            d = row.get("date_start", "")
+            if len(d) < 10:
+                continue
+            pr = parse_row(row)
+            daily_upserts.append({
+                "brand_id": brand_id, "date": d,
+                "spend": pr["spend"], "impressions": pr["impressions"], "clicks": pr["clicks"],
+                "purchases": pr["purchases"], "revenue": pr["revenue"], "reach": pr["reach"],
+            })
+    except (urllib.error.HTTPError, RuntimeError):
+        daily_upserts = []
+    if daily_upserts:
+        sb_upsert("meta_ads_daily", daily_upserts, on_conflict="brand_id,date")
+
     # Platform breakdown
     try:
         platform_rows = fetch_insights(account_id, access_token, breakdowns="publisher_platform")
@@ -173,7 +195,7 @@ def sync_brand(brand_id, name, account_id, access_token):
         sb_upsert("meta_ads_platform", plat_upserts, on_conflict="brand_id,month_key,platform")
 
     if upserts or plat_upserts:
-        print(f"✓  {len(upserts)} months, {len(plat_upserts)} platform rows")
+        print(f"✓  {len(upserts)} months, {len(plat_upserts)} platform rows, {len(daily_upserts)} daily rows")
     else:
         print("—  no data")
 

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { SalesChart } from "./SalesChart";
 import { GoogleAdsChart } from "./GoogleAdsChart";
 import { MetaAdsChart } from "./MetaAdsChart";
+import { AdsDailyRange } from "./AdsDailyRange";
 import { EmailChart } from "./EmailChart";
 import { EmailBrandDetail } from "./EmailBrandDetail";
 import { BrandReport } from "./BrandReport";
@@ -1272,6 +1273,8 @@ export function DashboardTabs({
               </div>
               <GoogleAdsChart key={fy} brands={filteredBrands} data={filteredAds} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} wholeYear={wholeYear} />
 
+              <AdsDailyRange platform="google" brandFilter={brandFilter} accent="#4285F4" />
+
               {/* Brand KPI cards — only when all brands shown */}
               {brandFilter === "all" && (() => {
                 const PREV = PREV_MO;
@@ -1391,6 +1394,8 @@ export function DashboardTabs({
                 </select>
               </div>
               <MetaAdsChart key={fy} brands={filteredBrands} data={filteredMeta} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} wholeYear={wholeYear} />
+
+              <AdsDailyRange platform="meta" brandFilter={brandFilter} accent="#1877F2" />
 
               {/* Brand KPI cards — only when all brands shown */}
               {brandFilter === "all" && (() => {

@@ -762,6 +762,65 @@ def fetch_google_ads_metrics(customer_id, creds):
         })
     return rows
 
+def fetch_google_ads_daily(customer_id, creds):
+    """Fetch DAY-level spend/impressions/clicks/conversions_value for a customer,
+    so the dashboard can offer a custom (daily) date range. Mirrors the monthly
+    fetch but segments by date and aggregates per day."""
+    access_token = _google_access_token(creds)
+    cid = customer_id.replace('-', '')
+
+    query = f'''
+    SELECT segments.date, metrics.cost_micros, metrics.impressions,
+           metrics.clicks, metrics.conversions_value
+    FROM campaign
+    WHERE segments.date >= '{FY_PREV_START}' AND segments.date <= '{RANGE_END}'
+      AND campaign.status != 'REMOVED'
+    '''
+    query_no_conv = f'''
+    SELECT segments.date, metrics.cost_micros, metrics.impressions, metrics.clicks
+    FROM campaign
+    WHERE segments.date >= '{FY_PREV_START}' AND segments.date <= '{RANGE_END}'
+      AND campaign.status != 'REMOVED'
+    '''
+    url = f'https://googleads.googleapis.com/v24/customers/{cid}/googleAds:search'
+    ctx = ssl.create_default_context()
+
+    def _fetch(q):
+        req = urllib.request.Request(url, data=json.dumps({'query': q}).encode(), method='POST')
+        req.add_header('Authorization', f'Bearer {access_token}')
+        req.add_header('developer-token', creds['developerToken'])
+        req.add_header('Content-Type', 'application/json')
+        req.add_header('login-customer-id', '8923727576')  # MCC ID
+        with urllib.request.urlopen(req, context=ctx, timeout=30) as r:
+            return json.loads(r.read().decode())
+
+    try:
+        data = _fetch(query)
+    except urllib.error.HTTPError as e:
+        if e.code == 400:
+            data = _fetch(query_no_conv)  # account has no conversion tracking
+        else:
+            raise
+
+    daily = defaultdict(lambda: {'spend': 0.0, 'impressions': 0, 'clicks': 0, 'conv_value': 0.0})
+    for row in data.get('results', []):
+        d   = row.get('segments', {}).get('date') or ''   # 'YYYY-MM-DD'
+        met = row.get('metrics', {})
+        if not d:
+            continue
+        daily[d]['spend']       += float(met.get('costMicros', 0)) / 1_000_000
+        daily[d]['impressions'] += int(met.get('impressions', 0))
+        daily[d]['clicks']      += int(met.get('clicks', 0))
+        daily[d]['conv_value']  += float(met.get('conversionsValue', 0))
+
+    return [{
+        'date':        d,
+        'spend':       round(m['spend'], 2),
+        'impressions': m['impressions'],
+        'clicks':      m['clicks'],
+        'revenue':     round(m['conv_value'], 2),
+    } for d, m in sorted(daily.items())]
+
 def fetch_google_ads_campaigns(customer_id, creds):
     """Fetch monthly spend/clicks/conversions broken down by campaign."""
     access_token = _google_access_token(creds)
@@ -861,6 +920,16 @@ def sync_google_ads(config):
             if camp_db:
                 sb_upsert('google_ads_campaigns', camp_db, on_conflict='brand_id,month_key,campaign_name')
                 print(f'       {len(set(r["campaign_name"] for r in camp_db))} campaigns synced')
+
+            # Day-level rows for the custom (daily) date-range view.
+            try:
+                daily_rows = fetch_google_ads_daily(cid, creds)
+                daily_db   = [{'brand_id': bid, **r} for r in daily_rows]
+                if daily_db:
+                    sb_upsert('google_ads_daily', daily_db, on_conflict='brand_id,date')
+                    print(f'       {len(daily_db)} daily rows synced')
+            except Exception as de:
+                print(f'       ⚠ daily sync skipped: {de}')
 
             may = next((r for r in rows if r['month_key'] == '2026-05'), {})
             print(f'       May spend: ${may.get("spend",0):,.2f} | ROAS: {may.get("roas",0):.2f} | Clicks: {may.get("clicks",0):,}')
