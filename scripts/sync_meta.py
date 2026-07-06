@@ -138,7 +138,7 @@ def sync_brand(brand_id, name, account_id, access_token):
         except Exception:
             pass
         print(f"✗  {e} {body}")
-        return
+        return f"{e} {body}".strip()
 
     # Total (account-level) upserts
     upserts = []
@@ -214,13 +214,23 @@ def main():
         return
 
     print(f"Syncing Meta Ads for {len(brands)} brand(s)...\n")
+    errors = []
     for b in brands:
         token = b.get("metaAccessToken") or global_token
         if not token:
             print(f"  {b['name']} ({b['metaAdAccountId']}) ... ↷  no token (set metaAccessToken)")
+            errors.append(f"{b['name']}: no token")
             continue
-        sync_brand(b["id"], b["name"], b["metaAdAccountId"], token)
+        err = sync_brand(b["id"], b["name"], b["metaAdAccountId"], token)
+        if err:
+            errors.append(f"{b['name']}: {err}")
+    from sync_status_util import record
+    record("Meta Ads", not errors, "; ".join(errors))
     print("\nDone. Run python3 scripts/sync.py to refresh all Shopify data too.")
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        from sync_status_util import record
+        record("Meta Ads", False, str(e)); raise

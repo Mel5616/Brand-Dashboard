@@ -186,4 +186,8 @@ def main():
     print(f"Synced {len(all_rows)} Asana tasks across {len(projects)} project(s)", flush=True)
 
 if __name__ == "__main__":
-    main()
+    from sync_status_util import record
+    try:
+        main(); record("Asana", True)
+    except Exception as e:
+        record("Asana", False, str(e)); raise

@@ -184,4 +184,8 @@ def main():
     print("\nDone.")
 
 if __name__ == "__main__":
-    main()
+    from sync_status_util import record
+    try:
+        main(); record("GA4", True)
+    except Exception as e:
+        record("GA4", False, str(e)); raise

@@ -180,4 +180,8 @@ def main():
     print(f"Synced {len(rows)} events.")
 
 if __name__ == "__main__":
-    main()
+    from sync_status_util import record
+    try:
+        main(); record("Eventbrite", True)
+    except Exception as e:
+        record("Eventbrite", False, str(e)); raise

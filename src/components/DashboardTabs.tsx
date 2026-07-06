@@ -7,6 +7,7 @@ import { MetaAdsChart } from "./MetaAdsChart";
 import { PinterestAdsChart } from "./PinterestAdsChart";
 import { AdsDailyRange } from "./AdsDailyRange";
 import { CommandPalette } from "./CommandPalette";
+import { SyncStatusPanel } from "./SyncStatusPanel";
 import { EmailChart } from "./EmailChart";
 import { EmailBrandDetail } from "./EmailBrandDetail";
 import { BrandReport } from "./BrandReport";
@@ -767,6 +768,7 @@ export function DashboardTabs({
           {/* ── Portfolio Overview: business + channel analytics ── */}
           {active === "brands" && (
             <>
+              {role === "admin" && <SyncStatusPanel />}
               {(() => {
                 const biz = buildChannels("all", { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest: LATEST });
                 if (!biz.length) return null;

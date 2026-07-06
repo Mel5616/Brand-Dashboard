@@ -901,6 +901,7 @@ def sync_google_ads(config):
 
     now = datetime.utcnow().isoformat() + 'Z'
     synced = 0
+    g_errors = []
     for brand in config['brands']:
         cid = brand.get('googleAdsCustomerId', '')
         if not cid:
@@ -942,7 +943,13 @@ def sync_google_ads(config):
             except Exception:
                 pass
             print(f'       ✗ {name}: {e} {body}')
+            g_errors.append(f'{name}: {e}')
     print(f'  Google Ads: {synced} brand(s) synced')
+    try:
+        from sync_status_util import record
+        record('Google Ads', not g_errors, '; '.join(g_errors))
+    except Exception:
+        pass
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
@@ -1064,4 +1071,8 @@ def main():
     print(f'   Open your dashboard to see live data.\n')
 
 if __name__ == '__main__':
-    main()
+    from sync_status_util import record
+    try:
+        main(); record('Shopify & core', True)
+    except Exception as e:
+        record('Shopify & core', False, str(e)); raise

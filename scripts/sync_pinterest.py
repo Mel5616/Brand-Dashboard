@@ -130,7 +130,7 @@ def sync_brand(brand_id, name, ad_account_id, token):
         except Exception:
             pass
         print(f"✗  {e} {body}")
-        return
+        return f"{e} {body}".strip()
 
     if not daily:
         print("—  no data")
@@ -170,13 +170,23 @@ def main():
         return
 
     print(f"Syncing Pinterest Ads for {len(brands)} brand(s)...\n")
+    errors = []
     for b in brands:
         token = b.get("pinterestAccessToken") or global_token
         if not token:
             print(f"  {b['name']} ({b['pinterestAdAccountId']}) ... ↷  no token (set pinterestAccessToken)")
+            errors.append(f"{b['name']}: no token")
             continue
-        sync_brand(b["id"], b["name"], b["pinterestAdAccountId"], token)
+        err = sync_brand(b["id"], b["name"], b["pinterestAdAccountId"], token)
+        if err:
+            errors.append(f"{b['name']}: {err}")
+    from sync_status_util import record
+    record("Pinterest Ads", not errors, "; ".join(errors))
     print("\nDone.")
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        from sync_status_util import record
+        record("Pinterest Ads", False, str(e)); raise

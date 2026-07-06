@@ -156,4 +156,8 @@ def main():
     print("\nDone.")
 
 if __name__ == "__main__":
-    main()
+    from sync_status_util import record
+    try:
+        main(); record("Semrush", True)
+    except Exception as e:
+        record("Semrush", False, str(e)); raise
