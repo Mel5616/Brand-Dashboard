@@ -46,7 +46,7 @@ import { EventsPanel } from "./EventsPanel";
 import { TasksPanel } from "./TasksPanel";
 import { SalesTargetTracker } from "./SalesTargetTracker";
 import { ShopifyInsights } from "./ShopifyInsights";
-import { fmt } from "@/lib/format";
+import { fmt, fmtFull } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
 type TabId = "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "uppababy" | "sales" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "budget" | "calendar" | "content" | "influencer" | "gifting" | "pa-budget" | "pa-tracker" | "team";
@@ -1773,6 +1773,57 @@ export function DashboardTabs({
           {active === "gifting" && (
             <>
               <SectionBar title="Influencer Gifting" />
+              {/* Admin-only: influencer budget per brand, straight from the marketing budget form. */}
+              {role === "admin" && (() => {
+                const inflByBrand = brands
+                  .map((b: any) => ({
+                    name: b.name,
+                    color: b.color || "#8b5cf6",
+                    budget: marketingBudgets
+                      .filter((mb: any) => mb.brand_id === b.id && mb.channel === "Influencer Marketing")
+                      .reduce((s: number, mb: any) => s + (Number(mb.annual_budget) || 0), 0),
+                  }))
+                  .filter((x: any) => x.budget > 0)
+                  .sort((a: any, b: any) => b.budget - a.budget);
+                const inflTotal = inflByBrand.reduce((s: number, x: any) => s + x.budget, 0);
+                const maxB = Math.max(1, ...inflByBrand.map((x: any) => x.budget));
+                return (
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
+                    <div className="flex items-end justify-between flex-wrap gap-2 mb-4">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Influencer budget by brand <span className="font-normal text-gray-400 normal-case tracking-normal">· {fyLabel} · from budget form</span></p>
+                      <div className="text-right">
+                        <p className="text-[10px] text-gray-400 uppercase tracking-wider">Total · all brands</p>
+                        <p className="text-2xl font-bold text-slate-800 leading-none">{fmtFull(inflTotal)}</p>
+                      </div>
+                    </div>
+                    {inflByBrand.length === 0 ? (
+                      <p className="text-sm text-gray-400">No Influencer Marketing budget set in the budget form for {fyLabel}.</p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {inflByBrand.map((x: any) => (
+                          <div key={x.name} className="flex items-center gap-3">
+                            <div className="w-32 shrink-0 flex items-center gap-1.5 min-w-0">
+                              <span className="w-2 h-2 rounded-full shrink-0" style={{ background: x.color }} />
+                              <span className="text-xs font-medium text-slate-600 truncate">{x.name}</span>
+                            </div>
+                            <div className="flex-1 h-5 bg-gray-50 rounded overflow-hidden">
+                              <div className="h-full rounded" style={{ width: `${(x.budget / maxB) * 100}%`, background: x.color }} />
+                            </div>
+                            <span className="w-24 shrink-0 text-right text-xs font-bold tabular-nums text-slate-700">{fmtFull(x.budget)}</span>
+                            <span className="w-12 shrink-0 text-right text-[11px] tabular-nums text-gray-400">{inflTotal > 0 ? Math.round((x.budget / inflTotal) * 100) : 0}%</span>
+                          </div>
+                        ))}
+                        <div className="flex items-center gap-3 pt-2 mt-1 border-t border-gray-100">
+                          <div className="w-32 shrink-0 text-xs font-bold text-slate-700">Total</div>
+                          <div className="flex-1" />
+                          <span className="w-24 shrink-0 text-right text-xs font-bold tabular-nums text-slate-900">{fmtFull(inflTotal)}</span>
+                          <span className="w-12 shrink-0 text-right text-[11px] tabular-nums text-gray-400">100%</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
               <TeamGiftingPanel />
             </>
           )}
