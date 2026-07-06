@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
-import { INFLUENCER_FY_KEYS, INFLUENCER_FY_LABEL } from "@/lib/influencerFy";
+import { INFLUENCER_FY_KEYS, INFLUENCER_FY_LABEL, INFLUENCER_BUDGET_FY } from "@/lib/influencerFy";
 
 // Team-safe influencer view. Any logged-in user (incl. the social team) may read it.
-// Budget pacing is returned as PERCENTAGES only — cost dollars never leave the server,
-// so the team sees how much budget is left without seeing what gifts actually cost.
-// Gift values are shown as RRP (retail), which is not derivable into cost.
+// The team CAN see how much BUDGET each brand has (dollars, monthly + FY) — that's their
+// planning allowance. What stays hidden is what gifts actually COST: spend is returned as
+// a PERCENTAGE of budget only, never as dollars. Gift values are shown as RRP (retail).
+// Budgets come straight from the marketing budget form (Influencer Marketing channel).
 
 export const revalidate = 0;
 const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -18,34 +19,45 @@ export async function GET() {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   if (!(await getAccess()).role) return NextResponse.json({ ok: false, error: "auth" }, { status: 401 });
 
-  const [bRes, eRes, rRes] = await Promise.all([
-    sb("influencer_budgets?select=brand,month_key,budget"),
+  const [mbRes, brRes, eRes, rRes] = await Promise.all([
+    sb(`marketing_budgets?select=brand_id,annual_budget&channel=eq.Influencer%20Marketing&fy=eq.${INFLUENCER_BUDGET_FY}`),
+    sb("brands?select=id,name"),
     sb("influencer_entries?select=*&order=month_key.desc"),
     sb("influencers?select=handle,name,followers,avatar_url,profile_url"),
   ]);
-  const bText = await bRes.text(), eText = await eRes.text();
-  if (!bRes.ok || !eRes.ok) return NextResponse.json({ ok: false, needsSetup: missing(bRes.status, bText) || missing(eRes.status, eText) });
+  const eText = await eRes.text();
+  if (!eRes.ok) return NextResponse.json({ ok: false, needsSetup: missing(eRes.status, eText) });
   const roster = rRes.ok ? (JSON.parse(await rRes.text() || "[]") as any[]) : [];
   const rosterBy = new Map(roster.map(r => [r.handle, r]));
+  const brandList = brRes.ok ? (JSON.parse(await brRes.text() || "[]") as any[]) : [];
+  const nameById = new Map(brandList.map(b => [b.id, b.name]));
+  const mbRows = mbRes.ok ? (JSON.parse(await mbRes.text() || "[]") as any[]) : [];
 
   const fy = new Set(INFLUENCER_FY_KEYS);
-  const budgets = (JSON.parse(bText || "[]") as any[]).filter(r => fy.has(r.month_key));
   const entries = (JSON.parse(eText || "[]") as any[]).filter(r => fy.has(r.month_key));
 
   const agg: Record<string, { budget: number; spend: number; rrp: number; gifts: number }> = {};
   const bucket = (b: string) => (agg[b] ??= { budget: 0, spend: 0, rrp: 0, gifts: 0 });
-  for (const r of budgets) bucket(r.brand).budget += Number(r.budget) || 0;
+  // Budget: FY annual influencer allowance per brand, from the marketing budget form.
+  for (const r of mbRows) { const name = nameById.get(r.brand_id); if (name) bucket(name).budget += Number(r.annual_budget) || 0; }
   for (const e of entries) { const a = bucket(e.brand || "—"); a.spend += Number(e.total_cost) || 0; a.rrp += Number(e.rrp) || 0; a.gifts++; }
 
   const pct = (used: number, budget: number) => budget > 0 ? Math.round((used / budget) * 100) : (used > 0 ? 100 : 0);
   const brands = Object.entries(agg)
-    .map(([brand, a]) => ({ brand, gifts: a.gifts, rrp_gifted: Math.round(a.rrp), used_pct: pct(a.spend, a.budget), left_pct: Math.max(0, 100 - pct(a.spend, a.budget)) }))
-    .filter(b => b.gifts > 0 || b.rrp_gifted > 0 || agg[b.brand].budget > 0)
-    .sort((x, y) => y.used_pct - x.used_pct);
+    .map(([brand, a]) => ({
+      brand, gifts: a.gifts, rrp_gifted: Math.round(a.rrp),
+      budget: Math.round(a.budget), monthly: Math.round(a.budget / 12),   // FY + monthly allowance ($)
+      used_pct: pct(a.spend, a.budget), left_pct: Math.max(0, 100 - pct(a.spend, a.budget)),
+    }))
+    .filter(b => b.gifts > 0 || b.rrp_gifted > 0 || b.budget > 0)
+    .sort((x, y) => y.budget - x.budget);
 
-  const totBudget = budgets.reduce((s, r) => s + (Number(r.budget) || 0), 0);
+  const totBudget = mbRows.reduce((s, r) => s + (Number(r.annual_budget) || 0), 0);
   const totSpend = entries.reduce((s, e) => s + (Number(e.total_cost) || 0), 0);
-  const overall = { used_pct: pct(totSpend, totBudget), left_pct: Math.max(0, 100 - pct(totSpend, totBudget)) };
+  const overall = {
+    used_pct: pct(totSpend, totBudget), left_pct: Math.max(0, 100 - pct(totSpend, totBudget)),
+    budget: Math.round(totBudget), monthly: Math.round(totBudget / 12),   // total allowance ($)
+  };
 
   const gifts = entries.slice(0, 120).map(e => ({
     id: e.id, month_key: e.month_key, handle: e.handle, platform: e.platform, brand: e.brand, product_name: e.product_name,

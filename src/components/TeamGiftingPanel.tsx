@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 // and gifts by RRP — never any cost. Plus a social board of post performance
 // (likes / reach) that the team fills in once a post is live.
 
-type Brand = { brand: string; gifts: number; rrp_gifted: number; used_pct: number; left_pct: number };
+type Brand = { brand: string; gifts: number; rrp_gifted: number; used_pct: number; left_pct: number; budget: number; monthly: number };
 type Gift = {
   id: number; month_key: string; handle: string | null; platform: string | null; brand: string | null;
   product_name: string | null; rrp: number | null; status: string | null; content_url: string | null;
@@ -15,7 +15,7 @@ type Gift = {
 };
 type TopInf = { handle: string; likes: number; name: string | null; followers: number | null; avatar_url: string | null };
 type Social = { posts: number; likes: number; reach: number };
-type Data = { fyLabel: string; overall: { used_pct: number; left_pct: number }; brands: Brand[]; gifts: Gift[]; social: Social; topInfluencers: TopInf[] };
+type Data = { fyLabel: string; overall: { used_pct: number; left_pct: number; budget: number; monthly: number }; brands: Brand[]; gifts: Gift[]; social: Social; topInfluencers: TopInf[] };
 
 function Avatar({ url, name, size = 40 }: { url: string | null; name: string | null; size?: number }) {
   const initial = (name || "?").replace(/^@/, "")[0]?.toUpperCase() || "?";
@@ -95,7 +95,7 @@ export function TeamGiftingPanel() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="font-semibold text-gray-800">Influencer & Social</h2>
-          <p className="text-xs text-gray-400 mt-0.5">{data.fyLabel} · budget as % · gift value is RRP · add post results as they go live</p>
+          <p className="text-xs text-gray-400 mt-0.5">{data.fyLabel} · monthly budget in $ · spend as % · gift value is RRP</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={load} className="text-xs font-medium text-slate-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3 py-2">↻ Refresh</button>
@@ -134,11 +134,21 @@ export function TeamGiftingPanel() {
         </div>
       )}
 
-      {/* Overall budget */}
+      {/* Overall budget — total $ allowance (monthly + FY) with spend as % */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-        <div className="flex items-baseline justify-between mb-2">
-          <h3 className="text-sm font-semibold text-slate-700">Budget remaining</h3>
+        <div className="flex items-baseline justify-between mb-2 gap-3 flex-wrap">
+          <h3 className="text-sm font-semibold text-slate-700">Gifting budget</h3>
           <span className="text-2xl font-bold text-slate-800">{data.overall.left_pct}% <span className="text-sm font-medium text-gray-400">left</span></span>
+        </div>
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="bg-gray-50/70 rounded-xl px-3 py-2">
+            <p className="text-[10px] uppercase tracking-wider text-gray-400">Monthly · all brands</p>
+            <p className="text-xl font-bold text-slate-800 leading-none mt-0.5">{rrp(data.overall.monthly)}</p>
+          </div>
+          <div className="bg-gray-50/70 rounded-xl px-3 py-2">
+            <p className="text-[10px] uppercase tracking-wider text-gray-400">Full year · all brands</p>
+            <p className="text-xl font-bold text-slate-800 leading-none mt-0.5">{rrp(data.overall.budget)}</p>
+          </div>
         </div>
         <Bar used={data.overall.used_pct} />
         <p className="text-[11px] text-gray-400 mt-1.5">{data.overall.used_pct}% of the FY gifting budget used across all brands</p>
@@ -156,7 +166,11 @@ export function TeamGiftingPanel() {
                 <p className="text-sm font-semibold text-slate-700 truncate w-full" title={b.brand}>{b.brand}</p>
                 <div className="my-2"><Ring used={b.used_pct} /></div>
                 <span className="text-[11px] font-semibold" style={{ color: meterColor(b.used_pct) }}>{b.used_pct}% used</span>
-                <p className="text-[11px] text-gray-400 mt-1">{b.gifts} gift{b.gifts === 1 ? "" : "s"} · {rrp(b.rrp_gifted)} RRP</p>
+                <div className="mt-2 w-full border-t border-gray-100 pt-2">
+                  <p className="text-base font-bold text-slate-800 leading-none">{rrp(b.monthly)}<span className="text-[11px] font-medium text-gray-400"> /mo</span></p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">{rrp(b.budget)} full year</p>
+                </div>
+                <p className="text-[11px] text-gray-400 mt-1.5">{b.gifts} gift{b.gifts === 1 ? "" : "s"} · {rrp(b.rrp_gifted)} RRP</p>
               </div>
             ))}
           </div>

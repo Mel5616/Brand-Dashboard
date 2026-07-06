@@ -13,3 +13,5 @@ export const INFLUENCER_FY_MONTHS = Array.from({ length: 12 }, (_, i) => {
 });
 export const INFLUENCER_FY_KEYS = INFLUENCER_FY_MONTHS.map(m => m.key);
 export const INFLUENCER_FY_LABEL = `FY${FY_START_YEAR}–${String(FY_START_YEAR + 1).slice(2)}`;
+// The `fy` value used in the marketing_budgets table, e.g. "2026-27".
+export const INFLUENCER_BUDGET_FY = `${FY_START_YEAR}-${String(FY_START_YEAR + 1).slice(2)}`;
