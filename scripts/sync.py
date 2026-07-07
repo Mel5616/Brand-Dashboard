@@ -693,6 +693,32 @@ def _google_access_token(creds):
     with urllib.request.urlopen(req, context=ctx, timeout=15) as r:
         return json.loads(r.read().decode())['access_token']
 
+def _google_purchase_value(_fetch, start, end, granularity):
+    """{period_key: purchase conversion value} via conversion-action-category
+    segmentation (only 'PURCHASE' = sale revenue, not leads/add-to-cart/sign-ups).
+    granularity 'month' -> 'YYYY-MM', 'date' -> 'YYYY-MM-DD'. Returns None if the
+    segmented query fails, so the caller falls back to total conversion value."""
+    seg = 'segments.month' if granularity == 'month' else 'segments.date'
+    q = f'''
+    SELECT {seg}, metrics.conversions_value
+    FROM campaign
+    WHERE segments.date >= '{start}' AND segments.date <= '{end}'
+      AND campaign.status != 'REMOVED'
+      AND segments.conversion_action_category = 'PURCHASE'
+    '''
+    try:
+        data = _fetch(q)
+    except urllib.error.HTTPError:
+        return None
+    out = defaultdict(float)
+    for row in data.get('results', []):
+        segv = row.get('segments', {})
+        key  = (segv.get('month') or segv.get('date') or '')
+        key  = key[:7] if granularity == 'month' else key[:10]
+        if key:
+            out[key] += float(row.get('metrics', {}).get('conversionsValue', 0))
+    return dict(out)
+
 def fetch_google_ads_metrics(customer_id, creds):
     """Fetch monthly spend, impressions, clicks, conversions_value for a customer."""
     access_token = _google_access_token(creds)
@@ -744,13 +770,18 @@ def fetch_google_ads_metrics(customer_id, creds):
         monthly[ym]['clicks']      += int(met.get('clicks', 0))
         monthly[ym]['conv_value']  += float(met.get('conversionsValue', 0))
 
+    # Purchase-only conversion value = sale revenue (excludes leads / add-to-cart /
+    # sign-ups). Segmented separately because conversion segments can't share a query
+    # with spend without double-counting cost. Falls back to total conv value.
+    purchase = _google_purchase_value(_fetch, FY_PREV_START, RANGE_END, 'month')
+
     rows = []
     # Emit both the previous and current FY (the query already fetches both), so the
     # revenue column stays populated across last year's history, not just this FY.
     for mk in MONTH_KEYS_PREV + MONTH_KEYS:
         m    = monthly.get(mk, {})
         spend = round(m.get('spend', 0), 2)
-        conv  = m.get('conv_value', 0)
+        conv  = purchase[mk] if (purchase is not None and mk in purchase) else (0.0 if purchase is not None else m.get('conv_value', 0))
         roas  = round(conv / spend, 2) if spend > 0 else 0
         rows.append({
             'month_key':   mk,
@@ -758,7 +789,7 @@ def fetch_google_ads_metrics(customer_id, creds):
             'impressions': m.get('impressions', 0),
             'clicks':      m.get('clicks', 0),
             'roas':        roas,
-            'revenue':     round(conv, 2),   # Google's actual reported conversion value
+            'revenue':     round(conv, 2),   # Google purchase conversion value (sale revenue)
         })
     return rows
 
@@ -813,12 +844,20 @@ def fetch_google_ads_daily(customer_id, creds):
         daily[d]['clicks']      += int(met.get('clicks', 0))
         daily[d]['conv_value']  += float(met.get('conversionsValue', 0))
 
+    # Purchase-only conversion value per day = sale revenue (fallback: total).
+    purchase = _google_purchase_value(_fetch, FY_PREV_START, RANGE_END, 'date')
+
+    def _rev(d, m):
+        if purchase is not None:
+            return purchase.get(d, 0.0)
+        return m['conv_value']
+
     return [{
         'date':        d,
         'spend':       round(m['spend'], 2),
         'impressions': m['impressions'],
         'clicks':      m['clicks'],
-        'revenue':     round(m['conv_value'], 2),
+        'revenue':     round(_rev(d, m), 2),
     } for d, m in sorted(daily.items())]
 
 def fetch_google_ads_campaigns(customer_id, creds):
