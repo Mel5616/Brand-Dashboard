@@ -699,8 +699,9 @@ def _google_purchase_value(_fetch, start, end, granularity):
     granularity 'month' -> 'YYYY-MM', 'date' -> 'YYYY-MM-DD'. Returns None if the
     segmented query fails, so the caller falls back to total conversion value."""
     seg = 'segments.month' if granularity == 'month' else 'segments.date'
+    # GAQL requires a segment used in WHERE to also appear in SELECT.
     q = f'''
-    SELECT {seg}, metrics.conversions_value
+    SELECT {seg}, segments.conversion_action_category, metrics.conversions_value
     FROM campaign
     WHERE segments.date >= '{start}' AND segments.date <= '{end}'
       AND campaign.status != 'REMOVED'
