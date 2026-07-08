@@ -99,24 +99,34 @@ def get_list_size(api_key, list_id):
         print(f"    Warning: could not fetch list size — {e}")
         return 0
 
-# True email subscriber base = profile_count of a segment the user creates per account
-# in Klaviyo (condition: "can receive email marketing"). Match it by name, read-only.
+# True email subscriber base = profile_count of each brand's "Active Subscribers"
+# segment in Klaviyo (named e.g. "NT - Active Subscribers", "GB - Active Subscribers").
+# Matched by name (tolerant of the "XX - " brand prefix); read-only.
 SUBSCRIBER_SEGMENT_NAMES = {
     "email subscribers", "subscribers", "all subscribers", "email marketing subscribers",
     "newsletter subscribers", "dashboard - email subscribers", "dashboard – email subscribers",
 }
 
+def _is_active_subscribers(name):
+    """True for an 'Active Subscribers' segment, ignoring a brand prefix, and NOT
+    matching 'Non-active' / 'Inactive' / 'Non-email' segments."""
+    n = (name or "").strip().lower()
+    bad = ("inactive", "non-active", "non active", "non-email", "non email")
+    return "active subscribers" in n and not any(b in n for b in bad)
+
 def get_subscriber_count(api_key):
-    """Find a segment named like 'Email Subscribers' and return its profile_count.
-    Returns 0 if no such segment exists yet. Read-only (no segments:write needed)."""
-    seg_id = None
+    """profile_count of the brand's 'Active Subscribers' segment (matched by name).
+    Falls back to a generic subscribers segment, else 0. Read-only."""
+    seg_id = fallback_id = None
     try:
         data = klaviyo_get(api_key, "segments/", {"fields[segment]": "name"})
         while True:
             for s in data.get("data", []):
                 name = (s.get("attributes", {}).get("name") or "").strip().lower()
-                if name in SUBSCRIBER_SEGMENT_NAMES:
+                if _is_active_subscribers(name):
                     seg_id = s["id"]; break
+                if fallback_id is None and name in SUBSCRIBER_SEGMENT_NAMES:
+                    fallback_id = s["id"]
             nxt = (data.get("links") or {}).get("next")
             if seg_id or not nxt:
                 break
@@ -124,6 +134,7 @@ def get_subscriber_count(api_key):
             r = requests.get(nxt, headers=headers, timeout=20); r.raise_for_status(); data = r.json()
     except Exception:
         return 0
+    seg_id = seg_id or fallback_id
     if not seg_id:
         return 0
     try:
@@ -247,7 +258,7 @@ def sync_brand(db, api_key, brand, brand_id):
     spam_id     = metrics.get("Marked Email as Spam")
 
     list_size = get_subscriber_count(api_key)
-    print(f"    Subscribers: {list_size:,}" + ("" if list_size else "  (no 'Email Subscribers' segment found — create one in Klaviyo)"))
+    print(f"    Active subscribers: {list_size:,}" + ("" if list_size else "  (no 'Active Subscribers' segment found — create one in Klaviyo)"))
 
     for mk in MONTH_KEYS:
         year, month = int(mk[:4]), int(mk[5:])

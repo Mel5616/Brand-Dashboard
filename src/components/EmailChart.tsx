@@ -91,7 +91,7 @@ export function EmailChart({ brands, data, monthly = [], monthKeys = DEFAULT_MON
 
   const kpis = [
     { label: `${latestLbl} Email Revenue`, value: fmtFull(revenue) },
-    { label: "Subscribers", value: subscribers > 0 ? subscribers.toLocaleString() : "—" },
+    { label: "Active Subscribers", value: subscribers > 0 ? subscribers.toLocaleString() : "—" },
     { label: `${latestLbl} Delivered`,     value: delivered.toLocaleString() },
     { label: "Open Rate",   value: blendOpen.toFixed(1) + "%" },
     { label: "Click Rate",  value: blendClick.toFixed(1) + "%" },

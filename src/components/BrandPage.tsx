@@ -950,7 +950,7 @@ export function BrandPage({
         <SectionHeader title={`${brand.name}  ·  Klaviyo  ·  Email Marketing`} />
         {hasKlaviyo ? (
           <div className="grid grid-cols-4 divide-x divide-gray-100 border-b border-gray-100 shadow-sm">
-            <KpiCard label="Subscribers"       value={(latestKl?.list_size ?? 0).toLocaleString()}          spark={klListSpark}  color="#7c3aed" />
+            <KpiCard label="Active Subscribers" value={(latestKl?.list_size ?? 0).toLocaleString()}          spark={klListSpark}  color="#7c3aed" />
             <KpiCard label={`Open Rate (${latestLbl})`} value={`${(latestKl?.open_rate ?? 0).toFixed(1)}%`}         spark={klOpenSpark}  prevPct={pctOf(latestKl?.open_rate ?? 0, prevKl?.open_rate ?? 0)} color="#7c3aed" />
             <KpiCard label={`Click Rate (${latestLbl})`} value={`${(latestKl?.click_rate ?? 0).toFixed(1)}%`}       spark={klClickSpark} prevPct={pctOf(latestKl?.click_rate ?? 0, prevKl?.click_rate ?? 0)} color="#7c3aed" />
             <KpiCard label={`Revenue (${latestLbl})`}  value={fmtFull(latestKl?.revenue ?? 0)}                      spark={klRevSpark}   prevPct={pctOf(latestKl?.revenue ?? 0, prevKl?.revenue ?? 0)} color="#7c3aed" />

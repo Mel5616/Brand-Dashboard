@@ -355,7 +355,7 @@ export function snapshotHtml(s: Snapshot): string {
       <div class="c"><div class="l">Click rate</div><div class="v">${em.clickRate.toFixed(1)}%</div></div>
       <div class="c"><div class="l">Attributed revenue</div><div class="v">${fmt(em.rev)}</div></div>
     </div>
-    <div class="seostat">Flow <strong>${fmt(em.flowRev)}</strong> &middot; Campaign <strong>${fmt(em.campaignRev)}</strong> &middot; Orders <strong>${em.orders.toLocaleString()}</strong> &middot; Unsubscribes <strong>${em.unsubs.toLocaleString()}</strong>${em.bounces ? ` &middot; Bounces <strong>${em.bounces.toLocaleString()}</strong>` : ""}</div>
+    <div class="seostat">${em.listSize ? `Active subscribers <strong>${em.listSize.toLocaleString()}</strong> &middot; ` : ""}Flow <strong>${fmt(em.flowRev)}</strong> &middot; Campaign <strong>${fmt(em.campaignRev)}</strong> &middot; Orders <strong>${em.orders.toLocaleString()}</strong> &middot; Unsubscribes <strong>${em.unsubs.toLocaleString()}</strong>${em.bounces ? ` &middot; Bounces <strong>${em.bounces.toLocaleString()}</strong>` : ""}</div>
   </div>` : "";
 
   // Top Instagram posts by engagement.

@@ -1700,7 +1700,7 @@ export function DashboardTabs({
 
                 const cols = [
                   { label: "Email Revenue", getValue: (r: any) => fmt(r.cur.revenue),                       getSpark: (r: any) => r.revSpark,   getChg: (r: any) => r.revChg },
-                  { label: "Subscribers",   getValue: (r: any) => r.subscribers > 0 ? r.subscribers.toLocaleString() : "—", getSpark: (r: any) => r.subSpark, getChg: () => null },
+                  { label: "Active Subs",   getValue: (r: any) => r.subscribers > 0 ? r.subscribers.toLocaleString() : "—", getSpark: (r: any) => r.subSpark, getChg: () => null },
                   { label: "Delivered",     getValue: (r: any) => r.cur.emails_sent.toLocaleString(),       getSpark: (r: any) => r.sentSpark,  getChg: (r: any) => r.sentChg },
                   { label: "Open Rate",     getValue: (r: any) => r.cur.open_rate.toFixed(1) + "%",          getSpark: (r: any) => r.openSpark,  getChg: (r: any) => r.openChg },
                   { label: "Click Rate",    getValue: (r: any) => r.cur.click_rate.toFixed(1) + "%",         getSpark: (r: any) => r.clickSpark, getChg: (r: any) => r.clickChg },
