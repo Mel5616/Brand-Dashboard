@@ -19,9 +19,11 @@ function isMissingTable(status: number, body: string) {
 }
 
 const FIELDS = ["horizon", "campaign", "brand", "tier", "owner", "channel", "status", "key_date", "end_date", "note", "sort_order", "brief", "image_url"];
+const DATE_FIELDS = new Set(["key_date", "end_date"]);
 function clean(b: any) {
   const row: Record<string, any> = {};
-  for (const f of FIELDS) if (b[f] !== undefined) row[f] = b[f];
+  // Empty-string dates aren't valid for a date column — store null instead.
+  for (const f of FIELDS) if (b[f] !== undefined) row[f] = (DATE_FIELDS.has(f) && b[f] === "") ? null : b[f];
   return row;
 }
 
@@ -43,6 +45,9 @@ export async function POST(req: Request) {
   const row = clean(b);
   if (!row.horizon) return NextResponse.json({ ok: false, message: "Missing horizon" }, { status: 400 });
   if (row.owner === undefined) row.owner = "TBC";
+  // key_date is NOT NULL — a brand-new card has no date yet, so default to today
+  // (the user sets the real date on the card). Avoids a not-null insert failure.
+  if (!row.key_date) row.key_date = new Date().toISOString().slice(0, 10);
   const res = await fetch(`${sbUrl}/rest/v1/campaigns`, { method: "POST", headers: headers({ Prefer: "return=representation" }), body: JSON.stringify(row) });
   const text = await res.text();
   if (!res.ok) return NextResponse.json({ ok: false, needsSetup: isMissingTable(res.status, text) }, { status: 500 });
