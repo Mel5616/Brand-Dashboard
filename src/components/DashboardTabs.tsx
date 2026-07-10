@@ -9,7 +9,7 @@ import { AdsDailyRange } from "./AdsDailyRange";
 import { CommandPalette } from "./CommandPalette";
 import { SyncStatusPanel } from "./SyncStatusPanel";
 import { GoogleCampaignsTable } from "./GoogleCampaignsTable";
-import { AffiliatesPanel } from "./AffiliatesPanel";
+import { AffiliatesPanel, CF_BRAND_IDS } from "./AffiliatesPanel";
 import { EmailChart } from "./EmailChart";
 import { EmailBrandDetail } from "./EmailBrandDetail";
 import { BrandReport } from "./BrandReport";
@@ -1889,22 +1889,29 @@ export function DashboardTabs({
           )}
 
           {/* ── Affiliates (Commission Factory) ── */}
-          {active === "affiliates" && (
-            <>
-              <SectionBar title="Affiliates · Commission Factory" />
-              <div className="flex items-center gap-2 mb-3">
-                <select
-                  value={brandFilter === "all" ? "all" : String(brandFilter)}
-                  onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
-                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-                >
-                  <option value="all">All Brands</option>
-                  {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
-                </select>
-              </div>
-              <AffiliatesPanel rows={commissionFactory} brands={brands} brandFilter={brandFilter} monthKeys={monthKeys} fyLabel={fyLabel} />
-            </>
-          )}
+          {active === "affiliates" && (() => {
+            // Only CF brands are selectable. A brand carried over from another tab
+            // would otherwise show an empty view that looks like a data problem.
+            const cfBrands = brands.filter((b: any) => CF_BRAND_IDS.includes(b.id));
+            const cfFilter: "all" | number = brandFilter !== "all" && CF_BRAND_IDS.includes(brandFilter as number) ? brandFilter : "all";
+            return (
+              <>
+                <SectionBar title="Affiliates · Commission Factory" />
+                <div className="flex items-center gap-2 mb-3">
+                  <select
+                    value={cfFilter === "all" ? "all" : String(cfFilter)}
+                    onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
+                    className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                  >
+                    <option value="all">Both brands</option>
+                    {cfBrands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
+                  </select>
+                  <span className="text-[11px] text-gray-400">UPPAbaby and Nanit only</span>
+                </div>
+                <AffiliatesPanel rows={commissionFactory} brands={cfBrands} brandFilter={cfFilter} monthKeys={monthKeys} fyLabel={fyLabel} />
+              </>
+            );
+          })()}
 
           {/* ── Partnerships & Affiliates ── */}
           {active === "pa-budget" && (

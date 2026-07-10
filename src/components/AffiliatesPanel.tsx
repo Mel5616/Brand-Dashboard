@@ -8,6 +8,11 @@ import { fmt, fmtFull } from "@/lib/format";
 // Deliberate: sale value is ATTRIBUTED revenue — those orders already sit in the
 // brand's Shopify revenue, so it is never added to store revenue anywhere. The
 // number that is genuinely new is the COST: commission + CF's override fee.
+// Only these brands run a Commission Factory program. Everyone else has no CF
+// merchant account, so showing them an empty affiliate view would imply
+// "coming soon" rather than "not applicable". Add an id here if a program launches.
+export const CF_BRAND_IDS = [0, 5]; // Nanit, UPPAbaby
+
 type CFRow = { brand_id: number; month_key: string; status: string; transactions: number; sale_value: number; commission: number; override_fee: number };
 type Brand = { id: number; name: string; color?: string };
 type Roll = { name: string; transactions: number; sale_value: number; cost: number };
@@ -49,8 +54,9 @@ export function AffiliatesPanel({ rows, brands, brandFilter, monthKeys, fyLabel 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
         <p className="text-slate-600 font-medium">No affiliate transactions yet</p>
         <p className="text-sm text-gray-400 mt-1.5 max-w-lg mx-auto">
-          The Commission Factory programs are newly launched. Real transactions appear here as they come in —
-          Commission Factory&apos;s own test transactions are excluded on purpose.
+          Commission Factory runs for <strong className="font-semibold text-gray-500">UPPAbaby and Nanit</strong> only, and both
+          programs are newly launched. Real transactions appear here as they come in — Commission Factory&apos;s own test
+          transactions are excluded on purpose.
         </p>
       </div>
     );
