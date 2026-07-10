@@ -119,6 +119,16 @@ export type PinterestAdsRow = {
   roas: number;
 };
 
+export type CommissionFactoryRow = {
+  brand_id: number;
+  month_key: string;
+  status: string;          // Approved / Pending / Void
+  transactions: number;
+  sale_value: number;      // ATTRIBUTED revenue — already in Shopify. Never add to store revenue.
+  commission: number;
+  override_fee: number;    // CF platform fee; true cost = commission + override_fee
+};
+
 export type MetaAdsPlatformRow = {
   brand_id: number;
   month_key: string;
@@ -235,6 +245,7 @@ export async function getDashboardData() {
     { data: googleAds },
     { data: metaAds },
     { data: pinterestAds },
+    { data: commissionFactory },
     { data: metaAdsPlatform },
     { data: instagramOrganic },
     { data: targets },
@@ -274,6 +285,7 @@ export async function getDashboardData() {
     db.from("google_ads").select("*").order("month_key"),
     db.from("meta_ads").select("*").order("month_key"),
     db.from("pinterest_ads").select("*").order("month_key"),
+    db.from("commission_factory").select("*").order("month_key"),
     db.from("meta_ads_platform").select("brand_id,month_key,platform,spend,impressions,clicks,purchases,revenue,reach").order("month_key"),
     db.from("instagram_organic").select("brand_id,month_key,followers,reach,profile_views,accounts_engaged").order("month_key"),
     db.from("brand_targets").select("*").order("month_key"),
@@ -315,6 +327,7 @@ export async function getDashboardData() {
     googleAds: (googleAds ?? []) as GoogleAdsRow[],
     metaAds: (metaAds ?? []) as MetaAdsRow[],
     pinterestAds: (pinterestAds ?? []) as PinterestAdsRow[],
+    commissionFactory: (commissionFactory ?? []) as CommissionFactoryRow[],
     metaAdsPlatform: (metaAdsPlatform ?? []) as MetaAdsPlatformRow[],
     instagramOrganic: (instagramOrganic ?? []) as InstagramOrganicRow[],
     targets: (targets ?? []) as BrandTarget[],

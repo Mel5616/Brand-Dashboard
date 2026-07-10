@@ -9,6 +9,7 @@ import { AdsDailyRange } from "./AdsDailyRange";
 import { CommandPalette } from "./CommandPalette";
 import { SyncStatusPanel } from "./SyncStatusPanel";
 import { GoogleCampaignsTable } from "./GoogleCampaignsTable";
+import { AffiliatesPanel } from "./AffiliatesPanel";
 import { EmailChart } from "./EmailChart";
 import { EmailBrandDetail } from "./EmailBrandDetail";
 import { BrandReport } from "./BrandReport";
@@ -54,7 +55,7 @@ import { ShopifyInsights } from "./ShopifyInsights";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "uppababy" | "sales" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "budget" | "calendar" | "content" | "influencer" | "gifting" | "pa-budget" | "pa-tracker" | "team";
+type TabId = "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "uppababy" | "sales" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "budget" | "calendar" | "content" | "influencer" | "gifting" | "affiliates" | "pa-budget" | "pa-tracker" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -182,6 +183,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8M12 4v16" /></svg>,
   },
   {
+    id: "affiliates", label: "Affiliates",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5m6.5-6.5l1.5-1.5a4 4 0 115.656 5.656l-3 3a4 4 0 01-5.656 0" /></svg>,
+  },
+  {
     id: "pa-budget", label: "Budget",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 1v8m0 0v1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   },
@@ -203,7 +208,7 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Plan", ids: ["show-deals", "campaign-calendar", "promotions", "calendar", "content", "events", "tasks", "design-requests"] },
   { label: "Operations", ids: ["budget", "new-products", "product-info"] },
   { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads"] },
-  { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting", "pa-budget", "pa-tracker"] },
+  { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting", "affiliates", "pa-budget", "pa-tracker"] },
 ];
 
 // Influencer pages collapse under an "Influencers" dropdown in the sidebar.
@@ -267,6 +272,7 @@ interface Props {
   googleAds: any[];
   metaAds: any[];
   pinterestAds: any[];
+  commissionFactory: any[];
   metaAdsPlatform: any[];
   instagramOrganic: any[];
   targets: any[];
@@ -301,7 +307,7 @@ interface Props {
 export function DashboardTabs({
   brands, summaries, monthly, weekly, brandDaily, products,
   tradeshows, tradeshowBrands, tradeshowSales,
-  weekLabels, googleAds, metaAds, pinterestAds, metaAdsPlatform,
+  weekLabels, googleAds, metaAds, pinterestAds, commissionFactory, metaAdsPlatform,
   instagramOrganic, targets, klaviyo, ga4,
   marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, boothFunnel, kpis,
   gscMetrics, gscQueries, gscInsights, semrushMetrics, semrushCompetitors,
@@ -1879,6 +1885,24 @@ export function DashboardTabs({
             <>
               <SectionBar title="Influencer Gifting" />
               <TeamGiftingPanel />
+            </>
+          )}
+
+          {/* ── Affiliates (Commission Factory) ── */}
+          {active === "affiliates" && (
+            <>
+              <SectionBar title="Affiliates · Commission Factory" />
+              <div className="flex items-center gap-2 mb-3">
+                <select
+                  value={brandFilter === "all" ? "all" : String(brandFilter)}
+                  onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
+                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                >
+                  <option value="all">All Brands</option>
+                  {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
+                </select>
+              </div>
+              <AffiliatesPanel rows={commissionFactory} brands={brands} brandFilter={brandFilter} monthKeys={monthKeys} fyLabel={fyLabel} />
             </>
           )}
 
