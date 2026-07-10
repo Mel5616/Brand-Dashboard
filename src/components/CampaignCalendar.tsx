@@ -8,6 +8,8 @@ import React, { useEffect, useRef, useState } from "react";
 // view and export a brief to PDF. Australian English. Owners default to TBC.
 
 type Brief = Record<string, any>; // mostly text fields; complianceFlags is { label, note }[]
+// brief.emails — the campaign's EDM drafts. Subject holds one option per line (first = chosen).
+export type EmailDraft = { name: string; sendDate: string; segment: string; subject: string; preview: string; body: string };
 type Campaign = {
   id: string; horizon: string; campaign: string; brand: string; tier: string;
   owner: string; channel: string; status: string; key_date: string; end_date?: string; note: string;
@@ -90,6 +92,7 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const [imgBusy, setImgBusy] = useState(false);
+  const [emailCopied, setEmailCopied] = useState<number | null>(null);
   const imgRef = useRef<HTMLInputElement>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<string | null>(null);
@@ -227,6 +230,31 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
     if (item.id.startsWith("temp-")) return;
     patch(item.id, { brief: { ...cur } } as Partial<Campaign>);
   }
+  // Email drafts — structured sends stored in brief.emails, copied straight into Klaviyo.
+  function setEmails(item: Campaign, emails: EmailDraft[]) {
+    const cur = { ...(briefDraft.current[item.id] ?? (item.brief as any) ?? {}), emails };
+    briefDraft.current[item.id] = cur;
+    setItems(prev => prev.map(it => (it.id === item.id ? { ...it, brief: { ...cur } } : it)));
+    if (item.id.startsWith("temp-")) return;
+    patch(item.id, { brief: { ...cur } } as Partial<Campaign>);
+  }
+  function updateEmail(item: Campaign, i: number, field: keyof EmailDraft, value: string) {
+    const arr = [...((item.brief?.emails as EmailDraft[]) ?? [])];
+    arr[i] = { ...arr[i], [field]: value };
+    setEmails(item, arr);
+  }
+  // Klaviyo wants the chosen subject (first line), the preview text, then the body.
+  const emailText = (e: EmailDraft) => [
+    `Subject: ${(e?.subject ?? "").split("\n")[0].trim()}`,
+    `Preview text: ${e?.preview ?? ""}`,
+    "",
+    e?.body ?? "",
+  ].join("\n");
+  async function copyEmail(e: EmailDraft, i: number) {
+    try { await navigator.clipboard.writeText(emailText(e)); setEmailCopied(i); setTimeout(() => setEmailCopied(null), 1500); }
+    catch { setError("Could not copy. Select the text and copy it manually."); }
+  }
+
   async function addRow(horizon: string) {
     const order = Math.max(0, ...items.filter(i => i.horizon === horizon).map(i => i.sort_order || 0)) + 1;
     const draft = { horizon, campaign: "", brand: "", tier: "A", owner: "TBC", channel: "", status: "Planned", key_date: "", end_date: "", note: "", sort_order: order, brief: {} };
@@ -329,6 +357,15 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
       "",
       ...BRIEF_FIELDS.map(f => `${f.label}: ${c.brief?.[f.key] ?? ""}`),
     ];
+    const emails: EmailDraft[] = c.brief?.emails ?? [];
+    if (emails.length) {
+      lines.push("", `— Email drafts (${emails.length}) —`);
+      emails.forEach((e, i) => lines.push(
+        "",
+        `${i + 1}. ${e.name || "Untitled send"}${e.sendDate ? ` · ${e.sendDate}` : ""}${e.segment ? ` · to: ${e.segment}` : ""}`,
+        emailText(e),
+      ));
+    }
     return lines.join("\n");
   }
   async function copyBrief(c: Campaign) {
@@ -598,6 +635,45 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                   </div>
                 ))}
                 {canEdit && <button onClick={() => setFlags(open, [...(open.brief?.complianceFlags ?? []), { label: "", note: "" }])} className="text-[13px] font-medium text-amber-700 hover:text-amber-800">+ Add compliance flag</button>}
+              </div>
+
+              {/* Email drafts — the actual copy, ready to paste into Klaviyo */}
+              <div className="space-y-3 border-t border-gray-100 pt-4 mt-3">
+                <label className="block text-[11px] font-semibold uppercase tracking-widest text-sky-700">
+                  Email drafts <span className="font-normal lowercase tracking-normal text-gray-300">· paste into Klaviyo, a human sends</span>
+                </label>
+                {(((open.brief?.emails as EmailDraft[]) ?? [])).map((em, i) => {
+                  const inp = "w-full bg-white/80 text-[13px] text-slate-700 rounded px-2 py-1 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400 read-only:cursor-default placeholder:text-sky-300";
+                  return (
+                    <div key={i} className="rounded-lg bg-sky-50/60 border border-sky-100 p-3 space-y-2">
+                      <div className="flex gap-2 items-center">
+                        <input readOnly={ro} defaultValue={em?.name ?? ""} placeholder="Send name (e.g. Launch)"
+                          onBlur={e => updateEmail(open, i, "name", e.target.value)}
+                          className={`${inp} flex-1 font-semibold text-slate-800`} />
+                        <input readOnly={ro} defaultValue={em?.sendDate ?? ""} placeholder="Send date"
+                          onBlur={e => updateEmail(open, i, "sendDate", e.target.value)} className={`${inp} w-32`} />
+                        {canEdit && <button onClick={() => setEmails(open, ((open.brief?.emails as EmailDraft[]) ?? []).filter((_, j) => j !== i))} className="text-sky-500 hover:text-sky-700 text-xs px-1" aria-label="Remove email draft">✕</button>}
+                      </div>
+                      <input readOnly={ro} defaultValue={em?.segment ?? ""} placeholder="Send to — a segment, not the whole list"
+                        onBlur={e => updateEmail(open, i, "segment", e.target.value)} className={inp} />
+                      <div>
+                        <span className="block text-[10px] uppercase tracking-widest text-gray-400 mb-0.5">Subject <span className="normal-case tracking-normal text-gray-300">· one per line, the first is used</span></span>
+                        <textarea readOnly={ro} defaultValue={em?.subject ?? ""} rows={2} placeholder="Subject line options"
+                          onBlur={e => updateEmail(open, i, "subject", e.target.value)} className={`${inp} resize-y`} />
+                      </div>
+                      <input readOnly={ro} defaultValue={em?.preview ?? ""} placeholder="Preview text"
+                        onBlur={e => updateEmail(open, i, "preview", e.target.value)} className={inp} />
+                      <textarea readOnly={ro} defaultValue={em?.body ?? ""} rows={8} placeholder="Email body"
+                        onBlur={e => updateEmail(open, i, "body", e.target.value)} className={`${inp} resize-y leading-relaxed`} />
+                      <div className="no-print flex justify-end">
+                        <button onClick={() => copyEmail(em, i)} className="text-[13px] font-medium text-sky-700 bg-white border border-sky-200 hover:bg-sky-50 rounded-lg px-3 py-1 transition">
+                          {emailCopied === i ? "Copied" : "Copy for Klaviyo"}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+                {canEdit && <button onClick={() => setEmails(open, [...(((open.brief?.emails as EmailDraft[]) ?? [])), { name: "", sendDate: "", segment: "", subject: "", preview: "", body: "" }])} className="text-[13px] font-medium text-sky-700 hover:text-sky-800">+ Add email draft</button>}
               </div>
 
               {/* Footer */}
