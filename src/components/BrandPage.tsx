@@ -14,6 +14,7 @@ import type {
 } from "@/lib/db";
 import { SocialBrandDetail } from "./SocialPanel";
 import { GoogleCampaignsTable } from "./GoogleCampaignsTable";
+import { forecastFY } from "@/lib/forecast";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Filler, Tooltip, Legend);
 
@@ -168,6 +169,7 @@ interface Props {
   brand: Brand;
   summary: BrandSummary | undefined;
   monthly: BrandMonthly[];
+  rawMonthly?: BrandMonthly[];   // all FYs (for the seasonal forecast); monthly is FY-scoped
   weekly: BrandWeekly[];
   weekLabels: WeekLabel[];
   products: BrandProduct[];
@@ -192,7 +194,7 @@ interface Props {
 }
 
 export function BrandPage({
-  brand, summary, monthly, weekly, weekLabels, products,
+  brand, summary, monthly, rawMonthly, weekly, weekLabels, products,
   googleAds, metaAds, metaAdsPlatform, instagramOrganic, instagramOrganicAll, instagramMedia,
   targets, klaviyo, ga4, marketingBudgets, marketingActuals, googleAdsCampaigns,
   monthKeys = DEFAULT_MONTH_KEYS, monthLabels = DEFAULT_MONTH_LABELS,
@@ -397,8 +399,17 @@ export function BrandPage({
   const portfolioFyRev     = monthly.filter(m => MONTH_KEYS.includes(m.month_key)).reduce((s, m) => s + m.revenue, 0);
   const shareOfPortfolio   = portfolioFyRev > 0 ? (fyRevenue / portfolioFyRev) * 100 : 0;
   const monthsWithData     = revMonthly.filter(v => v > 0).length;
-  const forecastFullYear   = monthsWithData > 0 ? (fyRevenue / monthsWithData) * 12 : 0;
-  const paceVsTarget       = fyRevTarget > 0 ? (forecastFullYear / fyRevTarget) * 100 : null;
+  // Seasonal forecast when we have prior-FY history (rawMonthly); else a flat run-rate.
+  const fcSeasonal = (() => {
+    if (!rawMonthly) return null;
+    const s: Record<string, number> = {};
+    for (const m of rawMonthly) if (m.brand_id === brand.id) s[m.month_key] = (s[m.month_key] || 0) + (m.revenue || 0);
+    const tMap: Record<string, number> = {};
+    for (const t of brandTargets) tMap[t.month_key] = (tMap[t.month_key] || 0) + (t.revenue_target ?? 0);
+    return forecastFY(s, fyRevTarget > 0 ? tMap : null);
+  })();
+  const forecastFullYear   = fcSeasonal ? fcSeasonal.full : (monthsWithData > 0 ? (fyRevenue / monthsWithData) * 12 : 0);
+  const paceVsTarget       = fcSeasonal?.pacePct ?? (fyRevTarget > 0 ? (forecastFullYear / fyRevTarget) * 100 : null);
   const targetVsActual     = fyRevTarget > 0 ? (fyRevenue / fyRevTarget) * 100 : null;
   const budgetUtilPct      = fyBudget > 0 ? (fyTotalSpend / fyBudget) * 100 : null;
   const hasSummaryKpis     = fyRevenue > 0 || fyTotalSpend > 0 || fyRevTarget > 0;

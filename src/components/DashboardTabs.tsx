@@ -8,6 +8,7 @@ import { PinterestAdsChart } from "./PinterestAdsChart";
 import { AdsDailyRange } from "./AdsDailyRange";
 import { CommandPalette } from "./CommandPalette";
 import { SyncStatusPanel } from "./SyncStatusPanel";
+import { ForecastPanel } from "./ForecastPanel";
 import { GoogleCampaignsTable } from "./GoogleCampaignsTable";
 import { AffiliatesPanel, CF_BRAND_IDS } from "./AffiliatesPanel";
 import { EmailChart } from "./EmailChart";
@@ -684,6 +685,7 @@ export function DashboardTabs({
             brandInsight={brandInsights.find((x: any) => x.brand_id === selectedBrand.id)?.content ?? null}
             summary={selectedSummary ?? undefined}
             monthly={monthly}
+            rawMonthly={rawMonthly}
             weekly={weekly}
             weekLabels={weekLabels}
             products={products}
@@ -776,6 +778,7 @@ export function DashboardTabs({
           {active === "brands" && (
             <>
               {role === "admin" && <SyncStatusPanel />}
+              <ForecastPanel brands={brands.filter((b: any) => b.live)} monthly={rawMonthly} targets={rawTargets} />
               {(() => {
                 const biz = buildChannels("all", { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest: LATEST });
                 if (!biz.length) return null;
