@@ -79,7 +79,11 @@ export function WeeklyBrief() {
         setIntro(it.intro || "");
         setObjectives(it.objectives?.length ? it.objectives : [{ text: "", done: false }]);
         setBrandUpdates(it.brand_updates?.length ? it.brand_updates : [{ text: "" }]);
-        if (it.snapshot) setSnapshot(it.snapshot);
+        // Published briefs keep their frozen snapshot (what the team saw). Drafts
+        // show LIVE data — publishing rebuilds it anyway, so the preview shouldn't
+        // lag behind newer sections or fresher figures.
+        if (it.published_at && it.snapshot) setSnapshot(it.snapshot);
+        else { const pv = await fetch("/api/weekly-brief?preview=1").then(x => x.json()).catch(() => null); if (pv?.ok) setSnapshot(pv.snapshot); else if (it.snapshot) setSnapshot(it.snapshot); }
         if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
       }
     } finally { setBusy(false); }
