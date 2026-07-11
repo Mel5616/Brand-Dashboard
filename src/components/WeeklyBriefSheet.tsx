@@ -7,6 +7,7 @@ type Snapshot = {
   generatedAt?: string;
   d2c?: { weekStart: string | null; partial?: boolean; total: number; wowPct: number | null; top: { brand: string; revenue: number; wow: number | null }[]; fallers: { brand: string; wow: number | null }[] };
   launches?: { campaign: string; brand: string; keyDate: string | null; status: string; oneLiner: string }[];
+  promos?: { brand: string; tier: number | null; endDate: string; note: string }[];
   attention?: { text: string; kind: string }[];
   wins?: {
     posts: { brand: string; engagement: number; likes: number; comments: number; reach: number; caption: string; permalink: string; image: string }[];
@@ -31,8 +32,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
   const s = brief.snapshot ?? {};
   const objectives = brief.objectives ?? [];
-  const d2c = s.d2c, launches = s.launches ?? [], attention = s.attention ?? [];
+  const d2c = s.d2c, launches = s.launches ?? [], attention = s.attention ?? [], promos = s.promos ?? [];
   const wins = s.wins, posts = wins?.posts ?? [], email = wins?.email;
+  const tierColor = (t: number | null) => t === 1 ? "bg-rose-100 text-rose-700" : t === 2 ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500";
 
   return (
     <div className="max-w-[760px] mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 space-y-7">
@@ -97,6 +99,21 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
               </li>
             ))}
           </ul>
+        </Section>
+      )}
+
+      {promos.length > 0 && (
+        <Section title="Promotions live this week">
+          <div className="flex flex-wrap gap-2">
+            {promos.map((p, i) => (
+              <span key={i} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-100 bg-gray-50/70 px-2.5 py-1.5 text-[13px]">
+                <span className={`text-[10px] font-bold rounded px-1.5 py-0.5 ${tierColor(p.tier)}`}>{p.tier != null ? `T${p.tier}` : "Promo"}</span>
+                <span className="font-medium text-slate-700">{p.brand}</span>
+                {p.note && <span className="text-gray-500">· {p.note}</span>}
+                <span className="text-gray-400">· ends {dateShort(p.endDate)}</span>
+              </span>
+            ))}
+          </div>
         </Section>
       )}
 
