@@ -164,15 +164,19 @@ export async function POST(req: Request) {
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
 
   const snapshot = await buildSnapshot();
-  const row = {
+  const row: any = {
     share_token: randomBytes(9).toString("base64url"),
     week_label: b.weekLabel || new Date().toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }),
     intro: String(b.intro || "").slice(0, 4000),
     objectives: Array.isArray(b.objectives) ? b.objectives.slice(0, 50) : [],
+    brand_updates: Array.isArray(b.brandUpdates) ? b.brandUpdates.slice(0, 50) : [],
     snapshot, published_at: new Date().toISOString(), created_by: access.user?.email ?? null,
   };
-  const res = await fetch(`${sbUrl}/rest/v1/weekly_briefs`, { method: "POST", headers: h({ Prefer: "return=representation" }), body: JSON.stringify(row) });
-  const text = await res.text();
+  const post = (r: any) => fetch(`${sbUrl}/rest/v1/weekly_briefs`, { method: "POST", headers: h({ Prefer: "return=representation" }), body: JSON.stringify(r) });
+  let res = await post(row);
+  let text = await res.text();
+  // Fallback if the brand_updates column hasn't been added yet — still publish.
+  if (!res.ok && /brand_updates/i.test(text)) { const { brand_updates, ...rest } = row; res = await post(rest); text = await res.text(); }
   if (!res.ok) return NextResponse.json({ ok: false, needsSetup: missing(res.status, text), error: text.slice(0, 200) }, { status: 500 });
   return NextResponse.json({ ok: true, item: JSON.parse(text)[0] });
 }
@@ -185,6 +189,7 @@ export async function PATCH(req: Request) {
   const fields: any = {};
   if (b.intro !== undefined) fields.intro = String(b.intro).slice(0, 4000);
   if (b.objectives !== undefined) fields.objectives = Array.isArray(b.objectives) ? b.objectives.slice(0, 50) : [];
+  if (b.brandUpdates !== undefined) fields.brand_updates = Array.isArray(b.brandUpdates) ? b.brandUpdates.slice(0, 50) : [];
   if (b.week_label !== undefined) fields.week_label = String(b.week_label).slice(0, 120);
   if (b.refreshSnapshot) fields.snapshot = await buildSnapshot();
   const res = await fetch(`${sbUrl}/rest/v1/weekly_briefs?id=eq.${encodeURIComponent(String(b.id))}`, { method: "PATCH", headers: h({ Prefer: "return=representation" }), body: JSON.stringify(fields) });

@@ -14,7 +14,7 @@ type Snapshot = {
     email: { month: string; topRevenue: { brand: string; revenue: number } | null; bestClick: { brand: string; clickRate: number } | null } | null;
   };
 };
-export type Brief = { week_label?: string; intro?: string; objectives?: Objective[]; snapshot?: Snapshot; published_at?: string };
+export type Brief = { week_label?: string; intro?: string; objectives?: Objective[]; brand_updates?: { text: string }[]; snapshot?: Snapshot; published_at?: string };
 
 const dateShort = (s?: string | null) => s ? new Date(s + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" }) : "";
 const Wow = ({ v }: { v: number | null }) => v == null ? <span className="text-slate-300">—</span>
@@ -32,6 +32,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
   const s = brief.snapshot ?? {};
   const objectives = brief.objectives ?? [];
+  const brandUpdates = (brief.brand_updates ?? []).filter(u => u.text?.trim());
   const d2c = s.d2c, launches = s.launches ?? [], attention = s.attention ?? [], promos = s.promos ?? [];
   const wins = s.wins, posts = wins?.posts ?? [], email = wins?.email;
   const tierColor = (t: number | null) => t === 1 ? "bg-rose-100 text-rose-700" : t === 2 ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500";
@@ -55,6 +56,19 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
                   {o.done && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                 </span>
                 <span className={`text-[15px] leading-snug ${o.done ? "text-gray-400 line-through" : "text-slate-700"}`}>{o.text}</span>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
+
+      {brandUpdates.length > 0 && (
+        <Section title="Brand updates">
+          <ul className="space-y-2">
+            {brandUpdates.map((u, i) => (
+              <li key={i} className="flex items-start gap-2.5 text-[15px] text-slate-700 leading-snug">
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                <span className="whitespace-pre-wrap">{u.text}</span>
               </li>
             ))}
           </ul>

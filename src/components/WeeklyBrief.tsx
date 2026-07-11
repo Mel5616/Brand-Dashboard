@@ -18,6 +18,7 @@ export function WeeklyBrief() {
   const [weekLabel, setWeekLabel] = useState(defaultLabel);
   const [intro, setIntro] = useState("");
   const [objectives, setObjectives] = useState<Objective[]>([{ text: "", done: false }]);
+  const [brandUpdates, setBrandUpdates] = useState<{ text: string }[]>([{ text: "" }]);
   const [snapshot, setSnapshot] = useState<any>(null);
   const [past, setPast] = useState<Saved[]>([]);
   const [current, setCurrent] = useState<Saved | null>(null);
@@ -39,11 +40,12 @@ export function WeeklyBrief() {
 
   const setObj = (i: number, patch: Partial<Objective>) => setObjectives(prev => prev.map((o, j) => j === i ? { ...o, ...patch } : o));
   const clean = () => objectives.filter(o => o.text.trim());
+  const cleanUpdates = () => brandUpdates.filter(u => u.text.trim());
 
   async function publish() {
     setBusy(true);
     try {
-      const r = await fetch("/api/weekly-brief", { method: "POST", headers: jh, body: JSON.stringify({ weekLabel, intro, objectives: clean() }) }).then(x => x.json());
+      const r = await fetch("/api/weekly-brief", { method: "POST", headers: jh, body: JSON.stringify({ weekLabel, intro, objectives: clean(), brandUpdates: cleanUpdates() }) }).then(x => x.json());
       if (r.ok) { setCurrent(r.item); setPast(p => [{ id: r.item.id, share_token: r.item.share_token, week_label: r.item.week_label, published_at: r.item.published_at }, ...p]); setSnapshot(r.item.snapshot); copyLink(r.item.share_token); }
     } finally { setBusy(false); }
   }
@@ -51,18 +53,18 @@ export function WeeklyBrief() {
     if (!current) return;
     setBusy(true);
     try {
-      const r = await fetch("/api/weekly-brief", { method: "PATCH", headers: jh, body: JSON.stringify({ id: current.id, week_label: weekLabel, intro, objectives: clean() }) }).then(x => x.json());
+      const r = await fetch("/api/weekly-brief", { method: "PATCH", headers: jh, body: JSON.stringify({ id: current.id, week_label: weekLabel, intro, objectives: clean(), brandUpdates: cleanUpdates() }) }).then(x => x.json());
       if (r.ok) setCurrent(c => c && { ...c, week_label: r.item.week_label });
     } finally { setBusy(false); }
   }
   function reset() {
-    setCurrent(null); setWeekLabel(defaultLabel()); setIntro(""); setObjectives([{ text: "", done: false }]);
+    setCurrent(null); setWeekLabel(defaultLabel()); setIntro(""); setObjectives([{ text: "", done: false }]); setBrandUpdates([{ text: "" }]);
     fetch("/api/weekly-brief?preview=1").then(r => r.json()).then(d => { if (d.ok) setSnapshot(d.snapshot); });
   }
 
   if (needsSetup) return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-500">Run <code className="bg-gray-100 px-1 rounded">add_weekly_briefs.sql</code> in Supabase to enable weekly briefs.</div>;
 
-  const previewBrief: Brief = { week_label: weekLabel, intro, objectives: clean(), snapshot };
+  const previewBrief: Brief = { week_label: weekLabel, intro, objectives: clean(), brand_updates: cleanUpdates(), snapshot };
   const inp = "w-full text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400";
 
   return (
@@ -94,6 +96,20 @@ export function WeeklyBrief() {
                 </div>
               ))}
               <button onClick={() => setObjectives(p => [...p, { text: "", done: false }])} className="text-[13px] font-medium text-emerald-600 hover:text-emerald-700">+ Add objective</button>
+            </div>
+          </div>
+
+          <div>
+            <span className="text-[10px] uppercase tracking-wider text-gray-400">Brand updates <span className="normal-case text-gray-300">· anything of relevance</span></span>
+            <div className="space-y-1.5 mt-1">
+              {brandUpdates.map((u, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <textarea value={u.text} onChange={e => setBrandUpdates(p => p.map((x, j) => j === i ? { text: e.target.value } : x))}
+                    rows={2} placeholder="Add a brand update…" className={`${inp} flex-1 resize-y`} />
+                  <button onClick={() => setBrandUpdates(p => { const n = p.filter((_, j) => j !== i); return n.length ? n : [{ text: "" }]; })} className="text-gray-300 hover:text-rose-500 text-sm px-1 mt-1.5">✕</button>
+                </div>
+              ))}
+              <button onClick={() => setBrandUpdates(p => [...p, { text: "" }])} className="text-[13px] font-medium text-emerald-600 hover:text-emerald-700">+ Add update</button>
             </div>
           </div>
 

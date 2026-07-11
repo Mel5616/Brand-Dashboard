@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
 export default async function WeeklyBriefPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const sb = await createClient();
-  const { data: brief } = await sb.from("weekly_briefs").select("week_label,intro,objectives,snapshot,published_at").eq("share_token", token).single();
+  const { data: brief } = await sb.from("weekly_briefs").select("week_label,intro,objectives,brand_updates,snapshot,published_at").eq("share_token", token).single();
   if (!brief) return <main className="min-h-screen grid place-items-center bg-slate-50 text-slate-500 text-sm">This brief link is not valid.</main>;
 
   return (
