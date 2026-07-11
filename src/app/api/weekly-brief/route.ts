@@ -149,9 +149,19 @@ async function buildSnapshot() {
 export async function GET(req: Request) {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
+  const params = new URL(req.url).searchParams;
   // ?preview=1 → assemble the live auto-sections without saving, for the compose preview.
-  if (new URL(req.url).searchParams.get("preview")) return NextResponse.json({ ok: true, snapshot: await buildSnapshot() });
-  const res = await fetch(`${sbUrl}/rest/v1/weekly_briefs?select=id,share_token,week_label,published_at&order=published_at.desc.nullslast&limit=20`, { headers: h(), cache: "no-store" });
+  if (params.get("preview")) return NextResponse.json({ ok: true, snapshot: await buildSnapshot() });
+  // ?id=… → load one brief in full so it can be re-opened in the editor.
+  const id = params.get("id");
+  if (id) {
+    const one = await fetch(`${sbUrl}/rest/v1/weekly_briefs?id=eq.${encodeURIComponent(id)}&select=id,share_token,week_label,intro,objectives,brand_updates,snapshot,published_at&limit=1`, { headers: h(), cache: "no-store" });
+    const ot = await one.text();
+    if (!one.ok) return NextResponse.json({ ok: false }, { status: 500 });
+    return NextResponse.json({ ok: true, item: JSON.parse(ot || "[]")[0] ?? null });
+  }
+  // Drafts (null published_at) sort first — they're the ones still needing action.
+  const res = await fetch(`${sbUrl}/rest/v1/weekly_briefs?select=id,share_token,week_label,published_at&order=published_at.desc.nullsfirst&limit=20`, { headers: h(), cache: "no-store" });
   const text = await res.text();
   if (!res.ok) return NextResponse.json({ ok: true, needsSetup: missing(res.status, text), items: [] });
   return NextResponse.json({ ok: true, items: JSON.parse(text || "[]") });
@@ -170,7 +180,7 @@ export async function POST(req: Request) {
     intro: String(b.intro || "").slice(0, 4000),
     objectives: Array.isArray(b.objectives) ? b.objectives.slice(0, 50) : [],
     brand_updates: Array.isArray(b.brandUpdates) ? b.brandUpdates.slice(0, 50) : [],
-    snapshot, published_at: new Date().toISOString(), created_by: access.user?.email ?? null,
+    snapshot, published_at: b.draft ? null : new Date().toISOString(), created_by: access.user?.email ?? null,
   };
   const post = (r: any) => fetch(`${sbUrl}/rest/v1/weekly_briefs`, { method: "POST", headers: h({ Prefer: "return=representation" }), body: JSON.stringify(r) });
   let res = await post(row);
@@ -191,7 +201,10 @@ export async function PATCH(req: Request) {
   if (b.objectives !== undefined) fields.objectives = Array.isArray(b.objectives) ? b.objectives.slice(0, 50) : [];
   if (b.brandUpdates !== undefined) fields.brand_updates = Array.isArray(b.brandUpdates) ? b.brandUpdates.slice(0, 50) : [];
   if (b.week_label !== undefined) fields.week_label = String(b.week_label).slice(0, 120);
-  if (b.refreshSnapshot) fields.snapshot = await buildSnapshot();
+  // Publishing a draft (or re-publishing) rebuilds the snapshot so the frozen
+  // figures are current as at the moment it actually goes out to the team.
+  if (b.publish) { fields.published_at = new Date().toISOString(); fields.snapshot = await buildSnapshot(); }
+  else if (b.refreshSnapshot) fields.snapshot = await buildSnapshot();
   const res = await fetch(`${sbUrl}/rest/v1/weekly_briefs?id=eq.${encodeURIComponent(String(b.id))}`, { method: "PATCH", headers: h({ Prefer: "return=representation" }), body: JSON.stringify(fields) });
   if (!res.ok) return NextResponse.json({ ok: false }, { status: 500 });
   return NextResponse.json({ ok: true, item: JSON.parse(await res.text())[0] });

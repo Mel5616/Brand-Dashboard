@@ -16,6 +16,7 @@ export default async function WeeklyBriefPage({ params }: { params: Promise<{ to
   const sb = await createClient();
   const { data: brief } = await sb.from("weekly_briefs").select("week_label,intro,objectives,brand_updates,snapshot,published_at").eq("share_token", token).single();
   if (!brief) return <main className="min-h-screen grid place-items-center bg-slate-50 text-slate-500 text-sm">This brief link is not valid.</main>;
+  if (!brief.published_at) return <main className="min-h-screen grid place-items-center bg-slate-50 text-slate-500 text-sm">This brief hasn&apos;t been published yet.</main>;
 
   return (
     <main className="min-h-screen bg-slate-100 py-8 px-4">

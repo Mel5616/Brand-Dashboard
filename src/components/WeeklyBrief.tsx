@@ -42,19 +42,46 @@ export function WeeklyBrief() {
   const clean = () => objectives.filter(o => o.text.trim());
   const cleanUpdates = () => brandUpdates.filter(u => u.text.trim());
 
-  async function publish() {
+  const asSaved = (it: any): Saved => ({ id: it.id, share_token: it.share_token, week_label: it.week_label, published_at: it.published_at });
+  // Create a brief. draft=true keeps it unpublished (no live link) so it can be
+  // prepared ahead of time; draft=false publishes and copies the link straight away.
+  async function saveNew(draft: boolean) {
     setBusy(true);
     try {
-      const r = await fetch("/api/weekly-brief", { method: "POST", headers: jh, body: JSON.stringify({ weekLabel, intro, objectives: clean(), brandUpdates: cleanUpdates() }) }).then(x => x.json());
-      if (r.ok) { setCurrent(r.item); setPast(p => [{ id: r.item.id, share_token: r.item.share_token, week_label: r.item.week_label, published_at: r.item.published_at }, ...p]); setSnapshot(r.item.snapshot); copyLink(r.item.share_token); }
+      const r = await fetch("/api/weekly-brief", { method: "POST", headers: jh, body: JSON.stringify({ weekLabel, intro, objectives: clean(), brandUpdates: cleanUpdates(), draft }) }).then(x => x.json());
+      if (r.ok) { setCurrent(asSaved(r.item)); setPast(p => [asSaved(r.item), ...p]); setSnapshot(r.item.snapshot); if (!draft) copyLink(r.item.share_token); }
     } finally { setBusy(false); }
   }
-  async function update() {
+  // Save edits to the brief in the editor. publishNow=true turns a draft live (and
+  // refreshes its figures); otherwise it just saves the text.
+  async function saveCurrent(publishNow: boolean) {
     if (!current) return;
     setBusy(true);
     try {
-      const r = await fetch("/api/weekly-brief", { method: "PATCH", headers: jh, body: JSON.stringify({ id: current.id, week_label: weekLabel, intro, objectives: clean(), brandUpdates: cleanUpdates() }) }).then(x => x.json());
-      if (r.ok) setCurrent(c => c && { ...c, week_label: r.item.week_label });
+      const body: any = { id: current.id, week_label: weekLabel, intro, objectives: clean(), brandUpdates: cleanUpdates() };
+      if (publishNow) body.publish = true;
+      const r = await fetch("/api/weekly-brief", { method: "PATCH", headers: jh, body: JSON.stringify(body) }).then(x => x.json());
+      if (r.ok) {
+        setCurrent(asSaved(r.item)); setPast(p => p.map(x => x.id === r.item.id ? asSaved(r.item) : x));
+        if (publishNow) { if (r.item.snapshot) setSnapshot(r.item.snapshot); copyLink(r.item.share_token); }
+      }
+    } finally { setBusy(false); }
+  }
+  // Re-open a saved brief (draft or published) in the editor.
+  async function editBrief(id: string) {
+    setBusy(true);
+    try {
+      const r = await fetch(`/api/weekly-brief?id=${encodeURIComponent(id)}`).then(x => x.json());
+      if (r.ok && r.item) {
+        const it = r.item;
+        setCurrent(asSaved(it));
+        setWeekLabel(it.week_label || defaultLabel());
+        setIntro(it.intro || "");
+        setObjectives(it.objectives?.length ? it.objectives : [{ text: "", done: false }]);
+        setBrandUpdates(it.brand_updates?.length ? it.brand_updates : [{ text: "" }]);
+        if (it.snapshot) setSnapshot(it.snapshot);
+        if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+      }
     } finally { setBusy(false); }
   }
   function reset() {
@@ -65,6 +92,7 @@ export function WeeklyBrief() {
   if (needsSetup) return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-500">Run <code className="bg-gray-100 px-1 rounded">add_weekly_briefs.sql</code> in Supabase to enable weekly briefs.</div>;
 
   const previewBrief: Brief = { week_label: weekLabel, intro, objectives: clean(), brand_updates: cleanUpdates(), snapshot };
+  const isDraft = !!current && !current.published_at;
   const inp = "w-full text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400";
 
   return (
@@ -75,7 +103,7 @@ export function WeeklyBrief() {
       <div className="space-y-4">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">{current ? "Editing published brief" : "New weekly brief"}</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">{current ? (isDraft ? "Editing draft" : "Editing published brief") : "New weekly brief"}</p>
             {current && <button onClick={reset} className="text-xs font-medium text-emerald-600 hover:underline">+ Start a new one</button>}
           </div>
           <label className="block"><span className="text-[10px] uppercase tracking-wider text-gray-400">Week</span>
@@ -113,14 +141,23 @@ export function WeeklyBrief() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 pt-1">
-            {current
-              ? <button onClick={update} disabled={busy} className="text-sm font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-4 py-2 disabled:opacity-60">{busy ? "Saving…" : "Save changes"}</button>
-              : <button onClick={publish} disabled={busy} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2 disabled:opacity-60">{busy ? "Publishing…" : "Publish & copy link"}</button>}
-            {current && <a href={linkFor(current.share_token)} target="_blank" rel="noreferrer" className="text-sm font-medium text-emerald-600 hover:underline">Open link ↗</a>}
-            {current && <button onClick={() => copyLink(current.share_token)} className="text-sm font-medium text-gray-600 hover:text-gray-800">{copied === current.share_token ? "Copied ✓" : "Copy link"}</button>}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            {!current && <>
+              <button onClick={() => saveNew(false)} disabled={busy} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2 disabled:opacity-60">{busy ? "Publishing…" : "Publish & copy link"}</button>
+              <button onClick={() => saveNew(true)} disabled={busy} className="text-sm font-semibold text-slate-700 bg-gray-100 hover:bg-gray-200 rounded-lg px-4 py-2 disabled:opacity-60">Save as draft</button>
+            </>}
+            {isDraft && <>
+              <button onClick={() => saveCurrent(true)} disabled={busy} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2 disabled:opacity-60">{busy ? "Publishing…" : "Publish now & copy link"}</button>
+              <button onClick={() => saveCurrent(false)} disabled={busy} className="text-sm font-semibold text-slate-700 bg-gray-100 hover:bg-gray-200 rounded-lg px-4 py-2 disabled:opacity-60">{busy ? "Saving…" : "Save draft"}</button>
+            </>}
+            {current && !isDraft && <>
+              <button onClick={() => saveCurrent(false)} disabled={busy} className="text-sm font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-4 py-2 disabled:opacity-60">{busy ? "Saving…" : "Save changes"}</button>
+              <a href={linkFor(current.share_token)} target="_blank" rel="noreferrer" className="text-sm font-medium text-emerald-600 hover:underline">Open link ↗</a>
+              <button onClick={() => copyLink(current.share_token)} className="text-sm font-medium text-gray-600 hover:text-gray-800">{copied === current.share_token ? "Copied ✓" : "Copy link"}</button>
+            </>}
           </div>
-          {current && <p className="text-[11px] text-gray-400">Live link: <span className="text-slate-500 break-all">{linkFor(current.share_token)}</span> — the team opens it with no login. The D2C/launch data is frozen as published.</p>}
+          {isDraft && <p className="text-[11px] text-gray-400">Draft — not sent. No live link until you publish. Publishing refreshes the D2C/launch figures to that moment.</p>}
+          {current && !isDraft && <p className="text-[11px] text-gray-400">Live link: <span className="text-slate-500 break-all">{linkFor(current.share_token)}</span> — the team opens it with no login. The D2C/launch data is frozen as published.</p>}
         </div>
 
         {past.length > 0 && (
@@ -130,10 +167,15 @@ export function WeeklyBrief() {
               {past.map(b => (
                 <div key={b.id} className="flex items-center justify-between py-2 gap-2">
                   <div className="min-w-0"><p className="text-sm text-slate-700 truncate">{b.week_label}</p>
-                    <p className="text-[11px] text-gray-400">{b.published_at ? new Date(b.published_at).toLocaleDateString("en-AU", { day: "numeric", month: "short" }) : "draft"}</p></div>
+                    {b.published_at
+                      ? <p className="text-[11px] text-gray-400">Published {new Date(b.published_at).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}</p>
+                      : <span className="inline-block text-[10px] font-semibold uppercase tracking-wider text-amber-700 bg-amber-100 rounded px-1.5 py-0.5 mt-0.5">Draft</span>}</div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <a href={linkFor(b.share_token)} target="_blank" rel="noreferrer" className="text-xs font-medium text-emerald-600 hover:underline">Open ↗</a>
-                    <button onClick={() => copyLink(b.share_token)} className="text-xs font-medium text-gray-500 hover:text-gray-700">{copied === b.share_token ? "Copied" : "Copy link"}</button>
+                    <button onClick={() => editBrief(b.id)} disabled={busy} className="text-xs font-medium text-slate-600 hover:text-slate-800 disabled:opacity-60">Edit</button>
+                    {b.published_at && <>
+                      <a href={linkFor(b.share_token)} target="_blank" rel="noreferrer" className="text-xs font-medium text-emerald-600 hover:underline">Open ↗</a>
+                      <button onClick={() => copyLink(b.share_token)} className="text-xs font-medium text-gray-500 hover:text-gray-700">{copied === b.share_token ? "Copied" : "Copy link"}</button>
+                    </>}
                   </div>
                 </div>
               ))}
