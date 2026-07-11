@@ -75,32 +75,31 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
         </Section>
       )}
 
-      {(posts.length > 0 || email) && (
-        <Section title="Wins this week">
-          <div className="space-y-3">
-            {posts.length > 0 && (
-              <div className="space-y-2">
-                {posts.map((p, i) => (
-                  <a key={i} href={p.permalink || undefined} target="_blank" rel="noreferrer" className={`flex items-start gap-3 rounded-lg border border-gray-100 px-3 py-2 ${p.permalink ? "hover:bg-emerald-50/40" : ""}`}>
-                    {p.image
-                      ? <img src={p.image} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
-                      : <span className="w-12 h-12 rounded-lg bg-emerald-50 grid place-items-center shrink-0 text-lg">📣</span>}
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[12px] font-semibold text-emerald-700">{p.brand}{i === 0 ? " · top post" : ""}</p>
-                      {p.caption && <p className="text-[13px] text-slate-700 leading-snug truncate">{p.caption}</p>}
-                      <p className="text-[12px] text-gray-500 mt-0.5">❤ {p.likes.toLocaleString()} · 💬 {p.comments.toLocaleString()}{p.reach ? ` · ${p.reach.toLocaleString()} reach` : ""}</p>
-                    </div>
-                  </a>
-                ))}
-              </div>
-            )}
-            {email && (email.topRevenue || email.bestClick) && (
-              <div className="rounded-lg bg-violet-50/60 border border-violet-100 px-3 py-2 text-[13px] text-violet-900">
-                <p className="text-[10px] uppercase tracking-wider text-violet-400 mb-0.5">Email · {email.month}</p>
-                {email.topRevenue && <p><strong>{email.topRevenue.brand}</strong> email drove <strong>{fmtFull(email.topRevenue.revenue)}</strong>.</p>}
-                {email.bestClick && <p className="mt-0.5">Best click-through: <strong>{email.bestClick.brand}</strong> at {email.bestClick.clickRate.toFixed(1)}%.</p>}
-              </div>
-            )}
+      {posts.length > 0 && (
+        <Section title="Best social media posts">
+          <div className="space-y-2">
+            {posts.map((p, i) => (
+              <a key={i} href={p.permalink || undefined} target="_blank" rel="noreferrer" className={`flex items-start gap-3 rounded-lg border border-gray-100 px-3 py-2 ${p.permalink ? "hover:bg-emerald-50/40" : ""}`}>
+                {p.image
+                  ? <img src={p.image} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+                  : <span className="w-12 h-12 rounded-lg bg-emerald-50 grid place-items-center shrink-0 text-lg">📣</span>}
+                <div className="min-w-0 flex-1">
+                  <p className="text-[12px] font-semibold text-emerald-700">{p.brand}{i === 0 ? " · top post" : ""}</p>
+                  {p.caption && <p className="text-[13px] text-slate-700 leading-snug truncate">{p.caption}</p>}
+                  <p className="text-[12px] text-gray-500 mt-0.5">❤ {p.likes.toLocaleString()} · 💬 {p.comments.toLocaleString()}{p.reach ? ` · ${p.reach.toLocaleString()} reach` : ""}</p>
+                </div>
+              </a>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {email && (email.topRevenue || email.bestClick) && (
+        <Section title="Email highlight">
+          <div className="rounded-lg bg-violet-50/60 border border-violet-100 px-3 py-2 text-[13px] text-violet-900">
+            <p className="text-[10px] uppercase tracking-wider text-violet-400 mb-0.5">{email.month}</p>
+            {email.topRevenue && <p><strong>{email.topRevenue.brand}</strong> email drove <strong>{fmtFull(email.topRevenue.revenue)}</strong>.</p>}
+            {email.bestClick && <p className="mt-0.5">Best click-through: <strong>{email.bestClick.brand}</strong> at {email.bestClick.clickRate.toFixed(1)}%.</p>}
           </div>
         </Section>
       )}
