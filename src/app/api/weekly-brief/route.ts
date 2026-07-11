@@ -56,8 +56,11 @@ async function buildSnapshot() {
   // ── Upcoming launches: next 21 days, or Now/Next horizon, not finished ──
   const in21 = new Date(today); in21.setDate(in21.getDate() + 21);
   const dead = new Set(["Done", "Paused", "Complete"]);
+  // Upcoming launches: only campaigns actually moving — Planned or Live (not Build,
+  // Pipeline or Paused). The team wants what's booked in, not the wishlist.
+  const launchStatuses = new Set(["Planned", "Live"]);
   const launches = campaigns.filter((c: any) => {
-    if (!c.campaign || dead.has(c.status)) return false;
+    if (!c.campaign || !launchStatuses.has(c.status)) return false;
     const soon = c.key_date && c.key_date >= todayStr && c.key_date <= iso(in21);
     return soon || c.horizon === "now" || c.horizon === "next";
   }).slice(0, 12).map((c: any) => ({
