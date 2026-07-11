@@ -15,12 +15,15 @@ const sb = (p: string) => fetch(`${sbUrl}/rest/v1/${p}`, { headers: h(), cache: 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 
 async function buildSnapshot() {
-  const [brands, daily, monthly, targets, campaigns] = await Promise.all([
+  const wkAgo = iso(new Date(Date.now() - 7 * 864e5));
+  const [brands, daily, monthly, targets, campaigns, igMedia, klaviyo] = await Promise.all([
     sb("brands?select=id,name,live"),
     sb("brand_daily?select=brand_id,day,revenue"),
     sb("brand_monthly?select=brand_id,month_key,revenue&order=month_key"),
     sb("brand_targets?select=brand_id,month_key,revenue_target"),
     sb("campaigns?select=campaign,brand,horizon,status,key_date,end_date,owner,brief&order=key_date"),
+    sb(`instagram_media?select=brand_id,posted_at,caption,permalink,image_url,like_count,comments_count,reach,saved,shares&posted_at=gte.${wkAgo}`),
+    sb("klaviyo_metrics?select=brand_id,month_key,revenue,open_rate,click_rate&order=month_key"),
   ]);
   const nameById = new Map<number, string>(brands.map((b: any) => [b.id, b.name]));
   const today = new Date(); const todayStr = iso(today);
@@ -91,7 +94,25 @@ async function buildSnapshot() {
     if (c.key_date <= iso(in14) && flags.length) attention.push({ kind: "compliance", text: `"${c.campaign}" (${c.key_date}) has ${flags.length} compliance check${flags.length === 1 ? "" : "s"} open` });
   }
 
-  return { generatedAt: new Date().toISOString(), d2c, launches, attention: attention.slice(0, 12) };
+  // ── Wins: top social posts this week + email highlights (good-news section) ──
+  const eng = (p: any) => (Number(p.like_count) || 0) + (Number(p.comments_count) || 0) + (Number(p.saved) || 0) + (Number(p.shares) || 0);
+  const topPosts = (igMedia as any[])
+    .map((p: any) => ({ brand: nameById.get(p.brand_id) || "", engagement: eng(p), likes: Number(p.like_count) || 0, comments: Number(p.comments_count) || 0, reach: Number(p.reach) || 0, caption: (p.caption || "").split("\n")[0].slice(0, 90), permalink: p.permalink || "", image: p.image_url || "" }))
+    .filter((p: any) => p.engagement > 0)
+    .sort((a: any, b: any) => b.engagement - a.engagement).slice(0, 3);
+  // Email: highlight the latest month's standouts (positive framing).
+  const kMonths = [...new Set<string>((klaviyo as any[]).map((k: any) => String(k.month_key)))].sort();
+  const kLatest = kMonths[kMonths.length - 1];
+  const kRows = (klaviyo as any[]).filter((k: any) => k.month_key === kLatest);
+  const topEmail = [...kRows].sort((a: any, b: any) => (Number(b.revenue) || 0) - (Number(a.revenue) || 0))[0];
+  const bestClick = [...kRows].filter((k: any) => Number(k.click_rate) > 0).sort((a: any, b: any) => (Number(b.click_rate) || 0) - (Number(a.click_rate) || 0))[0];
+  const email = (topEmail || bestClick) ? {
+    month: kLatest,
+    topRevenue: topEmail ? { brand: nameById.get(topEmail.brand_id) || "", revenue: Math.round(Number(topEmail.revenue) || 0), openRate: Math.round(Number(topEmail.open_rate) || 0) } : null,
+    bestClick: bestClick ? { brand: nameById.get(bestClick.brand_id) || "", clickRate: Number(bestClick.click_rate) || 0 } : null,
+  } : null;
+
+  return { generatedAt: new Date().toISOString(), d2c, launches, attention: attention.slice(0, 12), wins: { posts: topPosts, email } };
 }
 
 export async function GET(req: Request) {

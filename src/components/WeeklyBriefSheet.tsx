@@ -8,6 +8,10 @@ type Snapshot = {
   d2c?: { weekStart: string | null; partial?: boolean; total: number; wowPct: number | null; top: { brand: string; revenue: number; wow: number | null }[]; fallers: { brand: string; wow: number | null }[] };
   launches?: { campaign: string; brand: string; keyDate: string | null; status: string; oneLiner: string }[];
   attention?: { text: string; kind: string }[];
+  wins?: {
+    posts: { brand: string; engagement: number; likes: number; comments: number; reach: number; caption: string; permalink: string; image: string }[];
+    email: { month: string; topRevenue: { brand: string; revenue: number; openRate: number } | null; bestClick: { brand: string; clickRate: number } | null } | null;
+  };
 };
 export type Brief = { week_label?: string; intro?: string; objectives?: Objective[]; snapshot?: Snapshot; published_at?: string };
 
@@ -28,6 +32,7 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
   const s = brief.snapshot ?? {};
   const objectives = brief.objectives ?? [];
   const d2c = s.d2c, launches = s.launches ?? [], attention = s.attention ?? [];
+  const wins = s.wins, posts = wins?.posts ?? [], email = wins?.email;
 
   return (
     <div className="max-w-[760px] mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 space-y-7">
@@ -51,6 +56,35 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
               </li>
             ))}
           </ul>
+        </Section>
+      )}
+
+      {(posts.length > 0 || email) && (
+        <Section title="Wins this week">
+          <div className="space-y-3">
+            {posts.length > 0 && (
+              <div className="space-y-2">
+                {posts.map((p, i) => (
+                  <a key={i} href={p.permalink || undefined} target="_blank" rel="noreferrer" className={`flex items-start gap-3 rounded-lg border border-gray-100 px-3 py-2 ${p.permalink ? "hover:bg-emerald-50/40" : ""}`}>
+                    {p.image
+                      ? <img src={p.image} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+                      : <span className="w-12 h-12 rounded-lg bg-emerald-50 grid place-items-center shrink-0 text-lg">📣</span>}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[12px] font-semibold text-emerald-700">{p.brand}{i === 0 ? " · top post" : ""}</p>
+                      {p.caption && <p className="text-[13px] text-slate-700 leading-snug truncate">{p.caption}</p>}
+                      <p className="text-[12px] text-gray-500 mt-0.5">❤ {p.likes.toLocaleString()} · 💬 {p.comments.toLocaleString()}{p.reach ? ` · ${p.reach.toLocaleString()} reach` : ""}</p>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            )}
+            {email && (
+              <div className="rounded-lg bg-violet-50/60 border border-violet-100 px-3 py-2 text-[13px] text-violet-900">
+                {email.topRevenue && <p><strong>{email.topRevenue.brand}</strong> email drove <strong>{fmtFull(email.topRevenue.revenue)}</strong> in {email.month} at {email.topRevenue.openRate}% open rate.</p>}
+                {email.bestClick && <p className="mt-0.5">Best click-through: <strong>{email.bestClick.brand}</strong> at {email.bestClick.clickRate.toFixed(1)}%.</p>}
+              </div>
+            )}
+          </div>
         </Section>
       )}
 
