@@ -7,7 +7,7 @@ type Snapshot = {
   generatedAt?: string;
   d2c?: { weekStart: string | null; partial?: boolean; total: number; wowPct: number | null; top: { brand: string; revenue: number; wow: number | null }[]; fallers: { brand: string; wow: number | null }[] };
   launches?: { campaign: string; brand: string; keyDate: string | null; status: string; oneLiner: string }[];
-  promos?: { brand: string; tier: number | null; endDate: string; note: string }[];
+  promos?: { channel: string; tier: number | null; endDate: string; note: string; brands: string[] }[];
   attention?: { text: string; kind: string }[];
   wins?: {
     posts: { brand: string; engagement: number; likes: number; comments: number; reach: number; caption: string; permalink: string; image: string }[];
@@ -105,14 +105,16 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
 
       {promos.length > 0 && (
         <Section title="Promotions live this week">
-          <div className="flex flex-wrap gap-2">
+          <div className="space-y-2">
             {promos.map((p, i) => (
-              <span key={i} className="inline-flex items-center gap-1.5 rounded-lg border border-gray-100 bg-gray-50/70 px-2.5 py-1.5 text-[13px]">
-                <span className={`text-[10px] font-bold rounded px-1.5 py-0.5 ${tierColor(p.tier)}`}>{p.tier != null ? `T${p.tier}` : "Promo"}</span>
-                <span className="font-medium text-slate-700">{p.brand}</span>
-                {p.note && <span className="text-gray-500">· {p.note}</span>}
-                <span className="text-gray-400">· ends {dateShort(p.endDate)}</span>
-              </span>
+              <div key={i} className="flex items-start gap-2.5 rounded-lg border border-gray-100 bg-gray-50/70 px-3 py-2">
+                <span className={`text-[10px] font-bold rounded px-1.5 py-0.5 mt-0.5 shrink-0 ${tierColor(p.tier)}`}>{p.tier != null ? `T${p.tier}` : "Promo"}</span>
+                <div className="min-w-0">
+                  <p className="text-[14px] font-semibold text-slate-800">{p.channel} <span className="font-normal text-gray-400">· ends {dateShort(p.endDate)}</span></p>
+                  {p.note && <p className="text-[13px] text-slate-600">{p.note}</p>}
+                  <p className="text-[13px] text-slate-500">{p.brands.join(", ")}</p>
+                </div>
+              </div>
             ))}
           </div>
         </Section>

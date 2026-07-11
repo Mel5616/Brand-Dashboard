@@ -24,7 +24,7 @@ async function buildSnapshot() {
     sb("campaigns?select=campaign,brand,horizon,status,key_date,end_date,owner,brief&order=key_date"),
     sb(`instagram_media?select=brand_id,posted_at,caption,permalink,image_url,like_count,comments_count,reach,saved,shares&posted_at=gte.${wkAgo}`),
     sb("klaviyo_metrics?select=brand_id,month_key,revenue,open_rate,click_rate,emails_sent&order=month_key"),
-    sb("promotions?select=brand,brand_id,period_start,period_end,note,price,tier"),
+    sb("promotions?select=brand,brand_id,period_start,period_end,note,price,tier,channel"),
   ]);
   const nameById = new Map<number, string>(brands.map((b: any) => [b.id, b.name]));
   const today = new Date(); const todayStr = iso(today);
@@ -123,19 +123,25 @@ async function buildSnapshot() {
     bestClick: bestClick ? { brand: nameById.get(bestClick.brand_id) || "", clickRate: Number(bestClick.click_rate) || 0 } : null,
   } : null;
 
-  // ── Promotions live this week (which brands are running an offer) ──
+  // ── Promotions live this week, grouped by channel so it's clear WHAT they are
+  // (e.g. "Amazon PD · Frida, Magic, …") rather than a wall of unlabelled brands. ──
   const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate() + 6);
-  const byBrandPromo = new Map<string, { brand: string; tier: number | null; endDate: string; note: string }>();
+  const promoGroups = new Map<string, { channel: string; tier: number | null; endDate: string; note: string; brands: Set<string> }>();
   for (const p of (promotions as any[])) {
     if (!(p.period_start <= iso(weekEnd) && p.period_end >= iso(weekStart))) continue;
     const brand = p.brand || nameById.get(p.brand_id) || "";
     if (!brand) continue;
-    const cur = byBrandPromo.get(brand);
+    const channel = p.channel || "Promotion";
     const tier = p.tier == null ? null : Number(p.tier);
-    if (!cur || (tier != null && (cur.tier == null || tier < cur.tier))) byBrandPromo.set(brand, { brand, tier, endDate: p.period_end, note: p.note || cur?.note || "" });
-    else if (cur && !cur.note && p.note) cur.note = p.note;
+    const key = `${channel}|${tier ?? ""}|${p.period_end}`;
+    const cur = promoGroups.get(key) ?? { channel, tier, endDate: p.period_end, note: p.note || "", brands: new Set<string>() };
+    cur.brands.add(brand);
+    if (!cur.note && p.note) cur.note = p.note;
+    promoGroups.set(key, cur);
   }
-  const promos = [...byBrandPromo.values()].sort((a, b) => (a.tier ?? 9) - (b.tier ?? 9) || a.brand.localeCompare(b.brand));
+  const promos = [...promoGroups.values()]
+    .map(g => ({ channel: g.channel, tier: g.tier, endDate: g.endDate, note: g.note, brands: [...g.brands].sort() }))
+    .sort((a, b) => (a.tier ?? 9) - (b.tier ?? 9) || a.channel.localeCompare(b.channel));
 
   return { generatedAt: new Date().toISOString(), d2c, launches, promos, attention: attention.slice(0, 12), wins: { posts: topPosts, email } };
 }
