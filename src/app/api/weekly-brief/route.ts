@@ -64,10 +64,19 @@ async function buildSnapshot() {
   const months: string[] = [...new Set<string>((monthly as any[]).map((m: any) => String(m.month_key)))].sort();
   const latestMonth: string | undefined = months.filter((mk: string) => monthly.some((m: any) => m.month_key === mk && Number(m.revenue) > 0)).pop();
   if (latestMonth) {
+    // If the latest month is the CURRENT (partial) one, pro-rate the target by days
+    // elapsed — otherwise every brand looks "behind" simply because the month isn't over.
+    const curMonthKey = todayStr.slice(0, 7);
+    const partial = latestMonth === curMonthKey;
+    const frac = partial ? today.getDate() / new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate() : 1;
     for (const b of brands.filter((x: any) => x.live)) {
       const act = monthly.find((m: any) => m.brand_id === b.id && m.month_key === latestMonth)?.revenue ?? 0;
-      const tgt = targets.find((t: any) => t.brand_id === b.id && t.month_key === latestMonth)?.revenue_target ?? 0;
-      if (tgt > 0 && act < tgt * 0.8) attention.push({ kind: "behind", text: `${b.name} is ${Math.round((1 - act / tgt) * 100)}% behind its ${latestMonth} D2C target` });
+      const fullTgt = targets.find((t: any) => t.brand_id === b.id && t.month_key === latestMonth)?.revenue_target ?? 0;
+      const tgt = fullTgt * frac;
+      if (tgt > 0 && act < tgt * 0.8) {
+        const pct = Math.round((1 - act / tgt) * 100);
+        attention.push({ kind: "behind", text: partial ? `${b.name} is pacing ${pct}% behind its ${latestMonth} D2C target` : `${b.name} finished ${latestMonth} ${pct}% behind its D2C target` });
+      }
     }
   }
   const in7 = new Date(today); in7.setDate(in7.getDate() + 7);
