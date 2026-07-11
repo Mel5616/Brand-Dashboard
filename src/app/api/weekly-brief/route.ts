@@ -51,7 +51,7 @@ async function buildSnapshot() {
     weekStart: iso(weekStart), partial: false,
     total: Math.round(total),
     wowPct: prevTotal > 0 ? Math.round(((total - prevTotal) / prevTotal) * 100) : null,
-    top: movers.slice(0, 5),
+    top: movers,   // every brand with D2C sales, biggest first — the team sees them all
     fallers: movers.filter((m: any) => m.wow !== null && m.wow <= -25).slice(0, 3),
   };
 

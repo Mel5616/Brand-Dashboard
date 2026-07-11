@@ -162,16 +162,22 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
               <span className="text-sm font-semibold"><Wow v={d2c.wowPct} /> <span className="text-gray-400 font-normal">vs {d2c.partial ? "same days last week" : "prior week"}</span></span>
             </div>
             {d2c.top.length > 0 && (
-              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1.5">
-                {d2c.top.map(m => (
-                  <div key={m.brand} className="flex items-center justify-between text-[13px]">
-                    <span className="text-slate-600 truncate">{m.brand}</span>
-                    <span className="text-slate-700 font-semibold tabular-nums ml-2">{fmt(m.revenue)} <Wow v={m.wow} /></span>
-                  </div>
-                ))}
+              <div className="mt-3 space-y-1">
+                {d2c.top.map(m => {
+                  const pct = Math.max(4, Math.round((m.revenue / (d2c.top[0].revenue || 1)) * 100));
+                  return (
+                    <div key={m.brand} className="relative flex items-center rounded-lg bg-slate-100 overflow-hidden">
+                      <div className="absolute inset-y-0 left-0 bg-emerald-100" style={{ width: `${pct}%` }} />
+                      <div className="relative flex-1 flex items-center justify-between gap-3 px-3 py-2">
+                        <span className="text-[14px] font-medium text-slate-700">{m.brand}</span>
+                        <span className="text-[14px] font-semibold text-slate-800 tabular-nums whitespace-nowrap flex items-center gap-1.5">{fmt(m.revenue)}<Wow v={m.wow} /></span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
-            {d2c.fallers.length > 0 && <p className="text-[12px] text-rose-500 mt-2">Watch: {d2c.fallers.map(f => `${f.brand} ${f.wow}%`).join(" · ")}</p>}
+            {d2c.fallers.length > 0 && <p className="text-[12px] text-rose-500 mt-2.5">Watch: {d2c.fallers.map(f => `${f.brand} ${f.wow}%`).join(" · ")}</p>}
           </div>
           <p className="text-[10px] text-gray-400 mt-1.5">Own-store (D2C) revenue only — excludes Amazon, wholesale and Baby Bunting.</p>
         </Section>
