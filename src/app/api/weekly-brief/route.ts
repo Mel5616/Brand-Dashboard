@@ -16,7 +16,8 @@ const iso = (d: Date) => d.toISOString().slice(0, 10);
 
 async function buildSnapshot() {
   const wkAgo = iso(new Date(Date.now() - 7 * 864e5));
-  const [brands, daily, monthly, targets, campaigns, igMedia, klaviyo, promotions] = await Promise.all([
+  const adCut = iso(new Date(Date.now() - 21 * 864e5));   // covers last week + the week before
+  const [brands, daily, monthly, targets, campaigns, igMedia, klaviyo, promotions, googleDaily, metaDaily, pinterestDaily, ga4] = await Promise.all([
     sb("brands?select=id,name,live"),
     sb("brand_daily?select=brand_id,day,revenue"),
     sb("brand_monthly?select=brand_id,month_key,revenue&order=month_key"),
@@ -25,6 +26,10 @@ async function buildSnapshot() {
     sb(`instagram_media?select=brand_id,posted_at,caption,permalink,image_url,like_count,comments_count,reach,saved,shares&posted_at=gte.${wkAgo}`),
     sb("klaviyo_metrics?select=brand_id,month_key,revenue,open_rate,click_rate,emails_sent&order=month_key"),
     sb("promotions?select=brand,brand_id,period_start,period_end,note,price,tier,channel"),
+    sb(`google_ads_daily?select=brand_id,date,spend,revenue&date=gte.${adCut}`),
+    sb(`meta_ads_daily?select=brand_id,date,spend,revenue&date=gte.${adCut}`),
+    sb(`pinterest_ads_daily?select=brand_id,date,spend,revenue&date=gte.${adCut}`),
+    sb("ga4_metrics?select=brand_id,month_key,sessions,organic_sessions,new_users,engagement_rate&order=month_key"),
   ]);
   const nameById = new Map<number, string>(brands.map((b: any) => [b.id, b.name]));
   const today = new Date(); const todayStr = iso(today);
@@ -145,7 +150,54 @@ async function buildSnapshot() {
     .map(g => ({ channel: g.channel, tier: g.tier, endDate: g.endDate, note: g.note, brands: [...g.brands].sort() }))
     .sort((a, b) => (a.tier ?? 9) - (b.tier ?? 9) || a.channel.localeCompare(b.channel));
 
-  return { generatedAt: new Date().toISOString(), d2c, launches, promos, attention: attention.slice(0, 12), wins: { posts: topPosts, email } };
+  // ── Paid ads: last completed week (same Mon–Sun window as D2C), per platform,
+  // ROAS this week vs prior week. Revenue is each platform's own reported
+  // conversion value — see the honesty footnote on the sheet (Google goals /
+  // untracked Amazon spend mean blended ROAS reads high). ──
+  const sumAds = (rows: any[], s: Date, e: Date) => (rows as any[])
+    .filter((r: any) => r.date >= iso(s) && r.date <= iso(e))
+    .reduce((a: any, r: any) => { a.spend += Number(r.spend) || 0; a.revenue += Number(r.revenue) || 0; return a; }, { spend: 0, revenue: 0 });
+  const platform = (name: string, rows: any[]) => {
+    const cur = sumAds(rows, weekStart, weekEndSun), prev = sumAds(rows, prevStart, prevEnd);
+    return {
+      name, spend: Math.round(cur.spend), revenue: Math.round(cur.revenue),
+      roas: cur.spend > 0 ? Math.round((cur.revenue / cur.spend) * 10) / 10 : null,
+      roasPrev: prev.spend > 0 ? Math.round((prev.revenue / prev.spend) * 10) / 10 : null,
+      spendWow: prev.spend > 0 ? Math.round(((cur.spend - prev.spend) / prev.spend) * 100) : null,
+    };
+  };
+  const platforms = [platform("Google", googleDaily), platform("Meta", metaDaily), platform("Pinterest", pinterestDaily)].filter(p => p.spend > 0 || p.revenue > 0);
+  const totSpend = platforms.reduce((s, p) => s + p.spend, 0), totRev = platforms.reduce((s, p) => s + p.revenue, 0);
+  const paid = platforms.length ? {
+    week: iso(weekStart), platforms,
+    totalSpend: Math.round(totSpend), totalRevenue: Math.round(totRev),
+    blendedRoas: totSpend > 0 ? Math.round((totRev / totSpend) * 10) / 10 : null,
+  } : null;
+
+  // ── Website traffic: GA4 is monthly, so this is the last complete month vs the
+  // one before. GA4 here carries no conversion metric, so "per visit" is the
+  // month's D2C revenue ÷ sessions — an honest efficiency proxy, not a GA4 rate. ──
+  const g4Months: string[] = [...new Set<string>((ga4 as any[]).map((r: any) => String(r.month_key)))].sort();
+  const g4Latest = g4Months.filter((mk: string) => mk < curMK && (ga4 as any[]).some((r: any) => r.month_key === mk && Number(r.sessions) > 0)).pop() || g4Months[g4Months.length - 1];
+  const g4Prev = g4Months.filter((mk: string) => mk < g4Latest).pop();
+  const g4Sum = (mk?: string) => (ga4 as any[]).filter((r: any) => r.month_key === mk).reduce((a: any, r: any) => {
+    a.sessions += Number(r.sessions) || 0; a.organic += Number(r.organic_sessions) || 0; a.newUsers += Number(r.new_users) || 0;
+    a.engW += Number(r.sessions) || 0; a.engSum += (Number(r.engagement_rate) || 0) * (Number(r.sessions) || 0); return a;
+  }, { sessions: 0, organic: 0, newUsers: 0, engW: 0, engSum: 0 });
+  const gCur = g4Sum(g4Latest), gPrev = g4Prev ? g4Sum(g4Prev) : null;
+  const d2cRevForMonth = (mk?: string) => (monthly as any[]).filter((m: any) => m.month_key === mk).reduce((s: number, m: any) => s + (Number(m.revenue) || 0), 0);
+  let engRate = gCur.engW > 0 ? gCur.engSum / gCur.engW : null;
+  if (engRate !== null && engRate <= 1) engRate = engRate * 100;    // stored as fraction on some feeds
+  const traffic = g4Latest && gCur.sessions > 0 ? {
+    month: new Date(g4Latest + "-01T00:00:00").toLocaleDateString("en-AU", { month: "long", year: "numeric" }),
+    sessions: Math.round(gCur.sessions),
+    sessionsMoM: gPrev && gPrev.sessions > 0 ? Math.round(((gCur.sessions - gPrev.sessions) / gPrev.sessions) * 100) : null,
+    organicPct: gCur.sessions > 0 ? Math.round((gCur.organic / gCur.sessions) * 100) : null,
+    engagementPct: engRate !== null ? Math.round(engRate) : null,
+    revPerVisit: gCur.sessions > 0 ? Math.round((d2cRevForMonth(g4Latest) / gCur.sessions) * 100) / 100 : null,
+  } : null;
+
+  return { generatedAt: new Date().toISOString(), d2c, launches, promos, attention: attention.slice(0, 12), wins: { posts: topPosts, email }, paid, traffic };
 }
 
 export async function GET(req: Request) {

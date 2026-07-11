@@ -13,6 +13,14 @@ type Snapshot = {
     posts: { brand: string; engagement: number; likes: number; comments: number; reach: number; caption: string; permalink: string; image: string }[];
     email: { month: string; topRevenue: { brand: string; revenue: number } | null; bestClick: { brand: string; clickRate: number } | null } | null;
   };
+  paid?: {
+    week: string;
+    platforms: { name: string; spend: number; revenue: number; roas: number | null; roasPrev: number | null; spendWow: number | null }[];
+    totalSpend: number; totalRevenue: number; blendedRoas: number | null;
+  } | null;
+  traffic?: {
+    month: string; sessions: number; sessionsMoM: number | null; organicPct: number | null; engagementPct: number | null; revPerVisit: number | null;
+  } | null;
 };
 export type Brief = { week_label?: string; intro?: string; objectives?: Objective[]; brand_updates?: { text: string }[]; snapshot?: Snapshot; published_at?: string };
 
@@ -35,6 +43,8 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
   const brandUpdates = (brief.brand_updates ?? []).filter(u => u.text?.trim());
   const d2c = s.d2c, launches = s.launches ?? [], attention = s.attention ?? [], promos = s.promos ?? [];
   const wins = s.wins, posts = wins?.posts ?? [], email = wins?.email;
+  const paid = s.paid, traffic = s.traffic;
+  const roasColor = (v: number | null) => v == null ? "text-slate-400" : v >= 3 ? "text-emerald-600" : v >= 1 ? "text-slate-700" : "text-rose-500";
   const tierColor = (t: number | null) => t === 1 ? "bg-rose-100 text-rose-700" : t === 2 ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500";
 
   return (
@@ -179,6 +189,52 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
             {d2c.fallers.length > 0 && <p className="text-[12px] text-rose-500 mt-2.5">Watch: {d2c.fallers.map(f => `${f.brand} ${f.wow}%`).join(" · ")}</p>}
           </div>
           <p className="text-[10px] text-gray-400 mt-1.5">Own-store (D2C) revenue only — excludes Amazon, wholesale and Baby Bunting.</p>
+        </Section>
+      )}
+
+      {paid && paid.platforms.length > 0 && (
+        <Section title={`Paid ads · week of ${dateShort(paid.week)}`}>
+          <div className="rounded-xl bg-slate-50 border border-gray-100 overflow-hidden">
+            <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 px-4 py-2 text-[10px] uppercase tracking-wider text-gray-400 border-b border-gray-100">
+              <span>Platform</span><span className="text-right">Spend</span><span className="text-right">ROAS</span>
+            </div>
+            {paid.platforms.map(p => (
+              <div key={p.name} className="grid grid-cols-[1fr_auto_auto] gap-x-4 px-4 py-2 text-[14px] items-baseline border-b border-gray-50 last:border-0">
+                <span className="text-slate-700 font-medium">{p.name}</span>
+                <span className="text-right text-slate-700 tabular-nums">{fmt(p.spend)} {p.spendWow != null && <span className="text-[11px]"><Wow v={p.spendWow} /></span>}</span>
+                <span className={`text-right font-semibold tabular-nums ${roasColor(p.roas)}`}>{p.roas != null ? `${p.roas}x` : "—"}</span>
+              </div>
+            ))}
+            <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 px-4 py-2 text-[14px] items-baseline bg-slate-100/60">
+              <span className="text-slate-800 font-semibold">Total</span>
+              <span className="text-right text-slate-800 font-semibold tabular-nums">{fmtFull(paid.totalSpend)}</span>
+              <span className={`text-right font-bold tabular-nums ${roasColor(paid.blendedRoas)}`}>{paid.blendedRoas != null ? `${paid.blendedRoas}x` : "—"}</span>
+            </div>
+          </div>
+          <p className="text-[10px] text-gray-400 mt-1.5">ROAS uses each platform&apos;s reported conversion value, so it reads high — Google counts non-purchase goals and Amazon ad spend isn&apos;t tracked. Treat as directional, not the true blended return.</p>
+        </Section>
+      )}
+
+      {traffic && (
+        <Section title={`Website traffic · ${traffic.month}`}>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-xl bg-slate-50 border border-gray-100 px-3 py-2.5">
+              <p className="text-[11px] text-gray-400">Sessions</p>
+              <p className="text-lg font-bold text-slate-800 leading-tight">{traffic.sessions.toLocaleString()}</p>
+              {traffic.sessionsMoM != null && <p className="text-[12px] font-semibold"><Wow v={traffic.sessionsMoM} /> <span className="text-gray-400 font-normal">MoM</span></p>}
+            </div>
+            <div className="rounded-xl bg-slate-50 border border-gray-100 px-3 py-2.5">
+              <p className="text-[11px] text-gray-400">Organic share</p>
+              <p className="text-lg font-bold text-slate-800 leading-tight">{traffic.organicPct != null ? `${traffic.organicPct}%` : "—"}</p>
+              {traffic.engagementPct != null && <p className="text-[12px] text-gray-400">{traffic.engagementPct}% engaged</p>}
+            </div>
+            <div className="rounded-xl bg-slate-50 border border-gray-100 px-3 py-2.5">
+              <p className="text-[11px] text-gray-400">Revenue / visit</p>
+              <p className="text-lg font-bold text-slate-800 leading-tight">{traffic.revPerVisit != null ? `$${traffic.revPerVisit.toFixed(2)}` : "—"}</p>
+              <p className="text-[12px] text-gray-400">D2C ÷ sessions</p>
+            </div>
+          </div>
+          <p className="text-[10px] text-gray-400 mt-1.5">GA4 sessions across all brand sites. Revenue per visit is D2C revenue ÷ sessions — an efficiency proxy, not a GA4 conversion rate.</p>
         </Section>
       )}
 
