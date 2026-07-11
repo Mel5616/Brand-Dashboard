@@ -778,7 +778,6 @@ export function DashboardTabs({
           {active === "brands" && (
             <>
               {role === "admin" && <SyncStatusPanel />}
-              <ForecastPanel brands={brands.filter((b: any) => b.live)} monthly={rawMonthly} targets={rawTargets} />
               {(() => {
                 const biz = buildChannels("all", { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest: LATEST });
                 if (!biz.length) return null;
@@ -898,9 +897,10 @@ export function DashboardTabs({
               </>
             )}
 
-          {/* ── Summary (cont.): brand tier cards ── */}
+          {/* ── Summary (cont.): D2C forecast + brand tier cards ── */}
           {active === "summary" && (
             <>
+              <ForecastPanel brands={brands.filter((b: any) => b.live)} monthly={rawMonthly} targets={rawTargets} />
               <div>
                 <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
                   <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Brands — click to explore</h2>

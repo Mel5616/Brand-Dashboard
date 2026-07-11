@@ -43,7 +43,7 @@ export function ForecastPanel({ brands, monthly, targets }: { brands: Brand[]; m
 
   const growthPct = ((f.growth - 1) * 100);
   const kpis = [
-    { label: "Full-year forecast", value: fmtFull(f.full), sub: `${fmt(f.low)} – ${fmt(f.high)} range`, big: true },
+    { label: "D2C forecast", value: fmtFull(f.full), sub: `${fmt(f.low)} – ${fmt(f.high)} range`, big: true },
     ...(f.pacePct !== null ? [{ label: "vs target", value: `${f.pacePct.toFixed(0)}%`, sub: f.target ? `of ${fmt(f.target)}` : "", good: f.pacePct >= 100 }] : []),
     { label: "Banked so far", value: fmtFull(f.bankedToDate), sub: `${Math.round(f.elapsedFraction * 100)}% of year elapsed` },
     { label: "Applied growth", value: `${growthPct >= 0 ? "+" : ""}${growthPct.toFixed(0)}%`, sub: "vs last FY, so far" },
@@ -53,8 +53,8 @@ export function ForecastPanel({ brands, monthly, targets }: { brands: Brand[]; m
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
       <div className="flex items-start justify-between flex-wrap gap-3 mb-4">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Full-year forecast <span className="font-normal text-gray-400 normal-case tracking-normal">· seasonal, self-sharpening</span></p>
-          <p className="text-[11px] text-gray-400 mt-0.5">Last year&apos;s monthly shape, scaled by this year&apos;s pace.</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">D2C full-year forecast <span className="font-normal text-gray-400 normal-case tracking-normal">· own-store revenue, seasonal</span></p>
+          <p className="text-[11px] text-gray-400 mt-0.5">Website &amp; own-store (D2C) revenue only — excludes Amazon, wholesale and Baby Bunting. Last year&apos;s monthly shape, scaled by this year&apos;s pace.</p>
         </div>
         <select value={scope === "all" ? "all" : String(scope)} onChange={e => setScope(e.target.value === "all" ? "all" : Number(e.target.value))}
           className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
