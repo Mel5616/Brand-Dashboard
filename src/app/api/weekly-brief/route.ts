@@ -15,9 +15,9 @@ const sb = (p: string) => fetch(`${sbUrl}/rest/v1/${p}`, { headers: h(), cache: 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 
 async function buildSnapshot() {
-  const [brands, weekly, monthly, targets, campaigns] = await Promise.all([
+  const [brands, daily, monthly, targets, campaigns] = await Promise.all([
     sb("brands?select=id,name,live"),
-    sb("brand_weekly?select=brand_id,week_start,revenue&order=week_start"),
+    sb("brand_daily?select=brand_id,day,revenue"),
     sb("brand_monthly?select=brand_id,month_key,revenue&order=month_key"),
     sb("brand_targets?select=brand_id,month_key,revenue_target"),
     sb("campaigns?select=campaign,brand,horizon,status,key_date,end_date,owner,brief&order=key_date"),
@@ -25,21 +25,24 @@ async function buildSnapshot() {
   const nameById = new Map<number, string>(brands.map((b: any) => [b.id, b.name]));
   const today = new Date(); const todayStr = iso(today);
 
-  // ── D2C results: latest complete week vs the week before ──
-  const complete: string[] = [...new Set<string>((weekly as any[]).map((w: any) => String(w.week_start)))].filter((ws: string) => {
-    const e = new Date(ws + "T00:00:00"); e.setDate(e.getDate() + 7); return iso(e) <= todayStr;
-  }).sort();
-  const thisWk: string | undefined = complete[complete.length - 1], lastWk: string | undefined = complete[complete.length - 2];
-  const wkRev = (ws: string | undefined, bid?: number) => weekly
-    .filter((w: any) => w.week_start === ws && (bid === undefined || w.brand_id === bid))
-    .reduce((s: number, w: any) => s + (Number(w.revenue) || 0), 0);
-  const total = wkRev(thisWk), prevTotal = wkRev(lastWk);
+  // ── D2C results: THIS week (Mon → today), compared same-days vs last week ──
+  // From daily data so a mid-week brief compares Mon–today against Mon–same-day
+  // last week (fair), not against a full prior week. Complete once today is Sunday.
+  const dow = today.getDay();                       // 0 = Sun … 6 = Sat
+  const weekStart = new Date(today); weekStart.setDate(today.getDate() - ((dow + 6) % 7));  // this Monday
+  const lastWeekStart = new Date(weekStart); lastWeekStart.setDate(weekStart.getDate() - 7);
+  const lastWeekEnd = new Date(today); lastWeekEnd.setDate(today.getDate() - 7);
+  const partial = dow !== 0;                         // week isn't over until Sunday
+  const sumDaily = (start: Date, end: Date, bid?: number) => (daily as any[])
+    .filter((r: any) => (bid === undefined || r.brand_id === bid) && r.day >= iso(start) && r.day <= iso(end))
+    .reduce((s: number, r: any) => s + (Number(r.revenue) || 0), 0);
+  const total = sumDaily(weekStart, today), prevTotal = sumDaily(lastWeekStart, lastWeekEnd);
   const movers = brands.filter((b: any) => b.live).map((b: any) => {
-    const cur = wkRev(thisWk, b.id), prev = wkRev(lastWk, b.id);
-    return { brand: b.name, revenue: Math.round(cur), wow: prev > 0 ? Math.round(((cur - prev) / prev) * 100) : null };
+    const curV = sumDaily(weekStart, today, b.id), prevV = sumDaily(lastWeekStart, lastWeekEnd, b.id);
+    return { brand: b.name, revenue: Math.round(curV), wow: prevV > 0 ? Math.round(((curV - prevV) / prevV) * 100) : null };
   }).filter((m: any) => m.revenue > 0).sort((a: any, b: any) => b.revenue - a.revenue);
   const d2c = {
-    weekStart: thisWk ?? null,
+    weekStart: iso(weekStart), partial,
     total: Math.round(total),
     wowPct: prevTotal > 0 ? Math.round(((total - prevTotal) / prevTotal) * 100) : null,
     top: movers.slice(0, 5),

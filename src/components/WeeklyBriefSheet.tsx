@@ -5,7 +5,7 @@ import { fmt, fmtFull } from "@/lib/format";
 type Objective = { text: string; done?: boolean };
 type Snapshot = {
   generatedAt?: string;
-  d2c?: { weekStart: string | null; total: number; wowPct: number | null; top: { brand: string; revenue: number; wow: number | null }[]; fallers: { brand: string; wow: number | null }[] };
+  d2c?: { weekStart: string | null; partial?: boolean; total: number; wowPct: number | null; top: { brand: string; revenue: number; wow: number | null }[]; fallers: { brand: string; wow: number | null }[] };
   launches?: { campaign: string; brand: string; keyDate: string | null; status: string; oneLiner: string }[];
   attention?: { text: string; kind: string }[];
 };
@@ -87,11 +87,11 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
       )}
 
       {d2c && d2c.weekStart && (
-        <Section title={`D2C results · week of ${dateShort(d2c.weekStart)}`}>
+        <Section title={`D2C results · week of ${dateShort(d2c.weekStart)}${d2c.partial ? " (so far)" : ""}`}>
           <div className="rounded-xl bg-slate-50 border border-gray-100 px-4 py-3">
             <div className="flex items-baseline gap-3">
               <p className="text-2xl font-bold text-slate-800">{fmtFull(d2c.total)}</p>
-              <span className="text-sm font-semibold"><Wow v={d2c.wowPct} /> <span className="text-gray-400 font-normal">vs prior week</span></span>
+              <span className="text-sm font-semibold"><Wow v={d2c.wowPct} /> <span className="text-gray-400 font-normal">vs {d2c.partial ? "same days last week" : "prior week"}</span></span>
             </div>
             {d2c.top.length > 0 && (
               <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1.5">
