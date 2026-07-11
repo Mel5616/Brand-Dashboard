@@ -1,6 +1,0 @@
-<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-  <!-- Coolkidz petals mark: blue (up-left), green (up-right), pink (down) -->
-  <path d="M60 60 C42 44 30 36 30 24 C30 10 43 4 60 4 C77 4 90 10 90 24 C90 36 78 44 60 60 Z" fill="#14a8e0" transform="rotate(-60 60 60)"/>
-  <path d="M60 60 C42 44 30 36 30 24 C30 10 43 4 60 4 C77 4 90 10 90 24 C90 36 78 44 60 60 Z" fill="#7bc043" transform="rotate(60 60 60)"/>
-  <path d="M60 60 C42 44 30 36 30 24 C30 10 43 4 60 4 C77 4 90 10 90 24 C90 36 78 44 60 60 Z" fill="#ea3f8f" transform="rotate(180 60 60)"/>
-</svg>
