@@ -23,7 +23,7 @@ async function buildSnapshot() {
     sb("brand_targets?select=brand_id,month_key,revenue_target"),
     sb("campaigns?select=campaign,brand,horizon,status,key_date,end_date,owner,brief&order=key_date"),
     sb(`instagram_media?select=brand_id,posted_at,caption,permalink,image_url,like_count,comments_count,reach,saved,shares&posted_at=gte.${wkAgo}`),
-    sb("klaviyo_metrics?select=brand_id,month_key,revenue,open_rate,click_rate&order=month_key"),
+    sb("klaviyo_metrics?select=brand_id,month_key,revenue,open_rate,click_rate,emails_sent&order=month_key"),
     sb("promotions?select=brand,brand_id,period_start,period_end,note,price,tier"),
   ]);
   const nameById = new Map<number, string>(brands.map((b: any) => [b.id, b.name]));
@@ -101,15 +101,22 @@ async function buildSnapshot() {
     .map((p: any) => ({ brand: nameById.get(p.brand_id) || "", engagement: eng(p), likes: Number(p.like_count) || 0, comments: Number(p.comments_count) || 0, reach: Number(p.reach) || 0, caption: (p.caption || "").split("\n")[0].slice(0, 90), permalink: p.permalink || "", image: p.image_url || "" }))
     .filter((p: any) => p.engagement > 0)
     .sort((a: any, b: any) => b.engagement - a.engagement).slice(0, 3);
-  // Email: highlight the latest month's standouts (positive framing).
+  // Email: monthly (Klaviyo has no weekly), so use the last COMPLETE month for a
+  // solid number — not the partial current one. Best-click needs real send volume
+  // (a handful of emails at 100% is noise, not a win). Open rate is omitted: Apple
+  // Mail Privacy inflates it, so it isn't an honest metric to celebrate.
+  const curMK = todayStr.slice(0, 7);
   const kMonths = [...new Set<string>((klaviyo as any[]).map((k: any) => String(k.month_key)))].sort();
-  const kLatest = kMonths[kMonths.length - 1];
+  const kLatest = kMonths.filter((mk: string) => mk < curMK && (klaviyo as any[]).some((k: any) => k.month_key === mk && Number(k.emails_sent) > 0)).pop() || kMonths[kMonths.length - 1];
   const kRows = (klaviyo as any[]).filter((k: any) => k.month_key === kLatest);
-  const topEmail = [...kRows].sort((a: any, b: any) => (Number(b.revenue) || 0) - (Number(a.revenue) || 0))[0];
-  const bestClick = [...kRows].filter((k: any) => Number(k.click_rate) > 0).sort((a: any, b: any) => (Number(b.click_rate) || 0) - (Number(a.click_rate) || 0))[0];
+  const topEmail = [...kRows].filter((k: any) => Number(k.revenue) > 0).sort((a: any, b: any) => (Number(b.revenue) || 0) - (Number(a.revenue) || 0))[0];
+  const clickQualified = [...kRows].filter((k: any) => Number(k.emails_sent) >= 200 && Number(k.click_rate) > 0).sort((a: any, b: any) => (Number(b.click_rate) || 0) - (Number(a.click_rate) || 0));
+  // Prefer a different brand from the revenue winner so two brands get a shout-out.
+  const bestClick = clickQualified.find((k: any) => k.brand_id !== topEmail?.brand_id) || clickQualified[0];
+  const monthLabel = kLatest ? new Date(kLatest + "-01T00:00:00").toLocaleDateString("en-AU", { month: "long", year: "numeric" }) : "";
   const email = (topEmail || bestClick) ? {
-    month: kLatest,
-    topRevenue: topEmail ? { brand: nameById.get(topEmail.brand_id) || "", revenue: Math.round(Number(topEmail.revenue) || 0), openRate: Math.round(Number(topEmail.open_rate) || 0) } : null,
+    month: monthLabel,
+    topRevenue: topEmail ? { brand: nameById.get(topEmail.brand_id) || "", revenue: Math.round(Number(topEmail.revenue) || 0) } : null,
     bestClick: bestClick ? { brand: nameById.get(bestClick.brand_id) || "", clickRate: Number(bestClick.click_rate) || 0 } : null,
   } : null;
 

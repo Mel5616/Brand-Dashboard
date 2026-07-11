@@ -11,7 +11,7 @@ type Snapshot = {
   attention?: { text: string; kind: string }[];
   wins?: {
     posts: { brand: string; engagement: number; likes: number; comments: number; reach: number; caption: string; permalink: string; image: string }[];
-    email: { month: string; topRevenue: { brand: string; revenue: number; openRate: number } | null; bestClick: { brand: string; clickRate: number } | null } | null;
+    email: { month: string; topRevenue: { brand: string; revenue: number } | null; bestClick: { brand: string; clickRate: number } | null } | null;
   };
 };
 export type Brief = { week_label?: string; intro?: string; objectives?: Objective[]; snapshot?: Snapshot; published_at?: string };
@@ -80,9 +80,10 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
                 ))}
               </div>
             )}
-            {email && (
+            {email && (email.topRevenue || email.bestClick) && (
               <div className="rounded-lg bg-violet-50/60 border border-violet-100 px-3 py-2 text-[13px] text-violet-900">
-                {email.topRevenue && <p><strong>{email.topRevenue.brand}</strong> email drove <strong>{fmtFull(email.topRevenue.revenue)}</strong> in {email.month} at {email.topRevenue.openRate}% open rate.</p>}
+                <p className="text-[10px] uppercase tracking-wider text-violet-400 mb-0.5">Email · {email.month}</p>
+                {email.topRevenue && <p><strong>{email.topRevenue.brand}</strong> email drove <strong>{fmtFull(email.topRevenue.revenue)}</strong>.</p>}
                 {email.bestClick && <p className="mt-0.5">Best click-through: <strong>{email.bestClick.brand}</strong> at {email.bestClick.clickRate.toFixed(1)}%.</p>}
               </div>
             )}
