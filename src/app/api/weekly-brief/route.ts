@@ -29,24 +29,26 @@ async function buildSnapshot() {
   const nameById = new Map<number, string>(brands.map((b: any) => [b.id, b.name]));
   const today = new Date(); const todayStr = iso(today);
 
-  // ── D2C results: THIS week (Mon → today), compared same-days vs last week ──
-  // From daily data so a mid-week brief compares Mon–today against Mon–same-day
-  // last week (fair), not against a full prior week. Complete once today is Sunday.
+  // ── D2C results: the most recently COMPLETED week (Mon–Sun), compared to the
+  // week before it. The brief goes out on a Monday, so this is last week's finished
+  // numbers — never the near-empty current week — and the week-on-week is a fair
+  // full-week vs full-week comparison. ──
   const dow = today.getDay();                       // 0 = Sun … 6 = Sat
-  const weekStart = new Date(today); weekStart.setDate(today.getDate() - ((dow + 6) % 7));  // this Monday
-  const lastWeekStart = new Date(weekStart); lastWeekStart.setDate(weekStart.getDate() - 7);
-  const lastWeekEnd = new Date(today); lastWeekEnd.setDate(today.getDate() - 7);
-  const partial = dow !== 0;                         // week isn't over until Sunday
+  const thisMonday = new Date(today); thisMonday.setDate(today.getDate() - ((dow + 6) % 7));
+  const weekStart = new Date(thisMonday); weekStart.setDate(thisMonday.getDate() - 7);   // last complete Monday
+  const weekEndSun = new Date(thisMonday); weekEndSun.setDate(thisMonday.getDate() - 1); // last complete Sunday
+  const prevStart = new Date(weekStart); prevStart.setDate(weekStart.getDate() - 7);
+  const prevEnd = new Date(weekEndSun); prevEnd.setDate(weekEndSun.getDate() - 7);
   const sumDaily = (start: Date, end: Date, bid?: number) => (daily as any[])
     .filter((r: any) => (bid === undefined || r.brand_id === bid) && r.day >= iso(start) && r.day <= iso(end))
     .reduce((s: number, r: any) => s + (Number(r.revenue) || 0), 0);
-  const total = sumDaily(weekStart, today), prevTotal = sumDaily(lastWeekStart, lastWeekEnd);
+  const total = sumDaily(weekStart, weekEndSun), prevTotal = sumDaily(prevStart, prevEnd);
   const movers = brands.filter((b: any) => b.live).map((b: any) => {
-    const curV = sumDaily(weekStart, today, b.id), prevV = sumDaily(lastWeekStart, lastWeekEnd, b.id);
+    const curV = sumDaily(weekStart, weekEndSun, b.id), prevV = sumDaily(prevStart, prevEnd, b.id);
     return { brand: b.name, revenue: Math.round(curV), wow: prevV > 0 ? Math.round(((curV - prevV) / prevV) * 100) : null };
   }).filter((m: any) => m.revenue > 0).sort((a: any, b: any) => b.revenue - a.revenue);
   const d2c = {
-    weekStart: iso(weekStart), partial,
+    weekStart: iso(weekStart), partial: false,
     total: Math.round(total),
     wowPct: prevTotal > 0 ? Math.round(((total - prevTotal) / prevTotal) * 100) : null,
     top: movers.slice(0, 5),
@@ -125,10 +127,10 @@ async function buildSnapshot() {
 
   // ── Promotions live this week, grouped by channel so it's clear WHAT they are
   // (e.g. "Amazon PD · Frida, Magic, …") rather than a wall of unlabelled brands. ──
-  const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate() + 6);
+  const curWeekEnd = new Date(thisMonday); curWeekEnd.setDate(thisMonday.getDate() + 6);
   const promoGroups = new Map<string, { channel: string; tier: number | null; endDate: string; note: string; brands: Set<string> }>();
   for (const p of (promotions as any[])) {
-    if (!(p.period_start <= iso(weekEnd) && p.period_end >= iso(weekStart))) continue;
+    if (!(p.period_start <= iso(curWeekEnd) && p.period_end >= iso(thisMonday))) continue;
     const brand = p.brand || nameById.get(p.brand_id) || "";
     if (!brand) continue;
     const channel = p.channel || "Promotion";
