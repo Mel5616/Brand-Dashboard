@@ -94,7 +94,7 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
               <span className="text-sm font-semibold"><Wow v={d2c.wowPct} /> <span className="text-gray-400 font-normal">vs prior week</span></span>
             </div>
             {d2c.top.length > 0 && (
-              <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1.5">
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-1.5">
                 {d2c.top.map(m => (
                   <div key={m.brand} className="flex items-center justify-between text-[13px]">
                     <span className="text-slate-600 truncate">{m.brand}</span>

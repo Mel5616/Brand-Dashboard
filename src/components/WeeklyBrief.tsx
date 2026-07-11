@@ -66,7 +66,9 @@ export function WeeklyBrief() {
   const inp = "w-full text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400";
 
   return (
-    <div className="grid lg:grid-cols-2 gap-5">
+    // Compose is a fixed narrower column; the preview takes the rest so the brief
+    // sheet renders near full width instead of being crammed into a half column.
+    <div className="grid gap-5 lg:grid-cols-[minmax(340px,380px)_1fr] items-start">
       {/* Compose */}
       <div className="space-y-4">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
