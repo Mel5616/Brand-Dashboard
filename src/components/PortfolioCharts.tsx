@@ -77,12 +77,12 @@ export function PortfolioCharts({ brands, tiers, monthly, targets, monthKeys, mo
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
       {/* Cumulative pacing (burn-up) — full width */}
       <div className={card + " lg:col-span-2"}>
-        <h3 className="text-sm font-semibold text-slate-700">Cumulative pacing</h3>
-        <p className="text-xs text-gray-400 mb-3">{fyLabel} · revenue to date vs the target plan — above the line is ahead</p>
+        <h3 className="text-sm font-semibold text-slate-700">D2C cumulative pacing</h3>
+        <p className="text-xs text-gray-400 mb-3">{fyLabel} · own-store (D2C) revenue vs target plan — above the line is ahead. Excludes Amazon, wholesale and Baby Bunting.</p>
         <div className="h-52">
           <Line data={{ labels, datasets: [
             { label: "Target plan", data: cum(monthlyTarget), borderColor: "#94a3b8", borderDash: [5, 4], borderWidth: 2, pointRadius: 0, fill: false, tension: 0.3 },
-            { label: "Revenue", data: cum(monthlyRev), borderColor: "#10b981", backgroundColor: "#10b9811f", borderWidth: 2, pointRadius: 0, fill: true, tension: 0.3 },
+            { label: "D2C revenue", data: cum(monthlyRev), borderColor: "#10b981", backgroundColor: "#10b9811f", borderWidth: 2, pointRadius: 0, fill: true, tension: 0.3 },
           ] }} options={{ responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false }, plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 }, usePointStyle: true } }, tooltip: { callbacks: { label: (c: any) => ` ${c.dataset.label}: ${fmt(c.parsed.y ?? 0)}` } } }, scales: baseScales }} />
         </div>
       </div>
