@@ -42,6 +42,8 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
   const objectives = brief.objectives ?? [];
   const brandUpdates = (brief.brand_updates ?? []).filter(u => u.text?.trim());
   const d2c = s.d2c, launches = s.launches ?? [], attention = s.attention ?? [], promos = s.promos ?? [];
+  const liveLaunches = launches.filter(l => /live/i.test(l.status || ""));
+  const upcomingLaunches = launches.filter(l => !/live/i.test(l.status || ""));
   const wins = s.wins, posts = wins?.posts ?? [], email = wins?.email;
   const paid = s.paid, traffic = s.traffic;
   const roasColor = (v: number | null) => v == null ? "text-slate-400" : v >= 3 ? "text-emerald-600" : v >= 1 ? "text-slate-700" : "text-rose-500";
@@ -143,10 +145,30 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
         </Section>
       )}
 
-      {launches.length > 0 && (
+      {liveLaunches.length > 0 && (
+        <Section title="Live now">
+          <div className="space-y-2">
+            {liveLaunches.map((l, i) => (
+              <div key={i} className="flex items-start gap-3 rounded-lg border border-emerald-100 bg-emerald-50/40 px-3 py-2">
+                <div className="shrink-0 w-12 flex flex-col items-center pt-1">
+                  <span className="relative flex h-2.5 w-2.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" /><span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" /></span>
+                  <span className="text-[9px] font-semibold uppercase tracking-wider text-emerald-600 mt-1.5">Live</span>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-semibold text-slate-800">{l.campaign}</p>
+                  <p className="text-[12px] text-gray-500">{l.brand}{l.keyDate ? ` · since ${dateShort(l.keyDate)}` : ""}</p>
+                  {l.oneLiner && <p className="text-[13px] text-slate-500 mt-0.5 leading-snug">{l.oneLiner}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {upcomingLaunches.length > 0 && (
         <Section title="Upcoming launches">
           <div className="space-y-2">
-            {launches.map((l, i) => (
+            {upcomingLaunches.map((l, i) => (
               <div key={i} className="flex items-start gap-3 rounded-lg border border-gray-100 px-3 py-2">
                 <div className="text-center shrink-0 w-12">
                   <p className="text-[10px] uppercase tracking-wider text-gray-400 leading-none">{l.keyDate ? new Date(l.keyDate + "T00:00:00").toLocaleDateString("en-AU", { month: "short" }) : "TBC"}</p>
