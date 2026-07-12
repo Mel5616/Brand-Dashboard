@@ -22,8 +22,10 @@ const MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV
 function showDays(ts: Tradeshow): string[] {
   const days: string[] = [];
   if (!ts.date_start || !ts.date_end) return days;
-  const d = new Date(ts.date_start + "T00:00:00"), end = new Date(ts.date_end + "T00:00:00");
-  for (let i = 0; d <= end && i < 14; i++, d.setDate(d.getDate() + 1)) days.push(d.toISOString().slice(0, 10));
+  // Parse and step in UTC so toISOString() doesn't roll the date back a day in
+  // timezones ahead of UTC (e.g. Australia).
+  const d = new Date(ts.date_start + "T00:00:00Z"), end = new Date(ts.date_end + "T00:00:00Z");
+  for (let i = 0; d <= end && i < 14; i++, d.setUTCDate(d.getUTCDate() + 1)) days.push(d.toISOString().slice(0, 10));
   return days;
 }
 
@@ -224,8 +226,7 @@ export function TradeshowAccordion({
                     <div className="flex flex-wrap gap-3">
                       {days.map(day => {
                         const key = `${ts.id}|${day}`;
-                        const d = new Date(day + "T00:00:00");
-                        const label = d.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
+                        const label = new Date(day + "T00:00:00Z").toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
                         return admin ? (
                           <label key={key} className="flex flex-col gap-0.5">
                             <span className="text-[10px] text-gray-400">{label}</span>
