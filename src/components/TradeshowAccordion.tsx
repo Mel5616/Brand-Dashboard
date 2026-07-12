@@ -72,10 +72,24 @@ export function TradeshowAccordion({
       else if (d.ok) { const m: Record<string, number> = {}; for (const r of d.rows) m[`${r.tradeshow_id}|${r.day}`] = Number(r.attendance) || 0; setAttendance(m); }
     }).catch(() => {});
   }, []);
+  const [attMsg, setAttMsg] = useState<{ text: string; ok: boolean } | null>(null);
   async function saveAttendance(tradeshow_id: string, day: string, value: number) {
+    const key = `${tradeshow_id}|${day}`;
+    const prev = attendance[key];
     const v = Math.max(0, Math.round(value) || 0);
-    setAttendance(p => ({ ...p, [`${tradeshow_id}|${day}`]: v }));
-    await fetch("/api/tradeshows/attendance", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tradeshow_id, day, attendance: v }) }).catch(() => {});
+    if (prev === v) return;                       // nothing changed
+    setAttendance(p => ({ ...p, [key]: v }));
+    try {
+      const res = await fetch("/api/tradeshows/attendance", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tradeshow_id, day, attendance: v }) });
+      if (res.ok) { setAttMsg({ text: "Saved", ok: true }); setTimeout(() => setAttMsg(m => m?.ok ? null : m), 2000); }
+      else {
+        setAttendance(p => ({ ...p, [key]: prev ?? 0 }));   // revert — it didn't save
+        setAttMsg({ text: res.status === 401 ? "Session expired — refresh the page, sign in, then re-enter." : "Couldn’t save, try again.", ok: false });
+      }
+    } catch {
+      setAttendance(p => ({ ...p, [key]: prev ?? 0 }));
+      setAttMsg({ text: "Couldn’t save — check your connection.", ok: false });
+    }
   }
 
   // Post-show report (HTML/PDF) attached per show, keyed by tradeshow_id.
@@ -241,7 +255,10 @@ export function TradeshowAccordion({
               return (
                 <div className="rounded-lg border border-gray-100 bg-white px-3 py-2.5">
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Door attendance</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Door attendance</p>
+                      {attMsg && <span className={`text-[10px] font-medium ${attMsg.ok ? "text-emerald-600" : "text-rose-500"}`}>{attMsg.ok ? "✓ " : ""}{attMsg.text}</span>}
+                    </div>
                     <p className="text-[11px] text-slate-500"><span className="font-bold text-slate-800">{total.toLocaleString()}</span> total visitors</p>
                   </div>
                   {attNeedsSetup ? (
