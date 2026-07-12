@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { fmtFull } from "@/lib/format";
 import { AustraliaMap } from "./AustraliaMap";
 import { LiveShowPanel } from "./LiveShowPanel";
@@ -16,6 +16,16 @@ function showStatus(ts: Tradeshow): "live" | "upcoming" | "past" {
 }
 
 const MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+
+// Every calendar day a show runs (date_start … date_end), for per-day door
+// attendance. Capped so a bad date range can't produce a huge list.
+function showDays(ts: Tradeshow): string[] {
+  const days: string[] = [];
+  if (!ts.date_start || !ts.date_end) return days;
+  const d = new Date(ts.date_start + "T00:00:00"), end = new Date(ts.date_end + "T00:00:00");
+  for (let i = 0; d <= end && i < 14; i++, d.setDate(d.getDate() + 1)) days.push(d.toISOString().slice(0, 10));
+  return days;
+}
 
 // Compact currency for chart/map labels
 function fmtK(n: number) {
@@ -42,14 +52,29 @@ function stateLabel(fullName: string) {
 }
 
 export function TradeshowAccordion({
-  tradeshows, tradeshowBrands, tradeshowSales, brands, monthKeys,
+  tradeshows, tradeshowBrands, tradeshowSales, brands, monthKeys, admin = false,
 }: {
   tradeshows: Tradeshow[];
   tradeshowBrands: { tradeshow_id: string; brand_id: number }[];
   tradeshowSales: TradeshowSale[];
   brands: Brand[];
   monthKeys?: string[]; // restrict to shows whose start month is in the selected FY
+  admin?: boolean;
 }) {
+  // Door attendance per show-day, keyed `${tradeshow_id}|${day}`.
+  const [attendance, setAttendance] = useState<Record<string, number>>({});
+  const [attNeedsSetup, setAttNeedsSetup] = useState(false);
+  useEffect(() => {
+    fetch("/api/tradeshows/attendance").then(r => r.json()).then(d => {
+      if (d.needsSetup) setAttNeedsSetup(true);
+      else if (d.ok) { const m: Record<string, number> = {}; for (const r of d.rows) m[`${r.tradeshow_id}|${r.day}`] = Number(r.attendance) || 0; setAttendance(m); }
+    }).catch(() => {});
+  }, []);
+  async function saveAttendance(tradeshow_id: string, day: string, value: number) {
+    const v = Math.max(0, Math.round(value) || 0);
+    setAttendance(p => ({ ...p, [`${tradeshow_id}|${day}`]: v }));
+    await fetch("/api/tradeshows/attendance", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tradeshow_id, day, attendance: v }) }).catch(() => {});
+  }
   // Keep only shows that fall within the selected financial year
   const fyShows = monthKeys ? tradeshows.filter(t => monthKeys.includes(t.date_start.slice(0, 7))) : tradeshows;
   const sorted = [...fyShows].sort((a, b) => a.date_start.localeCompare(b.date_start));
@@ -181,6 +206,47 @@ export function TradeshowAccordion({
             {status === "live" && (
               <p className="text-[10px] text-gray-400 px-0.5">Live figures query Shopify in real time. The table below is the last synced snapshot.</p>
             )}
+
+            {/* Door attendance — visitors per day, entered after each expo */}
+            {status !== "upcoming" && (() => {
+              const days = showDays(ts);
+              const total = days.reduce((s, d) => s + (attendance[`${ts.id}|${d}`] || 0), 0);
+              if (!admin && total === 0) return null;   // nothing to show non-admins yet
+              return (
+                <div className="rounded-lg border border-gray-100 bg-white px-3 py-2.5">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Door attendance</p>
+                    <p className="text-[11px] text-slate-500"><span className="font-bold text-slate-800">{total.toLocaleString()}</span> total visitors</p>
+                  </div>
+                  {attNeedsSetup ? (
+                    <p className="text-[11px] text-gray-400">Run <code className="bg-gray-100 px-1 rounded">add_tradeshow_attendance.sql</code> to enable attendance.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-3">
+                      {days.map(day => {
+                        const key = `${ts.id}|${day}`;
+                        const d = new Date(day + "T00:00:00");
+                        const label = d.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
+                        return admin ? (
+                          <label key={key} className="flex flex-col gap-0.5">
+                            <span className="text-[10px] text-gray-400">{label}</span>
+                            <input type="number" min={0} value={attendance[key] ?? ""} placeholder="0"
+                              onChange={e => setAttendance(p => ({ ...p, [key]: e.target.value === "" ? 0 : Math.max(0, Math.round(Number(e.target.value)) || 0) }))}
+                              onBlur={e => saveAttendance(ts.id, day, Number(e.target.value) || 0)}
+                              className="w-24 text-sm border border-gray-200 rounded-lg px-2 py-1 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+                          </label>
+                        ) : (
+                          <div key={key} className="flex flex-col gap-0.5">
+                            <span className="text-[10px] text-gray-400">{label}</span>
+                            <span className="text-sm font-semibold text-slate-700">{(attendance[key] || 0).toLocaleString()}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
             {sales.length === 0 ? (
               status !== "live" ? <p className="text-xs text-gray-400 py-2 text-center">No sales data synced yet.</p> : null
             ) : (

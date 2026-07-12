@@ -1817,6 +1817,7 @@ export function DashboardTabs({
                 tradeshowSales={tradeshowSales}
                 brands={brands}
                 monthKeys={monthKeys}
+                admin={role === "admin"}
               />
               <BoothFunnel data={boothFunnel} />
             </div>
