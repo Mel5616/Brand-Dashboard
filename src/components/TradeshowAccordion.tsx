@@ -77,6 +77,30 @@ export function TradeshowAccordion({
     setAttendance(p => ({ ...p, [`${tradeshow_id}|${day}`]: v }));
     await fetch("/api/tradeshows/attendance", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tradeshow_id, day, attendance: v }) }).catch(() => {});
   }
+
+  // Post-show report (HTML/PDF) attached per show, keyed by tradeshow_id.
+  type Report = { tradeshow_id: string; title: string; html_url: string; file_name: string; uploaded_at: string };
+  const [reports, setReports] = useState<Record<string, Report>>({});
+  const [uploadingReport, setUploadingReport] = useState<string | null>(null);
+  useEffect(() => {
+    fetch("/api/tradeshows/report").then(r => r.json()).then(d => {
+      if (d.ok && d.rows) { const m: Record<string, Report> = {}; for (const r of d.rows) m[r.tradeshow_id] = r; setReports(m); }
+    }).catch(() => {});
+  }, []);
+  async function uploadReport(tradeshow_id: string, file: File, title: string) {
+    setUploadingReport(tradeshow_id);
+    try {
+      const fd = new FormData(); fd.set("tradeshow_id", tradeshow_id); fd.set("file", file); fd.set("title", title);
+      const d = await fetch("/api/tradeshows/report", { method: "POST", body: fd }).then(r => r.json());
+      if (d.ok) setReports(p => ({ ...p, [tradeshow_id]: d.item }));
+      else if (typeof window !== "undefined") window.alert(d.error || "Upload failed");
+    } finally { setUploadingReport(null); }
+  }
+  async function removeReport(tradeshow_id: string) {
+    if (typeof window !== "undefined" && !window.confirm("Remove this post-show report?")) return;
+    const d = await fetch(`/api/tradeshows/report?tradeshow_id=${encodeURIComponent(tradeshow_id)}`, { method: "DELETE" }).then(r => r.json());
+    if (d.ok) setReports(p => { const n = { ...p }; delete n[tradeshow_id]; return n; });
+  }
   // Keep only shows that fall within the selected financial year
   const fyShows = monthKeys ? tradeshows.filter(t => monthKeys.includes(t.date_start.slice(0, 7))) : tradeshows;
   const sorted = [...fyShows].sort((a, b) => a.date_start.localeCompare(b.date_start));
@@ -242,6 +266,31 @@ export function TradeshowAccordion({
                           </div>
                         );
                       })}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Post-show report — the one-page HTML report attached after the expo */}
+            {status !== "upcoming" && (() => {
+              const rep = reports[ts.id];
+              if (!rep && !admin) return null;
+              return (
+                <div className="rounded-lg border border-gray-100 bg-white px-3 py-2.5 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Post-show report</p>
+                    {rep
+                      ? <a href={rep.html_url} target="_blank" rel="noreferrer" className="text-sm font-medium text-emerald-600 hover:underline break-all">{rep.title || rep.file_name || "View report"} ↗</a>
+                      : <p className="text-[12px] text-gray-400">No report attached yet.</p>}
+                  </div>
+                  {admin && (
+                    <div className="flex items-center gap-2 shrink-0">
+                      <label className="text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg px-3 py-1.5 cursor-pointer whitespace-nowrap">
+                        {uploadingReport === ts.id ? "Uploading…" : rep ? "Replace" : "Upload report"}
+                        <input type="file" accept=".html,.htm,text/html,application/pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadReport(ts.id, f, ts.name); e.currentTarget.value = ""; }} />
+                      </label>
+                      {rep && <button onClick={() => removeReport(ts.id)} className="text-xs text-gray-400 hover:text-rose-500">Remove</button>}
                     </div>
                   )}
                 </div>
