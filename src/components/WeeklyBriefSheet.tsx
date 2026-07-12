@@ -25,6 +25,16 @@ type Snapshot = {
 export type Brief = { week_label?: string; intro?: string; objectives?: Objective[]; brand_updates?: { text: string }[]; snapshot?: Snapshot; published_at?: string };
 
 const dateShort = (s?: string | null) => s ? new Date(s + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" }) : "";
+
+// Turn any http(s) URL in free text into a clickable link (objectives, brand
+// updates, intro). Non-URL text is passed through untouched.
+function linkify(text: string) {
+  return text.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+    /^https?:\/\//.test(part)
+      ? <a key={i} href={part} target="_blank" rel="noreferrer" className="text-emerald-600 underline decoration-emerald-300 underline-offset-2 hover:text-emerald-700 break-all">{part}</a>
+      : part
+  );
+}
 const Wow = ({ v }: { v: number | null }) => v == null ? <span className="text-slate-300">—</span>
   : <span className={v >= 0 ? "text-emerald-600" : "text-rose-500"}>{v >= 0 ? "▲" : "▼"} {Math.abs(v)}%</span>;
 
@@ -57,7 +67,7 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
         {brief.published_at && <p className="text-xs text-gray-400 mt-1">Published {new Date(brief.published_at).toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" })}</p>}
       </header>
 
-      {brief.intro && <p className="text-[15px] text-slate-600 leading-relaxed whitespace-pre-wrap">{brief.intro}</p>}
+      {brief.intro && <p className="text-[15px] text-slate-600 leading-relaxed whitespace-pre-wrap">{linkify(brief.intro)}</p>}
 
       {objectives.length > 0 && (
         <Section title="This week's objectives">
@@ -67,7 +77,7 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
                 <span className={`mt-0.5 w-4 h-4 rounded border shrink-0 flex items-center justify-center ${o.done ? "bg-emerald-500 border-emerald-500" : "bg-white border-gray-300"}`}>
                   {o.done && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                 </span>
-                <span className={`text-[15px] leading-snug ${o.done ? "text-gray-400 line-through" : "text-slate-700"}`}>{o.text}</span>
+                <span className={`text-[15px] leading-snug ${o.done ? "text-gray-400 line-through" : "text-slate-700"}`}>{linkify(o.text)}</span>
               </li>
             ))}
           </ul>
@@ -80,7 +90,7 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
             {brandUpdates.map((u, i) => (
               <li key={i} className="flex items-start gap-2.5 text-[15px] text-slate-700 leading-snug">
                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                <span className="whitespace-pre-wrap">{u.text}</span>
+                <span className="whitespace-pre-wrap">{linkify(u.text)}</span>
               </li>
             ))}
           </ul>
