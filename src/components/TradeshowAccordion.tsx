@@ -253,33 +253,36 @@ export function TradeshowAccordion({
               const total = days.reduce((s, d) => s + (attendance[`${ts.id}|${d}`] || 0), 0);
               if (!admin && total === 0) return null;   // nothing to show non-admins yet
               return (
-                <div className="rounded-lg border border-gray-100 bg-white px-3 py-2.5">
-                  <div className="flex items-center justify-between mb-2">
+                <div className="rounded-xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 to-white px-4 py-3.5 shadow-sm">
+                  <div className="flex items-end justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Door attendance</p>
+                      <span className="grid place-items-center w-6 h-6 rounded-lg bg-emerald-100 text-emerald-600">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 00-3-3.87" /></svg>
+                      </span>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-700">Door attendance</p>
                       {attMsg && <span className={`text-[10px] font-medium ${attMsg.ok ? "text-emerald-600" : "text-rose-500"}`}>{attMsg.ok ? "✓ " : ""}{attMsg.text}</span>}
                     </div>
-                    <p className="text-[11px] text-slate-500"><span className="font-bold text-slate-800">{total.toLocaleString()}</span> total visitors</p>
+                    <p className="text-right leading-none"><span className="text-2xl font-extrabold text-slate-800 tabular-nums">{total.toLocaleString()}</span><span className="text-[11px] text-gray-400 ml-1">total visitors</span></p>
                   </div>
                   {attNeedsSetup ? (
                     <p className="text-[11px] text-gray-400">Run <code className="bg-gray-100 px-1 rounded">add_tradeshow_attendance.sql</code> to enable attendance.</p>
                   ) : (
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex flex-wrap gap-2.5">
                       {days.map(day => {
                         const key = `${ts.id}|${day}`;
                         const label = new Date(day + "T00:00:00Z").toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
                         return admin ? (
-                          <label key={key} className="flex flex-col gap-0.5">
-                            <span className="text-[10px] text-gray-400">{label}</span>
+                          <label key={key} className="flex flex-col gap-1 bg-white rounded-lg border border-emerald-100 px-2.5 py-2">
+                            <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">{label}</span>
                             <input type="number" min={0} value={attendance[key] ?? ""} placeholder="0"
                               onChange={e => setAttendance(p => ({ ...p, [key]: e.target.value === "" ? 0 : Math.max(0, Math.round(Number(e.target.value)) || 0) }))}
                               onBlur={e => saveAttendance(ts.id, day, Number(e.target.value) || 0)}
-                              className="w-24 text-sm border border-gray-200 rounded-lg px-2 py-1 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+                              className="w-28 text-lg font-bold text-slate-800 tabular-nums border-0 border-b-2 border-emerald-100 focus:border-emerald-400 px-0 py-0.5 focus:outline-none bg-transparent" />
                           </label>
                         ) : (
-                          <div key={key} className="flex flex-col gap-0.5">
-                            <span className="text-[10px] text-gray-400">{label}</span>
-                            <span className="text-sm font-semibold text-slate-700">{(attendance[key] || 0).toLocaleString()}</span>
+                          <div key={key} className="flex flex-col gap-1 bg-white rounded-lg border border-emerald-100 px-3 py-2 min-w-[7rem]">
+                            <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">{label}</span>
+                            <span className="text-lg font-bold text-slate-800 tabular-nums">{(attendance[key] || 0).toLocaleString()}</span>
                           </div>
                         );
                       })}
@@ -298,7 +301,7 @@ export function TradeshowAccordion({
                   <div className="min-w-0">
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Post-show report</p>
                     {rep
-                      ? <a href={rep.html_url} target="_blank" rel="noreferrer" className="text-sm font-medium text-emerald-600 hover:underline break-all">{rep.title || rep.file_name || "View report"} ↗</a>
+                      ? <a href={`/api/tradeshows/report/view?tradeshow_id=${encodeURIComponent(ts.id)}`} target="_blank" rel="noreferrer" className="text-sm font-medium text-emerald-600 hover:underline break-all">{rep.title || rep.file_name || "View report"} ↗</a>
                       : <p className="text-[12px] text-gray-400">No report attached yet.</p>}
                   </div>
                   {admin && (

@@ -33,7 +33,11 @@ export async function POST(req: Request) {
   const ext = (file.name.split(".").pop() || "html").toLowerCase().replace(/[^a-z0-9]/g, "") || "html";
   const ctype = ext === "pdf" ? "application/pdf" : "text/html; charset=utf-8";
   const path = `${tradeshow_id}/${Date.now()}.${ext}`;
-  const { error: upErr } = await sb.storage.from(BUCKET).upload(path, file, { contentType: file.type || ctype, upsert: true });
+  // Upload raw bytes with an explicit content-type from the extension — don't
+  // trust file.type (browsers can report .html as text/plain, and Supabase sends
+  // nosniff, so a wrong type makes the report open as source text, not a page).
+  const buf = await file.arrayBuffer();
+  const { error: upErr } = await sb.storage.from(BUCKET).upload(path, buf, { contentType: ctype, upsert: true });
   if (upErr) return NextResponse.json({ ok: false, error: `Upload: ${upErr.message}` }, { status: 500 });
   const html_url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
 
