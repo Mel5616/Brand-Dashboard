@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement,
   LineElement, PointElement, Filler, Tooltip, Legend,
@@ -207,6 +207,11 @@ export function BrandPage({
   const PREV_YR      = yoyKey(LATEST);
   const latestLbl    = MONTH_LABELS[MONTH_KEYS.indexOf(LATEST)] ?? MONTH_LABELS[MONTH_LABELS.length - 1];
   const [period, setPeriod] = useState<Period>("monthly");
+  // Influencer Marketing actuals come from the gifting the team logs (the
+  // Influencer Tracker), summed by brand — so the channel fills in automatically
+  // like Google/Meta, but from our own log rather than an ad-platform API.
+  const [inflSpend, setInflSpend] = useState<{ brand_id: number; month_key: string; spend: number }[]>([]);
+  useEffect(() => { fetch("/api/influencer/spend").then(r => r.json()).then(j => setInflSpend(j.rows ?? [])).catch(() => {}); }, []);
 
   const monthlyRows = monthly.filter(m => m.brand_id === brand.id);
   const weeklyRows  = weekly.filter(w => w.brand_id === brand.id);
@@ -366,10 +371,13 @@ export function BrandPage({
   const actualsRows    = marketingActuals.filter(a => a.brand_id === brand.id);
   const fyGoogleActual = adsRows.reduce((s, r) => s + r.spend, 0);
   const fyMetaActual   = metaRows.reduce((s, r) => s + r.spend, 0);
+  const fyInfluencerActual = inflSpend.filter(r => r.brand_id === brand.id).reduce((s, r) => s + (Number(r.spend) || 0), 0);
 
   function getActual(channel: string): number {
     if (channel === "Google Advertising") return fyGoogleActual;
     if (channel === "Social Media (Meta)") return fyMetaActual;
+    // Logged gifting + any manual uploads for the same channel.
+    if (channel === "Influencer Marketing") return fyInfluencerActual + actualsRows.filter(a => a.channel === channel).reduce((s, a) => s + a.spend, 0);
     return actualsRows.filter(a => a.channel === channel).reduce((s, a) => s + a.spend, 0);
   }
 
@@ -994,6 +1002,7 @@ export function BrandPage({
                     {budgets.sort((a, b) => b.annual_budget - a.annual_budget).map(b => {
                       const color    = CHANNEL_COLORS[b.channel] ?? "#94a3b8";
                       const isLive   = b.channel === "Google Advertising" || b.channel === "Social Media (Meta)";
+                      const isAuto   = b.channel === "Influencer Marketing";   // auto-summed from the gifting log
                       const actual   = getActual(b.channel);
                       const hasActual = actual > 0;
                       const utilPct  = b.annual_budget > 0 ? Math.min((actual / b.annual_budget) * 100, 110) : 0;
@@ -1004,6 +1013,7 @@ export function BrandPage({
                               <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color }} />
                               <span className="text-slate-700 font-medium">{b.channel}</span>
                               {isLive && <span className="text-[9px] bg-emerald-50 text-emerald-600 px-1 rounded font-bold">LIVE</span>}
+                              {isAuto && <span className="text-[9px] bg-amber-50 text-amber-600 px-1 rounded font-bold" title="Auto-summed from logged influencer gifting">AUTO</span>}
                             </div>
                           </td>
                           <td className="py-2 text-right text-slate-600 whitespace-nowrap pr-3">{fmtFull(b.annual_budget)}</td>
