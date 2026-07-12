@@ -263,3 +263,13 @@ export async function PATCH(req: Request) {
   if (!res.ok) return NextResponse.json({ ok: false }, { status: 500 });
   return NextResponse.json({ ok: true, item: JSON.parse(await res.text())[0] });
 }
+
+export async function DELETE(req: Request) {
+  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
+  if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
+  const id = new URL(req.url).searchParams.get("id");
+  if (!id) return NextResponse.json({ ok: false }, { status: 400 });
+  const res = await fetch(`${sbUrl}/rest/v1/weekly_briefs?id=eq.${encodeURIComponent(id)}`, { method: "DELETE", headers: h() });
+  if (!res.ok) return NextResponse.json({ ok: false }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}

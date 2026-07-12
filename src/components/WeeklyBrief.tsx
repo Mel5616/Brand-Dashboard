@@ -88,6 +88,16 @@ export function WeeklyBrief() {
       }
     } finally { setBusy(false); }
   }
+  // Delete a brief for good. Removes it from the list (and clears the editor if
+  // it was the one open). Published links stop working once deleted.
+  async function deleteBrief(id: string) {
+    if (typeof window !== "undefined" && !window.confirm("Delete this brief? This can't be undone, and any shared link will stop working.")) return;
+    setBusy(true);
+    try {
+      const r = await fetch(`/api/weekly-brief?id=${encodeURIComponent(id)}`, { method: "DELETE" }).then(x => x.json());
+      if (r.ok) { setPast(p => p.filter(x => x.id !== id)); if (current?.id === id) reset(); }
+    } finally { setBusy(false); }
+  }
   function reset() {
     setCurrent(null); setWeekLabel(defaultLabel()); setIntro(""); setObjectives([{ text: "", done: false }]); setBrandUpdates([{ text: "" }]);
     fetch("/api/weekly-brief?preview=1").then(r => r.json()).then(d => { if (d.ok) setSnapshot(d.snapshot); });
@@ -180,6 +190,7 @@ export function WeeklyBrief() {
                       <a href={linkFor(b.share_token)} target="_blank" rel="noreferrer" className="text-xs font-medium text-emerald-600 hover:underline">Open ↗</a>
                       <button onClick={() => copyLink(b.share_token)} className="text-xs font-medium text-gray-500 hover:text-gray-700">{copied === b.share_token ? "Copied" : "Copy link"}</button>
                     </>}
+                    <button onClick={() => deleteBrief(b.id)} disabled={busy} className="text-xs font-medium text-gray-400 hover:text-rose-500 disabled:opacity-60">Delete</button>
                   </div>
                 </div>
               ))}
