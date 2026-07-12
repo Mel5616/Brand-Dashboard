@@ -34,26 +34,26 @@ async function buildSnapshot() {
   const nameById = new Map<number, string>(brands.map((b: any) => [b.id, b.name]));
   const today = new Date(); const todayStr = iso(today);
 
-  // ── D2C results: the most recently COMPLETED week (Mon–Sun), compared to the
-  // week before it. The brief goes out on a Monday, so this is last week's finished
-  // numbers — never the near-empty current week — and the week-on-week is a fair
-  // full-week vs full-week comparison. ──
+  // ── D2C results: the most recently COMPLETED week, compared to the week before.
+  // Coolkidz weeks run Sunday → Saturday, so this is last week's finished numbers
+  // (never the near-empty current week) and the week-on-week is a fair full-week
+  // vs full-week comparison. ──
   const dow = today.getDay();                       // 0 = Sun … 6 = Sat
-  const thisMonday = new Date(today); thisMonday.setDate(today.getDate() - ((dow + 6) % 7));
-  const weekStart = new Date(thisMonday); weekStart.setDate(thisMonday.getDate() - 7);   // last complete Monday
-  const weekEndSun = new Date(thisMonday); weekEndSun.setDate(thisMonday.getDate() - 1); // last complete Sunday
+  const thisSunday = new Date(today); thisSunday.setDate(today.getDate() - dow);          // start of the current week (Sun)
+  const weekStart = new Date(thisSunday); weekStart.setDate(thisSunday.getDate() - 7);    // last complete Sunday
+  const weekEndSat = new Date(thisSunday); weekEndSat.setDate(thisSunday.getDate() - 1);  // last complete Saturday
   const prevStart = new Date(weekStart); prevStart.setDate(weekStart.getDate() - 7);
-  const prevEnd = new Date(weekEndSun); prevEnd.setDate(weekEndSun.getDate() - 7);
+  const prevEnd = new Date(weekEndSat); prevEnd.setDate(weekEndSat.getDate() - 7);
   const sumDaily = (start: Date, end: Date, bid?: number) => (daily as any[])
     .filter((r: any) => (bid === undefined || r.brand_id === bid) && r.day >= iso(start) && r.day <= iso(end))
     .reduce((s: number, r: any) => s + (Number(r.revenue) || 0), 0);
-  const total = sumDaily(weekStart, weekEndSun), prevTotal = sumDaily(prevStart, prevEnd);
+  const total = sumDaily(weekStart, weekEndSat), prevTotal = sumDaily(prevStart, prevEnd);
   const movers = brands.filter((b: any) => b.live).map((b: any) => {
-    const curV = sumDaily(weekStart, weekEndSun, b.id), prevV = sumDaily(prevStart, prevEnd, b.id);
+    const curV = sumDaily(weekStart, weekEndSat, b.id), prevV = sumDaily(prevStart, prevEnd, b.id);
     return { brand: b.name, revenue: Math.round(curV), wow: prevV > 0 ? Math.round(((curV - prevV) / prevV) * 100) : null };
   }).filter((m: any) => m.revenue > 0).sort((a: any, b: any) => b.revenue - a.revenue);
   const d2c = {
-    weekStart: iso(weekStart), partial: false,
+    weekStart: iso(weekStart), weekEnd: iso(weekEndSat), partial: false,
     total: Math.round(total),
     wowPct: prevTotal > 0 ? Math.round(((total - prevTotal) / prevTotal) * 100) : null,
     top: movers,   // every brand with D2C sales, biggest first — the team sees them all
@@ -132,10 +132,10 @@ async function buildSnapshot() {
 
   // ── Promotions live this week, grouped by channel so it's clear WHAT they are
   // (e.g. "Amazon PD · Frida, Magic, …") rather than a wall of unlabelled brands. ──
-  const curWeekEnd = new Date(thisMonday); curWeekEnd.setDate(thisMonday.getDate() + 6);
+  const curWeekEnd = new Date(thisSunday); curWeekEnd.setDate(thisSunday.getDate() + 6);
   const promoGroups = new Map<string, { channel: string; tier: number | null; endDate: string; note: string; brands: Set<string> }>();
   for (const p of (promotions as any[])) {
-    if (!(p.period_start <= iso(curWeekEnd) && p.period_end >= iso(thisMonday))) continue;
+    if (!(p.period_start <= iso(curWeekEnd) && p.period_end >= iso(thisSunday))) continue;
     const brand = p.brand || nameById.get(p.brand_id) || "";
     if (!brand) continue;
     const channel = p.channel || "Promotion";
@@ -158,7 +158,7 @@ async function buildSnapshot() {
     .filter((r: any) => r.date >= iso(s) && r.date <= iso(e))
     .reduce((a: any, r: any) => { a.spend += Number(r.spend) || 0; a.revenue += Number(r.revenue) || 0; return a; }, { spend: 0, revenue: 0 });
   const platform = (name: string, rows: any[]) => {
-    const cur = sumAds(rows, weekStart, weekEndSun), prev = sumAds(rows, prevStart, prevEnd);
+    const cur = sumAds(rows, weekStart, weekEndSat), prev = sumAds(rows, prevStart, prevEnd);
     return {
       name, spend: Math.round(cur.spend), revenue: Math.round(cur.revenue),
       roas: cur.spend > 0 ? Math.round((cur.revenue / cur.spend) * 10) / 10 : null,

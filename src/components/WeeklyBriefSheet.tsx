@@ -5,7 +5,7 @@ import { fmt, fmtFull } from "@/lib/format";
 type Objective = { text: string; done?: boolean };
 type Snapshot = {
   generatedAt?: string;
-  d2c?: { weekStart: string | null; partial?: boolean; total: number; wowPct: number | null; top: { brand: string; revenue: number; wow: number | null }[]; fallers: { brand: string; wow: number | null }[] };
+  d2c?: { weekStart: string | null; weekEnd?: string | null; partial?: boolean; total: number; wowPct: number | null; top: { brand: string; revenue: number; wow: number | null }[]; fallers: { brand: string; wow: number | null }[] };
   launches?: { campaign: string; brand: string; keyDate: string | null; status: string; oneLiner: string }[];
   promos?: { channel: string; tier: number | null; endDate: string; note: string; brands: string[] }[];
   attention?: { text: string; kind: string }[];
@@ -196,7 +196,7 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
       )}
 
       {d2c && d2c.weekStart && (
-        <Section title={`D2C results · week of ${dateShort(d2c.weekStart)}${d2c.partial ? " (so far)" : ""}`}>
+        <Section title={`D2C results · ${dateShort(d2c.weekStart)}${d2c.weekEnd ? ` – ${dateShort(d2c.weekEnd)}` : ""}${d2c.partial ? " (so far)" : ""}`}>
           <div className="rounded-xl bg-slate-50 border border-gray-100 px-4 py-3">
             <div className="flex items-baseline gap-3">
               <p className="text-2xl font-bold text-slate-800">{fmtFull(d2c.total)}</p>
