@@ -38,6 +38,12 @@ export async function proxy(request: NextRequest) {
   if (!user && !isPublic) {
     // API routes get a 401 (the client expects JSON); pages redirect to login.
     if (path.startsWith("/api")) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
+    // Link-preview crawlers (Teams, Slack, iMessage, etc.) don't follow the login
+    // redirect, so serve them the login page's HTML in place — it carries the site's
+    // Open Graph tags, so the shared link unfurls with a title, description and image.
+    const ua = request.headers.get("user-agent") || "";
+    const isPreviewBot = /bot|facebookexternalhit|slack|discord|whatsapp|telegram|twitter|linkedin|pinterest|preview|skype|microsoft office|embedly|applebot|redditbot|vkShare|W3C_Validator|Iframely/i.test(ua);
+    if (isPreviewBot) return NextResponse.rewrite(new URL("/login", request.url));
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", path);
