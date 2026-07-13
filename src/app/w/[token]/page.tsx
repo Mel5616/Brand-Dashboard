@@ -7,7 +7,13 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
   const { token } = await params;
   const sb = await createClient();
   const { data } = await sb.from("weekly_briefs").select("week_label").eq("share_token", token).single();
-  return { title: data?.week_label ? `Weekly Brief · ${data.week_label}` : "Weekly Brief · Coolkidz Australia" };
+  const title = data?.week_label ? `Weekly Brief · ${data.week_label}` : "Weekly Brief · Coolkidz Australia";
+  const description = "This week's D2C results, launches, promotions and wins — Coolkidz Australia.";
+  return {
+    title, description,
+    openGraph: { title, description, type: "article", images: [{ url: "/og-image.jpg", width: 1200, height: 685 }] },
+    twitter: { card: "summary_large_image", title, description, images: ["/og-image.jpg"] },
+  };
 }
 
 // Public, token-protected weekly brief — no login. Shareable with the team.
