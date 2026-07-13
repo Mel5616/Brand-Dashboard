@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 // Team hub: a manager cockpit. Top — a scorecard with one card per function
 // (owner, RAG status, this-week headline). Below — the roster; click a person to
 // see and add their 1:1 notes and goals.
-type Member = { id: string; name: string; function: string; email: string; focus: string; job_description?: string; active: boolean; sort: number };
+type Member = { id: string; name: string; function: string; email: string; focus: string; job_description?: string; job_desc_url?: string | null; job_desc_file?: string | null; active: boolean; sort: number };
 type Score = { function: string; owner_id: string | null; status: "green" | "amber" | "red"; headline: string; updated_at: string };
 type Note = { id: string; member_id: string; note_date: string; kind: "note" | "goal"; body: string; done: boolean };
 type Kpi = { id: string; member_id: string; label: string; target: string; current: string; cadence: string; status: "green" | "amber" | "red"; sort: number };
@@ -73,6 +73,16 @@ export function TeamHub({ admin }: { admin: boolean }) {
     if ((m.job_description || "") === text) return;
     setMembers(p => p.map(x => x.id === m.id ? { ...x, job_description: text } : x));
     await post({ action: "member.save", id: m.id, name: m.name, function: m.function, email: m.email, focus: m.focus, job_description: text });
+  }
+  async function uploadJobDesc(m: Member, file: File) {
+    const fd = new FormData(); fd.set("member_id", m.id); fd.set("file", file);
+    const d = await fetch("/api/team-hub/job-desc", { method: "POST", body: fd }).then(r => r.json());
+    if (d.ok) setMembers(p => p.map(x => x.id === m.id ? { ...x, job_desc_url: d.url, job_desc_file: d.file } : x));
+    else if (typeof window !== "undefined") window.alert(d.error || "Upload failed");
+  }
+  async function removeJobDesc(m: Member) {
+    const d = await fetch(`/api/team-hub/job-desc?member_id=${encodeURIComponent(m.id)}`, { method: "DELETE" }).then(r => r.json());
+    if (d.ok) setMembers(p => p.map(x => x.id === m.id ? { ...x, job_desc_url: null, job_desc_file: null } : x));
   }
   async function addKpi() {
     if (!selected || !kf.label.trim()) return;
@@ -184,9 +194,18 @@ export function TeamHub({ admin }: { admin: boolean }) {
 
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Job description</p>
+            {/* Uploaded JD document (PDF etc.) */}
+            <div className="flex items-center gap-3 flex-wrap mb-2">
+              {sel.job_desc_url
+                ? <a href={`/api/team-hub/job-desc/view?member_id=${encodeURIComponent(sel.id)}`} target="_blank" rel="noreferrer" className="text-sm font-medium text-emerald-600 hover:underline">📄 {sel.job_desc_file || "View job description"} ↗</a>
+                : <span className="text-[13px] text-gray-300">No document uploaded.</span>}
+              {admin && <label className="text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg px-3 py-1.5 cursor-pointer">{sel.job_desc_url ? "Replace" : "Upload document"}<input type="file" accept=".pdf,.html,.htm,.doc,.docx,image/*,application/pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadJobDesc(sel, f); e.currentTarget.value = ""; }} /></label>}
+              {admin && sel.job_desc_url && <button onClick={() => removeJobDesc(sel)} className="text-xs text-gray-400 hover:text-rose-500">Remove</button>}
+            </div>
+            {/* Optional short summary */}
             {admin
-              ? <textarea key={sel.id} defaultValue={sel.job_description || ""} onBlur={e => saveJobDesc(sel, e.target.value)} rows={3} placeholder="What this role is responsible for…" className={`${inp} resize-y`} />
-              : (sel.job_description ? <p className="text-[14px] text-slate-600 whitespace-pre-wrap leading-relaxed">{sel.job_description}</p> : <p className="text-[13px] text-gray-300">Not set.</p>)}
+              ? <textarea key={sel.id} defaultValue={sel.job_description || ""} onBlur={e => saveJobDesc(sel, e.target.value)} rows={2} placeholder="Optional one-line summary of the role…" className={`${inp} resize-y`} />
+              : (sel.job_description ? <p className="text-[14px] text-slate-600 whitespace-pre-wrap leading-relaxed">{sel.job_description}</p> : null)}
           </div>
 
           <div>
