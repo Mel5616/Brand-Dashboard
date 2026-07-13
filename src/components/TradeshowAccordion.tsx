@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { fmtFull } from "@/lib/format";
 import { AustraliaMap } from "./AustraliaMap";
 import { LiveShowPanel } from "./LiveShowPanel";
@@ -63,31 +63,33 @@ export function TradeshowAccordion({
   monthKeys?: string[]; // restrict to shows whose start month is in the selected FY
   admin?: boolean;
 }) {
-  // Door attendance per show-day, keyed `${tradeshow_id}|${day}`.
+  // Door attendance per show-day, keyed `${tradeshow_id}|${day}`. `attendance` is
+  // the live (typed) value; `savedRef` tracks what's actually persisted so the
+  // change-guard and failure-revert compare against the server, not the keystroke.
   const [attendance, setAttendance] = useState<Record<string, number>>({});
+  const savedRef = useRef<Record<string, number>>({});
   const [attNeedsSetup, setAttNeedsSetup] = useState(false);
   useEffect(() => {
     fetch("/api/tradeshows/attendance").then(r => r.json()).then(d => {
       if (d.needsSetup) setAttNeedsSetup(true);
-      else if (d.ok) { const m: Record<string, number> = {}; for (const r of d.rows) m[`${r.tradeshow_id}|${r.day}`] = Number(r.attendance) || 0; setAttendance(m); }
+      else if (d.ok) { const m: Record<string, number> = {}; for (const r of d.rows) m[`${r.tradeshow_id}|${r.day}`] = Number(r.attendance) || 0; setAttendance(m); savedRef.current = { ...m }; }
     }).catch(() => {});
   }, []);
   const [attMsg, setAttMsg] = useState<{ text: string; ok: boolean } | null>(null);
   async function saveAttendance(tradeshow_id: string, day: string, value: number) {
     const key = `${tradeshow_id}|${day}`;
-    const prev = attendance[key];
     const v = Math.max(0, Math.round(value) || 0);
-    if (prev === v) return;                       // nothing changed
+    if ((savedRef.current[key] ?? 0) === v) return;   // unchanged vs what's persisted
     setAttendance(p => ({ ...p, [key]: v }));
     try {
       const res = await fetch("/api/tradeshows/attendance", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tradeshow_id, day, attendance: v }) });
-      if (res.ok) { setAttMsg({ text: "Saved", ok: true }); setTimeout(() => setAttMsg(m => m?.ok ? null : m), 2000); }
+      if (res.ok) { savedRef.current[key] = v; setAttMsg({ text: "Saved", ok: true }); setTimeout(() => setAttMsg(m => m?.ok ? null : m), 2000); }
       else {
-        setAttendance(p => ({ ...p, [key]: prev ?? 0 }));   // revert — it didn't save
+        setAttendance(p => ({ ...p, [key]: savedRef.current[key] ?? 0 }));   // revert to last saved
         setAttMsg({ text: res.status === 401 ? "Session expired — refresh the page, sign in, then re-enter." : "Couldn’t save, try again.", ok: false });
       }
     } catch {
-      setAttendance(p => ({ ...p, [key]: prev ?? 0 }));
+      setAttendance(p => ({ ...p, [key]: savedRef.current[key] ?? 0 }));
       setAttMsg({ text: "Couldn’t save — check your connection.", ok: false });
     }
   }
