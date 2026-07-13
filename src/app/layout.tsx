@@ -16,6 +16,20 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://marketing.coolkidz.com.au"),
   title: "Brand Dashboard — Coolkidz Australia",
   description: "Live Shopify sales dashboard for all Coolkidz brands",
+  openGraph: {
+    title: "Brand Dashboard — Coolkidz Australia",
+    description: "Live Shopify sales dashboard for all Coolkidz brands",
+    url: "https://marketing.coolkidz.com.au",
+    siteName: "Coolkidz Brand Dashboard",
+    type: "website",
+    images: [{ url: "/og-image.jpg", width: 1200, height: 685, alt: "Coolkidz Brand Dashboard" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Brand Dashboard — Coolkidz Australia",
+    description: "Live Shopify sales dashboard for all Coolkidz brands",
+    images: ["/og-image.jpg"],
+  },
 };
 
 export default function RootLayout({
