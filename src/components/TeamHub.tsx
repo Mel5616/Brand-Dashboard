@@ -5,9 +5,10 @@ import { useEffect, useMemo, useState } from "react";
 // Team hub: a manager cockpit. Top — a scorecard with one card per function
 // (owner, RAG status, this-week headline). Below — the roster; click a person to
 // see and add their 1:1 notes and goals.
-type Member = { id: string; name: string; function: string; email: string; focus: string; active: boolean; sort: number };
+type Member = { id: string; name: string; function: string; email: string; focus: string; job_description?: string; active: boolean; sort: number };
 type Score = { function: string; owner_id: string | null; status: "green" | "amber" | "red"; headline: string; updated_at: string };
 type Note = { id: string; member_id: string; note_date: string; kind: "note" | "goal"; body: string; done: boolean };
+type Kpi = { id: string; member_id: string; label: string; target: string; current: string; cadence: string; status: "green" | "amber" | "red"; sort: number };
 
 const FUNCTIONS = ["Brand Manager", "Performance / Paid", "Email", "Social", "Influencer", "Store / Retail", "Affiliate", "Graphic Design", "Photography"];
 const STATUS = { green: { dot: "#10b981", ring: "border-emerald-200", bg: "bg-emerald-50/50", label: "On track" }, amber: { dot: "#f59e0b", ring: "border-amber-200", bg: "bg-amber-50/50", label: "Watch" }, red: { dot: "#ef4444", ring: "border-rose-200", bg: "bg-rose-50/50", label: "Needs help" } };
@@ -18,17 +19,19 @@ export function TeamHub({ admin }: { admin: boolean }) {
   const [members, setMembers] = useState<Member[]>([]);
   const [scores, setScores] = useState<Score[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
+  const [kpis, setKpis] = useState<Kpi[]>([]);
   const [loading, setLoading] = useState(true);
   const [needsSetup, setNeedsSetup] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [nf, setNf] = useState({ body: "", kind: "note" as "note" | "goal" });
+  const [kf, setKf] = useState({ label: "", target: "", cadence: "monthly" });
   const [mf, setMf] = useState({ name: "", function: FUNCTIONS[0], email: "", focus: "" });
   const [showAdd, setShowAdd] = useState(false);
 
   useEffect(() => {
     fetch("/api/team-hub").then(r => r.json()).then(d => {
       if (d.needsSetup) setNeedsSetup(true);
-      else if (d.ok) { setMembers(d.members ?? []); setScores(d.scorecard ?? []); setNotes(d.notes ?? []); }
+      else if (d.ok) { setMembers(d.members ?? []); setScores(d.scorecard ?? []); setNotes(d.notes ?? []); setKpis(d.kpis ?? []); }
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
@@ -66,12 +69,32 @@ export function TeamHub({ admin }: { admin: boolean }) {
     const d = await post({ action: "note.delete", id });
     if (d.ok) setNotes(p => p.filter(x => x.id !== id));
   }
+  async function saveJobDesc(m: Member, text: string) {
+    if ((m.job_description || "") === text) return;
+    setMembers(p => p.map(x => x.id === m.id ? { ...x, job_description: text } : x));
+    await post({ action: "member.save", id: m.id, name: m.name, function: m.function, email: m.email, focus: m.focus, job_description: text });
+  }
+  async function addKpi() {
+    if (!selected || !kf.label.trim()) return;
+    const d = await post({ action: "kpi.save", member_id: selected, label: kf.label, target: kf.target, cadence: kf.cadence, sort: kpis.filter(k => k.member_id === selected).length });
+    if (d.ok) { setKpis(p => [...p, d.item]); setKf({ label: "", target: "", cadence: kf.cadence }); }
+  }
+  async function updateKpi(k: Kpi, patch: Partial<Kpi>) {
+    const next = { ...k, ...patch };
+    setKpis(p => p.map(x => x.id === k.id ? next : x));
+    await post({ action: "kpi.save", id: k.id, member_id: k.member_id, label: next.label, target: next.target, current: next.current, cadence: next.cadence, status: next.status });
+  }
+  async function delKpi(id: string) {
+    const d = await post({ action: "kpi.delete", id });
+    if (d.ok) setKpis(p => p.filter(x => x.id !== id));
+  }
 
   if (needsSetup) return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-500">Run <code className="bg-gray-100 px-1 rounded">add_team_management.sql</code> in Supabase to enable the team hub.</div>;
   if (loading) return <div className="p-8 text-center text-sm text-gray-400">Loading…</div>;
 
   const sel = selected ? memberById.get(selected) : null;
   const selNotes = notes.filter(n => n.member_id === selected);
+  const selKpis = kpis.filter(k => k.member_id === selected);
 
   return (
     <div className="space-y-6">
@@ -147,6 +170,60 @@ export function TeamHub({ admin }: { admin: boolean }) {
           </div>
         )}
       </div>
+
+      {/* Selected person: job description + KPIs */}
+      {sel && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-5">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-base font-bold text-slate-800">{sel.name}</p>
+              <p className="text-[12px] text-emerald-600">{sel.function}{sel.focus ? ` · ${sel.focus}` : ""}</p>
+            </div>
+            <button onClick={() => setSelected(null)} className="text-xs text-gray-400 hover:text-gray-600">Close</button>
+          </div>
+
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Job description</p>
+            {admin
+              ? <textarea key={sel.id} defaultValue={sel.job_description || ""} onBlur={e => saveJobDesc(sel, e.target.value)} rows={3} placeholder="What this role is responsible for…" className={`${inp} resize-y`} />
+              : (sel.job_description ? <p className="text-[14px] text-slate-600 whitespace-pre-wrap leading-relaxed">{sel.job_description}</p> : <p className="text-[13px] text-gray-300">Not set.</p>)}
+          </div>
+
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1.5">KPIs</p>
+            <div className="space-y-1.5">
+              {selKpis.map(k => {
+                const st = STATUS[k.status];
+                return (
+                  <div key={k.id} className="flex items-center gap-3 rounded-lg border border-gray-100 px-3 py-2 group">
+                    <button onClick={() => admin && updateKpi(k, { status: nextStatus(k.status) })} disabled={!admin} title={st.label} className="shrink-0"><span className="block w-2.5 h-2.5 rounded-full" style={{ background: st.dot }} /></button>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] font-medium text-slate-700 truncate">{k.label} <span className="text-[11px] font-normal text-gray-400">· {k.cadence}</span></p>
+                      <p className="text-[12px] text-gray-500">Target: <span className="text-slate-600">{k.target || "—"}</span></p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-[10px] uppercase tracking-wider text-gray-400">Now</p>
+                      {admin
+                        ? <input key={k.id} defaultValue={k.current} onBlur={e => updateKpi(k, { current: e.target.value })} placeholder="—" className="w-20 text-[13px] font-semibold text-slate-800 text-right border-0 border-b border-gray-200 focus:border-emerald-400 focus:outline-none py-0.5" />
+                        : <p className="text-[13px] font-semibold text-slate-800">{k.current || "—"}</p>}
+                    </div>
+                    {admin && <button onClick={() => delKpi(k.id)} className="text-gray-300 hover:text-rose-500 text-sm px-1 opacity-0 group-hover:opacity-100 shrink-0">✕</button>}
+                  </div>
+                );
+              })}
+              {selKpis.length === 0 && <p className="text-[13px] text-gray-300">No KPIs yet.</p>}
+            </div>
+            {admin && (
+              <div className="flex flex-wrap items-center gap-2 mt-2.5">
+                <input value={kf.label} onChange={e => setKf({ ...kf, label: e.target.value })} placeholder="KPI (e.g. Blended ROAS)" className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 flex-1 min-w-[150px] focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+                <input value={kf.target} onChange={e => setKf({ ...kf, target: e.target.value })} placeholder="Target" className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 w-28 focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+                <select value={kf.cadence} onChange={e => setKf({ ...kf, cadence: e.target.value })} className="text-sm border border-gray-200 rounded-lg px-2 py-1.5"><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="quarterly">Quarterly</option></select>
+                <button onClick={addKpi} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-1.5">Add KPI</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 1:1 notes for the selected person */}
       {sel && (

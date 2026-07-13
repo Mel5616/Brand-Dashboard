@@ -14,18 +14,20 @@ const rest = (p: string, init?: RequestInit) => fetch(`${sbUrl}/rest/v1/${p}`, {
 export async function GET() {
   if (!(await getAccess()).role) return NextResponse.json({ ok: false }, { status: 401 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
-  const [mRes, sRes, nRes] = await Promise.all([
+  const [mRes, sRes, nRes, kRes] = await Promise.all([
     rest("team_members?select=*&order=sort.asc,name.asc"),
     rest("team_scorecard?select=*"),
     rest("team_notes?select=*&order=created_at.desc"),
+    rest("team_kpis?select=*&order=sort.asc"),
   ]);
   const mText = await mRes.text();
-  if (!mRes.ok) return NextResponse.json({ ok: true, needsSetup: missing(mRes.status, mText), members: [], scorecard: [], notes: [] });
+  if (!mRes.ok) return NextResponse.json({ ok: true, needsSetup: missing(mRes.status, mText), members: [], scorecard: [], notes: [], kpis: [] });
   return NextResponse.json({
     ok: true,
     members: JSON.parse(mText || "[]"),
     scorecard: sRes.ok ? JSON.parse((await sRes.text()) || "[]") : [],
     notes: nRes.ok ? JSON.parse((await nRes.text()) || "[]") : [],
+    kpis: kRes.ok ? JSON.parse((await kRes.text()) || "[]") : [],
   });
 }
 
@@ -40,6 +42,7 @@ export async function POST(req: Request) {
     switch (b.action) {
       case "member.save": {
         const row: any = { name: String(b.name || "").slice(0, 120), function: String(b.function || "").slice(0, 60), email: String(b.email || "").slice(0, 160), focus: String(b.focus || "").slice(0, 300), active: b.active !== false, sort: Number(b.sort) || 0 };
+        if (b.job_description !== undefined) row.job_description = String(b.job_description).slice(0, 4000);
         if (!row.name || !row.function) return NextResponse.json({ ok: false, error: "Name and function required" }, { status: 400 });
         const res = b.id
           ? await rest(`team_members?id=eq.${encodeURIComponent(b.id)}`, { method: "PATCH", headers: h({ Prefer: "return=representation" }), body: JSON.stringify(row) })
@@ -77,6 +80,21 @@ export async function POST(req: Request) {
       case "note.delete": {
         if (!b.id) return NextResponse.json({ ok: false }, { status: 400 });
         const res = await rest(`team_notes?id=eq.${encodeURIComponent(b.id)}`, { method: "DELETE" });
+        return NextResponse.json({ ok: res.ok });
+      }
+      case "kpi.save": {
+        const row: any = { member_id: b.member_id, label: String(b.label || "").slice(0, 120), target: String(b.target || "").slice(0, 80), current: String(b.current || "").slice(0, 80), cadence: ["weekly", "monthly", "quarterly"].includes(b.cadence) ? b.cadence : "monthly", status: ["green", "amber", "red"].includes(b.status) ? b.status : "amber", sort: Number(b.sort) || 0, updated_at: new Date().toISOString() };
+        if (!row.member_id || !row.label) return NextResponse.json({ ok: false, error: "Member and label required" }, { status: 400 });
+        const res = b.id
+          ? await rest(`team_kpis?id=eq.${encodeURIComponent(b.id)}`, { method: "PATCH", headers: h({ Prefer: "return=representation" }), body: JSON.stringify(row) })
+          : await rest("team_kpis", { method: "POST", headers: h({ Prefer: "return=representation" }), body: JSON.stringify(row) });
+        const text = await res.text();
+        if (!res.ok) return NextResponse.json({ ok: false, needsSetup: missing(res.status, text), error: text.slice(0, 200) }, { status: 500 });
+        return NextResponse.json({ ok: true, item: JSON.parse(text)[0] });
+      }
+      case "kpi.delete": {
+        if (!b.id) return NextResponse.json({ ok: false }, { status: 400 });
+        const res = await rest(`team_kpis?id=eq.${encodeURIComponent(b.id)}`, { method: "DELETE" });
         return NextResponse.json({ ok: res.ok });
       }
       default:
