@@ -9,7 +9,7 @@ type Member = { id: string; name: string; function: string; email: string; focus
 type Score = { function: string; owner_id: string | null; status: "green" | "amber" | "red"; headline: string; updated_at: string };
 type Note = { id: string; member_id: string; note_date: string; kind: "note" | "goal"; body: string; done: boolean };
 
-const FUNCTIONS = ["Performance / Paid", "Email", "Social", "Influencer", "Store / Retail", "Affiliate", "Graphic Design", "Photography"];
+const FUNCTIONS = ["Brand Manager", "Performance / Paid", "Email", "Social", "Influencer", "Store / Retail", "Affiliate", "Graphic Design", "Photography"];
 const STATUS = { green: { dot: "#10b981", ring: "border-emerald-200", bg: "bg-emerald-50/50", label: "On track" }, amber: { dot: "#f59e0b", ring: "border-amber-200", bg: "bg-amber-50/50", label: "Watch" }, red: { dot: "#ef4444", ring: "border-rose-200", bg: "bg-rose-50/50", label: "Needs help" } };
 const nextStatus = (s: string) => (s === "green" ? "amber" : s === "amber" ? "red" : "green") as Score["status"];
 const inp = "w-full text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400";
@@ -127,7 +127,7 @@ export function TeamHub({ admin }: { admin: boolean }) {
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 mb-4 p-3 rounded-xl bg-gray-50 border border-gray-100">
             <input value={mf.name} onChange={e => setMf({ ...mf, name: e.target.value })} placeholder="Name" className={inp} />
             <select value={mf.function} onChange={e => setMf({ ...mf, function: e.target.value })} className={inp}>{FUNCTIONS.map(f => <option key={f}>{f}</option>)}</select>
-            <input value={mf.focus} onChange={e => setMf({ ...mf, focus: e.target.value })} placeholder="Focus / remit (optional)" className={inp} />
+            <input value={mf.focus} onChange={e => setMf({ ...mf, focus: e.target.value })} placeholder="Key role / what they own" className={inp} />
             <button onClick={addMember} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2">Add</button>
           </div>
         )}
