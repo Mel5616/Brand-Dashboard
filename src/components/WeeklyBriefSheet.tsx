@@ -51,7 +51,7 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
   const s = brief.snapshot ?? {};
   const objectives = brief.objectives ?? [];
   const brandUpdates = (brief.brand_updates ?? []).filter(u => u.text?.trim());
-  const d2c = s.d2c, launches = s.launches ?? [], attention = s.attention ?? [], promos = s.promos ?? [];
+  const d2c = s.d2c, launches = s.launches ?? [], promos = s.promos ?? [];
   const liveLaunches = launches.filter(l => /live/i.test(l.status || ""));
   const upcomingLaunches = launches.filter(l => !/live/i.test(l.status || ""));
   const wins = s.wins, posts = wins?.posts ?? [], email = wins?.email;
@@ -123,18 +123,6 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
             {email.topRevenue && <p><strong>{email.topRevenue.brand}</strong> email drove <strong>{fmtFull(email.topRevenue.revenue)}</strong>.</p>}
             {email.bestClick && <p className="mt-0.5">Best click-through: <strong>{email.bestClick.brand}</strong> at {email.bestClick.clickRate.toFixed(1)}%.</p>}
           </div>
-        </Section>
-      )}
-
-      {attention.length > 0 && (
-        <Section title="Needs attention">
-          <ul className="space-y-1.5">
-            {attention.map((a, i) => (
-              <li key={i} className="flex items-start gap-2 text-[14px] leading-snug rounded-lg bg-amber-50/70 border border-amber-100 px-3 py-2">
-                <span className="text-amber-500 mt-0.5">⚠</span><span className="text-amber-900">{a.text}</span>
-              </li>
-            ))}
-          </ul>
         </Section>
       )}
 
