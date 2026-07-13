@@ -41,6 +41,7 @@ import { BrandPage } from "./BrandPage";
 import { MarketingBudgetTab } from "./MarketingBudgetTab";
 import { ExpensesPanel } from "./ExpensesPanel";
 import { TeamHub } from "./TeamHub";
+import { CreativePanel } from "./CreativePanel";
 import { MarketingCalendar } from "./MarketingCalendar";
 import { BriefingEngine } from "./BriefingEngine";
 import { ShopifyBrandSales } from "./ShopifyBrandSales";
@@ -59,7 +60,7 @@ import { ShopifyInsights } from "./ShopifyInsights";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "uppababy" | "sales" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "budget" | "expenses" | "team-hub" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "affiliates" | "pa-budget" | "pa-tracker" | "team";
+type TabId = "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "uppababy" | "sales" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "affiliates" | "pa-budget" | "pa-tracker" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -179,6 +180,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 00-3-3.87" /></svg>,
   },
   {
+    id: "creative", label: "Creative Production",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+  },
+  {
     id: "weekly-brief", label: "Weekly Brief",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>,
   },
@@ -221,7 +226,7 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Overview", ids: ["brands", "summary", "insights", "team-hub"] },
   { label: "Reports", ids: ["report", "snapshot", "social-report", "uppababy"] },
   { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows"] },
-  { label: "Plan", ids: ["show-deals", "campaign-calendar", "promotions", "weekly-brief", "calendar", "content", "events", "tasks", "design-requests"] },
+  { label: "Plan", ids: ["show-deals", "campaign-calendar", "promotions", "weekly-brief", "calendar", "content", "events", "tasks", "design-requests", "creative"] },
   { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info"] },
   { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads"] },
   { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting", "affiliates", "pa-budget", "pa-tracker"] },
@@ -1902,6 +1907,9 @@ export function DashboardTabs({
 
           {/* ── Team hub ── */}
           {active === "team-hub" && <TeamHub admin={role === "admin"} />}
+
+          {/* ── Creative production ── */}
+          {active === "creative" && <CreativePanel brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} admin={role === "admin"} />}
 
           {/* ── Briefing Engine (replaces the content planner) ── */}
           {active === "content" && (
