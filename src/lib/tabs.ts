@@ -12,6 +12,7 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "brands", label: "Business Overview" },
     { id: "summary", label: "Digital Portfolio Summary" },
     { id: "insights", label: "Insights" },
+    { id: "team-hub", label: "Team" },
   ] },
   { label: "Reports", tabs: [
     { id: "report", label: "Budget vs Actuals" },
