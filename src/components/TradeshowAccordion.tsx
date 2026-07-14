@@ -605,6 +605,45 @@ export function TradeshowAccordion({
         </div>
       )}
 
+      {/* Show economics: booth revenue vs cost per show, with profit */}
+      {(() => {
+        const rows = sorted.map(ts => {
+          const rev = tradeshowSales.filter(s => s.tradeshow_id === ts.id).reduce((s, r) => s + (r.revenue ?? 0), 0);
+          const cost = expItems.filter(x => x.tradeshow_id === ts.id).reduce((s, x) => s + x.amount, 0);
+          return { ts, rev, cost, profit: rev - cost };
+        }).filter(r => r.cost > 0 && r.rev > 0);
+        if (rows.length === 0) return null;
+        const maxVal = Math.max(...rows.map(r => Math.max(r.rev, r.cost)));
+        return (
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <h3 className="text-sm font-semibold text-slate-700">Expenses vs Sales</h3>
+            <p className="text-xs text-gray-400 mb-4">Booth revenue against show cost (ex GST) · profit per show</p>
+            <div className="space-y-4">
+              {rows.map(({ ts, rev, cost, profit }) => (
+                <div key={ts.id}>
+                  <div className="flex items-baseline justify-between mb-1">
+                    <p className="text-[13px] font-semibold text-slate-700 truncate">{ts.name} <span className="font-normal text-gray-400">· {dateRange(ts)}</span></p>
+                    <p className={`text-[13px] font-bold shrink-0 ml-2 ${profit >= 0 ? "text-emerald-600" : "text-rose-500"}`}>{profit >= 0 ? "+" : "-"}{fmtK(Math.abs(profit))} <span className="font-normal text-gray-400 text-[11px]">profit</span></p>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] uppercase tracking-wide text-gray-400 w-14 shrink-0">Sales</span>
+                      <div className="flex-1 h-4 bg-gray-50 rounded overflow-hidden"><div className="h-full bg-emerald-400 rounded" style={{ width: `${Math.max(3, (rev / maxVal) * 100)}%` }} /></div>
+                      <span className="text-xs font-semibold text-slate-700 w-14 text-right shrink-0">{fmtK(rev)}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] uppercase tracking-wide text-gray-400 w-14 shrink-0">Cost</span>
+                      <div className="flex-1 h-4 bg-gray-50 rounded overflow-hidden"><div className="h-full bg-slate-300 rounded" style={{ width: `${Math.max(3, (cost / maxVal) * 100)}%` }} /></div>
+                      <span className="text-xs font-semibold text-slate-500 w-14 text-right shrink-0">{fmtK(cost)}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {upcoming.length > 0 && (
         <div>
           <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 px-1">Upcoming & Live</h3>
