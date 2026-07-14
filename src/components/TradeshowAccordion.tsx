@@ -366,13 +366,13 @@ export function TradeshowAccordion({
                 <div className="rounded-xl border border-gray-100 bg-white px-4 py-3.5 space-y-3">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div className="flex items-center gap-2">
-                      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">Show expenses</p>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">Show expenses <span className="font-normal normal-case tracking-normal text-gray-400">· ex GST</span></p>
                       {expMsg && <span className={`text-[10px] font-medium ${expMsg.ok ? "text-emerald-600" : "text-rose-500"}`}>{expMsg.ok ? "✓ " : ""}{expMsg.text}</span>}
                     </div>
                     <div className="text-right">
                       <span className="text-lg font-bold text-slate-800">{fmtFull(totalExp)}</span>
                       <span className="text-[11px] text-gray-400 ml-1">total cost</span>
-                      {totalRev > 0 && totalExp > 0 && <span className={`ml-2 text-[12px] font-semibold ${net >= 0 ? "text-emerald-600" : "text-rose-500"}`}>Net {net < 0 ? "-" : ""}{fmtFull(Math.abs(net))}</span>}
+                      {totalRev > 0 && totalExp > 0 && <span className={`ml-2 text-[12px] font-semibold ${net >= 0 ? "text-emerald-600" : "text-rose-500"}`}>Profit {net < 0 ? "-" : ""}{fmtFull(Math.abs(net))}</span>}
                     </div>
                   </div>
 
