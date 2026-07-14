@@ -95,31 +95,34 @@ export function TradeshowAccordion({
     }
   }
 
-  // Per-show expenses by category, keyed `${tradeshow_id}|${category}` (same
-  // live/saved pattern as attendance).
-  const [expenses, setExpenses] = useState<Record<string, number>>({});
-  const expSaved = useRef<Record<string, number>>({});
+  // Line-item show expenses: each entry is allocated to a category with a label
+  // (who/what), amount and optional note — e.g. Staff · Melanie · $300 · 4 hours.
+  type ExpItem = { id: string; tradeshow_id: string; category: string; label: string; amount: number; note: string };
+  const [expItems, setExpItems] = useState<ExpItem[]>([]);
   const [expNeedsSetup, setExpNeedsSetup] = useState(false);
   const [expMsg, setExpMsg] = useState<{ text: string; ok: boolean } | null>(null);
+  const [expForm, setExpForm] = useState({ category: EXPENSE_CATEGORIES[0], label: "", amount: "", note: "" });
+  const [expBusy, setExpBusy] = useState(false);
   useEffect(() => {
     fetch("/api/tradeshows/expenses").then(r => r.json()).then(d => {
       if (d.needsSetup) setExpNeedsSetup(true);
-      else if (d.ok) { const m: Record<string, number> = {}; for (const r of d.rows) m[`${r.tradeshow_id}|${r.category}`] = Number(r.amount) || 0; setExpenses(m); expSaved.current = { ...m }; }
+      else if (d.ok) setExpItems((d.rows ?? []).map((r: any) => ({ ...r, amount: Number(r.amount) || 0 })));
     }).catch(() => {});
   }, []);
-  async function saveExpense(tradeshow_id: string, category: string, value: number) {
-    const key = `${tradeshow_id}|${category}`;
-    const v = Math.max(0, Number(value) || 0);
-    if ((expSaved.current[key] ?? 0) === v) return;
-    setExpenses(p => ({ ...p, [key]: v }));
+  async function addExpense(tradeshow_id: string) {
+    if (!expForm.amount || Number(expForm.amount) <= 0) { setExpMsg({ text: "Enter an amount.", ok: false }); return; }
+    setExpBusy(true);
     try {
-      const res = await fetch("/api/tradeshows/expenses", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tradeshow_id, category, amount: v }) });
-      if (res.ok) { expSaved.current[key] = v; setExpMsg({ text: "Saved", ok: true }); setTimeout(() => setExpMsg(m => m?.ok ? null : m), 2000); }
-      else { setExpenses(p => ({ ...p, [key]: expSaved.current[key] ?? 0 })); setExpMsg({ text: res.status === 401 ? "Session expired — refresh, sign in, re-enter." : "Couldn’t save, try again.", ok: false }); }
-    } catch {
-      setExpenses(p => ({ ...p, [key]: expSaved.current[key] ?? 0 }));
-      setExpMsg({ text: "Couldn’t save — check your connection.", ok: false });
-    }
+      const res = await fetch("/api/tradeshows/expenses", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tradeshow_id, ...expForm, amount: Number(expForm.amount) }) });
+      const d = await res.json().catch(() => ({ ok: false }));
+      if (res.ok && d.ok) { setExpItems(p => [...p, { ...d.item, amount: Number(d.item.amount) || 0 }]); setExpForm(f => ({ category: f.category, label: "", amount: "", note: "" })); setExpMsg({ text: "Added", ok: true }); setTimeout(() => setExpMsg(m => m?.ok ? null : m), 2000); }
+      else setExpMsg({ text: res.status === 401 ? "Session expired — refresh, sign in, re-enter." : (d.error || "Couldn’t save, try again."), ok: false });
+    } catch { setExpMsg({ text: "Couldn’t save — check your connection.", ok: false }); }
+    finally { setExpBusy(false); }
+  }
+  async function delExpense(id: string) {
+    const d = await fetch(`/api/tradeshows/expenses?id=${encodeURIComponent(id)}`, { method: "DELETE" }).then(r => r.json()).catch(() => ({ ok: false }));
+    if (d.ok) setExpItems(p => p.filter(x => x.id !== id));
   }
 
   // Post-show report (HTML/PDF) attached per show, keyed by tradeshow_id.
@@ -347,14 +350,17 @@ export function TradeshowAccordion({
               );
             })()}
 
-            {/* Show expenses by category */}
+            {/* Show expenses: line items allocated to categories, with a visual breakdown */}
             {(() => {
-              const totalExp = EXPENSE_CATEGORIES.reduce((s, c) => s + (expenses[`${ts.id}|${c}`] || 0), 0);
+              const items = expItems.filter(x => x.tradeshow_id === ts.id);
+              const totalExp = items.reduce((s, x) => s + x.amount, 0);
               if (!admin && totalExp === 0) return null;
               const net = totalRev - totalExp;
+              const byCat = EXPENSE_CATEGORIES.map(c => ({ cat: c, sum: items.filter(x => x.category === c).reduce((s, x) => s + x.amount, 0) })).filter(c => c.sum > 0);
+              const maxCat = Math.max(1, ...byCat.map(c => c.sum));
               return (
-                <div className="rounded-xl border border-gray-100 bg-white px-4 py-3.5">
-                  <div className="flex items-center justify-between mb-2.5 gap-2 flex-wrap">
+                <div className="rounded-xl border border-gray-100 bg-white px-4 py-3.5 space-y-3">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div className="flex items-center gap-2">
                       <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">Show expenses</p>
                       {expMsg && <span className={`text-[10px] font-medium ${expMsg.ok ? "text-emerald-600" : "text-rose-500"}`}>{expMsg.ok ? "✓ " : ""}{expMsg.text}</span>}
@@ -365,32 +371,52 @@ export function TradeshowAccordion({
                       {totalRev > 0 && totalExp > 0 && <span className={`ml-2 text-[12px] font-semibold ${net >= 0 ? "text-emerald-600" : "text-rose-500"}`}>Net {net < 0 ? "-" : ""}{fmtFull(Math.abs(net))}</span>}
                     </div>
                   </div>
+
                   {expNeedsSetup ? (
-                    <p className="text-[11px] text-gray-400">Run <code className="bg-gray-100 px-1 rounded">add_tradeshow_expenses.sql</code> to enable expenses.</p>
+                    <p className="text-[11px] text-gray-400">Run <code className="bg-gray-100 px-1 rounded">add_tradeshow_expense_items.sql</code> to enable expenses.</p>
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                      {EXPENSE_CATEGORIES.map(cat => {
-                        const key = `${ts.id}|${cat}`;
-                        const val = expenses[key] ?? 0;
-                        return admin ? (
-                          <label key={cat} className="flex flex-col gap-0.5">
-                            <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">{cat}</span>
-                            <div className="flex items-center border-b-2 border-gray-100 focus-within:border-emerald-400">
-                              <span className="text-gray-400 text-sm">$</span>
-                              <input type="number" min={0} value={val || ""} placeholder="0"
-                                onChange={e => setExpenses(p => ({ ...p, [key]: e.target.value === "" ? 0 : Math.max(0, Number(e.target.value) || 0) }))}
-                                onBlur={e => saveExpense(ts.id, cat, Number(e.target.value) || 0)}
-                                className="w-full text-sm font-semibold text-slate-800 tabular-nums bg-transparent px-1 py-0.5 focus:outline-none" />
+                    <>
+                      {/* Category breakdown bars */}
+                      {byCat.length > 0 && (
+                        <div className="space-y-1">
+                          {byCat.sort((a, b) => b.sum - a.sum).map(c => (
+                            <div key={c.cat} className="flex items-center gap-2">
+                              <span className="text-[11px] text-gray-500 w-28 shrink-0">{c.cat}</span>
+                              <div className="flex-1 h-3.5 rounded bg-slate-100 overflow-hidden"><div className="h-full bg-emerald-300/80 rounded" style={{ width: `${Math.max(3, Math.round((c.sum / maxCat) * 100))}%` }} /></div>
+                              <span className="text-[12px] font-semibold text-slate-700 tabular-nums w-16 text-right shrink-0">{fmtFull(c.sum)}</span>
                             </div>
-                          </label>
-                        ) : (
-                          <div key={cat} className="flex flex-col gap-0.5">
-                            <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">{cat}</span>
-                            <span className="text-sm font-semibold text-slate-800">{fmtFull(val)}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Line items */}
+                      {items.length > 0 && (
+                        <div className="divide-y divide-gray-50 border-t border-gray-100">
+                          {items.map(x => (
+                            <div key={x.id} className="flex items-center gap-2 py-1.5 group">
+                              <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 rounded px-1.5 py-0.5 shrink-0">{x.category}</span>
+                              <span className="text-[13px] text-slate-700 min-w-0 truncate">{x.label || "—"}{x.note && <span className="text-gray-400"> · {x.note}</span>}</span>
+                              <span className="text-[13px] font-semibold text-slate-800 tabular-nums ml-auto shrink-0">{fmtFull(x.amount)}</span>
+                              {admin && <button onClick={() => delExpense(x.id)} className="text-gray-300 hover:text-rose-500 text-sm px-1 opacity-0 group-hover:opacity-100 shrink-0">✕</button>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Add an expense */}
+                      {admin && (
+                        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                          <select value={expForm.category} onChange={e => setExpForm(f => ({ ...f, category: e.target.value }))} className="text-[13px] border border-gray-200 rounded-lg px-2 py-1.5 text-slate-600 focus:outline-none">
+                            {EXPENSE_CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                          </select>
+                          <input value={expForm.label} onChange={e => setExpForm(f => ({ ...f, label: e.target.value }))} placeholder="Who / what (e.g. Melanie)" className="text-[13px] border border-gray-200 rounded-lg px-2 py-1.5 flex-1 min-w-[130px] focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+                          <div className="flex items-center border border-gray-200 rounded-lg px-2 py-1.5 w-24"><span className="text-gray-400 text-[13px]">$</span>
+                            <input type="number" min={0} value={expForm.amount} onChange={e => setExpForm(f => ({ ...f, amount: e.target.value }))} placeholder="0" className="w-full text-[13px] tabular-nums px-1 focus:outline-none" /></div>
+                          <input value={expForm.note} onChange={e => setExpForm(f => ({ ...f, note: e.target.value }))} onKeyDown={e => { if (e.key === "Enter") addExpense(ts.id); }} placeholder="Note (e.g. 4 hours)" className="text-[13px] border border-gray-200 rounded-lg px-2 py-1.5 flex-1 min-w-[110px] focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+                          <button onClick={() => addExpense(ts.id)} disabled={expBusy} className="text-[13px] font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-1.5 disabled:opacity-60">{expBusy ? "Adding…" : "+ Add"}</button>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               );
