@@ -16,6 +16,7 @@ function showStatus(ts: Tradeshow): "live" | "upcoming" | "past" {
 }
 
 const MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+const EXPENSE_CATEGORIES = ["Printing", "Staff", "Floor Space", "Travel", "Accommodation", "Stand", "Setup/Packdown", "Advertising"];
 
 // Every calendar day a show runs (date_start … date_end), for per-day door
 // attendance. Capped so a bad date range can't produce a huge list.
@@ -91,6 +92,33 @@ export function TradeshowAccordion({
     } catch {
       setAttendance(p => ({ ...p, [key]: savedRef.current[key] ?? 0 }));
       setAttMsg({ text: "Couldn’t save — check your connection.", ok: false });
+    }
+  }
+
+  // Per-show expenses by category, keyed `${tradeshow_id}|${category}` (same
+  // live/saved pattern as attendance).
+  const [expenses, setExpenses] = useState<Record<string, number>>({});
+  const expSaved = useRef<Record<string, number>>({});
+  const [expNeedsSetup, setExpNeedsSetup] = useState(false);
+  const [expMsg, setExpMsg] = useState<{ text: string; ok: boolean } | null>(null);
+  useEffect(() => {
+    fetch("/api/tradeshows/expenses").then(r => r.json()).then(d => {
+      if (d.needsSetup) setExpNeedsSetup(true);
+      else if (d.ok) { const m: Record<string, number> = {}; for (const r of d.rows) m[`${r.tradeshow_id}|${r.category}`] = Number(r.amount) || 0; setExpenses(m); expSaved.current = { ...m }; }
+    }).catch(() => {});
+  }, []);
+  async function saveExpense(tradeshow_id: string, category: string, value: number) {
+    const key = `${tradeshow_id}|${category}`;
+    const v = Math.max(0, Number(value) || 0);
+    if ((expSaved.current[key] ?? 0) === v) return;
+    setExpenses(p => ({ ...p, [key]: v }));
+    try {
+      const res = await fetch("/api/tradeshows/expenses", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tradeshow_id, category, amount: v }) });
+      if (res.ok) { expSaved.current[key] = v; setExpMsg({ text: "Saved", ok: true }); setTimeout(() => setExpMsg(m => m?.ok ? null : m), 2000); }
+      else { setExpenses(p => ({ ...p, [key]: expSaved.current[key] ?? 0 })); setExpMsg({ text: res.status === 401 ? "Session expired — refresh, sign in, re-enter." : "Couldn’t save, try again.", ok: false }); }
+    } catch {
+      setExpenses(p => ({ ...p, [key]: expSaved.current[key] ?? 0 }));
+      setExpMsg({ text: "Couldn’t save — check your connection.", ok: false });
     }
   }
 
@@ -313,6 +341,55 @@ export function TradeshowAccordion({
                         <input type="file" accept=".html,.htm,text/html,application/pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadReport(ts.id, f, ts.name); e.currentTarget.value = ""; }} />
                       </label>
                       {rep && <button onClick={() => removeReport(ts.id)} className="text-xs text-gray-400 hover:text-rose-500">Remove</button>}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Show expenses by category */}
+            {(() => {
+              const totalExp = EXPENSE_CATEGORIES.reduce((s, c) => s + (expenses[`${ts.id}|${c}`] || 0), 0);
+              if (!admin && totalExp === 0) return null;
+              const net = totalRev - totalExp;
+              return (
+                <div className="rounded-xl border border-gray-100 bg-white px-4 py-3.5">
+                  <div className="flex items-center justify-between mb-2.5 gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">Show expenses</p>
+                      {expMsg && <span className={`text-[10px] font-medium ${expMsg.ok ? "text-emerald-600" : "text-rose-500"}`}>{expMsg.ok ? "✓ " : ""}{expMsg.text}</span>}
+                    </div>
+                    <div className="text-right">
+                      <span className="text-lg font-bold text-slate-800">{fmtFull(totalExp)}</span>
+                      <span className="text-[11px] text-gray-400 ml-1">total cost</span>
+                      {totalRev > 0 && totalExp > 0 && <span className={`ml-2 text-[12px] font-semibold ${net >= 0 ? "text-emerald-600" : "text-rose-500"}`}>Net {net < 0 ? "-" : ""}{fmtFull(Math.abs(net))}</span>}
+                    </div>
+                  </div>
+                  {expNeedsSetup ? (
+                    <p className="text-[11px] text-gray-400">Run <code className="bg-gray-100 px-1 rounded">add_tradeshow_expenses.sql</code> to enable expenses.</p>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      {EXPENSE_CATEGORIES.map(cat => {
+                        const key = `${ts.id}|${cat}`;
+                        const val = expenses[key] ?? 0;
+                        return admin ? (
+                          <label key={cat} className="flex flex-col gap-0.5">
+                            <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">{cat}</span>
+                            <div className="flex items-center border-b-2 border-gray-100 focus-within:border-emerald-400">
+                              <span className="text-gray-400 text-sm">$</span>
+                              <input type="number" min={0} value={val || ""} placeholder="0"
+                                onChange={e => setExpenses(p => ({ ...p, [key]: e.target.value === "" ? 0 : Math.max(0, Number(e.target.value) || 0) }))}
+                                onBlur={e => saveExpense(ts.id, cat, Number(e.target.value) || 0)}
+                                className="w-full text-sm font-semibold text-slate-800 tabular-nums bg-transparent px-1 py-0.5 focus:outline-none" />
+                            </div>
+                          </label>
+                        ) : (
+                          <div key={cat} className="flex flex-col gap-0.5">
+                            <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">{cat}</span>
+                            <span className="text-sm font-semibold text-slate-800">{fmtFull(val)}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
