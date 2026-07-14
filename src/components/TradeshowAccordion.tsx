@@ -517,7 +517,7 @@ export function TradeshowAccordion({
           {liveShows.length > 0 ? (
             liveShows.map(ts => (
               <div key={ts.id} className="bg-white rounded-2xl border border-emerald-200/70 shadow-sm p-4">
-                <LiveHeader ts={ts} />
+                {LiveHeader({ ts })}
                 <LiveShowPanel showId={ts.id} brands={brands} live />
               </div>
             ))
@@ -596,14 +596,17 @@ export function TradeshowAccordion({
       {upcoming.length > 0 && (
         <div>
           <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 px-1">Upcoming & Live</h3>
-          <div className="space-y-2">{upcoming.map(ts => <ShowCard key={ts.id} ts={ts} />)}</div>
+          {/* Called as plain functions (not <ShowCard/>): a locally-defined component
+              type changes identity every parent render, so React would unmount and
+              remount each card on every keystroke — losing focus and scroll. */}
+          <div className="space-y-2">{upcoming.map(ts => <div key={ts.id}>{ShowCard({ ts })}</div>)}</div>
         </div>
       )}
 
       {past.length > 0 && (
         <div>
           <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Past Shows</h3>
-          <div className="space-y-2">{past.map(ts => <ShowCard key={ts.id} ts={ts} />)}</div>
+          <div className="space-y-2">{past.map(ts => <div key={ts.id}>{ShowCard({ ts })}</div>)}</div>
         </div>
       )}
 
