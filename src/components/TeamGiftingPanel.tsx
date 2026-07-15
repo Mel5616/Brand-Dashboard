@@ -142,7 +142,7 @@ export function TeamGiftingPanel() {
         </div>
         <div className="grid grid-cols-2 gap-3 mb-3">
           <div className="bg-gray-50/70 rounded-xl px-3 py-2">
-            <p className="text-[10px] uppercase tracking-wider text-gray-400">Monthly · all brands</p>
+            <p className="text-[10px] uppercase tracking-wider text-gray-400">This month · all brands</p>
             <p className="text-xl font-bold text-slate-800 leading-none mt-0.5">{rrp(data.overall.monthly)}</p>
           </div>
           <div className="bg-gray-50/70 rounded-xl px-3 py-2">
@@ -167,7 +167,7 @@ export function TeamGiftingPanel() {
                 <div className="my-2"><Ring used={b.used_pct} /></div>
                 <span className="text-[11px] font-semibold" style={{ color: meterColor(b.used_pct) }}>{b.used_pct}% used</span>
                 <div className="mt-2 w-full border-t border-gray-100 pt-2">
-                  <p className="text-base font-bold text-slate-800 leading-none">{rrp(b.monthly)}<span className="text-[11px] font-medium text-gray-400"> /mo</span></p>
+                  <p className="text-base font-bold text-slate-800 leading-none">{rrp(b.monthly)}<span className="text-[11px] font-medium text-gray-400"> this month</span></p>
                   <p className="text-[11px] text-gray-400 mt-0.5">{rrp(b.budget)} full year</p>
                 </div>
                 <p className="text-[11px] text-gray-400 mt-1.5">{b.gifts} gift{b.gifts === 1 ? "" : "s"} · {rrp(b.rrp_gifted)} RRP</p>

@@ -19,11 +19,12 @@ export async function GET() {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   if (!(await getAccess()).role) return NextResponse.json({ ok: false, error: "auth" }, { status: 401 });
 
-  const [mbRes, brRes, eRes, rRes] = await Promise.all([
+  const [mbRes, brRes, eRes, rRes, ibRes] = await Promise.all([
     sb(`marketing_budgets?select=brand_id,annual_budget&channel=eq.Influencer%20Marketing&fy=eq.${INFLUENCER_BUDGET_FY}`),
     sb("brands?select=id,name"),
     sb("influencer_entries?select=*&order=month_key.desc"),
     sb("influencers?select=handle,name,followers,avatar_url,profile_url"),
+    sb("influencer_budgets?select=brand,month_key,budget"),
   ]);
   const eText = await eRes.text();
   if (!eRes.ok) return NextResponse.json({ ok: false, needsSetup: missing(eRes.status, eText) });
@@ -36,27 +37,45 @@ export async function GET() {
   const fy = new Set(INFLUENCER_FY_KEYS);
   const entries = (JSON.parse(eText || "[]") as any[]).filter(r => fy.has(r.month_key));
 
-  const agg: Record<string, { budget: number; spend: number; rrp: number; gifts: number }> = {};
-  const bucket = (b: string) => (agg[b] ??= { budget: 0, spend: 0, rrp: 0, gifts: 0 });
-  // Budget: FY annual influencer allowance per brand, from the marketing budget form.
-  for (const r of mbRows) { const name = nameById.get(r.brand_id); if (name) bucket(name).budget += Number(r.annual_budget) || 0; }
+  // Budgets: the Brand × Month grid (influencer_budgets) is the source of truth —
+  // the admin edits it and the team sees THIS MONTH's allowance. Brands without
+  // grid rows fall back to the marketing budget form (annual ÷ 12).
+  const ibRows = ibRes.ok ? (JSON.parse(await ibRes.text() || "[]") as any[]).filter(r => fy.has(r.month_key)) : [];
+  const curMonth = new Date().toISOString().slice(0, 7);
+  const gridFy = new Map<string, number>();      // brand → FY total from the grid
+  const gridCur = new Map<string, number>();     // brand → this month's budget
+  for (const r of ibRows) {
+    const b = String(r.brand || ""); if (!b) continue;
+    gridFy.set(b, (gridFy.get(b) ?? 0) + (Number(r.budget) || 0));
+    if (r.month_key === curMonth) gridCur.set(b, (gridCur.get(b) ?? 0) + (Number(r.budget) || 0));
+  }
+
+  const agg: Record<string, { budget: number; monthly: number; spend: number; rrp: number; gifts: number }> = {};
+  const bucket = (b: string) => (agg[b] ??= { budget: 0, monthly: 0, spend: 0, rrp: 0, gifts: 0 });
+  // Fallback FY allowance from the marketing budget form (only used if no grid rows).
+  for (const r of mbRows) {
+    const name = nameById.get(r.brand_id); if (!name || gridFy.has(name)) continue;
+    const a = bucket(name); a.budget += Number(r.annual_budget) || 0; a.monthly = Math.round(a.budget / 12);
+  }
+  for (const [brand, total] of gridFy) { const a = bucket(brand); a.budget = total; a.monthly = gridCur.get(brand) ?? 0; }
   for (const e of entries) { const a = bucket(e.brand || "—"); a.spend += Number(e.total_cost) || 0; a.rrp += Number(e.rrp) || 0; a.gifts++; }
 
   const pct = (used: number, budget: number) => budget > 0 ? Math.round((used / budget) * 100) : (used > 0 ? 100 : 0);
   const brands = Object.entries(agg)
     .map(([brand, a]) => ({
       brand, gifts: a.gifts, rrp_gifted: Math.round(a.rrp),
-      budget: Math.round(a.budget), monthly: Math.round(a.budget / 12),   // FY + monthly allowance ($)
+      budget: Math.round(a.budget), monthly: Math.round(a.monthly),   // FY total + THIS month's allowance ($)
       used_pct: pct(a.spend, a.budget), left_pct: Math.max(0, 100 - pct(a.spend, a.budget)),
     }))
     .filter(b => b.gifts > 0 || b.rrp_gifted > 0 || b.budget > 0)
     .sort((x, y) => y.budget - x.budget);
 
-  const totBudget = mbRows.reduce((s, r) => s + (Number(r.annual_budget) || 0), 0);
+  const totBudget = Object.values(agg).reduce((s, a) => s + a.budget, 0);
+  const totMonthly = Object.values(agg).reduce((s, a) => s + a.monthly, 0);
   const totSpend = entries.reduce((s, e) => s + (Number(e.total_cost) || 0), 0);
   const overall = {
     used_pct: pct(totSpend, totBudget), left_pct: Math.max(0, 100 - pct(totSpend, totBudget)),
-    budget: Math.round(totBudget), monthly: Math.round(totBudget / 12),   // total allowance ($)
+    budget: Math.round(totBudget), monthly: Math.round(totMonthly),   // total FY + this month ($)
   };
 
   const gifts = entries.slice(0, 120).map(e => ({
