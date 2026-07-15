@@ -213,10 +213,40 @@ function D2cPlan({ d2c, canEdit, brandF, tierF, statusF, onChanged }: { d2c: D2c
   async function setStatus(ids: number[], status: string) { await patch(ids, status); onChanged(); }
   async function action(g: VGroup) { await makeCampaign(g); onChanged(); }
 
+  // Approving a selection creates ONE campaign per promotion — products (and
+  // brands) sharing the same retailer + dates are grouped into a single campaign
+  // the team can be sent, instead of one campaign per product.
+  async function makeGroupedCampaigns(groups: VGroup[]) {
+    const clusters = new Map<string, VGroup[]>();
+    for (const g of groups) {
+      const r = g.rep;
+      const key = `${r.retailers || ""}|${r.period_start}|${r.period_end}`;
+      clusters.set(key, [...(clusters.get(key) ?? []), g]);
+    }
+    for (const cluster of clusters.values()) {
+      const rep = cluster[0].rep;
+      const brandNames = [...new Set(cluster.map(g => g.rep.brand).filter(Boolean))];
+      const maxDisc = Math.max(...cluster.map(g => Math.abs(Number(g.rep.discount_rrp) || 0)));
+      const days = (+d(rep.period_start) - Date.now()) / 86400000;
+      const horizon = days <= 42 ? "now" : days <= 120 ? "next" : "later";
+      const name = `${rep.retailers || "Promo"} · ${fmt(rep.period_start)} – ${fmt(rep.period_end)}`;
+      const oneLiner = `${cluster.length} product${cluster.length === 1 ? "" : "s"}${brandNames.length > 1 ? ` across ${brandNames.length} brands` : ""} on promo${maxDisc ? `, up to -${Math.round(maxDisc)}%` : ""} · run the same on D2C`;
+      await fetch("/api/campaigns", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          horizon, campaign: name, brand: brandNames.join(", ").slice(0, 120) || "Multiple", channel: "D2C",
+          status: "Planned", owner: "TBC", key_date: rep.period_start, end_date: rep.period_end,
+          note: oneLiner, brief: { oneLiner },
+        }),
+      }).catch(() => {});
+      await patch(cluster.flatMap(g => g.ids), "action");
+    }
+  }
+
   async function applyBulk() {
     const groups = [...sel.values()];
     if (!groups.length) return;
-    if (bulkStatus === "action") { for (const g of groups) await makeCampaign(g); }
+    if (bulkStatus === "action") await makeGroupedCampaigns(groups);
     else await patch(groups.flatMap(g => g.ids), bulkStatus);
     clearSel(); onChanged();
   }
