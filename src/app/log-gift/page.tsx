@@ -23,6 +23,7 @@ export default function LogGift() {
   const [batch, setBatch] = useState(0); // products logged in this multi-product session
 
   const [f, setF] = useState<any>({ month_key: FY_MONTHS[0].key, platform: "Instagram" });
+  const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
   const [oneOff, setOneOff] = useState(false);
   const [search, setSearch] = useState("");
   const [picked, setPicked] = useState<Product | null>(null);
@@ -66,10 +67,18 @@ export default function LogGift() {
   async function submit(addAnother = false) {
     if (!valid) return;
     setSaving(true); setErr("");
-    const body = { ...f, rrp: Number(f.rrp), influencer_cost: f.influencer_cost ? Number(f.influencer_cost) : 0 };
+    const body: any = { ...f, rrp: Number(f.rrp), influencer_cost: f.influencer_cost ? Number(f.influencer_cost) : 0 };
+    // Upload the invoice first (if attached) so its URL is stored on the entry.
+    if (invoiceFile) {
+      const fd = new FormData(); fd.set("file", invoiceFile);
+      const up = await fetch("/api/influencer/invoice", { method: "POST", body: fd }).then(r => r.json()).catch(() => null);
+      if (up?.ok) { body.invoice_url = up.url; body.invoice_file = up.file; }
+      else { setSaving(false); setErr(up?.error || "Invoice upload failed — try again or remove it."); return; }
+    }
     const res = await fetch("/api/influencer/entries", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()).catch(() => null);
     setSaving(false);
     if (res?.ok) {
+      setInvoiceFile(null);   // the invoice belongs to the entry just logged
       if (addAnother) {
         // Keep the influencer + month; clear just the product (and the cash fee, so it
         // isn't counted again for the same collaboration) so the next product is quick.
@@ -221,9 +230,25 @@ export default function LogGift() {
             <input value={f.campaign ?? ""} onChange={e => set("campaign", e.target.value)} placeholder="e.g. EOFY launch" className={input} />
           </div>
 
-          <div>
-            <label className={label}>Cash fee paid <span className="text-gray-300 font-normal">(optional, excl GST)</span></label>
-            <input type="number" inputMode="decimal" value={f.influencer_cost ?? ""} onChange={e => set("influencer_cost", e.target.value)} placeholder="$0" className={input} />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={label}>Cash fee paid <span className="text-gray-300 font-normal">(optional, excl GST)</span></label>
+              <input type="number" inputMode="decimal" value={f.influencer_cost ?? ""} onChange={e => set("influencer_cost", e.target.value)} placeholder="$0" className={input} />
+            </div>
+            <div>
+              <label className={label}>Invoice <span className="text-gray-300 font-normal">(optional, PDF or photo)</span></label>
+              {invoiceFile ? (
+                <div className="mt-1 flex items-center gap-2 text-sm border border-emerald-200 bg-emerald-50/60 rounded-lg px-3 py-2.5">
+                  <span className="truncate text-emerald-800">📎 {invoiceFile.name}</span>
+                  <button onClick={() => setInvoiceFile(null)} className="ml-auto text-gray-400 hover:text-rose-500 shrink-0">✕</button>
+                </div>
+              ) : (
+                <label className="mt-1 flex items-center justify-center gap-1.5 text-sm text-emerald-700 font-medium border border-dashed border-emerald-300 bg-emerald-50/40 hover:bg-emerald-50 rounded-lg px-3 py-2.5 cursor-pointer">
+                  + Upload invoice
+                  <input type="file" accept="application/pdf,image/*" className="hidden" onChange={e => { const fl = e.target.files?.[0]; if (fl) setInvoiceFile(fl); e.currentTarget.value = ""; }} />
+                </label>
+              )}
+            </div>
           </div>
 
           {err && <p className="text-[12px] text-rose-500">{err}</p>}

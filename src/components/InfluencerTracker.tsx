@@ -7,7 +7,7 @@ import { compactNum } from "@/lib/num";
 // Admin reporting for influencer gifting: brand × month cost spend vs budget.
 // Cost figures are shown here (this is your dashboard); the team form never does.
 
-type Entry = { id: number; month_key: string; handle: string | null; platform: string | null; brand: string | null; product_name: string | null; rrp: number | null; gifting_cost: number | null; influencer_cost: number | null; total_cost: number | null; created_at: string; status?: string | null; content_url?: string | null; reach?: number | null; engagements?: number | null; sales_value?: number | null };
+type Entry = { id: number; month_key: string; handle: string | null; platform: string | null; brand: string | null; product_name: string | null; rrp: number | null; gifting_cost: number | null; influencer_cost: number | null; total_cost: number | null; created_at: string; status?: string | null; content_url?: string | null; reach?: number | null; engagements?: number | null; sales_value?: number | null; invoice_url?: string | null; invoice_file?: string | null };
 type Budget = { brand: string; month_key: string; budget: number };
 type Influencer = { handle: string; name: string | null; platform: string | null; followers: number | null; contact: string | null; notes: string | null };
 
@@ -356,7 +356,7 @@ export function InfluencerTracker({ canEdit = false }: { canEdit?: boolean }) {
             <table className="w-full text-xs">
               <thead>
                 <tr className="text-gray-400">
-                  {["Month", "Influencer", "Brand", "Product", "Cost", "Status", "Reach", "CPM", "ROI", ""].map(h => (
+                  {["Month", "Influencer", "Brand", "Product", "Cost", "Status", "Reach", "CPM", "ROI", "Inv", ""].map(h => (
                     <th key={h} className={`${["Cost", "Reach", "CPM", "ROI"].includes(h) ? "text-right" : "text-left"} font-semibold uppercase tracking-wide text-[10px] py-2 px-2`}>{h}</th>
                   ))}
                 </tr>
@@ -375,6 +375,7 @@ export function InfluencerTracker({ canEdit = false }: { canEdit?: boolean }) {
                       <td className="py-1.5 px-2 text-right text-gray-500">{e.reach ? compact(e.reach) : "—"}</td>
                       <td className="py-1.5 px-2 text-right text-gray-500">{cpm != null ? aud(cpm) : "—"}</td>
                       <td className={`py-1.5 px-2 text-right font-semibold ${roi != null ? (roi >= 1 ? "text-emerald-600" : "text-amber-600") : "text-gray-300"}`}>{roi != null ? roi.toFixed(1) + "×" : "—"}</td>
+                      <td className="py-1.5 px-2">{e.invoice_url ? <a href={e.invoice_url} target="_blank" rel="noreferrer" onClick={ev => ev.stopPropagation()} className="text-emerald-600 hover:underline font-medium" title={e.invoice_file ?? "Invoice"}>📎</a> : <span className="text-gray-200">—</span>}</td>
                       <td className="py-1.5 px-2 text-right">{canEdit && <button onClick={ev => { ev.stopPropagation(); del(e.id); }} className="text-gray-300 hover:text-rose-500" title="Delete">✕</button>}</td>
                     </tr>
                   );

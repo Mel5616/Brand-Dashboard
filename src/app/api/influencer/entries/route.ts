@@ -74,9 +74,16 @@ export async function POST(req: Request) {
     campaign: b.campaign || null, brand, style_code: b.style_code || null, product_name, rrp,
     affiliate_code: b.affiliate_code ? String(b.affiliate_code).slice(0, 120) : null,
     gifting_cost, influencer_cost, total_cost: round(gifting_cost + influencer_cost),
+    ...(b.invoice_url ? { invoice_url: String(b.invoice_url).slice(0, 500), invoice_file: b.invoice_file ? String(b.invoice_file).slice(0, 200) : null } : {}),
   };
-  const res = await fetch(`${sbUrl}/rest/v1/influencer_entries`, { method: "POST", headers: headers({ Prefer: "return=minimal" }), body: JSON.stringify(row) });
-  if (!res.ok) { const t = await res.text(); return NextResponse.json({ ok: false, needsSetup: missing(res.status, t) }, { status: 500 }); }
+  const post = (r: any) => fetch(`${sbUrl}/rest/v1/influencer_entries`, { method: "POST", headers: headers({ Prefer: "return=minimal" }), body: JSON.stringify(r) });
+  let res = await post(row);
+  if (!res.ok) {
+    const t = await res.text();
+    // Fallback if the invoice columns haven't been migrated yet — still log the gift.
+    if (/invoice/i.test(t)) { const { invoice_url, invoice_file, ...rest } = row as any; res = await post(rest); }
+    if (!res.ok) return NextResponse.json({ ok: false, needsSetup: missing(res.status, t) }, { status: 500 });
+  }
 
   // Keep the influencer roster current — upsert the influencer by handle.
   if (b.handle) {
