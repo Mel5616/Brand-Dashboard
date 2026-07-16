@@ -12,7 +12,14 @@ const statusOf = (s: string) => STATUSES.find(x => x.id === s) ?? STATUSES[0];
 const fmtDate = (s?: string | null) => s ? new Date(s + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : null;
 
 // Variants share a base SKU (the part before the last hyphen, e.g. GSBW-G -> GSBW).
-const groupKeyOf = (p: any) => { const s = String(p.sku || "").trim(); return (s.includes("-") ? s.slice(0, s.lastIndexOf("-")) : (s || p.id)).toUpperCase(); };
+// The base must be ≥3 chars: short stubs are brand prefixes, not product lines
+// (MM-ATT and MM-BSTBT are different Matchstick products, not colours of "MM").
+const groupKeyOf = (p: any) => {
+  const s = String(p.sku || "").trim();
+  if (!s) return String(p.id);
+  const base = s.includes("-") ? s.slice(0, s.lastIndexOf("-")) : s;
+  return (base.length >= 3 ? base : s).toUpperCase();
+};
 // Longest shared word-prefix across the variant names — the product line title.
 function commonPrefix(names: string[]): string {
   if (!names.length) return "";
