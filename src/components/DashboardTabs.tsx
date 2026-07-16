@@ -223,10 +223,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
 
 // Sidebar grouping — how you market (top) vs where you sell (bottom).
 const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
-  { label: "Overview", ids: ["brands", "summary", "insights", "team-hub"] },
+  { label: "Overview", ids: ["brands", "summary", "insights", "team-hub", "weekly-brief"] },
   { label: "Reports", ids: ["report", "snapshot", "social-report", "uppababy"] },
   { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows"] },
-  { label: "Plan", ids: ["show-deals", "campaign-calendar", "promotions", "weekly-brief", "calendar", "content", "events", "tasks", "design-requests", "creative"] },
+  { label: "Plan", ids: ["show-deals", "campaign-calendar", "promotions", "calendar", "content", "events", "tasks", "design-requests", "creative"] },
   { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info"] },
   { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads"] },
   { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting", "affiliates", "pa-budget", "pa-tracker"] },

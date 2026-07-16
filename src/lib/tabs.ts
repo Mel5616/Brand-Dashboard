@@ -13,6 +13,7 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "summary", label: "Digital Portfolio Summary" },
     { id: "insights", label: "Insights" },
     { id: "team-hub", label: "Team" },
+    { id: "weekly-brief", label: "Weekly Brief" },
   ] },
   { label: "Reports", tabs: [
     { id: "report", label: "Budget vs Actuals" },
@@ -31,7 +32,6 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "show-deals", label: "Tradeshow Deals" },
     { id: "campaign-calendar", label: "Campaigns" },
     { id: "promotions", label: "Promotions" },
-    { id: "weekly-brief", label: "Weekly Brief" },
     { id: "calendar", label: "Calendar" },
     { id: "content", label: "Briefing Engine" },
     { id: "events", label: "Tune Up Days" },
