@@ -4,7 +4,7 @@ import { useState } from "react";
 
 // Nanit-facing table: read-only influencer details; editable code + plan with an
 // explicit per-row Save button so it's obvious when a code has been submitted.
-type Row = { id: string; month_key: string; name: string; handle: string; email: string; followers: string; platform: string; product_supplied: string; product_value: number | null; subscription_code: string; subscription_plan: string; avatar_url?: string | null };
+type Row = { id: string; month_key: string; name: string; handle: string; email: string; followers: string; platform: string; product_supplied: string; product_value: number | null; subscription_code: string; subscription_plan: string; avatar_url?: string | null; profile_url?: string | null };
 const monthLabel = (k: string) => k ? new Date(k + "-01T00:00:00").toLocaleDateString("en-AU", { month: "long", year: "numeric" }) : "";
 
 export function NanitCodeTable({ token, rows: initial }: { token: string; rows: Row[] }) {
@@ -71,12 +71,12 @@ export function NanitCodeTable({ token, rows: initial }: { token: string; rows: 
               return (
                 <tr key={r.id} className={r.subscription_code ? "" : "bg-amber-50/50"}>
                   <td className="px-4 py-2.5 whitespace-nowrap text-gray-500">{monthLabel(r.month_key)}</td>
-                  <td className="px-4 py-2.5"><div className="flex items-center gap-2.5">
+                  <td className="px-4 py-2.5"><a href={r.profile_url || undefined} target="_blank" rel="noreferrer" className={`flex items-center gap-2.5 ${r.profile_url ? "group" : ""}`}>
                     {r.avatar_url
                       ? <img src={r.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover shrink-0" />
                       : <span className="w-9 h-9 rounded-full bg-sky-100 text-sky-700 font-bold grid place-items-center shrink-0 text-sm">{(r.name || "?")[0]?.toUpperCase()}</span>}
-                    <span><p className="font-semibold text-slate-800 whitespace-nowrap">{r.name}</p><p className="text-[12px] text-gray-400">{r.handle}{r.followers ? ` · ${r.followers}` : ""}{r.platform ? ` · ${r.platform}` : ""}</p></span>
-                  </div></td>
+                    <span><p className="font-semibold text-slate-800 whitespace-nowrap group-hover:text-sky-600 group-hover:underline">{r.name}</p><p className="text-[12px] text-gray-400 group-hover:text-sky-500">{r.handle}{r.followers ? ` · ${r.followers}` : ""}{r.platform ? ` · ${r.platform}` : ""}</p></span>
+                  </a></td>
                   <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{r.email}</td>
                   <td className="px-4 py-2.5 text-slate-600 max-w-[220px]">{r.product_supplied}</td>
                   <td className="px-4 py-2.5 text-right font-semibold text-slate-700 tabular-nums whitespace-nowrap">{r.product_value != null ? `$${Math.round(r.product_value).toLocaleString()}` : "—"}</td>

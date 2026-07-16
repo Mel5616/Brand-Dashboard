@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 type Row = {
   id: string; month_key: string; name: string; handle: string; email: string; followers: string;
   platform: string; partnership_type: string; product_supplied: string; product_value: number | null;
-  subscription_code: string; subscription_plan: string; code_added_at?: string | null; avatar_url?: string | null;
+  subscription_code: string; subscription_plan: string; code_added_at?: string | null; avatar_url?: string | null; profile_url?: string | null;
 };
 const inp = "w-full text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400";
 const monthShort = (k: string) => k ? new Date(k + "-01T00:00:00").toLocaleDateString("en-AU", { month: "short", year: "2-digit" }) : "";
@@ -146,7 +146,10 @@ export function NanitTracker({ admin }: { admin: boolean }) {
                         <Avatar url={r.avatar_url} name={r.name || r.handle} />
                         <input type="file" accept="image/*" className="hidden" onChange={e => { const fl = e.target.files?.[0]; if (fl) uploadAvatar(r, fl); e.currentTarget.value = ""; }} />
                       </label>
-                      <div><p className="font-semibold text-slate-800 whitespace-nowrap">{r.name}</p><p className="text-[11px] text-gray-400">{r.handle}{r.followers ? ` · ${r.followers}` : ""}{r.platform ? ` · ${r.platform}` : ""}</p></div>
+                      <div>
+                        <p className="font-semibold text-slate-800 whitespace-nowrap">{r.profile_url ? <a href={r.profile_url} target="_blank" rel="noreferrer" className="hover:text-sky-600 hover:underline">{r.name}</a> : r.name}</p>
+                        <p className="text-[11px] text-gray-400">{r.profile_url ? <a href={r.profile_url} target="_blank" rel="noreferrer" className="hover:text-sky-600">{r.handle}</a> : r.handle}{r.followers ? ` · ${r.followers}` : ""}{r.platform ? ` · ${r.platform}` : ""}</p>
+                      </div>
                     </div>
                   </td>
                   <td className="px-3 py-2.5 text-slate-600 whitespace-nowrap">{r.email}</td>

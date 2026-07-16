@@ -25,9 +25,13 @@ export default async function NanitCodesPage({ params }: { params: Promise<{ tok
     return <main className="min-h-screen grid place-items-center bg-slate-50 text-slate-500 text-sm">This link is not valid.</main>;
   }
   const { data: rows } = await sb.from("nanit_influencers").select("id,month_key,name,handle,email,followers,platform,product_supplied,product_value,subscription_code,subscription_plan").order("month_key", { ascending: false }).order("created_at", { ascending: false });
-  const { data: roster } = await sb.from("influencers").select("handle,avatar_url");
-  const avatarBy = new Map((roster ?? []).map(r => [String(r.handle || "").toLowerCase(), r.avatar_url]));
-  const withAvatars = (rows ?? []).map(r => ({ ...r, avatar_url: avatarBy.get(String(r.handle || "").toLowerCase()) ?? null }));
+  const { data: roster } = await sb.from("influencers").select("handle,avatar_url,profile_url");
+  const rosterBy = new Map((roster ?? []).map(r => [String(r.handle || "").toLowerCase(), r]));
+  const igUrl = (h: string) => h ? `https://www.instagram.com/${h.replace(/^@+/, "")}/` : null;
+  const withAvatars = (rows ?? []).map(r => {
+    const m = rosterBy.get(String(r.handle || "").toLowerCase());
+    return { ...r, avatar_url: m?.avatar_url ?? null, profile_url: m?.profile_url || igUrl(String(r.handle || "")) };
+  });
 
   const reach = withAvatars.reduce((s, r) => s + parseFollowers(r.followers), 0);
   const value = withAvatars.reduce((s, r) => s + (Number(r.product_value) || 0), 0);
