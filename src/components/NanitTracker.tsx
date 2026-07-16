@@ -7,11 +7,18 @@ import { useEffect, useMemo, useState } from "react";
 type Row = {
   id: string; month_key: string; name: string; handle: string; email: string; followers: string;
   platform: string; partnership_type: string; product_supplied: string; product_value: number | null;
-  subscription_code: string; subscription_plan: string; code_added_at?: string | null;
+  subscription_code: string; subscription_plan: string; code_added_at?: string | null; avatar_url?: string | null;
 };
 const inp = "w-full text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400";
 const monthShort = (k: string) => k ? new Date(k + "-01T00:00:00").toLocaleDateString("en-AU", { month: "short", year: "2-digit" }) : "";
 const curMonth = () => new Date().toISOString().slice(0, 7);
+
+function Avatar({ url, name, size = 38 }: { url?: string | null; name: string; size?: number }) {
+  const initial = (name || "?").replace(/^@/, "")[0]?.toUpperCase() || "?";
+  return url
+    ? <img src={url} alt="" className="rounded-full object-cover shrink-0" style={{ width: size, height: size }} />
+    : <div className="rounded-full bg-sky-100 text-sky-700 font-bold flex items-center justify-center shrink-0" style={{ width: size, height: size, fontSize: size * 0.4 }}>{initial}</div>;
+}
 
 export function NanitTracker({ admin }: { admin: boolean }) {
   const [rows, setRows] = useState<Row[]>([]);
@@ -48,6 +55,14 @@ export function NanitTracker({ admin }: { admin: boolean }) {
     if (typeof window !== "undefined" && !window.confirm("Delete this influencer row?")) return;
     const d = await post({ action: "row.delete", id });
     if (d.ok) setRows(p => p.filter(r => r.id !== id));
+  }
+  // Photo uploads go to the shared influencer roster (by handle), so the same
+  // avatar shows in the main gifting tracker too.
+  async function uploadAvatar(r: Row, file: File) {
+    if (!r.handle) { if (typeof window !== "undefined") window.alert("Add a handle first — photos are stored against the @handle."); return; }
+    const fd = new FormData(); fd.set("handle", r.handle); fd.set("file", file);
+    const d = await fetch("/api/influencer/avatar", { method: "POST", body: fd }).then(x => x.json()).catch(() => null);
+    if (d?.ok) setRows(p => p.map(x => x.id === r.id ? { ...x, avatar_url: d.url } : x));
   }
   async function copyLink() {
     let t = token;
@@ -107,7 +122,7 @@ export function NanitTracker({ admin }: { admin: boolean }) {
           <table className="w-full text-[13px]">
             <thead>
               <tr className="text-[10px] uppercase tracking-wider text-gray-400 bg-slate-50/70">
-                {["Month", "Influencer", "Email", "Type", "Product supplied", "Value", "Code", "Plan", ""].map(h => (
+                {["Month", "Influencer", "Email", "Product supplied", "Value", "Code", "Plan", ""].map(h => (
                   <th key={h} className={`${h === "Value" ? "text-right" : "text-left"} font-semibold px-3 py-2 whitespace-nowrap`}>{h}</th>
                 ))}
               </tr>
@@ -116,9 +131,16 @@ export function NanitTracker({ admin }: { admin: boolean }) {
               {rows.map(r => (
                 <tr key={r.id} className={`group ${r.subscription_code ? "" : "bg-amber-50/40"}`}>
                   <td className="px-3 py-2.5 whitespace-nowrap text-gray-500">{monthShort(r.month_key)}</td>
-                  <td className="px-3 py-2.5"><p className="font-semibold text-slate-800 whitespace-nowrap">{r.name}</p><p className="text-[11px] text-gray-400">{r.handle}{r.followers ? ` · ${r.followers}` : ""}{r.platform ? ` · ${r.platform}` : ""}</p></td>
+                  <td className="px-3 py-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <label className="cursor-pointer shrink-0" title={r.avatar_url ? "Replace photo" : "Add photo"}>
+                        <Avatar url={r.avatar_url} name={r.name || r.handle} />
+                        <input type="file" accept="image/*" className="hidden" onChange={e => { const fl = e.target.files?.[0]; if (fl) uploadAvatar(r, fl); e.currentTarget.value = ""; }} />
+                      </label>
+                      <div><p className="font-semibold text-slate-800 whitespace-nowrap">{r.name}</p><p className="text-[11px] text-gray-400">{r.handle}{r.followers ? ` · ${r.followers}` : ""}{r.platform ? ` · ${r.platform}` : ""}</p></div>
+                    </div>
+                  </td>
                   <td className="px-3 py-2.5 text-slate-600 whitespace-nowrap">{r.email}</td>
-                  <td className="px-3 py-2.5 text-gray-500 max-w-[130px] truncate" title={r.partnership_type}>{r.partnership_type}</td>
                   <td className="px-3 py-2.5 text-slate-600 max-w-[220px]">{r.product_supplied}</td>
                   <td className="px-3 py-2.5 text-right font-semibold text-slate-700 tabular-nums whitespace-nowrap">{r.product_value != null ? `$${Math.round(Number(r.product_value)).toLocaleString()}` : "—"}</td>
                   <td className="px-3 py-2.5 whitespace-nowrap">{r.subscription_code
@@ -128,7 +150,7 @@ export function NanitTracker({ admin }: { admin: boolean }) {
                   <td className="px-3 py-2.5 text-right">{admin && <button onClick={() => delRow(r.id)} className="text-gray-300 hover:text-rose-500 opacity-0 group-hover:opacity-100">✕</button>}</td>
                 </tr>
               ))}
-              {rows.length === 0 && <tr><td colSpan={9} className="px-4 py-8 text-center text-gray-300">No influencers yet — add the first above.</td></tr>}
+              {rows.length === 0 && <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-300">No influencers yet — add the first above.</td></tr>}
             </tbody>
           </table>
         </div>

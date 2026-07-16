@@ -16,14 +16,19 @@ export async function GET() {
   const access = await getAccess();
   if (!access.role) return NextResponse.json({ ok: false, rows: [] }, { status: 401 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false, rows: [] }, { status: 500 });
-  const [rRes, sRes] = await Promise.all([
+  const [rRes, sRes, aRes] = await Promise.all([
     rest("nanit_influencers?select=*&order=month_key.desc,created_at.desc"),
     rest("nanit_settings?id=eq.1&select=share_token"),
+    rest("influencers?select=handle,avatar_url"),
   ]);
   const text = await rRes.text();
   if (!rRes.ok) return NextResponse.json({ ok: true, needsSetup: missing(rRes.status, text), rows: [] });
   const settings = sRes.ok ? JSON.parse((await sRes.text()) || "[]") : [];
-  return NextResponse.json({ ok: true, rows: JSON.parse(text || "[]"), share_token: settings[0]?.share_token ?? null });
+  // Avatars come from the shared influencer roster, matched by handle.
+  const roster = aRes.ok ? (JSON.parse((await aRes.text()) || "[]") as any[]) : [];
+  const avatarBy = new Map(roster.map(r => [String(r.handle || "").toLowerCase(), r.avatar_url]));
+  const rows = (JSON.parse(text || "[]") as any[]).map(r => ({ ...r, avatar_url: avatarBy.get(String(r.handle || "").toLowerCase()) ?? null }));
+  return NextResponse.json({ ok: true, rows, share_token: settings[0]?.share_token ?? null });
 }
 
 export async function POST(req: Request) {
