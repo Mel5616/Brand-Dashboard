@@ -19,6 +19,33 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
   };
 }
 
+// Inline emphasis: **bold** and *italic* markup, so briefs can be written with
+// simple markdown-style styling.
+function inline(text: string, keyBase: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*\n]+\*)/g).filter(Boolean);
+  return parts.map((p, i) => {
+    if (/^\*\*[^*]+\*\*$/.test(p)) return <strong key={`${keyBase}-${i}`} className="font-bold text-slate-800">{p.slice(2, -2)}</strong>;
+    if (/^\*[^*\n]+\*$/.test(p)) return <em key={`${keyBase}-${i}`} className="italic">{p.slice(1, -1)}</em>;
+    return p;
+  });
+}
+
+// Per line: bold a lead-in label ("Event:", "Arrival:", "1) BABIES & CHILDREN:")
+// automatically, then apply inline emphasis to the rest.
+function richLines(text: string, keyBase: string) {
+  const lines = text.split("\n");
+  const out: React.ReactNode[] = [];
+  lines.forEach((line, li) => {
+    if (li > 0) out.push("\n");
+    const m = line.match(/^((?:\d+\)\s*)?[A-Z][^:\n]{1,48}):(\s|$)/);
+    if (m) {
+      out.push(<strong key={`${keyBase}-l${li}`} className="font-bold text-slate-800">{m[1]}:</strong>);
+      out.push(...inline(line.slice(m[1].length + 1), `${keyBase}-l${li}`));
+    } else out.push(...inline(line, `${keyBase}-l${li}`));
+  });
+  return out;
+}
+
 // Render freeform brief text: blank-line paragraphs; a short ALL-CAPS lead line
 // styles as a section heading; numbered rule lines get emphasis.
 function BriefBody({ text, accent }: { text: string; accent: string }) {
@@ -39,7 +66,7 @@ function BriefBody({ text, accent }: { text: string; accent: string }) {
                 <span className="w-4 h-1 rounded-full shrink-0" style={{ background: accent }} />{heading}
               </h2>
             )}
-            <p className="text-[14px] text-slate-700 leading-relaxed whitespace-pre-wrap">{body}</p>
+            <p className="text-[14px] text-slate-700 leading-relaxed whitespace-pre-wrap">{richLines(body, `b${i}`)}</p>
           </section>
         );
       })}
@@ -106,7 +133,7 @@ export default async function BriefPage({ params }: { params: Promise<{ token: s
                   <span className={`mt-0.5 w-4 h-4 rounded border shrink-0 grid place-items-center ${c.done ? "bg-emerald-500 border-emerald-500" : "bg-white border-gray-300"}`}>
                     {c.done && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                   </span>
-                  <span className={`text-[14px] leading-snug ${c.done ? "text-gray-400 line-through" : "text-slate-700"}`}>{c.text}</span>
+                  <span className={`text-[14px] leading-snug ${c.done ? "text-gray-400 line-through" : "text-slate-700"}`}>{richLines(c.text, `c${i}`)}</span>
                 </li>
               ))}
             </ul>
