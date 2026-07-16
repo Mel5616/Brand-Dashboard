@@ -30,6 +30,19 @@ export async function POST(req: Request) {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
 
+  // Mint (or return) the job's public share token for the /brief/[token] sheet.
+  if (b.action === "job.share") {
+    if (!b.id) return NextResponse.json({ ok: false }, { status: 400 });
+    const cur = await rest(`creative_jobs?id=eq.${encodeURIComponent(b.id)}&select=share_token`);
+    const rows = cur.ok ? JSON.parse((await cur.text()) || "[]") : [];
+    if (rows[0]?.share_token) return NextResponse.json({ ok: true, token: rows[0].share_token });
+    const token = (await import("crypto")).randomBytes(9).toString("base64url");
+    const res = await rest(`creative_jobs?id=eq.${encodeURIComponent(b.id)}`, { method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify({ share_token: token }) });
+    const text = res.ok ? "" : await res.text();
+    if (!res.ok) return NextResponse.json({ ok: false, needsSetup: /share_token/i.test(text), error: text.slice(0, 200) }, { status: 500 });
+    return NextResponse.json({ ok: true, token });
+  }
+
   if (b.action === "job.delete") {
     if (!b.id) return NextResponse.json({ ok: false }, { status: 400 });
     const res = await rest(`creative_jobs?id=eq.${encodeURIComponent(b.id)}`, { method: "DELETE" });

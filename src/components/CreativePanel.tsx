@@ -62,6 +62,18 @@ export function CreativePanel({ brands, admin }: { brands: Brand[]; admin: boole
     const d = await post({ action: "job.save", id: job.id, title: next.title, type: next.type, brand: next.brand, owner_id: next.owner_id, status: next.status, priority: next.priority, due_date: next.due_date, asset_url: next.asset_url, notes: next.notes, checklist: next.checklist });
     if (d.ok && d.item) setJobs(p => p.map(j => j.id === job.id ? d.item : j));
   }
+  const [shareMsg, setShareMsg] = useState<string | null>(null);
+  // Mint the public brief link and copy it — the sheet at /brief/[token] is what
+  // the team (or an external photographer) opens; Print → PDF from there.
+  async function shareBrief(id: string) {
+    const d = await post({ action: "job.share", id });
+    if (d.ok && d.token) {
+      const url = `${window.location.origin}/brief/${d.token}`;
+      try { await navigator.clipboard.writeText(url); setShareMsg("Link copied ✓"); } catch { setShareMsg(url); }
+      window.open(url, "_blank");
+      setTimeout(() => setShareMsg(null), 2500);
+    } else setShareMsg(d.needsSetup ? "Run add_creative_share.sql first" : "Couldn’t create the link");
+  }
   async function delJob(id: string) {
     if (typeof window !== "undefined" && !window.confirm("Delete this job?")) return;
     const d = await post({ action: "job.delete", id });
@@ -198,7 +210,11 @@ export function CreativePanel({ brands, admin }: { brands: Brand[]; admin: boole
               : (sel.notes ? <p className="text-[14px] text-slate-600 whitespace-pre-wrap">{sel.notes}</p> : <p className="text-[13px] text-gray-300">None.</p>)}
           </div>
 
-          {admin && <button onClick={() => delJob(sel.id)} className="text-xs font-medium text-gray-400 hover:text-rose-500">Delete job</button>}
+          <div className="flex items-center gap-3 pt-1">
+            {admin && <button onClick={() => shareBrief(sel.id)} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2">Share brief link</button>}
+            {shareMsg && <span className="text-xs text-emerald-600 break-all">{shareMsg}</span>}
+            {admin && <button onClick={() => delJob(sel.id)} className="ml-auto text-xs font-medium text-gray-400 hover:text-rose-500">Delete job</button>}
+          </div>
         </div>
       )}
     </div>
