@@ -70,12 +70,34 @@ export function TradeshowAccordion({
   const [attendance, setAttendance] = useState<Record<string, number>>({});
   const savedRef = useRef<Record<string, number>>({});
   const [attNeedsSetup, setAttNeedsSetup] = useState(false);
+  // Staff working the expo per day, same keying and save pattern as attendance.
+  const [staffCount, setStaffCount] = useState<Record<string, number>>({});
+  const staffSaved = useRef<Record<string, number>>({});
   useEffect(() => {
     fetch("/api/tradeshows/attendance").then(r => r.json()).then(d => {
       if (d.needsSetup) setAttNeedsSetup(true);
-      else if (d.ok) { const m: Record<string, number> = {}; for (const r of d.rows) m[`${r.tradeshow_id}|${r.day}`] = Number(r.attendance) || 0; setAttendance(m); savedRef.current = { ...m }; }
+      else if (d.ok) {
+        const m: Record<string, number> = {}, s: Record<string, number> = {};
+        for (const r of d.rows) { const k = `${r.tradeshow_id}|${r.day}`; m[k] = Number(r.attendance) || 0; s[k] = Number(r.staff) || 0; }
+        setAttendance(m); savedRef.current = { ...m };
+        setStaffCount(s); staffSaved.current = { ...s };
+      }
     }).catch(() => {});
   }, []);
+  async function saveStaff(tradeshow_id: string, day: string, value: number) {
+    const key = `${tradeshow_id}|${day}`;
+    const v = Math.max(0, Math.round(value) || 0);
+    if ((staffSaved.current[key] ?? 0) === v) return;
+    setStaffCount(p => ({ ...p, [key]: v }));
+    try {
+      const res = await fetch("/api/tradeshows/attendance", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ tradeshow_id, day, staff: v }) });
+      if (res.ok) { staffSaved.current[key] = v; setAttMsg({ text: "Saved", ok: true }); setTimeout(() => setAttMsg(m => m?.ok ? null : m), 2000); }
+      else { setStaffCount(p => ({ ...p, [key]: staffSaved.current[key] ?? 0 })); setAttMsg({ text: res.status === 401 ? "Session expired — refresh, sign in, re-enter." : "Couldn’t save, try again.", ok: false }); }
+    } catch {
+      setStaffCount(p => ({ ...p, [key]: staffSaved.current[key] ?? 0 }));
+      setAttMsg({ text: "Couldn’t save — check your connection.", ok: false });
+    }
+  }
   const [attMsg, setAttMsg] = useState<{ text: string; ok: boolean } | null>(null);
   async function saveAttendance(tradeshow_id: string, day: string, value: number) {
     const key = `${tradeshow_id}|${day}`;
@@ -288,7 +310,11 @@ export function TradeshowAccordion({
             {status !== "upcoming" && (() => {
               const days = showDays(ts);
               const total = days.reduce((s, d) => s + (attendance[`${ts.id}|${d}`] || 0), 0);
-              if (!admin && total === 0) return null;   // nothing to show non-admins yet
+              const staffByDay = days.map(d => staffCount[`${ts.id}|${d}`] || 0);
+              const staffSummary = staffByDay.some(v => v > 0)
+                ? days.map((d, i) => `${new Date(d + "T00:00:00Z").toLocaleDateString("en-AU", { weekday: "short", timeZone: "UTC" })} ${staffByDay[i]}`).join(" · ")
+                : null;
+              if (!admin && total === 0 && !staffSummary) return null;   // nothing to show non-admins yet
               return (
                 <div className="rounded-xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 to-white px-4 py-3.5 shadow-sm">
                   <div className="flex items-end justify-between mb-3">
@@ -299,7 +325,10 @@ export function TradeshowAccordion({
                       <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-700">Door attendance</p>
                       {attMsg && <span className={`text-[10px] font-medium ${attMsg.ok ? "text-emerald-600" : "text-rose-500"}`}>{attMsg.ok ? "✓ " : ""}{attMsg.text}</span>}
                     </div>
-                    <p className="text-right leading-none"><span className="text-2xl font-extrabold text-slate-800 tabular-nums">{total.toLocaleString()}</span><span className="text-[11px] text-gray-400 ml-1">total visitors</span></p>
+                    <p className="text-right leading-none">
+                      <span className="text-2xl font-extrabold text-slate-800 tabular-nums">{total.toLocaleString()}</span><span className="text-[11px] text-gray-400 ml-1">total visitors</span>
+                      {staffSummary && <span className="block text-[11px] text-slate-500 mt-1">Staff: {staffSummary}</span>}
+                    </p>
                   </div>
                   {attNeedsSetup ? (
                     <p className="text-[11px] text-gray-400">Run <code className="bg-gray-100 px-1 rounded">add_tradeshow_attendance.sql</code> to enable attendance.</p>
@@ -309,17 +338,25 @@ export function TradeshowAccordion({
                         const key = `${ts.id}|${day}`;
                         const label = new Date(day + "T00:00:00Z").toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
                         return admin ? (
-                          <label key={key} className="flex flex-col gap-1 bg-white rounded-lg border border-emerald-100 px-2.5 py-2">
+                          <div key={key} className="flex flex-col gap-1 bg-white rounded-lg border border-emerald-100 px-2.5 py-2">
                             <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">{label}</span>
                             <input type="number" min={0} value={attendance[key] ?? ""} placeholder="0"
                               onChange={e => setAttendance(p => ({ ...p, [key]: e.target.value === "" ? 0 : Math.max(0, Math.round(Number(e.target.value)) || 0) }))}
                               onBlur={e => saveAttendance(ts.id, day, Number(e.target.value) || 0)}
                               className="w-28 text-lg font-bold text-slate-800 tabular-nums border-0 border-b-2 border-emerald-100 focus:border-emerald-400 px-0 py-0.5 focus:outline-none bg-transparent" />
-                          </label>
+                            <label className="flex items-center gap-1.5 mt-0.5">
+                              <span className="text-[10px] text-gray-400">Staff</span>
+                              <input type="number" min={0} value={staffCount[key] || ""} placeholder="0"
+                                onChange={e => setStaffCount(p => ({ ...p, [key]: e.target.value === "" ? 0 : Math.max(0, Math.round(Number(e.target.value)) || 0) }))}
+                                onBlur={e => saveStaff(ts.id, day, Number(e.target.value) || 0)}
+                                className="w-14 text-[13px] font-semibold text-slate-700 tabular-nums border-0 border-b border-emerald-100 focus:border-emerald-400 px-0 py-0.5 focus:outline-none bg-transparent" />
+                            </label>
+                          </div>
                         ) : (
                           <div key={key} className="flex flex-col gap-1 bg-white rounded-lg border border-emerald-100 px-3 py-2 min-w-[7rem]">
                             <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">{label}</span>
                             <span className="text-lg font-bold text-slate-800 tabular-nums">{(attendance[key] || 0).toLocaleString()}</span>
+                            {(staffCount[key] || 0) > 0 && <span className="text-[11px] text-gray-400">{staffCount[key]} staff</span>}
                           </div>
                         );
                       })}
