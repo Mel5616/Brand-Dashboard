@@ -223,6 +223,11 @@ function D2cPlan({ d2c, canEdit, brandF, tierF, statusF, onChanged }: { d2c: D2c
       const key = `${r.retailers || ""}|${r.period_start}|${r.period_end}`;
       clusters.set(key, [...(clusters.get(key) ?? []), g]);
     }
+    // Dedupe: if a campaign with the same name already exists (an earlier approval
+    // of the same promo), don't create a second one — just mark the rows actioned.
+    const existing = new Set<string>(
+      await fetch("/api/campaigns").then(r => r.json()).then(d => (d.items ?? []).map((c: any) => String(c.campaign))).catch(() => [])
+    );
     for (const cluster of clusters.values()) {
       const rep = cluster[0].rep;
       const brandNames = [...new Set(cluster.map(g => g.rep.brand).filter(Boolean))];
@@ -230,6 +235,7 @@ function D2cPlan({ d2c, canEdit, brandF, tierF, statusF, onChanged }: { d2c: D2c
       const days = (+d(rep.period_start) - Date.now()) / 86400000;
       const horizon = days <= 42 ? "now" : days <= 120 ? "next" : "later";
       const name = `${rep.retailers || "Promo"} · ${fmt(rep.period_start)} – ${fmt(rep.period_end)}`;
+      if (existing.has(name)) { await patch(cluster.flatMap(g => g.ids), "action"); continue; }
       const oneLiner = `${cluster.length} product${cluster.length === 1 ? "" : "s"}${brandNames.length > 1 ? ` across ${brandNames.length} brands` : ""} on promo${maxDisc ? `, up to -${Math.round(maxDisc)}%` : ""} · run the same on D2C`;
       await fetch("/api/campaigns", {
         method: "POST", headers: { "Content-Type": "application/json" },
