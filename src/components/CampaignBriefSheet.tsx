@@ -223,11 +223,16 @@ export function CampaignBriefSheet({ c }: { c: any }) {
           </div>
         )}
 
-        {/* 6b · Promo pricing table (grouped promotion campaigns) */}
-        {Array.isArray(brief.promoProducts) && brief.promoProducts.length > 0 && (
-          <section className="break-inside-avoid">
-            <Heading icon={TealDot}>Promo pricing</Heading>
-            <div className="overflow-x-auto rounded-xl border border-slate-100">
+        {/* 6b · Promo pricing table (grouped promotion campaigns). When
+            brief.mirrorBrands is set, those brands' offers are the ones we run on
+            D2C (highlighted); the rest stay visible as reference only. */}
+        {Array.isArray(brief.promoProducts) && brief.promoProducts.length > 0 && (() => {
+          const mirror: string[] = Array.isArray(brief.mirrorBrands) ? brief.mirrorBrands : [];
+          const isMirror = (p: any) => mirror.length === 0 || mirror.includes(p.brand);
+          const active = brief.promoProducts.filter(isMirror);
+          const reference = mirror.length ? brief.promoProducts.filter((p: any) => !isMirror(p)) : [];
+          const Table = ({ rows, dim }: { rows: any[]; dim?: boolean }) => (
+            <div className={`overflow-x-auto rounded-xl border border-slate-100 ${dim ? "opacity-70" : ""}`}>
               <table className="w-full text-[13px]">
                 <thead>
                   <tr className="text-[10px] uppercase tracking-wider text-slate-400 bg-slate-50/70">
@@ -239,20 +244,34 @@ export function CampaignBriefSheet({ c }: { c: any }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {brief.promoProducts.map((p: any, i: number) => (
-                    <tr key={i}>
+                  {rows.map((p: any, i: number) => (
+                    <tr key={i} className={dim ? "" : mirror.length ? "bg-emerald-50/40" : ""}>
                       <td className="px-3 py-1.5 text-slate-700 font-medium">{p.product}{p.colours ? <span className="text-slate-400 font-normal"> · {p.colours} colour{p.colours > 1 ? "s" : ""}</span> : null}</td>
                       <td className="px-3 py-1.5 text-slate-500">{p.brand || "—"}</td>
                       <td className="px-3 py-1.5 text-right text-slate-400 line-through tabular-nums">{p.rrp != null ? `$${Number(p.rrp).toLocaleString()}` : "—"}</td>
-                      <td className="px-3 py-1.5 text-right font-bold text-slate-800 tabular-nums">{p.promo != null ? `$${Number(p.promo).toLocaleString()}` : "—"}</td>
-                      <td className="px-3 py-1.5 text-right font-semibold tabular-nums" style={{ color: "#be123c" }}>{p.disc != null ? `${Math.round(Number(p.disc))}%` : "—"}</td>
+                      <td className={`px-3 py-1.5 text-right tabular-nums ${dim ? "font-semibold text-slate-500" : "font-bold text-slate-800"}`}>{p.promo != null ? `$${Number(p.promo).toLocaleString()}` : "—"}</td>
+                      <td className="px-3 py-1.5 text-right font-semibold tabular-nums" style={{ color: dim ? "#9f7f8a" : "#be123c" }}>{p.disc != null ? `${Math.round(Number(p.disc))}%` : "—"}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </section>
-        )}
+          );
+          return (
+            <section className="break-inside-avoid space-y-4">
+              <div>
+                <Heading icon={TealDot}>{mirror.length ? `Mirroring on D2C · ${mirror.join(" + ")}` : "Promo pricing"}</Heading>
+                <Table rows={active} />
+              </div>
+              {reference.length > 0 && (
+                <div>
+                  <Heading icon={TealDot}>Other offers in this promo · reference only, not mirrored</Heading>
+                  <Table rows={reference} dim />
+                </div>
+              )}
+            </section>
+          );
+        })()}
 
         {/* 7 · Detail sections */}
         {details.length > 0 && (
