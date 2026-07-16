@@ -238,6 +238,14 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
     if (item.id.startsWith("temp-")) return;
     patch(item.id, { brief: { ...cur } } as Partial<Campaign>);
   }
+  // Whether the drafts render on the shared brief sheet (default on).
+  function setShowEmails(item: Campaign, on: boolean) {
+    const cur = { ...(briefDraft.current[item.id] ?? (item.brief as any) ?? {}), showEmails: on };
+    briefDraft.current[item.id] = cur;
+    setItems(prev => prev.map(it => (it.id === item.id ? { ...it, brief: { ...cur } } : it)));
+    if (item.id.startsWith("temp-")) return;
+    patch(item.id, { brief: { ...cur } } as Partial<Campaign>);
+  }
   function updateEmail(item: Campaign, i: number, field: keyof EmailDraft, value: string) {
     const arr = [...((item.brief?.emails as EmailDraft[]) ?? [])];
     arr[i] = { ...arr[i], [field]: value };
@@ -639,9 +647,17 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
 
               {/* Email drafts — the actual copy, ready to paste into Klaviyo */}
               <div className="space-y-3 border-t border-gray-100 pt-4 mt-3">
-                <label className="block text-[11px] font-semibold uppercase tracking-widest text-sky-700">
-                  Email drafts <span className="font-normal lowercase tracking-normal text-gray-300">· paste into Klaviyo, a human sends</span>
-                </label>
+                <div className="flex items-center justify-between gap-3">
+                  <label className="block text-[11px] font-semibold uppercase tracking-widest text-sky-700">
+                    Email drafts <span className="font-normal lowercase tracking-normal text-gray-300">· paste into Klaviyo, a human sends</span>
+                  </label>
+                  {canEdit && (
+                    <label className="flex items-center gap-1.5 text-[11px] text-gray-500 cursor-pointer shrink-0" title="When off, the drafts stay here for the email team but don't render on the shared brief sheet">
+                      <input type="checkbox" checked={(open.brief as any)?.showEmails !== false} onChange={e => setShowEmails(open, e.target.checked)} className="accent-sky-500" />
+                      show on brief
+                    </label>
+                  )}
+                </div>
                 {(((open.brief?.emails as EmailDraft[]) ?? [])).map((em, i) => {
                   const inp = "w-full bg-white/80 text-[13px] text-slate-700 rounded px-2 py-1 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400 read-only:cursor-default placeholder:text-sky-300";
                   return (

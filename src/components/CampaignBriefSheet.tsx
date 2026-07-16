@@ -168,8 +168,9 @@ export function CampaignBriefSheet({ c }: { c: any }) {
           </div>
         )}
 
-        {/* 5b · Email drafts — the actual copy, so the team and designer see it with the brief */}
-        {emails.length > 0 && (
+        {/* 5b · Email drafts — the actual copy, so the team and designer see it with the brief.
+            brief.showEmails === false hides them (toggle in the campaign editor). */}
+        {emails.length > 0 && brief.showEmails !== false && (
           <div className="break-inside-avoid">
             <Heading>Email drafts</Heading>
             <div className="space-y-3">
