@@ -108,9 +108,12 @@ export function TeamHub({ admin }: { admin: boolean }) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold text-slate-800">Team</h1>
-        <p className="text-sm text-gray-400">Each function&apos;s health this week, and your people.</p>
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-slate-800">Team</h1>
+          <p className="text-sm text-gray-400">Each function&apos;s health this week, and your people.</p>
+        </div>
+        {admin && <a href="/team" className="text-sm font-semibold text-emerald-600 hover:underline shrink-0">KPI scorecards →</a>}
       </div>
 
       {/* Scorecard */}
