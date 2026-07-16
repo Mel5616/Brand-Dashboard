@@ -21,19 +21,24 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
 
 // Render freeform brief text: blank-line paragraphs; a short ALL-CAPS lead line
 // styles as a section heading; numbered rule lines get emphasis.
-function BriefBody({ text }: { text: string }) {
+function BriefBody({ text, accent }: { text: string; accent: string }) {
   const blocks = text.split(/\n\s*\n/).map(b => b.trim()).filter(Boolean);
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {blocks.map((block, i) => {
         const lines = block.split("\n");
         const first = lines[0].trim();
         const isHeading = /^[A-Z0-9 ,&'()/—:·.–-]+$/.test(first) && first.length <= 70 && lines.length > 1;
         const heading = isHeading ? first.replace(/:$/, "") : null;
         const body = (isHeading ? lines.slice(1) : lines).join("\n");
+        const critical = heading ? /non-negotiable|rule/i.test(heading) : false;
         return (
-          <section key={i}>
-            {heading && <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500 mb-1.5">{heading}</h2>}
+          <section key={i} className={critical ? "rounded-xl border px-4 py-3" : ""} style={critical ? { borderColor: `${accent}55`, background: `${accent}0d` } : undefined}>
+            {heading && (
+              <h2 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-600 mb-1.5">
+                <span className="w-4 h-1 rounded-full shrink-0" style={{ background: accent }} />{heading}
+              </h2>
+            )}
             <p className="text-[14px] text-slate-700 leading-relaxed whitespace-pre-wrap">{body}</p>
           </section>
         );
@@ -55,30 +60,46 @@ export default async function BriefPage({ params }: { params: Promise<{ token: s
     const { data: m } = await sb.from("team_members").select("name").eq("id", job.owner_id).single();
     ownerName = m?.name ?? "";
   }
+  // Accent: the brand's own colour where we know it, else the job-type colour.
+  let accent = TYPE_COLOR[job.type] ?? "#64748b";
+  if (job.brand) {
+    const { data: br } = await sb.from("brands").select("color").eq("name", job.brand).single();
+    if (br?.color) accent = br.color;
+  }
   const checklist: { text: string; done: boolean }[] = Array.isArray(job.checklist) ? job.checklist : [];
-  const color = TYPE_COLOR[job.type] ?? "#64748b";
 
   return (
     <main className="min-h-screen bg-slate-100 py-8 px-4 print:bg-white print:py-0">
-      <div className="max-w-[760px] mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-10 space-y-7 print:shadow-none print:border-0">
-        <header className="border-b border-gray-100 pb-5">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded" style={{ background: `${color}1a`, color }}>{job.type}</span>
-            {job.priority === "high" && <span className="text-[11px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded">High priority</span>}
+      <div className="max-w-[760px] mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden print:shadow-none print:border-0">
+        {/* Cover band */}
+        <header className="relative px-6 sm:px-10 pt-8 pb-9 text-white" style={{ background: `linear-gradient(120deg, ${accent} 0%, ${accent}e6 55%, ${accent}bf 100%)` }}>
+          <div className="absolute inset-0 opacity-[0.14]" style={{ background: "radial-gradient(ellipse at 85% 0%, #ffffff 0%, transparent 55%)" }} />
+          <div className="relative">
+            <div className="flex items-center justify-between gap-3 mb-5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logos/ck_icons.png" alt="" className="w-10 h-10 bg-white rounded-xl p-1.5 shadow-sm" />
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-white/20 backdrop-blur">{job.type} brief</span>
+                {job.priority === "high" && <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-white text-rose-600">High priority</span>}
+              </div>
+            </div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/80">Creative production · Coolkidz Australia</p>
+            <h1 className="text-[27px] sm:text-3xl font-extrabold leading-tight mt-1.5 drop-shadow-sm">{job.title}</h1>
+            <div className="flex flex-wrap gap-x-5 gap-y-1 mt-4 text-[13px] text-white/90">
+              {job.brand && <span><span className="text-white/60">Brand</span> · <span className="font-semibold">{job.brand}</span></span>}
+              {job.due_date && <span><span className="text-white/60">{job.type === "Shoot" ? "Shoot date" : "Due"}</span> · <span className="font-semibold">{dLong(job.due_date)}</span></span>}
+              {ownerName && <span><span className="text-white/60">Owner</span> · <span className="font-semibold">{ownerName}</span></span>}
+            </div>
           </div>
-          <h1 className="text-2xl font-bold text-slate-800 leading-tight">{job.title}</h1>
-          <p className="text-[13px] text-gray-500 mt-2">
-            {job.brand && <span className="font-medium text-slate-600">{job.brand}</span>}
-            {job.due_date && <span> · {job.type === "Shoot" ? "Shoot date" : "Due"}: <span className="font-medium text-slate-600">{dLong(job.due_date)}</span></span>}
-            {ownerName && <span> · Owner: <span className="font-medium text-slate-600">{ownerName}</span></span>}
-          </p>
         </header>
 
-        {job.notes && <BriefBody text={job.notes} />}
+        <div className="p-6 sm:p-10 space-y-7">
+
+        {job.notes && <BriefBody text={job.notes} accent={accent} />}
 
         {checklist.length > 0 && (
           <section>
-            <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500 mb-2">{job.type === "Shoot" ? "Shot list" : "Deliverables"}</h2>
+            <h2 className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-600 mb-2"><span className="w-4 h-1 rounded-full shrink-0" style={{ background: accent }} />{job.type === "Shoot" ? "Shot list" : "Deliverables"}</h2>
             <ul className="space-y-1.5">
               {checklist.map((c, i) => (
                 <li key={i} className="flex items-start gap-2.5">
@@ -95,6 +116,7 @@ export default async function BriefPage({ params }: { params: Promise<{ token: s
         <footer className="border-t border-gray-100 pt-3 text-[11px] text-gray-400 text-center">
           Coolkidz Australia · creative production brief{job.created_by ? ` · ${job.created_by}` : ""}
         </footer>
+        </div>
       </div>
     </main>
   );
