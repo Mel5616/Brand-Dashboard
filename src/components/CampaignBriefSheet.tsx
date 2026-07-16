@@ -223,6 +223,37 @@ export function CampaignBriefSheet({ c }: { c: any }) {
           </div>
         )}
 
+        {/* 6b · Promo pricing table (grouped promotion campaigns) */}
+        {Array.isArray(brief.promoProducts) && brief.promoProducts.length > 0 && (
+          <section className="break-inside-avoid">
+            <Heading icon={TealDot}>Promo pricing</Heading>
+            <div className="overflow-x-auto rounded-xl border border-slate-100">
+              <table className="w-full text-[13px]">
+                <thead>
+                  <tr className="text-[10px] uppercase tracking-wider text-slate-400 bg-slate-50/70">
+                    <th className="text-left font-semibold px-3 py-2">Product</th>
+                    <th className="text-left font-semibold px-3 py-2">Brand</th>
+                    <th className="text-right font-semibold px-3 py-2">RRP</th>
+                    <th className="text-right font-semibold px-3 py-2">Promo</th>
+                    <th className="text-right font-semibold px-3 py-2">Disc.</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {brief.promoProducts.map((p: any, i: number) => (
+                    <tr key={i}>
+                      <td className="px-3 py-1.5 text-slate-700 font-medium">{p.product}{p.colours ? <span className="text-slate-400 font-normal"> · {p.colours} colour{p.colours > 1 ? "s" : ""}</span> : null}</td>
+                      <td className="px-3 py-1.5 text-slate-500">{p.brand || "—"}</td>
+                      <td className="px-3 py-1.5 text-right text-slate-400 line-through tabular-nums">{p.rrp != null ? `$${Number(p.rrp).toLocaleString()}` : "—"}</td>
+                      <td className="px-3 py-1.5 text-right font-bold text-slate-800 tabular-nums">{p.promo != null ? `$${Number(p.promo).toLocaleString()}` : "—"}</td>
+                      <td className="px-3 py-1.5 text-right font-semibold tabular-nums" style={{ color: "#be123c" }}>{p.disc != null ? `${Math.round(Number(p.disc))}%` : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
         {/* 7 · Detail sections */}
         {details.length > 0 && (
           <div className="grid sm:grid-cols-2 gap-x-8 gap-y-5 pt-1 print:grid-cols-2">

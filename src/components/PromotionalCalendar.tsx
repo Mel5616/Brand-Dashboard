@@ -231,18 +231,25 @@ function D2cPlan({ d2c, canEdit, brandF, tierF, statusF, onChanged }: { d2c: D2c
     for (const cluster of clusters.values()) {
       const rep = cluster[0].rep;
       const brandNames = [...new Set(cluster.map(g => g.rep.brand).filter(Boolean))];
-      const maxDisc = Math.max(...cluster.map(g => Math.abs(Number(g.rep.discount_rrp) || 0)));
+      // discount_rrp is stored as a fraction (0.16 = 16%) — convert to percent here.
+      const maxDisc = Math.max(...cluster.map(g => Math.abs(Number(g.rep.discount_rrp) || 0))) * 100;
       const days = (+d(rep.period_start) - Date.now()) / 86400000;
       const horizon = days <= 42 ? "now" : days <= 120 ? "next" : "later";
       const name = `${rep.retailers || "Promo"} · ${fmt(rep.period_start)} – ${fmt(rep.period_end)}`;
       if (existing.has(name)) { await patch(cluster.flatMap(g => g.ids), "action"); continue; }
       const oneLiner = `${cluster.length} product${cluster.length === 1 ? "" : "s"}${brandNames.length > 1 ? ` across ${brandNames.length} brands` : ""} on promo${maxDisc ? `, up to -${Math.round(maxDisc)}%` : ""} · run the same on D2C`;
+      // Product/pricing table for the brief so the team sees exactly what's on promo.
+      const promoProducts = cluster.map(g => ({
+        product: g.base, brand: g.rep.brand || "", colours: g.colours.length || undefined,
+        rrp: g.rep.rrp ?? null, promo: g.rep.promo_price ?? null,
+        disc: g.rep.discount_rrp != null ? Math.abs(Number(g.rep.discount_rrp)) * 100 : null,
+      })).sort((a, b) => (a.brand || "").localeCompare(b.brand || "") || (a.product || "").localeCompare(b.product || ""));
       await fetch("/api/campaigns", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           horizon, campaign: name, brand: brandNames.join(", ").slice(0, 120) || "Multiple", channel: "D2C",
           status: "Planned", owner: "TBC", key_date: rep.period_start, end_date: rep.period_end,
-          note: oneLiner, brief: { oneLiner },
+          note: oneLiner, brief: { oneLiner, promoProducts },
         }),
       }).catch(() => {});
       await patch(cluster.flatMap(g => g.ids), "action");
