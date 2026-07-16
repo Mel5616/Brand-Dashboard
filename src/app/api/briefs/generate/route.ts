@@ -12,7 +12,7 @@ export const maxDuration = 60; // web search adds latency
 export async function POST(req: Request) {
   try {
     if ((await getAccess()).role !== "admin") return NextResponse.json({ error: "Admins only" }, { status: 403 });
-    const { brandSlug, momentId, pillarId, channels, focus, owner, dueDate } = await req.json();
+    const { brandSlug, momentId, pillarId, channels, focus, owner, dueDate, customMoment } = await req.json();
     if (!brandSlug || !momentId || !pillarId || !Array.isArray(channels) || channels.length === 0) {
       return NextResponse.json({ error: "Pick a brand, moment and at least one channel." }, { status: 400 });
     }
@@ -23,7 +23,19 @@ export async function POST(req: Request) {
 
     const p = brand.profile;
     const pillar = p.pillars.find((x: any) => x.id === pillarId);
-    const moment = p.moments.find((x: any) => x.id === momentId);
+    // "custom" lets the director brief a topic that isn't in the preset moments
+    // (e.g. an award win) — their typed context becomes the moment's objective.
+    let moment = p.moments.find((x: any) => x.id === momentId);
+    if (momentId === "custom") {
+      const name = String(customMoment?.name || "").trim().slice(0, 140);
+      const context = String(customMoment?.context || "").trim().slice(0, 3000);
+      if (!name) return NextResponse.json({ error: "Give the custom moment a short name." }, { status: 400 });
+      moment = {
+        id: "custom", name, pillar: pillarId,
+        objective: context || `Brief in "${name}" for ${brand.name}.`,
+        focus: "Custom moment briefed directly by the Marketing Director — treat the objective above as the authoritative context and build the brief from it.",
+      };
+    }
     const selected = p.channels.filter((c: any) => channels.includes(c.id));
     if (!pillar || !moment) return NextResponse.json({ error: "Invalid moment or pillar" }, { status: 400 });
 

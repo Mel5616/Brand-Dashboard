@@ -11,6 +11,8 @@ export function BriefingEngine() {
   const [pillarId, setPillarId] = useState("");
   const [channels, setChannels] = useState<string[]>([]);
   const [focus, setFocus] = useState("");
+  const [customName, setCustomName] = useState("");
+  const [customContext, setCustomContext] = useState("");
   const [owner, setOwner] = useState("Mel");
   const [due, setDue] = useState("");
   const [brief, setBrief] = useState<any>(null);
@@ -33,17 +35,22 @@ export function BriefingEngine() {
   }
   function pickMoment(id: string) {
     setMomentId(id);
+    if (id === "custom") return;   // custom keeps whatever pillar is selected below
     setPillarId(brand.profile.moments.find((m: any) => m.id === id).pillar);
   }
   const toggleChannel = (id: string) => setChannels((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id]));
 
   async function generate() {
     if (!brand || channels.length === 0) { setError("Pick a moment and at least one channel."); return; }
+    if (momentId === "custom" && !customName.trim()) { setError("Give your custom topic a short name."); return; }
     setError(""); setLoading(true); setBrief(null); setCleared(false);
     try {
       const res = await fetch("/api/briefs/generate", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ brandSlug: brand.slug, momentId, pillarId, channels, focus, owner, dueDate: due }),
+        body: JSON.stringify({
+          brandSlug: brand.slug, momentId, pillarId, channels, focus, owner, dueDate: due,
+          ...(momentId === "custom" ? { customMoment: { name: customName, context: customContext } } : {}),
+        }),
       });
       const data = await res.json();
       if (data.error) setError(data.detail ? `${data.error}: ${data.detail}` : data.error); else setBrief(data.brief);
@@ -98,6 +105,32 @@ export function BriefingEngine() {
                 {m.name}
               </button>
             ))}
+            <button onClick={() => pickMoment("custom")} className="w-full text-left px-3 py-2 rounded text-sm transition"
+              style={{ background: momentId === "custom" ? C.navy : "#fff", color: momentId === "custom" ? C.cream : C.ink, border: `1px dashed ${momentId === "custom" ? C.navy : C.line}` }}>
+              ✏️ Custom — brief your own topic
+            </button>
+            {momentId === "custom" && (
+              <div className="rounded p-3 space-y-2.5" style={{ background: "#fff", border: `1px solid ${C.line}` }}>
+                <div>
+                  <Lbl>Topic name</Lbl>
+                  <input value={customName} onChange={(e) => setCustomName(e.target.value)} placeholder="e.g. Canstar award win"
+                    className="w-full px-3 py-2 rounded bg-white text-sm" style={{ border: `1px solid ${C.line}` }} />
+                </div>
+                <div>
+                  <Lbl>What you know · your context for the brief</Lbl>
+                  <textarea value={customContext} onChange={(e) => setCustomContext(e.target.value)} rows={4}
+                    placeholder="e.g. We won the 2026 Canstar award for [category]. Nothing has been done to promote it yet. I want a strong push across social and email, award badge on site and PDPs, and outreach to retail partners…"
+                    className="w-full px-3 py-2 rounded bg-white text-sm resize-y" style={{ border: `1px solid ${C.line}` }} />
+                </div>
+                <div>
+                  <Lbl>Brand pillar to anchor the voice</Lbl>
+                  <select value={pillarId} onChange={(e) => setPillarId(e.target.value)}
+                    className="w-full px-3 py-2 rounded bg-white text-sm" style={{ border: `1px solid ${C.line}` }}>
+                    {profile.pillars.map((pl: any) => <option key={pl.id} value={pl.id}>{pl.name}</option>)}
+                  </select>
+                </div>
+              </div>
+            )}
           </div>
 
           <Lbl>Channels</Lbl>
