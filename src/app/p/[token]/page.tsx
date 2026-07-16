@@ -12,7 +12,9 @@ const STATUS: Record<string, { label: string; bg: string }> = {
   archived: { label: "Archived", bg: "#64748b" },
 };
 const lines = (s?: string | null) => (s || "").split(/\r?\n/).map(x => x.replace(/^[-*•\s]+/, "").trim()).filter(Boolean);
-const baseSku = (sku?: string | null) => { const s = String(sku || "").trim(); return s.includes("-") ? s.slice(0, s.lastIndexOf("-")) : s; };
+// Base must be ≥3 chars — short stubs are brand prefixes (MM-ATT vs MM-BSTBT are
+// different products, not colour variants of an "MM" line).
+const baseSku = (sku?: string | null) => { const s = String(sku || "").trim(); const b = s.includes("-") ? s.slice(0, s.lastIndexOf("-")) : s; return b.length >= 3 ? b : s; };
 // Longest shared word-prefix across the colour names (the product title).
 function commonPrefix(names: string[]): string {
   if (!names.length) return "";

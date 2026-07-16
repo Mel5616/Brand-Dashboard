@@ -5,7 +5,7 @@ import { BRAND_LOGOS } from "@/lib/brandLogos";
 export const revalidate = 0;
 const esc = (s = "") => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const lines = (s?: string | null) => (s || "").split(/\r?\n/).map(x => x.replace(/^[-*•\s]+/, "").trim()).filter(Boolean);
-const baseSku = (sku?: string | null) => { const s = String(sku || "").trim(); return s.includes("-") ? s.slice(0, s.lastIndexOf("-")) : s; };
+const baseSku = (sku?: string | null) => { const s = String(sku || "").trim(); const b = s.includes("-") ? s.slice(0, s.lastIndexOf("-")) : s; return b.length >= 3 ? b : s; }; // base ≥3 chars: short stubs are brand prefixes, not product lines
 function commonPrefix(names: string[]): string {
   if (!names.length) return "";
   const split = names.map(n => n.trim().split(/\s+/)); const out: string[] = [];

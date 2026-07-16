@@ -69,7 +69,7 @@ export function MarketingCalendar({ events, brands }: Props) {
   // New-product launches (from the New Products tab) land on the calendar too.
   // Colours of one product line share a base SKU + launch date, so group them
   // into a single launch event with the generic (colour-less) line name.
-  const baseSku = (sku?: string | null) => { const s = String(sku || "").trim(); return s.includes("-") ? s.slice(0, s.lastIndexOf("-")) : s; };
+  const baseSku = (sku?: string | null) => { const s = String(sku || "").trim(); const b = s.includes("-") ? s.slice(0, s.lastIndexOf("-")) : s; return b.length >= 3 ? b : s; }; // base ≥3 chars: short stubs are brand prefixes, not product lines
   const commonPrefix = (names: string[]) => {
     if (!names.length) return "";
     const split = names.map(n => n.trim().split(/\s+/)); const out: string[] = [];
