@@ -642,40 +642,74 @@ export function TradeshowAccordion({
         </div>
       )}
 
-      {/* Show economics: booth revenue vs cost per show, with profit */}
+      {/* Sales vs Expenses: the one-spot show P&L — a row per show with sales,
+          cost, profit, margin, visitors and $/visitor, plus season totals. */}
       {(() => {
         const rows = sorted.map(ts => {
           const rev = tradeshowSales.filter(s => s.tradeshow_id === ts.id).reduce((s, r) => s + (r.revenue ?? 0), 0);
           const cost = expItems.filter(x => x.tradeshow_id === ts.id).reduce((s, x) => s + x.amount, 0);
-          return { ts, rev, cost, profit: rev - cost };
-        }).filter(r => r.cost > 0 && r.rev > 0);
+          const visitors = showDays(ts).reduce((s, d) => s + (attendance[`${ts.id}|${d}`] || 0), 0);
+          return { ts, rev, cost, visitors, profit: rev - cost };
+        }).filter(r => r.rev > 0 || r.cost > 0);
         if (rows.length === 0) return null;
-        const maxVal = Math.max(...rows.map(r => Math.max(r.rev, r.cost)));
+        const maxVal = Math.max(1, ...rows.map(r => Math.max(r.rev, r.cost)));
+        const tot = rows.reduce((a, r) => ({ rev: a.rev + r.rev, cost: a.cost + r.cost, visitors: a.visitors + r.visitors }), { rev: 0, cost: 0, visitors: 0 });
+        const totProfit = tot.rev - tot.cost;
+        const pctCell = (profit: number, rev: number) => rev > 0 ? `${Math.round((profit / rev) * 100)}%` : "—";
         return (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-            <h3 className="text-sm font-semibold text-slate-700">Expenses vs Sales</h3>
-            <p className="text-xs text-gray-400 mb-4">Booth revenue against show cost (ex GST) · profit per show</p>
-            <div className="space-y-4">
-              {rows.map(({ ts, rev, cost, profit }) => (
-                <div key={ts.id}>
-                  <div className="flex items-baseline justify-between mb-1">
-                    <p className="text-[13px] font-semibold text-slate-700 truncate">{ts.name} <span className="font-normal text-gray-400">· {dateRange(ts)}</span></p>
-                    <p className={`text-[13px] font-bold shrink-0 ml-2 ${profit >= 0 ? "text-emerald-600" : "text-rose-500"}`}>{profit >= 0 ? "+" : "-"}{fmtK(Math.abs(profit))} <span className="font-normal text-gray-400 text-[11px]">profit</span></p>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] uppercase tracking-wide text-gray-400 w-14 shrink-0">Sales</span>
-                      <div className="flex-1 h-4 bg-gray-50 rounded overflow-hidden"><div className="h-full bg-emerald-400 rounded" style={{ width: `${Math.max(3, (rev / maxVal) * 100)}%` }} /></div>
-                      <span className="text-xs font-semibold text-slate-700 w-14 text-right shrink-0">{fmtK(rev)}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] uppercase tracking-wide text-gray-400 w-14 shrink-0">Cost</span>
-                      <div className="flex-1 h-4 bg-gray-50 rounded overflow-hidden"><div className="h-full bg-slate-300 rounded" style={{ width: `${Math.max(3, (cost / maxVal) * 100)}%` }} /></div>
-                      <span className="text-xs font-semibold text-slate-500 w-14 text-right shrink-0">{fmtK(cost)}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div className="flex items-baseline justify-between gap-3 flex-wrap mb-3">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-700">Sales vs Expenses</h3>
+                <p className="text-xs text-gray-400">Booth revenue against show cost (ex GST) · sales sync automatically, expenses entered on each show</p>
+              </div>
+              <p className={`text-sm font-bold ${totProfit >= 0 ? "text-emerald-600" : "text-rose-500"}`}>Season profit {totProfit < 0 ? "-" : ""}{fmtFull(Math.abs(totProfit))}</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-[13px]">
+                <thead>
+                  <tr className="text-[10px] uppercase tracking-wider text-gray-400 border-b border-gray-100">
+                    <th className="text-left font-semibold py-2 pr-3">Show</th>
+                    <th className="text-left font-semibold py-2 pr-3 min-w-[130px]"></th>
+                    <th className="text-right font-semibold py-2 pr-3">Sales</th>
+                    <th className="text-right font-semibold py-2 pr-3">Expenses</th>
+                    <th className="text-right font-semibold py-2 pr-3">Profit</th>
+                    <th className="text-right font-semibold py-2 pr-3">Margin</th>
+                    <th className="text-right font-semibold py-2 pr-3">Visitors</th>
+                    <th className="text-right font-semibold py-2">$/visitor</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {rows.map(({ ts, rev, cost, visitors, profit }) => (
+                    <tr key={ts.id}>
+                      <td className="py-2 pr-3"><p className="font-semibold text-slate-700 whitespace-nowrap">{ts.name}</p><p className="text-[11px] text-gray-400 whitespace-nowrap">{dateRange(ts)}{ts.location ? ` · ${ts.location}` : ""}</p></td>
+                      <td className="py-2 pr-3">
+                        <div className="space-y-0.5">
+                          <div className="h-2 rounded bg-gray-50 overflow-hidden"><div className="h-full bg-emerald-400 rounded" style={{ width: `${Math.max(3, (rev / maxVal) * 100)}%` }} /></div>
+                          <div className="h-2 rounded bg-gray-50 overflow-hidden"><div className="h-full bg-slate-300 rounded" style={{ width: `${Math.max(3, (cost / maxVal) * 100)}%` }} /></div>
+                        </div>
+                      </td>
+                      <td className="py-2 pr-3 text-right font-semibold text-slate-800 tabular-nums whitespace-nowrap">{rev > 0 ? fmtFull(rev) : "—"}</td>
+                      <td className="py-2 pr-3 text-right text-slate-500 tabular-nums whitespace-nowrap">{cost > 0 ? fmtFull(cost) : "—"}</td>
+                      <td className={`py-2 pr-3 text-right font-bold tabular-nums whitespace-nowrap ${rev > 0 && cost > 0 ? (profit >= 0 ? "text-emerald-600" : "text-rose-500") : "text-gray-300"}`}>{rev > 0 && cost > 0 ? `${profit < 0 ? "-" : ""}${fmtFull(Math.abs(profit))}` : "—"}</td>
+                      <td className={`py-2 pr-3 text-right font-semibold tabular-nums ${rev > 0 && cost > 0 ? (profit >= 0 ? "text-emerald-600" : "text-rose-500") : "text-gray-300"}`}>{rev > 0 && cost > 0 ? pctCell(profit, rev) : "—"}</td>
+                      <td className="py-2 pr-3 text-right text-slate-600 tabular-nums">{visitors > 0 ? visitors.toLocaleString() : "—"}</td>
+                      <td className="py-2 text-right text-slate-600 tabular-nums">{visitors > 0 && rev > 0 ? `$${Math.round(rev / visitors)}` : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="border-t-2 border-gray-200 font-bold text-slate-800">
+                    <td className="pt-2 pr-3" colSpan={2}>Season total · {rows.length} show{rows.length === 1 ? "" : "s"}</td>
+                    <td className="pt-2 pr-3 text-right tabular-nums">{fmtFull(tot.rev)}</td>
+                    <td className="pt-2 pr-3 text-right tabular-nums text-slate-500">{fmtFull(tot.cost)}</td>
+                    <td className={`pt-2 pr-3 text-right tabular-nums ${totProfit >= 0 ? "text-emerald-600" : "text-rose-500"}`}>{totProfit < 0 ? "-" : ""}{fmtFull(Math.abs(totProfit))}</td>
+                    <td className={`pt-2 pr-3 text-right tabular-nums ${totProfit >= 0 ? "text-emerald-600" : "text-rose-500"}`}>{pctCell(totProfit, tot.rev)}</td>
+                    <td className="pt-2 pr-3 text-right tabular-nums text-slate-600">{tot.visitors > 0 ? tot.visitors.toLocaleString() : "—"}</td>
+                    <td className="pt-2 text-right tabular-nums text-slate-600">{tot.visitors > 0 && tot.rev > 0 ? `$${Math.round(tot.rev / tot.visitors)}` : "—"}</td>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
           </div>
         );
