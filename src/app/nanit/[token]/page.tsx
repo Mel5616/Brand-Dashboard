@@ -24,7 +24,7 @@ export default async function NanitCodesPage({ params }: { params: Promise<{ tok
         <header className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-sky-600">Nanit Australia · Coolkidz Australia</p>
           <h1 className="text-2xl font-bold text-slate-800 mt-1">Influencer subscription codes</h1>
-          <p className="text-sm text-gray-500 mt-1.5">Gifted influencer collabs needing a Nanit subscription code. Please enter the <strong>subscription code</strong> (and plan) against each influencer — it saves automatically. Rows highlighted amber are waiting on a code.</p>
+          <p className="text-sm text-gray-500 mt-1.5">Gifted influencer collabs needing a Nanit subscription code. Please enter the <strong>subscription code</strong> (and plan) against each influencer, then click <strong>Save</strong> on the row — you&apos;ll see &ldquo;Saved ✓&rdquo; when it&apos;s done. Rows highlighted amber are waiting on a code.</p>
         </header>
         <NanitCodeTable token={token} rows={withAvatars} />
         <p className="text-[11px] text-gray-400 text-center">Coolkidz Australia · questions: mel@coolkidz.com.au</p>
