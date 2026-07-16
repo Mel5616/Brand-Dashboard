@@ -47,7 +47,7 @@ export async function POST(req: Request) {
       priority: ["low", "normal", "high"].includes(b.priority) ? b.priority : "normal",
       due_date: b.due_date || null,
       asset_url: String(b.asset_url || "").slice(0, 500),
-      notes: String(b.notes || "").slice(0, 2000),
+      notes: String(b.notes || "").slice(0, 12000),   // full briefs live here
       checklist: Array.isArray(b.checklist) ? b.checklist.slice(0, 100).map((c: any) => ({ text: String(c.text || "").slice(0, 200), done: !!c.done })) : [],
       updated_at: iso(),
     };
