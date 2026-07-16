@@ -44,8 +44,13 @@ export default async function NanitCodesPage({ params }: { params: Promise<{ tok
           <div className="absolute inset-0 opacity-[0.15]" style={{ background: "radial-gradient(ellipse at 85% 0%, #ffffff 0%, transparent 55%)" }} />
           <div className="relative px-6 sm:px-9 pt-7 pb-8">
             <div className="flex items-center justify-between gap-3 mb-5">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logos/ck_icons.png" alt="" className="w-10 h-10 bg-white rounded-xl p-1.5 shadow-sm" />
+              <div className="flex items-center gap-2.5 bg-white rounded-xl px-3.5 py-2 shadow-sm">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logos/nanit-logo.svg" alt="Nanit" className="h-6 w-auto" />
+                <span className="text-gray-300 text-sm font-light">×</span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logos/ck_icons.png" alt="Coolkidz" className="h-6 w-auto" />
+              </div>
               {faces.length > 0 && (
                 <div className="flex -space-x-2.5">
                   {faces.map(f => (
