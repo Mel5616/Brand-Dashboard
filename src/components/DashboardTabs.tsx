@@ -42,6 +42,7 @@ import { MarketingBudgetTab } from "./MarketingBudgetTab";
 import { ExpensesPanel } from "./ExpensesPanel";
 import { TeamHub } from "./TeamHub";
 import { CreativePanel } from "./CreativePanel";
+import { NanitTracker } from "./NanitTracker";
 import { MarketingCalendar } from "./MarketingCalendar";
 import { BriefingEngine } from "./BriefingEngine";
 import { ShopifyBrandSales } from "./ShopifyBrandSales";
@@ -60,7 +61,7 @@ import { ShopifyInsights } from "./ShopifyInsights";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "uppababy" | "sales" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "affiliates" | "pa-budget" | "pa-tracker" | "team";
+type TabId = "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "uppababy" | "sales" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "nanit" | "affiliates" | "pa-budget" | "pa-tracker" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -204,6 +205,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8M12 4v16" /></svg>,
   },
   {
+    id: "nanit", label: "Nanit Codes",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>,
+  },
+  {
     id: "affiliates", label: "Affiliates",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5m6.5-6.5l1.5-1.5a4 4 0 115.656 5.656l-3 3a4 4 0 01-5.656 0" /></svg>,
   },
@@ -229,11 +234,11 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Plan", ids: ["show-deals", "campaign-calendar", "promotions", "calendar", "content", "events", "tasks", "design-requests", "creative"] },
   { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info"] },
   { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads"] },
-  { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting", "affiliates", "pa-budget", "pa-tracker"] },
+  { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting", "nanit", "affiliates", "pa-budget", "pa-tracker"] },
 ];
 
 // Influencer pages collapse under an "Influencers" dropdown in the sidebar.
-const INFLUENCER_IDS: TabId[] = ["influencer", "gifting"];
+const INFLUENCER_IDS: TabId[] = ["influencer", "gifting", "nanit"];
 // Partnerships pages collapse under a "Partnerships & Affiliates" dropdown.
 const PARTNERSHIP_IDS: TabId[] = ["pa-budget", "pa-tracker"];
 
@@ -1923,6 +1928,8 @@ export function DashboardTabs({
           {active === "influencer" && <InfluencerTracker canEdit={role === "admin"} />}
 
           {/* ── Gifting (team view: % of budget + RRP, no cost) ── */}
+          {active === "nanit" && <NanitTracker admin={role === "admin"} />}
+
           {active === "gifting" && (
             <>
               <SectionBar title="Influencer Gifting" />

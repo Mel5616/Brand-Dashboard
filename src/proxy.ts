@@ -6,11 +6,11 @@ import { NextResponse, type NextRequest } from "next/server";
 // Public paths (login, auth callback, the team gift form, and API routes) pass
 // through — per-route financial gating is enforced in the routes themselves.
 
-const PUBLIC = ["/login", "/auth", "/log-gift", "/p", "/c", "/s", "/deals", "/w", "/brief", "/api/signout"];
+const PUBLIC = ["/login", "/auth", "/log-gift", "/p", "/c", "/s", "/deals", "/w", "/brief", "/nanit", "/api/signout"];
 // The only /api endpoints reachable without a session: the public team gift form.
 // Everything else under /api now requires auth at the edge (defence in depth on top
 // of each route's own getAccess check).
-const PUBLIC_API = ["/api/influencer/products", "/api/influencer/roster", "/api/influencer/entries", "/api/influencer/invoice"];
+const PUBLIC_API = ["/api/influencer/products", "/api/influencer/roster", "/api/influencer/entries", "/api/influencer/invoice", "/api/nanit/public"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
