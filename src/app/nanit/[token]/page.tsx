@@ -4,7 +4,15 @@ import { NanitCodeTable } from "@/components/NanitCodeTable";
 // Public, token-protected page for Nanit: the influencer program at a glance
 // (reach, gifted value, code progress) + the list with editable code/plan.
 export const revalidate = 0;
-export const metadata = { title: "Nanit Australia · Influencer program" };
+const OG_TITLE = "Nanit Australia · Influencer program";
+const OG_DESC = "Gifted influencer collabs awaiting subscription codes — enter yours here.";
+export const metadata = {
+  title: OG_TITLE,
+  description: OG_DESC,
+  metadataBase: new URL("https://marketing.coolkidz.com.au"),
+  openGraph: { title: OG_TITLE, description: OG_DESC, type: "website", images: [{ url: "/nanit-og.jpg", width: 1200, height: 630, alt: "Nanit Australia influencer program" }] },
+  twitter: { card: "summary_large_image", title: OG_TITLE, description: OG_DESC, images: ["/nanit-og.jpg"] },
+};
 
 // "92.5k" / "1M" / "4,359" → number, for the combined-reach stat.
 function parseFollowers(s?: string | null): number {
