@@ -12,6 +12,13 @@ type Row = {
 const inp = "w-full text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400";
 const monthShort = (k: string) => k ? new Date(k + "-01T00:00:00").toLocaleDateString("en-AU", { month: "short", year: "2-digit" }) : "";
 const curMonth = () => new Date().toISOString().slice(0, 7);
+// "92.5k" / "1M" / "4,359" -> number, for the combined-reach stat.
+const parseFollowers = (v?: string | null) => {
+  if (!v) return 0;
+  const m = String(v).trim().toLowerCase().replace(/,/g, "").match(/^([\d.]+)\s*([km])?$/);
+  return m ? Math.round((parseFloat(m[1]) || 0) * (m[2] === "m" ? 1e6 : m[2] === "k" ? 1e3 : 1)) : 0;
+};
+const compactNum = (n: number) => n >= 1e6 ? (n / 1e6).toFixed(1).replace(/\.0$/, "") + "M" : n >= 1e3 ? Math.round(n / 1e3) + "k" : String(n);
 
 function Avatar({ url, name, size = 38 }: { url?: string | null; name: string; size?: number }) {
   const initial = (name || "?").replace(/^@/, "")[0]?.toUpperCase() || "?";
@@ -42,6 +49,7 @@ export function NanitTracker({ admin }: { admin: boolean }) {
   const post = (body: any) => fetch("/api/nanit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
   const pending = useMemo(() => rows.filter(r => !r.subscription_code).length, [rows]);
   const totalValue = useMemo(() => rows.reduce((s, r) => s + (Number(r.product_value) || 0), 0), [rows]);
+  const reach = useMemo(() => rows.reduce((s, r) => s + parseFollowers(r.followers), 0), [rows]);
 
   async function addRow() {
     if (!f.name.trim()) { setErr("Name required."); return; }
@@ -90,8 +98,9 @@ export function NanitTracker({ admin }: { admin: boolean }) {
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4"><p className="text-[11px] uppercase tracking-wider text-gray-400">Influencers</p><p className="text-2xl font-bold text-slate-800">{rows.length}</p></div>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4"><p className="text-[11px] uppercase tracking-wider text-gray-400">Combined reach</p><p className="text-2xl font-bold text-slate-800">{compactNum(reach)}</p></div>
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4"><p className="text-[11px] uppercase tracking-wider text-gray-400">Awaiting code</p><p className={`text-2xl font-bold ${pending ? "text-amber-600" : "text-slate-800"}`}>{pending}</p></div>
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4"><p className="text-[11px] uppercase tracking-wider text-gray-400">Product value (RRP)</p><p className="text-2xl font-bold text-slate-800">${Math.round(totalValue).toLocaleString()}</p></div>
       </div>
