@@ -16,6 +16,14 @@ const STATUS_TINT: Record<string, keyof typeof TINT> = { Live: "green", Build: "
 const STATUS_DOT: Record<string, string> = { Live: "#2E7D5B", Build: "#C77D3C", Planned: "#3C6E9E", Pipeline: "#8A7BB0", Paused: "#9A9A9A", Complete: "#64748b" };
 
 const lines = (s?: string | null) => (s || "").split(/\r?\n/).map(x => x.replace(/^[-*•\s]+/, "").trim()).filter(Boolean);
+// Any http(s) URL in free text renders as a clickable link (opens in a new tab).
+function linkify(text: string) {
+  return text.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+    /^https?:\/\//.test(part)
+      ? <a key={i} href={part} target="_blank" rel="noreferrer" className="underline underline-offset-2 break-all hover:opacity-70" style={{ color: "inherit" }}>{part}</a>
+      : part
+  );
+}
 const oneLine = (s?: string | null) => lines(s)[0] || "";
 const splitChannels = (s?: string | null) => (s || "").split(/[,\n]/).map(x => x.trim()).filter(Boolean);
 const fmtDate = (s?: string | null) => s && /^\d{4}-\d{2}-\d{2}/.test(s) ? new Date(s.slice(0, 10) + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "";
@@ -135,11 +143,11 @@ export function CampaignBriefSheet({ c }: { c: any }) {
           <div className="grid sm:grid-cols-2 gap-3 break-inside-avoid print:grid-cols-2">
             <div className="rounded-xl px-4 py-3" style={{ background: TINT.green.bg }}>
               <Heading icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={TINT.green.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="m9 12 2 2 4-4" /></svg>}><span style={{ color: TINT.green.text }}>Do</span></Heading>
-              <ul className="space-y-1.5">{lines(brief.do).map((x, i) => <li key={i} className="flex gap-2 text-[14px] leading-relaxed" style={{ color: TINT.green.strong }}><span style={{ color: TINT.green.text }}>✓</span><span>{x}</span></li>)}</ul>
+              <ul className="space-y-1.5">{lines(brief.do).map((x, i) => <li key={i} className="flex gap-2 text-[14px] leading-relaxed" style={{ color: TINT.green.strong }}><span style={{ color: TINT.green.text }}>✓</span><span>{linkify(x)}</span></li>)}</ul>
             </div>
             <div className="rounded-xl px-4 py-3" style={{ background: TINT.coral.bg }}>
               <Heading icon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={TINT.coral.text} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="m15 9-6 6M9 9l6 6" /></svg>}><span style={{ color: TINT.coral.text }}>Don't</span></Heading>
-              <ul className="space-y-1.5">{lines(brief.dont).map((x, i) => <li key={i} className="flex gap-2 text-[14px] leading-relaxed" style={{ color: TINT.coral.strong }}><span style={{ color: TINT.coral.text }}>✕</span><span>{x}</span></li>)}</ul>
+              <ul className="space-y-1.5">{lines(brief.dont).map((x, i) => <li key={i} className="flex gap-2 text-[14px] leading-relaxed" style={{ color: TINT.coral.strong }}><span style={{ color: TINT.coral.text }}>✕</span><span>{linkify(x)}</span></li>)}</ul>
             </div>
           </div>
         )}
@@ -198,7 +206,7 @@ export function CampaignBriefSheet({ c }: { c: any }) {
                 <ul className="space-y-1.5">
                   {lines(brief.deliverables).map((t, i) => (
                     <li key={i} className="flex items-start gap-2 text-[14px] leading-relaxed" style={{ color: TINT.blue.strong }}>
-                      <span className="mt-0.5 inline-block w-4 h-4 rounded border shrink-0 bg-white" style={{ borderColor: TINT.blue.text }} />{t}
+                      <span className="mt-0.5 inline-block w-4 h-4 rounded border shrink-0 bg-white" style={{ borderColor: TINT.blue.text }} />{linkify(t)}
                     </li>
                   ))}
                 </ul>
@@ -214,7 +222,7 @@ export function CampaignBriefSheet({ c }: { c: any }) {
                       <li key={i} className="flex items-start gap-2 text-[14px] leading-relaxed" style={{ color: t.strong }}>
                         <span className={`mt-0.5 inline-flex items-center justify-center w-4 h-4 rounded border shrink-0 ${it.done ? "text-white" : "bg-white"}`} style={{ borderColor: t.text, background: it.done ? t.text : "#fff" }}>
                           {it.done && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>}
-                        </span>{it.text}
+                        </span>{linkify(it.text)}
                       </li>
                     );
                   })}
@@ -280,7 +288,7 @@ export function CampaignBriefSheet({ c }: { c: any }) {
             {details.map(d => (
               <section key={d.label} className="break-inside-avoid">
                 <Heading icon={TealDot}>{d.label}</Heading>
-                <div className="space-y-2 text-[14px] text-slate-600 leading-relaxed">{lines(d.value).map((p, i) => <p key={i}>{p}</p>)}</div>
+                <div className="space-y-2 text-[14px] text-slate-600 leading-relaxed">{lines(d.value).map((p, i) => <p key={i}>{linkify(p)}</p>)}</div>
               </section>
             ))}
           </div>
