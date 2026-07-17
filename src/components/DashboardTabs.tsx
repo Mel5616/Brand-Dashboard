@@ -43,6 +43,7 @@ import { ExpensesPanel } from "./ExpensesPanel";
 import { TeamHub } from "./TeamHub";
 import { CreativePanel } from "./CreativePanel";
 import { NanitTracker } from "./NanitTracker";
+import { DesignBoard } from "./DesignBoard";
 import { MarketingCalendar } from "./MarketingCalendar";
 import { BriefingEngine } from "./BriefingEngine";
 import { ShopifyBrandSales } from "./ShopifyBrandSales";
@@ -1879,12 +1880,7 @@ export function DashboardTabs({
           )}
 
           {/* ── Design Requirements (Asana — read-only) ── */}
-          {active === "design-requests" && (
-            <>
-              <SectionBar title="Design Requests · Asana" />
-              <TasksPanel tasks={asanaTasks.filter((t: any) => t.project_label === "Design Requirements")} brands={brands} currentEmail={currentEmail} />
-            </>
-          )}
+          {active === "design-requests" && <DesignBoard admin={role === "admin"} />}
 
           {/* ── Budget ── */}
           {active === "budget" && (
