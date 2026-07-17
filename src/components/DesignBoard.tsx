@@ -345,55 +345,6 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
         </div>
       )}
 
-      {/* Campaigns flagged "Design required" on the campaign calendar */}
-      {designCampaigns.length > 0 && (
-        <div className="rounded-2xl border-2 border-pink-200 bg-gradient-to-br from-pink-50/70 to-white shadow-sm p-5">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-pink-600 mb-2">🎨 Campaigns needing design</p>
-          <div className="space-y-1.5">
-            {[...designCampaigns].sort((a, b) =>
-              prioWeight(meta[`campaign:${a.id}`]?.priority) - prioWeight(meta[`campaign:${b.id}`]?.priority) ||
-              (a.key_date ?? "9999").localeCompare(b.key_date ?? "9999")).map(c => {
-              const gid = `campaign:${c.id}`;
-              const m = meta[gid];
-              const p = m?.priority && PRIO[m.priority];
-              const soon = c.key_date && c.key_date <= new Date(Date.now() + 10 * 86400_000).toISOString().slice(0, 10);
-              return (
-                <div key={c.id} className="flex items-center gap-2.5 bg-white rounded-xl border border-pink-100 px-3 py-2 group">
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: brandColor(c.brand.split("+")[0].trim()) }} />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13.5px] font-semibold text-slate-800 leading-snug">
-                      {c.briefUrl ? <a href={c.briefUrl} target="_blank" rel="noreferrer" className="hover:text-pink-700 hover:underline">{c.campaign}</a> : c.campaign}
-                      <span className="font-normal text-gray-400"> · {c.brand}</span>
-                    </p>
-                    <p className="text-[11.5px] text-gray-400">
-                      {c.key_date ? <span className={soon ? "text-rose-500 font-semibold" : ""}>launches {dShort(c.key_date)}</span> : "no date"}
-                      {c.status ? ` · ${c.status}` : ""}
-                      {c.briefUrl && <> · <a href={c.briefUrl} target="_blank" rel="noreferrer" className="text-emerald-600 font-semibold hover:underline">Open brief →</a></>}
-                    </p>
-                  </div>
-                  {metaSetup && (p || admin) && (
-                    <span className={`flex items-center gap-1 shrink-0 ${p ? "" : "opacity-0 group-hover:opacity-100"}`}>
-                      {(["high", "medium", "low"] as const).map(k => {
-                        const active = m?.priority === k;
-                        if (!admin && !active) return null;
-                        return (
-                          <button key={k} onClick={admin ? () => setPriority(gid, active ? null : k) : undefined}
-                            title={admin ? `${PRIO[k].label} urgency${active ? " — click to clear" : ""}` : `${PRIO[k].label} urgency`}
-                            className={`text-[10px] font-bold rounded-full transition-all ${active ? `${PRIO[k].cls} px-2 py-[3px] uppercase tracking-wide` : `w-[19px] h-[19px] border ${PRIO[k].idle}`} ${admin ? "" : "cursor-default"}`}>
-                            {active ? PRIO[k].label : PRIO[k].letter}
-                          </button>
-                        );
-                      })}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          <p className="text-[11px] text-gray-400 mt-2">Flagged from the campaign calendar — untick &quot;🎨 Design required&quot; on the campaign card when the work is done.</p>
-        </div>
-      )}
-
       {/* Summary + channel filter */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4"><p className="text-[11px] uppercase tracking-wider text-gray-400">Open tasks</p><p className="text-2xl font-bold text-slate-800">{open.length}</p></div>
@@ -497,6 +448,55 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
 
       {/* Search */}
       <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search tasks across all brands…" className={`${inp} w-full`} />
+
+      {/* Campaigns flagged "Design required" on the campaign calendar */}
+      {designCampaigns.length > 0 && (
+        <div className="rounded-2xl border-2 border-pink-200 bg-gradient-to-br from-pink-50/70 to-white shadow-sm p-5">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-pink-600 mb-2">🎨 Campaigns needing design</p>
+          <div className="space-y-1.5">
+            {[...designCampaigns].sort((a, b) =>
+              prioWeight(meta[`campaign:${a.id}`]?.priority) - prioWeight(meta[`campaign:${b.id}`]?.priority) ||
+              (a.key_date ?? "9999").localeCompare(b.key_date ?? "9999")).map(c => {
+              const gid = `campaign:${c.id}`;
+              const m = meta[gid];
+              const p = m?.priority && PRIO[m.priority];
+              const soon = c.key_date && c.key_date <= new Date(Date.now() + 10 * 86400_000).toISOString().slice(0, 10);
+              return (
+                <div key={c.id} className="flex items-center gap-2.5 bg-white rounded-xl border border-pink-100 px-3 py-2 group">
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: brandColor(c.brand.split("+")[0].trim()) }} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13.5px] font-semibold text-slate-800 leading-snug">
+                      {c.briefUrl ? <a href={c.briefUrl} target="_blank" rel="noreferrer" className="hover:text-pink-700 hover:underline">{c.campaign}</a> : c.campaign}
+                      <span className="font-normal text-gray-400"> · {c.brand}</span>
+                    </p>
+                    <p className="text-[11.5px] text-gray-400">
+                      {c.key_date ? <span className={soon ? "text-rose-500 font-semibold" : ""}>launches {dShort(c.key_date)}</span> : "no date"}
+                      {c.status ? ` · ${c.status}` : ""}
+                      {c.briefUrl && <> · <a href={c.briefUrl} target="_blank" rel="noreferrer" className="text-emerald-600 font-semibold hover:underline">Open brief →</a></>}
+                    </p>
+                  </div>
+                  {metaSetup && (p || admin) && (
+                    <span className={`flex items-center gap-1 shrink-0 ${p ? "" : "opacity-0 group-hover:opacity-100"}`}>
+                      {(["high", "medium", "low"] as const).map(k => {
+                        const active = m?.priority === k;
+                        if (!admin && !active) return null;
+                        return (
+                          <button key={k} onClick={admin ? () => setPriority(gid, active ? null : k) : undefined}
+                            title={admin ? `${PRIO[k].label} urgency${active ? " — click to clear" : ""}` : `${PRIO[k].label} urgency`}
+                            className={`text-[10px] font-bold rounded-full transition-all ${active ? `${PRIO[k].cls} px-2 py-[3px] uppercase tracking-wide` : `w-[19px] h-[19px] border ${PRIO[k].idle}`} ${admin ? "" : "cursor-default"}`}>
+                            {active ? PRIO[k].label : PRIO[k].letter}
+                          </button>
+                        );
+                      })}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-[11px] text-gray-400 mt-2">Flagged from the campaign calendar — untick &quot;🎨 Design required&quot; on the campaign card when the work is done.</p>
+        </div>
+      )}
 
       {/* Channel sections → brand cards */}
       {channels.filter(c => channelFilter === "all" || c.name === channelFilter).map(c => {
