@@ -95,11 +95,11 @@ export function CampaignBriefSheet({ c }: { c: any }) {
     { key: "green" as const, label: "Measured by", value: oneLine(brief.successMeasure) || "—", sub: "" },
   ];
   const details = [
-    { label: "Why now / the story", value: brief.whyNow },
-    { label: "Audience", value: brief.audience },
-    { label: "Key message", value: brief.keyMessage },
-    { label: "Offer mechanic", value: brief.offerMechanic },
-    { label: "Creative direction", value: brief.creativeDirection },
+    { label: "Why now / the story", value: brief.whyNow, tint: "blue" as const },
+    { label: "Audience", value: brief.audience, tint: "teal" as const },
+    { label: "Key message", value: brief.keyMessage, tint: "coral" as const },
+    { label: "Offer mechanic", value: brief.offerMechanic, tint: "green" as const },
+    { label: "Creative direction", value: brief.creativeDirection, tint: "amber" as const },
   ].filter(d => lines(d.value).length);
   const complianceLines = lines(brief.compliance);
 
@@ -286,11 +286,13 @@ export function CampaignBriefSheet({ c }: { c: any }) {
 
         {/* 7 · Detail sections */}
         {details.length > 0 && (
-          <div className="grid sm:grid-cols-2 gap-x-8 gap-y-5 pt-1 print:grid-cols-2">
+          <div className="grid sm:grid-cols-2 gap-4 pt-1 print:grid-cols-2">
             {details.map(d => (
-              <section key={d.label} className="break-inside-avoid">
-                <Heading icon={TealDot}>{d.label}</Heading>
-                <div className="space-y-2 text-[14px] text-slate-600 leading-relaxed">{lines(d.value).map((p, i) => <p key={i}>{linkify(p)}</p>)}</div>
+              <section key={d.label} className="break-inside-avoid rounded-xl px-5 py-4" style={{ background: TINT[d.tint].bg }}>
+                <Heading icon={<span className="inline-block w-2 h-2 rounded-full" style={{ background: TINT[d.tint].text }} />}>
+                  <span style={{ color: TINT[d.tint].strong }}>{d.label}</span>
+                </Heading>
+                <div className="space-y-2 text-[14px] leading-relaxed" style={{ color: TINT[d.tint].text }}>{lines(d.value).map((p, i) => <p key={i}>{linkify(p)}</p>)}</div>
               </section>
             ))}
           </div>
