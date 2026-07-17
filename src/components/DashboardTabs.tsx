@@ -1880,7 +1880,7 @@ export function DashboardTabs({
           )}
 
           {/* ── Design Requirements (Asana — read-only) ── */}
-          {active === "design-requests" && <DesignBoard admin={role === "admin"} />}
+          {active === "design-requests" && <DesignBoard admin={role === "admin"} brands={brands.map((b: any) => ({ name: b.name, color: b.color }))} />}
 
           {/* ── Budget ── */}
           {active === "budget" && (
