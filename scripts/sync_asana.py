@@ -186,6 +186,12 @@ def main():
                         "source": "asana",
                     })
                 continue
+            # Tasks dragged into a "Completed …" / "Done" section without being
+            # ticked are done in spirit — keep them off the dashboard.
+            sec = (section_for(t, project) or "").strip().lower()
+            if sec.startswith("completed") or sec == "done":
+                completed_gids.append(t["gid"])
+                continue
             due = t.get("due_on") or ""
             mod = (t.get("modified_at") or "")[:10]
             # Sales requests and the content to-do list are exempt from the
