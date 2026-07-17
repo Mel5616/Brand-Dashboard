@@ -147,6 +147,7 @@ def main():
         print("No Asana projects configured (ASANA_PROJECT_ID etc.) — skipping"); return
 
     all_rows = []
+    completed_gids = []
     for project, label in projects:
         if not label:
             # No label configured — use the board's actual name from Asana.
@@ -165,6 +166,9 @@ def main():
                 print(f"Asana error {e.code} for {label}: {body[:200]}")
             continue
         for t in tasks:
+            if t.get("completed"):
+                completed_gids.append(t["gid"])   # past work — never brought in
+                continue
             all_rows.append({
                 "gid": t["gid"],
                 "name": t.get("name") or "",
@@ -190,7 +194,16 @@ def main():
                json.dumps(all_rows).encode(), extra={"Prefer": "resolution=merge-duplicates"})
     if st not in (200, 201, 204):
         print(f"Supabase upsert failed ({st}): {b.decode(errors='replace')[:300]}"); sys.exit(1)
-    print(f"Synced {len(all_rows)} Asana tasks across {len(projects)} project(s)", flush=True)
+    # Open-only mirror: drop completed tasks (incl. ones completed since last sync)
+    # and rows from projects no longer in the config.
+    sb("DELETE", "/rest/v1/asana_tasks?completed=eq.true")
+    for i in range(0, len(completed_gids), 100):
+        chunk = ",".join(completed_gids[i:i+100])
+        sb("DELETE", f"/rest/v1/asana_tasks?gid=in.({chunk})")
+    keep = ",".join(g for g, _ in projects)
+    if keep:
+        sb("DELETE", f"/rest/v1/asana_tasks?project_gid=not.in.({keep})")
+    print(f"Synced {len(all_rows)} open Asana tasks across {len(projects)} project(s); pruned {len(completed_gids)} completed", flush=True)
 
 if __name__ == "__main__":
     from sync_status_util import record
