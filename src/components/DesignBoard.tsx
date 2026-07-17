@@ -131,7 +131,8 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
       const cur = cMap.get(bName) ?? { brand: bName, gid: t.project_gid, tasks: [] };
       cur.tasks.push(t); cMap.set(bName, cur); chan.set(cName, cMap);
     }
-    const order = ["EDM", "Social", "Sales", "Other"];
+    // Requests first (sales team + Diep's own list), then the brand channels.
+    const order = ["Sales", "Other", "EDM", "Social"];
     return order.filter(c => chan.has(c)).map(c => ({
       name: c,
       brands: [...chan.get(c)!.values()].sort((a, b) => b.tasks.length - a.tasks.length || a.brand.localeCompare(b.brand)),
