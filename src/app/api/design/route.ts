@@ -19,7 +19,7 @@ export async function GET() {
   if (!(await getAccess()).role) return NextResponse.json({ ok: false }, { status: 401 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   const [tRes, pRes] = await Promise.all([
-    rest("asana_tasks?select=gid,name,notes,assignee,due_on,completed,section,project_gid,project_label,permalink_url,modified_at&project_label=neq.Blogs&order=due_on.asc.nullslast"),
+    rest("asana_tasks?select=gid,name,notes,assignee,due_on,completed,section,project_gid,project_label,permalink_url,modified_at&project_label=neq.Blogs&order=due_on.asc.nullslast&limit=5000"),
     rest("design_priorities?select=*&order=rank.asc"),
   ]);
   const tText = await tRes.text();

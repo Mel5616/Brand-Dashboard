@@ -27,6 +27,8 @@ export function DesignBoard({ admin }: { admin: boolean }) {
   const [showAdd, setShowAdd] = useState(false);
   const [af, setAf] = useState({ name: "", notes: "", due_on: "", project_gid: "" });
   const [busy, setBusy] = useState(false);
+  const [q, setQ] = useState("");
+  const [openBoards, setOpenBoards] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetch("/api/design").then(r => r.json()).then(d => {
@@ -165,16 +167,27 @@ export function DesignBoard({ admin }: { admin: boolean }) {
         )}
       </div>
 
-      {/* All boards */}
-      {boards.map(bd => (
-        <div key={bd.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-1">{bd.label} <span className="font-normal text-gray-400 normal-case tracking-normal">· {bd.tasks.length} open</span></p>
-          <div className="divide-y divide-gray-50">
-            {bd.tasks.filter(t => !queued.has(t.gid)).map(t => <TaskRow key={t.gid} t={t} inQueue={false} />)}
-            {bd.tasks.every(t => queued.has(t.gid)) && <p className="text-[13px] text-gray-300 py-2">All queued.</p>}
+      {/* All boards — searchable; big boards collapse behind a count */}
+      <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search tasks across all boards…" className={`${inp} w-full`} />
+      {boards.map(bd => {
+        const matches = bd.tasks.filter(t => !queued.has(t.gid) && (!q || t.name.toLowerCase().includes(q.toLowerCase()) || (t.section || "").toLowerCase().includes(q.toLowerCase())));
+        const expanded = !!q || openBoards.has(bd.label) || matches.length <= 30;
+        return (
+          <div key={bd.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <button onClick={() => setOpenBoards(p => { const n = new Set(p); n.has(bd.label) ? n.delete(bd.label) : n.add(bd.label); return n; })} className="w-full flex items-center justify-between text-left">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">{bd.label} <span className="font-normal text-gray-400 normal-case tracking-normal">· {matches.length}{q ? " matching" : " open"}</span></p>
+              {!expanded && <span className="text-[12px] text-emerald-600 font-medium">Show ▾</span>}
+            </button>
+            {expanded && (
+              <div className="divide-y divide-gray-50 mt-1">
+                {matches.slice(0, 200).map(t => <TaskRow key={t.gid} t={t} inQueue={false} />)}
+                {matches.length > 200 && <p className="text-[12px] text-gray-400 py-2">Showing 200 of {matches.length} — search to narrow.</p>}
+                {matches.length === 0 && <p className="text-[13px] text-gray-300 py-2">{q ? "No matches." : "All queued."}</p>}
+              </div>
+            )}
           </div>
-        </div>
-      ))}
+        );
+      })}
       {boards.length === 0 && <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">No design boards synced yet — add the board IDs to the Asana sync config.</div>}
     </div>
   );
