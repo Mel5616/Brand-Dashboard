@@ -147,7 +147,11 @@ def main():
         print("No Asana projects configured (ASANA_PROJECT_ID etc.) — skipping"); return
 
     all_rows = []
-    completed_gids = []
+    completed_gids = []   # completed or stale — pruned from the dashboard mirror
+    # Staleness cutoff: anything due (or, with no due date, last modified) more
+    # than 6 weeks ago is history — keep the dashboard to current work only.
+    import datetime as _dt
+    cutoff = (_dt.date.today() - _dt.timedelta(weeks=6)).isoformat()
     for project, label in projects:
         if not label:
             # No label configured — use the board's actual name from Asana.
@@ -168,6 +172,11 @@ def main():
         for t in tasks:
             if t.get("completed"):
                 completed_gids.append(t["gid"])   # past work — never brought in
+                continue
+            due = t.get("due_on") or ""
+            mod = (t.get("modified_at") or "")[:10]
+            if (due and due < cutoff) or (not due and mod and mod < cutoff):
+                completed_gids.append(t["gid"])   # stale (>6 weeks old) — treat as done
                 continue
             all_rows.append({
                 "gid": t["gid"],
