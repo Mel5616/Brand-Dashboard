@@ -556,8 +556,8 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
                 const col = brandColor(b.brand);
                 const hi = b.tasks.filter(t => meta[t.gid]?.priority === "high").length;
                 return (
-                  <div key={b.brand} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow" style={{ borderTop: `3px solid ${col}` }}>
-                    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-50" style={{ background: `${col}0D` }}>
+                  <div key={b.brand} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow" style={{ borderTop: `3px solid ${col}` }}>
+                    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-50 rounded-t-[13px]" style={{ background: `${col}0D` }}>
                       <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: col }} />
                       <p className="text-[13px] font-bold text-slate-800 truncate">{b.brand}</p>
                       {hi > 0 && <span className="text-[10.5px] font-bold text-rose-600 bg-rose-100 rounded-full px-1.5 py-0.5 shrink-0">{hi} high</span>}
