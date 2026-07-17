@@ -178,26 +178,6 @@ export function CampaignBriefSheet({ c }: { c: any }) {
           </div>
         )}
 
-        {/* 5b · Email drafts — the actual copy, so the team and designer see it with the brief.
-            brief.showEmails === false hides them (toggle in the campaign editor). */}
-        {emails.length > 0 && brief.showEmails !== false && (
-          <div className="break-inside-avoid">
-            <Heading>Email drafts</Heading>
-            <div className="space-y-3">
-              {emails.map((e: any, i: number) => (
-                <div key={i} className="rounded-xl px-4 py-3 break-inside-avoid" style={{ background: TINT.blue.bg }}>
-                  <p className="text-[13px] font-semibold" style={{ color: TINT.blue.strong }}>
-                    {e.name || `Email ${i + 1}`}{e.sendDate ? ` · ${e.sendDate}` : ""}
-                  </p>
-                  {e.segment && <p className="text-[12px] mt-0.5" style={{ color: TINT.blue.text }}>To: {e.segment}</p>}
-                  {e.subject && <p className="text-[14px] mt-2" style={{ color: TINT.blue.strong }}><span className="font-semibold">Subject: </span>{String(e.subject).split("\n")[0].trim()}</p>}
-                  {e.preview && <p className="text-[13px]" style={{ color: TINT.blue.text }}><span className="font-semibold">Preview: </span>{e.preview}</p>}
-                  {e.body && <p className="text-[14px] mt-2 whitespace-pre-wrap leading-relaxed" style={{ color: TINT.blue.strong }}>{e.body}</p>}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* 6 · Deliverables + readiness */}
         {(lines(brief.deliverables).length > 0 || readiness.length > 0) && (
@@ -298,7 +278,28 @@ export function CampaignBriefSheet({ c }: { c: any }) {
           </div>
         )}
 
-        {/* 8 · Compliance & T&Cs — full-width box, text flows over two columns */}
+        {/* 8 · Email drafts — the actual copy, so the team and designer see it with the brief.
+            brief.showEmails === false hides them (toggle in the campaign editor). */}
+        {emails.length > 0 && brief.showEmails !== false && (
+          <div className="break-inside-avoid">
+            <Heading>Email drafts</Heading>
+            <div className="space-y-3">
+              {emails.map((e: any, i: number) => (
+                <div key={i} className="rounded-xl px-4 py-3 break-inside-avoid" style={{ background: TINT.blue.bg }}>
+                  <p className="text-[13px] font-semibold" style={{ color: TINT.blue.strong }}>
+                    {e.name || `Email ${i + 1}`}{e.sendDate ? ` · ${e.sendDate}` : ""}
+                  </p>
+                  {e.segment && <p className="text-[12px] mt-0.5" style={{ color: TINT.blue.text }}>To: {e.segment}</p>}
+                  {e.subject && <p className="text-[14px] mt-2" style={{ color: TINT.blue.strong }}><span className="font-semibold">Subject: </span>{String(e.subject).split("\n")[0].trim()}</p>}
+                  {e.preview && <p className="text-[13px]" style={{ color: TINT.blue.text }}><span className="font-semibold">Preview: </span>{e.preview}</p>}
+                  {e.body && <p className="text-[14px] mt-2 whitespace-pre-wrap leading-relaxed" style={{ color: TINT.blue.strong }}>{e.body}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 9 · Compliance & T&Cs — full-width box, text flows over two columns */}
         {complianceLines.length > 0 && (
           <section className="break-inside-avoid">
             <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-5 py-4 print:bg-white">
