@@ -360,18 +360,29 @@ export function DashboardTabs({
   const [mobileNavOpen, setMobileNavOpen] = useState(false); // slide-in nav drawer on small screens
   // Sidebar section groups the user has collapsed. Default: all open ("auto open").
   // Persisted to localStorage so a collapsed group stays collapsed across reloads.
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  // Groups start CLOSED (click to open) — except the group holding the active
+  // tab. A saved preference from toggling overrides the default.
+  const groupOf = (id: string) => TAB_GROUPS.find(g => g.ids.includes(id as TabId))?.label;
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => new Set(TAB_GROUPS.map(g => g.label)));
   useEffect(() => {
     try {
-      const raw = localStorage.getItem("sidebarCollapsedGroups");
+      const raw = localStorage.getItem("sidebarCollapsedGroups.v2");
       if (raw) setCollapsedGroups(new Set(JSON.parse(raw) as string[]));
+      else setCollapsedGroups(new Set(TAB_GROUPS.map(g => g.label).filter(l => l !== groupOf(active))));
     } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  // Navigating to a tab inside a closed group opens that group.
+  useEffect(() => {
+    const g = groupOf(active);
+    if (g) setCollapsedGroups(prev => { if (!prev.has(g)) return prev; const next = new Set(prev); next.delete(g); return next; });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active]);
   function toggleGroup(label: string) {
     setCollapsedGroups(prev => {
       const next = new Set(prev);
       if (next.has(label)) next.delete(label); else next.add(label);
-      try { localStorage.setItem("sidebarCollapsedGroups", JSON.stringify([...next])); } catch { /* ignore */ }
+      try { localStorage.setItem("sidebarCollapsedGroups.v2", JSON.stringify([...next])); } catch { /* ignore */ }
       return next;
     });
   }
