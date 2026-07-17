@@ -52,16 +52,32 @@ export async function POST(req: Request) {
   const by = access.user?.email ?? null;
 
   // ── Priority queue (admin sets priorities) ──
+  const BUCKETS = ["urgent", "week", "next", "soon"];
   if (b.action === "priority.add") {
     if (!admin) return NextResponse.json({ ok: false, error: "Admins only" }, { status: 403 });
     if (!b.task_gid) return NextResponse.json({ ok: false }, { status: 400 });
+    const bucket = BUCKETS.includes(b.bucket) ? b.bucket : "week";
     const cur = await rest("design_priorities?select=rank&order=rank.desc&limit=1");
     const rows = cur.ok ? JSON.parse((await cur.text()) || "[]") : [];
     const rank = (rows[0]?.rank ?? 0) + 1;
-    const res = await rest("design_priorities?on_conflict=task_gid", { method: "POST", headers: h({ Prefer: "resolution=merge-duplicates,return=representation" }), body: JSON.stringify({ task_gid: String(b.task_gid), rank, added_by: by }) });
-    const text = await res.text();
+    const row: any = { task_gid: String(b.task_gid), rank, added_by: by, bucket };
+    let res = await rest("design_priorities?on_conflict=task_gid", { method: "POST", headers: h({ Prefer: "resolution=merge-duplicates,return=representation" }), body: JSON.stringify(row) });
+    let text = await res.text();
+    if (!res.ok && /bucket/.test(text)) {
+      // bucket column not added yet — fall back to the plain queue
+      delete row.bucket;
+      res = await rest("design_priorities?on_conflict=task_gid", { method: "POST", headers: h({ Prefer: "resolution=merge-duplicates,return=representation" }), body: JSON.stringify(row) });
+      text = await res.text();
+    }
     if (!res.ok) return NextResponse.json({ ok: false, needsSetup: missing(res.status, text) }, { status: 500 });
     return NextResponse.json({ ok: true, item: JSON.parse(text)[0] });
+  }
+  if (b.action === "priority.bucket") {
+    if (!admin) return NextResponse.json({ ok: false, error: "Admins only" }, { status: 403 });
+    if (!b.task_gid || !BUCKETS.includes(b.bucket)) return NextResponse.json({ ok: false }, { status: 400 });
+    const res = await rest(`design_priorities?task_gid=eq.${encodeURIComponent(String(b.task_gid))}`, { method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify({ bucket: b.bucket }) });
+    if (!res.ok) return NextResponse.json({ ok: false, error: "Run the bucket SQL first" }, { status: 500 });
+    return NextResponse.json({ ok: true });
   }
   if (b.action === "priority.remove") {
     if (!admin) return NextResponse.json({ ok: false, error: "Admins only" }, { status: 403 });

@@ -13,7 +13,15 @@ type Task = {
   completed: boolean; section: string; project_gid: string; project_label: string | null;
   permalink_url: string | null; modified_at: string;
 };
-type Priority = { task_gid: string; rank: number };
+type Priority = { task_gid: string; rank: number; bucket?: string | null };
+const BUCKETS = [
+  { key: "urgent", label: "🔥 Urgent", head: "text-rose-600", card: "border-rose-200 from-rose-50/70", ring: "border-rose-100", num: "bg-rose-500" },
+  { key: "week", label: "📌 This week", head: "text-emerald-700", card: "border-emerald-200 from-emerald-50/70", ring: "border-emerald-100", num: "bg-emerald-500" },
+  { key: "next", label: "📅 Next week", head: "text-sky-700", card: "border-sky-200 from-sky-50/70", ring: "border-sky-100", num: "bg-sky-500" },
+  { key: "soon", label: "🌱 Coming soon", head: "text-violet-700", card: "border-violet-200 from-violet-50/70", ring: "border-violet-100", num: "bg-violet-500" },
+] as const;
+type BucketKey = (typeof BUCKETS)[number]["key"];
+const bucketOf = (p: Priority): BucketKey => (BUCKETS.some(b => b.key === p.bucket) ? (p.bucket as BucketKey) : "week");
 type Meta = { priority?: "high" | "medium" | "low" | null; notes?: string | null };
 type Completion = { task_gid: string; name: string | null; project_label: string | null; due_on: string | null; created_at_asana: string | null; completed_at: string; source: string };
 type BrandRef = { name: string; color: string };
@@ -67,6 +75,7 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
   const [q, setQ] = useState("");
   const [channelFilter, setChannelFilter] = useState<"all" | "EDM" | "Social" | "Sales">("all");
   const [notesFor, setNotesFor] = useState<string | null>(null);
+  const [plusFor, setPlusFor] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
   const [insights, setInsights] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
@@ -89,7 +98,15 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
   const byGid = useMemo(() => new Map(tasks.map(t => [t.gid, t])), [tasks]);
   const open = useMemo(() => tasks.filter(t => !t.completed), [tasks]);
   const queued = useMemo(() => new Set(priorities.map(p => p.task_gid)), [priorities]);
-  const queue = useMemo(() => priorities.map(p => byGid.get(p.task_gid)).filter((t): t is Task => !!t && !t.completed), [priorities, byGid]);
+  const buckets = useMemo(() => {
+    const out = new Map<BucketKey, Task[]>(BUCKETS.map(b => [b.key, []]));
+    for (const p of [...priorities].sort((a, b) => a.rank - b.rank)) {
+      const t = byGid.get(p.task_gid);
+      if (t && !t.completed) out.get(bucketOf(p))!.push(t);
+    }
+    return out;
+  }, [priorities, byGid]);
+  const queueCount = (buckets.get("urgent")?.length ?? 0) + (buckets.get("week")?.length ?? 0);
   const brandColor = (name: string) => brands.find(b => b.name.toLowerCase() === name.toLowerCase())?.color ?? "#94a3b8";
   const brandOfLabel = (label?: string | null) => (label || "").replace(/^(EDM|Social)\s*·\s*/i, "");
 
@@ -137,21 +154,32 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
     return { weeks, thisWeek: weeks[weeks.length - 1]?.count ?? 0, total: completions.length, onTimePct: withDue ? Math.round((onTime / withDue) * 100) : null };
   }, [completions]);
 
-  async function addToQueue(gid: string) {
-    const d = await post({ action: "priority.add", task_gid: gid });
-    if (d.ok) setPriorities(p => [...p, { task_gid: gid, rank: (p[p.length - 1]?.rank ?? 0) + 1 }]);
+  async function addToQueue(gid: string, bucket: BucketKey) {
+    setPlusFor(null);
+    const d = await post({ action: "priority.add", task_gid: gid, bucket });
+    if (d.ok) setPriorities(p => [...p, { task_gid: gid, rank: (d.item?.rank ?? (p[p.length - 1]?.rank ?? 0) + 1), bucket: d.item?.bucket ?? bucket }]);
     else setErr(d.error || "Couldn't add.");
   }
   async function removeFromQueue(gid: string) {
     const d = await post({ action: "priority.remove", task_gid: gid });
     if (d.ok) setPriorities(p => p.filter(x => x.task_gid !== gid));
   }
+  async function moveBucket(gid: string, bucket: BucketKey) {
+    const prev = priorities;
+    setPriorities(p => p.map(x => x.task_gid === gid ? { ...x, bucket } : x));
+    const d = await post({ action: "priority.bucket", task_gid: gid, bucket });
+    if (!d.ok) { setPriorities(prev); setErr(d.error || "Couldn't move — has the bucket SQL been run?"); }
+  }
   async function move(gid: string, dir: -1 | 1) {
-    const order = priorities.map(p => p.task_gid);
+    // Reorder within the task's bucket only.
+    const me = priorities.find(p => p.task_gid === gid);
+    if (!me) return;
+    const order = priorities.filter(p => bucketOf(p) === bucketOf(me)).sort((a, b) => a.rank - b.rank).map(p => p.task_gid);
     const i = order.indexOf(gid), j = i + dir;
     if (i < 0 || j < 0 || j >= order.length) return;
     [order[i], order[j]] = [order[j], order[i]];
-    setPriorities(order.map((g, idx) => ({ task_gid: g, rank: idx + 1 })));
+    const ranks = new Map(order.map((g, idx) => [g, idx + 1]));
+    setPriorities(p => p.map(x => ranks.has(x.task_gid) ? { ...x, rank: ranks.get(x.task_gid)! } : x));
     await post({ action: "priority.reorder", order });
   }
   async function complete(gid: string) {
@@ -244,11 +272,21 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
               className={`text-[13px] leading-none shrink-0 mt-0.5 ${m?.notes ? "opacity-100" : "opacity-0 group-hover:opacity-100 grayscale"}`}>💬</button>
           )}
           {admin && !inQueue && (
-            <button onClick={() => addToQueue(t.gid)} title="Add to this week's priorities"
-              className="text-[15px] leading-none font-bold text-emerald-500 hover:text-emerald-700 opacity-0 group-hover:opacity-100 shrink-0 px-0.5 mt-0.5">＋</button>
+            <span className="relative shrink-0">
+              <button onClick={() => setPlusFor(cur => cur === t.gid ? null : t.gid)} title="Add to the plan"
+                className={`text-[15px] leading-none font-bold text-emerald-500 hover:text-emerald-700 px-0.5 mt-0.5 ${plusFor === t.gid ? "" : "opacity-0 group-hover:opacity-100"}`}>＋</button>
+              {plusFor === t.gid && (
+                <span className="absolute right-0 top-6 z-20 bg-white border border-gray-200 rounded-xl shadow-lg p-1 flex flex-col min-w-[140px]">
+                  {BUCKETS.map(bk => (
+                    <button key={bk.key} onClick={() => addToQueue(t.gid, bk.key)}
+                      className="text-left text-[12.5px] text-slate-600 hover:bg-gray-50 rounded-lg px-2.5 py-1.5 whitespace-nowrap">{bk.label}</button>
+                  ))}
+                </span>
+              )}
+            </span>
           )}
           {admin && inQueue && <button onClick={() => removeFromQueue(t.gid)} className="text-[11px] text-gray-400 hover:text-rose-500 shrink-0 mt-0.5">remove</button>}
-          {admin
+          {admin && !inQueue
             ? <input type="date" value={t.due_on ?? ""} onChange={e => setDue(t.gid, e.target.value)}
                 className={`text-[11.5px] border rounded-md px-1 py-0.5 shrink-0 w-[108px] ${late ? "border-rose-200 bg-rose-50 text-rose-600" : "border-transparent hover:border-gray-200 text-slate-400 bg-transparent"}`} />
             : t.due_on && <span className={`text-[11.5px] rounded-md px-1.5 py-0.5 shrink-0 ${late ? "bg-rose-50 text-rose-600 font-semibold" : "text-gray-400"}`}>{dShort(t.due_on)}</span>}
@@ -307,7 +345,7 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
       {/* Summary + channel filter */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4"><p className="text-[11px] uppercase tracking-wider text-gray-400">Open tasks</p><p className="text-2xl font-bold text-slate-800">{open.length}</p></div>
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4"><p className="text-[11px] uppercase tracking-wider text-gray-400">This week</p><p className="text-2xl font-bold text-emerald-600">{queue.length}</p></div>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4"><p className="text-[11px] uppercase tracking-wider text-gray-400">This week</p><p className="text-2xl font-bold text-emerald-600">{queueCount}</p></div>
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4"><p className="text-[11px] uppercase tracking-wider text-gray-400">Overdue</p><p className={`text-2xl font-bold ${overdue ? "text-rose-500" : "text-slate-800"}`}>{overdue}</p></div>
         <button onClick={() => setShowStats(v => !v)} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-left hover:border-emerald-200 transition-colors">
           <p className="text-[11px] uppercase tracking-wider text-gray-400">Done this week {showStats ? "▾" : "▸"}</p>
@@ -361,29 +399,48 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
         </div>
       )}
 
-      {/* This week's priorities */}
-      <div className="rounded-2xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50/70 to-white shadow-sm p-5">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700">This week&apos;s priorities · work top to bottom</p>
-          {!prioritiesSetup && <span className="text-[11px] text-rose-500">Run add_design_priorities.sql to enable the queue</span>}
-        </div>
-        {queue.length === 0 ? <p className="text-sm text-gray-400 py-3">Nothing queued yet{admin ? " — hover a task below and click ＋." : "."}</p> : (
-          <div className="space-y-1">
-            {queue.map((t, i) => (
-              <div key={t.gid} className="flex items-center gap-2.5 bg-white rounded-xl border border-emerald-100 px-3 py-1">
-                <span className="w-6 h-6 rounded-full bg-emerald-500 text-white text-[12px] font-bold grid place-items-center shrink-0">{i + 1}</span>
-                {admin && (
-                  <span className="flex flex-col shrink-0">
-                    <button onClick={() => move(t.gid, -1)} disabled={i === 0} className="text-gray-300 hover:text-slate-600 disabled:opacity-20 leading-none text-[11px]">▲</button>
-                    <button onClick={() => move(t.gid, 1)} disabled={i === queue.length - 1} className="text-gray-300 hover:text-slate-600 disabled:opacity-20 leading-none text-[11px]">▼</button>
-                  </span>
+      {/* The plan: urgent / this week / next week / coming soon */}
+      <div>
+        {!prioritiesSetup && <p className="text-[11px] text-rose-500 mb-1">Run add_design_priorities.sql to enable the plan</p>}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+          {BUCKETS.map(bk => {
+            const list = buckets.get(bk.key) ?? [];
+            return (
+              <div key={bk.key} className={`rounded-2xl border-2 bg-gradient-to-br to-white shadow-sm p-4 ${bk.card}`}>
+                <p className={`text-[11px] font-bold uppercase tracking-[0.16em] mb-2 ${bk.head}`}>{bk.label} <span className="opacity-50 font-semibold">· {list.length}</span></p>
+                {list.length === 0 ? (
+                  <p className="text-[12.5px] text-gray-400 py-2">Empty{admin ? " — hover a task below, click ＋" : ""}</p>
+                ) : (
+                  <div className="space-y-1">
+                    {list.map((t, i) => (
+                      <div key={t.gid} className={`bg-white rounded-xl border px-2.5 py-1 ${bk.ring}`}>
+                        <div className="flex items-center gap-2">
+                          <span className={`w-5 h-5 rounded-full text-white text-[11px] font-bold grid place-items-center shrink-0 ${bk.num}`}>{i + 1}</span>
+                          {admin && (
+                            <span className="flex flex-col shrink-0">
+                              <button onClick={() => move(t.gid, -1)} disabled={i === 0} className="text-gray-300 hover:text-slate-600 disabled:opacity-20 leading-none text-[10px]">▲</button>
+                              <button onClick={() => move(t.gid, 1)} disabled={i === list.length - 1} className="text-gray-300 hover:text-slate-600 disabled:opacity-20 leading-none text-[10px]">▼</button>
+                            </span>
+                          )}
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: brandColor(brandOfLabel(t.project_label)) }} />
+                          <div className="flex-1 min-w-0"><TaskRow t={t} inQueue /></div>
+                        </div>
+                        {admin && (
+                          <div className="flex gap-1 pb-1 pl-7">
+                            {BUCKETS.filter(x => x.key !== bk.key).map(x => (
+                              <button key={x.key} onClick={() => moveBucket(t.gid, x.key)} title={`Move to ${x.label}`}
+                                className="text-[10px] text-gray-400 hover:text-slate-600 hover:bg-gray-50 rounded px-1 py-0.5">{x.label.split(" ")[0]}→</button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: brandColor(brandOfLabel(t.project_label)) }} />
-                <div className="flex-1 min-w-0"><TaskRow t={t} inQueue /></div>
               </div>
-            ))}
-          </div>
-        )}
+            );
+          })}
+        </div>
       </div>
 
       {/* Search */}
