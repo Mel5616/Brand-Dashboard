@@ -100,8 +100,8 @@ export function CampaignBriefSheet({ c }: { c: any }) {
     { label: "Key message", value: brief.keyMessage },
     { label: "Offer mechanic", value: brief.offerMechanic },
     { label: "Creative direction", value: brief.creativeDirection },
-    { label: "Compliance & T&Cs", value: brief.compliance },
   ].filter(d => lines(d.value).length);
+  const complianceLines = lines(brief.compliance);
 
   return (
     <article id="product-sheet" className="sheet max-w-[860px] mx-auto bg-white rounded-2xl shadow-lg ring-1 ring-slate-200/70 overflow-hidden print:shadow-none print:ring-0 print:rounded-none print:max-w-none print:overflow-visible">
@@ -294,6 +294,18 @@ export function CampaignBriefSheet({ c }: { c: any }) {
               </section>
             ))}
           </div>
+        )}
+
+        {/* 8 · Compliance & T&Cs — full-width box, text flows over two columns */}
+        {complianceLines.length > 0 && (
+          <section className="break-inside-avoid">
+            <div className="rounded-xl border border-slate-200 bg-slate-50/70 px-5 py-4 print:bg-white">
+              <Heading icon={TealDot}>Compliance &amp; T&amp;Cs</Heading>
+              <div className="sm:columns-2 gap-8 text-[13px] text-slate-600 leading-relaxed print:columns-2">
+                {complianceLines.map((p, i) => <p key={i} className="mb-2 break-inside-avoid">{linkify(p)}</p>)}
+              </div>
+            </div>
+          </section>
         )}
       </div>
 
