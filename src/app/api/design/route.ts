@@ -19,23 +19,28 @@ export async function GET() {
   if (!(await getAccess()).role) return NextResponse.json({ ok: false }, { status: 401 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   const compCutoff = new Date(Date.now() - 120 * 86400_000).toISOString();
-  const [tRes, pRes, mRes, cRes] = await Promise.all([
+  const [tRes, pRes, mRes, cRes, campRes] = await Promise.all([
     rest(`asana_tasks?select=gid,name,notes,assignee,due_on,completed,section,project_gid,project_label,permalink_url,modified_at&project_label=not.in.(${encodeURIComponent('"Blogs","Content To Do"')})&order=due_on.asc.nullslast&limit=5000`),
     rest("design_priorities?select=*&order=rank.asc"),
     rest("design_task_meta?select=task_gid,priority,notes,updated_by,updated_at&limit=5000"),
     rest(`design_completions?select=task_gid,name,project_label,due_on,created_at_asana,completed_at,source&completed_at=gte.${compCutoff}&order=completed_at.desc&limit=2000`),
+    rest(`campaigns?select=id,campaign,brand,status,key_date,end_date,share_token,brief&brief->>designRequired=eq.true&order=key_date.asc.nullslast`),
   ]);
   const tText = await tRes.text();
   if (!tRes.ok) return NextResponse.json({ ok: true, needsSetup: missing(tRes.status, tText), tasks: [], priorities: [] });
   const pText = pRes.ok ? await pRes.text() : "[]";
   const mText = mRes.ok ? await mRes.text() : "[]";
   const cText = cRes.ok ? await cRes.text() : "[]";
+  const campText = campRes.ok ? await campRes.text() : "[]";
   return NextResponse.json({
     ok: true,
     tasks: JSON.parse(tText || "[]"),
     priorities: pRes.ok ? JSON.parse(pText || "[]") : [],
     meta: mRes.ok ? JSON.parse(mText || "[]") : [],
     completions: cRes.ok ? JSON.parse(cText || "[]") : [],
+    designCampaigns: campRes.ok
+      ? JSON.parse(campText || "[]").map((c: any) => ({ id: c.id, campaign: c.campaign, brand: c.brand, status: c.status, key_date: c.key_date, end_date: c.end_date, briefUrl: c.share_token ? `/c/${c.share_token}` : null, oneLiner: c.brief?.oneLiner ?? "" }))
+      : [],
     prioritiesSetup: pRes.ok || !missing(pRes.status, pText),
     metaSetup: mRes.ok,
     asanaWrite: !!process.env.ASANA_TOKEN,

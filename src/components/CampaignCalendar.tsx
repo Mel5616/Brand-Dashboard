@@ -222,6 +222,16 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
     if (item.id.startsWith("temp-")) return;
     patch(item.id, { brief: { ...cur } } as Partial<Campaign>);
   }
+  // "Design required" — flags the campaign onto the Design tab so the designer
+  // sees it in her queue. Stored in brief.designRequired; saves immediately.
+  function toggleDesignRequired(item: Campaign) {
+    const cur = { ...(briefDraft.current[item.id] ?? (item.brief as any) ?? {}) };
+    cur.designRequired = !cur.designRequired;
+    briefDraft.current[item.id] = cur;
+    setItems(prev => prev.map(it => (it.id === item.id ? { ...it, brief: { ...cur } } : it)));
+    if (item.id.startsWith("temp-")) return;
+    patch(item.id, { brief: { ...cur } } as Partial<Campaign>);
+  }
   // Compliance flags — structured { label, note } rows stored in brief.complianceFlags.
   function setFlags(item: Campaign, flags: { label: string; note: string }[]) {
     const cur = { ...(briefDraft.current[item.id] ?? (item.brief as any) ?? {}), complianceFlags: flags };
@@ -501,7 +511,19 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                           })()}
                           <p className="text-[11px] text-gray-400">Owner {c.owner || "TBC"}{c.channel ? ` · ${c.channel}` : ""}</p>
                           {c.note && <p className="text-[11px] text-gray-500 leading-snug">{c.note}</p>}
-                          <p className="text-[11px] font-medium text-emerald-500 flex items-center gap-1">{flagged && <span title="Compliance flag" className="text-amber-500">⚠</span>}Open brief →</p>
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-[11px] font-medium text-emerald-500 flex items-center gap-1">{flagged && <span title="Compliance flag" className="text-amber-500">⚠</span>}Open brief →</p>
+                            {(canEdit || (c.brief as any)?.designRequired) && (
+                              <button
+                                onClick={canEdit ? (e => { e.stopPropagation(); toggleDesignRequired(c); }) : undefined}
+                                title={canEdit ? "Flag this campaign to the Design tab" : "On the Design tab"}
+                                className={`text-[10.5px] font-semibold rounded-full px-2 py-0.5 transition-colors ${(c.brief as any)?.designRequired
+                                  ? "bg-pink-100 text-pink-700"
+                                  : "text-gray-300 border border-dashed border-gray-200 hover:text-pink-500 hover:border-pink-200"} ${canEdit ? "" : "cursor-default"}`}>
+                                🎨 {(c.brief as any)?.designRequired ? "Design required ✓" : "Design required"}
+                              </button>
+                            )}
+                          </div>
                         </article>
                       );
                     })}
