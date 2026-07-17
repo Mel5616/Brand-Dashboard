@@ -72,7 +72,7 @@ def brand_for(name, brands):
             return i
     return None
 
-OPT_FIELDS = ("name,notes,completed,completed_at,created_at,due_on,permalink_url,modified_at,"
+OPT_FIELDS = ("name,notes,completed,completed_at,created_at,created_by.name,due_on,permalink_url,modified_at,"
               "assignee.name,memberships.section.name,memberships.project.gid,"
               "custom_fields.name,custom_fields.display_value,custom_fields.enum_value.name")
 
@@ -205,6 +205,7 @@ def main():
                 "name": t.get("name") or "",
                 "notes": (t.get("notes") or "")[:2000],
                 "assignee": ((t.get("assignee") or {}).get("name")),
+                "requested_by": ((t.get("created_by") or {}).get("name")),
                 "due_on": t.get("due_on"),
                 "completed": bool(t.get("completed")),
                 "completed_at": t.get("completed_at"),

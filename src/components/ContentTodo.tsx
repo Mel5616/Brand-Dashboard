@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 // notes share design_task_meta.
 type Task = {
   gid: string; name: string; notes: string; assignee: string | null; due_on: string | null;
-  section: string | null; project_gid: string; permalink_url: string | null;
+  section: string | null; project_gid: string; permalink_url: string | null; requested_by?: string | null;
 };
 type Meta = { priority?: "high" | "medium" | "low" | null; notes?: string | null };
 
@@ -131,10 +131,15 @@ export function ContentTodo({ admin }: { admin: boolean }) {
                         <button onClick={() => complete(t.gid)} title="Mark done (updates Asana)"
                           className="w-[17px] h-[17px] rounded-full border-2 border-gray-300 hover:border-emerald-500 hover:bg-emerald-100 shrink-0 transition-colors mt-0.5" />
                         <div className="min-w-0 flex-1">
-                          <p className="text-[13.5px] text-slate-700 leading-snug line-clamp-2 break-words">
-                            {t.permalink_url ? <a href={t.permalink_url} target="_blank" rel="noreferrer" className="hover:text-emerald-700 hover:underline" title={t.name}>{t.name}</a> : t.name}
+                          <p className="text-[13.5px] text-slate-700 leading-snug">
+                            {t.permalink_url ? <a href={t.permalink_url} target="_blank" rel="noreferrer" className="hover:text-emerald-700 hover:underline">{t.name}</a> : t.name}
                           </p>
-                          {t.assignee && <p className="text-[11px] text-gray-400 truncate">{t.assignee}</p>}
+                          {(t.assignee || t.requested_by) && (
+                            <p className="text-[11px] text-gray-400">
+                              {t.assignee}
+                              {t.requested_by && <span className="ml-1 bg-gray-50 rounded-full px-1.5 py-0.5" title={`Requested by ${t.requested_by}`}>req. {t.requested_by.split(" ")[0]}</span>}
+                            </p>
+                          )}
                         </div>
                         {(p || admin) && (
                           <span className={`flex items-center gap-1 shrink-0 mt-0.5 ${p ? "" : "opacity-0 group-hover:opacity-100"}`}>

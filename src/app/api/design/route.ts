@@ -19,14 +19,18 @@ export async function GET() {
   if (!(await getAccess()).role) return NextResponse.json({ ok: false }, { status: 401 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   const compCutoff = new Date(Date.now() - 120 * 86400_000).toISOString();
-  const [tRes, pRes, mRes, cRes, campRes] = await Promise.all([
-    rest(`asana_tasks?select=gid,name,notes,assignee,due_on,completed,section,project_gid,project_label,permalink_url,modified_at&project_label=not.in.(${encodeURIComponent('"Blogs","Content To Do"')})&order=due_on.asc.nullslast&limit=5000`),
+  const taskSelect = (withReq: boolean) => `asana_tasks?select=gid,name,notes,assignee,due_on,completed,section,project_gid,project_label,permalink_url,modified_at${withReq ? ",requested_by" : ""}&project_label=not.in.(${encodeURIComponent('"Blogs","Content To Do"')})&order=due_on.asc.nullslast&limit=5000`;
+  const [tResFirst, pRes, mRes, cRes, campRes] = await Promise.all([
+    rest(taskSelect(true)),
     rest("design_priorities?select=*&order=rank.asc"),
     rest("design_task_meta?select=task_gid,priority,notes,updated_by,updated_at&limit=5000"),
     rest(`design_completions?select=task_gid,name,project_label,due_on,created_at_asana,completed_at,source&completed_at=gte.${compCutoff}&order=completed_at.desc&limit=2000`),
     rest(`campaigns?select=id,campaign,brand,status,key_date,end_date,share_token,brief&brief->>designRequired=eq.true&order=key_date.asc.nullslast`),
   ]);
-  const tText = await tRes.text();
+  // requested_by may not exist yet (add_asana_requested_by.sql) — retry without.
+  let tRes = tResFirst;
+  let tText = await tRes.text();
+  if (!tRes.ok && /requested_by/.test(tText)) { tRes = await rest(taskSelect(false)); tText = await tRes.text(); }
   if (!tRes.ok) return NextResponse.json({ ok: true, needsSetup: missing(tRes.status, tText), tasks: [], priorities: [] });
   const pText = pRes.ok ? await pRes.text() : "[]";
   const mText = mRes.ok ? await mRes.text() : "[]";
@@ -154,13 +158,18 @@ export async function POST(req: Request) {
     const out = await res.json().catch(() => null);
     if (!res.ok || !out?.data?.gid) return NextResponse.json({ ok: false, error: `Asana: ${JSON.stringify(out).slice(0, 150)}` }, { status: 502 });
     const t = out.data;
-    const row = {
+    const row: any = {
       gid: t.gid, name, notes: data.notes ?? "", assignee: null, due_on: data.due_on ?? null,
       completed: false, section: "", status: "", priority: "", project_gid,
       project_label: String(b.project_label || "").slice(0, 120) || null,
       permalink_url: t.permalink_url ?? null, modified_at: new Date().toISOString(),
+      requested_by: by ? String(by).split("@")[0] : null,
     };
-    await rest("asana_tasks?on_conflict=gid", { method: "POST", headers: h({ Prefer: "resolution=merge-duplicates,return=minimal" }), body: JSON.stringify(row) });
+    let up = await rest("asana_tasks?on_conflict=gid", { method: "POST", headers: h({ Prefer: "resolution=merge-duplicates,return=minimal" }), body: JSON.stringify(row) });
+    if (!up.ok && /requested_by/.test(await up.text())) {
+      delete row.requested_by;
+      up = await rest("asana_tasks?on_conflict=gid", { method: "POST", headers: h({ Prefer: "resolution=merge-duplicates,return=minimal" }), body: JSON.stringify(row) });
+    }
     return NextResponse.json({ ok: true, item: row });
   }
 

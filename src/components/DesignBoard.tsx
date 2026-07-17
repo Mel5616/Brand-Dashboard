@@ -11,7 +11,7 @@ import { useEffect, useMemo, useState } from "react";
 type Task = {
   gid: string; name: string; notes: string; assignee: string | null; due_on: string | null;
   completed: boolean; section: string; project_gid: string; project_label: string | null;
-  permalink_url: string | null; modified_at: string;
+  permalink_url: string | null; modified_at: string; requested_by?: string | null;
 };
 type Priority = { task_gid: string; rank: number; bucket?: string | null };
 const BUCKETS = [
@@ -251,53 +251,58 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
     const p = m?.priority && PRIO[m.priority];
     return (
       <div>
-        <div className="flex items-start gap-2.5 py-[7px] group">
-          <button onClick={() => complete(t.gid)} title="Mark done (updates Asana)"
-            className="w-[17px] h-[17px] rounded-full border-2 border-gray-300 hover:border-emerald-500 hover:bg-emerald-100 shrink-0 transition-colors mt-0.5" />
-          <div className="min-w-0 flex-1">
-            <p className="text-[13.5px] text-slate-700 leading-snug line-clamp-2 break-words">
-              {t.permalink_url ? <a href={t.permalink_url} target="_blank" rel="noreferrer" className="hover:text-emerald-700 hover:underline" title={t.name}>{cleanName(t.name)}</a> : cleanName(t.name)}
+        <div className="py-[7px] group">
+          {/* Line 1: tick + full task name (never truncated) */}
+          <div className="flex items-start gap-2.5">
+            <button onClick={() => complete(t.gid)} title="Mark done (updates Asana)"
+              className="w-[17px] h-[17px] rounded-full border-2 border-gray-300 hover:border-emerald-500 hover:bg-emerald-100 shrink-0 transition-colors mt-0.5" />
+            <p className="text-[13.5px] text-slate-700 leading-snug flex-1 min-w-0">
+              {t.permalink_url ? <a href={t.permalink_url} target="_blank" rel="noreferrer" className="hover:text-emerald-700 hover:underline">{cleanName(t.name)}</a> : cleanName(t.name)}
             </p>
-            {inQueue && <p className="text-[11px] text-gray-400 truncate">{t.project_label}</p>}
           </div>
-          {metaSetup && (p || admin) && (
-            <span className={`flex items-center gap-1 shrink-0 mt-0.5 ${p ? "" : "opacity-0 group-hover:opacity-100"}`}>
-              {(["high", "medium", "low"] as const).map(k => {
-                const active = m?.priority === k;
-                if (!admin && !active) return null;
-                return (
-                  <button key={k} onClick={admin ? () => setPriority(t.gid, active ? null : k) : undefined}
-                    title={admin ? `${PRIO[k].label} priority${active ? " — click to clear" : ""}` : `${PRIO[k].label} priority`}
-                    className={`text-[10px] font-bold rounded-full transition-all ${active ? `${PRIO[k].cls} px-2 py-[3px] uppercase tracking-wide` : `w-[19px] h-[19px] border ${PRIO[k].idle}`} ${admin ? "" : "cursor-default"}`}>
-                    {active ? PRIO[k].label : PRIO[k].letter}
-                  </button>
-                );
-              })}
-            </span>
-          )}
-          {metaSetup && (
-            <button onClick={() => openNotes(t.gid)} title={m?.notes ? m.notes : "Add a note (stays on the dashboard)"}
-              className={`text-[13px] leading-none shrink-0 mt-0.5 ${m?.notes ? "opacity-100" : "opacity-0 group-hover:opacity-100 grayscale"}`}>💬</button>
-          )}
-          {admin && !inQueue && (
-            <span className="relative shrink-0">
-              <button onClick={() => setPlusFor(cur => cur === t.gid ? null : t.gid)} title="Add to the plan"
-                className={`text-[15px] leading-none font-bold text-emerald-500 hover:text-emerald-700 px-0.5 mt-0.5 ${plusFor === t.gid ? "" : "opacity-0 group-hover:opacity-100"}`}>＋</button>
-              {plusFor === t.gid && (
-                <span className="absolute right-0 top-6 z-20 bg-white border border-gray-200 rounded-xl shadow-lg p-1 flex flex-col min-w-[140px]">
-                  {BUCKETS.map(bk => (
-                    <button key={bk.key} onClick={() => addToQueue(t.gid, bk.key)}
-                      className="text-left text-[12.5px] text-slate-600 hover:bg-gray-50 rounded-lg px-2.5 py-1.5 whitespace-nowrap">{bk.label}</button>
-                  ))}
-                </span>
-              )}
-            </span>
-          )}
-          {admin && inQueue && <button onClick={() => removeFromQueue(t.gid)} className="text-[11px] text-gray-400 hover:text-rose-500 shrink-0 mt-0.5">remove</button>}
-          {admin && !inQueue
-            ? <input type="date" value={t.due_on ?? ""} onChange={e => setDue(t.gid, e.target.value)}
-                className={`text-[11.5px] border rounded-md px-1 py-0.5 shrink-0 w-[108px] ${late ? "border-rose-200 bg-rose-50 text-rose-600" : "border-transparent hover:border-gray-200 text-slate-400 bg-transparent"}`} />
-            : t.due_on && <span className={`text-[11.5px] rounded-md px-1.5 py-0.5 shrink-0 ${late ? "bg-rose-50 text-rose-600 font-semibold" : "text-gray-400"}`}>{dShort(t.due_on)}</span>}
+          {/* Line 2: meta + controls */}
+          <div className="flex items-center gap-1.5 flex-wrap pl-[27px] mt-0.5">
+            {admin && !inQueue
+              ? <input type="date" value={t.due_on ?? ""} onChange={e => setDue(t.gid, e.target.value)}
+                  className={`text-[11px] border rounded-md px-1 py-0.5 shrink-0 w-[104px] ${late ? "border-rose-200 bg-rose-50 text-rose-600" : "border-transparent hover:border-gray-200 text-slate-400 bg-transparent"}`} />
+              : t.due_on && <span className={`text-[11px] rounded-md px-1 py-0.5 shrink-0 ${late ? "bg-rose-50 text-rose-600 font-semibold" : "text-gray-400"}`}>{dShort(t.due_on)}</span>}
+            {t.requested_by && <span className="text-[10.5px] text-gray-400 bg-gray-50 rounded-full px-1.5 py-0.5" title={`Requested by ${t.requested_by}`}>req. {t.requested_by.split(" ")[0]}</span>}
+            {inQueue && <span className="text-[10.5px] text-gray-400">{t.project_label}</span>}
+            {metaSetup && (p || admin) && (
+              <span className={`flex items-center gap-1 ${p ? "" : "opacity-0 group-hover:opacity-100"}`}>
+                {(["high", "medium", "low"] as const).map(k => {
+                  const active = m?.priority === k;
+                  if (!admin && !active) return null;
+                  return (
+                    <button key={k} onClick={admin ? () => setPriority(t.gid, active ? null : k) : undefined}
+                      title={admin ? `${PRIO[k].label} priority${active ? " — click to clear" : ""}` : `${PRIO[k].label} priority`}
+                      className={`text-[10px] font-bold rounded-full transition-all ${active ? `${PRIO[k].cls} px-2 py-[2px] uppercase tracking-wide` : `w-[18px] h-[18px] border ${PRIO[k].idle}`} ${admin ? "" : "cursor-default"}`}>
+                      {active ? PRIO[k].label : PRIO[k].letter}
+                    </button>
+                  );
+                })}
+              </span>
+            )}
+            {metaSetup && (
+              <button onClick={() => openNotes(t.gid)} title={m?.notes ? m.notes : "Add a note (stays on the dashboard)"}
+                className={`text-[13px] leading-none ${m?.notes ? "opacity-100" : "opacity-0 group-hover:opacity-100 grayscale"}`}>💬</button>
+            )}
+            {admin && !inQueue && (
+              <span className="relative">
+                <button onClick={() => setPlusFor(cur => cur === t.gid ? null : t.gid)} title="Add to the plan"
+                  className={`text-[15px] leading-none font-bold text-emerald-500 hover:text-emerald-700 px-0.5 ${plusFor === t.gid ? "" : "opacity-0 group-hover:opacity-100"}`}>＋</button>
+                {plusFor === t.gid && (
+                  <span className="absolute left-0 top-6 z-20 bg-white border border-gray-200 rounded-xl shadow-lg p-1 flex flex-col min-w-[140px]">
+                    {BUCKETS.map(bk => (
+                      <button key={bk.key} onClick={() => addToQueue(t.gid, bk.key)}
+                        className="text-left text-[12.5px] text-slate-600 hover:bg-gray-50 rounded-lg px-2.5 py-1.5 whitespace-nowrap">{bk.label}</button>
+                    ))}
+                  </span>
+                )}
+              </span>
+            )}
+            {admin && inQueue && <button onClick={() => removeFromQueue(t.gid)} className="text-[10.5px] text-gray-400 hover:text-rose-500">remove</button>}
+          </div>
         </div>
         {notesFor === t.gid && (
           <div className="ml-7 mb-2 bg-amber-50/60 border border-amber-100 rounded-xl p-2.5 space-y-2">

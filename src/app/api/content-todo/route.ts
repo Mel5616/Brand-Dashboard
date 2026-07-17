@@ -12,10 +12,12 @@ const h = () => ({ apikey: sbKey!, Authorization: `Bearer ${sbKey}`, "Content-Ty
 export async function GET() {
   if (!(await getAccess()).role) return NextResponse.json({ ok: false }, { status: 401 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
-  const [tRes, mRes] = await Promise.all([
-    fetch(`${sbUrl}/rest/v1/asana_tasks?select=gid,name,notes,assignee,due_on,completed,section,project_gid,project_label,permalink_url&project_label=eq.${encodeURIComponent("Content To Do")}&completed=eq.false&order=due_on.asc.nullslast&limit=1000`, { headers: h(), cache: "no-store" }),
+  const sel = (withReq: boolean) => `${sbUrl}/rest/v1/asana_tasks?select=gid,name,notes,assignee,due_on,completed,section,project_gid,project_label,permalink_url${withReq ? ",requested_by" : ""}&project_label=eq.${encodeURIComponent("Content To Do")}&completed=eq.false&order=due_on.asc.nullslast&limit=1000`;
+  let [tRes, mRes] = await Promise.all([
+    fetch(sel(true), { headers: h(), cache: "no-store" }),
     fetch(`${sbUrl}/rest/v1/design_task_meta?select=task_gid,priority,notes&limit=5000`, { headers: h(), cache: "no-store" }),
   ]);
+  if (!tRes.ok && /requested_by/.test(await tRes.text())) tRes = await fetch(sel(false), { headers: h(), cache: "no-store" });
   const tasks = tRes.ok ? JSON.parse((await tRes.text()) || "[]") : [];
   const meta = mRes.ok ? JSON.parse((await mRes.text()) || "[]") : [];
   return NextResponse.json({ ok: true, tasks, meta, asanaWrite: !!process.env.ASANA_TOKEN });
