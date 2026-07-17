@@ -71,8 +71,10 @@ def fetch_orders(domain, token, ds, de):
             query: "financial_status:paid created_at:>={ds} created_at:<={de}", sortKey: CREATED_AT) {{
           edges {{ cursor node {{ sourceName createdAt
             totalPriceSet {{ shopMoney {{ amount }} }} totalTaxSet {{ shopMoney {{ amount }} }}
+            totalShippingPriceSet {{ shopMoney {{ amount }} }}
             lineItems(first: 50) {{ edges {{ node {{ title quantity
               discountedTotalSet {{ shopMoney {{ amount }} }}
+              originalTotalSet {{ shopMoney {{ amount }} }}
               product {{ vendor tags }} }} }} }}
           }} }} pageInfo {{ hasNextPage }} }} }}'''
         r = gql(domain, token, q)
@@ -88,6 +90,25 @@ def order_ex_gst(o):
     gross = float(o["totalPriceSet"]["shopMoney"]["amount"])
     tax = float((o.get("totalTaxSet") or {}).get("shopMoney", {}).get("amount") or 0)
     return (gross - tax) if tax > 0 else round(gross / 1.1, 2)
+
+def scaled_lines(o):
+    """Line items as [(title, qty, ex-GST amount)], scaled so the order's line
+    amounts sum to its ex-GST product total (net of shipping). Captures
+    ORDER-level discounts (show deals at the till) that line-level
+    discountedTotalSet misses — without this, product sums overstate."""
+    lines = []
+    for li in o["lineItems"]["edges"]:
+        n = li["node"]
+        amt = float(n["discountedTotalSet"]["shopMoney"]["amount"]) / 1.1
+        lines.append([n["title"][:200], int(n.get("quantity") or 0), amt])
+    ls = sum(x[2] for x in lines)
+    ship = float((o.get("totalShippingPriceSet") or {}).get("shopMoney", {}).get("amount") or 0) / 1.1
+    target = max(0.0, order_ex_gst(o) - ship)
+    if ls > 0 and target > 0:
+        f = target / ls
+        for x in lines:
+            x[2] = round(x[2] * f, 2)
+    return [(t, q, a) for t, q, a in lines]
 
 def tz_offset(state):
     s = (state or "").lower()
@@ -162,26 +183,30 @@ def main():
                 if is_qr:
                     qr_rev += ex; qr_orders += 1
                 add_hour(o["createdAt"], ex)
-                for li in o["lineItems"]["edges"]:
-                    n = li["node"]
-                    amt = round(float(n["discountedTotalSet"]["shopMoney"]["amount"]) / 1.1, 2)
-                    p = prod[bucket][n["title"][:200]]; p[0] += amt; p[1] += int(n.get("quantity") or 0)
+                for title, qty, amt in scaled_lines(o):
+                    p = prod[bucket][title]; p[0] += amt; p[1] += qty
 
         # Coolkidz booth till: line items split per brand.
         if ck and ck.get("domain") and ck.get("token"):
             try:
                 for o in fetch_orders(ck["domain"], ck["token"], ds, de):
+                    # This leg mirrors sync.py's booth-till split EXACTLY, which
+                    # uses ORIGINAL (pre-discount) line prices — so the product
+                    # sums reconcile with the existing BY BRAND figures. Known
+                    # consequence (flagged 17 Jul 2026): both overstate actual
+                    # paid by any show discount given at the till.
                     order_amt = 0.0
                     for li in o["lineItems"]["edges"]:
                         n = li["node"]
-                        bn = match(n["title"], (n.get("product") or {}).get("vendor", ""), (n.get("product") or {}).get("tags", []))
+                        pr = n.get("product") or {}
+                        bn = match(n["title"], pr.get("vendor", ""), pr.get("tags", []))
                         if not bn:
                             continue
-                        amt = round(float(n["discountedTotalSet"]["shopMoney"]["amount"]) / 1.1, 2)
+                        amt = round(float(n["originalTotalSet"]["shopMoney"]["amount"]) / 1.1, 2)
                         p = prod[bn][n["title"][:200]]; p[0] += amt; p[1] += int(n.get("quantity") or 0)
                         order_amt += amt
                     if order_amt > 0:
-                        add_hour(o["createdAt"], order_amt)
+                        add_hour(o["createdAt"], round(order_amt, 2))
             except Exception as e:
                 print(f"   ✗ Coolkidz till: {e}")
 
