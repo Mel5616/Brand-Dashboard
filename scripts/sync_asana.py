@@ -124,7 +124,7 @@ def resolve_projects(config):
         items = json.loads(raw) if isinstance(raw, str) else raw
         for it in items:
             if it.get("gid"):
-                out.append((str(it["gid"]), it.get("label") or "Tasks"))
+                out.append((str(it["gid"]), it.get("label") or None))  # None → resolve real name from Asana
     # Fallback / additive: individually named secrets.
     seen = {g for g, _ in out}
     for env_key, label in NAMED_PROJECTS:
@@ -148,6 +148,13 @@ def main():
 
     all_rows = []
     for project, label in projects:
+        if not label:
+            # No label configured — use the board's actual name from Asana.
+            try:
+                data = asana_get(f"projects/{project}", token, {"opt_fields": "name"})
+                label = (data.get("data") or {}).get("name") or "Tasks"
+            except Exception:
+                label = "Tasks"
         try:
             tasks = list_tasks(project, token)
         except urllib.error.HTTPError as e:
