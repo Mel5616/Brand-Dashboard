@@ -238,7 +238,7 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
       )}
 
       {upcomingLaunches.length > 0 && (
-        <Section title="Upcoming launches">
+        <Section title="Upcoming campaigns">
           <div className="space-y-2">
             {upcomingLaunches.map((l, i) => (
               <div key={i} className="flex items-start gap-3 rounded-lg border border-gray-100 px-3 py-2">
