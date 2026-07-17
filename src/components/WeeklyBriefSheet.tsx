@@ -6,7 +6,7 @@ type Objective = { text: string; done?: boolean };
 type Snapshot = {
   generatedAt?: string;
   d2c?: { weekStart: string | null; weekEnd?: string | null; partial?: boolean; total: number; wowPct: number | null; top: { brand: string; revenue: number; wow: number | null }[]; fallers: { brand: string; wow: number | null }[] };
-  launches?: { campaign: string; brand: string; keyDate: string | null; status: string; oneLiner: string }[];
+  launches?: { campaign: string; brand: string; keyDate: string | null; status: string; oneLiner: string; briefUrl?: string | null }[];
   promos?: { channel: string; tier: number | null; endDate: string; note: string; brands: string[] }[];
   events?: { name: string; type: string; dateStart: string; dateEnd: string | null; venue: string | null; url: string | null; ticketsSold: number | null; capacity: number | null }[];
   attention?: { text: string; kind: string }[];
@@ -128,7 +128,7 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
       )}
 
       {events.length > 0 && (
-        <Section title="What's on this week">
+        <Section title="What's on · next two weeks">
           <div className="space-y-2">
             {events.map((e, i) => {
               const sameDay = !e.dateEnd || e.dateEnd === e.dateStart;
@@ -148,6 +148,7 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
                       {sameDay ? dateShort(e.dateStart) : `${dateShort(e.dateStart)} – ${dateShort(e.dateEnd)}`}
                       {e.venue ? ` · ${e.venue}` : ""}
                       {e.ticketsSold != null && e.capacity ? ` · ${e.ticketsSold}/${e.capacity} booked` : ""}
+                      {e.type === "Tradeshow" && e.url && <> · <a href={e.url} target="_blank" rel="noreferrer" className="text-emerald-600 font-semibold hover:underline">Show deals →</a></>}
                     </p>
                   </div>
                 </div>
@@ -184,7 +185,7 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
                   <span className="text-[9px] font-semibold uppercase tracking-wider text-emerald-600 mt-1.5">Live</span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[14px] font-semibold text-slate-800">{l.campaign}</p>
+                  <p className="text-[14px] font-semibold text-slate-800">{l.campaign}{l.briefUrl && <> <a href={l.briefUrl} target="_blank" rel="noreferrer" className="text-[12px] font-semibold text-emerald-600 hover:underline">Brief →</a></>}</p>
                   <p className="text-[12px] text-gray-500">{l.brand}{l.keyDate ? ` · since ${dateShort(l.keyDate)}` : ""}</p>
                   {l.oneLiner && <p className="text-[13px] text-slate-500 mt-0.5 leading-snug">{l.oneLiner}</p>}
                 </div>
@@ -204,7 +205,7 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
                   <p className="text-lg font-bold text-slate-700 leading-none">{l.keyDate ? new Date(l.keyDate + "T00:00:00").getDate() : "·"}</p>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[14px] font-semibold text-slate-800">{l.campaign}</p>
+                  <p className="text-[14px] font-semibold text-slate-800">{l.campaign}{l.briefUrl && <> <a href={l.briefUrl} target="_blank" rel="noreferrer" className="text-[12px] font-semibold text-emerald-600 hover:underline">Brief →</a></>}</p>
                   <p className="text-[12px] text-gray-500">{l.brand}{l.status ? ` · ${l.status}` : ""}</p>
                   {l.oneLiner && <p className="text-[13px] text-slate-500 mt-0.5 leading-snug">{l.oneLiner}</p>}
                 </div>

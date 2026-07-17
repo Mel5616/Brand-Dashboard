@@ -22,7 +22,7 @@ async function buildSnapshot() {
     sb("brand_daily?select=brand_id,day,revenue"),
     sb("brand_monthly?select=brand_id,month_key,revenue&order=month_key"),
     sb("brand_targets?select=brand_id,month_key,revenue_target"),
-    sb("campaigns?select=campaign,brand,horizon,status,key_date,end_date,owner,brief&order=key_date"),
+    sb("campaigns?select=campaign,brand,horizon,status,key_date,end_date,owner,brief,share_token&order=key_date"),
     sb(`instagram_media?select=brand_id,posted_at,caption,permalink,image_url,like_count,comments_count,reach,saved,shares&posted_at=gte.${wkAgo}`),
     sb("klaviyo_metrics?select=brand_id,month_key,revenue,open_rate,click_rate,emails_sent&order=month_key"),
     sb("promotions?select=brand,brand_id,period_start,period_end,note,price,tier,channel"),
@@ -31,7 +31,7 @@ async function buildSnapshot() {
     sb(`pinterest_ads_daily?select=brand_id,date,spend,revenue&date=gte.${adCut}`),
     sb("ga4_metrics?select=brand_id,month_key,sessions,organic_sessions,new_users,engagement_rate&order=month_key"),
     sb("eventbrite_events?select=name,start_at,end_at,venue,status,url,capacity,tickets_sold&order=start_at"),
-    sb("tradeshows?select=name,date_start,date_end,location,state"),
+    sb("tradeshows?select=name,date_start,date_end,location,state,deals_token"),
   ]);
   const nameById = new Map<number, string>(brands.map((b: any) => [b.id, b.name]));
   const today = new Date(); const todayStr = iso(today);
@@ -75,6 +75,7 @@ async function buildSnapshot() {
   }).slice(0, 12).map((c: any) => ({
     campaign: c.campaign, brand: c.brand, keyDate: c.key_date, status: c.status,
     oneLiner: c.brief?.oneLiner || c.note || "",
+    briefUrl: c.share_token ? `/c/${c.share_token}` : null,
   }));
 
   // ── Needs attention ──
@@ -199,9 +200,9 @@ async function buildSnapshot() {
     revPerVisit: gCur.sessions > 0 ? Math.round((d2cRevForMonth(g4Latest) / gCur.sessions) * 100) / 100 : null,
   } : null;
 
-  // ── What's on this week: Tune-Up Days / special events (Eventbrite) and
-  // tradeshows falling in the next 7 days. ──
-  const weekAhead = iso(new Date(Date.now() + 7 * 864e5));
+  // ── What's on: Tune-Up Days / special events (Eventbrite) and tradeshows in
+  // the next 14 days, so the team sees them coming a week out. ──
+  const weekAhead = iso(new Date(Date.now() + 14 * 864e5));
   const events: { name: string; type: string; dateStart: string; dateEnd: string | null; venue: string | null; url: string | null; ticketsSold: number | null; capacity: number | null }[] = [];
   for (const e of (ebEvents as any[])) {
     const d = String(e.start_at || "").slice(0, 10);
@@ -216,7 +217,7 @@ async function buildSnapshot() {
   }
   for (const t of (shows as any[])) {
     if (!t.date_start || t.date_start > weekAhead || (t.date_end ?? t.date_start) < todayStr) continue;
-    events.push({ name: t.name, type: "Tradeshow", dateStart: t.date_start, dateEnd: t.date_end ?? null, venue: t.location ?? t.state ?? null, url: null, ticketsSold: null, capacity: null });
+    events.push({ name: t.name, type: "Tradeshow", dateStart: t.date_start, dateEnd: t.date_end ?? null, venue: t.location ?? t.state ?? null, url: t.deals_token ? `/deals/${t.deals_token}` : null, ticketsSold: null, capacity: null });
   }
   events.sort((a, b) => a.dateStart.localeCompare(b.dateStart));
 
