@@ -46,6 +46,7 @@ jobs:
           ASANA_TOKEN: ${{ secrets.ASANA_TOKEN }}
           ASANA_PROJECT_ID: ${{ secrets.ASANA_PROJECT_ID }}
           ASANA_DESIGN_PROJECT_ID: ${{ secrets.ASANA_DESIGN_PROJECT_ID }}
+          ASANA_PROJECTS: ${{ secrets.ASANA_PROJECTS }}
         run: python3 -u scripts/sync_asana.py
 
       - name: Run sync
