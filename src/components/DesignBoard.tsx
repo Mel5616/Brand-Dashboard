@@ -15,6 +15,19 @@ type Priority = { task_gid: string; rank: number };
 const inp = "text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400";
 const dShort = (s?: string | null) => s ? new Date(s + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" }) : "";
 const todayStr = () => new Date().toISOString().slice(0, 10);
+// Task names are prefixed with brand codes ("UB - ...", "MIA - ..."). Group by them.
+const BRAND_CODES: Record<string, string> = {
+  UB: "UPPAbaby", NAN: "Nanit", NA: "Nanit", ST: "SmarTrike", SMT: "SmarTrike",
+  FR: "Frida", FRI: "Frida", WF: "WonderFold", GB: "Gaia Baby", GAIA: "Gaia Baby",
+  HN: "Hannie", MG: "Magic", MAG: "Magic", MIA: "MiaMily", MV: "Mamave", MAM: "Mamave",
+  MM: "Matchstick Monkey", ZZ: "Zazu", CK: "Coolkidz",
+};
+const brandOf = (name: string) => {
+  const m = (name || "").match(/^([A-Za-z]{2,5})\s*[-–—:]/);
+  if (!m) return "Other";
+  const code = m[1].toUpperCase();
+  return BRAND_CODES[code] || code;
+};
 
 export function DesignBoard({ admin }: { admin: boolean }) {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -178,13 +191,28 @@ export function DesignBoard({ admin }: { admin: boolean }) {
               <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">{bd.label} <span className="font-normal text-gray-400 normal-case tracking-normal">· {matches.length}{q ? " matching" : " open"}</span></p>
               {!expanded && <span className="text-[12px] text-emerald-600 font-medium">Show ▾</span>}
             </button>
-            {expanded && (
-              <div className="divide-y divide-gray-50 mt-1">
-                {matches.slice(0, 200).map(t => <TaskRow key={t.gid} t={t} inQueue={false} />)}
-                {matches.length > 200 && <p className="text-[12px] text-gray-400 py-2">Showing 200 of {matches.length} — search to narrow.</p>}
-                {matches.length === 0 && <p className="text-[13px] text-gray-300 py-2">{q ? "No matches." : "All queued."}</p>}
-              </div>
-            )}
+            {expanded && (() => {
+              const byBrand = new Map<string, Task[]>();
+              for (const t of matches.slice(0, 400)) {
+                const b2 = brandOf(t.name);
+                byBrand.set(b2, [...(byBrand.get(b2) ?? []), t]);
+              }
+              const groups = [...byBrand.entries()].sort((a, b3) => b3[1].length - a[1].length || a[0].localeCompare(b3[0]));
+              return (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3">
+                  {groups.map(([brand2, ts]) => (
+                    <div key={brand2} className="rounded-xl border border-gray-100 bg-gray-50/50 px-3.5 py-2.5">
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-0.5">{brand2} <span className="font-normal text-gray-400 normal-case tracking-normal">· {ts.length}</span></p>
+                      <div className="divide-y divide-gray-100/70">
+                        {ts.map(t => <TaskRow key={t.gid} t={t} inQueue={false} />)}
+                      </div>
+                    </div>
+                  ))}
+                  {matches.length === 0 && <p className="text-[13px] text-gray-300 py-2">{q ? "No matches." : "All queued."}</p>}
+                  {matches.length > 400 && <p className="text-[12px] text-gray-400 py-2">Showing 400 of {matches.length} — search to narrow.</p>}
+                </div>
+              );
+            })()}
           </div>
         );
       })}
