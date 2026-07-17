@@ -23,10 +23,10 @@ const dShort = (s?: string | null) => s ? new Date(s + "T00:00:00").toLocaleDate
 const todayStr = () => new Date().toISOString().slice(0, 10);
 // Strip the brand-code prefix ("CK - ", "MIA – ") — the card already names the brand.
 const cleanName = (name: string) => (name || "").replace(/^[A-Za-z]{2,5}\s*[-–—:]\s*/, "");
-const PRIO: Record<string, { label: string; cls: string; weight: number }> = {
-  high: { label: "High", cls: "bg-rose-100 text-rose-700", weight: 0 },
-  medium: { label: "Med", cls: "bg-amber-100 text-amber-700", weight: 1 },
-  low: { label: "Low", cls: "bg-sky-100 text-sky-600", weight: 2 },
+const PRIO: Record<string, { label: string; letter: string; cls: string; idle: string; weight: number }> = {
+  high: { label: "High", letter: "H", cls: "bg-rose-500 text-white", idle: "border-rose-200 text-rose-400 hover:bg-rose-50", weight: 0 },
+  medium: { label: "Med", letter: "M", cls: "bg-amber-400 text-white", idle: "border-amber-200 text-amber-500 hover:bg-amber-50", weight: 1 },
+  low: { label: "Low", letter: "L", cls: "bg-sky-400 text-white", idle: "border-sky-200 text-sky-400 hover:bg-sky-50", weight: 2 },
 };
 const prioWeight = (p?: string | null) => (p && PRIO[p] ? PRIO[p].weight : 3);
 // Business weeks run Sunday→Saturday.
@@ -65,7 +65,7 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
   const [af, setAf] = useState({ name: "", notes: "", due_on: "", project_gid: "" });
   const [busy, setBusy] = useState(false);
   const [q, setQ] = useState("");
-  const [channelFilter, setChannelFilter] = useState<"all" | "EDM" | "Social">("all");
+  const [channelFilter, setChannelFilter] = useState<"all" | "EDM" | "Social" | "Sales">("all");
   const [notesFor, setNotesFor] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
   const [insights, setInsights] = useState("");
@@ -93,18 +93,20 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
   const brandColor = (name: string) => brands.find(b => b.name.toLowerCase() === name.toLowerCase())?.color ?? "#94a3b8";
   const brandOfLabel = (label?: string | null) => (label || "").replace(/^(EDM|Social)\s*·\s*/i, "");
 
-  // "EDM · Coolkidz" → channel EDM, brand Coolkidz. Anything unmatched → Other.
+  // "EDM · Coolkidz" → channel EDM, brand Coolkidz. The sales request board
+  // groups by Asana section instead (= who requested). Anything else → Other.
   const channels = useMemo(() => {
     const chan = new Map<string, Map<string, { brand: string; gid: string; tasks: Task[] }>>();
     for (const t of open) {
       const m = (t.project_label || "").match(/^(EDM|Social)\s*·\s*(.+)$/i);
-      const cName = m ? (m[1].toUpperCase() === "EDM" ? "EDM" : "Social") : "Other";
-      const bName = m ? m[2] : (t.project_label || "Board");
+      const sales = !m && /sales/i.test(t.project_label || "");
+      const cName = m ? (m[1].toUpperCase() === "EDM" ? "EDM" : "Social") : sales ? "Sales" : "Other";
+      const bName = m ? m[2] : sales ? (t.section || "General") : (t.project_label || "Board");
       const cMap = chan.get(cName) ?? new Map();
       const cur = cMap.get(bName) ?? { brand: bName, gid: t.project_gid, tasks: [] };
       cur.tasks.push(t); cMap.set(bName, cur); chan.set(cName, cMap);
     }
-    const order = ["EDM", "Social", "Other"];
+    const order = ["EDM", "Social", "Sales", "Other"];
     return order.filter(c => chan.has(c)).map(c => ({
       name: c,
       brands: [...chan.get(c)!.values()].sort((a, b) => b.tasks.length - a.tasks.length || a.brand.localeCompare(b.brand)),
@@ -167,12 +169,11 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
     const d = await post({ action: "task.due", gid, due_on: due_on || null });
     if (!d.ok) setErr(d.error || "Couldn't update the due date in Asana.");
   }
-  async function cyclePriority(gid: string) {
-    const next = ({ high: "medium", medium: "low", low: null } as Record<string, string | null>)[meta[gid]?.priority ?? ""] ?? "high";
+  async function setPriority(gid: string, next: Meta["priority"]) {
     const prev = meta[gid]?.priority ?? null;
-    setMeta(m => ({ ...m, [gid]: { ...m[gid], priority: next as Meta["priority"] } }));
+    setMeta(m => ({ ...m, [gid]: { ...m[gid], priority: next } }));
     const d = await post({ action: "meta.set", gid, priority: next });
-    if (!d.ok) { setMeta(m => ({ ...m, [gid]: { ...m[gid], priority: prev as Meta["priority"] } })); setErr(d.error || "Couldn't save priority."); }
+    if (!d.ok) { setMeta(m => ({ ...m, [gid]: { ...m[gid], priority: prev } })); setErr(d.error || "Couldn't save priority."); }
   }
   function openNotes(gid: string) {
     setNotesFor(cur => cur === gid ? null : gid);
@@ -224,10 +225,19 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
             {inQueue && <p className="text-[11px] text-gray-400 truncate">{t.project_label}</p>}
           </div>
           {metaSetup && (p || admin) && (
-            <button onClick={admin ? () => cyclePriority(t.gid) : undefined} title={admin ? "Click to change priority" : undefined}
-              className={`text-[10.5px] font-bold rounded-full px-2 py-0.5 shrink-0 mt-0.5 uppercase tracking-wide ${p ? p.cls : "text-gray-300 border border-dashed border-gray-200 opacity-0 group-hover:opacity-100"} ${admin ? "cursor-pointer" : "cursor-default"}`}>
-              {p ? p.label : "⚑"}
-            </button>
+            <span className={`flex items-center gap-1 shrink-0 mt-0.5 ${p ? "" : "opacity-0 group-hover:opacity-100"}`}>
+              {(["high", "medium", "low"] as const).map(k => {
+                const active = m?.priority === k;
+                if (!admin && !active) return null;
+                return (
+                  <button key={k} onClick={admin ? () => setPriority(t.gid, active ? null : k) : undefined}
+                    title={admin ? `${PRIO[k].label} priority${active ? " — click to clear" : ""}` : `${PRIO[k].label} priority`}
+                    className={`text-[10px] font-bold rounded-full transition-all ${active ? `${PRIO[k].cls} px-2 py-[3px] uppercase tracking-wide` : `w-[19px] h-[19px] border ${PRIO[k].idle}`} ${admin ? "" : "cursor-default"}`}>
+                    {active ? PRIO[k].label : PRIO[k].letter}
+                  </button>
+                );
+              })}
+            </span>
           )}
           {metaSetup && (
             <button onClick={() => openNotes(t.gid)} title={m?.notes ? m.notes : "Add a note (stays on the dashboard)"}
@@ -305,7 +315,7 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
         </button>
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center col-span-2 sm:col-span-1">
           <div className="inline-flex bg-gray-100 rounded-lg p-0.5 mx-auto">
-            {(["all", "EDM", "Social"] as const).map(c => (
+            {(["all", "EDM", "Social", "Sales"] as const).map(c => (
               <button key={c} onClick={() => setChannelFilter(c)} className={`px-2.5 py-1 rounded-md text-[12px] font-semibold ${channelFilter === c ? "bg-white shadow-sm text-slate-700" : "text-gray-400 hover:text-gray-600"}`}>{c === "all" ? "All" : c}</button>
             ))}
           </div>
@@ -389,7 +399,7 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
         return (
           <div key={c.name}>
             <div className="flex items-baseline gap-2 mb-2 px-1">
-              <h2 className="text-[13px] font-bold uppercase tracking-[0.14em] text-slate-500">{c.name === "EDM" ? "✉️ EDMs" : c.name === "Social" ? "📱 Social" : c.name}</h2>
+              <h2 className="text-[13px] font-bold uppercase tracking-[0.14em] text-slate-500">{c.name === "EDM" ? "✉️ EDMs" : c.name === "Social" ? "📱 Social" : c.name === "Sales" ? "🤝 Sales team requests · by requester" : c.name}</h2>
               <span className="text-[12px] text-gray-400">{total} open</span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
