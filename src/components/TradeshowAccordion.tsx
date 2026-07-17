@@ -188,6 +188,19 @@ export function TradeshowAccordion({
   }
   const [open, setOpen] = useState<Set<string>>(liveIds);
 
+  // Sales breakdown (top products / hourly / QR funnel) per show, lazy-loaded
+  // from /api/tradeshows/report/data on first expand. Keyed by tradeshow_id.
+  const [breakdown, setBreakdown] = useState<Record<string, any>>({});
+  const [bdOpen, setBdOpen] = useState<Set<string>>(new Set());
+  function toggleBreakdown(id: string) {
+    setBdOpen(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+    if (!breakdown[id]) {
+      fetch(`/api/tradeshows/report/data?tradeshow_id=${encodeURIComponent(id)}`)
+        .then(r => r.json()).then(d => setBreakdown(p => ({ ...p, [id]: d.ok ? d : { ok: false } })))
+        .catch(() => setBreakdown(p => ({ ...p, [id]: { ok: false } })));
+    }
+  }
+
   const liveShows    = sorted.filter(t => showStatus(t) === "live");
   const nextUpcoming = upcoming.find(t => showStatus(t) === "upcoming");
   const [view, setView] = useState<"live" | "all">(liveShows.length > 0 ? "live" : "all");
@@ -385,6 +398,59 @@ export function TradeshowAccordion({
                         <input type="file" accept=".html,.htm,text/html,application/pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadReport(ts.id, f, ts.name); e.currentTarget.value = ""; }} />
                       </label>
                       {rep && <button onClick={() => removeReport(ts.id)} className="text-xs text-gray-400 hover:text-rose-500">Remove</button>}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Sales breakdown — top products per brand, hourly pattern, QR funnel */}
+            {status !== "upcoming" && totalRev > 0 && (() => {
+              const bd = breakdown[ts.id];
+              const isBd = bdOpen.has(ts.id);
+              const maxSlot = bd?.ok ? Math.max(1, ...bd.hourlyBySlot.map((s: any) => s.revenue)) : 1;
+              const fmtH = (h: number) => h === 0 ? "12am" : h < 12 ? `${h}am` : h === 12 ? "12pm" : `${h - 12}pm`;
+              return (
+                <div className="rounded-lg border border-gray-100 bg-white px-3 py-2.5">
+                  <button onClick={() => toggleBreakdown(ts.id)} className="w-full flex items-center justify-between gap-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Sales breakdown · products & hourly</p>
+                    <span className="text-[11px] text-emerald-600 font-semibold">{isBd ? "Hide ▴" : "Show ▾"}</span>
+                  </button>
+                  {isBd && !bd && <p className="text-[12px] text-gray-400 pt-2">Loading…</p>}
+                  {isBd && bd && !bd.ok && <p className="text-[12px] text-gray-400 pt-2">No breakdown yet — it syncs for shows ended in the last 60 days.</p>}
+                  {isBd && bd?.ok && (
+                    <div className="pt-3 space-y-4">
+                      {bd.leads && (bd.leads.scans > 0 || bd.leads.orders > 0) && (
+                        <div className="flex flex-wrap gap-2">
+                          {[["QR scans", bd.leads.scans], ["Checkouts started", bd.leads.checkouts], ["QR orders", bd.leads.orders]].map(([l, v]) => (
+                            <span key={String(l)} className="text-[11.5px] rounded-full bg-sky-50 text-sky-700 px-2.5 py-1"><strong>{v as number}</strong> {l}</span>
+                          ))}
+                          {bd.byBrand.find((b: any) => b.brand === "QR") && <span className="text-[11.5px] rounded-full bg-sky-50 text-sky-700 px-2.5 py-1"><strong>${bd.byBrand.find((b: any) => b.brand === "QR").revenue.toLocaleString()}</strong> QR revenue (ex-GST)</span>}
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Sales by hour (both days combined)</p>
+                        <div className="flex items-end gap-1 h-16">
+                          {bd.hourlyBySlot.filter((s: any) => s.hour >= 8 && s.hour <= 18).map((s: any) => (
+                            <div key={s.hour} className="flex-1 flex flex-col items-center gap-0.5" title={`${fmtH(s.hour)}: $${s.revenue.toLocaleString()} · ${s.orders} orders`}>
+                              <div className="w-full rounded-t bg-emerald-300 hover:bg-emerald-400 transition-colors" style={{ height: `${Math.max(2, (s.revenue / maxSlot) * 48)}px` }} />
+                              <span className="text-[9px] text-gray-400">{fmtH(s.hour)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {bd.topProductsByBrand.map((b: any) => (
+                          <div key={b.bucket} className="rounded-lg bg-gray-50/70 border border-gray-100 px-3 py-2">
+                            <p className="text-[12px] font-bold text-slate-700 mb-1">{b.bucket} <span className="font-normal text-gray-400">· ${b.total.toLocaleString()}</span></p>
+                            {b.products.map((p: any) => (
+                              <p key={p.rank} className="text-[11.5px] text-slate-600 leading-relaxed truncate" title={p.product}>
+                                <span className="text-gray-300">{p.rank}.</span> {p.product} <span className="text-gray-400">— ${p.revenue.toLocaleString()} · {p.units}u</span>
+                              </p>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
