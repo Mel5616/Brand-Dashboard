@@ -101,14 +101,19 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
   const byGid = useMemo(() => new Map(tasks.map(t => [t.gid, t])), [tasks]);
   const open = useMemo(() => tasks.filter(t => !t.completed), [tasks]);
   const queued = useMemo(() => new Set(priorities.map(p => p.task_gid)), [priorities]);
+  // Queue entries are Asana tasks OR campaigns (gid "campaign:<id>").
+  type QueueItem = { kind: "task"; gid: string; t: Task } | { kind: "campaign"; gid: string; c: DesignCampaign };
   const buckets = useMemo(() => {
-    const out = new Map<BucketKey, Task[]>(BUCKETS.map(b => [b.key, []]));
+    const out = new Map<BucketKey, QueueItem[]>(BUCKETS.map(b => [b.key, []]));
+    const campById = new Map(designCampaigns.map(c => [`campaign:${c.id}`, c]));
     for (const p of [...priorities].sort((a, b) => a.rank - b.rank)) {
+      const c = campById.get(p.task_gid);
+      if (c) { out.get(bucketOf(p))!.push({ kind: "campaign", gid: p.task_gid, c }); continue; }
       const t = byGid.get(p.task_gid);
-      if (t && !t.completed) out.get(bucketOf(p))!.push(t);
+      if (t && !t.completed) out.get(bucketOf(p))!.push({ kind: "task", gid: p.task_gid, t });
     }
     return out;
-  }, [priorities, byGid]);
+  }, [priorities, byGid, designCampaigns]);
   const queueCount = (buckets.get("urgent")?.length ?? 0) + (buckets.get("week")?.length ?? 0);
   const brandColor = (name: string) => brands.find(b => b.name.toLowerCase() === name.toLowerCase())?.color ?? "#94a3b8";
   const brandOfLabel = (label?: string | null) => (label || "").replace(/^(EDM|Social)\s*·\s*/i, "");
@@ -415,23 +420,36 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
                   <p className="text-[12.5px] text-gray-400 py-2">Empty{admin ? " — hover a task below, click ＋" : ""}</p>
                 ) : (
                   <div className="space-y-1">
-                    {list.map((t, i) => (
-                      <div key={t.gid} className={`bg-white rounded-xl border px-2.5 py-1 ${bk.ring}`}>
+                    {list.map((item, i) => (
+                      <div key={item.gid} className={`bg-white rounded-xl border px-2.5 py-1 ${bk.ring}`}>
                         <div className="flex items-center gap-2">
                           <span className={`w-5 h-5 rounded-full text-white text-[11px] font-bold grid place-items-center shrink-0 ${bk.num}`}>{i + 1}</span>
                           {admin && (
                             <span className="flex flex-col shrink-0">
-                              <button onClick={() => move(t.gid, -1)} disabled={i === 0} className="text-gray-300 hover:text-slate-600 disabled:opacity-20 leading-none text-[10px]">▲</button>
-                              <button onClick={() => move(t.gid, 1)} disabled={i === list.length - 1} className="text-gray-300 hover:text-slate-600 disabled:opacity-20 leading-none text-[10px]">▼</button>
+                              <button onClick={() => move(item.gid, -1)} disabled={i === 0} className="text-gray-300 hover:text-slate-600 disabled:opacity-20 leading-none text-[10px]">▲</button>
+                              <button onClick={() => move(item.gid, 1)} disabled={i === list.length - 1} className="text-gray-300 hover:text-slate-600 disabled:opacity-20 leading-none text-[10px]">▼</button>
                             </span>
                           )}
-                          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: brandColor(brandOfLabel(t.project_label)) }} />
-                          <div className="flex-1 min-w-0"><TaskRow t={t} inQueue /></div>
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: item.kind === "task" ? brandColor(brandOfLabel(item.t.project_label)) : brandColor(item.c.brand.split("+")[0].trim()) }} />
+                          {item.kind === "task"
+                            ? <div className="flex-1 min-w-0"><TaskRow t={item.t} inQueue /></div>
+                            : (
+                              <div className="flex-1 min-w-0 py-[7px] group">
+                                <p className="text-[13.5px] text-slate-700 leading-snug line-clamp-2 break-words">
+                                  <span className="text-[10px] font-bold uppercase tracking-wide text-pink-500 bg-pink-50 rounded px-1 py-0.5 mr-1 align-middle">🎨</span>
+                                  {item.c.briefUrl ? <a href={item.c.briefUrl} target="_blank" rel="noreferrer" className="hover:text-pink-700 hover:underline">{item.c.campaign}</a> : item.c.campaign}
+                                </p>
+                                <p className="text-[11px] text-gray-400 truncate">
+                                  {item.c.brand}{item.c.key_date ? ` · launches ${dShort(item.c.key_date)}` : ""}
+                                  {admin && <> · <button onClick={() => removeFromQueue(item.gid)} className="text-gray-400 hover:text-rose-500">remove</button></>}
+                                </p>
+                              </div>
+                            )}
                         </div>
                         {admin && (
                           <div className="flex gap-1 pb-1 pl-7">
                             {BUCKETS.filter(x => x.key !== bk.key).map(x => (
-                              <button key={x.key} onClick={() => moveBucket(t.gid, x.key)} title={`Move to ${x.label}`}
+                              <button key={x.key} onClick={() => moveBucket(item.gid, x.key)} title={`Move to ${x.label}`}
                                 className="text-[10px] text-gray-400 hover:text-slate-600 hover:bg-gray-50 rounded px-1 py-0.5">{x.label.split(" ")[0]}→</button>
                             ))}
                           </div>
@@ -490,6 +508,22 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
                       })}
                     </span>
                   )}
+                  {queued.has(gid)
+                    ? <span className="text-[10.5px] font-semibold text-emerald-600 bg-emerald-50 rounded-full px-2 py-0.5 shrink-0">In the plan ✓</span>
+                    : admin && (
+                      <span className="relative shrink-0">
+                        <button onClick={() => setPlusFor(cur => cur === gid ? null : gid)} title="Add to the plan"
+                          className={`text-[15px] leading-none font-bold text-emerald-500 hover:text-emerald-700 px-0.5 ${plusFor === gid ? "" : "opacity-0 group-hover:opacity-100"}`}>＋</button>
+                        {plusFor === gid && (
+                          <span className="absolute right-0 top-6 z-20 bg-white border border-gray-200 rounded-xl shadow-lg p-1 flex flex-col min-w-[140px]">
+                            {BUCKETS.map(bk => (
+                              <button key={bk.key} onClick={() => addToQueue(gid, bk.key)}
+                                className="text-left text-[12.5px] text-slate-600 hover:bg-gray-50 rounded-lg px-2.5 py-1.5 whitespace-nowrap">{bk.label}</button>
+                            ))}
+                          </span>
+                        )}
+                      </span>
+                    )}
                 </div>
               );
             })}
