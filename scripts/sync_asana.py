@@ -188,10 +188,10 @@ def main():
                 continue
             due = t.get("due_on") or ""
             mod = (t.get("modified_at") or "")[:10]
-            # Sales requests are exempt from the staleness rule: an open request
-            # that's sat for weeks is still owed, not history.
-            is_sales = "sales" in (label or "").lower()
-            if not is_sales and ((due and due < cutoff) or (not due and mod and mod < cutoff)):
+            # Sales requests and the content to-do list are exempt from the
+            # staleness rule: an open item that's sat for weeks is still owed.
+            keep_all = any(k in (label or "").lower() for k in ("sales", "content"))
+            if not keep_all and ((due and due < cutoff) or (not due and mod and mod < cutoff)):
                 completed_gids.append(t["gid"])   # stale (>6 weeks old) — treat as done
                 continue
             all_rows.append({

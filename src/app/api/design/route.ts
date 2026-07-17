@@ -20,7 +20,7 @@ export async function GET() {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   const compCutoff = new Date(Date.now() - 120 * 86400_000).toISOString();
   const [tRes, pRes, mRes, cRes] = await Promise.all([
-    rest("asana_tasks?select=gid,name,notes,assignee,due_on,completed,section,project_gid,project_label,permalink_url,modified_at&project_label=neq.Blogs&order=due_on.asc.nullslast&limit=5000"),
+    rest(`asana_tasks?select=gid,name,notes,assignee,due_on,completed,section,project_gid,project_label,permalink_url,modified_at&project_label=not.in.(${encodeURIComponent('"Blogs","Content To Do"')})&order=due_on.asc.nullslast&limit=5000`),
     rest("design_priorities?select=*&order=rank.asc"),
     rest("design_task_meta?select=task_gid,priority,notes,updated_by,updated_at&limit=5000"),
     rest(`design_completions?select=task_gid,name,project_label,due_on,created_at_asana,completed_at,source&completed_at=gte.${compCutoff}&order=completed_at.desc&limit=2000`),

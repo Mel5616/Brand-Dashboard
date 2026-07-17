@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { ContentTodo } from "./ContentTodo";
 
 // Creative production hub: shoots and design jobs move through a pipeline
 // (Requested → In progress → Review → Delivered). Each job carries a shot-list /
@@ -148,6 +149,9 @@ export function CreativePanel({ brands, admin }: { brands: Brand[]; admin: boole
           );
         })}
       </div>
+
+      {/* Content to-do (Asana) */}
+      <ContentTodo admin={admin} />
 
       {/* Detail */}
       {sel && (
