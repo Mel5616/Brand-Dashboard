@@ -18,19 +18,28 @@ const asanaHeaders = () => ({ Authorization: `Bearer ${process.env.ASANA_TOKEN!}
 export async function GET() {
   if (!(await getAccess()).role) return NextResponse.json({ ok: false }, { status: 401 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
-  const [tRes, pRes] = await Promise.all([
+  const compCutoff = new Date(Date.now() - 120 * 86400_000).toISOString();
+  const [tRes, pRes, mRes, cRes] = await Promise.all([
     rest("asana_tasks?select=gid,name,notes,assignee,due_on,completed,section,project_gid,project_label,permalink_url,modified_at&project_label=neq.Blogs&order=due_on.asc.nullslast&limit=5000"),
     rest("design_priorities?select=*&order=rank.asc"),
+    rest("design_task_meta?select=task_gid,priority,notes,updated_by,updated_at&limit=5000"),
+    rest(`design_completions?select=task_gid,name,project_label,due_on,created_at_asana,completed_at,source&completed_at=gte.${compCutoff}&order=completed_at.desc&limit=2000`),
   ]);
   const tText = await tRes.text();
   if (!tRes.ok) return NextResponse.json({ ok: true, needsSetup: missing(tRes.status, tText), tasks: [], priorities: [] });
   const pText = pRes.ok ? await pRes.text() : "[]";
+  const mText = mRes.ok ? await mRes.text() : "[]";
+  const cText = cRes.ok ? await cRes.text() : "[]";
   return NextResponse.json({
     ok: true,
     tasks: JSON.parse(tText || "[]"),
     priorities: pRes.ok ? JSON.parse(pText || "[]") : [],
+    meta: mRes.ok ? JSON.parse(mText || "[]") : [],
+    completions: cRes.ok ? JSON.parse(cText || "[]") : [],
     prioritiesSetup: pRes.ok || !missing(pRes.status, pText),
+    metaSetup: mRes.ok,
     asanaWrite: !!process.env.ASANA_TOKEN,
+    aiReady: !!process.env.ANTHROPIC_API_KEY,
   });
 }
 
@@ -68,16 +77,37 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
+  // ── Task meta (dashboard-owned; never touches Asana) ──
+  if (b.action === "meta.set") {
+    if (!b.gid) return NextResponse.json({ ok: false }, { status: 400 });
+    if (b.priority !== undefined && !admin) return NextResponse.json({ ok: false, error: "Admins only" }, { status: 403 });
+    const row: any = { task_gid: String(b.gid), updated_by: by, updated_at: new Date().toISOString() };
+    if (b.priority !== undefined) row.priority = ["high", "medium", "low"].includes(b.priority) ? b.priority : null;
+    if (b.notes !== undefined) row.notes = String(b.notes ?? "").slice(0, 4000) || null;
+    const res = await rest("design_task_meta?on_conflict=task_gid", { method: "POST", headers: h({ Prefer: "resolution=merge-duplicates,return=representation" }), body: JSON.stringify(row) });
+    const text = await res.text();
+    if (!res.ok) return NextResponse.json({ ok: false, error: missing(res.status, text) ? "Run add_design_meta.sql first" : "Save failed" }, { status: 500 });
+    return NextResponse.json({ ok: true, item: JSON.parse(text)[0] });
+  }
+
   // ── Asana write-backs ──
   if (!process.env.ASANA_TOKEN) return NextResponse.json({ ok: false, error: "ASANA_TOKEN not configured" }, { status: 500 });
 
   if (b.action === "task.complete") {
     // Any signed-in user (the designer marks her own work done).
     if (!b.gid) return NextResponse.json({ ok: false }, { status: 400 });
+    const gid = encodeURIComponent(String(b.gid));
+    // Grab the mirror row before it's marked done — feeds the completion log.
+    const mirror = await rest(`asana_tasks?select=name,project_label,due_on&gid=eq.${gid}&limit=1`);
+    const mrow = mirror.ok ? (JSON.parse((await mirror.text()) || "[]")[0] ?? null) : null;
     const res = await fetch(`${ASANA}/tasks/${encodeURIComponent(String(b.gid))}`, { method: "PUT", headers: asanaHeaders(), body: JSON.stringify({ data: { completed: true } }) });
     if (!res.ok) return NextResponse.json({ ok: false, error: `Asana: ${(await res.text()).slice(0, 150)}` }, { status: 502 });
-    await rest(`asana_tasks?gid=eq.${encodeURIComponent(String(b.gid))}`, { method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify({ completed: true, completed_at: new Date().toISOString() }) });
-    await rest(`design_priorities?task_gid=eq.${encodeURIComponent(String(b.gid))}`, { method: "DELETE" });
+    await Promise.all([
+      rest(`asana_tasks?gid=eq.${gid}`, { method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify({ completed: true, completed_at: new Date().toISOString() }) }),
+      rest(`design_priorities?task_gid=eq.${gid}`, { method: "DELETE" }),
+      rest(`design_task_meta?task_gid=eq.${gid}`, { method: "DELETE" }),
+      rest("design_completions?on_conflict=task_gid", { method: "POST", headers: h({ Prefer: "resolution=ignore-duplicates,return=minimal" }), body: JSON.stringify({ task_gid: String(b.gid), name: mrow?.name ?? null, project_label: mrow?.project_label ?? null, due_on: mrow?.due_on ?? null, completed_at: new Date().toISOString(), source: "dashboard" }) }),
+    ]);
     return NextResponse.json({ ok: true });
   }
 

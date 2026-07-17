@@ -72,7 +72,7 @@ def brand_for(name, brands):
             return i
     return None
 
-OPT_FIELDS = ("name,notes,completed,completed_at,due_on,permalink_url,modified_at,"
+OPT_FIELDS = ("name,notes,completed,completed_at,created_at,due_on,permalink_url,modified_at,"
               "assignee.name,memberships.section.name,memberships.project.gid,"
               "custom_fields.name,custom_fields.display_value,custom_fields.enum_value.name")
 
@@ -148,10 +148,12 @@ def main():
 
     all_rows = []
     completed_gids = []   # completed or stale — pruned from the dashboard mirror
+    completion_rows = []  # recent completions → design_completions (throughput stats)
     # Staleness cutoff: anything due (or, with no due date, last modified) more
     # than 6 weeks ago is history — keep the dashboard to current work only.
     import datetime as _dt
     cutoff = (_dt.date.today() - _dt.timedelta(weeks=6)).isoformat()
+    comp_cutoff = (_dt.date.today() - _dt.timedelta(days=120)).isoformat()
     for project, label in projects:
         if not label:
             # No label configured — use the board's actual name from Asana.
@@ -172,6 +174,17 @@ def main():
         for t in tasks:
             if t.get("completed"):
                 completed_gids.append(t["gid"])   # past work — never brought in
+                ca = (t.get("completed_at") or "")[:10]
+                if ca and ca >= comp_cutoff:
+                    completion_rows.append({
+                        "task_gid": t["gid"],
+                        "name": (t.get("name") or "")[:200],
+                        "project_label": label,
+                        "due_on": t.get("due_on"),
+                        "created_at_asana": t.get("created_at"),
+                        "completed_at": t.get("completed_at"),
+                        "source": "asana",
+                    })
                 continue
             due = t.get("due_on") or ""
             mod = (t.get("modified_at") or "")[:10]
@@ -221,6 +234,22 @@ def main():
     keep = ",".join(g for g, _ in projects)
     if keep:
         sb("DELETE", f"/rest/v1/asana_tasks?project_gid=not.in.({keep})")
+    # Completion history (throughput stats). Table may not exist yet — tolerate.
+    seen_c = set(); comps = []
+    for r in completion_rows:
+        if r["task_gid"] in seen_c: continue
+        seen_c.add(r["task_gid"]); comps.append(r)
+    if comps:
+        st, b = sb("POST", "/rest/v1/design_completions?on_conflict=task_gid",
+                   json.dumps(comps).encode(), extra={"Prefer": "resolution=ignore-duplicates"})
+        if st in (200, 201, 204):
+            print(f"  logged {len(comps)} completions", flush=True)
+        else:
+            print(f"  design_completions upsert skipped ({st})", flush=True)
+    # Meta rows for finished tasks are dead weight — clean them up (tolerant).
+    for i in range(0, len(completed_gids), 100):
+        chunk = ",".join(completed_gids[i:i+100])
+        sb("DELETE", f"/rest/v1/design_task_meta?task_gid=in.({chunk})")
     print(f"Synced {len(all_rows)} open Asana tasks across {len(projects)} project(s); pruned {len(completed_gids)} completed", flush=True)
 
 if __name__ == "__main__":
