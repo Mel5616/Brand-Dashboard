@@ -17,7 +17,7 @@ const iso = (d: Date) => d.toISOString().slice(0, 10);
 async function buildSnapshot() {
   const wkAgo = iso(new Date(Date.now() - 7 * 864e5));
   const adCut = iso(new Date(Date.now() - 21 * 864e5));   // covers last week + the week before
-  const [brands, daily, monthly, targets, campaigns, igMedia, klaviyo, promotions, googleDaily, metaDaily, pinterestDaily, ga4, ebEvents, shows] = await Promise.all([
+  const [brands, daily, monthly, targets, campaigns, igMedia, klaviyo, promotions, googleDaily, metaDaily, pinterestDaily, ga4, ebEvents, shows, showReports, showAttendance] = await Promise.all([
     sb("brands?select=id,name,live"),
     sb("brand_daily?select=brand_id,day,revenue"),
     sb("brand_monthly?select=brand_id,month_key,revenue&order=month_key"),
@@ -31,7 +31,9 @@ async function buildSnapshot() {
     sb(`pinterest_ads_daily?select=brand_id,date,spend,revenue&date=gte.${adCut}`),
     sb("ga4_metrics?select=brand_id,month_key,sessions,organic_sessions,new_users,engagement_rate&order=month_key"),
     sb("eventbrite_events?select=name,start_at,end_at,venue,status,url,capacity,tickets_sold&order=start_at"),
-    sb("tradeshows?select=name,date_start,date_end,location,state,deals_token"),
+    sb("tradeshows?select=id,name,date_start,date_end,location,state,deals_token"),
+    sb("tradeshow_reports?select=tradeshow_id"),
+    sb("tradeshow_attendance?select=tradeshow_id,attendance"),
   ]);
   const nameById = new Map<number, string>(brands.map((b: any) => [b.id, b.name]));
   const today = new Date(); const todayStr = iso(today);
@@ -215,13 +217,36 @@ async function buildSnapshot() {
       ticketsSold: e.tickets_sold ?? null, capacity: e.capacity ?? null,
     });
   }
-  for (const t of (shows as any[])) {
-    if (!t.date_start || t.date_start > weekAhead || (t.date_end ?? t.date_start) < todayStr) continue;
-    events.push({ name: t.name, type: "Tradeshow", dateStart: t.date_start, dateEnd: t.date_end ?? null, venue: t.location ?? t.state ?? null, url: t.deals_token ? `/deals/${t.deals_token}` : null, ticketsSold: null, capacity: null });
-  }
   events.sort((a, b) => a.dateStart.localeCompare(b.dateStart));
 
-  return { generatedAt: new Date().toISOString(), d2c, launches, promos, events, attention: attention.slice(0, 12), wins: { posts: topPosts, email }, paid, traffic };
+  // ── Tradeshows: their own section — coming up (next 45 days, with the deal
+  // sheet) and just wrapped (last 21 days, with door attendance + post-show
+  // report once attached). ──
+  const reportIds = new Set((showReports as any[]).map((r: any) => String(r.tradeshow_id)));
+  const doorByShow = new Map<string, number>();
+  for (const a of (showAttendance as any[])) {
+    const k = String(a.tradeshow_id);
+    doorByShow.set(k, (doorByShow.get(k) ?? 0) + (Number(a.attendance) || 0));
+  }
+  const showAhead = iso(new Date(Date.now() + 45 * 864e5));
+  const wrapCut = iso(new Date(Date.now() - 21 * 864e5));
+  const showRow = (t: any) => ({
+    name: t.name, dateStart: t.date_start, dateEnd: t.date_end ?? null,
+    location: t.location ?? t.state ?? null,
+    dealsUrl: t.deals_token ? `/deals/${t.deals_token}` : null,
+    reportUrl: reportIds.has(String(t.id)) ? `/api/tradeshows/report/view?tradeshow_id=${t.id}` : null,
+    attendance: doorByShow.get(String(t.id)) ?? null,
+  });
+  const tradeshows = {
+    upcoming: (shows as any[])
+      .filter((t: any) => t.date_start && t.date_start >= todayStr && t.date_start <= showAhead)
+      .sort((a: any, b: any) => a.date_start.localeCompare(b.date_start)).map(showRow),
+    wrapped: (shows as any[])
+      .filter((t: any) => { const end = t.date_end ?? t.date_start; return end && end < todayStr && end >= wrapCut; })
+      .sort((a: any, b: any) => (b.date_end ?? b.date_start).localeCompare(a.date_end ?? a.date_start)).map(showRow),
+  };
+
+  return { generatedAt: new Date().toISOString(), d2c, launches, promos, events, tradeshows, attention: attention.slice(0, 12), wins: { posts: topPosts, email }, paid, traffic };
 }
 
 export async function GET(req: Request) {

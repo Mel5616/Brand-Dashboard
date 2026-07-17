@@ -9,6 +9,10 @@ type Snapshot = {
   launches?: { campaign: string; brand: string; keyDate: string | null; status: string; oneLiner: string; briefUrl?: string | null }[];
   promos?: { channel: string; tier: number | null; endDate: string; note: string; brands: string[] }[];
   events?: { name: string; type: string; dateStart: string; dateEnd: string | null; venue: string | null; url: string | null; ticketsSold: number | null; capacity: number | null }[];
+  tradeshows?: {
+    upcoming: { name: string; dateStart: string; dateEnd: string | null; location: string | null; dealsUrl: string | null; reportUrl: string | null; attendance: number | null }[];
+    wrapped: { name: string; dateStart: string; dateEnd: string | null; location: string | null; dealsUrl: string | null; reportUrl: string | null; attendance: number | null }[];
+  };
   attention?: { text: string; kind: string }[];
   wins?: {
     posts: { brand: string; engagement: number; likes: number; comments: number; reach: number; caption: string; permalink: string; image: string }[];
@@ -53,6 +57,7 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
   const objectives = brief.objectives ?? [];
   const brandUpdates = (brief.brand_updates ?? []).filter(u => u.text?.trim());
   const d2c = s.d2c, launches = s.launches ?? [], promos = s.promos ?? [], events = s.events ?? [];
+  const showsUp = s.tradeshows?.upcoming ?? [], showsDone = s.tradeshows?.wrapped ?? [];
   const liveLaunches = launches.filter(l => /live/i.test(l.status || ""));
   const upcomingLaunches = launches.filter(l => !/live/i.test(l.status || ""));
   const wins = s.wins, posts = wins?.posts ?? [], email = wins?.email;
@@ -154,6 +159,43 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
                 </div>
               );
             })}
+          </div>
+        </Section>
+      )}
+
+      {(showsUp.length > 0 || showsDone.length > 0) && (
+        <Section title="Tradeshows">
+          <div className="space-y-2">
+            {showsUp.map((t, i) => (
+              <div key={`u${i}`} className="flex items-start gap-2.5 rounded-lg border border-indigo-100 bg-indigo-50/40 px-3 py-2">
+                <div className="shrink-0 w-12 text-center rounded-lg bg-white border border-indigo-100 py-1">
+                  <p className="text-[9px] uppercase tracking-wider text-indigo-400">{new Date(t.dateStart + "T00:00:00").toLocaleDateString("en-AU", { month: "short" })}</p>
+                  <p className="text-[15px] font-bold text-slate-800 leading-tight">{new Date(t.dateStart + "T00:00:00").getDate()}</p>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-semibold text-slate-800">{t.name} <span className="text-[10px] font-bold uppercase tracking-wide text-indigo-500 bg-indigo-100 rounded px-1.5 py-0.5 ml-1 align-middle">Coming up</span></p>
+                  <p className="text-[12.5px] text-slate-500 mt-0.5">
+                    {dateShort(t.dateStart)}{t.dateEnd && t.dateEnd !== t.dateStart ? ` – ${dateShort(t.dateEnd)}` : ""}
+                    {t.location ? ` · ${t.location}` : ""}
+                    {t.dealsUrl && <> · <a href={t.dealsUrl} target="_blank" rel="noreferrer" className="text-emerald-600 font-semibold hover:underline">Show deals →</a></>}
+                  </p>
+                </div>
+              </div>
+            ))}
+            {showsDone.map((t, i) => (
+              <div key={`d${i}`} className="flex items-start gap-2.5 rounded-lg border border-gray-100 bg-gray-50/70 px-3 py-2">
+                <span className="shrink-0 w-12 text-center text-[18px] pt-1">🏁</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-semibold text-slate-800">{t.name} <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500 bg-slate-100 rounded px-1.5 py-0.5 ml-1 align-middle">Wrapped</span></p>
+                  <p className="text-[12.5px] text-slate-500 mt-0.5">
+                    {dateShort(t.dateStart)}{t.dateEnd && t.dateEnd !== t.dateStart ? ` – ${dateShort(t.dateEnd)}` : ""}
+                    {t.location ? ` · ${t.location}` : ""}
+                    {t.attendance != null && t.attendance > 0 ? ` · ${t.attendance.toLocaleString()} through the door` : ""}
+                    {t.reportUrl && <> · <a href={t.reportUrl} target="_blank" rel="noreferrer" className="text-emerald-600 font-semibold hover:underline">Post-show report →</a></>}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         </Section>
       )}
