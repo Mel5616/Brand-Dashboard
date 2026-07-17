@@ -197,6 +197,15 @@ def main():
             })
         print(f"  {label}: {len(tasks)} tasks", flush=True)
 
+    # Multi-homed tasks appear in more than one Asana project — keep the first
+    # (config order), or the upsert dies on duplicate gids in one statement.
+    seen_gids = set(); deduped = []
+    for r in all_rows:
+        if r["gid"] in seen_gids: continue
+        seen_gids.add(r["gid"]); deduped.append(r)
+    if len(deduped) < len(all_rows):
+        print(f"  deduped {len(all_rows) - len(deduped)} multi-homed tasks")
+    all_rows = deduped
     if not all_rows:
         print("No tasks found in any configured project"); return
     st, b = sb("POST", "/rest/v1/asana_tasks?on_conflict=gid",
