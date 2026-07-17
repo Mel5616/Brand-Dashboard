@@ -95,10 +95,12 @@ export function CampaignBriefSheet({ c }: { c: any }) {
     { key: "green" as const, label: "Measured by", value: oneLine(brief.successMeasure) || "—", sub: "" },
   ];
   const details = [
+    { label: "Why now / the story", value: brief.whyNow },
     { label: "Audience", value: brief.audience },
     { label: "Key message", value: brief.keyMessage },
     { label: "Offer mechanic", value: brief.offerMechanic },
     { label: "Creative direction", value: brief.creativeDirection },
+    { label: "Compliance & T&Cs", value: brief.compliance },
   ].filter(d => lines(d.value).length);
 
   return (
