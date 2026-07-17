@@ -17,7 +17,7 @@ const iso = (d: Date) => d.toISOString().slice(0, 10);
 async function buildSnapshot() {
   const wkAgo = iso(new Date(Date.now() - 7 * 864e5));
   const adCut = iso(new Date(Date.now() - 21 * 864e5));   // covers last week + the week before
-  const [brands, daily, monthly, targets, campaigns, igMedia, klaviyo, promotions, googleDaily, metaDaily, pinterestDaily, ga4] = await Promise.all([
+  const [brands, daily, monthly, targets, campaigns, igMedia, klaviyo, promotions, googleDaily, metaDaily, pinterestDaily, ga4, ebEvents, shows] = await Promise.all([
     sb("brands?select=id,name,live"),
     sb("brand_daily?select=brand_id,day,revenue"),
     sb("brand_monthly?select=brand_id,month_key,revenue&order=month_key"),
@@ -30,6 +30,8 @@ async function buildSnapshot() {
     sb(`meta_ads_daily?select=brand_id,date,spend,revenue&date=gte.${adCut}`),
     sb(`pinterest_ads_daily?select=brand_id,date,spend,revenue&date=gte.${adCut}`),
     sb("ga4_metrics?select=brand_id,month_key,sessions,organic_sessions,new_users,engagement_rate&order=month_key"),
+    sb("eventbrite_events?select=name,start_at,end_at,venue,status,url,capacity,tickets_sold&order=start_at"),
+    sb("tradeshows?select=name,date_start,date_end,location,state"),
   ]);
   const nameById = new Map<number, string>(brands.map((b: any) => [b.id, b.name]));
   const today = new Date(); const todayStr = iso(today);
@@ -197,7 +199,28 @@ async function buildSnapshot() {
     revPerVisit: gCur.sessions > 0 ? Math.round((d2cRevForMonth(g4Latest) / gCur.sessions) * 100) / 100 : null,
   } : null;
 
-  return { generatedAt: new Date().toISOString(), d2c, launches, promos, attention: attention.slice(0, 12), wins: { posts: topPosts, email }, paid, traffic };
+  // ── What's on this week: Tune-Up Days / special events (Eventbrite) and
+  // tradeshows falling in the next 7 days. ──
+  const weekAhead = iso(new Date(Date.now() + 7 * 864e5));
+  const events: { name: string; type: string; dateStart: string; dateEnd: string | null; venue: string | null; url: string | null; ticketsSold: number | null; capacity: number | null }[] = [];
+  for (const e of (ebEvents as any[])) {
+    const d = String(e.start_at || "").slice(0, 10);
+    if (!d || d < todayStr || d > weekAhead) continue;
+    if (/cancel|draft/i.test(e.status || "")) continue;
+    events.push({
+      name: e.name, type: /tune[\s-]?up/i.test(e.name || "") ? "Tune-Up Day" : "Event",
+      dateStart: d, dateEnd: String(e.end_at || "").slice(0, 10) || null,
+      venue: e.venue ?? null, url: e.url ?? null,
+      ticketsSold: e.tickets_sold ?? null, capacity: e.capacity ?? null,
+    });
+  }
+  for (const t of (shows as any[])) {
+    if (!t.date_start || t.date_start > weekAhead || (t.date_end ?? t.date_start) < todayStr) continue;
+    events.push({ name: t.name, type: "Tradeshow", dateStart: t.date_start, dateEnd: t.date_end ?? null, venue: t.location ?? t.state ?? null, url: null, ticketsSold: null, capacity: null });
+  }
+  events.sort((a, b) => a.dateStart.localeCompare(b.dateStart));
+
+  return { generatedAt: new Date().toISOString(), d2c, launches, promos, events, attention: attention.slice(0, 12), wins: { posts: topPosts, email }, paid, traffic };
 }
 
 export async function GET(req: Request) {

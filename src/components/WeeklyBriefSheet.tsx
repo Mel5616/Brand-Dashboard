@@ -8,6 +8,7 @@ type Snapshot = {
   d2c?: { weekStart: string | null; weekEnd?: string | null; partial?: boolean; total: number; wowPct: number | null; top: { brand: string; revenue: number; wow: number | null }[]; fallers: { brand: string; wow: number | null }[] };
   launches?: { campaign: string; brand: string; keyDate: string | null; status: string; oneLiner: string }[];
   promos?: { channel: string; tier: number | null; endDate: string; note: string; brands: string[] }[];
+  events?: { name: string; type: string; dateStart: string; dateEnd: string | null; venue: string | null; url: string | null; ticketsSold: number | null; capacity: number | null }[];
   attention?: { text: string; kind: string }[];
   wins?: {
     posts: { brand: string; engagement: number; likes: number; comments: number; reach: number; caption: string; permalink: string; image: string }[];
@@ -51,7 +52,7 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
   const s = brief.snapshot ?? {};
   const objectives = brief.objectives ?? [];
   const brandUpdates = (brief.brand_updates ?? []).filter(u => u.text?.trim());
-  const d2c = s.d2c, launches = s.launches ?? [], promos = s.promos ?? [];
+  const d2c = s.d2c, launches = s.launches ?? [], promos = s.promos ?? [], events = s.events ?? [];
   const liveLaunches = launches.filter(l => /live/i.test(l.status || ""));
   const upcomingLaunches = launches.filter(l => !/live/i.test(l.status || ""));
   const wins = s.wins, posts = wins?.posts ?? [], email = wins?.email;
@@ -122,6 +123,36 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
             <p className="text-[10px] uppercase tracking-wider text-violet-400 mb-0.5">{email.month}</p>
             {email.topRevenue && <p><strong>{email.topRevenue.brand}</strong> email drove <strong>{fmtFull(email.topRevenue.revenue)}</strong>.</p>}
             {email.bestClick && <p className="mt-0.5">Best click-through: <strong>{email.bestClick.brand}</strong> at {email.bestClick.clickRate.toFixed(1)}%.</p>}
+          </div>
+        </Section>
+      )}
+
+      {events.length > 0 && (
+        <Section title="What's on this week">
+          <div className="space-y-2">
+            {events.map((e, i) => {
+              const sameDay = !e.dateEnd || e.dateEnd === e.dateStart;
+              const typeCls = e.type === "Tune-Up Day" ? "bg-sky-100 text-sky-700" : e.type === "Tradeshow" ? "bg-indigo-100 text-indigo-700" : "bg-teal-100 text-teal-700";
+              return (
+                <div key={i} className="flex items-start gap-2.5 rounded-lg border border-gray-100 bg-gray-50/70 px-3 py-2">
+                  <div className="shrink-0 w-12 text-center rounded-lg bg-white border border-gray-100 py-1">
+                    <p className="text-[9px] uppercase tracking-wider text-gray-400">{new Date(e.dateStart + "T00:00:00").toLocaleDateString("en-AU", { weekday: "short" })}</p>
+                    <p className="text-[15px] font-bold text-slate-800 leading-tight">{new Date(e.dateStart + "T00:00:00").getDate()}</p>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className={`text-[10px] font-bold rounded px-1.5 py-0.5 ${typeCls}`}>{e.type}</span>
+                      <p className="text-[14px] font-semibold text-slate-800 truncate">{e.url ? <a href={e.url} target="_blank" rel="noreferrer" className="hover:underline">{e.name}</a> : e.name}</p>
+                    </div>
+                    <p className="text-[12.5px] text-slate-500 mt-0.5">
+                      {sameDay ? dateShort(e.dateStart) : `${dateShort(e.dateStart)} – ${dateShort(e.dateEnd)}`}
+                      {e.venue ? ` · ${e.venue}` : ""}
+                      {e.ticketsSold != null && e.capacity ? ` · ${e.ticketsSold}/${e.capacity} booked` : ""}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </Section>
       )}
