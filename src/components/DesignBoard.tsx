@@ -119,11 +119,11 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
   const TaskRow = ({ t, inQueue, showBrand = false }: { t: Task; inQueue: boolean; showBrand?: boolean }) => {
     const late = t.due_on && t.due_on < todayStr() && !t.completed;
     return (
-      <div className="flex items-center gap-2.5 py-[7px] group">
+      <div className="flex items-start gap-2.5 py-[7px] group">
         <button onClick={() => complete(t.gid)} title="Mark done (updates Asana)"
-          className="w-[17px] h-[17px] rounded-full border-2 border-gray-300 hover:border-emerald-500 hover:bg-emerald-100 shrink-0 transition-colors" />
+          className="w-[17px] h-[17px] rounded-full border-2 border-gray-300 hover:border-emerald-500 hover:bg-emerald-100 shrink-0 transition-colors mt-0.5" />
         <div className="min-w-0 flex-1">
-          <p className="text-[13.5px] text-slate-700 leading-snug truncate">
+          <p className="text-[13.5px] text-slate-700 leading-snug line-clamp-2 break-words">
             {t.permalink_url ? <a href={t.permalink_url} target="_blank" rel="noreferrer" className="hover:text-emerald-700 hover:underline" title={t.name}>{cleanName(t.name)}</a> : cleanName(t.name)}
           </p>
           {showBrand && <p className="text-[11px] text-gray-400 truncate">{t.project_label}</p>}
