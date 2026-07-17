@@ -416,7 +416,7 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
       {/* The plan: urgent / this week / next week / coming soon */}
       <div>
         {!prioritiesSetup && <p className="text-[11px] text-rose-500 mb-1">Run add_design_priorities.sql to enable the plan</p>}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {BUCKETS.map(bk => {
             const list = buckets.get(bk.key) ?? [];
             return (
