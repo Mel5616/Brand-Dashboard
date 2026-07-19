@@ -76,6 +76,15 @@ OPT_FIELDS = ("name,notes,completed,completed_at,created_at,created_by.name,due_
               "assignee.name,memberships.section.name,memberships.project.gid,"
               "custom_fields.name,custom_fields.display_value,custom_fields.enum_value.name")
 
+def all_custom_fields(task):
+    out = {}
+    for cf in (task.get("custom_fields") or []):
+        name = (cf.get("name") or "").strip()
+        val = ((cf.get("enum_value") or {}).get("name")) or cf.get("display_value")
+        if name and val not in (None, ""):
+            out[name] = str(val)[:200]
+    return out or None
+
 def custom_field(task, field_name):
     for cf in (task.get("custom_fields") or []):
         if (cf.get("name") or "").strip().lower() == field_name.lower():
@@ -212,6 +221,7 @@ def main():
                 "section": section_for(t, project),
                 "status": custom_field(t, "Status"),
                 "priority": custom_field(t, "Priority"),
+                "custom_fields": all_custom_fields(t),
                 "project_gid": project,
                 "project_label": label,
                 "permalink_url": t.get("permalink_url"),
@@ -233,6 +243,13 @@ def main():
         print("No tasks found in any configured project"); return
     st, b = sb("POST", "/rest/v1/asana_tasks?on_conflict=gid",
                json.dumps(all_rows).encode(), extra={"Prefer": "resolution=merge-duplicates"})
+    if st not in (200, 201, 204) and b"custom_fields" in b:
+        # add_asana_custom_fields.sql not run yet — sync without the field map
+        for r in all_rows:
+            r.pop("custom_fields", None)
+        st, b = sb("POST", "/rest/v1/asana_tasks?on_conflict=gid",
+                   json.dumps(all_rows).encode(), extra={"Prefer": "resolution=merge-duplicates"})
+        print("  custom_fields column missing — synced without it", flush=True)
     if st not in (200, 201, 204):
         print(f"Supabase upsert failed ({st}): {b.decode(errors='replace')[:300]}"); sys.exit(1)
     # Open-only mirror: drop completed tasks (incl. ones completed since last sync)

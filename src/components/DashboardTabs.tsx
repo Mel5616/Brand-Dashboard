@@ -61,7 +61,7 @@ import { SalesTargetTracker } from "./SalesTargetTracker";
 import { ShopifyInsights } from "./ShopifyInsights";
 import { D2CWeekly } from "./D2CWeekly";
 import { BrandAssets } from "./BrandAssets";
-import { ContentTodo } from "./ContentTodo";
+import { StockReport } from "./StockReport";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
@@ -1908,15 +1908,7 @@ export function DashboardTabs({
           )}
 
           {/* ── Product Information — brand fact sheets (Operations) ── */}
-          {active === "stock-report" && (
-            <div className="space-y-1">
-              <div>
-                <h1 className="text-xl font-bold text-slate-800">Stock report</h1>
-                <p className="text-sm text-gray-400">The Stock Report Asana board, grouped by section — ticks, due dates and quick-adds write back to Asana.</p>
-              </div>
-              <ContentTodo admin={role === "admin"} boardGid="1148429855158443" boardLabel="Stock Report" title="📦 Stock report" accent="#f59e0b" />
-            </div>
-          )}
+          {active === "stock-report" && <StockReport admin={role === "admin"} brands={brands.map((b: any) => ({ name: b.name, color: b.color }))} />}
 
           {active === "brand-assets" && <BrandAssets brands={brands.map((b: any) => ({ name: b.name, color: b.color }))} admin={role === "admin"} />}
 

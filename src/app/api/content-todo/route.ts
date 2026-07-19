@@ -13,12 +13,17 @@ export async function GET(req: Request) {
   if (!(await getAccess()).role) return NextResponse.json({ ok: false }, { status: 401 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   const label = new URL(req.url).searchParams.get("label") || "Content To Do";
-  const sel = (withReq: boolean) => `${sbUrl}/rest/v1/asana_tasks?select=gid,name,notes,assignee,due_on,completed,section,project_gid,project_label,permalink_url${withReq ? ",requested_by" : ""}&project_label=eq.${encodeURIComponent(label)}&completed=eq.false&order=due_on.asc.nullslast&limit=1000`;
+  const sel = (extra: string) => `${sbUrl}/rest/v1/asana_tasks?select=gid,name,notes,assignee,due_on,completed,section,project_gid,project_label,permalink_url,modified_at${extra}&project_label=eq.${encodeURIComponent(label)}&completed=eq.false&order=due_on.asc.nullslast&limit=1000`;
   let [tRes, mRes] = await Promise.all([
-    fetch(sel(true), { headers: h(), cache: "no-store" }),
+    fetch(sel(",requested_by,custom_fields"), { headers: h(), cache: "no-store" }),
     fetch(`${sbUrl}/rest/v1/design_task_meta?select=task_gid,priority,notes&limit=5000`, { headers: h(), cache: "no-store" }),
   ]);
-  if (!tRes.ok && /requested_by/.test(await tRes.text())) tRes = await fetch(sel(false), { headers: h(), cache: "no-store" });
+  // Newer columns may not exist yet — degrade gracefully.
+  if (!tRes.ok) {
+    const msg = await tRes.text();
+    if (/custom_fields/.test(msg)) tRes = await fetch(sel(",requested_by"), { headers: h(), cache: "no-store" });
+    if (!tRes.ok && /requested_by/.test(msg)) tRes = await fetch(sel(""), { headers: h(), cache: "no-store" });
+  }
   const tasks = tRes.ok ? JSON.parse((await tRes.text()) || "[]") : [];
   const meta = mRes.ok ? JSON.parse((await mRes.text()) || "[]") : [];
   return NextResponse.json({ ok: true, tasks, meta, asanaWrite: !!process.env.ASANA_TOKEN });
