@@ -159,14 +159,14 @@ def main():
                 col = "#6ee7b7" if up else "#fda4af"
             return f"<span style='color:{col};font-weight:700'>{'▲' if up else '▼'} {abs(v)}%</span>"
         rows_html = "".join(
-            f"<tr style='border-bottom:1px solid #f1f5f9'>"
+            f"<tr style='border-bottom:1px solid #f1f5f9;background:{'#f8fafc' if i % 2 else '#ffffff'}'>"
             f"<td style='padding:8px 12px;font-weight:600;color:#334155'>{b['brand']}</td>"
             f"<td style='padding:8px 12px;text-align:right;font-weight:700;color:#0f172a'>${b['revenue']:,}</td>"
             f"<td style='padding:8px 12px;text-align:right'>{wow_chip(b['wowPct'])}</td>"
             f"<td style='padding:8px 12px;text-align:right'>{wow_chip(b['vs4wkPct'])}</td>"
             f"<td style='padding:8px 12px;text-align:right;color:#475569'>{b['orders']}</td>"
             f"<td style='padding:8px 12px;text-align:right;color:#475569'>${b['aov'] or 0:,}</td></tr>"
-            for b in brands_out)
+            for i, b in enumerate(brands_out))
         movers_html = ""
         if payload["risers"] or payload["fallers"]:
             ri = "<br>".join(f"<strong>{b['brand']}</strong> +{b['wowPct']}% · ${b['revenue']:,}" for b in payload["risers"]) or "None"
