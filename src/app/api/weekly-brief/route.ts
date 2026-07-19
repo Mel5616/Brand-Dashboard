@@ -122,17 +122,29 @@ async function buildSnapshot() {
   // Mail Privacy inflates it, so it isn't an honest metric to celebrate.
   const curMK = todayStr.slice(0, 7);
   const kMonths = [...new Set<string>((klaviyo as any[]).map((k: any) => String(k.month_key)))].sort();
-  const kLatest = kMonths.filter((mk: string) => mk < curMK && (klaviyo as any[]).some((k: any) => k.month_key === mk && Number(k.emails_sent) > 0)).pop() || kMonths[kMonths.length - 1];
+  // Prefer the CURRENT month-to-date when it has sends (timely stories), else the last complete month.
+  const kLatest = kMonths.filter((mk: string) => mk <= curMK && (klaviyo as any[]).some((k: any) => k.month_key === mk && Number(k.emails_sent) > 0)).pop() || kMonths[kMonths.length - 1];
   const kRows = (klaviyo as any[]).filter((k: any) => k.month_key === kLatest);
   const topEmail = [...kRows].filter((k: any) => Number(k.revenue) > 0).sort((a: any, b: any) => (Number(b.revenue) || 0) - (Number(a.revenue) || 0))[0];
   const clickQualified = [...kRows].filter((k: any) => Number(k.emails_sent) >= 200 && Number(k.click_rate) > 0).sort((a: any, b: any) => (Number(b.click_rate) || 0) - (Number(a.click_rate) || 0));
   // Prefer a different brand from the revenue winner so two brands get a shout-out.
   const bestClick = clickQualified.find((k: any) => k.brand_id !== topEmail?.brand_id) || clickQualified[0];
-  const monthLabel = kLatest ? new Date(kLatest + "-01T00:00:00").toLocaleDateString("en-AU", { month: "long", year: "numeric" }) : "";
+  // Revenue per email sent — the "quality beats volume" hero. Small-but-real sends qualify.
+  const perQualified = [...kRows].filter((k: any) => Number(k.emails_sent) >= 100 && Number(k.revenue) >= 500)
+    .map((k: any) => ({ ...k, perEmail: Number(k.revenue) / Number(k.emails_sent) }))
+    .sort((a: any, b: any) => b.perEmail - a.perEmail);
+  const bestPer = perQualified.find((k: any) => k.brand_id !== topEmail?.brand_id) || perQualified[0];
+  // Quiet lists: live brands that sent nothing this month (opens are privacy-inflated, so
+  // this is the honest "needs a nudge" signal instead of celebrating open rates).
+  const sentIds = new Set(kRows.filter((k: any) => Number(k.emails_sent) > 0).map((k: any) => k.brand_id));
+  const quiet = (brands as any[]).filter((b: any) => b.live && !sentIds.has(b.id)).map((b: any) => b.name);
+  const monthLabel = kLatest ? new Date(kLatest + "-01T00:00:00").toLocaleDateString("en-AU", { month: "long", year: "numeric" }) + (kLatest === curMK ? " · month to date" : "") : "";
   const email = (topEmail || bestClick) ? {
     month: monthLabel,
     topRevenue: topEmail ? { brand: nameById.get(topEmail.brand_id) || "", revenue: Math.round(Number(topEmail.revenue) || 0) } : null,
     bestClick: bestClick ? { brand: nameById.get(bestClick.brand_id) || "", clickRate: Number(bestClick.click_rate) || 0 } : null,
+    bestPerEmail: bestPer ? { brand: nameById.get(bestPer.brand_id) || "", perEmail: Math.round(bestPer.perEmail * 100) / 100, sent: Number(bestPer.emails_sent), revenue: Math.round(Number(bestPer.revenue)) } : null,
+    quiet,
   } : null;
 
   // ── Promotions live this week, grouped by channel so it's clear WHAT they are

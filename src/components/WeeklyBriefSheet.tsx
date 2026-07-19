@@ -16,7 +16,7 @@ type Snapshot = {
   attention?: { text: string; kind: string }[];
   wins?: {
     posts: { brand: string; engagement: number; likes: number; comments: number; reach: number; caption: string; permalink: string; image: string }[];
-    email: { month: string; topRevenue: { brand: string; revenue: number } | null; bestClick: { brand: string; clickRate: number } | null } | null;
+    email: { month: string; topRevenue: { brand: string; revenue: number } | null; bestClick: { brand: string; clickRate: number } | null; bestPerEmail?: { brand: string; perEmail: number; sent: number; revenue: number } | null; quiet?: string[] } | null;
   };
   paid?: {
     week: string;
@@ -127,7 +127,9 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
           <div className="rounded-lg bg-violet-50/60 border border-violet-100 px-3 py-2 text-[13px] text-violet-900">
             <p className="text-[10px] uppercase tracking-wider text-violet-400 mb-0.5">{email.month}</p>
             {email.topRevenue && <p><strong>{email.topRevenue.brand}</strong> email drove <strong>{fmtFull(email.topRevenue.revenue)}</strong>.</p>}
+            {email.bestPerEmail && <p className="mt-0.5">💎 <strong>{email.bestPerEmail.brand}</strong> made <strong>${email.bestPerEmail.perEmail.toFixed(2)} per email sent</strong> ({email.bestPerEmail.sent.toLocaleString()} emails → {fmtFull(email.bestPerEmail.revenue)}) — small, sharp sends beating big blasts.</p>}
             {email.bestClick && <p className="mt-0.5">Best click-through: <strong>{email.bestClick.brand}</strong> at {email.bestClick.clickRate.toFixed(1)}%.</p>}
+            {(email.quiet ?? []).length > 0 && <p className="mt-1.5 text-[12px] text-amber-700 bg-amber-50 border border-amber-100 rounded-md px-2 py-1">📭 Quiet lists — no emails sent this month: <strong>{email.quiet!.join(", ")}</strong>.</p>}
           </div>
         </Section>
       )}
