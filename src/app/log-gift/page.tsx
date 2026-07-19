@@ -24,6 +24,7 @@ export default function LogGift() {
 
   const [f, setF] = useState<any>({ month_key: FY_MONTHS[0].key, platform: "Instagram" });
   const [invoiceFile, setInvoiceFile] = useState<File | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [oneOff, setOneOff] = useState(false);
   const [search, setSearch] = useState("");
   const [picked, setPicked] = useState<Product | null>(null);
@@ -76,6 +77,12 @@ export default function LogGift() {
       else { setSaving(false); setErr(up?.error || "Invoice upload failed — try again or remove it."); return; }
     }
     const res = await fetch("/api/influencer/entries", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()).catch(() => null);
+    // Influencer photo (optional) — saved against the handle on the roster.
+    if (res?.ok && photoFile && f.handle) {
+      const pd = new FormData(); pd.set("file", photoFile); pd.set("handle", String(f.handle));
+      await fetch("/api/influencer/avatar", { method: "POST", body: pd }).catch(() => {});
+      setPhotoFile(null);
+    }
     setSaving(false);
     if (res?.ok) {
       setInvoiceFile(null);   // the invoice belongs to the entry just logged
@@ -228,6 +235,23 @@ export default function LogGift() {
           <div>
             <label className={label}>Campaign / note <span className="text-gray-300 font-normal">(optional)</span></label>
             <input value={f.campaign ?? ""} onChange={e => set("campaign", e.target.value)} placeholder="e.g. EOFY launch" className={input} />
+          </div>
+
+          <div>
+            <label className={label}>Influencer photo <span className="text-gray-300 font-normal">(optional — shows on the tracker)</span></label>
+            {photoFile ? (
+              <div className="mt-1 flex items-center gap-2 text-sm border border-emerald-200 bg-emerald-50/60 rounded-lg px-3 py-2.5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={URL.createObjectURL(photoFile)} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
+                <span className="truncate text-emerald-800">{photoFile.name}</span>
+                <button onClick={() => setPhotoFile(null)} className="ml-auto text-gray-400 hover:text-rose-500 shrink-0">✕</button>
+              </div>
+            ) : (
+              <label className="mt-1 flex items-center justify-center gap-1.5 text-sm text-emerald-700 font-medium border border-dashed border-emerald-300 bg-emerald-50/40 hover:bg-emerald-50 rounded-lg px-3 py-2.5 cursor-pointer">
+                📸 Add influencer photo
+                <input type="file" accept="image/*" className="hidden" onChange={e => { const fl = e.target.files?.[0]; if (fl) setPhotoFile(fl); e.currentTarget.value = ""; }} />
+              </label>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">

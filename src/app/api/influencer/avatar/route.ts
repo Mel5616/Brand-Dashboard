@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { canManage } from "@/lib/access";
 import { createClient } from "@/lib/supabase/server";
 
 // Upload an influencer profile photo to Supabase Storage and store it on the roster
@@ -7,14 +6,16 @@ import { createClient } from "@/lib/supabase/server";
 export const revalidate = 0;
 const BUCKET = "influencer-avatars";
 
+// Public like the invoice upload — the team logs gifts from /log-gift without
+// signing in. Image-only + size cap keeps it safe.
 export async function POST(req: Request) {
-  if (!(await canManage("gifting"))) return NextResponse.json({ error: "forbidden" }, { status: 403 });
   let form: FormData;
   try { form = await req.formData(); } catch { return NextResponse.json({ error: "Bad form" }, { status: 400 }); }
   const file = form.get("file") as File | null;
   let handle = String(form.get("handle") || "").trim();
   if (!file || !handle) return NextResponse.json({ error: "Missing file or handle" }, { status: 400 });
   if (file.size > 8 * 1024 * 1024) return NextResponse.json({ error: "Image too large (max 8MB)" }, { status: 400 });
+  if (file.type && !file.type.startsWith("image/")) return NextResponse.json({ error: "Images only" }, { status: 400 });
   if (!handle.startsWith("@")) handle = "@" + handle.replace(/^@+/, "");
 
   const sb = await createClient();

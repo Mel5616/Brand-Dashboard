@@ -10,7 +10,7 @@ const PUBLIC = ["/login", "/auth", "/log-gift", "/p", "/c", "/s", "/deals", "/w"
 // The only /api endpoints reachable without a session: the public team gift form.
 // Everything else under /api now requires auth at the edge (defence in depth on top
 // of each route's own getAccess check).
-const PUBLIC_API = ["/api/influencer/products", "/api/influencer/roster", "/api/influencer/entries", "/api/influencer/invoice", "/api/nanit/public"];
+const PUBLIC_API = ["/api/influencer/products", "/api/influencer/roster", "/api/influencer/entries", "/api/influencer/invoice", "/api/influencer/avatar", "/api/nanit/public"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
