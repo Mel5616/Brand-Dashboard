@@ -45,6 +45,31 @@ const weekStartOf = (iso: string) => {
   return d.toISOString().slice(0, 10);
 };
 
+// Pastel donut chart via conic-gradient, with legend.
+function Donut({ title, segments, center }: { title: string; segments: { label: string; value: number; color: string }[]; center?: string }) {
+  const total = segments.reduce((s, x) => s + x.value, 0);
+  if (total === 0) return null;
+  let acc = 0;
+  const stops = segments.map(s => { const from = acc / total * 360; acc += s.value; return `${s.color} ${from}deg ${(acc / total * 360)}deg`; }).join(", ");
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">{title}</p>
+      <div className="relative w-24 h-24 rounded-full" style={{ background: `conic-gradient(${stops})` }}>
+        <div className="absolute inset-[18px] rounded-full bg-white grid place-items-center">
+          <span className="text-[13px] font-bold text-slate-700">{center ?? total}</span>
+        </div>
+      </div>
+      <div className="space-y-0.5">
+        {segments.filter(s => s.value > 0).map(s => (
+          <p key={s.label} className="text-[10.5px] text-slate-500 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: s.color }} />{s.label} · {s.value}{total > 0 ? ` (${Math.round(s.value / total * 100)}%)` : ""}
+          </p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Tiny markdown renderer for the AI briefing (bold + bullets only).
 function mdLite(text: string) {
   const bold = (s: string, k: string) => s.split(/\*\*(.+?)\*\*/g).map((part, i) => (i % 2 ? <strong key={`${k}-${i}`} className="font-bold text-slate-800">{part}</strong> : part));
@@ -162,6 +187,44 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
     }
     return { weeks, thisWeek: weeks[weeks.length - 1]?.count ?? 0, total: completions.length, onTimePct: withDue ? Math.round((onTime / withDue) * 100) : null };
   }, [completions]);
+
+  // Analytics for the visual dashboard panel.
+  const analytics = useMemo(() => {
+    const today = todayStr();
+    const in7 = new Date(Date.now() + 7 * 86400_000).toISOString().slice(0, 10);
+    const in14 = new Date(Date.now() + 14 * 86400_000).toISOString().slice(0, 10);
+    const counts = { overdue: 0, dueToday: 0, due7: 0, due14: 0 };
+    const byChannel = new Map<string, number>();
+    const byPriority = { high: 0, medium: 0, low: 0, none: 0 };
+    const byBrand = new Map<string, number>();
+    const byRequester = new Map<string, number>();
+    for (const t of open) {
+      if (t.due_on) {
+        if (t.due_on < today) counts.overdue++;
+        else if (t.due_on === today) counts.dueToday++;
+        else if (t.due_on <= in7) counts.due7++;
+        else if (t.due_on <= in14) counts.due14++;
+      }
+      const m = (t.project_label || "").match(/^(EDM|Social)\s*·\s*(.+)$/i);
+      const ch = m ? (m[1].toUpperCase() === "EDM" ? "EDM" : "Social") : /sales/i.test(t.project_label || "") ? "Sales" : "Other";
+      byChannel.set(ch, (byChannel.get(ch) ?? 0) + 1);
+      const p = meta[t.gid]?.priority;
+      byPriority[p && p in byPriority ? p : "none"]++;
+      const brand = m ? m[2] : null;
+      if (brand) byBrand.set(brand, (byBrand.get(brand) ?? 0) + 1);
+      if (t.requested_by) {
+        const name = t.requested_by.split(" ")[0];
+        byRequester.set(name, (byRequester.get(name) ?? 0) + 1);
+      }
+    }
+    return {
+      counts,
+      byChannel: [...byChannel.entries()].sort((a, b) => b[1] - a[1]),
+      byPriority,
+      byBrand: [...byBrand.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10),
+      byRequester: [...byRequester.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8),
+    };
+  }, [open, meta]);
 
   async function addToQueue(gid: string, bucket: BucketKey) {
     setPlusFor(null);
@@ -362,8 +425,8 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4"><p className="text-[11px] uppercase tracking-wider text-gray-400">This week</p><p className="text-2xl font-bold text-emerald-600">{queueCount}</p></div>
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4"><p className="text-[11px] uppercase tracking-wider text-gray-400">Overdue</p><p className={`text-2xl font-bold ${overdue ? "text-rose-500" : "text-slate-800"}`}>{overdue}</p></div>
         <button onClick={() => setShowStats(v => !v)} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-left hover:border-emerald-200 transition-colors">
-          <p className="text-[11px] uppercase tracking-wider text-gray-400">Done this week {showStats ? "▾" : "▸"}</p>
-          <p className="text-2xl font-bold text-slate-800">{stats.thisWeek}</p>
+          <p className="text-[11px] uppercase tracking-wider text-gray-400">📊 Analytics {showStats ? "▾" : "▸"}</p>
+          <p className="text-2xl font-bold text-slate-800">{stats.thisWeek} <span className="text-[12px] font-normal text-gray-400">done this wk</span></p>
         </button>
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center col-span-2 sm:col-span-1">
           <div className="inline-flex bg-gray-100 rounded-lg p-0.5 mx-auto">
@@ -374,28 +437,84 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
         </div>
       </div>
 
-      {/* Throughput tracker */}
+      {/* Analytics dashboard */}
       {showStats && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <div className="flex flex-wrap items-baseline justify-between gap-2 mb-3">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Completed per week · last 8 weeks</p>
-            <p className="text-[12px] text-gray-400">
-              {stats.total} done in ~4 months{stats.onTimePct !== null && <> · <span className={stats.onTimePct >= 70 ? "text-emerald-600 font-semibold" : "text-amber-600 font-semibold"}>{stats.onTimePct}% on time</span></>}
-            </p>
+        <div className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50/40 via-white to-pink-50/40 shadow-sm p-5 space-y-5">
+          {/* KPI strip */}
+          <div className="grid grid-cols-3 sm:grid-cols-6 rounded-xl bg-amber-50/70 border border-amber-100 divide-x divide-amber-100 text-center overflow-hidden">
+            {[["Open tasks", open.length, "text-slate-800"],
+              ["Overdue", analytics.counts.overdue, analytics.counts.overdue ? "text-rose-500" : "text-slate-800"],
+              ["Due today", analytics.counts.dueToday, analytics.counts.dueToday ? "text-amber-600" : "text-slate-800"],
+              ["Due ≤ 7 days", analytics.counts.due7, "text-slate-800"],
+              ["Due ≤ 14 days", analytics.counts.due14, "text-slate-800"],
+              ["Done this week", stats.thisWeek, "text-emerald-600"]].map(([l, v, cls]) => (
+              <div key={String(l)} className="py-2.5 px-1">
+                <p className={`text-xl font-bold ${cls}`}>{v as number}</p>
+                <p className="text-[9.5px] uppercase tracking-wider text-amber-700/60">{l}</p>
+              </div>
+            ))}
           </div>
-          {stats.total === 0 ? (
-            <p className="text-sm text-gray-400">No completions logged yet — they&apos;ll appear as tasks get ticked off here or finished in Asana.</p>
-          ) : (
-            <div className="flex items-end gap-2 h-24">
-              {stats.weeks.map((w, i) => (
-                <div key={w.start} className="flex-1 flex flex-col items-center gap-1">
-                  <span className="text-[11px] font-semibold text-slate-500">{w.count || ""}</span>
-                  <div className={`w-full rounded-t-md ${i === stats.weeks.length - 1 ? "bg-emerald-400" : "bg-emerald-200"}`} style={{ height: `${Math.max(3, (w.count / maxWeek) * 64)}px` }} />
-                  <span className="text-[10px] text-gray-400">{dShort(w.start)}</span>
-                </div>
-              ))}
+
+          {/* Donuts */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <Donut title="By channel" segments={analytics.byChannel.map(([ch, n], i) => ({ label: ch, value: n, color: ["#818cf8", "#f9a8d4", "#fcd34d", "#94a3b8"][i % 4] }))} />
+            <Donut title="By priority" segments={[
+              { label: "High", value: analytics.byPriority.high, color: "#fb7185" },
+              { label: "Medium", value: analytics.byPriority.medium, color: "#fbbf24" },
+              { label: "Low", value: analytics.byPriority.low, color: "#7dd3fc" },
+              { label: "Unset", value: analytics.byPriority.none, color: "#e2e8f0" },
+            ]} />
+            {stats.onTimePct !== null && (
+              <Donut title="On time" center={`${stats.onTimePct}%`} segments={[
+                { label: "On time", value: stats.onTimePct, color: "#34d399" },
+                { label: "Late", value: 100 - stats.onTimePct, color: "#fda4af" },
+              ]} />
+            )}
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 mb-2 text-center">Requested by</p>
+              <div className="space-y-1.5">
+                {analytics.byRequester.map(([name, n]) => (
+                  <div key={name} className="flex items-center gap-2">
+                    <span className="text-[10.5px] text-slate-500 w-14 truncate">{name}</span>
+                    <div className="flex-1 h-2.5 rounded-full bg-gray-100"><div className="h-2.5 rounded-full bg-indigo-300" style={{ width: `${(n / (analytics.byRequester[0]?.[1] || 1)) * 100}%` }} /></div>
+                    <span className="text-[10.5px] font-semibold text-slate-600 w-5 text-right">{n}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          )}
+          </div>
+
+          {/* Brand workload + weekly timeline */}
+          <div className="grid lg:grid-cols-2 gap-5">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 mb-2">Open tasks by brand</p>
+              <div className="space-y-1.5">
+                {analytics.byBrand.map(([brand, n]) => (
+                  <div key={brand} className="flex items-center gap-2">
+                    <span className="text-[11px] text-slate-600 w-28 truncate">{brand}</span>
+                    <div className="flex-1 h-3 rounded-full bg-gray-100"><div className="h-3 rounded-full" style={{ width: `${(n / (analytics.byBrand[0]?.[1] || 1)) * 100}%`, background: brandColor(brand) }} /></div>
+                    <span className="text-[11px] font-semibold text-slate-600 w-5 text-right">{n}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 mb-2">Completed per week · last 8 weeks{stats.onTimePct !== null && <span className="normal-case tracking-normal text-gray-400 font-normal"> · {stats.total} done in ~4 months</span>}</p>
+              {stats.total === 0 ? (
+                <p className="text-sm text-gray-400">No completions logged yet.</p>
+              ) : (
+                <div className="flex items-end gap-2 h-24">
+                  {stats.weeks.map((w, i) => (
+                    <div key={w.start} className="flex-1 flex flex-col items-center gap-1">
+                      <span className="text-[11px] font-semibold text-slate-500">{w.count || ""}</span>
+                      <div className={`w-full rounded-t-md ${i === stats.weeks.length - 1 ? "bg-emerald-400" : "bg-emerald-200"}`} style={{ height: `${Math.max(3, (w.count / maxWeek) * 64)}px` }} />
+                      <span className="text-[10px] text-gray-400">{dShort(w.start)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
