@@ -967,7 +967,7 @@ export function DashboardTabs({
                       </button>
                     </div>
                     <span className="text-[11px] text-gray-400 hidden sm:inline">
-                      {brandView === "month" ? `${latestLabel} · all channels` : `${fyLabel} · whole business`}
+                      {brandView === "month" ? `${latestLabel} · digital (D2C)` : `${fyLabel} · digital (D2C)`}
                     </span>
                   </div>
                 </div>
@@ -1010,13 +1010,12 @@ export function DashboardTabs({
                           const mRoas    = latestM && latestM.spend > 0 ? latestM.revenue / latestM.spend : 0;
                           const sum      = summaryMap[id];
 
-                          // Whole-business revenue across all channels — FY total, or just the
-                          // selected month, depending on the Month / Full year toggle above.
-                          const chans        = buildChannels(id, { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest: LATEST });
-                          const fyWhole      = chans.reduce((s: number, c: any) => s + (c.fy ?? 0), 0);
-                          const monthWhole   = chans.reduce((s: number, c: any) => s + (c.latest ?? 0), 0);
-                          const wholeRevenue = brandView === "month" ? monthWhole : fyWhole;
-                          const wholeLabel   = brandView === "month" ? `${latestLabel} · all channels` : `${fyLabel} · all channels`;
+                          // Digital (D2C Shopify) revenue only — whole-business figures stay on
+                          // the admin channel views; the team-visible cards show digital.
+                          const fyDigital    = monthly.filter((m: any) => m.brand_id === id && monthKeys.includes(m.month_key)).reduce((s: number, m: any) => s + (m.revenue ?? 0), 0);
+                          const monthDigital = monthly.find((m: any) => m.brand_id === id && m.month_key === LATEST)?.revenue ?? 0;
+                          const wholeRevenue = brandView === "month" ? monthDigital : fyDigital;
+                          const wholeLabel   = brandView === "month" ? `${latestLabel} · digital (D2C)` : `${fyLabel} · digital (D2C)`;
                           // Small "vs target" bar stays as monthly D2C pacing (D2C detail lives on Shopify).
                           const moRev    = monthly.find((m: any) => m.brand_id === id && m.month_key === LATEST)?.revenue ?? 0;
                           const moTarget = target?.revenue_target ?? 0;
