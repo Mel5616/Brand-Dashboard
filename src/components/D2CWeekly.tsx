@@ -18,6 +18,7 @@ type Report = { week_start: string; payload: Payload };
 type BrandRef = { name: string; color: string };
 
 const NAVY = "#132741";
+const longDay = (s: string) => { const d = new Date(s + "T00:00:00"); const n = d.getDate(); const suf = n % 100 >= 11 && n % 100 <= 13 ? "th" : ({ 1: "st", 2: "nd", 3: "rd" } as Record<number, string>)[n % 10] ?? "th"; return `${d.toLocaleDateString("en-AU", { weekday: "long" })} ${n}${suf} ${d.toLocaleDateString("en-AU", { month: "long" })}`; };
 const dShort = (s: string) => new Date(s + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" });
 const dow = (s: string) => new Date(s + "T00:00:00").toLocaleDateString("en-AU", { weekday: "short" });
 const fmtK = (n: number) => n >= 1000 ? `$${Math.round(n / 1000)}k` : `$${n}`;
@@ -77,7 +78,7 @@ export function D2CWeekly({ brands = [] }: { brands?: BrandRef[] }) {
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-emerald-300">Coolkidz Australia · D2C Weekly</p>
-              <h1 className="text-2xl font-bold mt-1">Week {dShort(report.weekStart)} – {dShort(report.weekEnd)}</h1>
+              <h1 className="text-2xl font-bold mt-1">Week {longDay(report.weekStart)} – {longDay(report.weekEnd)}</h1>
               <p className="text-[12px] text-slate-300 mt-0.5">All brand websites · Shopify · revenue ex-GST</p>
             </div>
             <div className="text-right">

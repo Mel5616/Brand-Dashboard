@@ -50,6 +50,11 @@ def get(path):
     st, body = sb("GET", path)
     return json.loads(body.decode()) if st == 200 else []
 
+def long_day(d):
+    n=d.day
+    suf="th" if 11<=n%100<=13 else {1:"st",2:"nd",3:"rd"}.get(n%10,"th")
+    return f"{d.strftime('%A')} {n}{suf} {d.strftime('%B')}"
+
 def main():
     if not URL or not KEY:
         print("Missing Supabase env"); sys.exit(1)
@@ -178,7 +183,7 @@ def main():
 <div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff">
   <div style="background:{NAVY};border-radius:14px 14px 0 0;padding:24px 28px;color:#fff">
     <div style="font-size:10px;font-weight:800;letter-spacing:3px;color:#6ee7b7">COOLKIDZ AUSTRALIA · D2C WEEKLY</div>
-    <div style="font-size:22px;font-weight:800;margin-top:6px">Week {wk_start.strftime('%-d %b')} – {wk_end.strftime('%-d %b')}</div>
+    <div style="font-size:22px;font-weight:800;margin-top:6px">Week {long_day(wk_start)} – {long_day(wk_end)}</div>
     <div style="font-size:34px;font-weight:800;margin-top:14px">${t['revenue']:,} {wow_chip(t['wowPct'], invert=True)}</div>
     <div style="font-size:13px;color:#cbd5e1;margin-top:6px">{t['orders']} orders · AOV ${t['aov'] or 0:,} · prev week ${t['prevRevenue']:,} · all brand websites, ex-GST</div>
   </div>
