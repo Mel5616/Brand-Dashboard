@@ -471,9 +471,9 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                       return (
                         <article
                           key={c.id}
-                          onClick={() => setOpenId(c.id)}
+                          onClick={() => canEdit ? setOpenId(c.id) : (c.share_token && window.open(`/c/${c.share_token}`, "_blank"))}
                           tabIndex={0}
-                          onKeyDown={e => { if (e.key === "Enter") setOpenId(c.id); }}
+                          onKeyDown={e => { if (e.key === "Enter") { if (canEdit) setOpenId(c.id); else if (c.share_token) window.open(`/c/${c.share_token}`, "_blank"); } }}
                           draggable={canEdit}
                           onDragStart={canEdit ? (e => { setDragId(c.id); e.dataTransfer.effectAllowed = "move"; }) : undefined}
                           onDragEnd={canEdit ? (() => { setDragId(null); setDragOver(null); }) : undefined}
