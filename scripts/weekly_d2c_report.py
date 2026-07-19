@@ -60,7 +60,7 @@ def main():
     this_week_start = today - timedelta(days=(today.weekday() + 1) % 7)  # most recent Sunday
     wk_start = this_week_start - timedelta(days=7)
     wk_end = wk_start + timedelta(days=6)
-    hist_start = wk_start - timedelta(days=28)   # 4 prior weeks for the average
+    hist_start = wk_start - timedelta(days=56)   # 8 prior weeks: 4-wk avg + trend chart
 
     brands = {b["id"]: b["name"] for b in get("/rest/v1/brands?select=id,name")}
     rows = get(f"/rest/v1/brand_daily?select=brand_id,day,revenue,orders&day=gte.{hist_start}&day=lte.{wk_end}&limit=20000")
@@ -69,14 +69,27 @@ def main():
         dd = date.fromisoformat(d)
         if wk_start <= dd <= wk_end: return "cur"
         if wk_start - timedelta(days=7) <= dd < wk_start: return "prev"
-        return "hist"
+        if wk_start - timedelta(days=28) <= dd < wk_start: return "hist"
+        return None   # older weeks feed the trend only
 
     agg = {}
+    daily = {}
+    weekly = {}
     for r in rows:
         bid = r["brand_id"]
+        rev = float(r["revenue"] or 0); orders = int(r["orders"] or 0)
+        dd = date.fromisoformat(r["day"])
+        # Portfolio day-by-day for the reported week.
+        if wk_start <= dd <= wk_end:
+            dr = daily.setdefault(r["day"], [0.0, 0]); dr[0] += rev; dr[1] += orders
+        # 9-week portfolio trend (8 prior + reported week).
+        ws = (dd - timedelta(days=(dd.weekday() + 1) % 7)).isoformat()
+        weekly[ws] = weekly.get(ws, 0.0) + rev
         a = agg.setdefault(bid, {"cur": [0.0, 0], "prev": [0.0, 0], "hist": [0.0, 0]})
-        b = a[bucket(r["day"])]
-        b[0] += float(r["revenue"] or 0); b[1] += int(r["orders"] or 0)
+        bk = bucket(r["day"])
+        if bk:
+            b = a[bk]
+            b[0] += rev; b[1] += orders
 
     def pct(cur, base):
         return round((cur - base) / base * 100, 1) if base > 0 else None
@@ -112,6 +125,8 @@ def main():
         "brands": brands_out,
         "risers": sorted([b for b in movers if b["wowPct"] > 0], key=lambda b: -b["wowPct"])[:3],
         "fallers": sorted([b for b in movers if b["wowPct"] < 0], key=lambda b: b["wowPct"])[:3],
+        "daily": [{"day": d, "revenue": round(v[0]), "orders": v[1]} for d, v in sorted(daily.items())],
+        "trend": [{"weekStart": ws, "revenue": round(v)} for ws, v in sorted(weekly.items()) if ws <= wk_start.isoformat()],
     }
 
     st, body = sb("POST", "/rest/v1/d2c_weekly_reports?on_conflict=week_start",

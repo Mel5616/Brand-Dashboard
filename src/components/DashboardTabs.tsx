@@ -1190,7 +1190,7 @@ export function DashboardTabs({
             </>
           )}
 
-          {active === "d2c-weekly" && <D2CWeekly />}
+          {active === "d2c-weekly" && <D2CWeekly brands={brands.map((b: any) => ({ name: b.name, color: b.color }))} />}
 
           {/* ── UPPAbaby monthly sales report (uploaded sell-through + dashboard marketing) ── */}
           {active === "uppababy" && (
