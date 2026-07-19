@@ -512,7 +512,10 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                           <p className="text-[11px] text-gray-400">Owner {c.owner || "TBC"}{c.channel ? ` · ${c.channel}` : ""}</p>
                           {c.note && <p className="text-[11px] text-gray-500 leading-snug">{c.note}</p>}
                           <div className="flex items-center justify-between gap-2">
-                            <p className="text-[11px] font-medium text-emerald-500 flex items-center gap-1">{flagged && <span title="Compliance flag" className="text-amber-500">⚠</span>}Open brief →</p>
+                            {c.share_token
+                              ? <a href={`/c/${c.share_token}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
+                                  className="text-[11px] font-medium text-emerald-500 hover:text-emerald-700 hover:underline flex items-center gap-1">{flagged && <span title="Compliance flag" className="text-amber-500">⚠</span>}Open brief →</a>
+                              : <p className="text-[11px] font-medium text-emerald-500 flex items-center gap-1">{flagged && <span title="Compliance flag" className="text-amber-500">⚠</span>}Open brief →</p>}
                             {(canEdit || (c.brief as any)?.designRequired) && (
                               <button
                                 onClick={canEdit ? (e => { e.stopPropagation(); toggleDesignRequired(c); }) : undefined}
