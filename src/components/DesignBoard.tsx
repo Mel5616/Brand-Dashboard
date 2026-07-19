@@ -70,19 +70,6 @@ function Donut({ title, segments, center }: { title: string; segments: { label: 
   );
 }
 
-// Tiny markdown renderer for the AI briefing (bold + bullets only).
-function mdLite(text: string) {
-  const bold = (s: string, k: string) => s.split(/\*\*(.+?)\*\*/g).map((part, i) => (i % 2 ? <strong key={`${k}-${i}`} className="font-bold text-slate-800">{part}</strong> : part));
-  return text.split("\n").map((line, i) => {
-    const t = line.trim();
-    if (!t) return null;
-    if (/^#{1,4}\s/.test(t)) return <p key={i} className="text-[13px] font-bold text-slate-800 mt-3 first:mt-0">{bold(t.replace(/^#{1,4}\s/, ""), String(i))}</p>;
-    if (/^[-*•]\s/.test(t)) return <p key={i} className="text-[13px] text-slate-600 leading-relaxed pl-4 relative before:content-['•'] before:absolute before:left-1 before:text-indigo-400">{bold(t.replace(/^[-*•]\s/, ""), String(i))}</p>;
-    if (/^\d+\.\s/.test(t)) return <p key={i} className="text-[13px] text-slate-600 leading-relaxed mt-2">{bold(t, String(i))}</p>;
-    return <p key={i} className="text-[13px] text-slate-600 leading-relaxed mt-1.5">{bold(t, String(i))}</p>;
-  });
-}
-
 export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: BrandRef[] }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [priorities, setPriorities] = useState<Priority[]>([]);
@@ -94,7 +81,6 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
   const [prioritiesSetup, setPrioritiesSetup] = useState(true);
   const [metaSetup, setMetaSetup] = useState(true);
   const [asanaWrite, setAsanaWrite] = useState(true);
-  const [aiReady, setAiReady] = useState(false);
   const [err, setErr] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [af, setAf] = useState({ name: "", notes: "", due_on: "", project_gid: "" });
@@ -104,8 +90,6 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
   const [notesFor, setNotesFor] = useState<string | null>(null);
   const [plusFor, setPlusFor] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
-  const [insights, setInsights] = useState("");
-  const [aiBusy, setAiBusy] = useState(false);
   const [showStats, setShowStats] = useState(false);
 
   useEffect(() => {
@@ -117,7 +101,7 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
         setCompletions(d.completions ?? []);
         setDesignCampaigns(d.designCampaigns ?? []);
         setPrioritiesSetup(d.prioritiesSetup !== false); setMetaSetup(d.metaSetup !== false);
-        setAsanaWrite(!!d.asanaWrite); setAiReady(!!d.aiReady);
+        setAsanaWrite(!!d.asanaWrite);
       }
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
@@ -284,13 +268,6 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
     if (d.ok) { setMeta(m => ({ ...m, [gid]: { ...m[gid], notes: noteDraft.trim() || null } })); setNotesFor(null); }
     else setErr(d.error || "Couldn't save notes.");
   }
-  async function runInsights() {
-    setAiBusy(true); setErr("");
-    const d = await fetch("/api/design/insights", { method: "POST" }).then(r => r.json()).catch(() => null);
-    setAiBusy(false);
-    if (d?.ok) setInsights(d.insights);
-    else setErr(d?.error || "Couldn't generate insights.");
-  }
   async function createTask() {
     if (!af.name.trim() || !af.project_gid) { setErr("Task name and board required."); return; }
     setBusy(true); setErr("");
@@ -395,29 +372,10 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
           <h1 className="text-xl font-bold text-slate-800">Design</h1>
           <p className="text-sm text-gray-400">EDM and social work across every brand. Queue the week here — ticks, due dates and new tasks write back to Asana.</p>
         </div>
-        <div className="flex gap-2 shrink-0">
-          {aiReady && (
-            <button onClick={runInsights} disabled={aiBusy}
-              className="text-sm font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg px-4 py-2 disabled:opacity-60">
-              {aiBusy ? "Thinking…" : "✨ AI insights"}
-            </button>
-          )}
-          {asanaWrite && <button onClick={() => setShowAdd(v => !v)} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2">{showAdd ? "Cancel" : "+ New task"}</button>}
-        </div>
+        {asanaWrite && <button onClick={() => setShowAdd(v => !v)} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2 shrink-0">{showAdd ? "Cancel" : "+ New task"}</button>}
       </div>
       {err && <p className="text-sm text-rose-500">{err}</p>}
       {!metaSetup && <p className="text-[12px] text-amber-600 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">Run <code className="bg-white px-1 rounded">add_design_meta.sql</code> to enable priorities, notes and the completion tracker.</p>}
-
-      {/* AI briefing */}
-      {insights && (
-        <div className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50/80 to-white shadow-sm p-5 relative">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-indigo-600">✨ This week&apos;s AI briefing</p>
-            <button onClick={() => setInsights("")} className="text-[11px] text-gray-400 hover:text-gray-600">dismiss</button>
-          </div>
-          <div className="space-y-0.5">{mdLite(insights)}</div>
-        </div>
-      )}
 
       {/* Summary + channel filter */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
