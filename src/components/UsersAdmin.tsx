@@ -86,7 +86,7 @@ function UserRow({ u, sections, adminOnly, open, onToggle, onChanged }: { u: Row
           {u.disabled && <span className="text-[10px] font-semibold text-rose-500 uppercase">Disabled</span>}
         </td>
         <td className="px-4 py-3">
-          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${u.role === "admin" ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-600"}`}>{u.role === "admin" ? "admin" : "management"}</span>
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${u.role === "admin" ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-600"}`}>{u.role === "admin" ? "admin" : "user"}</span>
         </td>
         <td className="px-4 py-3 text-xs text-slate-500">{u.role === "admin" ? "All sections" : (u.allowed_tabs.length ? `${u.allowed_tabs.length} section${u.allowed_tabs.length > 1 ? "s" : ""}` : "None")}</td>
         <td className="px-4 py-3 text-xs text-slate-500">{when(u.last_sign_in_at)}</td>
