@@ -2,7 +2,7 @@ name: d2c-weekly-report
 
 on:
   schedule:
-    - cron: "0 9 * * 0"   # Sunday 7pm AEST (8pm AEDT in summer)
+    - cron: "30 8 * * 0"   # Sunday 6:30pm AEST (7:30pm AEDT in summer)
   workflow_dispatch:
 
 jobs:

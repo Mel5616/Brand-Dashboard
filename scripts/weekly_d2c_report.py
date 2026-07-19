@@ -144,24 +144,71 @@ def main():
     api_key, to = config.get("resendApiKey"), config.get("digestEmail")
     if api_key and to:
         t = payload["totals"]
-        wow = f" ({'+' if t['wowPct'] >= 0 else ''}{t['wowPct']}% WoW)" if t["wowPct"] is not None else ""
+        NAVY = "#132741"
+        def wow_chip(v, invert=False):
+            if v is None:
+                return ""
+            up = v >= 0
+            col = "#059669" if up else "#e11d48"
+            if invert:
+                col = "#6ee7b7" if up else "#fda4af"
+            return f"<span style='color:{col};font-weight:700'>{'▲' if up else '▼'} {abs(v)}%</span>"
         rows_html = "".join(
-            f"<tr><td style='padding:6px 12px'>{b['brand']}</td><td style='padding:6px 12px;text-align:right'>${b['revenue']:,}</td>"
-            f"<td style='padding:6px 12px;text-align:right'>{b['orders']}</td>"
-            f"<td style='padding:6px 12px;text-align:right'>{('+' if (b['wowPct'] or 0) >= 0 else '') + str(b['wowPct']) + '%' if b['wowPct'] is not None else '—'}</td></tr>"
+            f"<tr style='border-bottom:1px solid #f1f5f9'>"
+            f"<td style='padding:8px 12px;font-weight:600;color:#334155'>{b['brand']}</td>"
+            f"<td style='padding:8px 12px;text-align:right;font-weight:700;color:#0f172a'>${b['revenue']:,}</td>"
+            f"<td style='padding:8px 12px;text-align:right'>{wow_chip(b['wowPct'])}</td>"
+            f"<td style='padding:8px 12px;text-align:right'>{wow_chip(b['vs4wkPct'])}</td>"
+            f"<td style='padding:8px 12px;text-align:right;color:#475569'>{b['orders']}</td>"
+            f"<td style='padding:8px 12px;text-align:right;color:#475569'>${b['aov'] or 0:,}</td></tr>"
             for b in brands_out)
-        html = (f"<h2>D2C Weekly · {wk_start.strftime('%-d %b')} – {wk_end.strftime('%-d %b')}</h2>"
-                f"<p><strong>${t['revenue']:,}</strong>{wow} · {t['orders']} orders · AOV ${t['aov'] or 0:,}</p>"
-                f"<table style='border-collapse:collapse;font-family:sans-serif;font-size:14px'>"
-                f"<tr><th style='padding:6px 12px;text-align:left'>Brand</th><th style='padding:6px 12px'>Revenue</th><th style='padding:6px 12px'>Orders</th><th style='padding:6px 12px'>WoW</th></tr>{rows_html}</table>"
-                f"<p><a href='https://marketing.coolkidz.com.au'>Open the dashboard →</a></p>")
+        movers_html = ""
+        if payload["risers"] or payload["fallers"]:
+            ri = "<br>".join(f"<strong>{b['brand']}</strong> +{b['wowPct']}% · ${b['revenue']:,}" for b in payload["risers"]) or "None"
+            fa = "<br>".join(f"<strong>{b['brand']}</strong> −{abs(b['wowPct'])}% · ${b['revenue']:,}" for b in payload["fallers"]) or "None"
+            movers_html = (
+                "<table width='100%' cellpadding='0' cellspacing='0' style='margin:16px 0'><tr>"
+                f"<td width='49%' style='background:#ecfdf5;border:1px solid #d1fae5;border-radius:10px;padding:12px;font-size:13px;color:#334155;vertical-align:top'>"
+                f"<div style='font-size:10px;font-weight:800;letter-spacing:2px;color:#047857;margin-bottom:6px'>▲ RISERS</div>{ri}</td>"
+                "<td width='2%'></td>"
+                f"<td width='49%' style='background:#fff1f2;border:1px solid #ffe4e6;border-radius:10px;padding:12px;font-size:13px;color:#334155;vertical-align:top'>"
+                f"<div style='font-size:10px;font-weight:800;letter-spacing:2px;color:#be123c;margin-bottom:6px'>▼ FALLERS</div>{fa}</td>"
+                "</tr></table>")
+        html = f"""
+<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:640px;margin:0 auto;background:#ffffff">
+  <div style="background:{NAVY};border-radius:14px 14px 0 0;padding:24px 28px;color:#fff">
+    <div style="font-size:10px;font-weight:800;letter-spacing:3px;color:#6ee7b7">COOLKIDZ AUSTRALIA · D2C WEEKLY</div>
+    <div style="font-size:22px;font-weight:800;margin-top:6px">Week {wk_start.strftime('%-d %b')} – {wk_end.strftime('%-d %b')}</div>
+    <div style="font-size:34px;font-weight:800;margin-top:14px">${t['revenue']:,} {wow_chip(t['wowPct'], invert=True)}</div>
+    <div style="font-size:13px;color:#cbd5e1;margin-top:6px">{t['orders']} orders · AOV ${t['aov'] or 0:,} · prev week ${t['prevRevenue']:,} · all brand websites, ex-GST</div>
+  </div>
+  <div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 14px 14px;padding:20px 24px">
+    {movers_html}
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:13px">
+      <tr style="border-bottom:2px solid #e2e8f0;color:#94a3b8;font-size:10px;letter-spacing:1px;text-transform:uppercase">
+        <th align="left" style="padding:8px 12px">Brand</th><th align="right" style="padding:8px 12px">Revenue</th>
+        <th align="right" style="padding:8px 12px">WoW</th><th align="right" style="padding:8px 12px">vs 4-wk</th>
+        <th align="right" style="padding:8px 12px">Orders</th><th align="right" style="padding:8px 12px">AOV</th>
+      </tr>
+      {rows_html}
+    </table>
+    <div style="text-align:center;margin-top:20px">
+      <a href="https://marketing.coolkidz.com.au" style="background:#10b981;color:#fff;font-weight:700;font-size:14px;text-decoration:none;border-radius:10px;padding:10px 22px;display:inline-block">Open the dashboard →</a>
+    </div>
+    <div style="font-size:10px;color:#94a3b8;margin-top:16px;text-align:center">Auto-generated Sunday 6:30pm · business weeks run Sunday–Saturday</div>
+  </div>
+</div>"""
+        wow_txt = f" ({'+' if t['wowPct'] >= 0 else ''}{t['wowPct']}% WoW)" if t["wowPct"] is not None else ""
+        sender = config.get("digestFrom") or "Coolkidz Dashboard <onboarding@resend.dev>"
         req = urllib.request.Request("https://api.resend.com/emails",
-            data=json.dumps({"from": "Coolkidz Dashboard <onboarding@resend.dev>", "to": [e.strip() for e in str(to).split(",")],
-                             "subject": f"D2C Weekly · ${t['revenue']:,}{wow}", "html": html}).encode(),
+            data=json.dumps({"from": sender, "to": [e.strip() for e in str(to).split(",")],
+                             "subject": f"D2C Weekly · ${t['revenue']:,}{wow_txt}", "html": html}).encode(),
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}, method="POST")
         try:
-            urllib.request.urlopen(req, context=CTX, timeout=30)
-            print("Email sent", flush=True)
+            with urllib.request.urlopen(req, context=CTX, timeout=30) as r:
+                print(f"Email sent to {to}", flush=True)
+        except urllib.error.HTTPError as e:
+            print(f"Email failed ({e.code}, report still saved): {e.read().decode(errors='replace')[:200]}", flush=True)
         except Exception as e:
             print(f"Email failed (report still saved): {e}", flush=True)
 
