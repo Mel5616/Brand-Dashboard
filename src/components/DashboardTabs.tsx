@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { SalesChart } from "./SalesChart";
 import { GoogleAdsChart } from "./GoogleAdsChart";
 import { MetaAdsChart } from "./MetaAdsChart";
@@ -516,6 +516,14 @@ export function DashboardTabs({
   function openBrand(id: number) { setBrandFilter(id); if (active !== "summary" && active !== "brands") setActive("brands"); setMobileNavOpen(false); }
   function goHome() { setBrandFilter("all"); setMobileNavOpen(false); }
   // Navigate to a tab and close the mobile drawer (no-op on desktop).
+  // Keep the sidebar's scroll position when switching tabs — without this the
+  // nav can jump back to the top on every click, losing your place in the list.
+  const sideRef = useRef<HTMLElement | null>(null);
+  const sideScroll = useRef(0);
+  useLayoutEffect(() => {
+    if (sideRef.current) sideRef.current.scrollTop = sideScroll.current;
+  }, [active]);
+
   function go(id: TabId) { setActive(id); setMobileNavOpen(false); }
   // Tabs (with their sidebar group) for the ⌘K palette.
   const paletteTabs = visibleTabs.map(t => ({ id: t.id, label: t.label, group: TAB_GROUPS.find(g => g.ids.includes(t.id as TabId))?.label }));
@@ -541,7 +549,8 @@ export function DashboardTabs({
       </button>
       {/* Mobile: backdrop behind the drawer */}
       {mobileNavOpen && <div className="lg:hidden fixed left-0 right-0 bottom-0 top-[70px] bg-black/40 z-20" onClick={() => setMobileNavOpen(false)} />}
-    <aside className={`fixed top-[70px] left-0 w-[288px] h-[calc(100vh-70px)] bg-white border-r border-gray-200 flex flex-col z-20 lg:z-10 overflow-y-auto transform transition-transform duration-200 ease-out lg:translate-x-0 ${mobileNavOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"}`}>
+    <aside ref={sideRef} onScroll={e => { sideScroll.current = e.currentTarget.scrollTop; }}
+      className={`fixed top-[70px] left-0 w-[288px] h-[calc(100vh-70px)] bg-white border-r border-gray-200 flex flex-col z-20 lg:z-10 overflow-y-auto transform transition-transform duration-200 ease-out lg:translate-x-0 ${mobileNavOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"}`}>
       {/* Mobile: close the drawer */}
       <div className="lg:hidden flex justify-end px-2 pt-2">
         <button type="button" onClick={() => setMobileNavOpen(false)} aria-label="Close menu"
