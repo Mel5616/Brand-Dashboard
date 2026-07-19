@@ -1,0 +1,27 @@
+name: d2c-weekly-report
+
+on:
+  schedule:
+    - cron: "0 9 * * 0"   # Sunday 7pm AEST (8pm AEDT in summer)
+  workflow_dispatch:
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Write stores.config.json
+        env:
+          STORES_CONFIG_JSON: ${{ secrets.STORES_CONFIG_JSON }}
+        run: |
+          printf '%s' "$STORES_CONFIG_JSON" > stores.config.json
+      - name: Generate D2C weekly report
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python3 -u scripts/weekly_d2c_report.py

@@ -19,6 +19,7 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "report", label: "Budget vs Actuals" },
     { id: "snapshot", label: "Brand Snapshot" },
     { id: "social-report", label: "Social Report" },
+    { id: "d2c-weekly", label: "D2C Weekly" },
     { id: "uppababy", label: "UPPAbaby" },
   ] },
   { label: "Revenue & Channels", tabs: [
