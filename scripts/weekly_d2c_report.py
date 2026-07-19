@@ -203,7 +203,7 @@ def main():
         req = urllib.request.Request("https://api.resend.com/emails",
             data=json.dumps({"from": sender, "to": [e.strip() for e in str(to).split(",")],
                              "subject": f"D2C Weekly · ${t['revenue']:,}{wow_txt}", "html": html}).encode(),
-            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}, method="POST")
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json", "User-Agent": "coolkidz-dashboard/1.0"}, method="POST")
         try:
             with urllib.request.urlopen(req, context=CTX, timeout=30) as r:
                 print(f"Email sent to {to}", flush=True)
