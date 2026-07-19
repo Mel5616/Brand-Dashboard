@@ -34,10 +34,21 @@ export async function POST(req: Request) {
   let url = String(b.url || "").trim().slice(0, 800);
   if (url && !/^https?:\/\//i.test(url)) url = `https://${url}`;
   if (!brand || !label || !url) return NextResponse.json({ ok: false, error: "Brand, label and link required" }, { status: 400 });
-  const row: any = { brand, label, url, notes: String(b.notes || "").slice(0, 400) || null, added_by: access.user?.email ?? null };
+  const row: any = {
+    brand, label, url, notes: String(b.notes || "").slice(0, 400) || null,
+    username: String(b.username || "").slice(0, 200) || null,
+    password: String(b.password || "").slice(0, 200) || null,
+    added_by: access.user?.email ?? null,
+  };
   const path = b.id ? `brand_asset_links?id=eq.${encodeURIComponent(String(b.id))}` : "brand_asset_links";
-  const res = await fetch(`${sbUrl}/rest/v1/${path}`, { method: b.id ? "PATCH" : "POST", headers: h({ Prefer: "return=representation" }), body: JSON.stringify(row) });
-  const text = await res.text();
+  let res = await fetch(`${sbUrl}/rest/v1/${path}`, { method: b.id ? "PATCH" : "POST", headers: h({ Prefer: "return=representation" }), body: JSON.stringify(row) });
+  let text = await res.text();
+  if (!res.ok && /username|password/.test(text)) {
+    // credentials columns not added yet (add_brand_asset_creds.sql) — save without
+    delete row.username; delete row.password;
+    res = await fetch(`${sbUrl}/rest/v1/${path}`, { method: b.id ? "PATCH" : "POST", headers: h({ Prefer: "return=representation" }), body: JSON.stringify(row) });
+    text = await res.text();
+  }
   if (!res.ok) return NextResponse.json({ ok: false, needsSetup: missing(res.status, text) }, { status: 500 });
   const out = JSON.parse(text);
   return NextResponse.json({ ok: true, item: Array.isArray(out) ? out[0] : out });

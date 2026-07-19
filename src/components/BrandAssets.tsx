@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 // Operations > Brand Assets — one place linking out to wherever each brand's
 // assets actually live (Brandfolder, Dropbox, Drive, supplier portals).
 // Admin adds/edits links inline; everyone gets the quick links.
-type Link = { id: string; brand: string; label: string; url: string; notes: string | null };
+type Link = { id: string; brand: string; label: string; url: string; notes: string | null; username?: string | null; password?: string | null };
 type BrandRef = { name: string; color: string };
 
 const inp = "text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400";
@@ -30,7 +30,8 @@ export function BrandAssets({ brands = [], admin }: { brands?: BrandRef[]; admin
   const [err, setErr] = useState("");
   const [addFor, setAddFor] = useState<string | null>(null);   // brand name, or "__new__"
   const [editId, setEditId] = useState<string | null>(null);
-  const [f, setF] = useState({ brand: "", label: "", url: "", notes: "" });
+  const [f, setF] = useState({ brand: "", label: "", url: "", notes: "", username: "", password: "" });
+  const [revealed, setRevealed] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -51,11 +52,11 @@ export function BrandAssets({ brands = [], admin }: { brands?: BrandRef[]; admin
 
   function startAdd(brand: string) {
     setEditId(null); setAddFor(brand);
-    setF({ brand: brand === "__new__" ? "" : brand, label: "", url: "", notes: "" });
+    setF({ brand: brand === "__new__" ? "" : brand, label: "", url: "", notes: "", username: "", password: "" });
   }
   function startEdit(l: Link) {
     setAddFor(null); setEditId(l.id);
-    setF({ brand: l.brand, label: l.label, url: l.url, notes: l.notes ?? "" });
+    setF({ brand: l.brand, label: l.label, url: l.url, notes: l.notes ?? "", username: l.username ?? "", password: l.password ?? "" });
   }
   async function save() {
     setBusy(true); setErr("");
@@ -82,7 +83,9 @@ export function BrandAssets({ brands = [], admin }: { brands?: BrandRef[]; admin
         <button onClick={save} disabled={busy} className="flex-1 text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2 disabled:opacity-60">{busy ? "Saving…" : "Save"}</button>
         <button onClick={() => { setAddFor(null); setEditId(null); }} className="text-sm text-gray-400 hover:text-gray-600 px-2">Cancel</button>
       </div>
-      <input value={f.notes} onChange={e => setF({ ...f, notes: e.target.value })} placeholder="Notes (optional — login owner, what's in there…)" className={`${inp} sm:col-span-2 lg:col-span-5`} />
+      <input value={f.username} onChange={e => setF({ ...f, username: e.target.value })} placeholder="Username / email (optional)" className={`${inp} sm:col-span-1 lg:col-span-2`} autoComplete="off" />
+      <input value={f.password} onChange={e => setF({ ...f, password: e.target.value })} placeholder="Password (optional — visible to all dashboard users)" className={`${inp} sm:col-span-1 lg:col-span-3`} autoComplete="off" />
+      <input value={f.notes} onChange={e => setF({ ...f, notes: e.target.value })} placeholder="Notes (optional — what's in there…)" className={`${inp} sm:col-span-2 lg:col-span-5`} />
       <datalist id="asset-brands">{brands.map(b => <option key={b.name} value={b.name} />)}</datalist>
     </div>
   );
@@ -108,11 +111,16 @@ export function BrandAssets({ brands = [], admin }: { brands?: BrandRef[]; admin
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {grouped.map(g => (
-          <div key={g.brand} className="bg-white rounded-2xl border border-gray-100 shadow-sm" style={{ borderTop: `3px solid ${color(g.brand)}` }}>
-            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-50 rounded-t-[13px]" style={{ background: `${color(g.brand)}0D` }}>
-              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color(g.brand) }} />
-              <p className="text-[13px] font-bold text-slate-800">{g.brand}</p>
-              {admin && <button onClick={() => startAdd(g.brand)} className="ml-auto text-[15px] leading-none font-bold text-emerald-500 hover:text-emerald-700" title="Add a link for this brand">＋</button>}
+          <div key={g.brand} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-3 px-4 py-3.5 rounded-t-2xl" style={{ background: `linear-gradient(120deg, ${color(g.brand)}, ${color(g.brand)}99)` }}>
+              <span className="w-9 h-9 rounded-full bg-white/90 grid place-items-center text-[13px] font-black shrink-0" style={{ color: color(g.brand) }}>
+                {g.brand.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
+              </span>
+              <div className="min-w-0">
+                <p className="text-[15px] font-bold text-white leading-tight">{g.brand}</p>
+                <p className="text-[10.5px] text-white/70">{g.links.length} {g.links.length === 1 ? "source" : "sources"}</p>
+              </div>
+              {admin && <button onClick={() => startAdd(g.brand)} className="ml-auto w-7 h-7 rounded-full bg-white/20 hover:bg-white/35 text-white text-[15px] leading-none font-bold grid place-items-center" title="Add a link for this brand">＋</button>}
             </div>
             <div className="px-4 py-2 divide-y divide-gray-50">
               {g.links.map(l => {
@@ -132,6 +140,21 @@ export function BrandAssets({ brands = [], admin }: { brands?: BrandRef[]; admin
                         </span>
                       )}
                     </div>
+                    {(l.username || l.password) && (
+                      <div className="flex items-center gap-2 flex-wrap mt-1 pl-1">
+                        {l.username && (
+                          <button onClick={() => navigator.clipboard?.writeText(l.username!)} title="Click to copy"
+                            className="text-[11px] text-slate-500 bg-gray-50 hover:bg-gray-100 rounded-full px-2 py-0.5">👤 {l.username} ⧉</button>
+                        )}
+                        {l.password && (
+                          <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 bg-gray-50 rounded-full px-2 py-0.5">
+                            🔑 {revealed.has(l.id) ? l.password : "••••••••"}
+                            <button onClick={() => setRevealed(prev => { const n = new Set(prev); n.has(l.id) ? n.delete(l.id) : n.add(l.id); return n; })} className="text-gray-400 hover:text-slate-600" title={revealed.has(l.id) ? "Hide" : "Reveal"}>{revealed.has(l.id) ? "🙈" : "👁"}</button>
+                            <button onClick={() => navigator.clipboard?.writeText(l.password!)} className="text-gray-400 hover:text-slate-600" title="Copy password">⧉</button>
+                          </span>
+                        )}
+                      </div>
+                    )}
                     {l.notes && <p className="text-[11.5px] text-gray-400 mt-0.5 pl-1">{l.notes}</p>}
                     {editId === l.id && Form}
                   </div>
