@@ -43,7 +43,9 @@ export function StockReport({ brands = [], admin }: { brands?: BrandRef[]; admin
   useEffect(() => {
     fetch("/api/content-todo?label=Stock%20Report").then(r => r.json()).then(d => {
       if (d.ok) {
-        setTasks(d.tasks ?? []);
+        // Only real stock lines come through — tasks with no custom fields
+        // (section headers, "Last Updated" markers) stay in Asana.
+        setTasks((d.tasks ?? []).filter((t: any) => t.custom_fields && Object.keys(t.custom_fields).length > 0));
         setAsanaWrite(!!d.asanaWrite);
         const mods = (d.tasks ?? []).map((t: any) => t.modified_at).filter(Boolean).sort();
         setSynced(d.synced ?? (mods[mods.length - 1] ?? null));
@@ -147,7 +149,7 @@ export function StockReport({ brands = [], admin }: { brands?: BrandRef[]; admin
                         <td className="px-3 py-2 font-mono text-[12px] text-slate-500">{code ?? "—"}</td>
                         <td className="px-3 py-2">{status ? <span className={`text-[11px] font-bold rounded-full px-2 py-0.5 ${statusCls(status)}`}>{status}</span> : <span className="text-slate-300">—</span>}</td>
                         <td className="px-3 py-2 text-slate-600">{ordering ?? (t.due_on ? new Date(t.due_on + "T00:00:00").toLocaleDateString("en-AU", { month: "long" }) : "—")}</td>
-                        <td className="px-3 py-2 text-slate-500 text-[13px] max-w-[280px] truncate" title={t.notes || undefined}>{t.notes?.trim() || "—"}</td>
+                        <td className="px-3 py-2 text-slate-500 text-[13px] max-w-[280px] truncate" title={field(t, [/^notes$/i]) || t.notes || undefined}>{field(t, [/^notes$/i]) || t.notes?.trim() || "—"}</td>
                         <td className="px-3 py-2 text-right">
                           {t.permalink_url && <a href={t.permalink_url} target="_blank" rel="noreferrer" title="Open in Asana" className="text-gray-300 hover:text-emerald-600">↗</a>}
                         </td>
