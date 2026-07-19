@@ -12,8 +12,8 @@ type Task = {
 };
 type Meta = { priority?: "high" | "medium" | "low" | null; notes?: string | null };
 
-const BOARD_GID = "1207220459783085";
-const BOARD_LABEL = "Content To Do";
+const DEFAULT_GID = "1207220459783085";
+const DEFAULT_LABEL = "Content To Do";
 const inp = "text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400";
 const dShort = (s?: string | null) => s ? new Date(s + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" }) : "";
 const todayStr = () => new Date().toISOString().slice(0, 10);
@@ -24,7 +24,7 @@ const PRIO: Record<string, { label: string; letter: string; cls: string; idle: s
 };
 const prioWeight = (p?: string | null) => (p && PRIO[p] ? PRIO[p].weight : 3);
 
-export function ContentTodo({ admin }: { admin: boolean }) {
+export function ContentTodo({ admin, boardGid = DEFAULT_GID, boardLabel = DEFAULT_LABEL, title = "📝 Content to-do", accent = "#0891b2" }: { admin: boolean; boardGid?: string; boardLabel?: string; title?: string; accent?: string }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [meta, setMeta] = useState<Record<string, Meta>>({});
   const [asanaWrite, setAsanaWrite] = useState(false);
@@ -37,14 +37,15 @@ export function ContentTodo({ admin }: { admin: boolean }) {
   const [noteDraft, setNoteDraft] = useState("");
 
   useEffect(() => {
-    fetch("/api/content-todo").then(r => r.json()).then(d => {
+    fetch(`/api/content-todo?label=${encodeURIComponent(boardLabel)}`).then(r => r.json()).then(d => {
       if (d.ok) {
         setTasks(d.tasks ?? []);
         setMeta(Object.fromEntries((d.meta ?? []).map((m: any) => [m.task_gid, { priority: m.priority, notes: m.notes }])));
         setAsanaWrite(!!d.asanaWrite);
       }
     }).catch(() => {}).finally(() => setLoading(false));
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boardLabel]);
 
   const post = (body: any) => fetch("/api/design", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
 
@@ -85,7 +86,7 @@ export function ContentTodo({ admin }: { admin: boolean }) {
   async function createTask() {
     if (!af.name.trim()) { setErr("Task name required."); return; }
     setBusy(true); setErr("");
-    const d = await post({ action: "task.create", name: af.name, due_on: af.due_on, project_gid: BOARD_GID, project_label: BOARD_LABEL });
+    const d = await post({ action: "task.create", name: af.name, due_on: af.due_on, project_gid: boardGid, project_label: boardLabel });
     setBusy(false);
     if (d.ok) { setTasks(p => [d.item, ...p]); setAf({ name: "", due_on: "" }); setShowAdd(false); }
     else setErr(d.error || "Couldn't create the task.");
@@ -97,7 +98,7 @@ export function ContentTodo({ admin }: { admin: boolean }) {
     <div className="pt-2">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-2 px-1">
         <div className="flex items-baseline gap-2">
-          <h2 className="text-[13px] font-bold uppercase tracking-[0.14em] text-slate-500">📝 Content to-do</h2>
+          <h2 className="text-[13px] font-bold uppercase tracking-[0.14em] text-slate-500">{title}</h2>
           <span className="text-[12px] text-gray-400">{tasks.length} open{overdue ? <> · <span className="text-rose-500 font-semibold">{overdue} overdue</span></> : null} · from Asana</span>
         </div>
         {asanaWrite && admin && <button onClick={() => setShowAdd(v => !v)} className="text-[12.5px] font-semibold text-emerald-600 hover:text-emerald-700">{showAdd ? "Cancel" : "+ Add to the list"}</button>}
@@ -111,11 +112,11 @@ export function ContentTodo({ admin }: { admin: boolean }) {
         </div>
       )}
       {tasks.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-center text-sm text-gray-400">Nothing on the content list — it fills from the Content To Do board in Asana after the next sync.</div>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-center text-sm text-gray-400">Nothing here yet — it fills from the Asana board after the next sync.</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
           {sections.map(([section, list]) => (
-            <div key={section} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" style={{ borderTop: "3px solid #0891b2" }}>
+            <div key={section} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden" style={{ borderTop: `3px solid ${accent}` }}>
               <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-50 bg-cyan-50/40">
                 <p className="text-[13px] font-bold text-slate-800 truncate">{section}</p>
                 <span className="ml-auto text-[11px] font-semibold text-gray-400 bg-white/70 rounded-full px-2 py-0.5 shrink-0">{list.length}</span>

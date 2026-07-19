@@ -19,7 +19,7 @@ export async function GET() {
   if (!(await getAccess()).role) return NextResponse.json({ ok: false }, { status: 401 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   const compCutoff = new Date(Date.now() - 120 * 86400_000).toISOString();
-  const taskSelect = (withReq: boolean) => `asana_tasks?select=gid,name,notes,assignee,due_on,completed,section,project_gid,project_label,permalink_url,modified_at${withReq ? ",requested_by" : ""}&project_label=not.in.(${encodeURIComponent('"Blogs","Content To Do"')})&order=due_on.asc.nullslast&limit=5000`;
+  const taskSelect = (withReq: boolean) => `asana_tasks?select=gid,name,notes,assignee,due_on,completed,section,project_gid,project_label,permalink_url,modified_at${withReq ? ",requested_by" : ""}&project_label=not.in.(${encodeURIComponent('"Blogs","Content To Do","Stock Report"')})&order=due_on.asc.nullslast&limit=5000`;
   const [tResFirst, pRes, mRes, cRes, campRes] = await Promise.all([
     rest(taskSelect(true)),
     rest("design_priorities?select=*&order=rank.asc"),

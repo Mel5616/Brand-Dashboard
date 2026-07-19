@@ -196,7 +196,7 @@ def main():
             mod = (t.get("modified_at") or "")[:10]
             # Sales requests and the content to-do list are exempt from the
             # staleness rule: an open item that's sat for weeks is still owed.
-            keep_all = any(k in (label or "").lower() for k in ("sales", "content"))
+            keep_all = any(k in (label or "").lower() for k in ("sales", "content", "stock"))
             if not keep_all and ((due and due < cutoff) or (not due and mod and mod < cutoff)):
                 completed_gids.append(t["gid"])   # stale (>6 weeks old) — treat as done
                 continue

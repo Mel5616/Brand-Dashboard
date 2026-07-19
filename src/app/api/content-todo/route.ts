@@ -9,10 +9,11 @@ const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const h = () => ({ apikey: sbKey!, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json" });
 
-export async function GET() {
+export async function GET(req: Request) {
   if (!(await getAccess()).role) return NextResponse.json({ ok: false }, { status: 401 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
-  const sel = (withReq: boolean) => `${sbUrl}/rest/v1/asana_tasks?select=gid,name,notes,assignee,due_on,completed,section,project_gid,project_label,permalink_url${withReq ? ",requested_by" : ""}&project_label=eq.${encodeURIComponent("Content To Do")}&completed=eq.false&order=due_on.asc.nullslast&limit=1000`;
+  const label = new URL(req.url).searchParams.get("label") || "Content To Do";
+  const sel = (withReq: boolean) => `${sbUrl}/rest/v1/asana_tasks?select=gid,name,notes,assignee,due_on,completed,section,project_gid,project_label,permalink_url${withReq ? ",requested_by" : ""}&project_label=eq.${encodeURIComponent(label)}&completed=eq.false&order=due_on.asc.nullslast&limit=1000`;
   let [tRes, mRes] = await Promise.all([
     fetch(sel(true), { headers: h(), cache: "no-store" }),
     fetch(`${sbUrl}/rest/v1/design_task_meta?select=task_gid,priority,notes&limit=5000`, { headers: h(), cache: "no-store" }),
