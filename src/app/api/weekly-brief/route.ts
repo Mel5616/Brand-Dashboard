@@ -229,7 +229,23 @@ async function buildSnapshot() {
       ticketsSold: e.tickets_sold ?? null, capacity: e.capacity ?? null,
     });
   }
-  events.sort((a, b) => a.dateStart.localeCompare(b.dateStart));
+  // Same-day Tune-Up Days collapse into one line (five stores = one card), and
+  // special events lead the section — they're the headline, not the service runs.
+  const tuneUps = events.filter(e => e.type === "Tune-Up Day");
+  const specials = events.filter(e => e.type !== "Tune-Up Day");
+  const tuByDay = new Map<string, typeof events>();
+  for (const e of tuneUps) tuByDay.set(e.dateStart, [...(tuByDay.get(e.dateStart) ?? []), e]);
+  const groupedTuneUps = [...tuByDay.entries()].map(([day, list]) => {
+    if (list.length === 1) return list[0];
+    const stores = list.map(e => (e.venue || e.name.replace(/^Tune-?Up Day\s*[-·]\s*/i, "")).trim());
+    const sold = list.reduce((s, e) => s + (e.ticketsSold ?? 0), 0);
+    const cap = list.reduce((s, e) => s + (e.capacity ?? 0), 0);
+    return { name: `Tune-Up Days · ${list.length} stores`, type: "Tune-Up Day", dateStart: day, dateEnd: null,
+      venue: stores.join(" · "), url: null, ticketsSold: sold || null, capacity: cap || null };
+  });
+  const evOrder = (a: any, b: any) => a.dateStart.localeCompare(b.dateStart);
+  events.length = 0;
+  events.push(...specials.sort(evOrder), ...groupedTuneUps.sort(evOrder));
 
   // ── Tradeshows: their own section — coming up (next 45 days, with the deal
   // sheet) and just wrapped (last 21 days, with door attendance + post-show

@@ -139,16 +139,17 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
           <div className="space-y-2">
             {events.map((e, i) => {
               const sameDay = !e.dateEnd || e.dateEnd === e.dateStart;
-              const typeCls = e.type === "Tune-Up Day" ? "bg-sky-100 text-sky-700" : e.type === "Tradeshow" ? "bg-indigo-100 text-indigo-700" : "bg-teal-100 text-teal-700";
+              const special = e.type !== "Tune-Up Day" && e.type !== "Tradeshow";
+              const typeCls = e.type === "Tune-Up Day" ? "bg-sky-100 text-sky-700" : e.type === "Tradeshow" ? "bg-indigo-100 text-indigo-700" : "bg-violet-100 text-violet-700";
               return (
-                <div key={i} className="flex items-start gap-2.5 rounded-lg border border-gray-100 bg-gray-50/70 px-3 py-2">
-                  <div className="shrink-0 w-12 text-center rounded-lg bg-white border border-gray-100 py-1">
+                <div key={i} className={`flex items-start gap-2.5 rounded-lg px-3 py-2 ${special ? "border-2 border-violet-200 bg-gradient-to-r from-violet-50/80 to-white shadow-sm" : "border border-gray-100 bg-gray-50/70"}`}>
+                  <div className={`shrink-0 w-12 text-center rounded-lg bg-white py-1 ${special ? "border border-violet-200" : "border border-gray-100"}`}>
                     <p className="text-[9px] uppercase tracking-wider text-gray-400">{new Date(e.dateStart + "T00:00:00").toLocaleDateString("en-AU", { weekday: "short" })}</p>
                     <p className="text-[15px] font-bold text-slate-800 leading-tight">{new Date(e.dateStart + "T00:00:00").getDate()}</p>
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className={`text-[10px] font-bold rounded px-1.5 py-0.5 ${typeCls}`}>{e.type}</span>
+                      <span className={`text-[10px] font-bold rounded px-1.5 py-0.5 ${typeCls}`}>{special ? "🎉 Event" : e.type}</span>
                       <p className="text-[14px] font-semibold text-slate-800 truncate">{e.url ? <a href={e.url} target="_blank" rel="noreferrer" className="hover:underline">{e.name}</a> : e.name}</p>
                     </div>
                     <p className="text-[12.5px] text-slate-500 mt-0.5">
