@@ -154,7 +154,7 @@ export function PromotionalCalendar({ canEdit, fy, month }: { canEdit: boolean; 
       </div>
 
       {/* D2C plan */}
-      <D2cPlan d2c={d2cFY} canEdit={canEdit} brandF={brandF} tierF={tierF} statusF={statusF} onChanged={load} />
+      <D2cPlan d2c={d2cFY} promos={promos} canEdit={canEdit} brandF={brandF} tierF={tierF} statusF={statusF} onChanged={load} />
     </div>
   );
 }
@@ -163,7 +163,7 @@ function TierBadge({ t }: { t: number | null }) {
   return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: tierColor(t) }}>{t ? `T${t}` : "?"}</span>;
 }
 
-function D2cPlan({ d2c, canEdit, brandF, tierF, statusF, onChanged }: { d2c: D2c[]; canEdit: boolean; brandF: string; tierF: string; statusF: string; onChanged: () => void }) {
+function D2cPlan({ d2c, promos, canEdit, brandF, tierF, statusF, onChanged }: { d2c: D2c[]; promos: Promo[]; canEdit: boolean; brandF: string; tierF: string; statusF: string; onChanged: () => void }) {
   const rows = d2c.filter(r => (!brandF || r.brand === brandF) && (!tierF || String(r.tier) === tierF) && (!statusF || r.status === statusF));
   const counts = d2c.reduce((m, r) => { m[r.status] = (m[r.status] || 0) + 1; return m; }, {} as Record<string, number>);
 
