@@ -30,7 +30,7 @@ const isWaiting = (s: string | null) => (s || "").toLowerCase().includes("waitin
 // source of truth — the dashboard only reads).
 type Suggestion = { taskName: string; brand: string; title: string; primaryKeyword: string; category: string; stage: string; angle: string };
 
-export function TasksPanel({ tasks, brands, currentEmail, admin = false }: { tasks: AsanaTask[]; brands: { id: number; name: string; color?: string }[]; currentEmail?: string; admin?: boolean }) {
+export function TasksPanel({ tasks, brands, currentEmail, admin = false, compact = false }: { tasks: AsanaTask[]; brands: { id: number; name: string; color?: string }[]; currentEmail?: string; admin?: boolean; compact?: boolean }) {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [blogsGid, setBlogsGid] = useState<string | null>(null);
   const [aiBusy, setAiBusy] = useState(false);
@@ -173,7 +173,9 @@ export function TasksPanel({ tasks, brands, currentEmail, admin = false }: { tas
         </div>
       )}
 
-      <div className="grid md:grid-cols-2 gap-4 items-start">
+      {/* compact mode (Blogs tab): the Blog Hub renders the clickable pipeline
+          list with full briefs, so skip the duplicate task listing here */}
+      {!compact && <div className="grid md:grid-cols-2 gap-4 items-start">
         {order.map(sec => (
           <div key={sec} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <div className="flex items-center justify-between mb-2 pb-2 border-b border-gray-50">
@@ -183,9 +185,9 @@ export function TasksPanel({ tasks, brands, currentEmail, admin = false }: { tas
             <div className="divide-y divide-gray-50">{bySection.get(sec)!.map(Row)}</div>
           </div>
         ))}
-      </div>
+      </div>}
 
-      {done.length > 0 && (
+      {!compact && done.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-1">Recently completed</h3>
           <div className="divide-y divide-gray-50">{done.slice(0, 12).map(Row)}</div>

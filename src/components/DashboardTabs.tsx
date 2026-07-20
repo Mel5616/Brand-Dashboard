@@ -1897,12 +1897,12 @@ export function DashboardTabs({
           {/* ── Blogs (Asana — read-only) ── */}
           {active === "tasks" && (
             <>
-              <SectionBar title="Blogs" />
-              <BlogHub brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} admin={role === "admin"} />
+              <SectionBar title="Blog pipeline · Asana" />
+              <TasksPanel tasks={asanaTasks.filter((t: any) => (t.project_label ?? "Blogs") === "Blogs")} brands={brands} currentEmail={currentEmail} admin={role === "admin"} compact />
               <div className="mt-6">
-                <SectionBar title="Blog pipeline · Asana" />
+                <SectionBar title="Blogs" />
               </div>
-              <TasksPanel tasks={asanaTasks.filter((t: any) => (t.project_label ?? "Blogs") === "Blogs")} brands={brands} currentEmail={currentEmail} admin={role === "admin"} />
+              <BlogHub brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} admin={role === "admin"} />
             </>
           )}
 
