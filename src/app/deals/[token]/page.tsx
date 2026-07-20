@@ -44,6 +44,10 @@ export default async function DealSheet({ params }: { params: Promise<{ token: s
 
   const byBrand = new Map<string, any[]>();
   for (const d of deals) { const a = byBrand.get(d.brand) || []; a.push(d); byBrand.set(d.brand, a); }
+  // Whole-brand banners lead, then deals by show price, highest first.
+  for (const [k, a] of byBrand) byBrand.set(k, [...a].sort((x, y) =>
+    (x.scope === "whole_brand" ? 0 : 1) - (y.scope === "whole_brand" ? 0 : 1) ||
+    (Number(y.show_price) || 0) - (Number(x.show_price) || 0)));
   const brandOrder = [...byBrand.keys()].sort((a, b) => a.localeCompare(b));
   // Two stands, matching the booth: UPPAbaby on its own, the rest as Coolkidz brands.
   const stands = [
