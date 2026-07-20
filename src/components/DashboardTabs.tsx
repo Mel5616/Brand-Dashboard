@@ -62,6 +62,7 @@ import { ShopifyInsights } from "./ShopifyInsights";
 import { D2CWeekly } from "./D2CWeekly";
 import { BrandAssets } from "./BrandAssets";
 import { BlogHub } from "./BlogHub";
+import { BlogPipeline } from "./BlogPipeline";
 import { Notifier } from "./Notifier";
 import { StockReport } from "./StockReport";
 import { fmt } from "@/lib/format";
@@ -1899,6 +1900,7 @@ export function DashboardTabs({
             <>
               <SectionBar title="Blog pipeline · Asana" />
               <TasksPanel tasks={asanaTasks.filter((t: any) => (t.project_label ?? "Blogs") === "Blogs")} brands={brands} currentEmail={currentEmail} admin={role === "admin"} compact />
+              <BlogPipeline />
               <div className="mt-6">
                 <SectionBar title="Blogs" />
               </div>
