@@ -51,8 +51,8 @@ export default async function DealSheet({ params }: { params: Promise<{ token: s
   const brandOrder = [...byBrand.keys()].sort((a, b) => a.localeCompare(b));
   // Two stands, matching the booth: UPPAbaby on its own, the rest as Coolkidz brands.
   const stands = [
-    { name: "UPPAbaby Stand", brands: brandOrder.filter(b => b === "UPPAbaby") },
-    { name: "Coolkidz Brands", brands: brandOrder.filter(b => b !== "UPPAbaby") },
+    { name: "UPPAbaby Stand", note: null as string | null, brands: brandOrder.filter(b => b === "UPPAbaby") },
+    { name: "Coolkidz Brands", note: "All Coolkidz Brands run through the Coolkidz website + POS", brands: brandOrder.filter(b => b !== "UPPAbaby") },
   ].filter(s => s.brands.length);
   const maxSave = Math.max(0, ...deals.map((d: any) => d.rrp && d.show_price ? Number(d.rrp) - Number(d.show_price) : 0));
   const dateStr = `${fmtDate(show.date_start)}${show.date_end !== show.date_start ? ` – ${fmtDate(show.date_end)}` : ""}`;
@@ -88,8 +88,9 @@ export default async function DealSheet({ params }: { params: Promise<{ token: s
           <div className="px-8 py-4 space-y-9">
             {stands.map(stand => (
               <div key={stand.name}>
-                <div className="flex items-center gap-3 mb-5">
+                <div className="flex items-center gap-3 mb-5 flex-wrap">
                   <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">{stand.name}</span>
+                  {stand.note && <span className="text-[12px] font-semibold text-cyan-800 bg-cyan-50 border border-cyan-100 rounded-full px-3 py-1">🛒 {stand.note}</span>}
                   <span className="flex-1 h-px bg-slate-100" />
                 </div>
 
