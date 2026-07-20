@@ -137,7 +137,10 @@ export default async function DealSheet({ params }: { params: Promise<{ token: s
                                   </div>
                                   {includes.length > 0 && (
                                     <div className="mt-3.5 pt-3.5 border-t border-slate-50">
-                                      <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: accent }}>Bundle includes — free</p>
+                                      <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                                        <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: accent }}>Bundle includes — free</p>
+                                        {d.gift_value ? <span className="text-[12px] font-black text-white rounded-full px-3 py-1" style={{ background: accent }}>🎁 Accessory bundle valued at {aud(d.gift_value)}</span> : null}
+                                      </div>
                                       <div className="flex flex-wrap gap-1.5">
                                         {includes.map((g, i) => (
                                           <span key={i} className="inline-flex items-center gap-1 text-[13px] bg-slate-50 border border-slate-100 rounded-full px-3 py-1 text-slate-600">
