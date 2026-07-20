@@ -89,8 +89,12 @@ export function EventsPanel({ events, brands }: { events: EventbriteEvent[]; bra
   const shortDate = (s: string | null) => s ? new Date(s).toLocaleDateString("en-AU", { day: "numeric", month: "short" }) : "—";
   const monthKeyOf = (s: string | null) => { const d = s ? new Date(s) : null; return d && !isNaN(d.getTime()) ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}` : "9999-99"; };
   const monthLabelOf = (s: string | null) => { const d = s ? new Date(s) : null; return d && !isNaN(d.getTime()) ? d.toLocaleDateString("en-AU", { month: "long", year: "numeric" }) : "Undated"; };
+  // Only actual Tune-Up Days belong in the monthly cards; other events (launches,
+  // brand events like Nobody Told Me) get their own list below.
+  const isTuneUp = (e: EventbriteEvent) => /tune[-\s]?up/i.test(e.name || "");
+  const otherUpcoming = upcoming.filter(e => !isTuneUp(e));
   const byMonth = new Map<string, EventbriteEvent[]>();
-  for (const e of upcoming) {
+  for (const e of upcoming.filter(isTuneUp)) {
     const k = monthKeyOf(e.start_at);
     (byMonth.get(k) ?? byMonth.set(k, []).get(k)!).push(e);
   }
@@ -219,6 +223,13 @@ export function EventsPanel({ events, brands }: { events: EventbriteEvent[]; bra
               );
             })}
           </div>
+        </div>
+      )}
+
+      {otherUpcoming.length > 0 && (
+        <div className="bg-white rounded-2xl border border-violet-100 shadow-sm p-5">
+          <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet-600 mb-1">🎉 Other upcoming events</h3>
+          <div className="divide-y divide-gray-50">{otherUpcoming.map(Row)}</div>
         </div>
       )}
 
