@@ -14,6 +14,7 @@ type QueryRow = { brand_id: number; month_key: string; page: string; query: stri
 type SourceRow = { brand_id: number; month_key: string; path: string; channel: string; sessions: number };
 type SemRow = { brand_id: number; month_key: string; phrase: string; position: number; search_volume: number; url: string };
 type BrandRef = { id: number; name: string; color: string };
+type PipeTask = { gid: string; name: string; notes: string | null; due_on: string | null; requested_by?: string | null; permalink_url: string | null };
 
 const inp = "text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400";
 const mShort = (mk: string) => new Date(mk + "-01T00:00:00").toLocaleDateString("en-AU", { month: "short", year: "2-digit" });
@@ -43,6 +44,8 @@ export function BlogHub({ brands = [], admin = false }: { brands?: BrandRef[]; a
   const [sources, setSources] = useState<SourceRow[]>([]);
   const [semrush, setSemrush] = useState<SemRow[]>([]);
   const [fix, setFix] = useState<Record<string, { busy?: boolean; text?: string; err?: string }>>({});
+  const [pipeline, setPipeline] = useState<PipeTask[]>([]);
+  const [pipeOpen, setPipeOpen] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [needsSetup, setNeedsSetup] = useState(false);
   const [brandSel, setBrandSel] = useState<number | "all">("all");
@@ -62,6 +65,10 @@ export function BlogHub({ brands = [], admin = false }: { brands?: BrandRef[]; a
         setSemrush(d.semrush ?? []);
       }
     }).catch(() => {}).finally(() => setLoading(false));
+    // Blogs Asana board — briefed posts waiting to be written (incl. AI-suggested ones)
+    fetch("/api/content-todo?label=Blogs").then(r => r.json()).then(d => {
+      if (d?.ok) setPipeline(d.tasks ?? []);
+    }).catch(() => {});
   }, []);
 
   const brandName = (id: number) => brands.find(b => b.id === id)?.name ?? `Brand ${id}`;
@@ -230,6 +237,36 @@ export function BlogHub({ brands = [], admin = false }: { brands?: BrandRef[]; a
           </div>
           {sumErr && <p className="text-sm text-rose-500 mt-1.5">{sumErr}</p>}
           {summary && <div className="mt-2 space-y-0.5">{mdLite(summary)}</div>}
+        </div>
+      )}
+
+      {/* Blog pipeline — briefed posts on the Blogs Asana board, incl. AI-suggested */}
+      {pipeline.length > 0 && (
+        <div className="bg-white rounded-2xl border border-violet-100 shadow-sm p-5">
+          <div className="flex items-baseline gap-2 mb-2">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet-600">📝 Blog pipeline</p>
+            <span className="text-[12px] text-gray-400">{pipeline.length} briefed · click one to read its full brief</span>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {pipeline.map(t => {
+              const isOpen = pipeOpen === t.gid;
+              return (
+                <div key={t.gid}>
+                  <button onClick={() => setPipeOpen(isOpen ? null : t.gid)} className="w-full text-left flex items-center gap-2 py-2 hover:bg-violet-50/40 rounded-lg px-1.5">
+                    <span className="text-[13px] font-semibold text-slate-700 flex-1 truncate">{isOpen ? "▾ " : "▸ "}{t.name}</span>
+                    {t.requested_by && <span className="text-[11px] text-gray-400 shrink-0">req. {String(t.requested_by).split(" ")[0]}</span>}
+                    {t.due_on && <span className="text-[11px] font-semibold text-violet-600 bg-violet-50 rounded px-1.5 py-0.5 shrink-0">{new Date(t.due_on + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" })}</span>}
+                  </button>
+                  {isOpen && (
+                    <div className="mx-1.5 mb-2.5 rounded-xl border border-violet-100 bg-violet-50/40 p-3.5">
+                      {t.notes ? <div className="space-y-0.5">{mdLite(t.notes)}</div> : <p className="text-[12.5px] text-gray-400">No brief attached to this one.</p>}
+                      {t.permalink_url && <a href={t.permalink_url} target="_blank" rel="noreferrer" className="inline-block mt-2 text-[12px] font-semibold text-violet-600 hover:underline">Open in Asana ↗</a>}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
