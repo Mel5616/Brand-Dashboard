@@ -158,11 +158,35 @@ def sync_brand(brand_id, name, ad_account_id, token):
     sb_upsert("pinterest_ads", month_rows, on_conflict="brand_id,month_key")
     print(f"✓  {len(month_rows)} months, {len(daily_rows)} daily rows")
 
+def refresh_access_token(config):
+    """Exchange the long-lived refresh token for a fresh 30-day access token.
+    Needs pinterestAppId + pinterestAppSecret + pinterestRefreshToken in config."""
+    app_id  = config.get("pinterestAppId")
+    secret  = config.get("pinterestAppSecret")
+    rtoken  = config.get("pinterestRefreshToken")
+    if not (app_id and secret and rtoken):
+        return None
+    import base64
+    body = urllib.parse.urlencode({"grant_type": "refresh_token", "refresh_token": rtoken}).encode()
+    req = urllib.request.Request(f"{API_BASE}/oauth/token", data=body, method="POST")
+    req.add_header("Content-Type", "application/x-www-form-urlencoded")
+    req.add_header("Authorization", "Basic " + base64.b64encode(f"{app_id}:{secret}".encode()).decode())
+    try:
+        with urllib.request.urlopen(req, context=ssl.create_default_context(), timeout=30) as r:
+            tok = json.loads(r.read().decode()).get("access_token")
+            if tok:
+                print("  ↻ refreshed Pinterest access token")
+            return tok
+    except urllib.error.HTTPError as e:
+        print(f"  ✗ token refresh failed: {e.code} {e.read().decode()[:200]}")
+        return None
+
 def main():
     with open(CONFIG_PATH) as f:
         config = json.load(f)
 
-    global_token = config.get("pinterestAccessToken")
+    # Prefer a freshly refreshed token (access tokens die after 30 days).
+    global_token = refresh_access_token(config) or config.get("pinterestAccessToken")
     brands = [b for b in config.get("brands", []) if b.get("pinterestAdAccountId")]
     if not brands:
         print("✗  No brands have pinterestAdAccountId set")
