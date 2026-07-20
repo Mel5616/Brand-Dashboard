@@ -74,11 +74,96 @@ def public_base(brand):
         return "https://" + p.split(":", 1)[1]
     return "https://" + brand.get("domain", "")
 
+UA = {"User-Agent": "Mozilla/5.0 (Macintosh) CoolkidzDashboard/1.0"}
+
+def http_get(url, tries=3):
+    import time
+    for i in range(tries):
+        try:
+            req = urllib.request.Request(url, headers=UA)
+            with urllib.request.urlopen(req, context=CTX, timeout=30) as r:
+                return r.read().decode(errors="replace")
+        except urllib.error.HTTPError as e:
+            if e.code in (430, 429, 503) and i < tries - 1:
+                time.sleep(15 * (i + 1)); continue
+            raise
+    raise RuntimeError("unreachable")
+
+def sync_articles_public(bid, brand):
+    """Fallback when the Admin token lacks read_content: the storefront's public
+    blog sitemaps list every article; new pages are fetched once for their title
+    and publish date, then cached in blog_articles."""
+    import re
+    base = public_base(brand)
+    try:
+        idx = http_get(base + "/sitemap.xml")
+    except Exception as e:
+        print(f"  ✗ {brand['name']} sitemap: {e}"); return 0
+    blog_maps = re.findall(r"<loc>([^<]*sitemap_blogs[^<]*)</loc>", idx)
+    urls = []
+    for bm in blog_maps:
+        try:
+            xml = http_get(bm.replace("&amp;", "&"))
+        except Exception:
+            continue
+        urls += re.findall(r"<loc>([^<]+/blogs/[^<]+)</loc>", xml)
+    # already imported → skip re-fetching pages
+    st, body = 200, b"[]"
+    try:
+        req = urllib.request.Request(f"{URL}/rest/v1/blog_articles?brand_id=eq.{bid}&select=path&limit=3000",
+            headers={"Authorization": f"Bearer {KEY}", "apikey": KEY})
+        with urllib.request.urlopen(req, context=CTX, timeout=30) as r:
+            body = r.read()
+    except Exception:
+        pass
+    known = {r["path"] for r in json.loads(body.decode() or "[]")}
+    rows = []
+    fetched = 0
+    for u in urls:
+        u = u.split("?")[0].rstrip("/")
+        m = re.search(r"/blogs/([^/]+)/([^/]+)$", u)
+        if not m:
+            continue
+        path = f"/blogs/{m.group(1)}/{m.group(2)}"
+        if path in known:
+            continue
+        if fetched >= 150:   # first-run safety cap; the rest import next sync
+            break
+        title, published = None, None
+        try:
+            import html as _html
+            __import__("time").sleep(0.4)
+            page = http_get(u); fetched += 1
+            tm = re.search(r"<title[^>]*>(.*?)</title>", page, re.S)
+            if tm:
+                title = _html.unescape(re.sub(r"\s+", " ", tm.group(1)).strip())
+                # drop trailing "– Brand Name" style suffixes
+                title = re.sub(r"\s+[–|—-]\s+[^–|—-]{2,40}$", "", title).strip() or title
+            pm = re.search(r'property="article:published_time"\s+content="([^"]+)"', page) or \
+                 re.search(r'content="([^"]+)"\s+property="article:published_time"', page) or \
+                 re.search(r'"datePublished"\s*:\s*"([^"]+)"', page)
+            if pm:
+                published = pm.group(1)
+        except Exception:
+            continue
+        rows.append({
+            "brand_id": bid, "article_id": "path:" + path, "blog_handle": m.group(1),
+            "title": title or m.group(2).replace("-", " ").title(), "handle": m.group(2),
+            "path": path, "url": base + path, "author": None, "tags": None,
+            "published_at": published,
+        })
+    sb_upsert("blog_articles", rows, "brand_id,article_id")
+    return len(rows) if rows else (len(known) and 0)
+
 def sync_articles(bid, brand):
     rows = []
     base = public_base(brand)
     try:
         blogs = shopify_get(brand["domain"], brand["token"], "blogs.json").get("blogs", [])
+    except urllib.error.HTTPError as e:
+        if e.code == 403:
+            return sync_articles_public(bid, brand)
+        print(f"  ✗ {brand['name']} blogs: {e}"); return 0
     except Exception as e:
         print(f"  ✗ {brand['name']} blogs: {e}"); return 0
     for bl in blogs:
