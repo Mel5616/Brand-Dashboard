@@ -6,10 +6,10 @@ import { useEffect, useRef, useState } from "react";
 // influencer gifts. Polls /api/notifications every 90s; per-browser last-seen
 // watermark + seen-id list in localStorage so nothing repeats and a fresh
 // browser doesn't get flooded with history.
-type Ev = { id: string; kind: "design" | "blog" | "influencer"; tab: string; title: string; sub: string; at: string };
+type Ev = { id: string; kind: "design" | "blog" | "influencer" | "alert"; tab: string; title: string; sub: string; at: string };
 
-const ICON: Record<Ev["kind"], string> = { design: "🎨", blog: "📝", influencer: "🤝" };
-const RING: Record<Ev["kind"], string> = { design: "border-pink-200", blog: "border-cyan-200", influencer: "border-violet-200" };
+const ICON: Record<Ev["kind"], string> = { design: "🎨", blog: "📝", influencer: "🤝", alert: "⚠️" };
+const RING: Record<Ev["kind"], string> = { design: "border-pink-200", blog: "border-cyan-200", influencer: "border-violet-200", alert: "border-red-300" };
 
 export function Notifier({ go }: { go: (tab: string) => void }) {
   const [toasts, setToasts] = useState<Ev[]>([]);

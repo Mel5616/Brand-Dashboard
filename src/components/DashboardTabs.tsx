@@ -1163,7 +1163,7 @@ export function DashboardTabs({
                 brands, summaries, monthly, targets,
                 marketingBudgets: marketingBudgets.filter((b: any) => b.fy === fy),
                 marketingActuals: marketingActuals.filter((a: any) => monthKeys.includes(a.month_key)),
-                googleAds, metaAds, monthKeys, monthLabels, fy,
+                googleAds, metaAds, klaviyo, monthKeys, monthLabels, fy,
               })} />
             </>
           )}

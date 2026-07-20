@@ -42,6 +42,11 @@ export type ReportData = {
   // Pacing: what SHOULD have happened by today.
   ytdTargetSales: number;   // seasonal — sum of monthly targets to date (current month pro-rated)
   ytdBudgetSpend: number;   // linear — FY budget × fraction elapsed
+  // Email (Klaviyo-attributed revenue, effectively free vs paid channels)
+  emailRevenueYTD: number;
+  emailFlowRevenueYTD: number;
+  emailCampaignRevenueYTD: number;
+  emailPctOfSales: number;
 };
 
 const sum = (a: number[]) => a.reduce((s, v) => s + (v || 0), 0);
@@ -75,12 +80,13 @@ export function buildReport(
     marketingActuals: MarketingActual[];
     googleAds: AdRow[];
     metaAds: AdRow[];
+    klaviyo?: { brand_id: number; month_key: string; revenue?: number; flow_revenue?: number; campaign_revenue?: number }[];
     monthKeys: string[];
     monthLabels: string[];
     fy: string;
   },
 ): ReportData {
-  const { brands, summaries, monthly, targets, marketingBudgets, marketingActuals, googleAds, metaAds, monthKeys, monthLabels, fy } = d;
+  const { brands, summaries, monthly, targets, marketingBudgets, marketingActuals, googleAds, metaAds, klaviyo = [], monthKeys, monthLabels, fy } = d;
   const ids = scope === "all" ? brands.map(b => b.id) : [scope];
   const inScope = <T extends { brand_id: number }>(rows: T[]) => rows.filter(r => ids.includes(r.brand_id));
 
@@ -144,6 +150,12 @@ export function buildReport(
   }));
   const forecast = elapsed > 0.02 && actualSalesYTD > 0 ? actualSalesYTD / elapsed : null;
 
+  // Email-attributed revenue (Klaviyo) within the FY months in view
+  const kv = inScope(klaviyo).filter(r => monthKeys.includes(r.month_key));
+  const emailFlowRevenueYTD     = sum(kv.map(r => r.flow_revenue ?? 0));
+  const emailCampaignRevenueYTD = sum(kv.map(r => r.campaign_revenue ?? 0));
+  const emailRevenueYTD         = sum(kv.map(r => r.revenue ?? 0)) || emailFlowRevenueYTD + emailCampaignRevenueYTD;
+
   return {
     label: scope === "all" ? "All Brands" : (brands.find(b => b.id === scope)?.name ?? "Brand"),
     color: scope === "all" ? "#1e293b" : (brands.find(b => b.id === scope)?.color ?? "#1e293b"),
@@ -167,5 +179,9 @@ export function buildReport(
     elapsed,
     ytdTargetSales,
     ytdBudgetSpend: marketingBudgetFY * elapsed,
+    emailRevenueYTD,
+    emailFlowRevenueYTD,
+    emailCampaignRevenueYTD,
+    emailPctOfSales: actualSalesYTD > 0 ? emailRevenueYTD / actualSalesYTD : 0,
   };
 }

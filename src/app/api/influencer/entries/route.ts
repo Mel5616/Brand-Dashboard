@@ -24,10 +24,15 @@ export async function GET() {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false, entries: [] }, { status: 500 });
   // read: any signed-in user (Management view-only). The write handlers stay admin-only.
   if (!(await getAccess()).role) return NextResponse.json({ ok: false, error: "unauthorised", entries: [] }, { status: 401 });
-  const res = await sb(`influencer_entries?select=*&order=created_at.desc`);
+  const [res, tRes] = await Promise.all([
+    sb(`influencer_entries?select=*&order=created_at.desc`),
+    // Auto-matched Shopify sales per affiliate code (sync_influencer_sales.py)
+    sb(`influencer_sales?select=code,month_key,orders,revenue&limit=5000`),
+  ]);
   const text = await res.text();
   if (!res.ok) return NextResponse.json({ ok: false, needsSetup: missing(res.status, text), entries: [] });
-  return NextResponse.json({ ok: true, entries: JSON.parse(text || "[]") });
+  const tracked = tRes.ok ? JSON.parse((await tRes.text()) || "[]") : [];
+  return NextResponse.json({ ok: true, entries: JSON.parse(text || "[]"), tracked });
 }
 
 export async function POST(req: Request) {

@@ -204,6 +204,35 @@ export function BrandReport({ r }: { r: ReportData }) {
         <DonutCard title="Marketing budget by channel" subtitle="Planned budget across channels" slices={r.budgetByChannel} total={r.marketingBudgetFY} />
         <DonutCard title="Spend by channel" subtitle="Actual spend across channels" slices={r.spendByChannel} total={r.spendYTD} />
       </div>
+
+      {/* Email contribution — Klaviyo-attributed revenue vs the paid channels */}
+      {r.emailRevenueYTD > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 mb-3">Email revenue · Klaviyo attributed</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[["Email revenue YTD", fmt(r.emailRevenueYTD)],
+              ["% of total sales", `${(r.emailPctOfSales * 100).toFixed(1)}%`],
+              ["Flows (automated)", fmt(r.emailFlowRevenueYTD)],
+              ["Campaigns (sent)", fmt(r.emailCampaignRevenueYTD)]].map(([l, v]) => (
+              <div key={l} className="bg-gray-50/70 rounded-xl px-4 py-3">
+                <p className="text-lg font-bold text-slate-800 leading-none">{v}</p>
+                <p className="text-[10px] uppercase tracking-wider text-gray-400 mt-1.5">{l}</p>
+              </div>
+            ))}
+          </div>
+          {(r.emailFlowRevenueYTD + r.emailCampaignRevenueYTD) > 0 && (
+            <div className="mt-3">
+              <div className="flex h-2.5 rounded-full overflow-hidden bg-gray-100">
+                <div className="bg-emerald-400" style={{ width: `${(r.emailFlowRevenueYTD / (r.emailFlowRevenueYTD + r.emailCampaignRevenueYTD)) * 100}%` }} />
+                <div className="bg-slate-700" style={{ width: `${(r.emailCampaignRevenueYTD / (r.emailFlowRevenueYTD + r.emailCampaignRevenueYTD)) * 100}%` }} />
+              </div>
+              <p className="text-[11px] text-gray-400 mt-1.5">
+                <span className="text-emerald-600 font-semibold">■ Flows</span> run themselves — <span className="text-slate-600 font-semibold">■ campaigns</span> take team effort. A healthy split leans on flows.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

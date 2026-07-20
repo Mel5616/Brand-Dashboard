@@ -7,7 +7,8 @@ import { compactNum } from "@/lib/num";
 // Admin reporting for influencer gifting: brand × month cost spend vs budget.
 // Cost figures are shown here (this is your dashboard); the team form never does.
 
-type Entry = { id: number; month_key: string; handle: string | null; platform: string | null; brand: string | null; product_name: string | null; rrp: number | null; gifting_cost: number | null; influencer_cost: number | null; total_cost: number | null; created_at: string; status?: string | null; content_url?: string | null; reach?: number | null; engagements?: number | null; sales_value?: number | null; invoice_url?: string | null; invoice_file?: string | null };
+type Entry = { id: number; month_key: string; handle: string | null; platform: string | null; brand: string | null; product_name: string | null; rrp: number | null; gifting_cost: number | null; influencer_cost: number | null; total_cost: number | null; created_at: string; status?: string | null; content_url?: string | null; reach?: number | null; engagements?: number | null; sales_value?: number | null; affiliate_code?: string | null; invoice_url?: string | null; invoice_file?: string | null };
+type TrackedRow = { code: string; month_key: string; orders: number; revenue: number };
 type Budget = { brand: string; month_key: string; budget: number };
 type Influencer = { handle: string; name: string | null; platform: string | null; followers: number | null; contact: string | null; notes: string | null };
 
@@ -48,6 +49,7 @@ alter table influencers disable row level security;`;
 
 export function InfluencerTracker({ canEdit = false }: { canEdit?: boolean }) {
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [tracked, setTracked] = useState<TrackedRow[]>([]);
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [loading, setLoading] = useState(true);
   const [needsSetup, setNeedsSetup] = useState(false);
@@ -102,11 +104,24 @@ export function InfluencerTracker({ canEdit = false }: { canEdit?: boolean }) {
       fetch("/api/influencer/roster").then(r => r.json()),
     ]).then(([e, b, r]) => {
       setNeedsSetup(!!e.needsSetup || !!b.needsSetup);
-      setEntries(e.entries ?? []); setBudgets(b.budgets ?? []); setInfluencers(r.influencers ?? []);
+      setEntries(e.entries ?? []); setTracked(e.tracked ?? []); setBudgets(b.budgets ?? []); setInfluencers(r.influencers ?? []);
       setNanitHandles(new Set((r.nanitHandles ?? []) as string[])); setLoading(false);
     }).catch(() => setLoading(false));
   }
   useEffect(() => { load(); }, []);
+
+  // Auto-tracked Shopify sales per affiliate code (manual sales_value wins if set)
+  const trackedByCode = useMemo(() => {
+    const m = new Map<string, { orders: number; revenue: number }>();
+    for (const t of tracked) {
+      const k = (t.code || "").toUpperCase();
+      const cur = m.get(k) ?? { orders: 0, revenue: 0 };
+      cur.orders += t.orders ?? 0; cur.revenue += t.revenue ?? 0;
+      m.set(k, cur);
+    }
+    return m;
+  }, [tracked]);
+  const saleOf = (e: Entry) => e.sales_value ?? (e.affiliate_code ? trackedByCode.get(e.affiliate_code.toUpperCase())?.revenue ?? null : null);
 
   // Roster: aggregate gifts per handle, merged with the influencer master list
   const roster = useMemo(() => {
@@ -114,7 +129,7 @@ export function InfluencerTracker({ canEdit = false }: { canEdit?: boolean }) {
     for (const e of entries) {
       const h = e.handle || "—";
       const cur = agg.get(h) ?? { handle: h, gifts: 0, value: 0, reach: 0, sales: 0, brands: new Set<string>(), last: "" };
-      cur.gifts++; cur.value += e.total_cost ?? 0; cur.reach += e.reach ?? 0; cur.sales += e.sales_value ?? 0;
+      cur.gifts++; cur.value += e.total_cost ?? 0; cur.reach += e.reach ?? 0; cur.sales += saleOf(e) ?? 0;
       if (e.brand) cur.brands.add(e.brand); if (e.month_key > cur.last) cur.last = e.month_key;
       agg.set(h, cur);
     }
@@ -122,7 +137,7 @@ export function InfluencerTracker({ canEdit = false }: { canEdit?: boolean }) {
     for (const i of influencers) if (!agg.has(i.handle) && !nanitHandles.has(i.handle)) agg.set(i.handle, { handle: i.handle, gifts: 0, value: 0, reach: 0, sales: 0, brands: new Set(), last: "" });
     const byHandle = new Map(influencers.map(i => [i.handle, i]));
     return [...agg.values()].map(a => ({ ...a, brands: [...a.brands], m: byHandle.get(a.handle) })).sort((x, y) => y.value - x.value);
-  }, [entries, influencers, nanitHandles]);
+  }, [entries, influencers, nanitHandles, trackedByCode]);
 
   async function saveInfluencer(i: Partial<Influencer>) {
     await fetch("/api/influencer/roster", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(i) });
@@ -143,15 +158,16 @@ export function InfluencerTracker({ canEdit = false }: { canEdit?: boolean }) {
   const results = useMemo(() => {
     let reach = 0, sales = 0, costReach = 0, costSales = 0;
     for (const e of entries) {
-      reach += e.reach ?? 0; sales += e.sales_value ?? 0;
+      const sv = saleOf(e);
+      reach += e.reach ?? 0; sales += sv ?? 0;
       if (e.reach) costReach += e.total_cost ?? 0;
-      if (e.sales_value) costSales += e.total_cost ?? 0;
+      if (sv) costSales += e.total_cost ?? 0;
     }
     return { reach, sales, cpm: reach > 0 ? (costReach / reach) * 1000 : 0, roi: costSales > 0 ? sales / costSales : 0,
-      hasAny: entries.some(e => e.reach || e.sales_value) };
-  }, [entries]);
+      hasAny: entries.some(e => e.reach || saleOf(e)) };
+  }, [entries, trackedByCode]);
   const cpmOf = (e: Entry) => (e.reach && e.total_cost ? (e.total_cost / e.reach) * 1000 : null);
-  const roiOf = (e: Entry) => (e.sales_value && e.total_cost ? e.sales_value / e.total_cost : null);
+  const roiOf = (e: Entry) => { const sv = saleOf(e); return sv && e.total_cost ? sv / e.total_cost : null; };
 
   // actual[brand][month] and budget[brand][month]
   const { brands, actual, budget } = useMemo(() => {
