@@ -201,6 +201,7 @@ function DealForm({ show, deal, brandNames, products, admin, marginFloor, onClos
   const [brand, setBrand] = useState(deal?.brand ?? brandNames[0] ?? "");
   const [scope, setScope] = useState(deal?.scope ?? "product");
   const [search, setSearch] = useState(deal?.product_name ?? "");
+  const [searchOpen, setSearchOpen] = useState(false);
   const [productCode, setProductCode] = useState<string | null>(deal?.product_code ?? null);
   const [rangeLabel, setRangeLabel] = useState(deal?.range_label ?? "");
   const [mechanic, setMechanic] = useState(deal?.mechanic ?? "discount");
@@ -228,9 +229,9 @@ function DealForm({ show, deal, brandNames, products, admin, marginFloor, onClos
   const [err, setErr] = useState("");
 
   const isProductScope = scope === "product" || scope === "bundle";
-  const matches = search.trim().length < 2 || productCode ? [] : products.filter(p => `${p.product_name} ${p.style_code}`.toLowerCase().includes(search.toLowerCase())).slice(0, 8);
+  const matches = !searchOpen || search.trim().length < 2 || productCode ? [] : products.filter(p => `${p.product_name} ${p.style_code}`.toLowerCase().includes(search.toLowerCase())).slice(0, 8);
   function pick(p: Product) {
-    setProductCode(p.style_code); setSearch(p.product_name); if (p.rrp != null) setRrp(String(p.rrp));
+    setProductCode(p.style_code); setSearch(p.product_name); setSearchOpen(false); if (p.rrp != null) setRrp(String(p.rrp));
     if (admin) fetch(`/api/deals?cost_code=${encodeURIComponent(p.style_code)}`).then(r => r.json()).then(j => { if (j?.cost_price != null) setCost(String(j.cost_price)); }).catch(() => {});
   }
 
@@ -284,7 +285,7 @@ function DealForm({ show, deal, brandNames, products, admin, marginFloor, onClos
       {isProductScope ? (
         <div className="relative">
           <label className={lbl}>Product</label>
-          <input value={search} onChange={e => { setSearch(e.target.value); setProductCode(null); }} placeholder="Search name or SKU…" className={inp} />
+          <input value={search} onChange={e => { setSearch(e.target.value); setProductCode(null); setSearchOpen(true); }} onFocus={() => setSearchOpen(true)} onBlur={() => setTimeout(() => setSearchOpen(false), 150)} onKeyDown={e => { if (e.key === "Escape") setSearchOpen(false); }} placeholder="Search name or SKU…" className={inp} />
           {matches.length > 0 && (
             <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
               {matches.map(p => <button key={p.style_code} onClick={() => pick(p)} className="block w-full text-left text-sm px-3 py-2 hover:bg-emerald-50"><span className="text-slate-700">{p.product_name}</span><span className="text-gray-400 text-xs"> · {p.style_code} · {aud(p.rrp)}</span></button>)}
