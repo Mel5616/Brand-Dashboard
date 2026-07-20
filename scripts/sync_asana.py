@@ -195,11 +195,23 @@ def main():
                         "source": "asana",
                     })
                 continue
-            # Tasks dragged into a "Completed …" / "Done" section without being
-            # ticked are done in spirit — keep them off the dashboard.
+            # Tasks dragged into a "Completed …" / "Done" / "Artwork Complete"
+            # section — or with an Artwork Complete status — are done in spirit
+            # (Artwork Complete is the final design step). Keep them off the
+            # dashboard and count them as completions for the throughput stats.
             sec = (section_for(t, project) or "").strip().lower()
-            if sec.startswith("completed") or sec == "done":
+            status_val = (custom_field(t, "Status") or "").strip().lower()
+            if sec.startswith("completed") or sec == "done" or "artwork complete" in sec or "artwork complete" in status_val:
                 completed_gids.append(t["gid"])
+                completion_rows.append({
+                    "task_gid": t["gid"],
+                    "name": (t.get("name") or "")[:200],
+                    "project_label": label,
+                    "due_on": t.get("due_on"),
+                    "created_at_asana": t.get("created_at"),
+                    "completed_at": _dt.datetime.utcnow().isoformat() + "Z",
+                    "source": "asana",
+                })
                 continue
             due = t.get("due_on") or ""
             mod = (t.get("modified_at") or "")[:10]
