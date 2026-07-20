@@ -101,8 +101,8 @@ export function BrandReport({ r }: { r: ReportData }) {
             data={{
               labels: r.months.map(m => m.label),
               datasets: [
-                { label: "Sales", data: r.months.map(m => m.sales || null), borderColor: "#0891b2", backgroundColor: "#0891b2", tension: 0.4, yAxisID: "y", pointRadius: 0, borderWidth: 2 },
-                { label: "Marketing spend", data: r.months.map(m => m.spend || null), borderColor: "#0e7490", borderDash: [5, 4], tension: 0.4, yAxisID: "y1", pointRadius: 0, borderWidth: 2 },
+                { label: "Sales", data: r.months.map(m => m.sales || null), borderColor: "#0891b2", backgroundColor: "#0891b2", tension: 0.4, yAxisID: "y", pointRadius: 3, pointHoverRadius: 5, spanGaps: true, borderWidth: 2 },
+                { label: "Marketing spend", data: r.months.map(m => m.spend || null), borderColor: "#0e7490", backgroundColor: "#0e7490", borderDash: [5, 4], tension: 0.4, yAxisID: "y1", pointRadius: 3, pointHoverRadius: 5, spanGaps: true, borderWidth: 2 },
               ],
             }}
             options={{
@@ -110,8 +110,8 @@ export function BrandReport({ r }: { r: ReportData }) {
               plugins: { legend: { display: true, position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } }, tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${fmt(c.parsed.y ?? 0)}` } } },
               scales: {
                 x: { grid: { display: false } },
-                y:  { position: "left",  ticks: { callback: v => fmt(v as number) }, grid: { color: "#f3f4f6" } },
-                y1: { position: "right", ticks: { callback: v => fmt(v as number) }, grid: { display: false } },
+                y:  { position: "left",  beginAtZero: true, ticks: { callback: v => fmt(v as number), maxTicksLimit: 6 }, grid: { color: "#f3f4f6" } },
+                y1: { position: "right", beginAtZero: true, ticks: { callback: v => fmt(v as number), maxTicksLimit: 6 }, grid: { display: false } },
               },
             }}
           />
