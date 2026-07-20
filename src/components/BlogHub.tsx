@@ -109,6 +109,50 @@ export function BlogHub({ brands = [] }: { brands?: BrandRef[] }) {
         ))}
       </div>
 
+      {/* Blogs by brand — output + traffic share across the portfolio */}
+      {(() => {
+        const perBrand = brands
+          .map(b => {
+            const arts = articles.filter(a => a.brand_id === b.id);
+            const latest = [...new Set(ga4.map(r => r.month_key))].sort().pop();
+            const pv = ga4.filter(r => r.brand_id === b.id && r.month_key === latest).reduce((s, r) => s + r.pageviews, 0);
+            const d90 = new Date(Date.now() - 90 * 86400_000).toISOString();
+            return { id: b.id, name: b.name, color: b.color, count: arts.length, recent: arts.filter(a => (a.published_at ?? "") >= d90).length, pv };
+          })
+          .filter(b => b.count > 0 || b.pv > 0)
+          .sort((a, b) => b.count - a.count);
+        if (perBrand.length === 0) return null;
+        const maxCount = Math.max(1, ...perBrand.map(b => b.count));
+        const maxPv = Math.max(1, ...perBrand.map(b => b.pv));
+        return (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 mb-3">Blogs by brand</p>
+            <div className="grid md:grid-cols-2 gap-x-8 gap-y-1.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 hidden md:block">Published posts <span className="normal-case font-normal">(● = last 90 days)</span></p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 hidden md:block">Blog pageviews · latest month</p>
+              {perBrand.map(b => (
+                <div key={`c${b.id}`} className="contents">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11.5px] text-slate-600 w-28 truncate">{b.name}</span>
+                    <div className="flex-1 h-3.5 rounded-full bg-gray-100 relative">
+                      <div className="h-3.5 rounded-full" style={{ width: `${(b.count / maxCount) * 100}%`, background: b.color }} />
+                    </div>
+                    <span className="text-[11.5px] font-semibold text-slate-700 w-12 text-right">{b.count}{b.recent > 0 && <span className="text-emerald-500"> ●{b.recent}</span>}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11.5px] text-slate-600 w-28 truncate md:hidden">{b.name}</span>
+                    <div className="flex-1 h-3.5 rounded-full bg-gray-100">
+                      <div className="h-3.5 rounded-full opacity-70" style={{ width: `${(b.pv / maxPv) * 100}%`, background: b.color }} />
+                    </div>
+                    <span className="text-[11.5px] font-semibold text-slate-700 w-14 text-right">{b.pv.toLocaleString()}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       <div className="flex flex-wrap items-center gap-2">
         <select value={String(brandSel)} onChange={e => setBrandSel(e.target.value === "all" ? "all" : Number(e.target.value))} className={inp}>
           <option value="all">All brands</option>
