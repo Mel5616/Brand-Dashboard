@@ -24,6 +24,30 @@ function Avatar({ url, name, size = 40 }: { url: string | null; name: string | n
     : <div className="rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center shrink-0" style={{ width: size, height: size, fontSize: size * 0.4 }}>{initial}</div>;
 }
 
+// Card avatar doubles as the photo uploader — click the circle to add/replace
+// the influencer's image (stored on the roster by handle).
+function AvatarUpload({ url, handle, size = 40 }: { url: string | null; handle: string | null; size?: number }) {
+  const [current, setCurrent] = useState(url);
+  const [busy, setBusy] = useState(false);
+  async function upload(file: File) {
+    if (!handle) return;
+    setBusy(true);
+    const fd = new FormData(); fd.append("file", file); fd.append("handle", handle);
+    const r = await fetch("/api/influencer/avatar", { method: "POST", body: fd }).then(x => x.json()).catch(() => ({}));
+    setBusy(false);
+    if (r.url) setCurrent(r.url);
+  }
+  return (
+    <label className="relative shrink-0 cursor-pointer group/avatar" title={current ? "Replace photo" : "Add a photo"}>
+      <Avatar url={current} name={handle} size={size} />
+      <span className={`absolute inset-0 rounded-full bg-black/45 text-white text-[13px] flex items-center justify-center transition-opacity ${busy ? "opacity-100" : "opacity-0 group-hover/avatar:opacity-100"}`}>
+        {busy ? "…" : "📷"}
+      </span>
+      <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) upload(f); e.currentTarget.value = ""; }} />
+    </label>
+  );
+}
+
 const rrp = (n: number | null) => n == null ? "—" : "$" + Math.round(n).toLocaleString("en-AU");
 const compact = (n: number | null) => n == null ? "—" : n >= 1_000_000 ? (n / 1e6).toFixed(1) + "M" : n >= 1_000 ? (n / 1e3).toFixed(1) + "K" : String(n);
 const mon = (k: string) => new Date(k + "-01T00:00:00").toLocaleDateString("en-AU", { month: "short", year: "2-digit" });
@@ -231,7 +255,7 @@ function PostCard({ g, editing, onEdit, onClose, onSaved }: { g: Gift; editing: 
       </div>
       <div className="p-4">
       <div className="flex items-start gap-3">
-        <Avatar url={g.avatar_url} name={g.handle} size={40} />
+        <AvatarUpload url={g.avatar_url} handle={g.handle} size={40} />
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-slate-700 truncate">
             {g.profile_url
