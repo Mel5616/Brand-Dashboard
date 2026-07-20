@@ -57,7 +57,6 @@ export function PromotionalCalendar({ canEdit, fy, month }: { canEdit: boolean; 
   const [statusF, setStatusF] = useState("");
 
   async function load() {
-    setLoading(true);
     const [a, c] = await Promise.all([
       fetch("/api/promotions").then(x => x.json()).catch(() => ({ ok: false })),
       fetch("/api/d2c").then(x => x.json()).catch(() => ({ ok: false })),
@@ -68,6 +67,11 @@ export function PromotionalCalendar({ canEdit, fy, month }: { canEdit: boolean; 
     setD2c(c.items || []);
   }
   useEffect(() => { load(); }, []);
+  // Status changes patch local state so the open months/brands don't collapse;
+  // a silent background load() keeps everything else fresh.
+  function applyStatusLocal(ids: number[], status: string) {
+    setD2c(prev => prev.map(r => ids.includes(r.id) ? { ...r, status } : r));
+  }
 
   // Sidebar Financial Year + Month drive the scope.
   const fyStart = Number((fy || "").slice(0, 4)) || null;
@@ -154,7 +158,7 @@ export function PromotionalCalendar({ canEdit, fy, month }: { canEdit: boolean; 
       </div>
 
       {/* D2C plan */}
-      <D2cPlan d2c={d2cFY} promos={promos} canEdit={canEdit} brandF={brandF} tierF={tierF} statusF={statusF} onChanged={load} />
+      <D2cPlan d2c={d2cFY} promos={promos} canEdit={canEdit} brandF={brandF} tierF={tierF} statusF={statusF} onChanged={load} onStatusLocal={applyStatusLocal} />
     </div>
   );
 }
@@ -163,7 +167,7 @@ function TierBadge({ t }: { t: number | null }) {
   return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: tierColor(t) }}>{t ? `T${t}` : "?"}</span>;
 }
 
-function D2cPlan({ d2c, promos, canEdit, brandF, tierF, statusF, onChanged }: { d2c: D2c[]; promos: Promo[]; canEdit: boolean; brandF: string; tierF: string; statusF: string; onChanged: () => void }) {
+function D2cPlan({ d2c, promos, canEdit, brandF, tierF, statusF, onChanged, onStatusLocal }: { d2c: D2c[]; promos: Promo[]; canEdit: boolean; brandF: string; tierF: string; statusF: string; onChanged: () => void; onStatusLocal: (ids: number[], status: string) => void }) {
   const rows = d2c.filter(r => (!brandF || r.brand === brandF) && (!tierF || String(r.tier) === tierF) && (!statusF || r.status === statusF));
   const counts = d2c.reduce((m, r) => { m[r.status] = (m[r.status] || 0) + 1; return m; }, {} as Record<string, number>);
 
@@ -210,7 +214,7 @@ function D2cPlan({ d2c, promos, canEdit, brandF, tierF, statusF, onChanged }: { 
     await patch(g.ids, "action");
   }
 
-  async function setStatus(ids: number[], status: string) { await patch(ids, status); onChanged(); }
+  async function setStatus(ids: number[], status: string) { onStatusLocal(ids, status); await patch(ids, status); }
   async function action(g: VGroup) { await makeCampaign(g); onChanged(); }
 
   // Approving a selection creates ONE campaign per promotion — products (and
