@@ -121,7 +121,9 @@ export default async function DealSheet({ params }: { params: Promise<{ token: s
                             }
                             const colours = items(d.range_label);
                             const includes = items(d.gift_label);
-                            const save = d.rrp && d.show_price ? Number(d.rrp) - Number(d.show_price) : (d.discount_value ?? null);
+                            // Total value saved = price cut + the free accessory bundle's value.
+                            const priceSave = d.rrp && d.show_price ? Number(d.rrp) - Number(d.show_price) : (d.discount_value ?? null);
+                            const save = priceSave != null ? priceSave + (Number(d.gift_value) || 0) : (Number(d.gift_value) || null);
                             return (
                               <div key={d.id} className="rounded-xl border border-slate-100 bg-white shadow-sm overflow-hidden" style={{ borderLeft: `4px solid ${accent}` }}>
                                 <div className="px-5 py-4">
@@ -133,7 +135,7 @@ export default async function DealSheet({ params }: { params: Promise<{ token: s
                                     <div className="text-right shrink-0">
                                       {d.rrp && <p className="text-[13px] text-slate-400 line-through">RRP {aud(d.rrp)}</p>}
                                       <p className="text-[30px] font-black text-slate-900 leading-none" style={{ color: accent }}>{aud(d.show_price)}</p>
-                                      {save ? <span className="inline-block mt-1.5 text-[12.5px] font-bold text-white rounded-full px-3 py-1" style={{ background: accent }}>Save {aud(save)}</span> : null}
+                                      {save ? <span className="inline-block mt-1.5 text-[12.5px] font-bold text-white rounded-full px-3 py-1" style={{ background: accent }}>Save {aud(save)}{d.gift_value ? " total value" : ""}</span> : null}
                                     </div>
                                   </div>
                                   {includes.length > 0 && (
