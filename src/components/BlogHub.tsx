@@ -12,6 +12,7 @@ type GscRow = { brand_id: number; month_key: string; page: string; clicks: numbe
 type LandingRow = { brand_id: number; month_key: string; path: string; sessions: number; revenue: number; transactions: number };
 type QueryRow = { brand_id: number; month_key: string; page: string; query: string; clicks: number; impressions: number; position: number };
 type SourceRow = { brand_id: number; month_key: string; path: string; channel: string; sessions: number };
+type SemRow = { brand_id: number; month_key: string; phrase: string; position: number; search_volume: number; url: string };
 type BrandRef = { id: number; name: string; color: string };
 
 const inp = "text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400";
@@ -40,6 +41,8 @@ export function BlogHub({ brands = [], admin = false }: { brands?: BrandRef[]; a
   const [landing, setLanding] = useState<LandingRow[]>([]);
   const [queries, setQueries] = useState<QueryRow[]>([]);
   const [sources, setSources] = useState<SourceRow[]>([]);
+  const [semrush, setSemrush] = useState<SemRow[]>([]);
+  const [fix, setFix] = useState<Record<string, { busy?: boolean; text?: string; err?: string }>>({});
   const [loading, setLoading] = useState(true);
   const [needsSetup, setNeedsSetup] = useState(false);
   const [brandSel, setBrandSel] = useState<number | "all">("all");
@@ -56,6 +59,7 @@ export function BlogHub({ brands = [], admin = false }: { brands?: BrandRef[]; a
       else if (d.ok) {
         setArticles(d.articles ?? []); setGa4(d.ga4 ?? []); setGsc(d.gsc ?? []);
         setLanding(d.landing ?? []); setQueries(d.queries ?? []); setSources(d.sources ?? []);
+        setSemrush(d.semrush ?? []);
       }
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
@@ -132,6 +136,54 @@ export function BlogHub({ brands = [], admin = false }: { brands?: BrandRef[]; a
       },
     };
   }, [articles, ga4, gsc, landing, brandSel, brands]);
+
+  // Semrush keywords per post (latest month per brand), keyed `${brand_id}|${path}`
+  const semByPath = useMemo(() => {
+    const latest = new Map<number, string>();
+    for (const r of semrush) if ((latest.get(r.brand_id) ?? "") < r.month_key) latest.set(r.brand_id, r.month_key);
+    const m = new Map<string, SemRow[]>();
+    for (const r of semrush) {
+      if (r.month_key !== latest.get(r.brand_id)) continue;
+      const p = r.url.match(/\/blogs\/.+$/)?.[0];
+      if (!p) continue;
+      const k = `${r.brand_id}|${p.replace(/\/$/, "")}`;
+      if (!m.has(k)) m.set(k, []);
+      m.get(k)!.push(r);
+    }
+    for (const v of m.values()) v.sort((a, b) => (b.search_volume ?? 0) - (a.search_volume ?? 0));
+    return m;
+  }, [semrush]);
+  const semFor = (bid: number, pageOrPath: string) => {
+    const p = pageOrPath.match(/\/blogs\/.+$/)?.[0]?.replace(/\/$/, "");
+    return p ? semByPath.get(`${bid}|${p}`) ?? [] : [];
+  };
+  const vol = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k` : String(n);
+
+  async function runFix(bid: number, pageOrPath: string) {
+    const path = pageOrPath.match(/\/blogs\/.+$/)?.[0];
+    if (!path) return;
+    const key = `${bid}|${path}`;
+    setFix(f => ({ ...f, [key]: { busy: true } }));
+    const d = await fetch("/api/blogs/fix", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brand_id: bid, path }) }).then(r => r.json()).catch(() => null);
+    setFix(f => ({ ...f, [key]: d?.ok ? { text: d.brief } : { err: d?.error || "Couldn't generate suggestions." } }));
+  }
+  const fixState = (bid: number, pageOrPath: string) => fix[`${bid}|${pageOrPath.match(/\/blogs\/.+$/)?.[0] ?? ""}`];
+  const FixBtn = ({ bid, page }: { bid: number; page: string }) => {
+    const st = fixState(bid, page);
+    if (!admin) return null;
+    return (
+      <button onClick={e => { e.stopPropagation(); if (!st?.busy) runFix(bid, page); }} title="AI: suggest changes to this post"
+        className="shrink-0 text-[11px] font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded px-1.5 py-0.5">
+        {st?.busy ? "…" : "✏️ Fix"}
+      </button>
+    );
+  };
+  const FixOut = ({ bid, page }: { bid: number; page: string }) => {
+    const st = fixState(bid, page);
+    if (!st || st.busy) return st?.busy ? <p className="text-[12px] text-indigo-500 pl-4 py-1">✏️ Writing change brief…</p> : null;
+    if (st.err) return <p className="text-[12px] text-rose-500 pl-4 py-1">{st.err}</p>;
+    return <div className="ml-4 my-1.5 rounded-xl border border-indigo-100 bg-indigo-50/50 p-3 space-y-0.5">{mdLite(st.text!)}</div>;
+  };
 
   const titleFor = (bid: number, pageOrPath: string) => {
     const m = pageOrPath.match(/\/blogs\/.+$/);
@@ -302,24 +354,36 @@ export function BlogHub({ brands = [], admin = false }: { brands?: BrandRef[]; a
           <div className="bg-white rounded-2xl border border-amber-100 shadow-sm p-5">
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-600 mb-1">🎯 Page 2 — nearly there</p>
             <p className="text-[11.5px] text-gray-400 mb-3">Ranking 11–20 with real impressions — a refresh or internal links could push these onto page 1.</p>
-            {data.page2.length === 0 ? <p className="text-sm text-gray-400">Nothing in range{data.latestGsc ? "" : " — needs Search Console"}.</p> : data.page2.map(r => (
-              <div key={r.page} className="flex items-center gap-2 py-1 text-[12.5px]">
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: brandColor(r.brand_id) }} />
-                <a href={r.page} target="_blank" rel="noreferrer" className="text-slate-600 hover:underline truncate flex-1">{titleFor(r.brand_id, r.page)}</a>
-                <span className="text-[11px] font-bold text-amber-600 bg-amber-50 rounded px-1.5 py-0.5 shrink-0">#{r.position.toFixed(0)}</span>
-                <span className="text-[11px] text-gray-400 w-20 text-right shrink-0">{r.impressions.toLocaleString()} impr.</span>
-              </div>
-            ))}
+            {data.page2.length === 0 ? <p className="text-sm text-gray-400">Nothing in range{data.latestGsc ? "" : " — needs Search Console"}.</p> : data.page2.map(r => {
+              const sv = semFor(r.brand_id, r.page)[0]?.search_volume;
+              return (
+                <div key={r.page}>
+                  <div className="flex items-center gap-2 py-1 text-[12.5px]">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: brandColor(r.brand_id) }} />
+                    <a href={r.page} target="_blank" rel="noreferrer" className="text-slate-600 hover:underline truncate flex-1">{titleFor(r.brand_id, r.page)}</a>
+                    {sv ? <span className="text-[10.5px] font-semibold text-sky-600 bg-sky-50 rounded px-1.5 py-0.5 shrink-0" title="Semrush search volume of its top keyword">🔎 {vol(sv)}/mo</span> : null}
+                    <span className="text-[11px] font-bold text-amber-600 bg-amber-50 rounded px-1.5 py-0.5 shrink-0">#{r.position.toFixed(0)}</span>
+                    <span className="text-[11px] text-gray-400 w-20 text-right shrink-0">{r.impressions.toLocaleString()} impr.</span>
+                    <FixBtn bid={r.brand_id} page={r.page} />
+                  </div>
+                  <FixOut bid={r.brand_id} page={r.page} />
+                </div>
+              );
+            })}
           </div>
           <div className="bg-white rounded-2xl border border-rose-100 shadow-sm p-5">
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-rose-500 mb-1">🖱 Under-clicking for their rank</p>
             <p className="text-[11.5px] text-gray-400 mb-3">Ranking well but CTR is below what that position should earn — sharpen the meta title and description.</p>
             {data.lowCtr.length === 0 ? <p className="text-sm text-gray-400">None flagged.</p> : data.lowCtr.map(r => (
-              <div key={r.page} className="flex items-center gap-2 py-1 text-[12.5px]">
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: brandColor(r.brand_id) }} />
-                <a href={r.page} target="_blank" rel="noreferrer" className="text-slate-600 hover:underline truncate flex-1">{titleFor(r.brand_id, r.page)}</a>
-                <span className="text-[11px] font-bold text-slate-500 bg-slate-100 rounded px-1.5 py-0.5 shrink-0">#{r.position.toFixed(0)}</span>
-                <span className="text-[11px] font-bold text-rose-500 w-16 text-right shrink-0">{r.ctr.toFixed(1)}% CTR</span>
+              <div key={r.page}>
+                <div className="flex items-center gap-2 py-1 text-[12.5px]">
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: brandColor(r.brand_id) }} />
+                  <a href={r.page} target="_blank" rel="noreferrer" className="text-slate-600 hover:underline truncate flex-1">{titleFor(r.brand_id, r.page)}</a>
+                  <span className="text-[11px] font-bold text-slate-500 bg-slate-100 rounded px-1.5 py-0.5 shrink-0">#{r.position.toFixed(0)}</span>
+                  <span className="text-[11px] font-bold text-rose-500 w-16 text-right shrink-0">{r.ctr.toFixed(1)}% CTR</span>
+                  <FixBtn bid={r.brand_id} page={r.page} />
+                </div>
+                <FixOut bid={r.brand_id} page={r.page} />
               </div>
             ))}
           </div>
@@ -327,11 +391,15 @@ export function BlogHub({ brands = [], admin = false }: { brands?: BrandRef[]; a
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-orange-500 mb-1">📉 Needs a refresh</p>
             <p className="text-[11.5px] text-gray-400 mb-3">Traffic down 40%+ vs the post&apos;s own 3-month average — a content refresh is cheaper than a new post.</p>
             {data.decay.length === 0 ? <p className="text-sm text-gray-400">No decaying posts flagged.</p> : data.decay.map(x => (
-              <div key={`${x.bid}${x.path}`} className="flex items-center gap-2 py-1 text-[12.5px]">
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: brandColor(x.bid) }} />
-                <span className="text-slate-600 truncate flex-1">{titleFor(x.bid, x.path)}</span>
-                <span className="text-[11px] text-gray-400 shrink-0">{Math.round(x.avg)} → {x.cur}/mo</span>
-                <span className="text-[11px] font-bold text-orange-500 w-12 text-right shrink-0">▼{Math.round(x.dropPct)}%</span>
+              <div key={`${x.bid}${x.path}`}>
+                <div className="flex items-center gap-2 py-1 text-[12.5px]">
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: brandColor(x.bid) }} />
+                  <span className="text-slate-600 truncate flex-1">{titleFor(x.bid, x.path)}</span>
+                  <span className="text-[11px] text-gray-400 shrink-0">{Math.round(x.avg)} → {x.cur}/mo</span>
+                  <span className="text-[11px] font-bold text-orange-500 w-12 text-right shrink-0">▼{Math.round(x.dropPct)}%</span>
+                  <FixBtn bid={x.bid} page={x.path} />
+                </div>
+                <FixOut bid={x.bid} page={x.path} />
               </div>
             ))}
           </div>
@@ -385,12 +453,31 @@ export function BlogHub({ brands = [], admin = false }: { brands?: BrandRef[]; a
                           <div className="grid md:grid-cols-3 gap-5">
                             <div>
                               <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Ranks for</p>
-                              {qList.length === 0 ? <p className="text-[12px] text-gray-400">No query data{data.latestGsc ? "" : " (needs Search Console)"}.</p> : qList.map(r => (
-                                <p key={r.query} className="text-[12px] text-slate-600 flex justify-between gap-2 py-0.5">
-                                  <span className="truncate">{r.query}</span>
-                                  <span className="shrink-0 text-gray-400">#{r.position.toFixed(0)} · {r.clicks} clicks</span>
-                                </p>
-                              ))}
+                              {(() => {
+                                const sem = semFor(a.brand_id, a.path);
+                                const semVol = new Map(sem.map(s => [s.phrase.toLowerCase(), s.search_volume]));
+                                const extra = sem.filter(s => !qList.some(r => r.query.toLowerCase() === s.phrase.toLowerCase())).slice(0, 4);
+                                if (qList.length === 0 && extra.length === 0) return <p className="text-[12px] text-gray-400">No query data{data.latestGsc ? "" : " (needs Search Console)"}.</p>;
+                                return (
+                                  <>
+                                    {qList.map(r => {
+                                      const sv = semVol.get(r.query.toLowerCase());
+                                      return (
+                                        <p key={r.query} className="text-[12px] text-slate-600 flex justify-between gap-2 py-0.5">
+                                          <span className="truncate">{r.query}{sv ? <span className="ml-1.5 text-[10px] font-semibold text-sky-600 bg-sky-50 rounded px-1 py-px" title="Semrush AU search volume">{vol(sv)}/mo</span> : null}</span>
+                                          <span className="shrink-0 text-gray-400">#{r.position.toFixed(0)} · {r.clicks} clicks</span>
+                                        </p>
+                                      );
+                                    })}
+                                    {extra.map(s => (
+                                      <p key={`s${s.phrase}`} className="text-[12px] text-slate-500 flex justify-between gap-2 py-0.5">
+                                        <span className="truncate">{s.phrase}<span className="ml-1.5 text-[10px] font-semibold text-sky-600 bg-sky-50 rounded px-1 py-px">{vol(s.search_volume)}/mo</span></span>
+                                        <span className="shrink-0 text-gray-400">#{s.position} · Semrush</span>
+                                      </p>
+                                    ))}
+                                  </>
+                                );
+                              })()}
                             </div>
                             <div>
                               <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Where traffic comes from{srcMonth ? ` · ${mShort(srcMonth)}` : ""}</p>
@@ -412,9 +499,18 @@ export function BlogHub({ brands = [], admin = false }: { brands?: BrandRef[]; a
                               <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Money</p>
                               <p className="text-[13px] text-slate-700">Attributed revenue: <strong className="text-emerald-700">{a.revenue ? aud(a.revenue) : "$0"}</strong>{a.transactions ? ` · ${a.transactions} orders` : ""}</p>
                               <p className="text-[12px] text-gray-400 mt-1">Sessions landing on this post first, latest month.</p>
-                              <a href={a.url} target="_blank" rel="noreferrer" className="inline-block mt-2 text-[12px] font-semibold text-emerald-600 hover:underline">Open post ↗</a>
+                              <span className="flex items-center gap-2 mt-2">
+                                <a href={a.url} target="_blank" rel="noreferrer" className="text-[12px] font-semibold text-emerald-600 hover:underline">Open post ↗</a>
+                                {admin && (
+                                  <button onClick={e => { e.stopPropagation(); if (!fixState(a.brand_id, a.path)?.busy) runFix(a.brand_id, a.path); }}
+                                    className="text-[11.5px] font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg px-2 py-1">
+                                    {fixState(a.brand_id, a.path)?.busy ? "Thinking…" : "✏️ Suggest changes"}
+                                  </button>
+                                )}
+                              </span>
                             </div>
                           </div>
+                          <FixOut bid={a.brand_id} page={a.path} />
                         </td>
                       </tr>
                     )}
