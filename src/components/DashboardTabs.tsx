@@ -61,6 +61,7 @@ import { SalesTargetTracker } from "./SalesTargetTracker";
 import { ShopifyInsights } from "./ShopifyInsights";
 import { D2CWeekly } from "./D2CWeekly";
 import { BrandAssets } from "./BrandAssets";
+import { BlogHub } from "./BlogHub";
 import { StockReport } from "./StockReport";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
@@ -1894,7 +1895,11 @@ export function DashboardTabs({
           {/* ── Blogs (Asana — read-only) ── */}
           {active === "tasks" && (
             <>
-              <SectionBar title="Blogs · Asana" />
+              <SectionBar title="Blogs" />
+              <BlogHub brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} />
+              <div className="mt-6">
+                <SectionBar title="Blog pipeline · Asana" />
+              </div>
               <TasksPanel tasks={asanaTasks.filter((t: any) => (t.project_label ?? "Blogs") === "Blogs")} brands={brands} currentEmail={currentEmail} admin={role === "admin"} />
             </>
           )}
