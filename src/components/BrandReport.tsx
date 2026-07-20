@@ -57,6 +57,31 @@ function DonutCard({ title, subtitle, slices, total }: { title: string; subtitle
   );
 }
 
+
+// Pacing bar: actual vs where you should be by today. Fill is actual as a share
+// of expected; the 100% line = exactly on pace.
+function PaceRow({ label, actual, expected, colour }: { label: string; actual: number; expected: number; colour: string }) {
+  const ratio = expected > 0 ? actual / expected : null;
+  const pctOf = ratio != null ? ratio * 100 : null;
+  const verdict = ratio == null ? { text: "no plan", cls: "bg-slate-100 text-slate-500" }
+    : ratio >= 1.05 ? { text: `▲ ${Math.round((ratio - 1) * 100)}% ahead`, cls: "bg-emerald-100 text-emerald-700" }
+    : ratio >= 0.95 ? { text: "● on pace", cls: "bg-sky-100 text-sky-700" }
+    : { text: `▼ ${Math.round((1 - ratio) * 100)}% behind`, cls: "bg-rose-100 text-rose-600" };
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-2 mb-1">
+        <p className="text-[12px] font-semibold text-slate-600">{label}</p>
+        <span className={`text-[11px] font-bold rounded-full px-2 py-0.5 ${verdict.cls}`}>{verdict.text}</span>
+      </div>
+      <div className="relative h-3 rounded-full bg-gray-100 overflow-hidden">
+        <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: `${Math.min(100, (pctOf ?? 0) / 2)}%`, background: colour }} />
+        <div className="absolute inset-y-0 w-px bg-slate-700" style={{ left: "50%" }} title="On pace" />
+      </div>
+      <p className="text-[11px] text-gray-400 mt-1">{fmtFull(actual)} actual · {fmtFull(expected)} expected by today</p>
+    </div>
+  );
+}
+
 export function BrandReport({ r }: { r: ReportData }) {
   const elapsedPct = r.elapsed * 100;
   const usedPct = r.pctBudgetUsed * 100;
@@ -90,6 +115,16 @@ export function BrandReport({ r }: { r: ReportData }) {
       </div>
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         {kpis.map(k => <Card key={k.label} {...k} />)}
+      </div>
+
+      {/* Pacing — are we where we should be by today? */}
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Pacing</h3>
+        <p className="text-xs text-gray-400 mb-4">Actual vs where the plan says you should be by today ({(r.elapsed * 100).toFixed(1)}% of the FY elapsed). Sales pacing follows the seasonal monthly targets; the centre line = exactly on pace.</p>
+        <div className="grid md:grid-cols-2 gap-6">
+          <PaceRow label="Sales vs target pace" actual={r.actualSalesYTD} expected={r.ytdTargetSales} colour="#0891b2" />
+          <PaceRow label="Marketing spend vs budget pace" actual={r.spendYTD} expected={r.ytdBudgetSpend} colour="#0e7490" />
+        </div>
       </div>
 
       {/* Monthly sales vs spend */}

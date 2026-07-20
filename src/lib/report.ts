@@ -39,6 +39,9 @@ export type ReportData = {
   spendByChannel: ChannelSlice[];
   priorYearActual: number;  // 0 until last-year sales are synced
   elapsed: number;
+  // Pacing: what SHOULD have happened by today.
+  ytdTargetSales: number;   // seasonal — sum of monthly targets to date (current month pro-rated)
+  ytdBudgetSpend: number;   // linear — FY budget × fraction elapsed
 };
 
 const sum = (a: number[]) => a.reduce((s, v) => s + (v || 0), 0);
@@ -130,6 +133,15 @@ export function buildReport(
   ]);
 
   const elapsed  = fyElapsedFraction(fy);
+  // Seasonal YTD sales target: completed months in full + current month by day fraction.
+  const now = new Date();
+  const curMk = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const monthFrac = now.getDate() / new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const ytdTargetSales = sum(inScope(targets).map(t => {
+    if (t.month_key < curMk) return t.revenue_target;
+    if (t.month_key === curMk) return t.revenue_target * monthFrac;
+    return 0;
+  }));
   const forecast = elapsed > 0.02 && actualSalesYTD > 0 ? actualSalesYTD / elapsed : null;
 
   return {
@@ -153,5 +165,7 @@ export function buildReport(
     spendByChannel,
     priorYearActual: 0,
     elapsed,
+    ytdTargetSales,
+    ytdBudgetSpend: marketingBudgetFY * elapsed,
   };
 }
