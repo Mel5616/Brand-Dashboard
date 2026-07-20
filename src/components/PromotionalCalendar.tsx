@@ -301,28 +301,58 @@ function D2cPlan({ d2c, promos, canEdit, brandF, tierF, statusF, onChanged, onSt
         const active = group(promos.filter(p => p.period_start <= today && p.period_end >= today));
         const upcoming = group(promos.filter(p => p.period_start > today && p.period_start <= soon));
         if (active.length === 0 && upcoming.length === 0) return null;
-        const Row = ({ g, live }: { g: { channel: string; start: string; end: string; brands: string[] }; live: boolean }) => (
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 py-1.5">
-            <span className={`text-[10px] font-bold uppercase tracking-wider rounded px-1.5 py-0.5 shrink-0 ${live ? "bg-emerald-100 text-emerald-700" : "bg-sky-100 text-sky-600"}`}>{live ? "Live" : "Soon"}</span>
-            <span className="text-[13px] font-semibold text-slate-700">{g.channel}</span>
-            <span className="text-[12px] text-gray-400">{fmt(g.start)} – {fmt(g.end)}</span>
-            <span className="flex flex-wrap gap-1">
-              {g.brands.map(b => (
-                <span key={b} className={`text-[11px] font-semibold rounded-full px-2 py-0.5 ${live && d2cLive.has(b) ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-slate-100 text-slate-500"}`}>
-                  {b}{live && d2cLive.has(b) ? " · D2C ✓" : ""}
+        // Shared timeline axis: a few days back → the latest end in view (capped ~7 weeks)
+        const DAY = 86400_000;
+        const nowT = d(today).getTime();
+        const t0 = nowT - 4 * DAY;
+        const tEnd = Math.min(Math.max(...[...active, ...upcoming].map(g => d(g.end).getTime() + DAY), nowT + 21 * DAY), nowT + 49 * DAY);
+        const span = tEnd - t0;
+        const x = (t: number) => Math.max(0, Math.min(100, ((t - t0) / span) * 100));
+        const weeks: string[] = [];
+        for (let t = t0; t <= tEnd; t += 7 * DAY) weeks.push(new Date(t).toLocaleDateString("en-AU", { day: "numeric", month: "short" }));
+        const Row = ({ g, live }: { g: { channel: string; start: string; end: string; brands: string[] }; live: boolean }) => {
+          const s = d(g.start).getTime(), e = d(g.end).getTime() + DAY;
+          const daysLeft = Math.ceil((e - nowT) / DAY), startsIn = Math.ceil((s - nowT) / DAY);
+          return (
+            <div className="py-2">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="text-[13px] font-semibold text-slate-700">{g.channel}</span>
+                <span className="text-[11.5px] text-gray-400">{fmt(g.start)} – {fmt(g.end)}</span>
+                <span className={`text-[10.5px] font-bold rounded-full px-2 py-0.5 ${live ? "bg-emerald-100 text-emerald-700" : "bg-sky-100 text-sky-600"}`}>
+                  {live ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} left` : `starts in ${startsIn} day${startsIn === 1 ? "" : "s"}`}
                 </span>
-              ))}
-            </span>
-          </div>
-        );
+                <span className="ml-auto flex flex-wrap gap-1 justify-end">
+                  {g.brands.map(b => (
+                    <span key={b} className={`text-[10.5px] font-semibold rounded-full px-2 py-0.5 ${live && d2cLive.has(b) ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-500"}`}>
+                      {b}{live && d2cLive.has(b) ? " ✓" : ""}
+                    </span>
+                  ))}
+                </span>
+              </div>
+              <div className="relative h-3 mt-1.5 rounded-full bg-gray-100 overflow-hidden">
+                <div className={`absolute top-0 h-3 rounded-full ${live ? "bg-emerald-400" : "bg-sky-300"}`}
+                  style={{ left: `${x(s)}%`, width: `${Math.max(1.5, x(e) - x(s))}%` }} />
+                {live && <div className="absolute top-0 h-3 bg-emerald-600/25" style={{ left: `${x(s)}%`, width: `${Math.max(0, x(nowT) - x(s))}%` }} />}
+                <div className="absolute top-0 h-3 w-px bg-slate-700" style={{ left: `${x(nowT)}%` }} />
+              </div>
+            </div>
+          );
+        };
         return (
           <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm px-4 py-3">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-600 mb-1">📣 Promo windows{active.length ? ` · ${active.length} running` : ""}</p>
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-600">📣 Promo windows{active.length ? ` · ${active.length} running` : ""}</p>
+              <p className="text-[10.5px] text-gray-400">▐ today · <span className="text-emerald-600 font-semibold">green brand ✓</span> = mirrored Live on D2C</p>
+            </div>
             <div className="divide-y divide-gray-50">
               {active.map((g, i) => <Row key={`a${i}`} g={g} live />)}
               {upcoming.map((g, i) => <Row key={`u${i}`} g={g} live={false} />)}
             </div>
-            <p className="text-[11px] text-gray-400 mt-1.5">Brand chip with <span className="text-emerald-600 font-semibold">D2C ✓</span> = products marked Live on our own sites for this window.</p>
+            <div className="relative h-4 mt-0.5">
+              {weeks.map((w, i) => (
+                <span key={i} className="absolute text-[9.5px] text-gray-300 -translate-x-1/2" style={{ left: `${x(t0 + i * 7 * DAY)}%` }}>{w}</span>
+              ))}
+            </div>
           </div>
         );
       })()}
