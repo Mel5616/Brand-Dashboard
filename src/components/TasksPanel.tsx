@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { AsanaTask } from "@/lib/db";
 
 // Status / priority colours mirror the Asana projects' field colours (Blogs + Design Requirements).
@@ -27,7 +28,29 @@ const isWaiting = (s: string | null) => (s || "").toLowerCase().includes("waitin
 
 // Read-only Asana tasks for one project, grouped by section (Asana stays the
 // source of truth — the dashboard only reads).
-export function TasksPanel({ tasks, brands, currentEmail }: { tasks: AsanaTask[]; brands: { id: number; name: string; color?: string }[]; currentEmail?: string }) {
+type Suggestion = { taskName: string; brand: string; title: string; primaryKeyword: string; category: string; stage: string; angle: string };
+
+export function TasksPanel({ tasks, brands, currentEmail, admin = false }: { tasks: AsanaTask[]; brands: { id: number; name: string; color?: string }[]; currentEmail?: string; admin?: boolean }) {
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [blogsGid, setBlogsGid] = useState<string | null>(null);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiErr, setAiErr] = useState("");
+  const [added, setAdded] = useState<Set<string>>(new Set());
+  async function suggest() {
+    setAiBusy(true); setAiErr("");
+    const d = await fetch("/api/blogs/suggest", { method: "POST" }).then(r => r.json()).catch(() => null);
+    setAiBusy(false);
+    if (d?.ok) { setSuggestions(d.suggestions ?? []); setBlogsGid(d.blogsGid ?? null); }
+    else setAiErr(d?.error || "Couldn't generate suggestions.");
+  }
+  async function addToBoard(sg: Suggestion) {
+    if (!blogsGid) { setAiErr("Blogs board id not configured (ASANA_PROJECT_ID)."); return; }
+    const d = await fetch("/api/design", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "task.create", name: sg.taskName, project_gid: blogsGid, project_label: "Blogs",
+        notes: `Category: ${sg.category}\nCustomer stage: ${sg.stage}\nPrimary keyword: ${sg.primaryKeyword}\nAngle: ${sg.angle}\n\nSuggested by the dashboard AI — brief in the house SEO style before writing.` }) }).then(r => r.json()).catch(() => null);
+    if (d?.ok) setAdded(prev => new Set(prev).add(sg.taskName));
+    else setAiErr(d?.error || "Couldn't add to Asana.");
+  }
   if (!tasks.length) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
@@ -106,6 +129,38 @@ export function TasksPanel({ tasks, brands, currentEmail }: { tasks: AsanaTask[]
           </div>
         ))}
       </div>
+
+      {admin && (
+        <div className="rounded-2xl border-2 border-indigo-200 bg-gradient-to-br from-indigo-50/60 to-white shadow-sm p-5">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-indigo-600">✨ Suggested blogs</p>
+              <p className="text-[12.5px] text-gray-400 mt-0.5">AI topic ideas in the house SEO style — seasonal, campaign-aware, no duplicates of the board.</p>
+            </div>
+            <button onClick={suggest} disabled={aiBusy} className="text-sm font-semibold text-indigo-700 bg-indigo-100 hover:bg-indigo-200 rounded-lg px-4 py-2 disabled:opacity-60">{aiBusy ? "Thinking…" : suggestions.length ? "↻ Regenerate" : "Suggest blog topics"}</button>
+          </div>
+          {aiErr && <p className="text-sm text-rose-500 mt-2">{aiErr}</p>}
+          {suggestions.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {suggestions.map(sg => (
+                <div key={sg.taskName} className="bg-white rounded-xl border border-indigo-100 px-4 py-3 flex items-start gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13.5px] font-semibold text-slate-800">{sg.taskName}</p>
+                    <p className="text-[12px] text-gray-500 mt-0.5">{sg.angle}</p>
+                    <p className="text-[11px] text-gray-400 mt-1">
+                      <span className="bg-indigo-50 text-indigo-600 rounded-full px-2 py-0.5 font-semibold">{sg.brand}</span>
+                      <span className="ml-1.5">{sg.category} · {sg.stage} · kw: {sg.primaryKeyword}</span>
+                    </p>
+                  </div>
+                  {added.has(sg.taskName)
+                    ? <span className="text-[12px] font-semibold text-emerald-600 shrink-0 mt-1">✓ On the board</span>
+                    : <button onClick={() => addToBoard(sg)} className="text-[12.5px] font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-1.5 shrink-0">+ Add to Asana</button>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {myWaiting.length > 0 && (
         <div className="bg-amber-50 rounded-2xl border border-amber-200 shadow-sm p-5">

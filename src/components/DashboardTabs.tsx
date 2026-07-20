@@ -1895,7 +1895,7 @@ export function DashboardTabs({
           {active === "tasks" && (
             <>
               <SectionBar title="Blogs · Asana" />
-              <TasksPanel tasks={asanaTasks.filter((t: any) => (t.project_label ?? "Blogs") === "Blogs")} brands={brands} currentEmail={currentEmail} />
+              <TasksPanel tasks={asanaTasks.filter((t: any) => (t.project_label ?? "Blogs") === "Blogs")} brands={brands} currentEmail={currentEmail} admin={role === "admin"} />
             </>
           )}
 
