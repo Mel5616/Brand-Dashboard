@@ -203,15 +203,21 @@ def main():
             status_val = (custom_field(t, "Status") or "").strip().lower()
             if sec.startswith("completed") or sec == "done" or "artwork complete" in sec or "artwork complete" in status_val:
                 completed_gids.append(t["gid"])
-                completion_rows.append({
-                    "task_gid": t["gid"],
-                    "name": (t.get("name") or "")[:200],
-                    "project_label": label,
-                    "due_on": t.get("due_on"),
-                    "created_at_asana": t.get("created_at"),
-                    "completed_at": _dt.datetime.utcnow().isoformat() + "Z",
-                    "source": "asana",
-                })
+                # Log as a completion ONLY if freshly moved (modified in the last
+                # 14 days) — historic backlog must not stamp today's date onto
+                # the throughput stats.
+                mod = (t.get("modified_at") or "")[:10]
+                recent = (_dt.date.today() - _dt.timedelta(days=14)).isoformat()
+                if mod and mod >= recent:
+                    completion_rows.append({
+                        "task_gid": t["gid"],
+                        "name": (t.get("name") or "")[:200],
+                        "project_label": label,
+                        "due_on": t.get("due_on"),
+                        "created_at_asana": t.get("created_at"),
+                        "completed_at": _dt.datetime.utcnow().isoformat() + "Z",
+                        "source": "asana",
+                    })
                 continue
             due = t.get("due_on") or ""
             mod = (t.get("modified_at") or "")[:10]
