@@ -278,6 +278,51 @@ function D2cPlan({ d2c, canEdit, brandF, tierF, statusF, onChanged }: { d2c: D2c
       </div>
       <p className="text-xs text-slate-400">Open a month, then a brand, to see its sales. Tick products to bulk-update, or set each status. Run the same on D2C for the same dates.</p>
 
+      {/* Live + upcoming promo windows (from the promo calendar), with D2C mirror status */}
+      {(() => {
+        const today = new Date().toISOString().slice(0, 10);
+        const soon = new Date(Date.now() + 30 * 86400_000).toISOString().slice(0, 10);
+        // brands with a D2C product row marked live that overlaps today
+        const d2cLive = new Set(d2c.filter(r => r.status === "live" && r.period_start <= today && r.period_end >= today).map(r => r.brand));
+        const group = (rows: Promo[]) => {
+          const m = new Map<string, { channel: string; start: string; end: string; brands: string[]; tier: number | null }>();
+          for (const p of rows) {
+            const k = `${p.channel}|${p.period_start}|${p.period_end}`;
+            const cur = m.get(k) ?? { channel: p.channel || "Promo", start: p.period_start, end: p.period_end, brands: [], tier: p.tier };
+            if (!cur.brands.includes(p.brand)) cur.brands.push(p.brand);
+            m.set(k, cur);
+          }
+          return [...m.values()].sort((a, b) => a.start.localeCompare(b.start));
+        };
+        const active = group(promos.filter(p => p.period_start <= today && p.period_end >= today));
+        const upcoming = group(promos.filter(p => p.period_start > today && p.period_start <= soon));
+        if (active.length === 0 && upcoming.length === 0) return null;
+        const Row = ({ g, live }: { g: { channel: string; start: string; end: string; brands: string[] }; live: boolean }) => (
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 py-1.5">
+            <span className={`text-[10px] font-bold uppercase tracking-wider rounded px-1.5 py-0.5 shrink-0 ${live ? "bg-emerald-100 text-emerald-700" : "bg-sky-100 text-sky-600"}`}>{live ? "Live" : "Soon"}</span>
+            <span className="text-[13px] font-semibold text-slate-700">{g.channel}</span>
+            <span className="text-[12px] text-gray-400">{fmt(g.start)} – {fmt(g.end)}</span>
+            <span className="flex flex-wrap gap-1">
+              {g.brands.map(b => (
+                <span key={b} className={`text-[11px] font-semibold rounded-full px-2 py-0.5 ${live && d2cLive.has(b) ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-slate-100 text-slate-500"}`}>
+                  {b}{live && d2cLive.has(b) ? " · D2C ✓" : ""}
+                </span>
+              ))}
+            </span>
+          </div>
+        );
+        return (
+          <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm px-4 py-3">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-600 mb-1">📣 Promo windows{active.length ? ` · ${active.length} running` : ""}</p>
+            <div className="divide-y divide-gray-50">
+              {active.map((g, i) => <Row key={`a${i}`} g={g} live />)}
+              {upcoming.map((g, i) => <Row key={`u${i}`} g={g} live={false} />)}
+            </div>
+            <p className="text-[11px] text-gray-400 mt-1.5">Brand chip with <span className="text-emerald-600 font-semibold">D2C ✓</span> = products marked Live on our own sites for this window.</p>
+          </div>
+        );
+      })()}
+
       {sel.size > 0 && (
         <div className="sticky top-2 z-10 flex flex-wrap items-center gap-2 bg-slate-800 text-white rounded-xl px-4 py-2.5 shadow-lg">
           <span className="text-sm font-semibold">{sel.size} selected</span>
