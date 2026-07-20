@@ -17,10 +17,17 @@ function missing(status: number, body: string) {
 
 export async function GET() {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false, influencers: [] }, { status: 500 });
-  const res = await fetch(`${sbUrl}/rest/v1/influencers?select=*&order=name.asc.nullslast`, { headers: headers(), cache: "no-store" });
+  const [res, nRes] = await Promise.all([
+    fetch(`${sbUrl}/rest/v1/influencers?select=*&order=name.asc.nullslast`, { headers: headers(), cache: "no-store" }),
+    // Handles managed on the Nanit Codes tab — the gifting roster hides these
+    // unless they've actually been gifted (their avatars live on the shared roster).
+    fetch(`${sbUrl}/rest/v1/nanit_influencers?select=handle`, { headers: headers(), cache: "no-store" }),
+  ]);
   const text = await res.text();
   if (!res.ok) return NextResponse.json({ ok: false, needsSetup: missing(res.status, text), influencers: [] });
-  return NextResponse.json({ ok: true, influencers: JSON.parse(text || "[]") });
+  const nanit = nRes.ok ? JSON.parse((await nRes.text()) || "[]") : [];
+  const nanitHandles = [...new Set(nanit.map((r: any) => String(r.handle || "").trim()).filter(Boolean).map((h: string) => (h.startsWith("@") ? h : `@${h}`)))];
+  return NextResponse.json({ ok: true, influencers: JSON.parse(text || "[]"), nanitHandles });
 }
 
 export async function POST(req: Request) {

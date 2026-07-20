@@ -55,6 +55,7 @@ export function InfluencerTracker({ canEdit = false }: { canEdit?: boolean }) {
   const [copied, setCopied] = useState(false);
   const [tab, setTab] = useState<"report" | "roster">("report");
   const [influencers, setInfluencers] = useState<Influencer[]>([]);
+  const [nanitHandles, setNanitHandles] = useState<Set<string>>(new Set());
   const [editInf, setEditInf] = useState<Partial<Influencer> | null>(null);
   const [prodMsg, setProdMsg] = useState("");
   const [prodBusy, setProdBusy] = useState(false);
@@ -101,7 +102,8 @@ export function InfluencerTracker({ canEdit = false }: { canEdit?: boolean }) {
       fetch("/api/influencer/roster").then(r => r.json()),
     ]).then(([e, b, r]) => {
       setNeedsSetup(!!e.needsSetup || !!b.needsSetup);
-      setEntries(e.entries ?? []); setBudgets(b.budgets ?? []); setInfluencers(r.influencers ?? []); setLoading(false);
+      setEntries(e.entries ?? []); setBudgets(b.budgets ?? []); setInfluencers(r.influencers ?? []);
+      setNanitHandles(new Set((r.nanitHandles ?? []) as string[])); setLoading(false);
     }).catch(() => setLoading(false));
   }
   useEffect(() => { load(); }, []);
@@ -116,10 +118,11 @@ export function InfluencerTracker({ canEdit = false }: { canEdit?: boolean }) {
       if (e.brand) cur.brands.add(e.brand); if (e.month_key > cur.last) cur.last = e.month_key;
       agg.set(h, cur);
     }
-    for (const i of influencers) if (!agg.has(i.handle)) agg.set(i.handle, { handle: i.handle, gifts: 0, value: 0, reach: 0, sales: 0, brands: new Set(), last: "" });
+    // Nanit-tracker influencers only join the gifting roster once they've been gifted
+    for (const i of influencers) if (!agg.has(i.handle) && !nanitHandles.has(i.handle)) agg.set(i.handle, { handle: i.handle, gifts: 0, value: 0, reach: 0, sales: 0, brands: new Set(), last: "" });
     const byHandle = new Map(influencers.map(i => [i.handle, i]));
     return [...agg.values()].map(a => ({ ...a, brands: [...a.brands], m: byHandle.get(a.handle) })).sort((x, y) => y.value - x.value);
-  }, [entries, influencers]);
+  }, [entries, influencers, nanitHandles]);
 
   async function saveInfluencer(i: Partial<Influencer>) {
     await fetch("/api/influencer/roster", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(i) });
