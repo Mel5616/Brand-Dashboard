@@ -60,7 +60,7 @@ export default async function DealSheet({ params }: { params: Promise<{ token: s
   return (
     <main className="min-h-screen bg-slate-100 py-8 px-4 print:bg-white print:p-0">
       <style dangerouslySetInnerHTML={{ __html: PRINT_CSS }} />
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <div className="no-print flex justify-end mb-3"><PrintButton /></div>
 
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden print:shadow-none print:rounded-none">
@@ -101,16 +101,16 @@ export default async function DealSheet({ params }: { params: Promise<{ token: s
                           {logo ? <img src={logo} alt={brand} className="h-8 w-auto max-w-[150px] object-contain" /> : <span className="text-lg font-bold" style={{ color: accent }}>{brand}</span>}
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="grid sm:grid-cols-2 gap-3 print:grid-cols-2">
                           {list.map((d: any) => {
                             if (d.scope === "whole_brand" && d.discount_type === "pct_off") {
                               return (
-                                <div key={d.id} className="rounded-xl px-5 py-4 flex items-center justify-between" style={{ background: accent + "0d", border: `1px solid ${accent}22` }}>
+                                <div key={d.id} className="sm:col-span-2 rounded-xl px-5 py-4 flex items-center justify-between" style={{ background: accent + "0d", border: `1px solid ${accent}22` }}>
                                   <div>
-                                    <p className="font-bold text-slate-800 text-lg">{Number(d.discount_value)}% off the entire {brand} range</p>
-                                    <p className="text-xs text-slate-500 mt-0.5">Applies to every {brand} SKU · {d.channel === "both" ? "booth + retail" : d.channel === "retail" ? "retail" : "D2C booth"}</p>
+                                    <p className="font-bold text-slate-800 text-xl">{Number(d.discount_value)}% off the entire {brand} range</p>
+                                    <p className="text-[13.5px] text-slate-500 mt-0.5">Applies to every {brand} SKU · {d.channel === "both" ? "booth + retail" : d.channel === "retail" ? "retail" : "D2C booth"}</p>
                                   </div>
-                                  <span className="text-4xl font-black" style={{ color: accent }}>−{Number(d.discount_value)}%</span>
+                                  <span className="text-5xl font-black" style={{ color: accent }}>−{Number(d.discount_value)}%</span>
                                 </div>
                               );
                             }
@@ -122,28 +122,28 @@ export default async function DealSheet({ params }: { params: Promise<{ token: s
                                 <div className="px-5 py-4">
                                   <div className="flex items-start justify-between gap-4 flex-wrap">
                                     <div className="min-w-0">
-                                      <p className="font-bold text-slate-800 text-[15px]">{d.product_name || brand}</p>
-                                      {colours.length > 0 && <p className="text-[13px] text-slate-500 mt-0.5"><span className="font-semibold text-slate-400 uppercase text-[10px] tracking-wide">Colours</span> · {colours.join(" · ")}</p>}
+                                      <p className="font-bold text-slate-800 text-[17.5px] leading-snug">{d.product_name || brand}</p>
+                                      {colours.length > 0 && <p className="text-[14px] text-slate-500 mt-1"><span className="font-semibold text-slate-400 uppercase text-[10px] tracking-wide">Colours</span> · {colours.join(" · ")}</p>}
                                     </div>
                                     <div className="text-right shrink-0">
-                                      {d.rrp && <p className="text-xs text-slate-400 line-through">RRP {aud(d.rrp)}</p>}
-                                      <p className="text-[26px] font-black text-slate-900 leading-none" style={{ color: accent }}>{aud(d.show_price)}</p>
-                                      {save ? <span className="inline-block mt-1.5 text-[11px] font-bold text-white rounded-full px-2.5 py-0.5" style={{ background: accent }}>Save {aud(save)}</span> : null}
+                                      {d.rrp && <p className="text-[13px] text-slate-400 line-through">RRP {aud(d.rrp)}</p>}
+                                      <p className="text-[30px] font-black text-slate-900 leading-none" style={{ color: accent }}>{aud(d.show_price)}</p>
+                                      {save ? <span className="inline-block mt-1.5 text-[12.5px] font-bold text-white rounded-full px-3 py-1" style={{ background: accent }}>Save {aud(save)}</span> : null}
                                     </div>
                                   </div>
                                   {includes.length > 0 && (
                                     <div className="mt-3.5 pt-3.5 border-t border-slate-50">
-                                      <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: accent }}>Bundle includes — free</p>
+                                      <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: accent }}>Bundle includes — free</p>
                                       <div className="flex flex-wrap gap-1.5">
                                         {includes.map((g, i) => (
-                                          <span key={i} className="inline-flex items-center gap-1 text-[12px] bg-slate-50 border border-slate-100 rounded-full px-2.5 py-1 text-slate-600">
+                                          <span key={i} className="inline-flex items-center gap-1 text-[13px] bg-slate-50 border border-slate-100 rounded-full px-3 py-1 text-slate-600">
                                             <span className="font-bold" style={{ color: accent }}>+</span>{g}
                                           </span>
                                         ))}
                                       </div>
                                     </div>
                                   )}
-                                  {d.notes && <p className="text-[12px] text-slate-400 mt-2.5">{d.notes}</p>}
+                                  {d.notes && <p className="text-[13px] text-slate-400 mt-2.5">{d.notes}</p>}
                                 </div>
                               </div>
                             );
