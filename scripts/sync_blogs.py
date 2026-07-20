@@ -239,6 +239,71 @@ def sync_ga4_pages(bid, brand, months):
         total += len(agg)
     return total
 
+def sync_ga4_landing(bid, brand, months, client_holder):
+    """Landing-page attribution (sessions that started on a blog post + the
+    purchase revenue they drove) and, for recent months, the channel split."""
+    prop = brand.get("ga4PropertyId")
+    if not prop:
+        return 0
+    from google.analytics.data_v1beta.types import (RunReportRequest, DateRange, Dimension, Metric,
+                                                    FilterExpression, Filter)
+    client = client_holder["client"]
+    total = 0
+    recent = months[-3:]
+    for m in months:
+        start, end = month_bounds(m)
+        mk = m.strftime("%Y-%m")
+        try:
+            resp = client.run_report(RunReportRequest(
+                property=f"properties/{prop}",
+                date_ranges=[DateRange(start_date=start, end_date=end)],
+                dimensions=[Dimension(name="landingPagePlusQueryString")],
+                metrics=[Metric(name="sessions"), Metric(name="purchaseRevenue"), Metric(name="transactions")],
+                dimension_filter=FilterExpression(filter=Filter(
+                    field_name="landingPagePlusQueryString",
+                    string_filter=Filter.StringFilter(match_type=Filter.StringFilter.MatchType.CONTAINS, value="/blogs/"))),
+                limit=300,
+            ))
+        except Exception as e:
+            print(f"  ✗ {brand['name']} GA4 landing {mk}: {e}"); continue
+        agg = {}
+        for r in resp.rows:
+            path = r.dimension_values[0].value.split("?")[0].rstrip("/")
+            if not path.startswith("/blogs/"):
+                continue
+            a = agg.setdefault(path, {"brand_id": bid, "month_key": mk, "path": path, "sessions": 0, "revenue": 0.0, "transactions": 0})
+            a["sessions"] += int(float(r.metric_values[0].value or 0))
+            a["revenue"] += round(float(r.metric_values[1].value or 0), 2)
+            a["transactions"] += int(float(r.metric_values[2].value or 0))
+        sb_upsert("blog_landing_metrics", list(agg.values()), "brand_id,month_key,path")
+        total += len(agg)
+        # channel split — recent months only (volume control)
+        if m in recent:
+            try:
+                resp2 = client.run_report(RunReportRequest(
+                    property=f"properties/{prop}",
+                    date_ranges=[DateRange(start_date=start, end_date=end)],
+                    dimensions=[Dimension(name="pagePath"), Dimension(name="sessionDefaultChannelGroup")],
+                    metrics=[Metric(name="sessions")],
+                    dimension_filter=FilterExpression(filter=Filter(
+                        field_name="pagePath",
+                        string_filter=Filter.StringFilter(match_type=Filter.StringFilter.MatchType.CONTAINS, value="/blogs/"))),
+                    limit=1000,
+                ))
+            except Exception as e:
+                print(f"  ✗ {brand['name']} GA4 sources {mk}: {e}"); continue
+            agg2 = {}
+            for r in resp2.rows:
+                path = r.dimension_values[0].value.split("?")[0].rstrip("/")
+                ch = r.dimension_values[1].value or "Other"
+                if not path.startswith("/blogs/"):
+                    continue
+                k = (path, ch)
+                a = agg2.setdefault(k, {"brand_id": bid, "month_key": mk, "path": path, "channel": ch, "sessions": 0})
+                a["sessions"] += int(float(r.metric_values[0].value or 0))
+            sb_upsert("blog_page_sources", list(agg2.values()), "brand_id,month_key,path,channel")
+    return total
+
 # ── Search Console blog pages ────────────────────────────────────────────────
 def gsc_token():
     from google.oauth2 import service_account
@@ -277,6 +342,34 @@ def sync_gsc_pages(token, bid, brand, months):
         total += len(rows)
     return total
 
+def sync_gsc_page_queries(token, bid, brand, months):
+    site = brand.get("gscProperty")
+    if not site:
+        return 0
+    enc = urllib.parse.quote(site, safe="")
+    total = 0
+    for m in months[-3:]:
+        start, end = month_bounds(m)
+        mk = m.strftime("%Y-%m")
+        body = {"startDate": start, "endDate": end, "dimensions": ["page", "query"], "rowLimit": 800,
+                "dimensionFilterGroups": [{"filters": [{"dimension": "page", "operator": "contains", "expression": "/blogs/"}]}]}
+        req = urllib.request.Request(
+            f"https://searchconsole.googleapis.com/webmasters/v3/sites/{enc}/searchAnalytics/query",
+            data=json.dumps(body).encode(), method="POST",
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req, context=CTX, timeout=40) as r:
+                data = json.loads(r.read().decode())
+        except Exception as e:
+            print(f"  ✗ {brand['name']} GSC queries {mk}: {e}"); continue
+        rows = [{"brand_id": bid, "month_key": mk, "page": row["keys"][0].split("?")[0].rstrip("/"),
+                 "query": row["keys"][1][:200], "clicks": int(row.get("clicks", 0)),
+                 "impressions": int(row.get("impressions", 0)), "position": round(float(row.get("position", 0)), 1)}
+                for row in data.get("rows", [])]
+        sb_upsert("blog_gsc_queries", rows, "brand_id,month_key,page,query")
+        total += len(rows)
+    return total
+
 def main():
     if not URL or not KEY:
         print("Missing Supabase env"); sys.exit(1)
@@ -287,13 +380,23 @@ def main():
     have_creds = os.path.exists(os.path.join(BASE_DIR, "credentials.json"))
     token = gsc_token() if have_creds else None
 
+    client_holder = {}
+    if have_creds:
+        from google.oauth2 import service_account as _sa
+        from google.analytics.data_v1beta import BetaAnalyticsDataClient as _C
+        creds = _sa.Credentials.from_service_account_file(
+            os.path.join(BASE_DIR, "credentials.json"),
+            scopes=["https://www.googleapis.com/auth/analytics.readonly"])
+        client_holder["client"] = _C(credentials=creds)
     for bid, b in enumerate(brands):
         if not b.get("domain") or not b.get("token"):
             continue
         n_art = sync_articles(bid, b)
         n_ga4 = sync_ga4_pages(bid, b, months) if have_creds else 0
+        n_rev = sync_ga4_landing(bid, b, months, client_holder) if have_creds else 0
         n_gsc = sync_gsc_pages(token, bid, b, months) if token else 0
-        print(f"  {b['name']}: {n_art} articles · {n_ga4} GA4 rows · {n_gsc} GSC rows", flush=True)
+        n_q   = sync_gsc_page_queries(token, bid, b, months) if token else 0
+        print(f"  {b['name']}: {n_art} articles · {n_ga4} GA4 · {n_rev} landing · {n_gsc} GSC pages · {n_q} queries", flush=True)
 
 if __name__ == "__main__":
     try:

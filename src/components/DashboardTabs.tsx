@@ -1896,7 +1896,7 @@ export function DashboardTabs({
           {active === "tasks" && (
             <>
               <SectionBar title="Blogs" />
-              <BlogHub brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} />
+              <BlogHub brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} admin={role === "admin"} />
               <div className="mt-6">
                 <SectionBar title="Blog pipeline · Asana" />
               </div>
