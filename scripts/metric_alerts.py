@@ -7,8 +7,10 @@ Checks (per brand):
   revenue_drop   — last 7 complete days vs the prior 7 down 40%+ (prior >= $500)
   spend_spike    — yesterday's ad spend (Google+Meta) > 2.5x the trailing 14-day
                    average and > $100
-  roas_collapse  — trailing-7-day blended ROAS < half the prior-30-day ROAS,
-                   with >= $300 spend in the window
+  roas_collapse  — month-to-date blended ROAS < half the prior-2-month average,
+                   with >= $500 MTD spend and >= 10 days into the month.
+                   (Monthly tables only: daily Google revenue lags conversions
+                   and false-alarmed on day one — never use it for ROAS.)
 
 New alerts land in metric_alerts (deduped by alert_key so a persisting condition
 doesn't re-fire daily), surface as dashboard toasts, and email via Resend.
@@ -77,6 +79,12 @@ def main():
     daily = daterows('brand_daily', 'day', since, 'brand_id,day,revenue')
     gads  = daterows('google_ads_daily', 'date', since, 'brand_id,date,spend,revenue')
     mads  = daterows('meta_ads_daily', 'date', since, 'brand_id,date,spend,revenue')
+    # Monthly ads rows (reliable revenue attribution) for the ROAS check
+    mk_now = today.isoformat()[:7]
+    prior_mks = [(date(today.year, today.month, 1) - timedelta(days=1)).isoformat()[:7]]
+    prior_mks.append((date(int(prior_mks[0][:4]), int(prior_mks[0][5:7]), 1) - timedelta(days=1)).isoformat()[:7])
+    gm = sb(f'google_ads?select=brand_id,month_key,spend,revenue&month_key=in.({mk_now},{",".join(prior_mks)})') or []
+    mm = sb(f'meta_ads?select=brand_id,month_key,spend,revenue&month_key=in.({mk_now},{",".join(prior_mks)})') or []
 
     def win(rows, datecol, start, end):
         s, e = start.isoformat(), end.isoformat()
@@ -115,20 +123,22 @@ def main():
                 'value': round(y_spend, 2),
             })
 
-        cur_sp  = sum(r['spend'] or 0 for r in win(ads_mine, 'date', wk_start, yday))
-        cur_rv  = sum(r['revenue'] or 0 for r in win(ads_mine, 'date', wk_start, yday))
-        p30_sp  = sum(r['spend'] or 0 for r in win(ads_mine, 'date', today - timedelta(days=38), today - timedelta(days=8)))
-        p30_rv  = sum(r['revenue'] or 0 for r in win(ads_mine, 'date', today - timedelta(days=38), today - timedelta(days=8)))
-        if cur_sp >= 300 and p30_sp > 0 and p30_rv / p30_sp >= 1:
-            cur_roas, base_roas = cur_rv / cur_sp, p30_rv / p30_sp
-            if cur_roas < base_roas * 0.5:
-                alerts.append({
-                    'alert_key': f'roas_collapse|{bid}|{yday.isoformat()[:7]}-{yday.isocalendar()[1]}',
-                    'kind': 'roas_collapse', 'severity': 'warn', 'brand_id': bid,
-                    'title': f'{name}: blended ROAS halved ({base_roas:.1f} → {cur_roas:.1f})',
-                    'detail': f'Last 7 days ${cur_sp:,.0f} spend for ${cur_rv:,.0f} revenue vs {base_roas:.1f}x baseline.',
-                    'value': round(cur_roas, 2),
-                })
+        if today.day >= 10:
+            ads_m   = [r for r in gm if r['brand_id'] == bid] + [r for r in mm if r['brand_id'] == bid]
+            cur_sp  = sum(r['spend'] or 0 for r in ads_m if r['month_key'] == mk_now)
+            cur_rv  = sum(r['revenue'] or 0 for r in ads_m if r['month_key'] == mk_now)
+            base_sp = sum(r['spend'] or 0 for r in ads_m if r['month_key'] in prior_mks)
+            base_rv = sum(r['revenue'] or 0 for r in ads_m if r['month_key'] in prior_mks)
+            if cur_sp >= 500 and base_sp > 0 and base_rv / base_sp >= 1:
+                cur_roas, base_roas = cur_rv / cur_sp, base_rv / base_sp
+                if cur_roas < base_roas * 0.5:
+                    alerts.append({
+                        'alert_key': f'roas_collapse|{bid}|{mk_now}',
+                        'kind': 'roas_collapse', 'severity': 'warn', 'brand_id': bid,
+                        'title': f'{name}: blended ROAS halved ({base_roas:.1f} → {cur_roas:.1f})',
+                        'detail': f'{mk_now} so far: ${cur_sp:,.0f} spend for ${cur_rv:,.0f} revenue vs {base_roas:.1f}x over the prior two months.',
+                        'value': round(cur_roas, 2),
+                    })
 
     fresh = []
     for a in alerts:
