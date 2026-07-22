@@ -256,13 +256,13 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Reports", ids: ["report", "snapshot", "social-report", "d2c-weekly", "uppababy"] },
   { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows"] },
   { label: "Plan", ids: ["show-deals", "campaign-calendar", "promotions", "calendar", "content", "events", "tasks", "design-requests", "creative"] },
-  { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info", "brand-assets", "stock-report", "releases"] },
+  { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info", "brand-assets", "stock-report"] },
   { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads"] },
-  { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting", "nanit", "affiliates", "pa-budget", "pa-tracker"] },
+  { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting", "nanit", "releases", "affiliates", "pa-budget", "pa-tracker"] },
 ];
 
 // Influencer pages collapse under an "Influencers" dropdown in the sidebar.
-const INFLUENCER_IDS: TabId[] = ["influencer", "gifting", "nanit"];
+const INFLUENCER_IDS: TabId[] = ["influencer", "gifting", "nanit", "releases"];
 // Partnerships pages collapse under a "Partnerships & Affiliates" dropdown.
 const PARTNERSHIP_IDS: TabId[] = ["pa-budget", "pa-tracker"];
 
