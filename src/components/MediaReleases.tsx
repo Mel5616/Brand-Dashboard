@@ -35,6 +35,21 @@ export function MediaReleases({ brands, admin = false }: { brands: { id: number;
   const [msg, setMsg] = useState("");
   const empty = { child_first_name: "", guardian_name: "", guardian_email: "", brand: "", campaign: "", shoot_date: "", shoot_location: "", note: "" };
   const [f, setF] = useState<Record<string, string>>(empty);
+  const [editId, setEditId] = useState<string | null>(null);
+
+  function startEdit(r: Release) {
+    setEditId(r.id);
+    setF({ child_first_name: r.child_first_name, guardian_name: r.guardian_name, guardian_email: r.guardian_email,
+      brand: r.brand, campaign: r.campaign ?? "", shoot_date: r.shoot_date ?? "", shoot_location: r.shoot_location ?? "", note: r.note ?? "" });
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  async function saveEdit() {
+    setMsg("");
+    const d = await fetch("/api/releases", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editId, action: "edit", ...f }) }).then(r => r.json()).catch(() => null);
+    if (d?.ok) { setShowForm(false); setEditId(null); setF(empty); load(); setMsg("Release updated."); }
+    else setMsg(d?.error || "Couldn't save changes.");
+  }
 
   function load() {
     fetch("/api/releases").then(r => r.json()).then(d => {
@@ -101,7 +116,7 @@ export function MediaReleases({ brands, admin = false }: { brands: { id: number;
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <button onClick={() => setShowForm(v => !v)} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2">{showForm ? "Close" : "+ New release"}</button>
+        <button onClick={() => { setShowForm(v => !v); setEditId(null); if (showForm) setF(empty); }} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2">{showForm ? "Close" : "+ New release"}</button>
         <select value={brandF} onChange={e => setBrandF(e.target.value)} className={inp}>
           <option value="">All brands</option>
           {[...new Set(rows.map(r => r.brand))].sort().map(b => <option key={b}>{b}</option>)}
@@ -116,7 +131,7 @@ export function MediaReleases({ brands, admin = false }: { brands: { id: number;
 
       {showForm && (
         <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-5">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-600 mb-3">New media release</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-600 mb-3">{editId ? `Editing release for ${f.child_first_name || "…"}` : "New media release"}</p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <input value={f.child_first_name} onChange={e => setF(p => ({ ...p, child_first_name: e.target.value }))} placeholder="Child first name * (first name only)" className={inp} />
             <input value={f.guardian_name} onChange={e => setF(p => ({ ...p, guardian_name: e.target.value }))} placeholder="Guardian full name *" className={inp} />
@@ -132,8 +147,17 @@ export function MediaReleases({ brands, admin = false }: { brands: { id: number;
             <input value={f.note} onChange={e => setF(p => ({ ...p, note: e.target.value }))} placeholder="Internal note (optional)" className={`${inp} sm:col-span-2`} />
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
-            <button onClick={() => create(true)} className="text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg px-5 py-2.5">Save as draft · preview first</button>
-            <button onClick={() => create(false)} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2.5">Create &amp; email signing link</button>
+            {editId ? (
+              <>
+                <button onClick={saveEdit} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2.5">Save changes</button>
+                <button onClick={() => { setShowForm(false); setEditId(null); setF(empty); }} className="text-sm font-semibold text-slate-500 bg-slate-100 hover:bg-slate-200 rounded-lg px-5 py-2.5">Cancel</button>
+              </>
+            ) : (
+              <>
+                <button onClick={() => create(true)} className="text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg px-5 py-2.5">Save as draft · preview first</button>
+                <button onClick={() => create(false)} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2.5">Create &amp; email signing link</button>
+              </>
+            )}
           </div>
           <p className="text-[11px] text-gray-400 mt-2">Draft = nothing is emailed; you can preview the exact page first, then Send link. The guardian&apos;s link is single-use and expires 14 days after sending. Terms are the standard versioned template — no per-release editing.</p>
         </div>
@@ -173,6 +197,7 @@ export function MediaReleases({ brands, admin = false }: { brands: { id: number;
                     <td className="px-5 py-2.5 text-right whitespace-nowrap">
                       {r.status !== "signed" && r.status !== "withdrawn" && (
                         <>
+                          <button onClick={() => startEdit(r)} className="text-[12px] font-semibold text-amber-600 hover:underline mr-2.5">Edit</button>
                           <a href={`/sign/${r.token}`} target="_blank" rel="noreferrer" className="text-[12px] font-semibold text-violet-600 hover:underline mr-2.5">👁 View</a>
                           <button onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/sign/${r.token}`); setMsg("Signing link copied."); }}
                             className="text-[12px] font-semibold text-slate-500 hover:underline mr-2.5">⧉ Link</button>

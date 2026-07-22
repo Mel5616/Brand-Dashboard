@@ -79,6 +79,20 @@ export async function PATCH(req: Request) {
   const r = (await get.json())[0];
   if (!r) return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
 
+  if (b.action === "edit") {
+    // Details are editable until the release is signed.
+    if (r.status === "signed" || r.status === "withdrawn") return NextResponse.json({ ok: false, error: "Already signed — details are locked" }, { status: 400 });
+    const fields: any = {};
+    if (b.child_first_name) fields.child_first_name = String(b.child_first_name).trim().split(" ")[0].slice(0, 60);
+    if (b.guardian_name) fields.guardian_name = String(b.guardian_name).trim().slice(0, 120);
+    if (b.guardian_email) fields.guardian_email = String(b.guardian_email).trim().slice(0, 200);
+    if (b.brand) fields.brand = String(b.brand).trim().slice(0, 80);
+    for (const [k, max] of [["campaign", 160], ["shoot_location", 200], ["note", 500]] as const)
+      if (b[k] !== undefined) fields[k] = b[k] ? String(b[k]).slice(0, max) : null;
+    if (b.shoot_date !== undefined) fields.shoot_date = b.shoot_date || null;
+    const res2 = await fetch(`${sbUrl}/rest/v1/media_releases?id=eq.${id}`, { method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify(fields) });
+    return NextResponse.json({ ok: res2.ok });
+  }
   if (b.action === "resend") {
     // Also used to send a draft for the first time.
     if (r.status === "signed") return NextResponse.json({ ok: false, error: "Already signed" }, { status: 400 });
