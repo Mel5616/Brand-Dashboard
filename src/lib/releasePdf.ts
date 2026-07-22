@@ -13,7 +13,8 @@ export type ReleaseForPdf = {
   signed_at: string; signed_ip: string; signed_user_agent: string;
 };
 
-export async function buildReleasePdf(r: ReleaseForPdf, signaturePng: Uint8Array): Promise<Uint8Array> {
+// signaturePng omitted → unsigned copy with a blank signature line (for preview/print).
+export async function buildReleasePdf(r: ReleaseForPdf, signaturePng?: Uint8Array | null): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
@@ -78,18 +79,28 @@ export async function buildReleasePdf(r: ReleaseForPdf, signaturePng: Uint8Array
 
   ensure(120);
   y -= 6;
-  page.drawText("Signed", { x: left, y, size: 10.5, font: bold, color: navy }); y -= 16;
-  const png = await doc.embedPng(signaturePng);
-  const dims = png.scaleToFit(200, 70);
-  ensure(dims.height + 60);
-  page.drawImage(png, { x: left, y: y - dims.height, width: dims.width, height: dims.height });
-  y -= dims.height + 14;
-  page.drawText(r.signed_name, { x: left, y, size: 11, font: bold, color: navy }); y -= 16;
+  if (signaturePng) {
+    page.drawText("Signed", { x: left, y, size: 10.5, font: bold, color: navy }); y -= 16;
+    const png = await doc.embedPng(signaturePng);
+    const dims = png.scaleToFit(200, 70);
+    ensure(dims.height + 60);
+    page.drawImage(png, { x: left, y: y - dims.height, width: dims.width, height: dims.height });
+    y -= dims.height + 14;
+    page.drawText(r.signed_name, { x: left, y, size: 11, font: bold, color: navy }); y -= 16;
 
-  const utc = new Date(r.signed_at);
-  const aest = utc.toLocaleString("en-AU", { timeZone: "Australia/Sydney", dateStyle: "long", timeStyle: "short" });
-  para(`Signed ${aest} AEST (${utc.toISOString()} UTC) · Terms version ${r.terms_version}`, font, 8.5, slate, 2);
-  para(`Audit: IP ${r.signed_ip} · ${r.signed_user_agent.slice(0, 140)}`, font, 8.5, slate, 0);
+    const utc = new Date(r.signed_at);
+    const aest = utc.toLocaleString("en-AU", { timeZone: "Australia/Sydney", dateStyle: "long", timeStyle: "short" });
+    para(`Signed ${aest} AEST (${utc.toISOString()} UTC) · Terms version ${r.terms_version}`, font, 8.5, slate, 2);
+    para(`Audit: IP ${r.signed_ip} · ${r.signed_user_agent.slice(0, 140)}`, font, 8.5, slate, 0);
+  } else {
+    page.drawText("Signature of parent / legal guardian", { x: left, y, size: 10.5, font: bold, color: navy }); y -= 46;
+    page.drawLine({ start: { x: left, y }, end: { x: left + 240, y }, thickness: 0.8, color: slate }); y -= 14;
+    page.drawText("Name:", { x: left, y, size: 10, font: bold, color: navy });
+    page.drawLine({ start: { x: left + 42, y: y - 2 }, end: { x: left + 240, y: y - 2 }, thickness: 0.8, color: slate }); y -= 20;
+    page.drawText("Date:", { x: left, y, size: 10, font: bold, color: navy });
+    page.drawLine({ start: { x: left + 42, y: y - 2 }, end: { x: left + 240, y: y - 2 }, thickness: 0.8, color: slate }); y -= 22;
+    para(`Unsigned copy · Terms version ${r.terms_version}`, font, 8.5, slate, 0);
+  }
 
   return doc.save();
 }

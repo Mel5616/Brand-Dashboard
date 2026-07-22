@@ -171,12 +171,20 @@ export function MediaReleases({ brands }: { brands: { id: number; name: string }
                     </td>
                     <td className="px-3 py-2.5 text-right text-[12px] text-gray-400">{fmtD(r.signed_at)}</td>
                     <td className="px-5 py-2.5 text-right whitespace-nowrap">
-                      {r.pdf_path && <button onClick={() => openFile(r.pdf_path)} className="text-[12px] font-semibold text-emerald-600 hover:underline mr-2.5">PDF</button>}
-                      {r.status === "draft" && (
+                      {r.status !== "signed" && r.status !== "withdrawn" && (
                         <>
-                          <a href={`/sign/${r.token}`} target="_blank" rel="noreferrer" className="text-[12px] font-semibold text-violet-600 hover:underline mr-2.5">👁 Preview</a>
-                          <button disabled={busyId === r.id} onClick={() => act(r.id, "resend")} className="text-[12px] font-semibold text-emerald-600 hover:underline mr-2.5 disabled:opacity-50">Send link</button>
+                          <a href={`/sign/${r.token}`} target="_blank" rel="noreferrer" className="text-[12px] font-semibold text-violet-600 hover:underline mr-2.5">👁 View</a>
+                          <button onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/sign/${r.token}`); setMsg("Signing link copied."); }}
+                            className="text-[12px] font-semibold text-slate-500 hover:underline mr-2.5">⧉ Link</button>
                         </>
+                      )}
+                      {r.status === "signed" || r.status === "withdrawn"
+                        ? (r.pdf_path
+                          ? <button onClick={() => openFile(r.pdf_path)} className="text-[12px] font-semibold text-emerald-600 hover:underline mr-2.5">PDF</button>
+                          : <a href={`/api/releases/pdf?id=${r.id}`} target="_blank" rel="noreferrer" className="text-[12px] font-semibold text-emerald-600 hover:underline mr-2.5">PDF</a>)
+                        : <a href={`/api/releases/pdf?id=${r.id}`} target="_blank" rel="noreferrer" className="text-[12px] font-semibold text-emerald-600 hover:underline mr-2.5" title="Unsigned copy with a blank signature block">PDF</a>}
+                      {r.status === "draft" && (
+                        <button disabled={busyId === r.id} onClick={() => act(r.id, "resend")} className="text-[12px] font-semibold text-emerald-600 hover:underline mr-2.5 disabled:opacity-50">Send link</button>
                       )}
                       {(r.status === "sent" || r.status === "expired") && (
                         <>
