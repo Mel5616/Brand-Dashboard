@@ -60,6 +60,7 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "influencer", label: "Influencer Budget" },
     { id: "gifting", label: "Influencer Tracker" },
     { id: "nanit", label: "Nanit Codes" },
+    { id: "releases", label: "Media Releases" },
     { id: "affiliates", label: "Affiliates" },
     { id: "pa-budget", label: "Partnerships Budget" },
     { id: "pa-tracker", label: "Partnerships Tracker" },

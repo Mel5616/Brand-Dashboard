@@ -7,7 +7,8 @@ const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export async function GET(req: Request) {
-  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "Admins only" }, { status: 403 });
+  const acc = await getAccess();
+  if (!(acc.role === "admin" || (acc.role && acc.allowedTabs.includes("releases")))) return NextResponse.json({ ok: false, error: "No access" }, { status: 403 });
   const path = new URL(req.url).searchParams.get("path") || "";
   if (!path || path.includes("..")) return NextResponse.json({ ok: false }, { status: 400 });
   const res = await fetch(`${sbUrl}/storage/v1/object/sign/media-releases/${path}`, {

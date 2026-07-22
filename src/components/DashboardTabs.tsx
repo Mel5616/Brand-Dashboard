@@ -1927,7 +1927,7 @@ export function DashboardTabs({
           {active === "releases" && (
             <>
               <SectionBar title="Media Releases" />
-              <MediaReleases brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} />
+              <MediaReleases brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} admin={role === "admin"} />
             </>
           )}
 

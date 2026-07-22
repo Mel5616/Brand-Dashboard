@@ -11,6 +11,8 @@ const h = (extra: Record<string, string> = {}) => ({ apikey: sbKey!, Authorizati
 const BASE = "https://marketing.coolkidz.com.au";
 
 const missing = (status: number, body: string) => status === 404 || /PGRST205|does not exist|schema cache/i.test(body);
+// Staff with the Media Releases tab granted can run the flow; withdraw stays admin-only.
+const canUse = (acc: { role: string | null; allowedTabs: string[] }) => acc.role === "admin" || (!!acc.role && acc.allowedTabs.includes("releases"));
 
 function signingEmail(r: { child_first_name: string; guardian_name: string; token: string; expires_at: string; brand: string }) {
   const expires = new Date(r.expires_at).toLocaleDateString("en-AU", { day: "numeric", month: "long" });
@@ -24,7 +26,7 @@ function signingEmail(r: { child_first_name: string; guardian_name: string; toke
 }
 
 export async function GET() {
-  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "Admins only" }, { status: 403 });
+  if (!canUse(await getAccess())) return NextResponse.json({ ok: false, error: "No access" }, { status: 403 });
   const res = await fetch(`${sbUrl}/rest/v1/media_releases?select=*&order=created_at.desc&limit=1000`, { headers: h(), cache: "no-store" });
   const text = await res.text();
   if (!res.ok) return NextResponse.json({ ok: false, needsSetup: missing(res.status, text), releases: [] });
@@ -36,7 +38,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const acc = await getAccess();
-  if (acc.role !== "admin") return NextResponse.json({ ok: false, error: "Admins only" }, { status: 403 });
+  if (!canUse(acc)) return NextResponse.json({ ok: false, error: "No access" }, { status: 403 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   const need = ["child_first_name", "guardian_name", "guardian_email", "brand"];
   for (const k of need) if (!String(b[k] || "").trim()) return NextResponse.json({ ok: false, error: `${k.replace(/_/g, " ")} required` }, { status: 400 });
@@ -67,8 +69,10 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "Admins only" }, { status: 403 });
+  const acc = await getAccess();
+  if (!canUse(acc)) return NextResponse.json({ ok: false, error: "No access" }, { status: 403 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
+  if (b.action === "withdraw" && acc.role !== "admin") return NextResponse.json({ ok: false, error: "Withdrawals are admin-only" }, { status: 403 });
   const id = String(b.id || "");
   if (!id) return NextResponse.json({ ok: false }, { status: 400 });
   const get = await fetch(`${sbUrl}/rest/v1/media_releases?id=eq.${encodeURIComponent(id)}&limit=1`, { headers: h(), cache: "no-store" });

@@ -24,7 +24,7 @@ const STATUS: Record<string, { label: string; cls: string }> = {
 };
 const fmtD = (s: string | null) => s ? new Date(s).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "2-digit" }) : "—";
 
-export function MediaReleases({ brands }: { brands: { id: number; name: string }[] }) {
+export function MediaReleases({ brands, admin = false }: { brands: { id: number; name: string }[]; admin?: boolean }) {
   const [rows, setRows] = useState<Release[]>([]);
   const [loading, setLoading] = useState(true);
   const [needsSetup, setNeedsSetup] = useState(false);
@@ -192,7 +192,7 @@ export function MediaReleases({ brands }: { brands: { id: number; name: string }
                           {r.status === "sent" && <button disabled={busyId === r.id} onClick={() => act(r.id, "void")} className="text-[12px] font-semibold text-gray-400 hover:underline mr-2.5 disabled:opacity-50">Void</button>}
                         </>
                       )}
-                      {r.status === "signed" && (
+                      {r.status === "signed" && admin && (
                         <button disabled={busyId === r.id} onClick={() => { if (confirm(`Mark ${r.child_first_name}'s release as withdrawn? The signed record is kept.`)) act(r.id, "withdraw"); }}
                           className="text-[12px] font-semibold text-rose-500 hover:underline disabled:opacity-50">Withdraw</button>
                       )}

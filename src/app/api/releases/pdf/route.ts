@@ -10,7 +10,8 @@ const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const h = { apikey: sbKey!, Authorization: `Bearer ${sbKey}` };
 
 export async function GET(req: Request) {
-  if ((await getAccess()).role !== "admin") return new Response("Admins only", { status: 403 });
+  const acc = await getAccess();
+  if (!(acc.role === "admin" || (acc.role && acc.allowedTabs.includes("releases")))) return new Response("No access", { status: 403 });
   const id = new URL(req.url).searchParams.get("id") || "";
   if (!/^[0-9a-f-]{36}$/.test(id)) return new Response("Bad id", { status: 400 });
   const res = await fetch(`${sbUrl}/rest/v1/media_releases?id=eq.${id}&limit=1`, { headers: h, cache: "no-store" });
