@@ -55,9 +55,11 @@ export async function POST(req: Request) {
     guardian_phone: phone || null, guardian_relationship: relationship,
     retail_partner_optin: !!b.retail_partner_optin,
   };
+  const logo = await fetch("https://marketing.coolkidz.com.au/logos/coolkidz-logo.png")
+    .then(r => (r.ok ? r.arrayBuffer() : null)).then(b => (b ? new Uint8Array(b) : null)).catch(() => null);
   let pdfBytes: Uint8Array | null = null;
   try {
-    pdfBytes = await buildReleasePdf(full as any, sigBytes);
+    pdfBytes = await buildReleasePdf(full as any, sigBytes, logo);
     await upload(pdfPath, pdfBytes, "application/pdf");
   } catch { /* record still saves; PDF can be regenerated */ }
 

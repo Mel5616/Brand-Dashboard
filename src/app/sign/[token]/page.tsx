@@ -45,8 +45,9 @@ export default async function SignPage({ params }: { params: Promise<{ token: st
           </div>
         )}
         <div className="bg-[#132741] rounded-t-2xl px-7 py-5">
-          <p className="text-white font-bold tracking-[0.14em] text-sm">COOLKIDZ AUSTRALIA</p>
-          <h1 className="text-white text-xl font-bold mt-1">Photography &amp; media release</h1>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logos/coolkidz-logo.png" alt="Coolkidz Australia" className="h-8 w-auto" />
+          <h1 className="text-white text-xl font-bold mt-2.5">Photography &amp; media release</h1>
         </div>
         <div className="bg-white rounded-b-2xl border border-t-0 border-gray-100 shadow-sm p-7">
           <div className="rounded-xl bg-slate-50 border border-slate-100 p-4 text-[13.5px] text-slate-600 space-y-1">
@@ -68,7 +69,7 @@ export default async function SignPage({ params }: { params: Promise<{ token: st
 
           <SignForm token={token} childName={r.child_first_name} guardianName={r.guardian_name} preview={preview} />
         </div>
-        <p className="text-center text-[11px] text-gray-400 mt-4">Coolkidz Australia · marketing@coolkidz.com.au</p>
+        <p className="text-center text-[11px] text-gray-400 mt-4">Coolkidz Australia Pty Ltd · 1 Beyer Road, Braeside, Victoria 3195 · marketing@coolkidz.com.au</p>
       </div>
     </main>
   );

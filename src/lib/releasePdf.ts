@@ -13,8 +13,10 @@ export type ReleaseForPdf = {
   signed_at: string; signed_ip: string; signed_user_agent: string;
 };
 
+export const COOLKIDZ_ADDRESS = "Coolkidz Australia Pty Ltd · 1 Beyer Road, Braeside, Victoria 3195";
+
 // signaturePng omitted → unsigned copy with a blank signature line (for preview/print).
-export async function buildReleasePdf(r: ReleaseForPdf, signaturePng?: Uint8Array | null): Promise<Uint8Array> {
+export async function buildReleasePdf(r: ReleaseForPdf, signaturePng?: Uint8Array | null, logoPng?: Uint8Array | null): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
@@ -47,7 +49,17 @@ export async function buildReleasePdf(r: ReleaseForPdf, signaturePng?: Uint8Arra
     y -= gap;
   };
 
-  page.drawText("COOLKIDZ AUSTRALIA", { x: left, y, size: 11, font: bold, color: navy }); y -= 22;
+  if (logoPng) {
+    try {
+      const logo = await doc.embedPng(logoPng);
+      const ld = logo.scaleToFit(170, 40);
+      page.drawImage(logo, { x: left, y: y - ld.height + 8, width: ld.width, height: ld.height });
+      y -= ld.height + 8;
+    } catch { page.drawText("COOLKIDZ AUSTRALIA", { x: left, y, size: 11, font: bold, color: navy }); y -= 18; }
+  } else {
+    page.drawText("COOLKIDZ AUSTRALIA", { x: left, y, size: 11, font: bold, color: navy }); y -= 18;
+  }
+  page.drawText(COOLKIDZ_ADDRESS, { x: left, y, size: 8.5, font, color: slate }); y -= 20;
   page.drawText("Photography & Media Release", { x: left, y, size: 18, font: bold, color: navy }); y -= 26;
 
   const dateFmt = (s: string | null) => s ? new Date(s + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" }) : "TBC";

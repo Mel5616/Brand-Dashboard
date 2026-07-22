@@ -22,7 +22,9 @@ export async function GET(req: Request) {
     const s = await fetch(`${sbUrl}/storage/v1/object/media-releases/${r.signature_image_path}`, { headers: h });
     if (s.ok) sig = new Uint8Array(await s.arrayBuffer());
   }
-  const pdf = await buildReleasePdf(r, sig);
+  const logo = await fetch("https://marketing.coolkidz.com.au/logos/coolkidz-logo.png")
+    .then(x => (x.ok ? x.arrayBuffer() : null)).then(b => (b ? new Uint8Array(b) : null)).catch(() => null);
+  const pdf = await buildReleasePdf(r, sig, logo);
   return new Response(Buffer.from(pdf), {
     headers: {
       "Content-Type": "application/pdf",

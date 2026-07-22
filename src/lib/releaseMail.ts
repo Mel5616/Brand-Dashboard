@@ -17,9 +17,9 @@ export async function sendMail(opts: { to: string[]; subject: string; html: stri
 export function shell(inner: string) {
   return `<div style="font-family:-apple-system,Segoe UI,sans-serif;max-width:560px;margin:0 auto;color:#334155">
     <div style="background:#132741;border-radius:12px 12px 0 0;padding:22px 28px">
-      <p style="margin:0;color:#fff;font-size:16px;font-weight:700;letter-spacing:.04em">COOLKIDZ AUSTRALIA</p>
+      <img src="https://marketing.coolkidz.com.au/logos/coolkidz-logo.png" alt="Coolkidz Australia" height="30" style="display:block;height:30px" />
     </div>
     <div style="border:1px solid #e2e8f0;border-top:0;border-radius:0 0 12px 12px;padding:26px 28px">${inner}</div>
-    <p style="color:#94a3b8;font-size:11px;text-align:center;margin-top:14px">Coolkidz Australia · questions: marketing@coolkidz.com.au</p>
+    <p style="color:#94a3b8;font-size:11px;text-align:center;margin-top:14px">Coolkidz Australia Pty Ltd · 1 Beyer Road, Braeside, Victoria 3195 · marketing@coolkidz.com.au</p>
   </div>`;
 }
