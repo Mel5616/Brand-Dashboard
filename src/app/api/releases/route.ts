@@ -14,15 +14,23 @@ const missing = (status: number, body: string) => status === 404 || /PGRST205|do
 // Staff with the Media Releases tab granted can run the flow; withdraw stays admin-only.
 const canUse = (acc: { role: string | null; allowedTabs: string[] }) => acc.role === "admin" || (!!acc.role && acc.allowedTabs.includes("releases"));
 
-function signingEmail(r: { child_first_name: string; guardian_name: string; token: string; expires_at: string; brand: string }) {
+function signingEmail(r: { child_first_name: string; guardian_name: string; token: string; expires_at: string; brand: string; campaign?: string | null; shoot_date?: string | null; shoot_location?: string | null }) {
   const expires = new Date(r.expires_at).toLocaleDateString("en-AU", { day: "numeric", month: "long" });
+  const shoot = [
+    r.shoot_date ? new Date(r.shoot_date + "T00:00:00").toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : null,
+    r.shoot_location,
+  ].filter(Boolean).join(" · ");
   return shell(`
     <p style="font-size:15px">Hi ${r.guardian_name.split(" ")[0]},</p>
-    <p style="font-size:14px;line-height:1.6">Thanks for taking part in a ${r.brand} photo shoot with us. Before we can use any photos or video featuring <strong>${r.child_first_name}</strong>, we need your permission as parent or guardian. It takes about two minutes — read the terms and sign on screen.</p>
+    <p style="font-size:14px;line-height:1.7">Thank you for your interest in participating in an upcoming photoshoot for Coolkidz Australia — we're delighted to have <strong>${r.child_first_name}</strong> involved${r.campaign ? ` in our <strong>${r.brand}</strong> "${r.campaign}" campaign` : ` with <strong>${r.brand}</strong>`}.</p>
+    ${shoot ? `<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 16px;margin:14px 0"><p style="margin:0;font-size:13px;color:#64748b"><strong style="color:#334155">📸 Shoot details:</strong> ${shoot}</p></div>` : ""}
+    <p style="font-size:14px;line-height:1.7">Before the shoot, we need your permission as ${r.child_first_name}'s parent or legal guardian to capture and use photos and video from the day. The release takes about two minutes to complete — it explains exactly how the content may be used, how ${r.child_first_name}'s privacy is protected (we only ever use a first name, or no name at all), and how you can withdraw your permission at any time.</p>
     <p style="text-align:center;margin:26px 0">
       <a href="${BASE}/sign/${r.token}" style="background:#10b981;color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:13px 34px;border-radius:10px">Review &amp; sign the release</a>
     </p>
-    <p style="font-size:12.5px;color:#64748b">This link is unique to you, can be used once, and expires on ${expires}. A signed copy will be emailed to you for your records.</p>`);
+    <p style="font-size:14px;line-height:1.7">Once you've signed, a copy will be emailed to you straight away for your records. If you have any questions before signing, just reply to this email — we're happy to help.</p>
+    <p style="font-size:14px;line-height:1.7;margin-bottom:4px">Warm regards,<br><strong>The Coolkidz Australia Marketing Team</strong></p>
+    <p style="font-size:12.5px;color:#64748b;margin-top:18px">This link is unique to you, can be used once, and expires on ${expires}.</p>`);
 }
 
 export async function GET() {
