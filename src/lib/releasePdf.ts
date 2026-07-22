@@ -71,6 +71,9 @@ export async function buildReleasePdf(r: ReleaseForPdf, signaturePng?: Uint8Arra
     ["Shoot", [dateFmt(r.shoot_date), r.shoot_location].filter(Boolean).join(" · ")],
     ["Retail partner use", r.retail_partner_optin ? "Yes — extended to authorised retail partners" : "No — Coolkidz-owned channels only"],
   ];
+  if (signaturePng && r.signed_at) {
+    rows.push(["Date executed", new Date(r.signed_at).toLocaleDateString("en-AU", { timeZone: "Australia/Sydney", day: "numeric", month: "long", year: "numeric" })]);
+  }
   for (const [k, v] of rows) {
     ensure(16);
     page.drawText(k, { x: left, y, size: 9.5, font: bold, color: navy });

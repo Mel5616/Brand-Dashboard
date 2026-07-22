@@ -148,7 +148,7 @@ export function MediaReleases({ brands, admin = false }: { brands: { id: number;
                 <th className="text-left px-3 py-2.5">Brand · campaign</th>
                 <th className="text-left px-3 py-2.5">Shoot</th>
                 <th className="text-left px-3 py-2.5">Status</th>
-                <th className="text-right px-3 py-2.5">Signed</th>
+                <th className="text-right px-3 py-2.5">Executed</th>
                 <th className="text-right px-5 py-2.5">Actions</th>
               </tr>
             </thead>

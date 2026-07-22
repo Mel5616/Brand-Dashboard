@@ -83,7 +83,7 @@ export async function POST(req: Request) {
     subject: `Signed: photography release for ${r.child_first_name}`,
     html: shell(`
       <p style="font-size:15px">Hi ${r.guardian_name.split(" ")[0]},</p>
-      <p style="font-size:14px;line-height:1.6">Thanks — your photography release for <strong>${r.child_first_name}</strong> (${r.brand}) is signed. Your copy is attached for your records.</p>
+      <p style="font-size:14px;line-height:1.6">Thanks — your photography release for <strong>${r.child_first_name}</strong> (${r.brand}) was executed on <strong>${new Date(signed_at).toLocaleDateString("en-AU", { timeZone: "Australia/Sydney", day: "numeric", month: "long", year: "numeric" })}</strong>. Your copy is attached for your records.</p>
       <p style="font-size:12.5px;color:#64748b;line-height:1.6">You can withdraw this permission at any time by emailing <a href="mailto:marketing@coolkidz.com.au">marketing@coolkidz.com.au</a> — we'll stop new uses and remove the content from our channels within 30 days.</p>`),
     attachments: att,
   });
