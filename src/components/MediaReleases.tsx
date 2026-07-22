@@ -54,12 +54,13 @@ export function MediaReleases({ brands }: { brands: { id: number; name: string }
     withdrawn: rows.filter(r => r.status === "withdrawn").length,
   };
 
-  async function create() {
+  async function create(draft: boolean) {
     setMsg("");
-    const d = await fetch("/api/releases", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(f) }).then(r => r.json()).catch(() => null);
+    const d = await fetch("/api/releases", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...f, draft }) }).then(r => r.json()).catch(() => null);
     if (d?.ok) {
       setShowForm(false); setF(empty); load();
-      setMsg(d.emailed ? `Signing link emailed to ${d.release.guardian_email}.` : `Created, but the email failed (${d.emailError || "check RESEND_API_KEY"}) — use Resend on the row.`);
+      if (draft) setMsg("Saved as draft — nothing sent. Use 👁 Preview on the row, then Send link when you're happy.");
+      else setMsg(d.emailed ? `Signing link emailed to ${d.release.guardian_email}.` : `Created, but the email failed (${d.emailError || "check RESEND_API_KEY"}) — use Resend on the row.`);
     } else setMsg(d?.error || "Couldn't create the release.");
   }
   async function act(id: string, action: string) {
@@ -130,8 +131,11 @@ export function MediaReleases({ brands }: { brands: { id: number; name: string }
             <input value={f.shoot_location} onChange={e => setF(p => ({ ...p, shoot_location: e.target.value }))} placeholder="Shoot location" className={inp} />
             <input value={f.note} onChange={e => setF(p => ({ ...p, note: e.target.value }))} placeholder="Internal note (optional)" className={`${inp} sm:col-span-2`} />
           </div>
-          <button onClick={create} className="mt-3 text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2.5">Create &amp; email signing link</button>
-          <p className="text-[11px] text-gray-400 mt-2">The guardian gets a single-use link that expires in 14 days. Terms are the standard versioned template — no per-release editing.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button onClick={() => create(true)} className="text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg px-5 py-2.5">Save as draft · preview first</button>
+            <button onClick={() => create(false)} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2.5">Create &amp; email signing link</button>
+          </div>
+          <p className="text-[11px] text-gray-400 mt-2">Draft = nothing is emailed; you can preview the exact page first, then Send link. The guardian&apos;s link is single-use and expires 14 days after sending. Terms are the standard versioned template — no per-release editing.</p>
         </div>
       )}
 
@@ -168,6 +172,12 @@ export function MediaReleases({ brands }: { brands: { id: number; name: string }
                     <td className="px-3 py-2.5 text-right text-[12px] text-gray-400">{fmtD(r.signed_at)}</td>
                     <td className="px-5 py-2.5 text-right whitespace-nowrap">
                       {r.pdf_path && <button onClick={() => openFile(r.pdf_path)} className="text-[12px] font-semibold text-emerald-600 hover:underline mr-2.5">PDF</button>}
+                      {r.status === "draft" && (
+                        <>
+                          <a href={`/sign/${r.token}`} target="_blank" rel="noreferrer" className="text-[12px] font-semibold text-violet-600 hover:underline mr-2.5">👁 Preview</a>
+                          <button disabled={busyId === r.id} onClick={() => act(r.id, "resend")} className="text-[12px] font-semibold text-emerald-600 hover:underline mr-2.5 disabled:opacity-50">Send link</button>
+                        </>
+                      )}
                       {(r.status === "sent" || r.status === "expired") && (
                         <>
                           <button disabled={busyId === r.id} onClick={() => act(r.id, "resend")} className="text-[12px] font-semibold text-sky-600 hover:underline mr-2.5 disabled:opacity-50">Resend</button>

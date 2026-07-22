@@ -50,13 +50,14 @@ export async function POST(req: Request) {
     shoot_location: b.shoot_location ? String(b.shoot_location).slice(0, 200) : null,
     note: b.note ? String(b.note).slice(0, 500) : null,
     terms_version: TERMS_VERSION,
-    status: "sent",
+    status: b.draft ? "draft" : "sent",
     created_by: (acc.user as any)?.email ?? null,
   };
   const res = await fetch(`${sbUrl}/rest/v1/media_releases`, { method: "POST", headers: h({ Prefer: "return=representation" }), body: JSON.stringify(row) });
   const text = await res.text();
   if (!res.ok) return NextResponse.json({ ok: false, needsSetup: missing(res.status, text), error: text.slice(0, 200) }, { status: 500 });
   const created = JSON.parse(text)[0];
+  if (b.draft) return NextResponse.json({ ok: true, release: created, emailed: false });
   const mail = await sendMail({
     to: [created.guardian_email],
     subject: `Photography release for ${created.child_first_name} — action needed`,
@@ -75,6 +76,7 @@ export async function PATCH(req: Request) {
   if (!r) return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
 
   if (b.action === "resend") {
+    // Also used to send a draft for the first time.
     if (r.status === "signed") return NextResponse.json({ ok: false, error: "Already signed" }, { status: 400 });
     // Fresh single-use token + 14-day window on every resend.
     const upd = { token: crypto.randomUUID(), status: "sent", expires_at: new Date(Date.now() + 14 * 86400_000).toISOString() };

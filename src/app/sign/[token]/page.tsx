@@ -28,7 +28,8 @@ export default async function SignPage({ params }: { params: Promise<{ token: st
   const r = (await res.json().catch(() => []))[0];
   if (!r) return <DeadEnd msg="This link isn't valid" />;
   if (r.status === "signed") return <DeadEnd msg="This release has already been signed" />;
-  if (r.status !== "sent" || r.expires_at < new Date().toISOString()) return <DeadEnd msg="This link has expired" />;
+  const preview = r.status === "draft"; // admin previewing before the link is sent
+  if (!preview && (r.status !== "sent" || r.expires_at < new Date().toISOString())) return <DeadEnd msg="This link has expired" />;
 
   const shoot = [
     r.shoot_date ? new Date(r.shoot_date + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" }) : null,
@@ -38,6 +39,11 @@ export default async function SignPage({ params }: { params: Promise<{ token: st
   return (
     <main className="min-h-screen bg-slate-50 py-8 px-4">
       <div className="max-w-2xl mx-auto">
+        {preview && (
+          <div className="mb-3 rounded-xl bg-amber-50 border border-amber-200 px-4 py-2.5 text-[13px] text-amber-800 font-semibold">
+            👁 Preview — this is exactly what the guardian will see. The link hasn&apos;t been emailed yet; use &quot;Send link&quot; on the dashboard when you&apos;re happy.
+          </div>
+        )}
         <div className="bg-[#132741] rounded-t-2xl px-7 py-5">
           <p className="text-white font-bold tracking-[0.14em] text-sm">COOLKIDZ AUSTRALIA</p>
           <h1 className="text-white text-xl font-bold mt-1">Photography &amp; media release</h1>
@@ -60,7 +66,7 @@ export default async function SignPage({ params }: { params: Promise<{ token: st
             ))}
           </div>
 
-          <SignForm token={token} childName={r.child_first_name} guardianName={r.guardian_name} />
+          <SignForm token={token} childName={r.child_first_name} guardianName={r.guardian_name} preview={preview} />
         </div>
         <p className="text-center text-[11px] text-gray-400 mt-4">Coolkidz Australia · marketing@coolkidz.com.au</p>
       </div>

@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 // + drawn signature (plain canvas, pointer events, exported as PNG data URL).
 const inp = "w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400";
 
-export function SignForm({ token, childName, guardianName }: { token: string; childName: string; guardianName: string }) {
+export function SignForm({ token, childName, guardianName, preview = false }: { token: string; childName: string; guardianName: string; preview?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
   const [hasInk, setHasInk] = useState(false);
@@ -108,9 +108,9 @@ export function SignForm({ token, childName, guardianName }: { token: string; ch
           className="w-full h-[160px] rounded-xl border-2 border-dashed border-gray-200 bg-slate-50/50 touch-none cursor-crosshair" />
       </div>
       {err && <p className="text-sm text-rose-500">{err}</p>}
-      <button onClick={submit} disabled={busy}
+      <button onClick={preview ? undefined : submit} disabled={busy || preview}
         className="w-full text-[15px] font-bold text-white bg-emerald-500 hover:bg-emerald-600 rounded-xl py-3.5 disabled:opacity-60">
-        {busy ? "Saving…" : "Sign the release"}
+        {preview ? "Preview only — sending disabled" : busy ? "Saving…" : "Sign the release"}
       </button>
     </div>
   );
