@@ -29,7 +29,7 @@ const CHANNEL_MAP: Record<string, string> = {
 export const CH_COLORS = ["#2f4858", "#4f9d86", "#cc7a57", "#5b86b0", "#8a79ad", "#c97f96", "#73a9a0", "#9c7c5e", "#7fae8a", "#6f7a87", "#b8954a", "#5f93a8"];
 // Append-only: a channel's index here picks its colour, so inserting mid-list would
 // recolour every channel after it. Pharmacy is offline retail (not a DIGITAL_CHANNEL).
-const CHANNEL_ORDER = ["Baby Bunting", "Website Sales", "Wholesale", "Tradeshows", "New Zealand", "Amazon", "Online Only Stores", "Specialty", "Marketplace", "Partnerships", "Affiliates", "Pharmacy"];
+const CHANNEL_ORDER = ["Baby Bunting", "Website Sales", "Wholesale", "Tradeshows", "New Zealand", "Amazon", "Online Only Stores", "Specialty", "Marketplace", "Partnerships", "Affiliates", "Pharmacy", "The Memo", "Online Wholesale"];
 export const channelColor = (name: string) => { const i = CHANNEL_ORDER.indexOf(name); return CH_COLORS[(i >= 0 ? i : CHANNEL_ORDER.length + name.length) % CH_COLORS.length]; };
 
 const sum = (a: number[]) => a.reduce((s, v) => s + (v || 0), 0);
