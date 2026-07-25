@@ -21,24 +21,41 @@ export async function GET() {
   return NextResponse.json({ ok: true, concepts: c.data ?? [], files: f.data ?? [] });
 }
 
+// Word docs are converted to HTML on upload so briefs open as an in-dashboard
+// spec sheet instead of a download. Other file types keep the plain link.
+async function docxHtml(buf: ArrayBuffer): Promise<string | null> {
+  try {
+    const mammoth = (await import("mammoth")).default;
+    const { value } = await mammoth.convertToHtml({ buffer: Buffer.from(buf) });
+    // mammoth emits clean markup, but strip anything script-like defensively
+    return value.replace(/<script[\s\S]*?<\/script>/gi, "").slice(0, 400_000) || null;
+  } catch { return null; }
+}
+
 async function uploadFiles(sb: any, conceptId: number, files: File[], by: string | null) {
   const rows: any[] = [];
   for (const file of files) {
     if (!file || file.size === 0) continue;
     if (file.size > 25 * 1024 * 1024) throw new Error(`${file.name} is over 25MB`);
     const ext = (file.name.split(".").pop() || "pdf").toLowerCase().replace(/[^a-z0-9]/g, "") || "pdf";
+    const buf = await file.arrayBuffer();
     const path = `${conceptId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-    const { error } = await sb.storage.from(BUCKET).upload(path, file, { contentType: file.type || "application/octet-stream", upsert: true });
+    const { error } = await sb.storage.from(BUCKET).upload(path, Buffer.from(buf), { contentType: file.type || "application/octet-stream", upsert: true });
     if (error) throw new Error(`Upload ${file.name}: ${error.message}`);
     rows.push({
       concept_id: conceptId,
       file_url: sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl,
       file_name: file.name.slice(0, 200),
       uploaded_by: by,
+      content_html: ext === "docx" ? await docxHtml(buf) : null,
     });
   }
   if (rows.length) {
-    const { error } = await sb.from("event_concept_files").insert(rows);
+    let { error } = await sb.from("event_concept_files").insert(rows);
+    // content_html column may not exist yet — degrade to plain links
+    if (error && /content_html/.test(error.message)) {
+      ({ error } = await sb.from("event_concept_files").insert(rows.map(({ content_html: _x, ...r }: any) => r)));
+    }
     if (error) throw new Error(error.message);
   }
   return rows.length;
@@ -85,6 +102,22 @@ export async function PATCH(req: Request) {
   const access = await getAccess();
   if (!access.role) return NextResponse.json({ ok: false }, { status: 401 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
+
+  // Retro-convert an already-uploaded .docx into spec-sheet HTML.
+  if (b.action === "convert") {
+    const sb = await createClient();
+    const { data: f } = await sb.from("event_concept_files").select("*").eq("id", Number(b.fileId)).single();
+    if (!f) return NextResponse.json({ ok: false, error: "File not found" }, { status: 404 });
+    if (!/\.docx$/i.test(f.file_name)) return NextResponse.json({ ok: false, error: "Only Word (.docx) files convert" }, { status: 400 });
+    const res = await fetch(f.file_url, { cache: "no-store" });
+    if (!res.ok) return NextResponse.json({ ok: false, error: "Couldn't read the file" }, { status: 500 });
+    const html = await docxHtml(await res.arrayBuffer());
+    if (!html) return NextResponse.json({ ok: false, error: "Conversion failed" }, { status: 500 });
+    const { error } = await sb.from("event_concept_files").update({ content_html: html }).eq("id", f.id);
+    if (error) return NextResponse.json({ ok: false, error: error.message.slice(0, 150) }, { status: 500 });
+    return NextResponse.json({ ok: true, html });
+  }
+
   const id = Number(b.id);
   if (!id) return NextResponse.json({ ok: false }, { status: 400 });
   const fields: any = {};

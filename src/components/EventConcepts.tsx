@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 // Plan > Event Concepts: event ideas with uploaded concept documents.
 // Any signed-in user with the tab can create/upload; delete is admin-only.
 type Concept = { id: number; title: string; brand: string | null; event_date: string | null; location: string | null; status: string; note: string | null; created_by: string | null; created_at: string };
-type CFile = { id: number; concept_id: number; file_url: string; file_name: string; uploaded_by: string | null; created_at: string };
+type CFile = { id: number; concept_id: number; file_url: string; file_name: string; uploaded_by: string | null; created_at: string; content_html?: string | null };
 
 const inp = "text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400";
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -34,6 +34,20 @@ export function EventConcepts({ brands, admin = false }: { brands: { name: strin
   const [f, setF] = useState<Record<string, string>>(empty);
   const newFilesRef = useRef<HTMLInputElement>(null);
   const addRefs = useRef<Record<number, HTMLInputElement | null>>({});
+  // Spec-sheet viewer: concept + the brief's converted HTML
+  const [sheet, setSheet] = useState<{ concept: Concept; file: CFile; html: string } | null>(null);
+  const [convertingId, setConvertingId] = useState<number | null>(null);
+
+  async function openSheet(concept: Concept, file: CFile) {
+    if (file.content_html) { setSheet({ concept, file, html: file.content_html }); return; }
+    setConvertingId(file.id);
+    const d = await fetch("/api/event-concepts", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "convert", fileId: file.id }) }).then(r => r.json()).catch(() => null);
+    setConvertingId(null);
+    if (d?.ok) {
+      setFiles(prev => prev.map(x => x.id === file.id ? { ...x, content_html: d.html } : x));
+      setSheet({ concept, file, html: d.html });
+    } else setMsg(d?.error || "Couldn't open the brief — use the download link instead.");
+  }
 
   function load() {
     fetch("/api/event-concepts").then(r => r.json()).then(d => {
@@ -86,10 +100,39 @@ export function EventConcepts({ brands, admin = false }: { brands: { name: strin
   }
 
   if (loading) return <div className="p-6 text-center text-sm text-gray-400">Loading event concepts…</div>;
+
+  const SheetModal = sheet && (
+    <div className="fixed inset-0 z-50 bg-slate-900/50 flex items-start justify-center overflow-y-auto p-4 sm:p-8" onClick={() => setSheet(null)}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl my-4" onClick={e => e.stopPropagation()}>
+        <div className="bg-[#132741] rounded-t-2xl px-7 py-5 flex items-start justify-between gap-3 sticky top-0">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-cyan-300">Event brief · {sheet.concept.brand ?? "Coolkidz"}</p>
+            <h2 className="text-white text-xl font-bold mt-0.5">{sheet.concept.title}</h2>
+            <p className="text-[12px] text-slate-300 mt-0.5">{[fmtD(sheet.concept.event_date), sheet.concept.location].filter(Boolean).join(" · ")}</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button onClick={() => window.print()} className="text-[12px] font-semibold text-white/80 hover:text-white border border-white/25 rounded-lg px-2.5 py-1.5">Print</button>
+            <a href={sheet.file.file_url} className="text-[12px] font-semibold text-white/80 hover:text-white border border-white/25 rounded-lg px-2.5 py-1.5">Word ⬇</a>
+            <button onClick={() => setSheet(null)} className="text-white/70 hover:text-white text-xl leading-none ml-1">✕</button>
+          </div>
+        </div>
+        <div className="px-7 py-6 text-[14px] leading-relaxed text-slate-700
+          [&_h1]:text-[19px] [&_h1]:font-bold [&_h1]:text-slate-800 [&_h1]:mt-6 [&_h1]:mb-2 first:[&_h1]:mt-0
+          [&_h2]:text-[16px] [&_h2]:font-bold [&_h2]:text-slate-800 [&_h2]:mt-5 [&_h2]:mb-1.5
+          [&_h3]:text-[14px] [&_h3]:font-bold [&_h3]:text-slate-700 [&_h3]:mt-4 [&_h3]:mb-1
+          [&_p]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:my-2 [&_li]:my-0.5
+          [&_table]:w-full [&_table]:my-3 [&_table]:border-collapse [&_td]:border [&_td]:border-gray-200 [&_td]:px-2.5 [&_td]:py-1.5 [&_td]:text-[13px]
+          [&_th]:border [&_th]:border-gray-200 [&_th]:px-2.5 [&_th]:py-1.5 [&_th]:bg-slate-50 [&_th]:text-[12px] [&_th]:font-bold
+          [&_a]:text-emerald-600 [&_a]:underline [&_strong]:text-slate-800 [&_img]:max-w-full [&_img]:rounded-xl [&_img]:my-3"
+          dangerouslySetInnerHTML={{ __html: sheet.html }} />
+      </div>
+    </div>
+  );
   if (needsSetup) return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-center text-sm text-gray-500">Run <code className="bg-gray-100 px-1 rounded">supabase/add_event_concepts.sql</code> to enable event concepts.</div>;
 
   return (
     <div className="space-y-4">
+      {SheetModal}
       <div className="flex flex-wrap items-center gap-2">
         <button onClick={() => setShowForm(v => !v)} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2">{showForm ? "Close" : "+ New event concept"}</button>
         <select value={brandF} onChange={e => setBrandF(e.target.value)} className={inp}>
@@ -149,14 +192,25 @@ export function EventConcepts({ brands, admin = false }: { brands: { name: strin
               </div>
               {c.note && <p className="text-[13px] text-slate-600 mt-2 leading-relaxed">{c.note}</p>}
               <div className="mt-3 space-y-1">
-                {cf.map(x => (
-                  <div key={x.id} className="flex items-center gap-2 group">
-                    <a href={x.file_url} target="_blank" rel="noreferrer" className="flex-1 min-w-0 flex items-center gap-2 text-[13px] text-slate-600 hover:text-emerald-700 hover:underline truncate">
-                      <span>{docIcon(x.file_name)}</span><span className="truncate">{x.file_name}</span>
-                    </a>
-                    {admin && <button onClick={() => delFile(x.id)} className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-rose-500 text-xs">✕</button>}
-                  </div>
-                ))}
+                {cf.map(x => {
+                  const isDocx = /\.docx$/i.test(x.file_name);
+                  return (
+                    <div key={x.id} className="flex items-center gap-2 group">
+                      {isDocx ? (
+                        <button onClick={() => openSheet(c, x)} disabled={convertingId === x.id}
+                          className="flex-1 min-w-0 flex items-center gap-2 text-left text-[13px] font-semibold text-emerald-700 hover:underline truncate disabled:opacity-60">
+                          <span>📋</span><span className="truncate">{convertingId === x.id ? "Opening brief…" : `Open brief · ${x.file_name.replace(/[-_]/g, " ").replace(/\.docx$/i, "")}`}</span>
+                        </button>
+                      ) : (
+                        <a href={x.file_url} target="_blank" rel="noreferrer" className="flex-1 min-w-0 flex items-center gap-2 text-[13px] text-slate-600 hover:text-emerald-700 hover:underline truncate">
+                          <span>{docIcon(x.file_name)}</span><span className="truncate">{x.file_name}</span>
+                        </a>
+                      )}
+                      {isDocx && <a href={x.file_url} className="opacity-0 group-hover:opacity-100 text-[11px] text-gray-400 hover:text-gray-600 shrink-0" title="Download the original Word file">⬇</a>}
+                      {admin && <button onClick={() => delFile(x.id)} className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-rose-500 text-xs">✕</button>}
+                    </div>
+                  );
+                })}
                 {cf.length === 0 && <p className="text-[12px] text-gray-300">No documents yet.</p>}
               </div>
               <div className="mt-3 flex items-center gap-3 border-t border-gray-50 pt-2.5">
