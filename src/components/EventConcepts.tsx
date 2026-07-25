@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 // Plan > Event Concepts: event ideas with uploaded concept documents.
 // Any signed-in user with the tab can create/upload; delete is admin-only.
-type Concept = { id: number; title: string; brand: string | null; event_date: string | null; location: string | null; status: string; note: string | null; created_by: string | null; created_at: string };
+type Concept = { id: number; title: string; brand: string | null; event_date: string | null; location: string | null; status: string; note: string | null; cover_url?: string | null; created_by: string | null; created_at: string };
 type CFile = { id: number; concept_id: number; file_url: string; file_name: string; uploaded_by: string | null; created_at: string; content_html?: string | null };
 
 const inp = "text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400";
@@ -33,7 +33,20 @@ export function EventConcepts({ brands, admin = false }: { brands: { name: strin
   const empty = { title: "", brand: "", event_date: "", location: "", note: "" };
   const [f, setF] = useState<Record<string, string>>(empty);
   const newFilesRef = useRef<HTMLInputElement>(null);
+  const coverRef = useRef<HTMLInputElement>(null);
   const addRefs = useRef<Record<number, HTMLInputElement | null>>({});
+
+  async function setCover(id: number, fl: FileList | null) {
+    if (!fl || fl.length === 0) return;
+    setMsg(""); setBusy(true);
+    const fd = new FormData();
+    fd.append("concept_id", String(id));
+    fd.append("cover", fl[0]);
+    const d = await fetch("/api/event-concepts", { method: "POST", body: fd }).then(r => r.json()).catch(() => null);
+    setBusy(false);
+    if (d?.ok) { load(); setMsg("Cover photo updated."); }
+    else setMsg(d?.error || "Cover upload failed.");
+  }
   // Spec-sheet viewer: concept + the brief's converted HTML
   const [sheet, setSheet] = useState<{ concept: Concept; file: CFile; html: string } | null>(null);
   const [convertingId, setConvertingId] = useState<number | null>(null);
@@ -67,6 +80,7 @@ export function EventConcepts({ brands, admin = false }: { brands: { name: strin
     const fd = new FormData();
     Object.entries(f).forEach(([k, v]) => fd.append(k, v));
     for (const file of Array.from(newFilesRef.current?.files ?? [])) fd.append("files", file);
+    if (coverRef.current?.files?.[0]) fd.append("cover", coverRef.current.files[0]);
     const d = await fetch("/api/event-concepts", { method: "POST", body: fd }).then(r => r.json()).catch(() => null);
     setBusy(false);
     if (d?.ok) {
@@ -161,9 +175,15 @@ export function EventConcepts({ brands, admin = false }: { brands: { name: strin
             <input value={f.location} onChange={e => setF(p => ({ ...p, location: e.target.value }))} placeholder="Location (optional)" className={inp} />
             <input value={f.note} onChange={e => setF(p => ({ ...p, note: e.target.value }))} placeholder="One-line summary (optional)" className={inp} />
           </div>
-          <div className="mt-3">
-            <label className="text-[12px] font-semibold text-slate-600 block mb-1">Concept documents (PDF, Word, slides — up to 25MB each)</label>
-            <input ref={newFilesRef} type="file" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.key,.pages,.xls,.xlsx,.png,.jpg,.jpeg" className="text-sm text-slate-600" />
+          <div className="mt-3 grid sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-[12px] font-semibold text-slate-600 block mb-1">Concept documents (PDF, Word, slides — up to 25MB each)</label>
+              <input ref={newFilesRef} type="file" multiple accept=".pdf,.doc,.docx,.ppt,.pptx,.key,.pages,.xls,.xlsx,.png,.jpg,.jpeg" className="text-sm text-slate-600" />
+            </div>
+            <div>
+              <label className="text-[12px] font-semibold text-slate-600 block mb-1">Cover photo (optional — shown on the card)</label>
+              <input ref={coverRef} type="file" accept="image/*" className="text-sm text-slate-600" />
+            </div>
           </div>
           <button onClick={create} disabled={busy} className="mt-3 text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2.5 disabled:opacity-60">{busy ? "Saving…" : "Save concept"}</button>
         </div>
@@ -176,7 +196,12 @@ export function EventConcepts({ brands, admin = false }: { brands: { name: strin
           const st = STATUS[c.status] ?? STATUS.concept;
           const cf = filesFor(c.id);
           return (
-            <div key={c.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <div key={c.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              {c.cover_url && (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={c.cover_url} alt="" className="w-full h-40 object-cover" />
+              )}
+              <div className="p-5">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="text-[15px] font-bold text-slate-800">{c.title}</p>
@@ -220,8 +245,14 @@ export function EventConcepts({ brands, admin = false }: { brands: { name: strin
                     accept=".pdf,.doc,.docx,.ppt,.pptx,.key,.pages,.xls,.xlsx,.png,.jpg,.jpeg"
                     onChange={e => { addFiles(c.id, e.target.files); e.target.value = ""; }} />
                 </label>
+                <label className="text-[12px] font-semibold text-slate-500 hover:underline cursor-pointer">
+                  🖼 {c.cover_url ? "Change cover" : "Add cover"}
+                  <input type="file" accept="image/*" className="hidden"
+                    onChange={e => { setCover(c.id, e.target.files); e.target.value = ""; }} />
+                </label>
                 <span className="text-[11px] text-gray-300">{c.created_by ? `added by ${c.created_by.split("@")[0]}` : ""}</span>
                 {admin && <button onClick={() => del(c.id, c.title)} className="ml-auto text-[12px] text-gray-300 hover:text-rose-500">Delete</button>}
+              </div>
               </div>
             </div>
           );

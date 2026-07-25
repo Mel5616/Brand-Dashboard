@@ -71,10 +71,25 @@ export async function POST(req: Request) {
   const by = access.user?.email ?? null;
   const files = form.getAll("files").filter((f): f is File => f instanceof File);
 
+  // Cover image for a card (jpg/png/webp, stored alongside the docs)
+  async function uploadCover(conceptId: number, cover: File): Promise<string> {
+    if (cover.size > 10 * 1024 * 1024) throw new Error("Cover image is over 10MB");
+    const ext = (cover.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+    const path = `${conceptId}/cover-${Date.now()}.${ext}`;
+    const { error } = await sb.storage.from(BUCKET).upload(path, Buffer.from(await cover.arrayBuffer()), { contentType: cover.type || "image/jpeg", upsert: true });
+    if (error) throw new Error(`Cover: ${error.message}`);
+    return sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+  }
+  const cover = form.get("cover");
+
   const existingId = String(form.get("concept_id") || "").trim();
   if (existingId) {
     try {
       const n = await uploadFiles(sb, Number(existingId), files, by);
+      if (cover instanceof File && cover.size > 0) {
+        const url = await uploadCover(Number(existingId), cover);
+        await sb.from("event_concepts").update({ cover_url: url }).eq("id", Number(existingId));
+      }
       return NextResponse.json({ ok: true, added: n });
     } catch (e: any) { return NextResponse.json({ ok: false, error: String(e.message || e).slice(0, 200) }, { status: 500 }); }
   }
@@ -92,7 +107,13 @@ export async function POST(req: Request) {
   };
   const { data, error } = await sb.from("event_concepts").insert(row).select().single();
   if (error) return NextResponse.json({ ok: false, needsSetup: missing(error.message), error: error.message.slice(0, 200) }, { status: 500 });
-  try { await uploadFiles(sb, data.id, files, by); } catch (e: any) {
+  try {
+    await uploadFiles(sb, data.id, files, by);
+    if (cover instanceof File && cover.size > 0) {
+      const url = await uploadCover(data.id, cover);
+      await sb.from("event_concepts").update({ cover_url: url }).eq("id", data.id);
+    }
+  } catch (e: any) {
     return NextResponse.json({ ok: true, item: data, fileError: String(e.message || e).slice(0, 200) });
   }
   return NextResponse.json({ ok: true, item: data });
