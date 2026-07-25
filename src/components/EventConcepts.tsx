@@ -191,7 +191,7 @@ export function EventConcepts({ brands, admin = false }: { brands: { name: strin
 
       {list.length === 0 && <div className="bg-white rounded-2xl border border-gray-100 shadow-sm py-10 text-center text-gray-300 text-sm">No event concepts yet — add the first one above.</div>}
 
-      <div className="grid md:grid-cols-2 gap-4 items-start">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 items-start">
         {list.map(c => {
           const st = STATUS[c.status] ?? STATUS.concept;
           const cf = filesFor(c.id);
@@ -199,7 +199,7 @@ export function EventConcepts({ brands, admin = false }: { brands: { name: strin
             <div key={c.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               {c.cover_url && (
                 /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={c.cover_url} alt="" className="w-full h-40 object-cover" />
+                <img src={c.cover_url} alt="" className="w-full aspect-[4/3] object-cover" />
               )}
               <div className="p-5">
               <div className="flex items-start justify-between gap-2">
