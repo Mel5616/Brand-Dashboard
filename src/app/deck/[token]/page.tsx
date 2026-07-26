@@ -7,8 +7,9 @@ export const revalidate = 0;
 const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-export default async function DeckPage({ params }: { params: Promise<{ token: string }> }) {
+export default async function DeckPage({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ preview?: string }> }) {
   const { token } = await params;
+  const { preview } = await searchParams;
   if (!/^[0-9a-f-]{36}$/.test(token) || !sbUrl || !sbKey) return <DeadEnd />;
   const sRes = await fetch(`${sbUrl}/rest/v1/deck_shares?token=eq.${token}&select=deck_id&limit=1`, {
     headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}` }, cache: "no-store",
@@ -23,7 +24,8 @@ export default async function DeckPage({ params }: { params: Promise<{ token: st
 
   return (
     <main className="min-h-screen bg-white">
-      <DeckTracker token={token} />
+      {/* preview=1 (admin card thumbnails) renders without logging a view */}
+      {preview !== "1" && <DeckTracker token={token} />}
       <div dangerouslySetInnerHTML={{ __html: deck.html }} />
     </main>
   );

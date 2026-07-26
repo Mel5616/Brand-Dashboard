@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 // Plan > Launch Decks: HTML strategy decks with per-recipient tracked share
 // links — who opened, how many times, how long they actually looked. Admin-only.
-type Deck = { id: number; title: string; brand: string | null; thumb?: string; created_by: string | null; created_at: string };
+type Deck = { id: number; title: string; brand: string | null; created_by: string | null; created_at: string };
 type Share = { id: number; deck_id: number; token: string; label: string; created_at: string };
 type View = { share_id: number; session_id: string; viewer: string | null; seconds: number; opened_at: string; last_seen: string };
 
@@ -124,17 +124,16 @@ export function LaunchDecks({ brands }: { brands: { name: string }[] }) {
         const firstToken = dShares[0]?.token;
         return (
           <div key={d.id} className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${isOpen ? "sm:col-span-2 xl:col-span-3" : ""}`}>
-            {/* First slide as the card face — click to open the deck */}
-            {firstToken ? (
-              <a href={`/deck/${firstToken}`} target="_blank" rel="noreferrer" className="block relative group">
-                {d.thumb
-                  ? <div className="pointer-events-none [&_.pageno]:hidden [&_.slide]:!rounded-none [&_.slide]:!shadow-none [&_.slide]:!m-0" dangerouslySetInnerHTML={{ __html: d.thumb }} />
-                  : <div className="aspect-video bg-slate-100 flex items-center justify-center text-3xl">📽</div>}
+            {/* Live top-of-deck preview (scaled iframe, ?preview=1 so it never counts as an open) */}
+            {firstToken && (
+              <a href={`/deck/${firstToken}`} target="_blank" rel="noreferrer" className="block relative group aspect-video overflow-hidden bg-slate-100">
+                <iframe src={`/deck/${firstToken}?preview=1`} loading="lazy" tabIndex={-1} aria-hidden scrolling="no"
+                  className="absolute top-0 left-0 w-[400%] h-[400%] origin-top-left scale-[0.25] pointer-events-none border-0" />
                 <span className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/25 transition-colors flex items-center justify-center">
                   <span className="opacity-0 group-hover:opacity-100 text-white text-[13px] font-bold bg-slate-900/70 rounded-full px-4 py-2">Open deck →</span>
                 </span>
               </a>
-            ) : d.thumb && <div className="pointer-events-none [&_.pageno]:hidden" dangerouslySetInnerHTML={{ __html: d.thumb }} />}
+            )}
             <button onClick={() => setOpen(isOpen ? null : d.id)} className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50/60 text-left border-t border-gray-50">
               <span className="min-w-0 flex-1">
                 <span className="block text-[14.5px] font-bold text-slate-800 truncate">{d.title}</span>
