@@ -5,7 +5,7 @@ import { fmt, fmtFull } from "@/lib/format";
 type Objective = { text: string; done?: boolean };
 type Snapshot = {
   generatedAt?: string;
-  d2c?: { weekStart: string | null; weekEnd?: string | null; partial?: boolean; total: number; wowPct: number | null; top: { brand: string; revenue: number; wow: number | null }[]; fallers: { brand: string; wow: number | null }[] };
+  d2c?: { weekStart: string | null; weekEnd?: string | null; partial?: boolean; total: number; wowPct: number | null; top: { brand: string; color?: string | null; revenue: number; wow: number | null }[]; fallers: { brand: string; wow: number | null }[]; topProducts?: { title: string; brand: string; qty: number; revenue: number }[] };
   launches?: { campaign: string; brand: string; keyDate: string | null; status: string; oneLiner: string; briefUrl?: string | null }[];
   promos?: { channel: string; tier: number | null; endDate: string; note: string; brands: string[] }[];
   events?: { name: string; type: string; dateStart: string; dateEnd: string | null; venue: string | null; url: string | null; ticketsSold: number | null; capacity: number | null }[];
@@ -297,16 +297,22 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
               <span className="text-sm font-semibold"><Wow v={d2c.wowPct} /> <span className="text-gray-400 font-normal">vs {d2c.partial ? "same days last week" : "prior week"}</span></span>
             </div>
             {d2c.top.length > 0 && (
-              <div className="mt-3 space-y-1">
-                {d2c.top.map(m => {
-                  const pct = Math.max(4, Math.round((m.revenue / (d2c.top[0].revenue || 1)) * 100));
+              <div className="mt-3 space-y-1.5">
+                {d2c.top.map((m, i) => {
+                  // sqrt scaling keeps the tail visible when one brand dominates
+                  const pct = Math.max(3, Math.round(Math.sqrt(m.revenue / (d2c.top[0].revenue || 1)) * 100));
+                  const col = (m as any).color || "#10b981";
                   return (
-                    <div key={m.brand} className="relative flex items-center rounded-lg bg-slate-100 overflow-hidden">
-                      <div className="absolute inset-y-0 left-0 bg-emerald-100" style={{ width: `${pct}%` }} />
-                      <div className="relative flex-1 flex items-center justify-between gap-3 px-3 py-2">
-                        <span className="text-[14px] font-medium text-slate-700">{m.brand}</span>
-                        <span className="text-[14px] font-semibold text-slate-800 tabular-nums whitespace-nowrap flex items-center gap-1.5">{fmt(m.revenue)}<Wow v={m.wow} /></span>
+                    <div key={m.brand} className="flex items-center gap-2.5">
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: col }} />
+                      <span className={`w-[118px] shrink-0 truncate text-[13px] ${i === 0 ? "font-bold text-slate-800" : "font-medium text-slate-600"}`}>{m.brand}</span>
+                      <div className="flex-1 h-[9px] rounded-full bg-slate-100 overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: col }} />
                       </div>
+                      <span className={`w-[52px] text-right tabular-nums shrink-0 text-[13.5px] ${i === 0 ? "font-bold text-slate-800" : "font-semibold text-slate-700"}`}>{fmt(m.revenue)}</span>
+                      <span className={`w-[54px] shrink-0 text-center text-[10.5px] font-bold rounded-full px-1 py-0.5 ${m.wow == null ? "text-gray-300" : m.wow >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"}`}>
+                        {m.wow == null ? "new" : `${m.wow >= 0 ? "▲" : "▼"} ${Math.abs(m.wow)}%`}
+                      </span>
                     </div>
                   );
                 })}
@@ -314,7 +320,28 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
             )}
             {d2c.fallers.length > 0 && <p className="text-[12px] text-rose-500 mt-2.5">Watch: {d2c.fallers.map(f => `${f.brand} ${f.wow}%`).join(" · ")}</p>}
           </div>
-          <p className="text-[10px] text-gray-400 mt-1.5">Own-store (D2C) revenue only — excludes Amazon, wholesale and Baby Bunting.</p>
+
+          {(d2c.topProducts ?? []).length > 0 && (
+            <div className="mt-3 rounded-xl border border-teal-100 bg-gradient-to-br from-teal-50/60 to-white px-4 py-3">
+              <p className="text-[10.5px] font-bold uppercase tracking-[0.18em] text-teal-600 mb-2">🛒 Top products · by units sold</p>
+              <div className="space-y-1.5">
+                {d2c.topProducts!.map((p, i) => (
+                  <div key={i} className="flex items-center gap-2.5">
+                    <span className={`w-6 h-6 shrink-0 rounded-full flex items-center justify-center text-[11px] font-bold ${i === 0 ? "bg-amber-100 text-amber-700" : i === 1 ? "bg-slate-200 text-slate-600" : i === 2 ? "bg-orange-100 text-orange-700" : "bg-slate-100 text-slate-400"}`}>{i + 1}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[13.5px] font-semibold text-slate-700 truncate">{p.title}</span>
+                      <span className="block text-[11px] text-gray-400">{p.brand}</span>
+                    </span>
+                    <span className="shrink-0 text-right">
+                      <span className="block text-[13.5px] font-bold text-slate-800">{p.qty} units</span>
+                      <span className="block text-[11px] text-teal-600 font-semibold">{fmt(p.revenue)}</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <p className="text-[10px] text-gray-400 mt-1.5">Own-store (D2C) websites only — excludes Amazon, wholesale, Baby Bunting and expo POS.</p>
         </Section>
       )}
 

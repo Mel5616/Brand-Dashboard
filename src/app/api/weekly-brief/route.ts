@@ -7,6 +7,7 @@ import { randomBytes } from "crypto";
 // publishes it to a token link. GET lists recent briefs. PATCH edits one in place.
 
 export const revalidate = 0;
+export const maxDuration = 60;
 const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const h = (extra: Record<string, string> = {}) => ({ apikey: sbKey!, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json", ...extra });
@@ -14,11 +15,71 @@ const missing = (s: number, b: string) => s === 404 || /PGRST205|does not exist|
 const sb = (p: string) => fetch(`${sbUrl}/rest/v1/${p}`, { headers: h(), cache: "no-store" }).then(async r => (r.ok ? JSON.parse((await r.text()) || "[]") : []));
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 
+// Melbourne local date for a UTC timestamp (business weeks are AEST Sun–Sat)
+const melDate = (t: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Melbourne", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(t));
+// Merge colour variants: "Vista V3 - Jake (Black)" → "Vista V3"
+const baseTitle = (t: string) => {
+  let s = t.replace(/\s*\([^)]*\)\s*$/, "").trim();
+  const i = s.lastIndexOf(" - ");
+  if (i > 0 && s.slice(i + 3).trim().split(/\s+/).length <= 3) s = s.slice(0, i).trim();
+  return s;
+};
+
+// Top products by unit qty across every brand's own website for the completed
+// week — web orders only (POS/expo excluded), ex-GST revenue.
+async function topProductsWeek(weekStart: string, weekEnd: string, nameById: Map<number, string>) {
+  let stores: { id: number; name: string; domain: string; token: string }[] = [];
+  try { stores = JSON.parse(process.env.BRAND_SHOPIFY || "[]"); } catch { return []; }
+  if (!stores.length) return [];
+  const since = iso(new Date(new Date(weekStart + "T00:00:00Z").getTime() - 864e5));
+  const until = iso(new Date(new Date(weekEnd + "T00:00:00Z").getTime() + 864e5));
+  const agg = new Map<string, { title: string; brand: string; qty: number; revenue: number }>();
+  await Promise.all(stores.map(async (st) => {
+    let cursor: string | null = null;
+    for (let p = 0; p < 4; p++) {
+      const after: string = cursor ? `, after: "${cursor}"` : "";
+      const q = `{ orders(first: 250${after}, query: "financial_status:paid created_at:>=${since} created_at:<=${until}", sortKey: CREATED_AT) {
+        edges { cursor node { createdAt sourceName lineItems(first: 12) { edges { node { title quantity originalTotalSet { shopMoney { amount } } } } } } }
+        pageInfo { hasNextPage } } }`;
+      const j: any = await fetch(`https://${st.domain}/admin/api/2024-01/graphql.json`, {
+        method: "POST", headers: { "Content-Type": "application/json", "X-Shopify-Access-Token": st.token },
+        body: JSON.stringify({ query: q }), cache: "no-store",
+      }).then(r => r.json()).catch(() => null);
+      const edges = j?.data?.orders?.edges ?? [];
+      for (const e of edges) {
+        const n = e.node;
+        if ((n.sourceName || "").toLowerCase() === "pos") continue;  // expo/booth ≠ website
+        const d = melDate(n.createdAt);
+        if (d < weekStart || d > weekEnd) continue;
+        for (const li of n.lineItems?.edges ?? []) {
+          const it = li.node;
+          const key = baseTitle(it.title || "").toLowerCase();
+          if (!key) continue;
+          const cur = agg.get(key) ?? { title: baseTitle(it.title), brand: st.name, qty: 0, revenue: 0, byStore: {} as Record<string, number> };
+          const qn = Number(it.quantity) || 0;
+          cur.qty += qn;
+          cur.revenue += (Number(it.originalTotalSet?.shopMoney?.amount) || 0) / 1.1;
+          (cur as any).byStore[st.name] = ((cur as any).byStore[st.name] || 0) + qn;
+          agg.set(key, cur);
+        }
+      }
+      if (!j?.data?.orders?.pageInfo?.hasNextPage || edges.length === 0) break;
+      cursor = edges[edges.length - 1].cursor;
+    }
+  }));
+  return [...agg.values()].sort((a, b) => b.qty - a.qty).slice(0, 5)
+    .map((p: any) => ({
+      title: p.title, qty: p.qty, revenue: Math.round(p.revenue),
+      // label the store that sold most units of it
+      brand: Object.entries(p.byStore as Record<string, number>).sort((a, b) => b[1] - a[1])[0]?.[0] ?? p.brand,
+    }));
+}
+
 async function buildSnapshot() {
   const wkAgo = iso(new Date(Date.now() - 7 * 864e5));
   const adCut = iso(new Date(Date.now() - 21 * 864e5));   // covers last week + the week before
   const [brands, daily, monthly, targets, campaigns, igMedia, klaviyo, promotions, googleDaily, metaDaily, pinterestDaily, ga4, ebEvents, shows, showReports, showAttendance] = await Promise.all([
-    sb("brands?select=id,name,live"),
+    sb("brands?select=id,name,live,color"),
     sb("brand_daily?select=brand_id,day,revenue"),
     sb("brand_monthly?select=brand_id,month_key,revenue&order=month_key"),
     sb("brand_targets?select=brand_id,month_key,revenue_target"),
@@ -56,14 +117,16 @@ async function buildSnapshot() {
   const total = sumDaily(weekStart, weekEndSat), prevTotal = sumDaily(prevStart, prevEnd);
   const movers = brands.filter((b: any) => b.live).map((b: any) => {
     const curV = sumDaily(weekStart, weekEndSat, b.id), prevV = sumDaily(prevStart, prevEnd, b.id);
-    return { brand: b.name, revenue: Math.round(curV), wow: prevV > 0 ? Math.round(((curV - prevV) / prevV) * 100) : null };
+    return { brand: b.name, color: b.color ?? null, revenue: Math.round(curV), wow: prevV > 0 ? Math.round(((curV - prevV) / prevV) * 100) : null };
   }).filter((m: any) => m.revenue > 0).sort((a: any, b: any) => b.revenue - a.revenue);
+  const topProducts = await topProductsWeek(iso(weekStart), iso(weekEndSat), nameById).catch(() => []);
   const d2c = {
     weekStart: iso(weekStart), weekEnd: iso(weekEndSat), partial: false,
     total: Math.round(total),
     wowPct: prevTotal > 0 ? Math.round(((total - prevTotal) / prevTotal) * 100) : null,
     top: movers,   // every brand with D2C sales, biggest first — the team sees them all
     fallers: movers.filter((m: any) => m.wow !== null && m.wow <= -25).slice(0, 3),
+    topProducts,   // top 5 products by unit qty across the D2C websites
   };
 
   // ── Upcoming launches: next 21 days, or Now/Next horizon, not finished ──
