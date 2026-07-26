@@ -801,6 +801,28 @@ export function DashboardTabs({
       <div className="lg:ml-[288px]">
         <main className="max-w-screen-2xl mx-auto px-6 py-8 space-y-8">
 
+          {/* Quick access: one pill per sidebar group — jump straight to its first tab */}
+          {(() => {
+            const groups = TAB_GROUPS
+              .map(g => ({ label: g.label, first: g.ids.find(id => visibleTabs.some(t => t.id === id)) }))
+              .filter(g => g.first);
+            if (groups.length < 2) return null;
+            return (
+              <div className="flex gap-1.5 overflow-x-auto pb-0.5 -mt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {groups.map(g => {
+                  const isActive = TAB_GROUPS.find(x => x.label === g.label)!.ids.includes(active);
+                  return (
+                    <button key={g.label} onClick={() => go(g.first as TabId)}
+                      className={`shrink-0 text-[11px] font-bold uppercase tracking-[0.1em] rounded-full px-3.5 py-1.5 transition-colors ${
+                        isActive ? "bg-slate-800 text-white shadow-sm" : "bg-white text-slate-500 border border-gray-200 hover:border-slate-300 hover:text-slate-700"}`}>
+                      {g.label}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
           {/* ── Brands ── */}
           {/* ── Summary: needs-attention banner + brand tier cards ── */}
           {active === "summary" && (
