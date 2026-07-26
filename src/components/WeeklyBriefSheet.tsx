@@ -14,6 +14,7 @@ type Snapshot = {
     wrapped: { name: string; dateStart: string; dateEnd: string | null; location: string | null; dealsUrl: string | null; reportUrl: string | null; attendance: number | null }[];
   };
   attention?: { text: string; kind: string }[];
+  highlights?: { icon: string; title: string; sub: string | null }[];
   wins?: {
     posts: { brand: string; engagement: number; likes: number; comments: number; reach: number; caption: string; permalink: string; image: string }[];
     email: { month: string; topRevenue: { brand: string; revenue: number } | null; bestClick: { brand: string; clickRate: number } | null; bestPerEmail?: { brand: string; perEmail: number; sent: number; revenue: number } | null; quiet?: string[] } | null;
@@ -74,6 +75,22 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
       </header>
 
       {brief.intro && <p className="text-[15px] text-slate-600 leading-relaxed whitespace-pre-wrap">{linkify(brief.intro)}</p>}
+
+      {(s.highlights ?? []).length > 0 && (
+        <Section title="Last week's wins">
+          <div className="space-y-2">
+            {s.highlights!.map((w, i) => (
+              <div key={i} className="flex items-start gap-2.5 rounded-lg border-2 border-emerald-200 bg-gradient-to-r from-emerald-50/80 to-white px-3 py-2.5 shadow-sm">
+                <span className="text-lg leading-none mt-0.5">{w.icon}</span>
+                <span className="min-w-0">
+                  <span className="block text-[14px] font-bold text-slate-800">{w.title}</span>
+                  {w.sub && <span className="block text-[12.5px] text-gray-500 mt-0.5">{w.sub}</span>}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
 
       {objectives.length > 0 && (
         <Section title="This week's objectives">

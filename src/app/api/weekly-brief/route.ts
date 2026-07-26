@@ -35,6 +35,7 @@ async function buildSnapshot() {
     sb("tradeshow_reports?select=tradeshow_id"),
     sb("tradeshow_attendance?select=tradeshow_id,attendance"),
   ]);
+  const showSales = await sb("tradeshow_sales?select=tradeshow_id,brand_id,revenue");
   const nameById = new Map<number, string>(brands.map((b: any) => [b.id, b.name]));
   const today = new Date(); const todayStr = iso(today);
 
@@ -276,7 +277,45 @@ async function buildSnapshot() {
       .sort((a: any, b: any) => (b.date_end ?? b.date_start).localeCompare(a.date_end ?? a.date_start)).map(showRow),
   };
 
-  return { generatedAt: new Date().toISOString(), d2c, launches, promos, events, tradeshows, attention: attention.slice(0, 12), wins: { posts: topPosts, email }, paid, traffic };
+  // ── 🏆 Big wins from the week just gone: expo results + record weeks/days ──
+  const highlights: { icon: string; title: string; sub: string | null }[] = [];
+  const wk8 = iso(new Date(Date.now() - 8 * 864e5));
+  for (const t of (shows as any[])) {
+    const end = t.date_end ?? t.date_start;
+    if (!end || end < wk8 || t.date_start > todayStr) continue;
+    const rows = (showSales as any[]).filter((r: any) => String(r.tradeshow_id) === String(t.id));
+    const tot = rows.reduce((s: number, r: any) => s + (Number(r.revenue) || 0), 0);
+    if (tot < 5000) continue;
+    const top = rows.sort((a: any, b: any) => (b.revenue || 0) - (a.revenue || 0))[0];
+    const live = end >= todayStr;
+    highlights.push({
+      icon: "🎪",
+      title: `${t.name}: $${Math.round(tot).toLocaleString()} in expo sales${live ? " — and still counting" : ""}`,
+      sub: top ? `${nameById.get(top.brand_id) ?? "Top brand"} led with $${Math.round(top.revenue).toLocaleString()}` : null,
+    });
+  }
+  // Record checks against every prior complete Sun–Sat week per live brand
+  for (const b of (brands as any[]).filter((x: any) => x.live)) {
+    const cur = sumDaily(weekStart, weekEndSat, b.id);
+    if (cur < 3000) continue;
+    let bestPrior = 0;
+    for (let w = 1; w <= 78; w++) {
+      const ws = new Date(weekStart); ws.setDate(ws.getDate() - 7 * w);
+      const we = new Date(weekEndSat); we.setDate(we.getDate() - 7 * w);
+      const v = sumDaily(ws, we, b.id);
+      if (v > bestPrior) bestPrior = v;
+    }
+    if (bestPrior > 0 && cur > bestPrior) {
+      highlights.push({
+        icon: "🏆",
+        title: `${b.name}: best D2C week on record — $${Math.round(cur).toLocaleString()}`,
+        sub: `Beats the previous best of $${Math.round(bestPrior).toLocaleString()}`,
+      });
+    }
+  }
+  highlights.sort((a, b) => (a.icon === "🎪" ? -1 : 0) - (b.icon === "🎪" ? -1 : 0));
+
+  return { generatedAt: new Date().toISOString(), d2c, launches, promos, events, tradeshows, attention: attention.slice(0, 12), wins: { posts: topPosts, email }, paid, traffic, highlights: highlights.slice(0, 5) };
 }
 
 export async function GET(req: Request) {
