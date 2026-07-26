@@ -39,7 +39,14 @@ export async function GET(req: Request, ctx: { params: Promise<{ token: string }
 
   let html: string = deck.html;
   if (!preview) {
-    const t = tracker(token);
+    let t = tracker(token);
+    // If a companion PDF exists for this deck (deck-assets/deck-<id>.pdf),
+    // float a small Download PDF button — the print path for paged decks.
+    const pdfUrl = `${sbUrl}/storage/v1/object/public/deck-assets/deck-${share.deck_id}.pdf`;
+    const pdfOk = await fetch(pdfUrl, { method: "HEAD", cache: "no-store" }).then(r => r.ok).catch(() => false);
+    if (pdfOk) {
+      t += `<a href="${pdfUrl}" target="_blank" rel="noopener" style="position:fixed;right:18px;bottom:18px;z-index:99999;background:#e2593c;color:#fff;text-decoration:none;font-family:-apple-system,'Segoe UI',sans-serif;font-size:12.5px;font-weight:700;letter-spacing:.05em;padding:10px 16px;border-radius:999px;box-shadow:0 4px 14px rgba(0,0,0,.3)">⬇ PDF</a>`;
+    }
     html = /<\/body>/i.test(html) ? html.replace(/<\/body>/i, `${t}</body>`) : html + t;
   }
   return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
