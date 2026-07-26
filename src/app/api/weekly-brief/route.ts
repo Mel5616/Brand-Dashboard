@@ -68,7 +68,7 @@ async function buildSnapshot() {
 
   // ── Upcoming launches: next 21 days, or Now/Next horizon, not finished ──
   const in21 = new Date(today); in21.setDate(in21.getDate() + 21);
-  const dead = new Set(["Done", "Paused", "Complete"]);
+  const dead = new Set(["Done", "Paused", "Complete", "Completed"]);
   // Upcoming launches: only campaigns actually moving — Planned or Live (not Build,
   // Pipeline or Paused). The team wants what's booked in, not the wishlist.
   // Anything actively moving toward launch — Build campaigns ARE upcoming work.

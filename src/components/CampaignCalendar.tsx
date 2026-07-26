@@ -53,8 +53,8 @@ const gcalUrl = (c: Campaign) => {
   return `https://calendar.google.com/calendar/render?${p.toString()}`;
 };
 const TIERS = ["A", "B", "C"];
-const STATUSES = ["Live", "Build", "Planned", "Pipeline", "Paused"];
-const STATUS_COLOR: Record<string, string> = { Live: "#2E7D5B", Build: "#C77D3C", Planned: "#3C6E9E", Pipeline: "#8A7BB0", Paused: "#9A9A9A" };
+const STATUSES = ["Live", "Build", "Planned", "Pipeline", "Paused", "Completed"];
+const STATUS_COLOR: Record<string, string> = { Live: "#2E7D5B", Build: "#C77D3C", Planned: "#3C6E9E", Pipeline: "#8A7BB0", Paused: "#9A9A9A", Completed: "#475569" };
 const TIER_DOT: Record<string, string> = { A: "#E8956B", B: "#7FA9A0", C: "#B9A7C9" };
 
 // Fixed brief field order — the team learns where each guardrail lives once.

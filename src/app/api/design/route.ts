@@ -25,7 +25,7 @@ export async function GET() {
     rest("design_priorities?select=*&order=rank.asc"),
     rest("design_task_meta?select=task_gid,priority,notes,updated_by,updated_at&limit=5000"),
     rest(`design_completions?select=task_gid,name,project_label,due_on,created_at_asana,completed_at,source&completed_at=gte.${compCutoff}&order=completed_at.desc&limit=2000`),
-    rest(`campaigns?select=id,campaign,brand,status,key_date,end_date,share_token,brief&brief->>designRequired=eq.true&order=key_date.asc.nullslast`),
+    rest(`campaigns?select=id,campaign,brand,status,key_date,end_date,share_token,brief&brief->>designRequired=eq.true&status=not.in.(${encodeURIComponent('"Completed","Paused"')})&order=key_date.asc.nullslast`),
   ]);
   // requested_by may not exist yet (add_asana_requested_by.sql) — retry without.
   let tRes = tResFirst;
