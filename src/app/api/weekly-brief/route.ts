@@ -206,15 +206,35 @@ async function buildSnapshot() {
   const sentIds = new Set(kRows.filter((k: any) => Number(k.emails_sent) > 0).map((k: any) => k.brand_id));
   const quiet = (brands as any[]).filter((b: any) => b.live && !sentIds.has(b.id)).map((b: any) => b.name);
   const monthLabel = kLatest ? new Date(kLatest + "-01T00:00:00").toLocaleDateString("en-AU", { month: "long", year: "numeric" }) + (kLatest === curMK ? " · month to date" : "") : "";
-  // Campaigns actually sent in the last 7 days (klaviyo_campaigns, synced per-campaign)
-  const sends = (Array.isArray(kvCampaigns) ? kvCampaigns : [])
-    .map((c: any) => ({
-      brand: nameById.get(c.brand_id) || "", name: String(c.name || "Campaign"),
-      sentAt: c.sent_at, recipients: Number(c.recipients) || 0,
-      openRate: Number(c.open_rate) || 0, clickRate: Number(c.click_rate) || 0,
-      revenue: Math.round(Number(c.revenue) || 0),
-    }))
-    .sort((a: any, b: any) => b.revenue - a.revenue).slice(0, 8);
+  // Campaigns actually sent in the last 7 days (klaviyo_campaigns, synced
+  // per-campaign). Variants of the same send (smart-send splits, per-store
+  // backorder reports) share a name up to the date token — group them.
+  const sendGroups = new Map<string, { brand: string; name: string; recipients: number; openW: number; clickW: number; revenue: number; n: number }>();
+  for (const c of (Array.isArray(kvCampaigns) ? kvCampaigns : []) as any[]) {
+    const recipients = Number(c.recipients) || 0;
+    const revenue = Number(c.revenue) || 0;
+    if (recipients === 0 && revenue === 0) continue; // dead sends are noise
+    const raw = String(c.name || "Campaign");
+    const dateIdx = raw.search(/\d{8}/);
+    const base = (dateIdx > 0 ? raw.slice(0, dateIdx) : raw).replace(/[-_\s]+$/, "").trim() || raw;
+    const key = `${c.brand_id}|${base.toLowerCase()}`;
+    const g = sendGroups.get(key) ?? { brand: nameById.get(c.brand_id) || "", name: base, recipients: 0, openW: 0, clickW: 0, revenue: 0, n: 0 };
+    g.recipients += recipients;
+    g.openW += (Number(c.open_rate) || 0) * recipients;
+    g.clickW += (Number(c.click_rate) || 0) * recipients;
+    g.revenue += revenue;
+    g.n += 1;
+    sendGroups.set(key, g);
+  }
+  const sends = [...sendGroups.values()].map(g => ({
+    brand: g.brand,
+    name: g.n > 1 ? `${g.name} · ${g.n} sends` : g.name,
+    sentAt: null as string | null,
+    recipients: g.recipients,
+    openRate: g.recipients > 0 ? g.openW / g.recipients : 0,
+    clickRate: g.recipients > 0 ? g.clickW / g.recipients : 0,
+    revenue: Math.round(g.revenue),
+  })).sort((a, b) => b.revenue - a.revenue || b.recipients - a.recipients).slice(0, 8);
   const email = (topEmail || bestClick || sends.length) ? {
     month: monthLabel,
     topRevenue: topEmail ? { brand: nameById.get(topEmail.brand_id) || "", revenue: Math.round(Number(topEmail.revenue) || 0) } : null,
