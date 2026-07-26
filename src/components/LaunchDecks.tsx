@@ -17,23 +17,36 @@ const ago = (s: string) => {
 };
 const mins = (sec: number) => sec >= 90 ? `${Math.round(sec / 60)}m` : `${sec}s`;
 
-// Renders the top of the live deck at desktop width (1280px), scaled to fit
-// the card exactly — measured with a ResizeObserver so any card width works.
+// The live deck rendered inside a laptop mockup: the screen is a scaled iframe
+// of the real deck at desktop width, measured so any card width works.
 function DeckThumb({ token }: { token: string }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(0.3);
+  const [w, setW] = useState(384);
   useEffect(() => {
     const el = ref.current; if (!el) return;
-    const upd = () => setScale((el.clientWidth || 384) / 1280);
+    const upd = () => setW(el.clientWidth || 384);
     upd();
     const ro = new ResizeObserver(upd); ro.observe(el);
     return () => ro.disconnect();
   }, []);
+  const screenW = Math.max(200, w - 96);
+  const scale = screenW / 1280;
   return (
-    <div ref={ref} className="relative aspect-video overflow-hidden bg-slate-100">
-      <iframe src={`/deck/${token}?preview=1`} loading="lazy" tabIndex={-1} aria-hidden scrolling="no"
-        style={{ width: 1280, height: 720, transform: `scale(${scale})`, transformOrigin: "top left" }}
-        className="absolute top-0 left-0 pointer-events-none border-0" />
+    <div ref={ref} className="bg-gradient-to-b from-slate-100 to-slate-200 pt-5 px-4 flex flex-col items-center">
+      {/* lid + bezel */}
+      <div className="rounded-t-xl rounded-b-[3px] bg-slate-900 p-[7px] pb-[9px] shadow-xl" style={{ width: screenW + 14 }}>
+        <div className="mx-auto mb-1 w-1.5 h-1.5 rounded-full bg-slate-700" />
+        <div className="relative overflow-hidden bg-white rounded-[3px]" style={{ width: screenW, height: screenW * 0.625 }}>
+          <iframe src={`/deck/${token}?preview=1`} loading="lazy" tabIndex={-1} aria-hidden scrolling="no"
+            style={{ width: 1280, height: 800, transform: `scale(${scale})`, transformOrigin: "top left" }}
+            className="absolute top-0 left-0 pointer-events-none border-0" />
+        </div>
+      </div>
+      {/* base */}
+      <div className="rounded-b-lg bg-gradient-to-b from-slate-300 to-slate-400 h-[7px]" style={{ width: screenW + 58 }}>
+        <div className="mx-auto w-16 h-[3px] rounded-b bg-slate-400/80" />
+      </div>
+      <div className="h-4" />
     </div>
   );
 }
