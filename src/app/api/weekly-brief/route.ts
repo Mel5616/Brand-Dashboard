@@ -180,9 +180,35 @@ async function buildSnapshot() {
   // ── Wins: top social posts this week + email highlights (good-news section) ──
   const eng = (p: any) => (Number(p.like_count) || 0) + (Number(p.comments_count) || 0) + (Number(p.saved) || 0) + (Number(p.shares) || 0);
   const topPosts = (igMedia as any[])
-    .map((p: any) => ({ brand: nameById.get(p.brand_id) || "", engagement: eng(p), likes: Number(p.like_count) || 0, comments: Number(p.comments_count) || 0, reach: Number(p.reach) || 0, caption: (p.caption || "").split("\n")[0].slice(0, 90), permalink: p.permalink || "", image: p.image_url || "" }))
+    .map((p: any) => ({ brand: nameById.get(p.brand_id) || "", engagement: eng(p), likes: Number(p.like_count) || 0, comments: Number(p.comments_count) || 0, reach: Number(p.reach) || 0, saves: Number(p.saved) || 0, shares: Number(p.shares) || 0, caption: (p.caption || "").split("\n")[0].slice(0, 90), permalink: p.permalink || "", image: p.image_url || "" }))
     .filter((p: any) => p.engagement > 0)
     .sort((a: any, b: any) => b.engagement - a.engagement).slice(0, 3);
+  // Week-level social pulse: posting volume + reach, follower gains, quiet grids
+  const igOrganic = await sb("instagram_organic?select=brand_id,month_key,followers&order=month_key");
+  const postsByBrand = new Map<number, { n: number; reach: number }>();
+  for (const p of (igMedia as any[])) {
+    const cur = postsByBrand.get(p.brand_id) ?? { n: 0, reach: 0 };
+    cur.n += 1; cur.reach += Number(p.reach) || 0;
+    postsByBrand.set(p.brand_id, cur);
+  }
+  const igMonths = [...new Set<string>((igOrganic as any[]).map((r: any) => String(r.month_key)))].sort();
+  const [prevIgMk, curIgMk] = [igMonths[igMonths.length - 2], igMonths[igMonths.length - 1]];
+  const followerGains = curIgMk ? (igOrganic as any[])
+    .filter((r: any) => r.month_key === curIgMk)
+    .map((r: any) => {
+      const prev = (igOrganic as any[]).find((x: any) => x.brand_id === r.brand_id && x.month_key === prevIgMk);
+      return { brand: nameById.get(r.brand_id) || "", gain: prev ? (Number(r.followers) || 0) - (Number(prev.followers) || 0) : 0, followers: Number(r.followers) || 0 };
+    })
+    .filter((x: any) => x.gain > 0)
+    .sort((a: any, b: any) => b.gain - a.gain).slice(0, 3) : [];
+  const igActive = new Set(postsByBrand.keys());
+  const social = {
+    postsThisWeek: (igMedia as any[]).length,
+    reachThisWeek: [...postsByBrand.values()].reduce((s, v) => s + v.reach, 0),
+    mostActive: [...postsByBrand.entries()].sort((a, b) => b[1].n - a[1].n).slice(0, 1).map(([id, v]) => ({ brand: nameById.get(id) || "", n: v.n }))[0] ?? null,
+    followerGains,
+    quietGrids: (brands as any[]).filter((b: any) => b.live && !igActive.has(b.id)).map((b: any) => b.name),
+  };
   // Email: monthly (Klaviyo has no weekly), so use the last COMPLETE month for a
   // solid number — not the partial current one. Best-click needs real send volume
   // (a handful of emails at 100% is noise, not a win). Open rate is omitted: Apple
@@ -409,7 +435,7 @@ async function buildSnapshot() {
   }
   highlights.sort((a, b) => (a.icon === "🎪" ? -1 : 0) - (b.icon === "🎪" ? -1 : 0));
 
-  return { generatedAt: new Date().toISOString(), d2c, launches, promos, events, tradeshows, attention: attention.slice(0, 12), wins: { posts: topPosts, email }, paid, traffic, highlights: highlights.slice(0, 5) };
+  return { generatedAt: new Date().toISOString(), d2c, launches, promos, events, tradeshows, attention: attention.slice(0, 12), wins: { posts: topPosts, email, social }, paid, traffic, highlights: highlights.slice(0, 5) };
 }
 
 export async function GET(req: Request) {

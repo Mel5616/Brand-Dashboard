@@ -16,7 +16,8 @@ type Snapshot = {
   attention?: { text: string; kind: string }[];
   highlights?: { icon: string; title: string; sub: string | null }[];
   wins?: {
-    posts: { brand: string; engagement: number; likes: number; comments: number; reach: number; caption: string; permalink: string; image: string }[];
+    posts: { brand: string; engagement: number; likes: number; comments: number; reach: number; saves?: number; shares?: number; caption: string; permalink: string; image: string }[];
+    social?: { postsThisWeek: number; reachThisWeek: number; mostActive: { brand: string; n: number } | null; followerGains: { brand: string; gain: number; followers: number }[]; quietGrids: string[] } | null;
     email: { month: string; topRevenue: { brand: string; revenue: number } | null; bestClick: { brand: string; clickRate: number } | null; bestPerEmail?: { brand: string; perEmail: number; sent: number; revenue: number } | null; quiet?: string[]; sends?: { brand: string; name: string; sentAt: string | null; recipients: number; openRate: number; clickRate: number; revenue: number }[] } | null;
   };
   paid?: {
@@ -120,8 +121,18 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
         </Section>
       )}
 
-      {posts.length > 0 && (
-        <Section title="Best social media posts">
+      {(posts.length > 0 || (wins?.social?.postsThisWeek ?? 0) > 0) && (
+        <Section title="Social media this week">
+          {wins?.social && wins.social.postsThisWeek > 0 && (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg bg-pink-50/60 border border-pink-100 px-3 py-2 mb-2 text-[12.5px] text-slate-600">
+              <span><strong className="text-slate-800">{wins.social.postsThisWeek}</strong> posts published</span>
+              {wins.social.reachThisWeek > 0 && <span><strong className="text-slate-800">{wins.social.reachThisWeek.toLocaleString()}</strong> combined reach</span>}
+              {wins.social.mostActive && <span>most active: <strong className="text-slate-800">{wins.social.mostActive.brand}</strong> ({wins.social.mostActive.n})</span>}
+              {wins.social.followerGains.length > 0 && (
+                <span>📈 followers: {wins.social.followerGains.map(f => `${f.brand} +${f.gain.toLocaleString()}`).join(" · ")} <span className="text-gray-400">(this month)</span></span>
+              )}
+            </div>
+          )}
           <div className="space-y-2">
             {posts.map((p, i) => (
               <a key={i} href={p.permalink || undefined} target="_blank" rel="noreferrer" className={`flex items-start gap-3 rounded-lg border border-gray-100 px-3 py-2 ${p.permalink ? "hover:bg-emerald-50/40" : ""}`}>
@@ -131,11 +142,14 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
                 <div className="min-w-0 flex-1">
                   <p className="text-[12px] font-semibold text-emerald-700">{p.brand}{i === 0 ? " · top post" : ""}</p>
                   {p.caption && <p className="text-[13px] text-slate-700 leading-snug truncate">{p.caption}</p>}
-                  <p className="text-[12px] text-gray-500 mt-0.5">❤ {p.likes.toLocaleString()} · 💬 {p.comments.toLocaleString()}{p.reach ? ` · ${p.reach.toLocaleString()} reach` : ""}</p>
+                  <p className="text-[12px] text-gray-500 mt-0.5">❤ {p.likes.toLocaleString()} · 💬 {p.comments.toLocaleString()}{(p.saves ?? 0) > 0 ? ` · 🔖 ${p.saves!.toLocaleString()}` : ""}{(p.shares ?? 0) > 0 ? ` · ↗ ${p.shares!.toLocaleString()}` : ""}{p.reach ? ` · ${p.reach.toLocaleString()} reach` : ""}</p>
                 </div>
               </a>
             ))}
           </div>
+          {(wins?.social?.quietGrids ?? []).length > 0 && (
+            <p className="mt-2 text-[12px] text-amber-700 bg-amber-50 border border-amber-100 rounded-md px-2 py-1">🤫 Quiet grids — no posts this week: <strong>{wins!.social!.quietGrids.join(", ")}</strong>.</p>
+          )}
         </Section>
       )}
 
