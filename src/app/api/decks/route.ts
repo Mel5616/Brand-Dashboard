@@ -20,11 +20,50 @@ export async function GET() {
   return NextResponse.json({ ok: true, decks: d.data ?? [], shares: s.data ?? [], views: v.data ?? [] });
 }
 
+const UPLOAD_BUCKET = "deck-uploads";
+
 export async function POST(req: Request) {
   const access = await getAccess();
   if (access.role !== "admin") return NextResponse.json({ ok: false, error: "Admins only" }, { status: 403 });
   let form: FormData;
   try { form = await req.formData(); } catch { return NextResponse.json({ ok: false, error: "Bad upload" }, { status: 400 }); }
+  const action = String(form.get("action") || "");
+
+  // Chunked upload for big decks (Vercel caps request bodies ~4.5MB):
+  // the client slices the file into ~3MB parts, then "finish" reassembles.
+  if (action === "part") {
+    const sb = await createClient();
+    await sb.storage.createBucket(UPLOAD_BUCKET, { public: false }).catch(() => {});
+    const uploadId = String(form.get("upload_id") || "").replace(/[^a-z0-9-]/gi, "").slice(0, 64);
+    const seq = Number(form.get("seq"));
+    const part = form.get("part");
+    if (!uploadId || !(part instanceof File) || isNaN(seq)) return NextResponse.json({ ok: false, error: "Bad part" }, { status: 400 });
+    const { error } = await sb.storage.from(UPLOAD_BUCKET).upload(`${uploadId}/${seq}`, part, { contentType: "text/plain", upsert: true });
+    if (error) return NextResponse.json({ ok: false, error: error.message.slice(0, 150) }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+  if (action === "finish") {
+    const sb = await createClient();
+    const uploadId = String(form.get("upload_id") || "").replace(/[^a-z0-9-]/gi, "").slice(0, 64);
+    const parts = Number(form.get("parts"));
+    const title2 = String(form.get("title") || "").trim().slice(0, 200);
+    if (!uploadId || !parts || parts > 40 || !title2) return NextResponse.json({ ok: false, error: "Bad finish" }, { status: 400 });
+    let html = "";
+    for (let i = 0; i < parts; i++) {
+      const { data, error } = await sb.storage.from(UPLOAD_BUCKET).download(`${uploadId}/${i}`);
+      if (error || !data) return NextResponse.json({ ok: false, error: `Missing part ${i + 1}` }, { status: 500 });
+      html += await data.text();
+    }
+    await sb.storage.from(UPLOAD_BUCKET).remove(Array.from({ length: parts }, (_, i) => `${uploadId}/${i}`)).catch(() => {});
+    const { data, error } = await sb.from("decks").insert({
+      title: title2, brand: String(form.get("brand") || "").trim().slice(0, 80) || null,
+      html, created_by: access.user?.email ?? null,
+    }).select("id,title").single();
+    if (error) return NextResponse.json({ ok: false, error: error.message.slice(0, 200) }, { status: 500 });
+    await sb.from("deck_shares").insert({ deck_id: data.id, label: "Team" });
+    return NextResponse.json({ ok: true, item: data });
+  }
+
   const title = String(form.get("title") || "").trim().slice(0, 200);
   if (!title) return NextResponse.json({ ok: false, error: "Deck title required" }, { status: 400 });
   let html = String(form.get("html") || "");

@@ -76,12 +76,34 @@ export function LaunchDecks({ brands }: { brands: { name: string }[] }) {
   async function create() {
     setMsg("");
     if (!title.trim()) { setMsg("Give the deck a title."); return; }
-    if (!fileRef.current?.files?.[0]) { setMsg("Attach the deck's HTML file."); return; }
+    const file = fileRef.current?.files?.[0];
+    if (!file) { setMsg("Attach the deck's HTML file."); return; }
+    if (file.size > 40 * 1024 * 1024) { setMsg("That's over 40MB — send it to Mel to slim down first."); return; }
     setBusy(true);
-    const fd = new FormData();
-    fd.append("title", title); fd.append("brand", brand);
-    fd.append("file", fileRef.current.files[0]);
-    const d = await fetch("/api/decks", { method: "POST", body: fd }).then(r => r.json()).catch(() => null);
+    let d: any = null;
+    const CHUNK = 3 * 1024 * 1024;
+    if (file.size <= CHUNK) {
+      const fd = new FormData();
+      fd.append("title", title); fd.append("brand", brand); fd.append("file", file);
+      d = await fetch("/api/decks", { method: "POST", body: fd }).then(r => r.json()).catch(() => null);
+    } else {
+      // Big deck: upload in ~3MB parts (Vercel rejects bodies over ~4.5MB), then assemble.
+      const uploadId = crypto.randomUUID();
+      const parts = Math.ceil(file.size / CHUNK);
+      for (let i = 0; i < parts; i++) {
+        setMsg(`Uploading… part ${i + 1} of ${parts}`);
+        const fd = new FormData();
+        fd.append("action", "part"); fd.append("upload_id", uploadId); fd.append("seq", String(i));
+        fd.append("part", file.slice(i * CHUNK, (i + 1) * CHUNK));
+        const r = await fetch("/api/decks", { method: "POST", body: fd }).then(x => x.json()).catch(() => null);
+        if (!r?.ok) { setBusy(false); setMsg(r?.error || `Upload failed at part ${i + 1} — try again.`); return; }
+      }
+      setMsg("Assembling deck…");
+      const fd = new FormData();
+      fd.append("action", "finish"); fd.append("upload_id", uploadId); fd.append("parts", String(parts));
+      fd.append("title", title); fd.append("brand", brand);
+      d = await fetch("/api/decks", { method: "POST", body: fd }).then(x => x.json()).catch(() => null);
+    }
     setBusy(false);
     if (d?.ok) { setShowForm(false); setTitle(""); setBrand(""); if (fileRef.current) fileRef.current.value = ""; load(); setMsg("Deck loaded — a Team share link is ready."); }
     else setMsg(d?.error || "Couldn't load the deck.");
