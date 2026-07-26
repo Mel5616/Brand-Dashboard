@@ -17,7 +17,7 @@ type Snapshot = {
   highlights?: { icon: string; title: string; sub: string | null }[];
   wins?: {
     posts: { brand: string; engagement: number; likes: number; comments: number; reach: number; caption: string; permalink: string; image: string }[];
-    email: { month: string; topRevenue: { brand: string; revenue: number } | null; bestClick: { brand: string; clickRate: number } | null; bestPerEmail?: { brand: string; perEmail: number; sent: number; revenue: number } | null; quiet?: string[] } | null;
+    email: { month: string; topRevenue: { brand: string; revenue: number } | null; bestClick: { brand: string; clickRate: number } | null; bestPerEmail?: { brand: string; perEmail: number; sent: number; revenue: number } | null; quiet?: string[]; sends?: { brand: string; name: string; sentAt: string | null; recipients: number; openRate: number; clickRate: number; revenue: number }[] } | null;
   };
   paid?: {
     week: string;
@@ -146,6 +146,18 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
             {email.topRevenue && <p><strong>{email.topRevenue.brand}</strong> email drove <strong>{fmtFull(email.topRevenue.revenue)}</strong>.</p>}
             {email.bestPerEmail && <p className="mt-0.5">💎 <strong>{email.bestPerEmail.brand}</strong> made <strong>${email.bestPerEmail.perEmail.toFixed(2)} per email sent</strong> ({email.bestPerEmail.sent.toLocaleString()} emails → {fmtFull(email.bestPerEmail.revenue)}) — small, sharp sends beating big blasts.</p>}
             {email.bestClick && <p className="mt-0.5">Best click-through: <strong>{email.bestClick.brand}</strong> at {email.bestClick.clickRate.toFixed(1)}%.</p>}
+            {(email.sends ?? []).length > 0 && (
+              <div className="mt-2.5 border-t border-violet-100 pt-2">
+                <p className="text-[10.5px] font-bold uppercase tracking-wider text-violet-500 mb-1">📤 Sent this week</p>
+                {email.sends!.map((c, i) => (
+                  <p key={i} className="text-[12.5px] text-slate-600 py-0.5">
+                    <strong>{c.brand}</strong> · {c.name}
+                    <span className="text-gray-400"> — {c.recipients.toLocaleString()} sent · {c.openRate.toFixed(0)}% open · {c.clickRate.toFixed(1)}% click{c.revenue > 0 ? ` · ` : ""}</span>
+                    {c.revenue > 0 && <strong className="text-emerald-700">${c.revenue.toLocaleString()}</strong>}
+                  </p>
+                ))}
+              </div>
+            )}
             {(email.quiet ?? []).length > 0 && <p className="mt-1.5 text-[12px] text-amber-700 bg-amber-50 border border-amber-100 rounded-md px-2 py-1">📭 Quiet lists — no emails sent this month: <strong>{email.quiet!.join(", ")}</strong>.</p>}
           </div>
         </Section>

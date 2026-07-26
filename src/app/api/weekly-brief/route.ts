@@ -36,6 +36,7 @@ async function buildSnapshot() {
     sb("tradeshow_attendance?select=tradeshow_id,attendance"),
   ]);
   const showSales = await sb("tradeshow_sales?select=tradeshow_id,brand_id,revenue");
+  const kvCampaigns = await sb(`klaviyo_campaigns?select=brand_id,name,sent_at,recipients,open_rate,click_rate,revenue&sent_at=gte.${wkAgo}&order=sent_at.desc`);
   const nameById = new Map<number, string>(brands.map((b: any) => [b.id, b.name]));
   const today = new Date(); const todayStr = iso(today);
 
@@ -142,12 +143,22 @@ async function buildSnapshot() {
   const sentIds = new Set(kRows.filter((k: any) => Number(k.emails_sent) > 0).map((k: any) => k.brand_id));
   const quiet = (brands as any[]).filter((b: any) => b.live && !sentIds.has(b.id)).map((b: any) => b.name);
   const monthLabel = kLatest ? new Date(kLatest + "-01T00:00:00").toLocaleDateString("en-AU", { month: "long", year: "numeric" }) + (kLatest === curMK ? " · month to date" : "") : "";
-  const email = (topEmail || bestClick) ? {
+  // Campaigns actually sent in the last 7 days (klaviyo_campaigns, synced per-campaign)
+  const sends = (Array.isArray(kvCampaigns) ? kvCampaigns : [])
+    .map((c: any) => ({
+      brand: nameById.get(c.brand_id) || "", name: String(c.name || "Campaign"),
+      sentAt: c.sent_at, recipients: Number(c.recipients) || 0,
+      openRate: Number(c.open_rate) || 0, clickRate: Number(c.click_rate) || 0,
+      revenue: Math.round(Number(c.revenue) || 0),
+    }))
+    .sort((a: any, b: any) => b.revenue - a.revenue).slice(0, 8);
+  const email = (topEmail || bestClick || sends.length) ? {
     month: monthLabel,
     topRevenue: topEmail ? { brand: nameById.get(topEmail.brand_id) || "", revenue: Math.round(Number(topEmail.revenue) || 0) } : null,
     bestClick: bestClick ? { brand: nameById.get(bestClick.brand_id) || "", clickRate: Number(bestClick.click_rate) || 0 } : null,
     bestPerEmail: bestPer ? { brand: nameById.get(bestPer.brand_id) || "", perEmail: Math.round(bestPer.perEmail * 100) / 100, sent: Number(bestPer.emails_sent), revenue: Math.round(Number(bestPer.revenue)) } : null,
     quiet,
+    sends,
   } : null;
 
   // ── Promotions live this week, grouped by channel so it's clear WHAT they are

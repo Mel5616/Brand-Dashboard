@@ -23,7 +23,7 @@ Setup:
 """
 
 import sys, os, json, time
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from calendar import monthrange
 
 try:
@@ -302,6 +302,55 @@ def sync_brand(db, api_key, brand, brand_id):
         db.table("klaviyo_metrics").upsert(row, on_conflict="brand_id,month_key").execute()
         print(f"    {mk}: delivered={int(sent):,} open={open_rate:.1f}% click={click_rate:.1f}% rev=${revenue:,.0f} orders={int(orders)} unsub={int(unsubs)} flow/camp=${flow_rev:,.0f}/${campaign_rev:,.0f}")
         time.sleep(0.2)
+
+    # Per-campaign results for the weekly brief's "sent this week" panel
+    sync_campaigns(db, api_key, brand, brand_id, revenue_id)
+
+def sync_campaigns(db, api_key, brand, brand_id, revenue_id):
+    """Recent email campaigns (last 21 days) with per-campaign results."""
+    since = (datetime.utcnow() - timedelta(days=21)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    try:
+        data = klaviyo_get(api_key, "campaigns/", {
+            "filter": f"and(equals(messages.channel,'email'),greater-than(scheduled_at,{since}))",
+            "fields[campaign]": "name,status,send_time",
+        })
+    except Exception as e:
+        print(f"    Warning: campaign list failed — {e}")
+        return
+    camps = [c for c in data.get("data", []) if (c.get("attributes", {}).get("status") or "").lower() in ("sent", "sending")]
+    for c in camps:
+        cid = c["id"]
+        att = c.get("attributes", {})
+        stats = {}
+        if revenue_id:
+            try:
+                rep = klaviyo_post(api_key, "campaign-values-reports/", {
+                    "data": {"type": "campaign-values-report", "attributes": {
+                        "timeframe": {"key": "last_30_days"},
+                        "statistics": ["recipients", "open_rate", "click_rate", "conversion_value"],
+                        "conversion_metric_id": revenue_id,
+                        "filter": f'equals(campaign_id,"{cid}")',
+                    }}})
+                results = rep.get("data", {}).get("attributes", {}).get("results", [])
+                if results:
+                    stats = results[0].get("statistics", {})
+            except Exception as e:
+                print(f"    Warning: stats for '{att.get('name')}' failed — {e}")
+        row = {
+            "brand_id": brand_id, "campaign_id": cid,
+            "name": (att.get("name") or "Campaign")[:200],
+            "sent_at": att.get("send_time"),
+            "recipients": int(stats.get("recipients") or 0),
+            "open_rate": round(float(stats.get("open_rate") or 0) * 100, 2),
+            "click_rate": round(float(stats.get("click_rate") or 0) * 100, 2),
+            "revenue": round(float(stats.get("conversion_value") or 0), 2),
+        }
+        try:
+            db.table("klaviyo_campaigns").upsert(row, on_conflict="brand_id,campaign_id").execute()
+            print(f"    📤 {row['name'][:50]}: {row['recipients']:,} recipients · {row['open_rate']:.0f}% open · ${row['revenue']:,.0f}")
+        except Exception as e:
+            print(f"    Warning: campaign upsert failed (run add_klaviyo_campaigns.sql?) — {e}")
+        time.sleep(0.3)
 
 def main():
     config = load_config()
