@@ -1,4 +1,5 @@
 import { fmt, fmtFull } from "@/lib/format";
+import { Confetti } from "./Confetti";
 
 // Renders a weekly brief. Shared by the public /w/[token] page and the compose
 // preview so they never drift. Pure presentation — no data fetching.
@@ -15,6 +16,7 @@ type Snapshot = {
   };
   attention?: { text: string; kind: string }[];
   highlights?: { icon: string; title: string; sub: string | null }[];
+  celebrate?: boolean;
   wins?: {
     posts: { brand: string; engagement: number; likes: number; comments: number; reach: number; saves?: number; shares?: number; caption: string; permalink: string; image: string }[];
     social?: { postsThisWeek: number; reachThisWeek: number; mostActive: { brand: string; n: number } | null; followerGains: { brand: string; gain: number; followers: number }[]; quietGrids: string[] } | null;
@@ -69,6 +71,7 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
 
   return (
     <div className="max-w-[760px] mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 space-y-7">
+      {s.celebrate && <Confetti />}
       <header className="border-b border-gray-100 pb-4">
         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-600">Weekly Brief · Coolkidz Australia</p>
         <h1 className="text-2xl font-bold text-slate-800 mt-1">{brief.week_label || "This week"}</h1>

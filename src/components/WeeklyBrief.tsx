@@ -23,6 +23,7 @@ export function WeeklyBrief() {
   const [past, setPast] = useState<Saved[]>([]);
   const [current, setCurrent] = useState<Saved | null>(null);
   const [busy, setBusy] = useState(false);
+  const [celebrate, setCelebrate] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [needsSetup, setNeedsSetup] = useState(false);
   const jh = { "Content-Type": "application/json" };
@@ -48,7 +49,7 @@ export function WeeklyBrief() {
   async function saveNew(draft: boolean) {
     setBusy(true);
     try {
-      const r = await fetch("/api/weekly-brief", { method: "POST", headers: jh, body: JSON.stringify({ weekLabel, intro, objectives: clean(), brandUpdates: cleanUpdates(), draft }) }).then(x => x.json());
+      const r = await fetch("/api/weekly-brief", { method: "POST", headers: jh, body: JSON.stringify({ weekLabel, intro, objectives: clean(), brandUpdates: cleanUpdates(), draft, celebrate }) }).then(x => x.json());
       if (r.ok) { setCurrent(asSaved(r.item)); setPast(p => [asSaved(r.item), ...p]); setSnapshot(r.item.snapshot); if (!draft) copyLink(r.item.share_token); }
     } finally { setBusy(false); }
   }
@@ -58,7 +59,7 @@ export function WeeklyBrief() {
     if (!current) return;
     setBusy(true);
     try {
-      const body: any = { id: current.id, week_label: weekLabel, intro, objectives: clean(), brandUpdates: cleanUpdates() };
+      const body: any = { id: current.id, week_label: weekLabel, intro, objectives: clean(), brandUpdates: cleanUpdates(), celebrate };
       if (publishNow) body.publish = true;
       const r = await fetch("/api/weekly-brief", { method: "PATCH", headers: jh, body: JSON.stringify(body) }).then(x => x.json());
       if (r.ok) {
@@ -82,6 +83,7 @@ export function WeeklyBrief() {
         // Published briefs keep their frozen snapshot (what the team saw). Drafts
         // show LIVE data — publishing rebuilds it anyway, so the preview shouldn't
         // lag behind newer sections or fresher figures.
+        setCelebrate(!!it.snapshot?.celebrate);
         if (it.published_at && it.snapshot) setSnapshot(it.snapshot);
         else { const pv = await fetch("/api/weekly-brief?preview=1").then(x => x.json()).catch(() => null); if (pv?.ok) setSnapshot(pv.snapshot); else if (it.snapshot) setSnapshot(it.snapshot); }
         if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
@@ -154,6 +156,13 @@ export function WeeklyBrief() {
               <button onClick={() => setBrandUpdates(p => [...p, { text: "" }])} className="text-[13px] font-medium text-emerald-600 hover:text-emerald-700">+ Add update</button>
             </div>
           </div>
+
+          <button onClick={() => setCelebrate(v => !v)}
+            className={`flex items-center gap-2 rounded-xl border-2 px-3.5 py-2 text-[13px] font-semibold transition-colors ${
+              celebrate ? "border-amber-300 bg-gradient-to-r from-amber-50 to-pink-50 text-amber-700" : "border-gray-200 bg-white text-gray-400 hover:border-amber-200 hover:text-amber-600"}`}>
+            <span className="text-base">🎉</span>
+            {celebrate ? "Celebration mode ON — confetti rains when the team opens this brief" : "Good week? Turn on celebration mode (confetti on open)"}
+          </button>
 
           <div className="flex flex-wrap items-center gap-2 pt-1">
             {!current && <>

@@ -465,7 +465,8 @@ export async function POST(req: Request) {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
 
-  const snapshot = await buildSnapshot();
+  const snapshot: any = await buildSnapshot();
+  snapshot.celebrate = !!b.celebrate;   // 🎉 confetti on the published sheet
   const row: any = {
     share_token: randomBytes(9).toString("base64url"),
     week_label: b.weekLabel || new Date().toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }),
@@ -497,6 +498,14 @@ export async function PATCH(req: Request) {
   // figures are current as at the moment it actually goes out to the team.
   if (b.publish) { fields.published_at = new Date().toISOString(); fields.snapshot = await buildSnapshot(); }
   else if (b.refreshSnapshot) fields.snapshot = await buildSnapshot();
+  // 🎉 celebration toggle lives inside the snapshot json (no schema change)
+  if (b.celebrate !== undefined) {
+    if (!fields.snapshot) {
+      const cur = await fetch(`${sbUrl}/rest/v1/weekly_briefs?id=eq.${encodeURIComponent(String(b.id))}&select=snapshot&limit=1`, { headers: h(), cache: "no-store" }).then(r => r.json()).catch(() => []);
+      fields.snapshot = cur[0]?.snapshot ?? {};
+    }
+    fields.snapshot.celebrate = !!b.celebrate;
+  }
   const res = await fetch(`${sbUrl}/rest/v1/weekly_briefs?id=eq.${encodeURIComponent(String(b.id))}`, { method: "PATCH", headers: h({ Prefer: "return=representation" }), body: JSON.stringify(fields) });
   if (!res.ok) return NextResponse.json({ ok: false }, { status: 500 });
   return NextResponse.json({ ok: true, item: JSON.parse(await res.text())[0] });
