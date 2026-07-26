@@ -17,6 +17,27 @@ const ago = (s: string) => {
 };
 const mins = (sec: number) => sec >= 90 ? `${Math.round(sec / 60)}m` : `${sec}s`;
 
+// Renders the top of the live deck at desktop width (1280px), scaled to fit
+// the card exactly — measured with a ResizeObserver so any card width works.
+function DeckThumb({ token }: { token: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.3);
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    const upd = () => setScale((el.clientWidth || 384) / 1280);
+    upd();
+    const ro = new ResizeObserver(upd); ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <div ref={ref} className="relative aspect-video overflow-hidden bg-slate-100">
+      <iframe src={`/deck/${token}?preview=1`} loading="lazy" tabIndex={-1} aria-hidden scrolling="no"
+        style={{ width: 1280, height: 720, transform: `scale(${scale})`, transformOrigin: "top left" }}
+        className="absolute top-0 left-0 pointer-events-none border-0" />
+    </div>
+  );
+}
+
 export function LaunchDecks({ brands }: { brands: { name: string }[] }) {
   const [decks, setDecks] = useState<Deck[]>([]);
   const [shares, setShares] = useState<Share[]>([]);
@@ -126,9 +147,8 @@ export function LaunchDecks({ brands }: { brands: { name: string }[] }) {
           <div key={d.id} className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${isOpen ? "sm:col-span-2 xl:col-span-3" : ""}`}>
             {/* Live top-of-deck preview (scaled iframe, ?preview=1 so it never counts as an open) */}
             {firstToken && (
-              <a href={`/deck/${firstToken}`} target="_blank" rel="noreferrer" className="block relative group aspect-video overflow-hidden bg-slate-100">
-                <iframe src={`/deck/${firstToken}?preview=1`} loading="lazy" tabIndex={-1} aria-hidden scrolling="no"
-                  className="absolute top-0 left-0 w-[400%] h-[400%] origin-top-left scale-[0.25] pointer-events-none border-0" />
+              <a href={`/deck/${firstToken}`} target="_blank" rel="noreferrer" className="block relative group">
+                <DeckThumb token={firstToken} />
                 <span className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/25 transition-colors flex items-center justify-center">
                   <span className="opacity-0 group-hover:opacity-100 text-white text-[13px] font-bold bg-slate-900/70 rounded-full px-4 py-2">Open deck →</span>
                 </span>
