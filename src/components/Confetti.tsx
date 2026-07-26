@@ -4,12 +4,62 @@ import { useEffect, useRef } from "react";
 
 // 🎉 One-shot confetti drop for celebration-mode briefs. No dependencies:
 // a fixed canvas, ~160 pieces over ~5s, then it removes itself. Respects
-// prefers-reduced-motion (renders nothing).
+// prefers-reduced-motion (renders nothing, plays nothing).
+
+// Party-popper jingle via WebAudio (no audio file): three pops + a rising
+// sparkle arpeggio. Browsers block autoplay, so if the context starts
+// suspended we play on the reader's first tap/scroll/keypress instead.
+function playJingle() {
+  try {
+    const AC = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AC) return;
+    const ctx = new AC();
+    const start = () => {
+      const t0 = ctx.currentTime + 0.02;
+      const master = ctx.createGain();
+      master.gain.value = 0.22;                      // keep it polite
+      master.connect(ctx.destination);
+      // pops: short filtered noise bursts
+      for (let i = 0; i < 3; i++) {
+        const dur = 0.09;
+        const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let j = 0; j < d.length; j++) d[j] = (Math.random() * 2 - 1) * (1 - j / d.length);
+        const src = ctx.createBufferSource(); src.buffer = buf;
+        const g = ctx.createGain(); g.gain.value = 0.8;
+        src.connect(g); g.connect(master);
+        src.start(t0 + i * 0.12);
+      }
+      // sparkle: rising notes C5 E5 G5 C6 E6
+      [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, i) => {
+        const o = ctx.createOscillator(); o.type = "triangle"; o.frequency.value = f;
+        const g = ctx.createGain();
+        const at = t0 + 0.25 + i * 0.09;
+        g.gain.setValueAtTime(0, at);
+        g.gain.linearRampToValueAtTime(0.5, at + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.001, at + 0.5);
+        o.connect(g); g.connect(master);
+        o.start(at); o.stop(at + 0.55);
+      });
+      setTimeout(() => ctx.close().catch(() => {}), 2500);
+    };
+    if (ctx.state === "suspended") {
+      const arm = () => { ctx.resume().then(start).catch(() => {}); cleanup(); };
+      const cleanup = () => { removeEventListener("pointerdown", arm); removeEventListener("keydown", arm); removeEventListener("scroll", arm); };
+      addEventListener("pointerdown", arm, { once: true });
+      addEventListener("keydown", arm, { once: true });
+      addEventListener("scroll", arm, { once: true, passive: true });
+      setTimeout(cleanup, 15000);                    // stop waiting after 15s
+    } else start();
+  } catch { /* sound is a bonus, never an error */ }
+}
+
 export function Confetti() {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    playJingle();
     const canvas = ref.current; if (!canvas) return;
     const ctx = canvas.getContext("2d"); if (!ctx) return;
     const dpr = window.devicePixelRatio || 1;
