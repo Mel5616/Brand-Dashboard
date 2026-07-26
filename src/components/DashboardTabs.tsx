@@ -265,7 +265,7 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Overview", ids: ["brands", "summary", "insights", "team-hub", "weekly-brief"] },
   { label: "Reports", ids: ["report", "snapshot", "social-report", "d2c-weekly", "uppababy"] },
   { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows"] },
-  { label: "Plan", ids: ["show-deals", "campaign-calendar", "promotions", "calendar", "content", "events", "event-concepts", "decks"] },
+  { label: "Plan", ids: ["campaign-calendar", "promotions", "calendar", "content", "events", "event-concepts", "decks", "show-deals"] },
   { label: "Creative", ids: ["tasks", "design-requests", "creative"] },
   { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info", "brand-assets", "stock-report"] },
   { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads"] },

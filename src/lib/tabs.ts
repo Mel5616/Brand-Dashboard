@@ -30,7 +30,6 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "tradeshows", label: "Tradeshows" },
   ] },
   { label: "Plan", tabs: [
-    { id: "show-deals", label: "Tradeshow Deals" },
     { id: "campaign-calendar", label: "Campaigns" },
     { id: "promotions", label: "Promotions" },
     { id: "calendar", label: "Calendar" },
@@ -38,6 +37,7 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "events", label: "Tune Up Days" },
     { id: "event-concepts", label: "Event Concepts" },
     { id: "decks", label: "Launch Decks" },
+    { id: "show-deals", label: "Tradeshow Deals" },
   ] },
   { label: "Creative", tabs: [
     { id: "tasks", label: "Blogs" },
