@@ -12,12 +12,20 @@ export async function GET() {
   if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "Admins only" }, { status: 403 });
   const sb = await createClient();
   const [d, s, v] = await Promise.all([
-    sb.from("decks").select("id,title,brand,created_by,created_at").order("created_at", { ascending: false }),
+    sb.from("decks").select("id,title,brand,html,created_by,created_at").order("created_at", { ascending: false }),
     sb.from("deck_shares").select("*").order("created_at", { ascending: true }),
     sb.from("deck_views").select("share_id,session_id,viewer,seconds,opened_at,last_seen"),
   ]);
   if (d.error) return NextResponse.json({ ok: true, needsSetup: missing(d.error.message), decks: [], shares: [], views: [] });
-  return NextResponse.json({ ok: true, decks: d.data ?? [], shares: s.data ?? [], views: v.data ?? [] });
+  // Card thumbnails: the deck's stylesheet + its first slide (cqw units make it
+  // scale natively inside a small card). Full html never leaves this route.
+  const decks = (d.data ?? []).map((r: any) => {
+    const style = r.html.match(/<style>[\s\S]*?<\/style>/)?.[0] ?? "";
+    const slide = r.html.match(/<section class="slide"[\s\S]*?<\/section>/)?.[0] ?? "";
+    const { html: _h, ...rest } = r;
+    return { ...rest, thumb: style + slide };
+  });
+  return NextResponse.json({ ok: true, decks, shares: s.data ?? [], views: v.data ?? [] });
 }
 
 export async function POST(req: Request) {

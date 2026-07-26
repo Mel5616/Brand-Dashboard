@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 // Plan > Launch Decks: HTML strategy decks with per-recipient tracked share
 // links — who opened, how many times, how long they actually looked. Admin-only.
-type Deck = { id: number; title: string; brand: string | null; created_by: string | null; created_at: string };
+type Deck = { id: number; title: string; brand: string | null; thumb?: string; created_by: string | null; created_at: string };
 type Share = { id: number; deck_id: number; token: string; label: string; created_at: string };
 type View = { share_id: number; session_id: string; viewer: string | null; seconds: number; opened_at: string; last_seen: string };
 
@@ -115,20 +115,32 @@ export function LaunchDecks({ brands }: { brands: { name: string }[] }) {
 
       {decks.length === 0 && <div className="bg-white rounded-2xl border border-gray-100 shadow-sm py-10 text-center text-gray-300 text-sm">No decks yet.</div>}
 
+      <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
       {decks.map(d => {
         const dShares = shares.filter(s => s.deck_id === d.id);
         const opens = dShares.reduce((s, x) => s + (statFor.get(x.id)?.opens ?? 0), 0);
         const secs = dShares.reduce((s, x) => s + (statFor.get(x.id)?.seconds ?? 0), 0);
         const isOpen = open === d.id;
+        const firstToken = dShares[0]?.token;
         return (
-          <div key={d.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <button onClick={() => setOpen(isOpen ? null : d.id)} className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50/60 text-left">
-              <span className="text-lg">📽</span>
+          <div key={d.id} className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${isOpen ? "sm:col-span-2 xl:col-span-3" : ""}`}>
+            {/* First slide as the card face — click to open the deck */}
+            {firstToken ? (
+              <a href={`/deck/${firstToken}`} target="_blank" rel="noreferrer" className="block relative group">
+                {d.thumb
+                  ? <div className="pointer-events-none [&_.pageno]:hidden [&_.slide]:!rounded-none [&_.slide]:!shadow-none [&_.slide]:!m-0" dangerouslySetInnerHTML={{ __html: d.thumb }} />
+                  : <div className="aspect-video bg-slate-100 flex items-center justify-center text-3xl">📽</div>}
+                <span className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/25 transition-colors flex items-center justify-center">
+                  <span className="opacity-0 group-hover:opacity-100 text-white text-[13px] font-bold bg-slate-900/70 rounded-full px-4 py-2">Open deck →</span>
+                </span>
+              </a>
+            ) : d.thumb && <div className="pointer-events-none [&_.pageno]:hidden" dangerouslySetInnerHTML={{ __html: d.thumb }} />}
+            <button onClick={() => setOpen(isOpen ? null : d.id)} className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50/60 text-left border-t border-gray-50">
               <span className="min-w-0 flex-1">
                 <span className="block text-[14.5px] font-bold text-slate-800 truncate">{d.title}</span>
                 <span className="block text-[11.5px] text-gray-400">{[d.brand, `${dShares.length} link${dShares.length === 1 ? "" : "s"}`, `${opens} open${opens === 1 ? "" : "s"}`, secs > 0 ? `${mins(secs)} viewed` : null].filter(Boolean).join(" · ")}</span>
               </span>
-              <span className="text-gray-300">{isOpen ? "▾" : "▸"}</span>
+              <span className="text-[11px] font-semibold text-gray-400">{isOpen ? "Hide links ▾" : "Links & tracking ▸"}</span>
             </button>
             {isOpen && (
               <div className="px-5 pb-4 border-t border-gray-50">
@@ -176,6 +188,7 @@ export function LaunchDecks({ brands }: { brands: { name: string }[] }) {
           </div>
         );
       })}
+      </div>
     </div>
   );
 }
