@@ -49,7 +49,7 @@ export function Notifier({ go }: { go: (tab: string) => void }) {
 
   if (toasts.length === 0) return null;
   return (
-    <div className="fixed bottom-4 right-4 z-50 space-y-2 w-[320px] max-w-[calc(100vw-2rem)]">
+    <div className="fixed bottom-20 right-4 z-50 space-y-2 w-[320px] max-w-[calc(100vw-2rem)]">
       {toasts.map(e => (
         <button key={e.id}
           onClick={() => { go(e.tab); setToasts(t => t.filter(x => x.id !== e.id)); }}

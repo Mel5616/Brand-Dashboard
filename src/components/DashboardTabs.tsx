@@ -66,6 +66,7 @@ import { BlogPipeline } from "./BlogPipeline";
 import { MediaReleases } from "./MediaReleases";
 import { EventConcepts } from "./EventConcepts";
 import { LaunchDecks } from "./LaunchDecks";
+import { TodoPanel } from "./TodoPanel";
 import { Notifier } from "./Notifier";
 import { StockReport } from "./StockReport";
 import { fmt } from "@/lib/format";
@@ -574,6 +575,7 @@ export function DashboardTabs({
       {/* Mobile: backdrop behind the drawer */}
       {mobileNavOpen && <div className="lg:hidden fixed left-0 right-0 bottom-0 top-[70px] bg-black/40 z-20" onClick={() => setMobileNavOpen(false)} />}
     <Notifier go={(t) => go(t as TabId)} />
+    <TodoPanel />
     <aside ref={sideRef} onScroll={e => { sideScroll.current = e.currentTarget.scrollTop; }}
       className={`fixed top-[70px] left-0 w-[288px] h-[calc(100vh-70px)] bg-white border-r border-gray-200 flex flex-col z-20 lg:z-10 overflow-y-auto transform transition-transform duration-200 ease-out lg:translate-x-0 ${mobileNavOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"}`}>
       {/* Mobile: close the drawer */}
