@@ -10,7 +10,9 @@ const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const rest = (p: string) => fetch(`${sbUrl}/rest/v1/${p}`, { headers: { apikey: sbKey!, Authorization: `Bearer ${sbKey}` }, cache: "no-store" }).then(async r => (r.ok ? JSON.parse((await r.text()) || "[]") : []));
 
 export async function POST(req: Request) {
-  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "Admins only" }, { status: 403 });
+  const acc = await getAccess();
+  const aiOk = acc.role === "admin" || ["alison@coolkidz.com.au"].includes(((acc.user as any)?.email ?? "").toLowerCase());
+  if (!aiOk) return NextResponse.json({ ok: false, error: "No access" }, { status: 403 });
   if (!process.env.ANTHROPIC_API_KEY) return NextResponse.json({ ok: false, error: "ANTHROPIC_API_KEY not configured" }, { status: 500 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   const brandId = Number(b.brand_id); const path = String(b.path || "");

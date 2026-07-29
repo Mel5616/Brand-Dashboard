@@ -2023,12 +2023,12 @@ export function DashboardTabs({
           {active === "tasks" && (
             <>
               <SectionBar title="Blog pipeline · Asana" />
-              <TasksPanel tasks={asanaTasks.filter((t: any) => (t.project_label ?? "Blogs") === "Blogs")} brands={brands} currentEmail={currentEmail} admin={role === "admin"} compact />
+              <TasksPanel tasks={asanaTasks.filter((t: any) => (t.project_label ?? "Blogs") === "Blogs")} brands={brands} currentEmail={currentEmail} admin={(role === "admin" || (currentEmail ?? "").toLowerCase() === "alison@coolkidz.com.au")} compact />
               <BlogPipeline />
               <div className="mt-6">
                 <SectionBar title="Blogs" />
               </div>
-              <BlogHub brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} admin={role === "admin"} />
+              <BlogHub brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} admin={(role === "admin" || (currentEmail ?? "").toLowerCase() === "alison@coolkidz.com.au")} />
             </>
           )}
 
