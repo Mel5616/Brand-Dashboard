@@ -957,7 +957,6 @@ export function DashboardTabs({
           {active === "brands" && (
             <>
               {role === "admin" && <SyncStatusPanel />}
-              <BrandShareCard brands={brands} monthly={monthly} monthKeys={monthKeys} channelSales={channelSales} role={role} fyLabel={fyLabel} />
               {(() => {
                 const biz = buildChannels("all", { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest: LATEST });
                 if (!biz.length) return null;
@@ -1037,6 +1036,8 @@ export function DashboardTabs({
                   </div>
                 );
               })()}
+
+              <BrandShareCard brands={brands} monthly={monthly} monthKeys={monthKeys} channelSales={channelSales} role={role} fyLabel={fyLabel} />
 
               {/* Portfolio trend, channel mix, brand contribution, top movers */}
               <PortfolioCharts
