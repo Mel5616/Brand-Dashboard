@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 // Plan > Launch Decks: HTML strategy decks with per-recipient tracked share
 // links — who opened, how many times, how long they actually looked. Admin-only.
-type Deck = { id: number; title: string; brand: string | null; created_by: string | null; created_at: string };
+type Deck = { id: number; title: string; brand: string | null; pdfUrl?: string | null; created_by: string | null; created_at: string };
 type Share = { id: number; deck_id: number; token: string; label: string; created_at: string };
 type View = { share_id: number; session_id: string; viewer: string | null; seconds: number; opened_at: string; last_seen: string };
 
@@ -189,13 +189,17 @@ export function LaunchDecks({ brands }: { brands: { name: string }[] }) {
                 </span>
               </a>
             )}
-            <button onClick={() => setOpen(isOpen ? null : d.id)} className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50/60 text-left border-t border-gray-50">
-              <span className="min-w-0 flex-1">
+            <div className="flex items-center gap-3 px-5 py-3.5 border-t border-gray-50">
+              <button onClick={() => setOpen(isOpen ? null : d.id)} className="min-w-0 flex-1 text-left hover:opacity-80">
                 <span className="block text-[14.5px] font-bold text-slate-800 truncate">{d.title}</span>
                 <span className="block text-[11.5px] text-gray-400">{[d.brand, `${dShares.length} link${dShares.length === 1 ? "" : "s"}`, `${opens} open${opens === 1 ? "" : "s"}`, secs > 0 ? `${mins(secs)} viewed` : null].filter(Boolean).join(" · ")}</span>
-              </span>
-              <span className="text-[11px] font-semibold text-gray-400">{isOpen ? "Hide links ▾" : "Links & tracking ▸"}</span>
-            </button>
+              </button>
+              {d.pdfUrl && (
+                <a href={d.pdfUrl} target="_blank" rel="noreferrer"
+                  className="shrink-0 text-[11.5px] font-bold text-white bg-[#e2593c] hover:bg-[#c94c31] rounded-full px-3 py-1.5">⬇ PDF</a>
+              )}
+              <button onClick={() => setOpen(isOpen ? null : d.id)} className="shrink-0 text-[11px] font-semibold text-gray-400 hover:text-gray-600">{isOpen ? "Hide links ▾" : "Links & tracking ▸"}</button>
+            </div>
             {isOpen && (
               <div className="px-5 pb-4 border-t border-gray-50">
                 <table className="w-full text-sm mt-3">

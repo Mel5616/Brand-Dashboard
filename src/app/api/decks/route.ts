@@ -17,7 +17,14 @@ export async function GET() {
     sb.from("deck_views").select("share_id,session_id,viewer,seconds,opened_at,last_seen"),
   ]);
   if (d.error) return NextResponse.json({ ok: true, needsSetup: missing(d.error.message), decks: [], shares: [], views: [] });
-  return NextResponse.json({ ok: true, decks: d.data ?? [], shares: s.data ?? [], views: v.data ?? [] });
+  // Companion PDFs (deck-assets/deck-<id>.pdf) — surfaced as a download on the card
+  const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const decks = await Promise.all((d.data ?? []).map(async (r: any) => {
+    const pdfUrl = `${sbUrl}/storage/v1/object/public/deck-assets/deck-${r.id}.pdf`;
+    const hasPdf = await fetch(pdfUrl, { method: "HEAD", cache: "no-store" }).then(x => x.ok).catch(() => false);
+    return { ...r, pdfUrl: hasPdf ? pdfUrl : null };
+  }));
+  return NextResponse.json({ ok: true, decks, shares: s.data ?? [], views: v.data ?? [] });
 }
 
 const UPLOAD_BUCKET = "deck-uploads";
