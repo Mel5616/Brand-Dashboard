@@ -281,7 +281,7 @@ const INFLUENCER_IDS: TabId[] = ["influencer", "gifting", "nanit", "releases"];
 function BrandShareCard({ brands, monthly, monthKeys, channelSales, role, fyLabel }: {
   brands: any[]; monthly: any[]; monthKeys: string[]; channelSales: any[]; role: string; fyLabel: string;
 }) {
-  const [basis, setBasis] = useState<"d2c" | "whole">("d2c");
+  const [basis, setBasis] = useState<"d2c" | "whole">("whole");
   const whole = basis === "whole" && role === "admin";
   let shares: { id: number | string; name: string; color: string; fy: number }[];
   if (whole) {
@@ -314,7 +314,7 @@ function BrandShareCard({ brands, monthly, monthKeys, channelSales, role, fyLabe
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Brand share of {whole ? "whole-business" : "D2C"} revenue · {fyLabel}</p>
         {role === "admin" && (
           <div className="flex rounded-lg bg-gray-100 p-0.5">
-            {(["d2c", "whole"] as const).map(k => (
+            {(["whole", "d2c"] as const).map(k => (
               <button key={k} onClick={() => setBasis(k)}
                 className={`text-[11px] font-semibold rounded-md px-2.5 py-1 ${basis === k ? "bg-white shadow-sm text-slate-700" : "text-gray-400 hover:text-gray-600"}`}>
                 {k === "d2c" ? "D2C" : "Whole business"}
