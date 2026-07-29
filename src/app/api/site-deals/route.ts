@@ -25,6 +25,7 @@ export async function POST(req: Request) {
     brand: String(b.brand || "").trim().slice(0, 80),
     title: String(b.title || "").trim().slice(0, 160),
     period_start: b.period_start, period_end: b.period_end,
+    price: b.price ? String(b.price).slice(0, 60) : null,
     note: b.note ? String(b.note).slice(0, 300) : null,
     created_by: (acc.user as any)?.email ?? null,
   };
