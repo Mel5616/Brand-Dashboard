@@ -295,12 +295,26 @@ function PostCard({ g, editing, onEdit, onClose, onSaved }: { g: Gift; editing: 
   );
 }
 
+type Piece = { url: string; content_type: string; posted_at: string; likes: string; reach: string };
+
 function PostEditor({ g, onClose, onSaved }: { g: Gift; onClose: () => void; onSaved: () => void }) {
-  const [url, setUrl] = useState(g.content_url || "");
-  const [type, setType] = useState(g.content_type || "Reel");
-  const [likes, setLikes] = useState(g.likes != null ? String(g.likes) : "");
-  const [reach, setReach] = useState(g.reach != null ? String(g.reach) : "");
-  const [posted, setPosted] = useState(g.posted_at || "");
+  // Up to 5 content pieces per gift. Loaded from influencer_content; falls back
+  // to the entry's legacy single-content fields as piece #1.
+  const [pieces, setPieces] = useState<Piece[]>([{
+    url: g.content_url || "", content_type: g.content_type || "Reel",
+    posted_at: g.posted_at || "", likes: g.likes != null ? String(g.likes) : "", reach: g.reach != null ? String(g.reach) : "",
+  }]);
+  useEffect(() => {
+    fetch(`/api/influencer/post?entry_id=${g.id}`).then(r => r.json()).then(d => {
+      if (d?.ok && (d.pieces ?? []).length) {
+        setPieces(d.pieces.map((p: any) => ({
+          url: p.url || "", content_type: p.content_type || "Reel", posted_at: p.posted_at || "",
+          likes: p.likes != null ? String(p.likes) : "", reach: p.reach != null ? String(p.reach) : "",
+        })));
+      }
+    }).catch(() => {});
+  }, [g.id]);
+  const setPiece = (i: number, patch: Partial<Piece>) => setPieces(prev => prev.map((p, j) => j === i ? { ...p, ...patch } : p));
   const [status, setStatus] = useState(g.status || "Live");
   const [profileUrl, setProfileUrl] = useState(g.profile_url || "");
   const [avatar, setAvatar] = useState(g.avatar_url || "");
@@ -317,7 +331,7 @@ function PostEditor({ g, onClose, onSaved }: { g: Gift; onClose: () => void; onS
   async function save() {
     setBusy(true);
     await fetch("/api/influencer/post", { method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: g.id, handle: g.handle, profile_url: profileUrl, content_url: url, content_type: type, likes, reach, posted_at: posted || null, status }) }).catch(() => {});
+      body: JSON.stringify({ id: g.id, handle: g.handle, profile_url: profileUrl, status, pieces }) }).catch(() => {});
     setBusy(false); onSaved();
   }
   async function remove() {
@@ -340,19 +354,35 @@ function PostEditor({ g, onClose, onSaved }: { g: Gift; onClose: () => void; onS
         </div>
       </div>
       <div className="space-y-2">
-        <input value={profileUrl} onChange={e => setProfileUrl(e.target.value)} placeholder="Instagram profile (https://instagram.com/handle)" className={inp} />
-        <input value={url} onChange={e => setUrl(e.target.value)} placeholder="Post link (https://instagram.com/p/…)" className={inp} />
         <div className="grid grid-cols-2 gap-2">
-          <select value={type} onChange={e => setType(e.target.value)} className={inp + " bg-white"}>
-            {["Reel", "Post", "Story", "Other"].map(t => <option key={t}>{t}</option>)}
-          </select>
+          <input value={profileUrl} onChange={e => setProfileUrl(e.target.value)} placeholder="Instagram profile (https://instagram.com/handle)" className={inp} />
           <select value={status} onChange={e => setStatus(e.target.value)} className={inp + " bg-white"}>
             {["Gifted", "Posted", "Live", "Done"].map(t => <option key={t}>{t}</option>)}
           </select>
-          <input value={likes} onChange={e => setLikes(e.target.value)} inputMode="numeric" placeholder="Likes" className={inp} />
-          <input value={reach} onChange={e => setReach(e.target.value)} inputMode="numeric" placeholder="Reach / views" className={inp} />
-          <input type="date" value={posted} onChange={e => setPosted(e.target.value)} className={inp + " col-span-2"} />
         </div>
+        {pieces.map((p, i) => (
+          <div key={i} className="rounded-xl border border-gray-100 bg-slate-50/60 p-2.5 space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Content {i + 1} of {pieces.length}</p>
+              {pieces.length > 1 && <button onClick={() => setPieces(prev => prev.filter((_, j) => j !== i))} className="text-[11px] text-gray-300 hover:text-rose-500">Remove</button>}
+            </div>
+            <input value={p.url} onChange={e => setPiece(i, { url: e.target.value })} placeholder="Post link (https://instagram.com/p/…)" className={inp} />
+            <div className="grid grid-cols-2 gap-2">
+              <select value={p.content_type} onChange={e => setPiece(i, { content_type: e.target.value })} className={inp + " bg-white"}>
+                {["Reel", "Post", "Story", "Other"].map(t => <option key={t}>{t}</option>)}
+              </select>
+              <input type="date" value={p.posted_at} onChange={e => setPiece(i, { posted_at: e.target.value })} className={inp} />
+              <input value={p.likes} onChange={e => setPiece(i, { likes: e.target.value })} inputMode="numeric" placeholder="Likes" className={inp} />
+              <input value={p.reach} onChange={e => setPiece(i, { reach: e.target.value })} inputMode="numeric" placeholder="Reach / views" className={inp} />
+            </div>
+          </div>
+        ))}
+        {pieces.length < 5 && (
+          <button onClick={() => setPieces(prev => [...prev, { url: "", content_type: "Reel", posted_at: "", likes: "", reach: "" }])}
+            className="w-full text-[12px] font-semibold text-emerald-600 border border-dashed border-emerald-200 rounded-lg py-1.5 hover:bg-emerald-50/50">
+            ＋ Add another content piece ({pieces.length}/5)
+          </button>
+        )}
       </div>
       <div className="flex items-center mt-3">
         <button onClick={remove} disabled={busy} className="text-xs text-rose-500 hover:text-rose-700 disabled:opacity-40">Delete</button>

@@ -9,6 +9,20 @@ export const revalidate = 0;
 const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+// Content pieces for one entry (up to 5 posts/reels/stories per gift)
+export async function GET(req: Request) {
+  if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
+  if (!(await canManage("gifting"))) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
+  const entryId = new URL(req.url).searchParams.get("entry_id");
+  if (!entryId) return NextResponse.json({ ok: false }, { status: 400 });
+  const res = await fetch(`${sbUrl}/rest/v1/influencer_content?entry_id=eq.${encodeURIComponent(entryId)}&order=created_at.asc`, {
+    headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}` }, cache: "no-store",
+  });
+  const text = await res.text();
+  if (!res.ok) return NextResponse.json({ ok: true, needsSetup: /PGRST205|does not exist/i.test(text), pieces: [] });
+  return NextResponse.json({ ok: true, pieces: JSON.parse(text || "[]") });
+}
+
 export async function DELETE(req: Request) {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   if (!(await canManage("gifting"))) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
@@ -44,6 +58,31 @@ export async function PATCH(req: Request) {
       headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=minimal" },
       body: JSON.stringify({ handle, profile_url: b.profile_url ? String(b.profile_url).slice(0, 500) : null }),
     }).catch(() => {});
+  }
+
+  // Multiple content pieces (max 5): replace the entry's set, then roll the
+  // sums back onto the entry so ROI/CPM reporting keeps working unchanged.
+  if (Array.isArray(b.pieces)) {
+    const h = { apikey: sbKey!, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json", Prefer: "return=minimal" };
+    const pieces = b.pieces.slice(0, 5).map((p: any) => ({
+      entry_id: Number(b.id),
+      url: p.url ? String(p.url).slice(0, 500) : null,
+      content_type: p.content_type || null,
+      posted_at: p.posted_at || null,
+      likes: parseCount(p.likes),
+      reach: parseCount(p.reach),
+    })).filter((p: any) => p.url || p.likes != null || p.reach != null || p.posted_at);
+    await fetch(`${sbUrl}/rest/v1/influencer_content?entry_id=eq.${encodeURIComponent(String(b.id))}`, { method: "DELETE", headers: h });
+    if (pieces.length) {
+      const ins = await fetch(`${sbUrl}/rest/v1/influencer_content`, { method: "POST", headers: h, body: JSON.stringify(pieces) });
+      if (!ins.ok) return NextResponse.json({ ok: false, needsSetup: true, error: "Run add_influencer_content.sql" }, { status: 500 });
+    }
+    const sum = (k: string) => pieces.reduce((s: number, p: any) => s + (p[k] ?? 0), 0);
+    fields.likes = pieces.some((p: any) => p.likes != null) ? sum("likes") : null;
+    fields.reach = pieces.some((p: any) => p.reach != null) ? sum("reach") : null;
+    fields.content_url = pieces[0]?.url ?? null;
+    fields.content_type = pieces[0]?.content_type ?? null;
+    fields.posted_at = pieces.map((p: any) => p.posted_at).filter(Boolean).sort()[0] ?? null;
   }
 
   if (Object.keys(fields).length === 0) return NextResponse.json({ ok: true });
