@@ -330,17 +330,19 @@ function BrandShareCard({ brands, monthly, monthKeys, channelSales, role, fyLabe
             <span className="text-xl font-bold text-slate-800">{shares.length}</span>
           </div>
         </div>
-        <div className="flex-1 w-full grid sm:grid-cols-2 gap-x-8 gap-y-1">
-          {shares.map(x => {
+        <div className="flex-1 w-full space-y-1.5">
+          {shares.map((x, i) => {
             const pct = (x.fy / total) * 100;
+            // sqrt scale keeps small brands visible next to a dominant leader
+            const barPct = Math.max(2.5, Math.sqrt(x.fy / (shares[0].fy || 1)) * 100);
             return (
-              <div key={x.id} className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: x.color }} />
-                <span className="text-[12.5px] text-slate-600 w-28 truncate">{x.name}</span>
-                <div className="flex-1 h-2.5 rounded-full bg-gray-100 overflow-hidden">
-                  <div className="h-full rounded-full" style={{ width: `${Math.max(1.5, pct)}%`, background: x.color }} />
+              <div key={x.id} className="flex items-center gap-2.5">
+                <span className={`w-6 h-6 shrink-0 rounded-full flex items-center justify-center text-[11px] font-bold ${i === 0 ? "bg-amber-100 text-amber-700" : i === 1 ? "bg-slate-200 text-slate-600" : i === 2 ? "bg-orange-100 text-orange-700" : "bg-slate-100 text-slate-400"}`}>{i + 1}</span>
+                <span className={`w-[124px] shrink-0 truncate text-[13px] ${i === 0 ? "font-bold text-slate-800" : "font-medium text-slate-600"}`}>{x.name}</span>
+                <div className="flex-1 h-3.5 rounded-full bg-gray-100 overflow-hidden">
+                  <div className="h-full rounded-full" style={{ width: `${barPct}%`, background: x.color }} />
                 </div>
-                <span className="text-[12px] font-bold text-slate-700 w-12 text-right tabular-nums">{pct >= 10 ? Math.round(pct) : pct.toFixed(1)}%</span>
+                <span className={`w-14 text-right tabular-nums shrink-0 ${i === 0 ? "text-[14px] font-bold text-slate-800" : "text-[12.5px] font-bold text-slate-600"}`}>{pct >= 10 ? Math.round(pct) : pct.toFixed(1)}%</span>
               </div>
             );
           })}
