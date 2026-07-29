@@ -29,7 +29,7 @@ import { SocialPanel } from "./SocialPanel";
 import { SalesPanel } from "./SalesPanel";
 import { SalesBudget } from "./SalesBudget";
 import { BabyBunting } from "./BabyBunting";
-import { buildChannels, groupDirect, channelColor, momPct, DIGITAL_CHANNELS } from "@/lib/channels";
+import { buildChannels, groupDirect, channelColor, momPct, DIGITAL_CHANNELS, brandMatch } from "@/lib/channels";
 import { PortfolioCharts, Sparkline } from "./PortfolioCharts";
 import { SectionBar } from "./ui";
 import { ProductsTable } from "./ProductsTable";
@@ -393,6 +393,7 @@ export function DashboardTabs({
   const [influencersOpen, setInfluencersOpen] = useState<boolean>(() => INFLUENCER_IDS.includes(firstTab));
   const [partnershipsOpen, setPartnershipsOpen] = useState<boolean>(() => PARTNERSHIP_IDS.includes(firstTab));
   const [mobileNavOpen, setMobileNavOpen] = useState(false); // slide-in nav drawer on small screens
+  const [shareBasis, setShareBasis] = useState<"d2c" | "whole">("d2c"); // brand-share donut basis (whole = admin only)
   // Sidebar section groups the user has collapsed. Default: all open ("auto open").
   // Persisted to localStorage so a collapsed group stays collapsed across reloads.
   // Groups start CLOSED (click to open) — except the group holding the active
@@ -1048,11 +1049,27 @@ export function DashboardTabs({
                   const lastWkStart  = sortedWeeks[0]?.week_start;
                   const prevWkStart  = sortedWeeks[1]?.week_start;
 
-                  // Share of D2C revenue by brand (FY, same digital basis as the cards)
-                  const shares = liveBrands.map((b: any) => ({
-                    id: b.id, name: b.name, color: b.color ?? "#94a3b8",
-                    fy: monthly.filter((m: any) => m.brand_id === b.id && monthKeys.includes(m.month_key)).reduce((s: number, m: any) => s + (m.revenue ?? 0), 0),
-                  })).filter((x: any) => x.fy > 0).sort((a: any, b: any) => b.fy - a.fy);
+                  // Share of revenue by brand. D2C basis for everyone (matches the cards);
+                  // whole-business basis (from the monthly channel export) is admin-only.
+                  const wholeBase = shareBasis === "whole" && role === "admin";
+                  let shares: { id: number | string; name: string; color: string; fy: number }[];
+                  if (wholeBase) {
+                    const agg = new Map<string, { id: number | string; name: string; color: string; fy: number }>();
+                    for (const r of channelSales as any[]) {
+                      if (!monthKeys.includes(r.month_key)) continue;
+                      const b = brands.find((x: any) => brandMatch(x.name, r.brand));
+                      const key = b ? String(b.id) : "other";
+                      const cur = agg.get(key) ?? { id: b?.id ?? "other", name: b?.name ?? "Other", color: b?.color ?? "#94a3b8", fy: 0 };
+                      cur.fy += Number(r.value) || 0;
+                      agg.set(key, cur);
+                    }
+                    shares = [...agg.values()].filter(x => x.fy > 0).sort((a, b) => b.fy - a.fy);
+                  } else {
+                    shares = liveBrands.map((b: any) => ({
+                      id: b.id, name: b.name, color: b.color ?? "#94a3b8",
+                      fy: monthly.filter((m: any) => m.brand_id === b.id && monthKeys.includes(m.month_key)).reduce((s: number, m: any) => s + (m.revenue ?? 0), 0),
+                    })).filter((x: any) => x.fy > 0).sort((a: any, b: any) => b.fy - a.fy);
+                  }
                   const shareTotal = shares.reduce((s: number, x: any) => s + x.fy, 0);
                   const donut = (() => {
                     let acc = 0;
@@ -1065,7 +1082,19 @@ export function DashboardTabs({
                   return (<>
                   {shares.length > 1 && (
                     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
-                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 mb-3">Brand share of D2C revenue · {fyLabel}</p>
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Brand share of {wholeBase ? "whole-business" : "D2C"} revenue · {fyLabel}</p>
+                        {role === "admin" && (
+                          <div className="flex rounded-lg bg-gray-100 p-0.5">
+                            {(["d2c", "whole"] as const).map(k => (
+                              <button key={k} onClick={() => setShareBasis(k)}
+                                className={`text-[11px] font-semibold rounded-md px-2.5 py-1 ${shareBasis === k ? "bg-white shadow-sm text-slate-700" : "text-gray-400 hover:text-gray-600"}`}>
+                                {k === "d2c" ? "D2C" : "Whole business"}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                       <div className="flex flex-col sm:flex-row items-center gap-6">
                         <div className="relative w-36 h-36 shrink-0 rounded-full" style={{ background: `conic-gradient(${donut})` }}>
                           <div className="absolute inset-4 rounded-full bg-white flex flex-col items-center justify-center">
