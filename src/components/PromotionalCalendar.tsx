@@ -12,6 +12,7 @@ type D2c = {
   promo_price: number | null; discount_rrp: number | null; retailers: string | null; status: string; note: string | null;
 };
 type Brand = { id: number; name: string };
+type SiteDeal = { id: number; brand: string; title: string; period_start: string; period_end: string; note: string | null };
 
 const TIER_COLOR: Record<number, string> = { 1: "#0F9ED5", 2: "#4EA72E" };
 const tierColor = (t: number | null) => (t && TIER_COLOR[t]) || "#94a3b8";
@@ -47,8 +48,9 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
 };
 const STATUS_LIST = ["todo", "action", "planned", "live", "done", "skip"];
 
-export function PromotionalCalendar({ canEdit, fy, month }: { canEdit: boolean; brands: Brand[]; fy: string; month: string }) {
+export function PromotionalCalendar({ canEdit, brands = [], fy, month }: { canEdit: boolean; brands?: Brand[]; fy: string; month: string }) {
   const [promos, setPromos] = useState<Promo[]>([]);
+  const [siteDeals, setSiteDeals] = useState<SiteDeal[]>([]);
   const [d2c, setD2c] = useState<D2c[]>([]);
   const [loading, setLoading] = useState(true);
   const [needsSetup, setNeedsSetup] = useState(false);
@@ -57,14 +59,16 @@ export function PromotionalCalendar({ canEdit, fy, month }: { canEdit: boolean; 
   const [statusF, setStatusF] = useState("");
 
   async function load() {
-    const [a, c] = await Promise.all([
+    const [a, c, sd] = await Promise.all([
       fetch("/api/promotions").then(x => x.json()).catch(() => ({ ok: false })),
       fetch("/api/d2c").then(x => x.json()).catch(() => ({ ok: false })),
+      fetch("/api/site-deals").then(x => x.json()).catch(() => ({ ok: false })),
     ]);
     setLoading(false);
     if (!a.ok && a.needsSetup) { setNeedsSetup(true); return; }
     setPromos(a.items || []);
     setD2c(c.items || []);
+    setSiteDeals(sd?.items || []);
   }
   useEffect(() => { load(); }, []);
   // Status changes patch local state so the open months/brands don't collapse;
@@ -158,7 +162,7 @@ export function PromotionalCalendar({ canEdit, fy, month }: { canEdit: boolean; 
       </div>
 
       {/* D2C plan */}
-      <D2cPlan d2c={d2cFY} promos={promos} canEdit={canEdit} brandF={brandF} tierF={tierF} statusF={statusF} onChanged={load} onStatusLocal={applyStatusLocal} />
+      <D2cPlan d2c={d2cFY} promos={promos} siteDeals={siteDeals} brands={brands} onReload={load} canEdit={canEdit} brandF={brandF} tierF={tierF} statusF={statusF} onChanged={load} onStatusLocal={applyStatusLocal} />
     </div>
   );
 }
@@ -167,7 +171,18 @@ function TierBadge({ t }: { t: number | null }) {
   return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: tierColor(t) }}>{t ? `T${t}` : "?"}</span>;
 }
 
-function D2cPlan({ d2c, promos, canEdit, brandF, tierF, statusF, onChanged, onStatusLocal }: { d2c: D2c[]; promos: Promo[]; canEdit: boolean; brandF: string; tierF: string; statusF: string; onChanged: () => void; onStatusLocal: (ids: number[], status: string) => void }) {
+function D2cPlan({ d2c, promos, siteDeals, brands, onReload, canEdit, brandF, tierF, statusF, onChanged, onStatusLocal }: { d2c: D2c[]; promos: Promo[]; siteDeals: SiteDeal[]; brands: Brand[]; onReload: () => void; canEdit: boolean; brandF: string; tierF: string; statusF: string; onChanged: () => void; onStatusLocal: (ids: number[], status: string) => void }) {
+  // Own-site deal quick-add (shown in the promo windows banner)
+  const [sdOpen, setSdOpen] = useState(false);
+  const [sd, setSd] = useState({ brand: "", title: "", period_start: "", period_end: "" });
+  const [sdMsg, setSdMsg] = useState("");
+  async function addSiteDeal() {
+    if (!sd.brand || !sd.title || !sd.period_start || !sd.period_end) { setSdMsg("Brand, deal and both dates required."); return; }
+    const r = await fetch("/api/site-deals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(sd) }).then(x => x.json()).catch(() => null);
+    if (r?.ok) { setSd({ brand: "", title: "", period_start: "", period_end: "" }); setSdOpen(false); setSdMsg(""); onReload(); }
+    else setSdMsg(r?.needsSetup ? "Run add_site_deals.sql first." : r?.error || "Couldn't save.");
+  }
+
   const rows = d2c.filter(r => (!brandF || r.brand === brandF) && (!tierF || String(r.tier) === tierF) && (!statusF || r.status === statusF));
   const counts = d2c.reduce((m, r) => { m[r.status] = (m[r.status] || 0) + 1; return m; }, {} as Record<string, number>);
 
@@ -300,7 +315,13 @@ function D2cPlan({ d2c, promos, canEdit, brandF, tierF, statusF, onChanged, onSt
         };
         const active = group(promos.filter(p => p.period_start <= today && p.period_end >= today));
         const upcoming = group(promos.filter(p => p.period_start > today && p.period_start <= soon));
-        if (active.length === 0 && upcoming.length === 0) return null;
+        // Own-website deals (site_deals) join the same timeline, marked 🛒
+        const dealRow = (x: SiteDeal) => ({ channel: `🛒 ${x.title}`, start: x.period_start, end: x.period_end, brands: [x.brand], tier: null, own: true, dealId: x.id });
+        const siteActive = siteDeals.filter(x => x.period_start <= today && x.period_end >= today).map(dealRow);
+        const siteSoon = siteDeals.filter(x => x.period_start > today && x.period_start <= soon).map(dealRow);
+        active.push(...siteActive); active.sort((a, b) => a.start.localeCompare(b.start));
+        upcoming.push(...siteSoon); upcoming.sort((a, b) => a.start.localeCompare(b.start));
+        if (active.length === 0 && upcoming.length === 0 && !canEdit) return null;
         // Shared timeline axis: a few days back → the latest end in view (capped ~7 weeks)
         const DAY = 86400_000;
         const nowT = d(today).getTime();
@@ -310,13 +331,13 @@ function D2cPlan({ d2c, promos, canEdit, brandF, tierF, statusF, onChanged, onSt
         const x = (t: number) => Math.max(0, Math.min(100, ((t - t0) / span) * 100));
         const weeks: string[] = [];
         for (let t = t0; t <= tEnd; t += 7 * DAY) weeks.push(new Date(t).toLocaleDateString("en-AU", { day: "numeric", month: "short" }));
-        const Row = ({ g, live }: { g: { channel: string; start: string; end: string; brands: string[] }; live: boolean }) => {
+        const Row = ({ g, live }: { g: { channel: string; start: string; end: string; brands: string[]; own?: boolean; dealId?: number }; live: boolean }) => {
           const s = d(g.start).getTime(), e = d(g.end).getTime() + DAY;
           const daysLeft = Math.ceil((e - nowT) / DAY), startsIn = Math.ceil((s - nowT) / DAY);
           return (
             <div className="py-2">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="text-[13px] font-semibold text-slate-700">{g.channel}</span>
+                <span className="text-[13px] font-semibold text-slate-700">{g.channel}{g.own && <span className="ml-1.5 text-[9.5px] font-bold uppercase tracking-wider text-teal-600 bg-teal-50 rounded px-1 py-0.5 align-middle">our site</span>}</span>
                 <span className="text-[11.5px] text-gray-400">{fmt(g.start)} – {fmt(g.end)}</span>
                 <span className={`text-[10.5px] font-bold rounded-full px-2 py-0.5 ${live ? "bg-emerald-100 text-emerald-700" : "bg-sky-100 text-sky-600"}`}>
                   {live ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} left` : `starts in ${startsIn} day${startsIn === 1 ? "" : "s"}`}
@@ -330,7 +351,7 @@ function D2cPlan({ d2c, promos, canEdit, brandF, tierF, statusF, onChanged, onSt
                 </span>
               </div>
               <div className="relative h-3 mt-1.5 rounded-full bg-gray-100 overflow-hidden">
-                <div className={`absolute top-0 h-3 rounded-full ${live ? "bg-emerald-400" : "bg-sky-300"}`}
+                <div className={`absolute top-0 h-3 rounded-full ${g.own ? (live ? "bg-teal-500" : "bg-teal-200") : live ? "bg-emerald-400" : "bg-sky-300"}`}
                   style={{ left: `${x(s)}%`, width: `${Math.max(1.5, x(e) - x(s))}%` }} />
                 {live && <div className="absolute top-0 h-3 bg-emerald-600/25" style={{ left: `${x(s)}%`, width: `${Math.max(0, x(nowT) - x(s))}%` }} />}
                 <div className="absolute top-0 h-3 w-px bg-slate-700" style={{ left: `${x(nowT)}%` }} />
@@ -342,8 +363,27 @@ function D2cPlan({ d2c, promos, canEdit, brandF, tierF, statusF, onChanged, onSt
           <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm px-4 py-3">
             <div className="flex items-baseline justify-between gap-2">
               <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-600">📣 Promo windows{active.length ? ` · ${active.length} running` : ""}</p>
-              <p className="text-[10.5px] text-gray-400">▐ today · <span className="text-emerald-600 font-semibold">green brand ✓</span> = mirrored Live on D2C</p>
+              <div className="flex items-center gap-3">
+                <p className="text-[10.5px] text-gray-400">▐ today · <span className="text-emerald-600 font-semibold">green brand ✓</span> = mirrored Live on D2C</p>
+                <button onClick={() => setSdOpen(v => !v)} className="text-[11px] font-bold text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-full px-2.5 py-1">{sdOpen ? "Close" : "＋ Site deal"}</button>
+              </div>
             </div>
+            {sdOpen && (
+              <div className="mt-2 mb-1 rounded-xl border border-teal-100 bg-teal-50/40 p-3">
+                <div className="grid sm:grid-cols-4 gap-2">
+                  <select value={sd.brand} onChange={e => setSd(p2 => ({ ...p2, brand: e.target.value }))} className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white">
+                    <option value="">Brand *</option>
+                    {brands.map(b => <option key={b.id}>{b.name}</option>)}
+                    <option>All brands</option>
+                  </select>
+                  <input value={sd.title} onChange={e => setSd(p2 => ({ ...p2, title: e.target.value }))} placeholder="Deal · e.g. 15% off sitewide *" className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5" />
+                  <input type="date" value={sd.period_start} onChange={e => setSd(p2 => ({ ...p2, period_start: e.target.value }))} className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5" />
+                  <input type="date" value={sd.period_end} onChange={e => setSd(p2 => ({ ...p2, period_end: e.target.value }))} className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5" />
+                </div>
+                {sdMsg && <p className="text-[12px] text-rose-500 mt-1.5">{sdMsg}</p>}
+                <button onClick={addSiteDeal} className="mt-2 text-[12.5px] font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg px-4 py-1.5">Save site deal</button>
+              </div>
+            )}
             <div className="divide-y divide-gray-50">
               {active.map((g, i) => <Row key={`a${i}`} g={g} live />)}
               {upcoming.map((g, i) => <Row key={`u${i}`} g={g} live={false} />)}
