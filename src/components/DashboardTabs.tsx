@@ -1048,7 +1048,50 @@ export function DashboardTabs({
                   const lastWkStart  = sortedWeeks[0]?.week_start;
                   const prevWkStart  = sortedWeeks[1]?.week_start;
 
-                  return tiers.map(({ label, ids }) => (
+                  // Share of D2C revenue by brand (FY, same digital basis as the cards)
+                  const shares = liveBrands.map((b: any) => ({
+                    id: b.id, name: b.name, color: b.color ?? "#94a3b8",
+                    fy: monthly.filter((m: any) => m.brand_id === b.id && monthKeys.includes(m.month_key)).reduce((s: number, m: any) => s + (m.revenue ?? 0), 0),
+                  })).filter((x: any) => x.fy > 0).sort((a: any, b: any) => b.fy - a.fy);
+                  const shareTotal = shares.reduce((s: number, x: any) => s + x.fy, 0);
+                  const donut = (() => {
+                    let acc = 0;
+                    return shares.map((x: any) => {
+                      const from = (acc / shareTotal) * 360; acc += x.fy;
+                      return `${x.color} ${from.toFixed(1)}deg ${((acc / shareTotal) * 360).toFixed(1)}deg`;
+                    }).join(", ");
+                  })();
+
+                  return (<>
+                  {shares.length > 1 && (
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500 mb-3">Brand share of D2C revenue · {fyLabel}</p>
+                      <div className="flex flex-col sm:flex-row items-center gap-6">
+                        <div className="relative w-36 h-36 shrink-0 rounded-full" style={{ background: `conic-gradient(${donut})` }}>
+                          <div className="absolute inset-4 rounded-full bg-white flex flex-col items-center justify-center">
+                            <span className="text-[10px] uppercase tracking-wider text-gray-400">Brands</span>
+                            <span className="text-xl font-bold text-slate-800">{shares.length}</span>
+                          </div>
+                        </div>
+                        <div className="flex-1 w-full grid sm:grid-cols-2 gap-x-8 gap-y-1">
+                          {shares.map((x: any) => {
+                            const pct = (x.fy / shareTotal) * 100;
+                            return (
+                              <div key={x.id} className="flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: x.color }} />
+                                <span className="text-[12.5px] text-slate-600 w-28 truncate">{x.name}</span>
+                                <div className="flex-1 h-2.5 rounded-full bg-gray-100 overflow-hidden">
+                                  <div className="h-full rounded-full" style={{ width: `${Math.max(1.5, pct)}%`, background: x.color }} />
+                                </div>
+                                <span className="text-[12px] font-bold text-slate-700 w-12 text-right tabular-nums">{pct >= 10 ? Math.round(pct) : pct.toFixed(1)}%</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {tiers.map(({ label, ids }) => (
                     <div key={label} className={label ? "mb-6" : ""}>
                       {label && (
                         <div className="flex items-center gap-3 mb-4">
@@ -1099,7 +1142,8 @@ export function DashboardTabs({
                         })}
                       </div>
                     </div>
-                  ));
+                  ))}
+                  </>);
                 })()}
               </div>
               </>
