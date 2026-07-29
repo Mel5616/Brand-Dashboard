@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 // every number is current. Fetched on demand from /api/sync-status.
 type Row = { source: string; ok: boolean; message: string; ran_at: string };
 const STALE_HOURS = 26;
+// Sources on their own slower schedule get a matching staleness window.
+const STALE_OVERRIDES: Record<string, number> = { "Semrush": 8 * 24 };
 
 function ago(iso: string): string {
   const ms = Date.now() - Date.parse(iso);
@@ -32,7 +34,7 @@ export function SyncStatusPanel() {
   if (rows.length === 0) return null;
 
   const status = (r: Row): "ok" | "stale" | "failed" =>
-    !r.ok ? "failed" : (Date.now() - Date.parse(r.ran_at) > STALE_HOURS * 3.6e6 ? "stale" : "ok");
+    !r.ok ? "failed" : (Date.now() - Date.parse(r.ran_at) > (STALE_OVERRIDES[r.source] ?? STALE_HOURS) * 3.6e6 ? "stale" : "ok");
   const scored = rows.map(r => ({ ...r, s: status(r) }));
   const failed = scored.filter(r => r.s === "failed");
   const stale = scored.filter(r => r.s === "stale");

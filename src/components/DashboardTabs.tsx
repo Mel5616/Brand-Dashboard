@@ -1071,6 +1071,7 @@ export function DashboardTabs({
               })()}
 
 
+              <SectionBar title="Digital (D2C) performance" />
               {/* Portfolio trend, channel mix, brand contribution, top movers */}
               <PortfolioCharts
                 brands={brands.filter((b: any) => b.live)} tiers={BRAND_TIERS} monthly={monthly} targets={targets}
