@@ -30,7 +30,7 @@ import { SalesPanel } from "./SalesPanel";
 import { SalesBudget } from "./SalesBudget";
 import { BabyBunting } from "./BabyBunting";
 import { buildChannels, groupDirect, channelColor, momPct, DIGITAL_CHANNELS, brandMatch } from "@/lib/channels";
-import { PortfolioCharts, Sparkline } from "./PortfolioCharts";
+import { PortfolioCharts, ChannelMixCard, Sparkline } from "./PortfolioCharts";
 import { SectionBar } from "./ui";
 import { ProductsTable } from "./ProductsTable";
 import { TradeshowAccordion } from "./TradeshowAccordion";
@@ -1071,8 +1071,11 @@ export function DashboardTabs({
               })()}
 
 
+              <ChannelMixCard brands={brands.filter((b: any) => b.live)} monthly={monthly} monthKeys={monthKeys} monthLabels={monthLabels}
+                channelSales={channelSales} tradeshows={tradeshows} tradeshowSales={tradeshowSales} shopifySources={shopifySources} latest={LATEST} />
+
               <SectionBar title="Digital (D2C) performance" />
-              {/* Portfolio trend, channel mix, brand contribution, top movers */}
+              {/* Portfolio trend, brand contribution, top movers */}
               <PortfolioCharts
                 brands={brands.filter((b: any) => b.live)} tiers={BRAND_TIERS} monthly={monthly} targets={targets}
                 monthKeys={monthKeys} monthLabels={monthLabels} latestI={latestI}

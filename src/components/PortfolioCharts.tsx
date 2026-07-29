@@ -27,6 +27,28 @@ export function Sparkline({ data, color = "#1e3a5f" }: { data: number[]; color?:
 
 // Whole-portfolio visuals for the overview: trend vs target, channel mix over time,
 // brand contribution, and the biggest YoY movers.
+// Whole-business channel mix, month by month — rendered ABOVE the D2C divider
+// on Business Overview (it's the one portfolio chart that isn't D2C-only).
+export function ChannelMixCard({ brands, monthly, monthKeys, monthLabels, channelSales, tradeshows, tradeshowSales, shopifySources, latest }: any) {
+  const channelMix = useMemo(() => {
+    const biz = buildChannels("all", { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest });
+    const top = [...biz].filter((c: any) => c.fy > 0).sort((a: any, b: any) => b.fy - a.fy).slice(0, 7);
+    return top.map((c: any) => ({ label: c.name, color: channelColor(c.name), data: monthKeys.map((_: string, i: number) => c.series?.[i] ?? 0) }));
+  }, [brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest]);
+  const labels = monthLabels;
+  if (!channelMix.length) return null;
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
+      <h3 className="text-sm font-semibold text-slate-700">Channel mix over time</h3>
+      <p className="text-xs text-gray-400 mb-3">Where revenue comes from, month by month — whole business</p>
+      <div className="h-56">
+        <Bar data={{ labels, datasets: channelMix.map((c: any) => ({ label: c.label, data: c.data, backgroundColor: c.color, borderRadius: 2, stack: "c" })) }}
+          options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { boxWidth: 8, font: { size: 10 }, usePointStyle: true } }, tooltip: { callbacks: { label: (c: any) => ` ${c.dataset.label}: ${fmt(c.parsed.y ?? 0)}` } } }, scales: { x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 }, color: "#9ca3af" } }, y: { stacked: true, ticks: { callback: (v: any) => fmt(v), font: { size: 10 }, color: "#9ca3af" }, grid: { color: "#f3f4f6" } } } }} />
+      </div>
+    </div>
+  );
+}
+
 export function PortfolioCharts({ brands, tiers, monthly, targets, monthKeys, monthLabels, channelSales, tradeshows, tradeshowSales, shopifySources, latest, fyLabel, googleAds = [], metaAds = [], marketingActuals = [] }: any) {
   const labels = monthLabels;
 
@@ -96,16 +118,6 @@ export function PortfolioCharts({ brands, tiers, monthly, targets, monthKeys, mo
             { label: "Target", data: monthlyTarget, borderColor: "#94a3b8", borderDash: [5, 4], borderWidth: 2, pointRadius: 0, fill: false, tension: 0.3 },
             { label: "Revenue", data: monthlyRev, borderColor: "#1e3a5f", backgroundColor: "#1e3a5f1f", borderWidth: 2, pointRadius: 2, fill: true, tension: 0.3 },
           ] }} options={{ responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false }, plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 }, usePointStyle: true } }, tooltip: { callbacks: { label: (c: any) => ` ${c.dataset.label}: ${fmt(c.parsed.y ?? 0)}` } } }, scales: baseScales }} />
-        </div>
-      </div>
-
-      {/* Channel mix over time */}
-      <div className={card}>
-        <h3 className="text-sm font-semibold text-slate-700">Channel mix over time</h3>
-        <p className="text-xs text-gray-400 mb-3">Where revenue comes from, month by month</p>
-        <div className="h-56">
-          <Bar data={{ labels, datasets: channelMix.map((c: any) => ({ label: c.label, data: c.data, backgroundColor: c.color, borderRadius: 2, stack: "c" })) }}
-            options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { boxWidth: 8, font: { size: 10 }, usePointStyle: true } }, tooltip: { callbacks: { label: (c: any) => ` ${c.dataset.label}: ${fmt(c.parsed.y ?? 0)}` } } }, scales: { x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 }, color: "#9ca3af" } }, y: { stacked: true, ticks: { callback: (v: any) => fmt(v), font: { size: 10 }, color: "#9ca3af" }, grid: { color: "#f3f4f6" } } } }} />
         </div>
       </div>
 
