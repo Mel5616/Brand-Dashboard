@@ -330,7 +330,7 @@ function BrandShareCard({ brands, monthly, monthKeys, channelSales, role, fyLabe
             <span className="text-xl font-bold text-slate-800">{shares.length}</span>
           </div>
         </div>
-        <div className="flex-1 w-full space-y-1.5">
+        <div className="flex-1 w-full grid sm:grid-cols-2 sm:grid-flow-col gap-x-8 gap-y-1.5" style={{ gridTemplateRows: `repeat(${Math.ceil(shares.length / 2)}, minmax(0, auto))` }}>
           {shares.map((x, i) => {
             const pct = (x.fy / total) * 100;
             // sqrt scale keeps small brands visible next to a dominant leader
