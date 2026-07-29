@@ -275,6 +275,80 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
 
 // Influencer pages collapse under an "Influencers" dropdown in the sidebar.
 const INFLUENCER_IDS: TabId[] = ["influencer", "gifting", "nanit", "releases"];
+
+// Brand share of revenue donut + bars. D2C basis for everyone (matches the
+// team-visible cards); whole-business basis (monthly channel export) admin-only.
+function BrandShareCard({ brands, monthly, monthKeys, channelSales, role, fyLabel }: {
+  brands: any[]; monthly: any[]; monthKeys: string[]; channelSales: any[]; role: string; fyLabel: string;
+}) {
+  const [basis, setBasis] = useState<"d2c" | "whole">("d2c");
+  const whole = basis === "whole" && role === "admin";
+  let shares: { id: number | string; name: string; color: string; fy: number }[];
+  if (whole) {
+    const agg = new Map<string, { id: number | string; name: string; color: string; fy: number }>();
+    for (const r of channelSales) {
+      if (!monthKeys.includes(r.month_key)) continue;
+      const b = brands.find((x: any) => brandMatch(x.name, r.brand));
+      const key = b ? String(b.id) : "other";
+      const cur = agg.get(key) ?? { id: b?.id ?? "other", name: b?.name ?? "Other", color: b?.color ?? "#94a3b8", fy: 0 };
+      cur.fy += Number(r.value) || 0;
+      agg.set(key, cur);
+    }
+    shares = [...agg.values()].filter(x => x.fy > 0).sort((a, b) => b.fy - a.fy);
+  } else {
+    shares = brands.filter((b: any) => b.live).map((b: any) => ({
+      id: b.id, name: b.name, color: b.color ?? "#94a3b8",
+      fy: monthly.filter((m: any) => m.brand_id === b.id && monthKeys.includes(m.month_key)).reduce((s: number, m: any) => s + (m.revenue ?? 0), 0),
+    })).filter(x => x.fy > 0).sort((a, b) => b.fy - a.fy);
+  }
+  const total = shares.reduce((s, x) => s + x.fy, 0);
+  if (shares.length < 2 || total <= 0) return null;
+  let acc = 0;
+  const donut = shares.map(x => {
+    const from = (acc / total) * 360; acc += x.fy;
+    return `${x.color} ${from.toFixed(1)}deg ${((acc / total) * 360).toFixed(1)}deg`;
+  }).join(", ");
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Brand share of {whole ? "whole-business" : "D2C"} revenue · {fyLabel}</p>
+        {role === "admin" && (
+          <div className="flex rounded-lg bg-gray-100 p-0.5">
+            {(["d2c", "whole"] as const).map(k => (
+              <button key={k} onClick={() => setBasis(k)}
+                className={`text-[11px] font-semibold rounded-md px-2.5 py-1 ${basis === k ? "bg-white shadow-sm text-slate-700" : "text-gray-400 hover:text-gray-600"}`}>
+                {k === "d2c" ? "D2C" : "Whole business"}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="flex flex-col sm:flex-row items-center gap-6">
+        <div className="relative w-36 h-36 shrink-0 rounded-full" style={{ background: `conic-gradient(${donut})` }}>
+          <div className="absolute inset-4 rounded-full bg-white flex flex-col items-center justify-center">
+            <span className="text-[10px] uppercase tracking-wider text-gray-400">Brands</span>
+            <span className="text-xl font-bold text-slate-800">{shares.length}</span>
+          </div>
+        </div>
+        <div className="flex-1 w-full grid sm:grid-cols-2 gap-x-8 gap-y-1">
+          {shares.map(x => {
+            const pct = (x.fy / total) * 100;
+            return (
+              <div key={x.id} className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: x.color }} />
+                <span className="text-[12.5px] text-slate-600 w-28 truncate">{x.name}</span>
+                <div className="flex-1 h-2.5 rounded-full bg-gray-100 overflow-hidden">
+                  <div className="h-full rounded-full" style={{ width: `${Math.max(1.5, pct)}%`, background: x.color }} />
+                </div>
+                <span className="text-[12px] font-bold text-slate-700 w-12 text-right tabular-nums">{pct >= 10 ? Math.round(pct) : pct.toFixed(1)}%</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
 // Partnerships pages collapse under a "Partnerships & Affiliates" dropdown.
 const PARTNERSHIP_IDS: TabId[] = ["pa-budget", "pa-tracker"];
 
@@ -393,7 +467,6 @@ export function DashboardTabs({
   const [influencersOpen, setInfluencersOpen] = useState<boolean>(() => INFLUENCER_IDS.includes(firstTab));
   const [partnershipsOpen, setPartnershipsOpen] = useState<boolean>(() => PARTNERSHIP_IDS.includes(firstTab));
   const [mobileNavOpen, setMobileNavOpen] = useState(false); // slide-in nav drawer on small screens
-  const [shareBasis, setShareBasis] = useState<"d2c" | "whole">("d2c"); // brand-share donut basis (whole = admin only)
   // Sidebar section groups the user has collapsed. Default: all open ("auto open").
   // Persisted to localStorage so a collapsed group stays collapsed across reloads.
   // Groups start CLOSED (click to open) — except the group holding the active
@@ -884,6 +957,7 @@ export function DashboardTabs({
           {active === "brands" && (
             <>
               {role === "admin" && <SyncStatusPanel />}
+              <BrandShareCard brands={brands} monthly={monthly} monthKeys={monthKeys} channelSales={channelSales} role={role} fyLabel={fyLabel} />
               {(() => {
                 const biz = buildChannels("all", { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest: LATEST });
                 if (!biz.length) return null;
@@ -1049,77 +1123,8 @@ export function DashboardTabs({
                   const lastWkStart  = sortedWeeks[0]?.week_start;
                   const prevWkStart  = sortedWeeks[1]?.week_start;
 
-                  // Share of revenue by brand. D2C basis for everyone (matches the cards);
-                  // whole-business basis (from the monthly channel export) is admin-only.
-                  const wholeBase = shareBasis === "whole" && role === "admin";
-                  let shares: { id: number | string; name: string; color: string; fy: number }[];
-                  if (wholeBase) {
-                    const agg = new Map<string, { id: number | string; name: string; color: string; fy: number }>();
-                    for (const r of channelSales as any[]) {
-                      if (!monthKeys.includes(r.month_key)) continue;
-                      const b = brands.find((x: any) => brandMatch(x.name, r.brand));
-                      const key = b ? String(b.id) : "other";
-                      const cur = agg.get(key) ?? { id: b?.id ?? "other", name: b?.name ?? "Other", color: b?.color ?? "#94a3b8", fy: 0 };
-                      cur.fy += Number(r.value) || 0;
-                      agg.set(key, cur);
-                    }
-                    shares = [...agg.values()].filter(x => x.fy > 0).sort((a, b) => b.fy - a.fy);
-                  } else {
-                    shares = liveBrands.map((b: any) => ({
-                      id: b.id, name: b.name, color: b.color ?? "#94a3b8",
-                      fy: monthly.filter((m: any) => m.brand_id === b.id && monthKeys.includes(m.month_key)).reduce((s: number, m: any) => s + (m.revenue ?? 0), 0),
-                    })).filter((x: any) => x.fy > 0).sort((a: any, b: any) => b.fy - a.fy);
-                  }
-                  const shareTotal = shares.reduce((s: number, x: any) => s + x.fy, 0);
-                  const donut = (() => {
-                    let acc = 0;
-                    return shares.map((x: any) => {
-                      const from = (acc / shareTotal) * 360; acc += x.fy;
-                      return `${x.color} ${from.toFixed(1)}deg ${((acc / shareTotal) * 360).toFixed(1)}deg`;
-                    }).join(", ");
-                  })();
-
                   return (<>
-                  {shares.length > 1 && (
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6">
-                      <div className="flex items-center justify-between gap-2 mb-3">
-                        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Brand share of {wholeBase ? "whole-business" : "D2C"} revenue · {fyLabel}</p>
-                        {role === "admin" && (
-                          <div className="flex rounded-lg bg-gray-100 p-0.5">
-                            {(["d2c", "whole"] as const).map(k => (
-                              <button key={k} onClick={() => setShareBasis(k)}
-                                className={`text-[11px] font-semibold rounded-md px-2.5 py-1 ${shareBasis === k ? "bg-white shadow-sm text-slate-700" : "text-gray-400 hover:text-gray-600"}`}>
-                                {k === "d2c" ? "D2C" : "Whole business"}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex flex-col sm:flex-row items-center gap-6">
-                        <div className="relative w-36 h-36 shrink-0 rounded-full" style={{ background: `conic-gradient(${donut})` }}>
-                          <div className="absolute inset-4 rounded-full bg-white flex flex-col items-center justify-center">
-                            <span className="text-[10px] uppercase tracking-wider text-gray-400">Brands</span>
-                            <span className="text-xl font-bold text-slate-800">{shares.length}</span>
-                          </div>
-                        </div>
-                        <div className="flex-1 w-full grid sm:grid-cols-2 gap-x-8 gap-y-1">
-                          {shares.map((x: any) => {
-                            const pct = (x.fy / shareTotal) * 100;
-                            return (
-                              <div key={x.id} className="flex items-center gap-2">
-                                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: x.color }} />
-                                <span className="text-[12.5px] text-slate-600 w-28 truncate">{x.name}</span>
-                                <div className="flex-1 h-2.5 rounded-full bg-gray-100 overflow-hidden">
-                                  <div className="h-full rounded-full" style={{ width: `${Math.max(1.5, pct)}%`, background: x.color }} />
-                                </div>
-                                <span className="text-[12px] font-bold text-slate-700 w-12 text-right tabular-nums">{pct >= 10 ? Math.round(pct) : pct.toFixed(1)}%</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  <BrandShareCard brands={brands} monthly={monthly} monthKeys={monthKeys} channelSales={channelSales} role={role} fyLabel={fyLabel} />
                   {tiers.map(({ label, ids }) => (
                     <div key={label} className={label ? "mb-6" : ""}>
                       {label && (
