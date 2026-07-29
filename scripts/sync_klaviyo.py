@@ -318,6 +318,7 @@ def sync_campaigns(db, api_key, brand, brand_id, revenue_id):
         print(f"    Warning: campaign list failed — {e}")
         return
     camps = [c for c in data.get("data", []) if (c.get("attributes", {}).get("status") or "").lower() in ("sent", "sending")]
+    camps = camps[:10]  # cap per brand — the reports API is slow + rate-limited
     for c in camps:
         cid = c["id"]
         att = c.get("attributes", {})
