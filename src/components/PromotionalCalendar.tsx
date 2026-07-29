@@ -12,7 +12,7 @@ type D2c = {
   promo_price: number | null; discount_rrp: number | null; retailers: string | null; status: string; note: string | null;
 };
 type Brand = { id: number; name: string };
-type SiteDeal = { id: number; brand: string; title: string; period_start: string; period_end: string; price?: string | null; note: string | null };
+type SiteDeal = { id: number; brand: string; title: string; period_start: string; period_end: string; price?: string | null; approved_by?: string | null; note: string | null };
 
 const TIER_COLOR: Record<number, string> = { 1: "#0F9ED5", 2: "#4EA72E" };
 const tierColor = (t: number | null) => (t && TIER_COLOR[t]) || "#94a3b8";
@@ -174,12 +174,12 @@ function TierBadge({ t }: { t: number | null }) {
 function D2cPlan({ d2c, promos, siteDeals, brands, onReload, canEdit, brandF, tierF, statusF, onChanged, onStatusLocal }: { d2c: D2c[]; promos: Promo[]; siteDeals: SiteDeal[]; brands: Brand[]; onReload: () => void; canEdit: boolean; brandF: string; tierF: string; statusF: string; onChanged: () => void; onStatusLocal: (ids: number[], status: string) => void }) {
   // Own-site deal quick-add (shown in the promo windows banner)
   const [sdOpen, setSdOpen] = useState(false);
-  const [sd, setSd] = useState({ brand: "", title: "", period_start: "", period_end: "", price: "", note: "" });
+  const [sd, setSd] = useState({ brand: "", title: "", period_start: "", period_end: "", price: "", note: "", approved_by: "" });
   const [sdMsg, setSdMsg] = useState("");
   async function addSiteDeal() {
     if (!sd.brand || !sd.title || !sd.period_start || !sd.period_end) { setSdMsg("Brand, deal and both dates required."); return; }
     const r = await fetch("/api/site-deals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(sd) }).then(x => x.json()).catch(() => null);
-    if (r?.ok) { setSd({ brand: "", title: "", period_start: "", period_end: "", price: "", note: "" }); setSdOpen(false); setSdMsg(""); onReload(); }
+    if (r?.ok) { setSd({ brand: "", title: "", period_start: "", period_end: "", price: "", note: "", approved_by: "" }); setSdOpen(false); setSdMsg(""); onReload(); }
     else setSdMsg(r?.needsSetup ? "Run add_site_deals.sql first." : r?.error || "Couldn't save.");
   }
 
@@ -316,7 +316,7 @@ function D2cPlan({ d2c, promos, siteDeals, brands, onReload, canEdit, brandF, ti
         const active = group(promos.filter(p => p.period_start <= today && p.period_end >= today));
         const upcoming = group(promos.filter(p => p.period_start > today && p.period_start <= soon));
         // Own-website deals (site_deals) join the same timeline, marked 🛒
-        const dealRow = (x: SiteDeal) => ({ channel: `🛒 ${x.title}`, start: x.period_start, end: x.period_end, brands: [x.brand], tier: null, own: true, dealId: x.id, price: x.price ?? null, note: x.note ?? null });
+        const dealRow = (x: SiteDeal) => ({ channel: `🛒 ${x.title}`, start: x.period_start, end: x.period_end, brands: [x.brand], tier: null, own: true, dealId: x.id, price: x.price ?? null, note: x.note ?? null, approvedBy: x.approved_by ?? null });
         const siteActive = siteDeals.filter(x => x.period_start <= today && x.period_end >= today).map(dealRow);
         const siteSoon = siteDeals.filter(x => x.period_start > today && x.period_start <= soon).map(dealRow);
         if (active.length === 0 && upcoming.length === 0 && siteActive.length === 0 && siteSoon.length === 0 && !canEdit) return null;
@@ -329,14 +329,17 @@ function D2cPlan({ d2c, promos, siteDeals, brands, onReload, canEdit, brandF, ti
         const x = (t: number) => Math.max(0, Math.min(100, ((t - t0) / span) * 100));
         const weeks: string[] = [];
         for (let t = t0; t <= tEnd; t += 7 * DAY) weeks.push(new Date(t).toLocaleDateString("en-AU", { day: "numeric", month: "short" }));
-        const Row = ({ g, live }: { g: { channel: string; start: string; end: string; brands: string[]; own?: boolean; dealId?: number; price?: string | null; note?: string | null }; live: boolean }) => {
+        const Row = ({ g, live }: { g: { channel: string; start: string; end: string; brands: string[]; own?: boolean; dealId?: number; price?: string | null; note?: string | null; approvedBy?: string | null }; live: boolean }) => {
           const s = d(g.start).getTime(), e = d(g.end).getTime() + DAY;
           const daysLeft = Math.ceil((e - nowT) / DAY), startsIn = Math.ceil((s - nowT) / DAY);
           return (
             <div className="py-2">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span className="text-[13px] font-semibold text-slate-700">{g.channel}{g.own && <span className="ml-1.5 text-[9.5px] font-bold uppercase tracking-wider text-teal-600 bg-teal-50 rounded px-1 py-0.5 align-middle">our site</span>}</span>
-                {g.price && <span className="text-[12px] font-bold text-teal-700 bg-teal-50 rounded px-1.5 py-0.5">{g.price}</span>}
+                {g.price && <span className="text-[13.5px] font-extrabold text-white bg-teal-600 rounded-md px-2 py-0.5">{/^\d/.test(g.price.trim()) ? `$${g.price.trim()}` : g.price}</span>}
+                {g.own && (g.approvedBy
+                  ? <span className="text-[10.5px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">✔ Approved · {g.approvedBy}</span>
+                  : <span className="text-[10.5px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">Awaiting approval</span>)}
                 <span className="text-[11.5px] text-gray-400">{fmt(g.start)} – {fmt(g.end)}</span>
                 <span className={`text-[10.5px] font-bold rounded-full px-2 py-0.5 ${live ? "bg-emerald-100 text-emerald-700" : "bg-sky-100 text-sky-600"}`}>
                   {live ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} left` : `starts in ${startsIn} day${startsIn === 1 ? "" : "s"}`}
@@ -399,8 +402,12 @@ function D2cPlan({ d2c, promos, siteDeals, brands, onReload, canEdit, brandF, ti
                   <input type="date" value={sd.period_start} onChange={e => setSd(p2 => ({ ...p2, period_start: e.target.value }))} className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5" />
                   <input type="date" value={sd.period_end} onChange={e => setSd(p2 => ({ ...p2, period_end: e.target.value }))} className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5" />
                 </div>
-                <div className="grid sm:grid-cols-[140px_1fr] gap-2 mt-2">
+                <div className="grid sm:grid-cols-[140px_170px_1fr] gap-2 mt-2">
                   <input value={sd.price} onChange={e => setSd(p2 => ({ ...p2, price: e.target.value }))} placeholder="Price · e.g. $269" className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5" />
+                  <select value={sd.approved_by} onChange={e => setSd(p2 => ({ ...p2, approved_by: e.target.value }))} className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white">
+                    <option value="">Approved by…</option>
+                    {["Zac", "Dave", "Mel", "Steve"].map(n => <option key={n}>{n}</option>)}
+                  </select>
                   <input value={sd.note} onChange={e => setSd(p2 => ({ ...p2, note: e.target.value }))} placeholder="Description · e.g. Was $399, clearance on remaining stock, excludes bundles" className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5" />
                 </div>
                 {sdMsg && <p className="text-[12px] text-rose-500 mt-1.5">{sdMsg}</p>}
