@@ -13,7 +13,9 @@ export async function GET() {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   if (!(await getAccess()).role) return NextResponse.json({ ok: false, error: "auth" }, { status: 401 });
 
-  const res = await fetch(`${sbUrl}/rest/v1/sync_status?select=source,ok,message,ran_at&source=not.like.__*&order=source`, {
+  // NB: filter bookkeeping rows in JS — in LIKE patterns "_" is a wildcard, so
+  // source=not.like.__* accidentally matched (and excluded) every row.
+  const res = await fetch(`${sbUrl}/rest/v1/sync_status?select=source,ok,message,ran_at&order=source`, {
     headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}` }, cache: "no-store",
   });
   const text = await res.text();
@@ -21,5 +23,5 @@ export async function GET() {
     if (missing(res.status, text)) return NextResponse.json({ ok: true, needsSetup: true, rows: [] });
     return NextResponse.json({ ok: false, error: text.slice(0, 200) }, { status: 500 });
   }
-  return NextResponse.json({ ok: true, rows: JSON.parse(text || "[]") });
+  return NextResponse.json({ ok: true, rows: JSON.parse(text || "[]").filter((r: any) => !String(r.source).startsWith("__")) });
 }
