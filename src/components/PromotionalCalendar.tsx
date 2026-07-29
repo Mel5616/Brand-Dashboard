@@ -319,14 +319,12 @@ function D2cPlan({ d2c, promos, siteDeals, brands, onReload, canEdit, brandF, ti
         const dealRow = (x: SiteDeal) => ({ channel: `🛒 ${x.title}`, start: x.period_start, end: x.period_end, brands: [x.brand], tier: null, own: true, dealId: x.id });
         const siteActive = siteDeals.filter(x => x.period_start <= today && x.period_end >= today).map(dealRow);
         const siteSoon = siteDeals.filter(x => x.period_start > today && x.period_start <= soon).map(dealRow);
-        active.push(...siteActive); active.sort((a, b) => a.start.localeCompare(b.start));
-        upcoming.push(...siteSoon); upcoming.sort((a, b) => a.start.localeCompare(b.start));
-        if (active.length === 0 && upcoming.length === 0 && !canEdit) return null;
+        if (active.length === 0 && upcoming.length === 0 && siteActive.length === 0 && siteSoon.length === 0 && !canEdit) return null;
         // Shared timeline axis: a few days back → the latest end in view (capped ~7 weeks)
         const DAY = 86400_000;
         const nowT = d(today).getTime();
         const t0 = nowT - 4 * DAY;
-        const tEnd = Math.min(Math.max(...[...active, ...upcoming].map(g => d(g.end).getTime() + DAY), nowT + 21 * DAY), nowT + 49 * DAY);
+        const tEnd = Math.min(Math.max(...[...active, ...upcoming, ...siteActive, ...siteSoon].map(g => d(g.end).getTime() + DAY), nowT + 21 * DAY), nowT + 49 * DAY);
         const span = tEnd - t0;
         const x = (t: number) => Math.max(0, Math.min(100, ((t - t0) / span) * 100));
         const weeks: string[] = [];
@@ -359,15 +357,30 @@ function D2cPlan({ d2c, promos, siteDeals, brands, onReload, canEdit, brandF, ti
             </div>
           );
         };
-        return (
+        return (<>
           <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm px-4 py-3">
             <div className="flex items-baseline justify-between gap-2">
               <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-600">📣 Promo windows{active.length ? ` · ${active.length} running` : ""}</p>
-              <div className="flex items-center gap-3">
-                <p className="text-[10.5px] text-gray-400">▐ today · <span className="text-emerald-600 font-semibold">green brand ✓</span> = mirrored Live on D2C</p>
+              <p className="text-[10.5px] text-gray-400">▐ today · <span className="text-emerald-600 font-semibold">green brand ✓</span> = mirrored Live on D2C</p>
+            </div>
+            <div className="divide-y divide-gray-50">
+              {active.map((g, i) => <Row key={`a${i}`} g={g} live />)}
+              {upcoming.map((g, i) => <Row key={`u${i}`} g={g} live={false} />)}
+            </div>
+            <div className="relative h-4 mt-0.5">
+              {weeks.map((w, i) => (
+                <span key={i} className="absolute text-[9.5px] text-gray-300 -translate-x-1/2" style={{ left: `${x(t0 + i * 7 * DAY)}%` }}>{w}</span>
+              ))}
+            </div>
+          </div>
+
+          {/* Own-website deals — separate card so D2C sales read clearly */}
+          {(siteActive.length > 0 || siteSoon.length > 0 || canEdit) && (
+            <div className="bg-white rounded-2xl border border-teal-100 shadow-sm px-4 py-3 mt-4">
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-teal-600">🛒 D2C site deals{siteActive.length ? ` · ${siteActive.length} live` : ""}</p>
                 <button onClick={() => setSdOpen(v => !v)} className="text-[11px] font-bold text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-full px-2.5 py-1">{sdOpen ? "Close" : "＋ Site deal"}</button>
               </div>
-            </div>
             {sdOpen && (
               <div className="mt-2 mb-1 rounded-xl border border-teal-100 bg-teal-50/40 p-3">
                 <div className="grid sm:grid-cols-4 gap-2">
@@ -384,17 +397,22 @@ function D2cPlan({ d2c, promos, siteDeals, brands, onReload, canEdit, brandF, ti
                 <button onClick={addSiteDeal} className="mt-2 text-[12.5px] font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg px-4 py-1.5">Save site deal</button>
               </div>
             )}
-            <div className="divide-y divide-gray-50">
-              {active.map((g, i) => <Row key={`a${i}`} g={g} live />)}
-              {upcoming.map((g, i) => <Row key={`u${i}`} g={g} live={false} />)}
+              {(siteActive.length > 0 || siteSoon.length > 0) ? (
+                <>
+                  <div className="divide-y divide-gray-50">
+                    {siteActive.map((g, i) => <Row key={`sa${i}`} g={g} live />)}
+                    {siteSoon.map((g, i) => <Row key={`ss${i}`} g={g} live={false} />)}
+                  </div>
+                  <div className="relative h-4 mt-0.5">
+                    {weeks.map((w, i) => (
+                      <span key={i} className="absolute text-[9.5px] text-gray-300 -translate-x-1/2" style={{ left: `${x(t0 + i * 7 * DAY)}%` }}>{w}</span>
+                    ))}
+                  </div>
+                </>
+              ) : <p className="text-[12px] text-gray-300 py-2">No site deals running — add one so the team can see what&apos;s live on our own websites.</p>}
             </div>
-            <div className="relative h-4 mt-0.5">
-              {weeks.map((w, i) => (
-                <span key={i} className="absolute text-[9.5px] text-gray-300 -translate-x-1/2" style={{ left: `${x(t0 + i * 7 * DAY)}%` }}>{w}</span>
-              ))}
-            </div>
-          </div>
-        );
+          )}
+        </>);
       })()}
 
       {sel.size > 0 && (
