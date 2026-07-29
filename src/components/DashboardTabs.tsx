@@ -288,8 +288,9 @@ function BrandShareCard({ brands, monthly, monthKeys, channelSales, role, fyLabe
     const agg = new Map<string, { id: number | string; name: string; color: string; fy: number }>();
     for (const r of channelSales) {
       if (!monthKeys.includes(r.month_key)) continue;
-      const b = brands.find((x: any) => brandMatch(x.name, r.brand));
-      const key = b ? String(b.id) : "other";
+      // Unmatched export labels (e.g. "Unassigned") are UPPAbaby lines in the ERP
+      const b = brands.find((x: any) => brandMatch(x.name, r.brand)) ?? brands.find((x: any) => x.name === "UPPAbaby");
+      const key = String(b?.id ?? "other");
       const cur = agg.get(key) ?? { id: b?.id ?? "other", name: b?.name ?? "Other", color: b?.color ?? "#94a3b8", fy: 0 };
       cur.fy += Number(r.value) || 0;
       agg.set(key, cur);
