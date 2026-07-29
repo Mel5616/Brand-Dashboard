@@ -74,7 +74,7 @@ def public_base(brand):
         return "https://" + p.split(":", 1)[1]
     return "https://" + brand.get("domain", "")
 
-UA = {"User-Agent": "Mozilla/5.0 (Macintosh) CoolkidzDashboard/1.0"}
+UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"}
 
 def http_get(url, tries=3):
     import time
