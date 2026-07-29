@@ -1042,15 +1042,6 @@ export function DashboardTabs({
 
               <BrandShareCard brands={brands} monthly={monthly} monthKeys={monthKeys} channelSales={channelSales} role={role} fyLabel={fyLabel} />
 
-              {/* Portfolio trend, channel mix, brand contribution, top movers */}
-              <PortfolioCharts
-                brands={brands.filter((b: any) => b.live)} tiers={BRAND_TIERS} monthly={monthly} targets={targets}
-                monthKeys={monthKeys} monthLabels={monthLabels} latestI={latestI}
-                channelSales={channelSales} tradeshows={tradeshows} tradeshowSales={tradeshowSales}
-                shopifySources={shopifySources} latest={LATEST} fyLabel={fyLabel}
-                googleAds={googleAds} metaAds={metaAds} marketingActuals={marketingActuals}
-              />
-
               {/* Channel sales board — one card per channel so the split is clear at a glance */}
               {(() => {
                 const biz = buildChannels("all", { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest: LATEST });
@@ -1078,6 +1069,17 @@ export function DashboardTabs({
                   </div>
                 );
               })()}
+
+
+              {/* Portfolio trend, channel mix, brand contribution, top movers */}
+              <PortfolioCharts
+                brands={brands.filter((b: any) => b.live)} tiers={BRAND_TIERS} monthly={monthly} targets={targets}
+                monthKeys={monthKeys} monthLabels={monthLabels} latestI={latestI}
+                channelSales={channelSales} tradeshows={tradeshows} tradeshowSales={tradeshowSales}
+                shopifySources={shopifySources} latest={LATEST} fyLabel={fyLabel}
+                googleAds={googleAds} metaAds={metaAds} marketingActuals={marketingActuals}
+              />
+
               </>
             )}
 
