@@ -427,20 +427,17 @@ function D2cPlan({ d2c, promos, siteDeals, brands, onReload, canEdit, brandF, ti
               </div>
             )}
               {(siteActive.length > 0 || siteSoon.length > 0) ? (
-                <>
-                  <div className="divide-y divide-gray-50">
-                    {siteActive.map((g, i) => <Row key={`sa${i}`} g={g} live />)}
-                    {siteSoon.map((g, i) => <Row key={`ss${i}`} g={g} live={false} />)}
-                  </div>
-                  <div className="relative h-4 mt-0.5">
-                    {weeks.map((w, i) => (
-                      <span key={i} className="absolute text-[9.5px] text-gray-300 -translate-x-1/2" style={{ left: `${x(t0 + i * 7 * DAY)}%` }}>{w}</span>
-                    ))}
-                  </div>
-                </>
+                <div className="divide-y divide-gray-50">
+                  {siteActive.map((g, i) => <Row key={`sa${i}`} g={g} live />)}
+                  {siteSoon.map((g, i) => <Row key={`ss${i}`} g={g} live={false} />)}
+                </div>
               ) : <p className="text-[12px] text-gray-300 py-2">No site deals running — add one so the team can see what&apos;s live on our own websites.</p>}
-            </div>
-          )}
+              <div className="relative h-4 mt-2 border-t border-gray-100 pt-1">
+                {weeks.map((w, i) => (
+                  <span key={i} className="absolute text-[9.5px] text-gray-400 -translate-x-1/2" style={{ left: `${x(t0 + i * 7 * DAY)}%` }}>{w}</span>
+                ))}
+              </div>
+          </div>
         </>);
       })()}
 
