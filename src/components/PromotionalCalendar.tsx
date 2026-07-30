@@ -380,28 +380,19 @@ function D2cPlan({ d2c, promos, siteDeals, brands, onReload, canEdit, brandF, ti
         };
         return (<>
           <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm px-4 py-3">
-            <div className="flex items-baseline justify-between gap-2">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-600">📣 Promo windows{active.length ? ` · ${active.length} running` : ""}</p>
-              <p className="text-[10.5px] text-gray-400">▐ today · <span className="text-emerald-600 font-semibold">green brand ✓</span> = mirrored Live on D2C</p>
+            <div className="flex items-baseline justify-between gap-2 border-b border-gray-100 pb-2">
+              <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-slate-700">Promotions at a glance</p>
+              <div className="flex items-center gap-3">
+                <p className="text-[10.5px] text-gray-400">▐ today · <span className="text-emerald-600 font-semibold">✓</span> = mirrored Live on our site</p>
+                <button onClick={() => setSdOpen(v => !v)} className="text-[11px] font-bold text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-full px-2.5 py-1">{sdOpen ? "Close" : "＋ Site deal"}</button>
+              </div>
             </div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-600 mt-2.5">🏬 Retail windows{active.length ? ` · ${active.length} running` : ""}</p>
             <div className="divide-y divide-gray-50">
               {active.map((g, i) => <Row key={`a${i}`} g={g} live />)}
               {upcoming.map((g, i) => <Row key={`u${i}`} g={g} live={false} />)}
             </div>
-            <div className="relative h-4 mt-0.5">
-              {weeks.map((w, i) => (
-                <span key={i} className="absolute text-[9.5px] text-gray-300 -translate-x-1/2" style={{ left: `${x(t0 + i * 7 * DAY)}%` }}>{w}</span>
-              ))}
-            </div>
-          </div>
-
-          {/* Own-website deals — separate card so D2C sales read clearly */}
-          {(siteActive.length > 0 || siteSoon.length > 0 || canEdit) && (
-            <div className="bg-white rounded-2xl border border-teal-100 shadow-sm px-4 py-3 mt-4">
-              <div className="flex items-baseline justify-between gap-2">
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-teal-600">🛒 D2C site deals{siteActive.length ? ` · ${siteActive.length} live` : ""}</p>
-                <button onClick={() => setSdOpen(v => !v)} className="text-[11px] font-bold text-teal-600 bg-teal-50 hover:bg-teal-100 rounded-full px-2.5 py-1">{sdOpen ? "Close" : "＋ Site deal"}</button>
-              </div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-teal-600 mt-4 pt-3 border-t border-gray-100">🛒 Our websites (D2C){siteActive.length ? ` · ${siteActive.length} live` : ""}</p>
             {sdOpen && (
               <div className="mt-2 mb-1 rounded-xl border border-teal-100 bg-teal-50/40 p-3">
                 <div className="grid sm:grid-cols-4 gap-2">
