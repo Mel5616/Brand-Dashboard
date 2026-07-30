@@ -175,11 +175,20 @@ function D2cPlan({ d2c, promos, siteDeals, brands, onReload, canEdit, brandF, ti
   // Own-site deal quick-add (shown in the promo windows banner)
   const [sdOpen, setSdOpen] = useState(false);
   const [sd, setSd] = useState({ brand: "", title: "", period_start: "", period_end: "", price: "", note: "", approved_by: "" });
+  const [sdEditId, setSdEditId] = useState<number | null>(null);
+  function editDeal(id: number) {
+    const x = siteDeals.find(v => v.id === id);
+    if (!x) return;
+    setSd({ brand: x.brand, title: x.title, period_start: x.period_start, period_end: x.period_end, price: x.price ?? "", note: x.note ?? "", approved_by: x.approved_by ?? "" });
+    setSdEditId(id); setSdOpen(true);
+  }
   const [sdMsg, setSdMsg] = useState("");
   async function addSiteDeal() {
     if (!sd.brand || !sd.title || !sd.period_start || !sd.period_end) { setSdMsg("Brand, deal and both dates required."); return; }
-    const r = await fetch("/api/site-deals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(sd) }).then(x => x.json()).catch(() => null);
-    if (r?.ok) { setSd({ brand: "", title: "", period_start: "", period_end: "", price: "", note: "", approved_by: "" }); setSdOpen(false); setSdMsg(""); onReload(); }
+    const r = sdEditId != null
+      ? await fetch("/api/site-deals", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: sdEditId, ...sd }) }).then(x => x.json()).catch(() => null)
+      : await fetch("/api/site-deals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(sd) }).then(x => x.json()).catch(() => null);
+    if (r?.ok) { setSd({ brand: "", title: "", period_start: "", period_end: "", price: "", note: "", approved_by: "" }); setSdOpen(false); setSdEditId(null); setSdMsg(""); onReload(); }
     else setSdMsg(r?.needsSetup ? "Run add_site_deals.sql first." : r?.error || "Couldn't save.");
   }
 
@@ -318,7 +327,7 @@ function D2cPlan({ d2c, promos, siteDeals, brands, onReload, canEdit, brandF, ti
         // Own-website deals (site_deals) join the same timeline, marked 🛒
         const dealRow = (x: SiteDeal) => ({ channel: `🛒 ${x.title}`, start: x.period_start, end: x.period_end, brands: [x.brand], tier: null, own: true, dealId: x.id, price: x.price ?? null, note: x.note ?? null, approvedBy: x.approved_by ?? null });
         const siteActive = siteDeals.filter(x => x.period_start <= today && x.period_end >= today).map(dealRow);
-        const siteSoon = siteDeals.filter(x => x.period_start > today && x.period_start <= soon).map(dealRow);
+        const siteSoon = siteDeals.filter(x => x.period_start > today).sort((a, b) => a.period_start.localeCompare(b.period_start)).map(dealRow);
         if (active.length === 0 && upcoming.length === 0 && siteActive.length === 0 && siteSoon.length === 0 && !canEdit) return null;
         // Shared timeline axis: a few days back → the latest end in view (capped ~7 weeks)
         const DAY = 86400_000;
@@ -350,6 +359,9 @@ function D2cPlan({ d2c, promos, siteDeals, brands, onReload, canEdit, brandF, ti
                       {b}{live && d2cLive.has(b) ? " ✓" : ""}
                     </span>
                   ))}
+                  {g.own && g.dealId != null && (
+                    <button onClick={() => editDeal(g.dealId!)} className="text-gray-300 hover:text-teal-600 text-[12px] leading-none px-0.5" title="Edit deal">✎</button>
+                  )}
                   {g.own && canEdit && g.dealId != null && (
                     <button onClick={async () => { if (confirm("Delete this site deal?")) { await fetch(`/api/site-deals?id=${g.dealId}`, { method: "DELETE" }); onReload(); } }}
                       className="text-gray-300 hover:text-rose-500 text-[13px] leading-none px-1" title="Delete deal">✕</button>
@@ -411,7 +423,7 @@ function D2cPlan({ d2c, promos, siteDeals, brands, onReload, canEdit, brandF, ti
                   <input value={sd.note} onChange={e => setSd(p2 => ({ ...p2, note: e.target.value }))} placeholder="Description · e.g. Was $399, clearance on remaining stock, excludes bundles" className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5" />
                 </div>
                 {sdMsg && <p className="text-[12px] text-rose-500 mt-1.5">{sdMsg}</p>}
-                <button onClick={addSiteDeal} className="mt-2 text-[12.5px] font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg px-4 py-1.5">Save site deal</button>
+                <button onClick={addSiteDeal} className="mt-2 text-[12.5px] font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg px-4 py-1.5">{sdEditId != null ? "Save changes" : "Save site deal"}</button>
               </div>
             )}
               {(siteActive.length > 0 || siteSoon.length > 0) ? (

@@ -38,6 +38,23 @@ export async function POST(req: Request) {
   return NextResponse.json({ ok: true, item: JSON.parse(text)[0] });
 }
 
+export async function PATCH(req: Request) {
+  const acc = await getAccess();
+  if (!acc.role) return NextResponse.json({ ok: false }, { status: 401 });
+  let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
+  const id = Number(b.id);
+  if (!id) return NextResponse.json({ ok: false }, { status: 400 });
+  const fields: any = {};
+  if (b.brand) fields.brand = String(b.brand).trim().slice(0, 80);
+  if (b.title) fields.title = String(b.title).trim().slice(0, 160);
+  if (b.period_start) fields.period_start = b.period_start;
+  if (b.period_end) fields.period_end = b.period_end;
+  for (const k of ["price", "note", "approved_by"] as const)
+    if (b[k] !== undefined) fields[k] = b[k] ? String(b[k]).slice(0, k === "note" ? 300 : 60) : null;
+  const res = await fetch(`${sbUrl}/rest/v1/site_deals?id=eq.${id}`, { method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify(fields) });
+  return NextResponse.json({ ok: res.ok });
+}
+
 export async function DELETE(req: Request) {
   if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "Admins only" }, { status: 403 });
   const id = new URL(req.url).searchParams.get("id");
