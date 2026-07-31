@@ -1795,7 +1795,9 @@ export function DashboardTabs({
                   className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                 >
                   <option value="all">All Brands</option>
-                  {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
+                  {/* only the brands actually on Pinterest: any with synced data, plus Gaia (connected, campaign not yet spending) */}
+                  {brands.filter((b: any) => b.name === "Gaia Baby" || pinterestAds.some((d: any) => d.brand_id === b.id))
+                    .map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
                 </select>
               </div>
               <PinterestAdsChart key={fy} brands={filteredBrands} data={filteredPinterest} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} wholeYear={wholeYear} />
