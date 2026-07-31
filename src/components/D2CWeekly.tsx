@@ -36,6 +36,63 @@ const WowPill = ({ v, light = false }: { v: number | null; light?: boolean }) =>
 const Delta = ({ v }: { v: number | null }) => v == null ? <span className="text-slate-300">—</span>
   : <span className={`font-semibold ${v >= 0 ? "text-emerald-600" : "text-rose-500"}`}>{v >= 0 ? "▲" : "▼"} {Math.abs(v)}%</span>;
 
+type WeekSoFar = {
+  weekStart: string; today: string; total: number; prevTotal: number; orders: number;
+  wowPct: number | null;
+  brands: { brand: string; revenue: number; orders: number; prevRevenue: number }[];
+};
+
+// Live "week so far" band — the current (incomplete) business week straight
+// from Shopify, so the tab is never a full week behind between Sunday reports.
+function WeekSoFarCard({ color }: { color: (name: string) => string }) {
+  const [data, setData] = useState<WeekSoFar | null>(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    fetch("/api/d2c-week-so-far").then(r => r.json())
+      .then(d => setData(d.weekSoFar ?? null))
+      .catch(() => {}).finally(() => setLoading(false));
+  }, []);
+  if (loading) return (
+    <div className="bg-white rounded-2xl ring-1 ring-slate-200/70 shadow-sm px-6 py-5 text-sm text-gray-400 print:hidden">
+      Fetching this week's live numbers…
+    </div>
+  );
+  if (!data || (data.total === 0 && data.prevTotal === 0)) return null;
+  const maxRev = Math.max(1, ...data.brands.map(b => b.revenue));
+  return (
+    <div className="bg-white rounded-2xl ring-1 ring-slate-200/70 shadow-sm overflow-hidden print:hidden">
+      <div className="px-6 py-4 flex items-start justify-between gap-4 flex-wrap border-b border-slate-100">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-600">Live · This week so far</p>
+          <p className="text-sm text-slate-500 mt-0.5">{dShort(data.weekStart)} → {dShort(data.today)} · web orders ex-GST · updates live</p>
+        </div>
+        <div className="text-right">
+          <p className="text-3xl font-bold tracking-tight text-slate-900">{fmtFull(data.total)}</p>
+          <div className="mt-1 flex items-center gap-2 justify-end">
+            <WowPill v={data.wowPct} />
+            <span className="text-[12px] text-slate-400">{data.orders.toLocaleString()} orders · same days last wk {fmtFull(data.prevTotal)}</span>
+          </div>
+        </div>
+      </div>
+      <div className="px-6 py-4 grid sm:grid-cols-2 gap-x-8 gap-y-2">
+        {data.brands.map(b => {
+          const wow = b.prevRevenue > 0 ? Math.round(((b.revenue - b.prevRevenue) / b.prevRevenue) * 100) : null;
+          return (
+            <div key={b.brand} className="flex items-center gap-3">
+              <span className="w-28 shrink-0 text-[12px] font-semibold text-slate-700 truncate">{b.brand}</span>
+              <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-full rounded-full" style={{ width: `${Math.max(3, (b.revenue / maxRev) * 100)}%`, background: color(b.brand) }} />
+              </div>
+              <span className="w-16 text-right text-[12px] font-bold text-slate-800">{fmtK(b.revenue)}</span>
+              <span className="w-12 text-right text-[11px]"><Delta v={wow} /></span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function D2CWeekly({ brands = [] }: { brands?: BrandRef[] }) {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,6 +122,7 @@ export function D2CWeekly({ brands = [] }: { brands?: BrandRef[] }) {
 
   return (
     <div className="space-y-3 max-w-[900px]">
+      <WeekSoFarCard color={color} />
       <div className="flex items-center justify-between gap-3 print:hidden">
         <select value={sel ?? ""} onChange={e => setSel(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400">
           {reports.map(r => <option key={r.week_start} value={r.week_start}>Week of {dShort(r.week_start)}</option>)}
