@@ -22,8 +22,42 @@ const tracker = (token: string) => `<script>(function(){
     try { fetch("/api/decks/track", { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify(Object.assign({ token: ${JSON.stringify(token)}, session: session }, extra)), keepalive: true }).catch(function(){}); } catch (e) {}
   }
-  post({ kind: "open" });
-  setInterval(function(){ if (document.visibilityState === "visible") post({ kind: "beat", seconds: 10 }); }, 10000);
+  function start(email) {
+    post({ kind: "open", email: email || undefined });
+    setInterval(function(){ if (document.visibilityState === "visible") post({ kind: "beat", seconds: 10 }); }, 10000);
+  }
+  // Email gate: viewers identify themselves once per browser before the deck
+  // shows, so opens are attributable even when a link gets forwarded.
+  var saved = null;
+  try { saved = localStorage.getItem("deckViewerEmail"); } catch (e) {}
+  if (saved) { start(saved); return; }
+  var ov = document.createElement("div");
+  ov.style.cssText = "position:fixed;inset:0;z-index:2147483647;background:rgba(12,20,33,.92);backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:center;font-family:-apple-system,'Segoe UI',sans-serif";
+  ov.innerHTML = '<div style="background:#fff;border-radius:18px;padding:34px 36px;max-width:380px;width:calc(100% - 48px);text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.4)">'
+    + '<p style="font-size:26px;margin:0 0 6px">&#128274;</p>'
+    + '<h1 style="font-size:17px;color:#0f172a;margin:0 0 6px;font-weight:700">This deck is confidential</h1>'
+    + '<p style="font-size:13px;color:#64748b;line-height:1.5;margin:0 0 18px">Enter your email address to view &mdash; it identifies your session for the Coolkidz team.</p>'
+    + '<form id="deckGateForm" style="display:flex;flex-direction:column;gap:10px">'
+    + '<input id="deckGateEmail" type="email" required placeholder="you@company.com" style="border:1.5px solid #e2e8f0;border-radius:10px;padding:11px 14px;font-size:14px;outline:none;text-align:center" />'
+    + '<button type="submit" style="background:#e2593c;color:#fff;border:0;border-radius:10px;padding:11px;font-size:14px;font-weight:700;cursor:pointer">View deck &rarr;</button>'
+    + '</form></div>';
+  function mount() {
+    document.body.appendChild(ov);
+    document.body.style.overflow = "hidden";
+    var form = document.getElementById("deckGateForm");
+    var input = document.getElementById("deckGateEmail");
+    setTimeout(function(){ try { input.focus(); } catch (e) {} }, 50);
+    form.addEventListener("submit", function(ev){
+      ev.preventDefault();
+      var em = (input.value || "").trim().toLowerCase();
+      if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(em)) { input.style.borderColor = "#ef4444"; return; }
+      try { localStorage.setItem("deckViewerEmail", em); } catch (e) {}
+      ov.remove();
+      document.body.style.overflow = "";
+      start(em);
+    });
+  }
+  if (document.body) mount(); else document.addEventListener("DOMContentLoaded", mount);
 })();</script>`;
 
 export async function GET(req: Request, ctx: { params: Promise<{ token: string }> }) {

@@ -24,6 +24,11 @@ export async function POST(req: Request) {
   if (b.kind === "open") {
     let viewer: string | null = null;
     try { viewer = (await getAccess()).user?.email ?? null; } catch { /* anonymous */ }
+    // External viewers identify themselves via the deck's email gate
+    if (!viewer && typeof b.email === "string") {
+      const em = b.email.trim().toLowerCase().slice(0, 120);
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) viewer = em;
+    }
     await fetch(`${sbUrl}/rest/v1/deck_views?on_conflict=share_id,session_id`, {
       method: "POST", headers: h({ Prefer: "resolution=merge-duplicates,return=minimal" }),
       body: JSON.stringify({ share_id: share.id, session_id: session, viewer }),
