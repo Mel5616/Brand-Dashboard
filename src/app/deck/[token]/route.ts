@@ -15,9 +15,20 @@ const DEAD_END = `<!doctype html><html><head><meta charset="utf-8"><meta name="v
 <p style="font-size:14px;color:#64748b;line-height:1.6">The deck may have been removed or the link revoked. Contact the Coolkidz marketing team for a fresh link.</p>
 </div></body></html>`;
 
-const wrapper = (token: string, title: string, pdfUrl: string | null) => `<!doctype html>
+const wrapper = (token: string, title: string, pdfUrl: string | null, origin: string) => `<!doctype html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${title.replace(/</g, "&lt;")}</title>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Coolkidz Australia">
+<meta property="og:title" content="${title.replace(/"/g, "&quot;").replace(/</g, "&lt;")}">
+<meta property="og:description" content="Confidential launch deck — enter your email to view.">
+<meta property="og:url" content="${origin}/deck/${token}">
+<meta property="og:image" content="${origin}/api/decks/og/${token}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${title.replace(/"/g, "&quot;").replace(/</g, "&lt;")}">
+<meta name="twitter:image" content="${origin}/api/decks/og/${token}">
 <style>
   html,body{margin:0;height:100%;background:#0c1421;font-family:-apple-system,'Segoe UI',sans-serif}
   iframe{display:block;width:100%;height:100%;border:0}
@@ -100,7 +111,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ token: string }
   const pdfHead = share.allow_pdf !== false ? await fetch(pdfBase, { method: "HEAD", cache: "no-store" }).catch(() => null) : null;
   const pdfV = pdfHead?.headers.get("etag")?.replace(/[^a-f0-9]/gi, "").slice(0, 12) ?? "";
   const pdfUrl = pdfHead?.ok ? `${pdfBase}?v=${pdfV}` : null;
-  return new Response(wrapper(token, deck.title || "Launch deck", pdfUrl), {
+  const origin = new URL(req.url).origin.replace(/^http:/, "https:");
+  return new Response(wrapper(token, deck.title || "Launch deck", pdfUrl, origin), {
     headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
   });
 }
