@@ -123,8 +123,15 @@ export async function POST(req: Request) {
     if (!b.gid) return NextResponse.json({ ok: false }, { status: 400 });
     const gid = encodeURIComponent(String(b.gid));
     // Grab the mirror row before it's marked done — feeds the completion log.
-    const mirror = await rest(`asana_tasks?select=name,project_label,due_on&gid=eq.${gid}&limit=1`);
+    const mirror = await rest(`asana_tasks?select=name,project_label,due_on,section&gid=eq.${gid}&limit=1`);
     const mrow = mirror.ok ? (JSON.parse((await mirror.text()) || "[]")[0] ?? null) : null;
+    // Stock Report item completed = back in stock → alert users immediately
+    if (mrow?.project_label === "Stock Report" && mrow?.name) {
+      await rest("stock_alerts?on_conflict=gid", {
+        method: "POST", headers: h({ Prefer: "resolution=ignore-duplicates,return=minimal" }),
+        body: JSON.stringify({ gid: String(b.gid), name: String(mrow.name).slice(0, 200), section: mrow.section ?? null }),
+      }).catch(() => {});
+    }
     const res = await fetch(`${ASANA}/tasks/${encodeURIComponent(String(b.gid))}`, { method: "PUT", headers: asanaHeaders(), body: JSON.stringify({ data: { completed: true } }) });
     if (!res.ok) return NextResponse.json({ ok: false, error: `Asana: ${(await res.text()).slice(0, 150)}` }, { status: 502 });
     await Promise.all([

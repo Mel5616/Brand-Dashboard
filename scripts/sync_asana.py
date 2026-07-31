@@ -259,6 +259,22 @@ def main():
     all_rows = deduped
     if not all_rows:
         print("No tasks found in any configured project"); return
+    # Back-in-stock alerts: any open Stock Report item from the last sync that is
+    # no longer open now was removed from the board → back in stock.
+    try:
+        stock_fetched = any(lbl == "Stock Report" for _, lbl in projects)
+        st0, b0 = sb("GET", "/rest/v1/asana_tasks?project_label=eq.Stock%20Report&completed=eq.false&select=gid,name,section&limit=1000")
+        prev_stock = (json.loads(b0.decode()) if st0 == 200 else []) if stock_fetched else []
+        open_now = {r["gid"] for r in all_rows if r.get("project_label") == "Stock Report" and not r.get("completed")}
+        removed = [r for r in prev_stock if r["gid"] not in open_now and r.get("name")]
+        # section-header rows aren't stock lines — skip ones with no real name
+        alerts = [{"gid": r["gid"], "name": r["name"][:200], "section": r.get("section")} for r in removed]
+        if alerts:
+            sta, ba = sb("POST", "/rest/v1/stock_alerts?on_conflict=gid",
+                         json.dumps(alerts).encode(), extra={"Prefer": "resolution=ignore-duplicates"})
+            print(f"  back-in-stock alerts: {len(alerts)} ({sta})", flush=True)
+    except Exception as e:
+        print(f"  stock alert check skipped: {e}", flush=True)
     st, b = sb("POST", "/rest/v1/asana_tasks?on_conflict=gid",
                json.dumps(all_rows).encode(), extra={"Prefer": "resolution=merge-duplicates"})
     if st not in (200, 201, 204) and b"custom_fields" in b:
