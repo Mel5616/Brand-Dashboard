@@ -81,7 +81,7 @@ export function PinterestAdsChart({ brands, data, monthKeys = DEFAULT_MONTH_KEYS
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <div>
           <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Pinterest Ads</h2>
-          <p className="text-xs text-gray-400 mt-0.5">Monthly performance across all brands</p>
+          <p className="text-xs text-gray-400 mt-0.5">Monthly performance · UPPAbaby &amp; Gaia Baby (the brands running Pinterest)</p>
         </div>
         <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
           {metricLabels.map(m => (
