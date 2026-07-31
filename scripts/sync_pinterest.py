@@ -191,6 +191,7 @@ def sync_organic(brand_id, name, ad_account_id, token):
             })
             s = (d.get("all") or {}).get("summary_metrics") or {}
             month_rows.append({"brand_id": brand_id, "month_key": cur.strftime("%Y-%m"),
+                               "followers": 0, "monthly_views": 0, "pin_count": 0,
                                **{col: int(s.get(k, 0) or 0) for k, col in _ORG_MAP.items()}})
             cur = m_end + _timedelta(days=1)
 
