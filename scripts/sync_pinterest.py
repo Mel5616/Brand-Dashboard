@@ -25,9 +25,10 @@ CONFIG_PATH = os.path.join(BASE_DIR, 'stores.config.json')
 ENV_PATH    = os.path.join(BASE_DIR, '.env.local')
 
 API_BASE = "https://api.pinterest.com/v5"
-# Rolling ~18-month window (this FY + the previous one). Pinterest analytics caps a
-# single request at 90 days, so we page through in 90-day windows.
-DAILY_START = _date.today() - _timedelta(days=550)
+# The v5 /analytics endpoint only serves the trailing 90 days at all (older
+# history needs the async /reports endpoint) — so we sync a rolling 89-day
+# window and let the table accumulate history from daily runs.
+DAILY_START = _date.today() - _timedelta(days=89)
 TODAY       = _date.today()
 
 # Pinterest analytics columns we request, mapped to our schema.
