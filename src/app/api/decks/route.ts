@@ -21,8 +21,9 @@ export async function GET() {
   const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const decks = await Promise.all((d.data ?? []).map(async (r: any) => {
     const pdfUrl = `${sbUrl}/storage/v1/object/public/deck-assets/deck-${r.id}.pdf`;
-    const hasPdf = await fetch(pdfUrl, { method: "HEAD", cache: "no-store" }).then(x => x.ok).catch(() => false);
-    return { ...r, pdfUrl: hasPdf ? pdfUrl : null };
+    const head = await fetch(pdfUrl, { method: "HEAD", cache: "no-store" }).catch(() => null);
+    const v = head?.headers.get("etag")?.replace(/[^a-f0-9]/gi, "").slice(0, 12) ?? "";
+    return { ...r, pdfUrl: head?.ok ? `${pdfUrl}?v=${v}` : null };
   }));
   return NextResponse.json({ ok: true, decks, shares: s.data ?? [], views: v.data ?? [] });
 }
