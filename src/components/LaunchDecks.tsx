@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 // Plan > Launch Decks: HTML strategy decks with per-recipient tracked share
 // links — who opened, how many times, how long they actually looked. Admin-only.
 type Deck = { id: number; title: string; brand: string | null; pdfUrl?: string | null; created_by: string | null; created_at: string };
-type Share = { id: number; deck_id: number; token: string; label: string; created_at: string };
+type Share = { id: number; deck_id: number; token: string; label: string; created_at: string; allow_pdf?: boolean };
 type View = { share_id: number; session_id: string; viewer: string | null; seconds: number; opened_at: string; last_seen: string };
 
 const inp = "text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400";
@@ -128,6 +128,12 @@ export function LaunchDecks({ brands }: { brands: { name: string }[] }) {
     if (d?.ok) { setNewLabel(p => ({ ...p, [deckId]: "" })); load(); }
     else setMsg(d?.error || "Couldn't create the link.");
   }
+  async function togglePdf(s: Share) {
+    const next = s.allow_pdf === false;
+    setShares(p => p.map(x => x.id === s.id ? { ...x, allow_pdf: next } : x));
+    const d = await fetch("/api/decks", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "share.pdf", share_id: s.id, allow_pdf: next }) }).then(r => r.json()).catch(() => null);
+    if (!d?.ok) { setShares(p => p.map(x => x.id === s.id ? { ...x, allow_pdf: !next } : x)); alert(d?.error || "Couldn't update the link."); }
+  }
   async function delShare(shareId: number) {
     if (!confirm("Revoke this link? Anyone holding it loses access; its view history is removed.")) return;
     await fetch("/api/decks", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "share.delete", share_id: shareId }) });
@@ -224,6 +230,10 @@ export function LaunchDecks({ brands }: { brands: { name: string }[] }) {
                           <td className="py-2 text-right text-gray-400 text-[12px]">{st?.last ? ago(st.last) : "never"}</td>
                           <td className="py-2 text-right text-[11.5px] text-gray-400 max-w-[180px] truncate" title={st?.viewers.join(", ")}>{st?.viewers.length ? st.viewers.map(v => v.split("@")[0]).join(", ") : (st?.opens ? "external" : "—")}</td>
                           <td className="py-2 text-right whitespace-nowrap">
+                            <label className="inline-flex items-center gap-1 mr-3 cursor-pointer select-none" title="Allow viewers on this link to download the PDF">
+                              <input type="checkbox" checked={s.allow_pdf !== false} onChange={() => togglePdf(s)} className="accent-[#e2593c] h-3.5 w-3.5" />
+                              <span className="text-[11.5px] font-semibold text-gray-500">PDF</span>
+                            </label>
                             <a href={`/deck/${s.token}`} target="_blank" rel="noreferrer" className="text-[12px] font-semibold text-violet-600 hover:underline mr-2">View</a>
                             <button onClick={() => copy(s.token)} className="text-[12px] font-semibold text-emerald-600 hover:underline mr-2">⧉ Copy</button>
                             <button onClick={() => delShare(s.id)} className="text-[12px] text-gray-300 hover:text-rose-500">Revoke</button>

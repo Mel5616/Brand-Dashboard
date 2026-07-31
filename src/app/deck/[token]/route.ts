@@ -78,7 +78,12 @@ export async function GET(req: Request, ctx: { params: Promise<{ token: string }
   const dead = () => new Response(DEAD_END, { status: 404, headers: { "Content-Type": "text/html; charset=utf-8" } });
   if (!/^[0-9a-f-]{36}$/.test(token) || !sbUrl || !sbKey) return dead();
   const h = { apikey: sbKey, Authorization: `Bearer ${sbKey}` };
-  const share = (await fetch(`${sbUrl}/rest/v1/deck_shares?token=eq.${token}&select=deck_id&limit=1`, { headers: h, cache: "no-store" }).then(r => r.json()).catch(() => []))[0];
+  // allow_pdf may not exist until add_deck_shares_pdf.sql runs — degrade to allowed
+  let share = (await fetch(`${sbUrl}/rest/v1/deck_shares?token=eq.${token}&select=deck_id,allow_pdf&limit=1`, { headers: h, cache: "no-store" }).then(r => r.ok ? r.json() : null).catch(() => null))?.[0];
+  if (!share) {
+    share = (await fetch(`${sbUrl}/rest/v1/deck_shares?token=eq.${token}&select=deck_id&limit=1`, { headers: h, cache: "no-store" }).then(r => r.json()).catch(() => []))[0];
+    if (share) share.allow_pdf = true;
+  }
   if (!share) return dead();
 
   if (raw) {
@@ -92,7 +97,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ token: string }
   // Companion PDF (deck-assets/deck-<id>.pdf) — etag-versioned so a replaced
   // file always busts caches
   const pdfBase = `${sbUrl}/storage/v1/object/public/deck-assets/deck-${share.deck_id}.pdf`;
-  const pdfHead = await fetch(pdfBase, { method: "HEAD", cache: "no-store" }).catch(() => null);
+  const pdfHead = share.allow_pdf !== false ? await fetch(pdfBase, { method: "HEAD", cache: "no-store" }).catch(() => null) : null;
   const pdfV = pdfHead?.headers.get("etag")?.replace(/[^a-f0-9]/gi, "").slice(0, 12) ?? "";
   const pdfUrl = pdfHead?.ok ? `${pdfBase}?v=${pdfV}` : null;
   return new Response(wrapper(token, deck.title || "Launch deck", pdfUrl), {

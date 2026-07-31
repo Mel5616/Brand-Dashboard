@@ -103,6 +103,11 @@ export async function PATCH(req: Request) {
     if (error) return NextResponse.json({ ok: false, error: error.message.slice(0, 150) }, { status: 500 });
     return NextResponse.json({ ok: true, share: data });
   }
+  if (b.action === "share.pdf") {
+    const { error } = await sb.from("deck_shares").update({ allow_pdf: !!b.allow_pdf }).eq("id", Number(b.share_id));
+    if (error) return NextResponse.json({ ok: false, error: /allow_pdf/.test(error.message) ? "Run add_deck_shares_pdf.sql first" : error.message.slice(0, 150) }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
   if (b.action === "share.delete") {
     const { error } = await sb.from("deck_shares").delete().eq("id", Number(b.share_id));
     return NextResponse.json({ ok: !error });
