@@ -23,6 +23,7 @@ const CHANNEL_COLORS: Record<string, string> = {
   "Influencer Marketing": "#f59e0b",
   "Photography":          "#ec4899",
   "Shopify":              "#96bf48",
+  "Pinterest Ads":        "#E60023",
 };
 const FALLBACK_COLORS = ["#6366f1","#14b8a6","#f97316","#e11d48","#8b5cf6","#0ea5e9"];
 
@@ -32,6 +33,7 @@ interface Props {
   marketingActuals: MarketingActual[];
   googleAds:        GoogleAdsRow[];
   metaAds:          MetaAdsRow[];
+  pinterestAds?:    { brand_id: number; month_key: string; spend: number }[];
   monthly:          BrandMonthly[];
   targets?:         any[];
   fyLabel?:         string;
@@ -69,7 +71,7 @@ const DONUT_OPTS: any = {
   },
 };
 
-export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marketingActuals, googleAds, metaAds, monthly, targets = [], fyLabel = "FY 2025–26", fy = "2025-26", canEdit = false, monthKeys = DEFAULT_MONTH_KEYS, monthLabels = DEFAULT_MONTH_LABELS, latest = DEFAULT_MONTH_KEYS[DEFAULT_MONTH_KEYS.length - 1] }: Props) {
+export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marketingActuals, googleAds, metaAds, pinterestAds = [], monthly, targets = [], fyLabel = "FY 2025–26", fy = "2025-26", canEdit = false, monthKeys = DEFAULT_MONTH_KEYS, monthLabels = DEFAULT_MONTH_LABELS, latest = DEFAULT_MONTH_KEYS[DEFAULT_MONTH_KEYS.length - 1] }: Props) {
   // Only the selected financial year's budgets (older rows default to FY 2025-26).
   const marketingBudgets = allBudgets.filter((b: any) => (b.fy ?? "2025-26") === fy);
   const MONTH_KEYS = monthKeys;
@@ -98,6 +100,7 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
   function getActual(brandId: number, channel: string): number {
     if (channel === "Google Advertising")  return googleAds.filter(r => r.brand_id === brandId).reduce((s, r) => s + r.spend, 0);
     if (channel === "Social Media (Meta)") return metaAds.filter(r => r.brand_id === brandId).reduce((s, r) => s + r.spend, 0);
+    if (channel === "Pinterest Ads")       return pinterestAds.filter(r => r.brand_id === brandId).reduce((s, r) => s + r.spend, 0);
     if (channel === "Influencer Marketing") return inflSpend.filter(r => r.brand_id === brandId && MONTH_KEYS.includes(r.month_key)).reduce((s, r) => s + r.spend, 0) + marketingActuals.filter(a => a.brand_id === brandId && a.channel === channel).reduce((s, a) => s + a.spend, 0);
     return marketingActuals.filter(a => a.brand_id === brandId && a.channel === channel).reduce((s, a) => s + a.spend, 0);
   }
@@ -138,8 +141,9 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
   const monthlySpend = MONTH_KEYS.map(mk => {
     const gSpend  = googleAds.filter(r => r.month_key === mk).reduce((s, r) => s + r.spend, 0);
     const mSpend  = metaAds.filter(r => r.month_key === mk).reduce((s, r) => s + r.spend, 0);
+    const pSpend  = pinterestAds.filter(r => r.month_key === mk).reduce((s, r) => s + r.spend, 0);
     const oSpend  = marketingActuals.filter(a => a.month_key === mk).reduce((s, a) => s + a.spend, 0);
-    return gSpend + mSpend + oSpend;
+    return gSpend + mSpend + pSpend + oSpend;
   });
 
   // Monthly revenue (all brands)
@@ -328,6 +332,7 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
           marketingActuals={marketingActuals}
           googleAds={googleAds}
           metaAds={metaAds}
+          pinterestAds={pinterestAds}
           targets={targets}
           monthlySales={monthly}
           monthKeys={MONTH_KEYS}
@@ -603,7 +608,7 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
       </div>
 
       <p className="text-center text-xs text-gray-300 pb-4">
-        Google &amp; Meta actuals are live from the ad platforms · all other expenses are uploaded above
+        Google, Meta &amp; Pinterest actuals are live from the ad platforms · all other expenses are uploaded above
       </p>
       </>
       )}

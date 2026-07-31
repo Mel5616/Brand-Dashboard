@@ -2093,6 +2093,7 @@ export function DashboardTabs({
               marketingActuals={marketingActuals}
               googleAds={googleAds}
               metaAds={metaAds}
+              pinterestAds={pinterestAds}
               monthly={monthly}
               targets={targets}
               fyLabel={fyLabel}

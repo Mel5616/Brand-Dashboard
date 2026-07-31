@@ -14,6 +14,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, LineElement
 const CHANNEL_COLORS: Record<string, string> = {
   "Google Advertising":   "#4285F4",
   "Social Media (Meta)":  "#1877F2",
+  "Pinterest Ads":        "#E60023",
   "Klaviyo":              "#7c3aed",
   "Influencer Marketing": "#f59e0b",
   "Photography":          "#ec4899",
@@ -27,6 +28,7 @@ interface Props {
   marketingActuals: MarketingActual[];
   googleAds: GoogleAdsRow[];
   metaAds: MetaAdsRow[];
+  pinterestAds?: { brand_id: number; month_key: string; spend: number }[];
   targets: BrandTarget[];
   monthlySales: BrandMonthly[];
   monthKeys: string[];
@@ -36,7 +38,7 @@ interface Props {
 }
 
 export function BrandBudgetOverview({
-  brand, marketingBudgets, marketingActuals, googleAds, metaAds, targets, monthlySales,
+  brand, marketingBudgets, marketingActuals, googleAds, metaAds, pinterestAds = [], targets, monthlySales,
   monthKeys, monthLabels, fyLabel, latest,
 }: Props) {
   const bid = brand.id;
@@ -75,6 +77,7 @@ export function BrandBudgetOverview({
   function actual(channel: string, mk: string): number {
     if (channel === "Google Advertising")  return googleAds.filter(r => r.brand_id === bid && r.month_key === mk).reduce((s, r) => s + r.spend, 0);
     if (channel === "Social Media (Meta)") return metaAds.filter(r => r.brand_id === bid && r.month_key === mk).reduce((s, r) => s + r.spend, 0);
+    if (channel === "Pinterest Ads")       return pinterestAds.filter(r => r.brand_id === bid && r.month_key === mk).reduce((s, r) => s + r.spend, 0);
     if (channel === "Influencer Marketing") return influencerActual(mk) + marketingActuals.filter(a => a.brand_id === bid && a.channel === channel && a.month_key === mk).reduce((s, a) => s + a.spend, 0);
     return marketingActuals.filter(a => a.brand_id === bid && a.channel === channel && a.month_key === mk).reduce((s, a) => s + a.spend, 0);
   }
