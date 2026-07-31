@@ -24,7 +24,7 @@ CONFIG   = json.load(open(os.path.join(BASE_DIR, "stores.config.json")))
 APP_ID   = CONFIG.get("pinterestAppId") or "1587816"
 SECRET   = CONFIG.get("pinterestAppSecret")
 REDIRECT = "http://localhost:8085/callback"
-SCOPES   = "ads:read,user_accounts:read"
+SCOPES   = "ads:read,user_accounts:read,pins:read,boards:read"
 
 if not SECRET:
     raise SystemExit('✗ Add "pinterestAppSecret" to stores.config.json first (app console → App secret).')
