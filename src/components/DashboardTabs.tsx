@@ -5,6 +5,7 @@ import { SalesChart } from "./SalesChart";
 import { GoogleAdsChart } from "./GoogleAdsChart";
 import { MetaAdsChart } from "./MetaAdsChart";
 import { PinterestAdsChart } from "./PinterestAdsChart";
+import { PinterestOrganicPanel } from "./PinterestOrganicPanel";
 import { AdsDailyRange } from "./AdsDailyRange";
 import { CommandPalette } from "./CommandPalette";
 import { SyncStatusPanel } from "./SyncStatusPanel";
@@ -1803,6 +1804,8 @@ export function DashboardTabs({
               <PinterestAdsChart key={fy} brands={filteredBrands} data={filteredPinterest} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} wholeYear={wholeYear} />
 
               <AdsDailyRange platform="pinterest" brandFilter={brandFilter} accent="#E60023" />
+
+              <PinterestOrganicPanel brands={brands} brandFilter={brandFilter} />
             </>
           )}
 

@@ -159,6 +159,93 @@ def sync_brand(brand_id, name, ad_account_id, token):
     sb_upsert("pinterest_ads", month_rows, on_conflict="brand_id,month_key")
     print(f"✓  {len(month_rows)} months, {len(daily_rows)} daily rows")
 
+def _api_get(path, token, params=None):
+    url = f"{API_BASE}{path}"
+    if params:
+        url += "?" + urllib.parse.urlencode(params)
+    req = urllib.request.Request(url)
+    req.add_header("Authorization", f"Bearer {token}")
+    with urllib.request.urlopen(req, context=ssl.create_default_context(), timeout=40) as r:
+        return json.loads(r.read().decode())
+
+# Organic metric keys -> our columns
+_ORG_MAP = {
+    "IMPRESSION": "impressions", "ENGAGEMENT": "engagement", "PIN_CLICK": "pin_clicks",
+    "OUTBOUND_CLICK": "outbound_clicks", "SAVE": "saves",
+}
+
+def sync_organic(brand_id, name, ad_account_id, token):
+    """Organic (non-paid) profile + engagement, fetched on behalf of the brand's
+    ad account. Monthly rollups for the trailing 89 days + a top-pins refresh."""
+    print(f"  {name} organic ...", end=" ", flush=True)
+    try:
+        # Per-calendar-month summary metrics, clamped to the 89-day API window
+        month_rows = []
+        cur = _date(DAILY_START.year, DAILY_START.month, 1)
+        while cur <= TODAY:
+            m_end = (_date(cur.year + (cur.month == 12), cur.month % 12 + 1, 1) - _timedelta(days=1))
+            since, until = max(cur, DAILY_START), min(m_end, TODAY)
+            d = _api_get("/user_account/analytics", token, {
+                "start_date": since.isoformat(), "end_date": until.isoformat(),
+                "ad_account_id": ad_account_id, "from_claimed_content": "BOTH",
+            })
+            s = (d.get("all") or {}).get("summary_metrics") or {}
+            month_rows.append({"brand_id": brand_id, "month_key": cur.strftime("%Y-%m"),
+                               **{col: int(s.get(k, 0) or 0) for k, col in _ORG_MAP.items()}})
+            cur = m_end + _timedelta(days=1)
+
+        # Profile snapshot lands on the current month's row
+        prof = _api_get("/user_account", token, {"ad_account_id": ad_account_id})
+        for r in month_rows:
+            if r["month_key"] == TODAY.strftime("%Y-%m"):
+                r["followers"]     = int(prof.get("follower_count", 0) or 0)
+                r["monthly_views"] = max(int(prof.get("monthly_views", 0) or 0), 0)
+                r["pin_count"]     = int(prof.get("pin_count", 0) or 0)
+        sb_upsert("pinterest_organic", month_rows, on_conflict="brand_id,month_key")
+
+        # Top pins by impressions over the trailing 30 days (replace wholesale)
+        since30 = (TODAY - _timedelta(days=30)).isoformat()
+        top = _api_get("/user_account/analytics/top_pins", token, {
+            "start_date": since30, "end_date": TODAY.isoformat(),
+            "ad_account_id": ad_account_id, "sort_by": "IMPRESSION", "num_of_pins": 8,
+        }).get("pins", [])
+        pin_rows = []
+        for i, p in enumerate(top):
+            pid, met = p.get("pin_id"), p.get("metrics", {})
+            if not pid:
+                continue
+            row = {"brand_id": brand_id, "pin_id": str(pid), "rank": i + 1,
+                   "period_start": since30, "period_end": TODAY.isoformat(),
+                   **{col: int(met.get(k, 0) or 0) for k, col in _ORG_MAP.items()}}
+            try:
+                det = _api_get(f"/pins/{pid}", token, {"ad_account_id": ad_account_id})
+                imgs = ((det.get("media") or {}).get("images") or {})
+                img = (imgs.get("600x") or imgs.get("400x300") or next(iter(imgs.values()), {})).get("url")
+                row.update({"title": (det.get("title") or "")[:200] or None,
+                            "link": (det.get("link") or "")[:500] or None, "image_url": img})
+            except (urllib.error.HTTPError, urllib.error.URLError):
+                pass
+            pin_rows.append(row)
+        if pin_rows:
+            # clear this brand's old top pins so dropped pins don't linger
+            req = urllib.request.Request(f"{SUPABASE_URL}/rest/v1/pinterest_top_pins?brand_id=eq.{brand_id}", method="DELETE")
+            req.add_header("Authorization", f"Bearer {SUPABASE_SVC_KEY}")
+            req.add_header("apikey", SUPABASE_ANON_KEY)
+            try:
+                urllib.request.urlopen(req, context=ssl.create_default_context(), timeout=30)
+            except urllib.error.HTTPError:
+                pass
+            sb_upsert("pinterest_top_pins", pin_rows, on_conflict="brand_id,pin_id")
+        print(f"✓  {len(month_rows)} months, {len(pin_rows)} top pins")
+    except (urllib.error.HTTPError, urllib.error.URLError) as e:
+        body = ""
+        try:
+            if hasattr(e, "read"): body = e.read().decode()[:200]
+        except Exception:
+            pass
+        print(f"✗  {e} {body}")
+        return f"organic: {e} {body}".strip()
+
 def refresh_access_token(config):
     """Exchange the long-lived refresh token for a fresh 30-day access token.
     Needs pinterestAppId + pinterestAppSecret + pinterestRefreshToken in config."""
@@ -205,6 +292,9 @@ def main():
         err = sync_brand(b["id"], b["name"], b["pinterestAdAccountId"], token)
         if err:
             errors.append(f"{b['name']}: {err}")
+        err2 = sync_organic(b["id"], b["name"], b["pinterestAdAccountId"], token)
+        if err2:
+            errors.append(f"{b['name']}: {err2}")
     from sync_status_util import record
     record("Pinterest Ads", not errors, "; ".join(errors))
     print("\nDone.")
