@@ -8,6 +8,7 @@ import {
 import { Line, Bar } from "react-chartjs-2";
 import { fmt } from "@/lib/format";
 import { buildChannels, channelColor } from "@/lib/channels";
+import { annotationChartExtras } from "./AnnotationsCard";
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, LineElement, PointElement, Filler, Tooltip, Legend);
 
@@ -29,7 +30,8 @@ export function Sparkline({ data, color = "#1e3a5f" }: { data: number[]; color?:
 // brand contribution, and the biggest YoY movers.
 // Whole-business channel mix, month by month — rendered ABOVE the D2C divider
 // on Business Overview (it's the one portfolio chart that isn't D2C-only).
-export function ChannelMixCard({ brands, monthly, monthKeys, monthLabels, channelSales, tradeshows, tradeshowSales, shopifySources, latest }: any) {
+export function ChannelMixCard({ brands, monthly, monthKeys, monthLabels, channelSales, tradeshows, tradeshowSales, shopifySources, latest, annotations = [] }: any) {
+  const extras = annotationChartExtras(annotations, monthKeys);
   const channelMix = useMemo(() => {
     const biz = buildChannels("all", { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest });
     const top = [...biz].filter((c: any) => c.fy > 0).sort((a: any, b: any) => b.fy - a.fy).slice(0, 7);
@@ -43,7 +45,8 @@ export function ChannelMixCard({ brands, monthly, monthKeys, monthLabels, channe
       <p className="text-xs text-gray-400 mb-3">Where revenue comes from, month by month — whole business</p>
       <div className="h-56">
         <Bar data={{ labels, datasets: channelMix.map((c: any) => ({ label: c.label, data: c.data, backgroundColor: c.color, borderRadius: 2, stack: "c" })) }}
-          options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { boxWidth: 8, font: { size: 10 }, usePointStyle: true } }, tooltip: { callbacks: { label: (c: any) => ` ${c.dataset.label}: ${fmt(c.parsed.y ?? 0)}` } } }, scales: { x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 }, color: "#9ca3af" } }, y: { stacked: true, ticks: { callback: (v: any) => fmt(v), font: { size: 10 }, color: "#9ca3af" }, grid: { color: "#f3f4f6" } } } }} />
+          plugins={extras.hasAny ? [extras.plugin] : []}
+          options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { boxWidth: 8, font: { size: 10 }, usePointStyle: true } }, tooltip: { callbacks: { label: (c: any) => ` ${c.dataset.label}: ${fmt(c.parsed.y ?? 0)}`, footer: extras.footer } } }, scales: { x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 }, color: "#9ca3af" } }, y: { stacked: true, ticks: { callback: (v: any) => fmt(v), font: { size: 10 }, color: "#9ca3af" }, grid: { color: "#f3f4f6" } } } }} />
       </div>
     </div>
   );

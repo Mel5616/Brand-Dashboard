@@ -14,6 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://marketing.coolkidz.com.au"),
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Coolkidz" },
   title: "Brand Dashboard — Coolkidz Australia",
   description: "Live Shopify sales dashboard for all Coolkidz brands",
   openGraph: {

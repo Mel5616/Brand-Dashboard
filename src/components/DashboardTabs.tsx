@@ -70,6 +70,8 @@ import { LaunchDecks } from "./LaunchDecks";
 import { TodoPanel } from "./TodoPanel";
 import { BackInStockToast } from "./BackInStockToast";
 import { IdleLogout } from "./IdleLogout";
+import { MerCard } from "./MerCard";
+import { AnnotationsCard, type Annotation } from "./AnnotationsCard";
 import { Notifier } from "./Notifier";
 import { StockReport } from "./StockReport";
 import { fmt } from "@/lib/format";
@@ -535,6 +537,10 @@ export function DashboardTabs({
   // One brand selection, shared across every tab — pick a brand once and it
   // persists as you move between Shopify / Google / Meta / Email / Report.
   const [brandFilter, setBrandFilter] = useState<number | "all">("all");
+  // Event memory (chart annotations) — shared by the timeline card and chart flags
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const loadAnnotations = () => fetch("/api/annotations").then(r => r.json()).then(d => setAnnotations(d.items ?? [])).catch(() => {});
+  useEffect(() => { loadAnnotations(); }, []);
   const [brandPeriod, setBrandPeriod] = useState<BrandPeriod>("monthly");
   const [fy, setFy] = useState<FY>(currentFY());
 
@@ -1047,6 +1053,13 @@ export function DashboardTabs({
 
               <BrandShareCard brands={brands} monthly={monthly} monthKeys={monthKeys} channelSales={channelSales} role={role} fyLabel={fyLabel} />
 
+              <MerCard channelSales={channelSales} googleAds={googleAds} metaAds={metaAds} pinterestAds={pinterestAds}
+                marketingActuals={marketingActuals} targets={targets} marketingBudgets={marketingBudgets}
+                monthKeys={monthKeys} monthLabels={monthLabels} fy={fy} fyLabel={fyLabel} role={role} />
+
+              <AnnotationsCard items={annotations} brands={brands.map((b: any) => ({ name: b.name }))}
+                isAdmin={role === "admin"} me={currentEmail ?? null} onChange={loadAnnotations} />
+
               {/* Channel sales board — one card per channel so the split is clear at a glance */}
               {(() => {
                 const biz = buildChannels("all", { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest: LATEST });
@@ -1077,7 +1090,8 @@ export function DashboardTabs({
 
 
               <ChannelMixCard brands={brands.filter((b: any) => b.live)} monthly={monthly} monthKeys={monthKeys} monthLabels={monthLabels}
-                channelSales={channelSales} tradeshows={tradeshows} tradeshowSales={tradeshowSales} shopifySources={shopifySources} latest={LATEST} />
+                channelSales={channelSales} tradeshows={tradeshows} tradeshowSales={tradeshowSales} shopifySources={shopifySources} latest={LATEST}
+                annotations={annotations} />
 
               <SectionBar title="Digital (D2C) performance" />
               {/* Portfolio trend, brand contribution, top movers */}
