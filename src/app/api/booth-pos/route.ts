@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAccess } from "@/lib/access";
 
 // Live Shopify POS query for booth orders. Called on demand from the Tradeshows
 // tab so it doesn't add latency to other pages. POS orders are distinct from QR
@@ -26,6 +27,8 @@ function storeCreds(store: string): { domain?: string; token?: string } {
 }
 
 export async function GET(req: Request) {
+  // Edge proxy already blocks anonymous /api traffic — this is defence in depth.
+  if (!(await getAccess()).role) return NextResponse.json({ ok: false }, { status: 401 });
   const sp = new URL(req.url).searchParams;
   const store = sp.get("store") || "uppababy";
   const { domain, token } = storeCreds(store);
