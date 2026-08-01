@@ -10,8 +10,12 @@ const IDLE_MS = 10 * 60 * 1000;
 const WARN_MS = 60 * 1000;
 const LS_KEY = "dashLastActive";
 
-export function IdleLogout() {
+// Emails never auto-logged-out (the owner's always-on dashboard screens)
+const EXEMPT = ["mel@coolkidz.com.au"];
+
+export function IdleLogout({ email }: { email?: string | null }) {
   useEffect(() => {
+    if (EXEMPT.includes((email ?? "").toLowerCase())) return;
     const touch = () => { try { localStorage.setItem(LS_KEY, String(Date.now())); } catch { /* noop */ } };
     touch();
 
@@ -62,7 +66,7 @@ export function IdleLogout() {
       clearInterval(check);
       clearWarn();
     };
-  }, []);
+  }, [email]);
 
   return null;
 }

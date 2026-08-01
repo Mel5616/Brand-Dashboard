@@ -675,7 +675,7 @@ export function DashboardTabs({
     <Notifier go={(t) => go(t as TabId)} />
     <TodoPanel />
     <BackInStockToast />
-    <IdleLogout />
+    <IdleLogout email={currentEmail} />
     <aside ref={sideRef} onScroll={e => { sideScroll.current = e.currentTarget.scrollTop; }}
       className={`fixed top-[70px] left-0 w-[288px] h-[calc(100vh-70px)] bg-white border-r border-gray-200 flex flex-col z-20 lg:z-10 overflow-y-auto transform transition-transform duration-200 ease-out lg:translate-x-0 ${mobileNavOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"}`}>
       {/* Mobile: close the drawer */}
@@ -1166,6 +1166,9 @@ export function DashboardTabs({
 
                   return (<>
                   <BrandShareCard brands={brands} monthly={monthly} monthKeys={monthKeys} channelSales={channelSales} role={role} fyLabel={fyLabel} />
+                  <MerCard channelSales={channelSales} googleAds={googleAds} metaAds={metaAds} pinterestAds={pinterestAds}
+                    marketingActuals={marketingActuals} targets={targets} marketingBudgets={marketingBudgets}
+                    monthKeys={monthKeys} monthLabels={monthLabels} fy={fy} fyLabel={fyLabel} role={role} />
                   {tiers.map(({ label, ids }) => (
                     <div key={label} className={label ? "mb-6" : ""}>
                       {label && (
