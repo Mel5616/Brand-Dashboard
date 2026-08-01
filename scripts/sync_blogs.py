@@ -156,6 +156,8 @@ def sync_articles_public(bid, brand):
     return len(rows) if rows else (len(known) and 0)
 
 def sync_articles(bid, brand):
+    from shopify_auth import store_token
+    brand = {**brand, "token": store_token(brand)}
     rows = []
     base = public_base(brand)
     try:

@@ -139,12 +139,13 @@ def sync_brand(brand_id, name, domain, token):
 def main():
     with open(CONFIG_PATH) as f:
         config = json.load(f)
-    brands = [b for b in config.get('brands', []) if b.get('domain') and b.get('token')]
+    from shopify_auth import store_token
+    brands = [b for b in config.get('brands', []) if b.get('domain') and (b.get('token') or b.get('shopifyClientId'))]
     print(f'LTV cohorts for {len(brands)} store(s), history from {HISTORY_START}...')
     errors = []
     for b in brands:
         try:
-            sync_brand(b['id'], b['name'], b['domain'], b['token'])
+            sync_brand(b['id'], b['name'], b['domain'], store_token(b))
         except Exception as e:
             print(f'✗  {e}')
             errors.append(f"{b['name']}: {e}")
