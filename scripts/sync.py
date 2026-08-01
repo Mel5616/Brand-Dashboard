@@ -10,6 +10,7 @@ On Vercel:     triggered automatically at 4am AEST via /api/sync cron
 import json, ssl, urllib.request, urllib.parse, os
 from datetime import datetime, date as _date, timedelta as _td
 from collections import defaultdict
+from shopify_auth import store_token
 
 # ── Store timezone ────────────────────────────────────────────────────────────
 # Shopify returns order createdAt in UTC, but the Shopify admin reports revenue
@@ -452,7 +453,7 @@ def merge_coolkidz(m, cs):
 def sync_brand(brand, ck_split=None):
     name   = brand['name']
     domain = brand.get('domain', '')
-    token  = brand.get('token', '')
+    token  = store_token(brand)
     bid    = brand['id']
 
     if brand.get('comingSoon') or not domain or not token:
@@ -652,9 +653,9 @@ def sync_tradeshows(config, all_brands):
 
         # Coolkidz booth till — all orders on the show dates, split per brand.
         ck_show = {}
-        if coolkidz and coolkidz.get('token') and coolkidz.get('domain'):
+        if coolkidz and coolkidz.get('domain'):
             try:
-                ck_show = fetch_state_orders_by_brand(coolkidz['domain'], coolkidz['token'], state, date_start, date_end)
+                ck_show = fetch_state_orders_by_brand(coolkidz['domain'], store_token(coolkidz), state, date_start, date_end)
             except Exception as e:
                 print(f'       ✗ Coolkidz fetch failed: {e}')
 
@@ -664,9 +665,9 @@ def sync_tradeshows(config, all_brands):
             own_r = own_o = 0
             # Brand's own store: in-person POS (booth) orders on the show dates
             # only (skip Coolkidz itself — that's the booth till above).
-            if br and br['name'] != 'Coolkidz Australia' and br.get('token') and br.get('domain'):
+            if br and br['name'] != 'Coolkidz Australia' and br.get('domain'):
                 try:
-                    own_r, own_o = fetch_state_orders(br['domain'], br['token'], state, date_start, date_end)
+                    own_r, own_o = fetch_state_orders(br['domain'], store_token(br), state, date_start, date_end)
                 except Exception as e:
                     print(f'       ✗ {br["name"]} store: {e}')
 
@@ -1045,7 +1046,7 @@ def main():
 
     config = json.loads(open(CONFIG_PATH).read())
     brands = config['brands']
-    configured = sum(1 for b in brands if b.get('token') and not b.get('comingSoon'))
+    configured = sum(1 for b in brands if (b.get('token') or b.get('shopifyClientId')) and not b.get('comingSoon'))
     print(f'Supabase: {SUPABASE_URL}')
     print(f'Brands: {len(brands)} total · {configured} with tokens\n')
 
@@ -1060,11 +1061,11 @@ def main():
     # Build the Coolkidz-store split once, then fold it into each brand
     ck_split = {}
     coolkidz = next((b for b in brands if b['name'] == 'Coolkidz Australia'), None)
-    if coolkidz and coolkidz.get('token') and coolkidz.get('domain'):
+    if coolkidz and coolkidz.get('domain'):
         print('  ⟳  Splitting Coolkidz store sales by brand...')
         try:
             start_dates = {b['id']: b['salesStart'] for b in brands if b.get('salesStart')}
-            ck_split = compute_coolkidz_split(fetch_all_orders(coolkidz['domain'], coolkidz['token']), start_dates)
+            ck_split = compute_coolkidz_split(fetch_all_orders(coolkidz['domain'], store_token(coolkidz)), start_dates)
             print(f'       mapped to {len(ck_split)} brands')
         except Exception as e:
             print(f'  ✗ Coolkidz split failed: {e}')

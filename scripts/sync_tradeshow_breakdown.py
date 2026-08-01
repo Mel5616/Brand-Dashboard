@@ -17,6 +17,8 @@ line-item pagination across every historical show would hammer Shopify for data
 that never changes.
 """
 import json, os, ssl, sys, urllib.request
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from shopify_auth import store_token
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 
@@ -170,7 +172,7 @@ def main():
             if b["name"] == "Coolkidz Australia" or not b.get("domain") or not b.get("token"):
                 continue
             try:
-                orders = fetch_orders(b["domain"], b["token"], ds, de)
+                orders = fetch_orders(b["domain"], store_token(b), ds, de)
             except Exception as e:
                 print(f"   ✗ {b['name']}: {e}"); continue
             for o in orders:

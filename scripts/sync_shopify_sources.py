@@ -18,6 +18,8 @@ Run: python3 scripts/sync_shopify_sources.py
 """
 
 import os, sys, json, ssl, urllib.request
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from shopify_auth import store_token
 from collections import defaultdict
 
 BASE_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -120,7 +122,7 @@ def main():
     print(f"Syncing Shopify special sources {SOURCES} for {len(brands)} brand(s)...\n")
     for b in brands:
         try:
-            sync_brand(b["id"], b["name"], b["domain"], b["token"])
+            sync_brand(b["id"], b["name"], b["domain"], store_token(b))
         except Exception as e:
             print(f"  ERROR {b['name']}: {e}")
     print("\nDone.")

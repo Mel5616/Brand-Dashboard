@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
+import { resolveToken } from "@/lib/shopifyMint";
 
 // Live Shopify POS query for booth orders. Called on demand from the Tradeshows
 // tab so it doesn't add latency to other pages. POS orders are distinct from QR
@@ -14,16 +15,13 @@ const API_VERSION = "2024-01";
 // test POS orders are excluded. Real booth sales start here.
 const POS_GO_LIVE = "2026-06-20";
 
-// Resolve the store credentials for the requested storefront.
-function storeCreds(store: string): { domain?: string; token?: string } {
-  if (store === "coolkidz") {
-    try {
-      const stores = JSON.parse(process.env.BRAND_SHOPIFY || "[]");
-      const ck = stores.find((s: any) => s.id === 9);
-      return { domain: ck?.domain, token: ck?.token };
-    } catch { return {}; }
-  }
-  return { domain: process.env.UPPABABY_SHOPIFY_DOMAIN, token: process.env.UPPABABY_SHOPIFY_TOKEN };
+// Resolve the store for the requested storefront, from BRAND_SHOPIFY (which
+// carries client-credentials for migrated stores, static token otherwise).
+function findStore(store: string): { domain?: string; token?: string; clientId?: string; clientSecret?: string } {
+  let stores: any[] = [];
+  try { stores = JSON.parse(process.env.BRAND_SHOPIFY || "[]"); } catch { /* noop */ }
+  if (store === "coolkidz") return stores.find((s: any) => s.id === 9) ?? {};
+  return stores.find((s: any) => s.id === 5) ?? { domain: process.env.UPPABABY_SHOPIFY_DOMAIN, token: process.env.UPPABABY_SHOPIFY_TOKEN };
 }
 
 export async function GET(req: Request) {
@@ -31,7 +29,8 @@ export async function GET(req: Request) {
   if (!(await getAccess()).role) return NextResponse.json({ ok: false }, { status: 401 });
   const sp = new URL(req.url).searchParams;
   const store = sp.get("store") || "uppababy";
-  const { domain, token } = storeCreds(store);
+  const { domain } = findStore(store);
+  const token = domain ? await resolveToken(findStore(store) as any) : null;
   if (!domain || !token) {
     return NextResponse.json({ ok: false, orders: 0, revenue: 0, daily: [] });
   }

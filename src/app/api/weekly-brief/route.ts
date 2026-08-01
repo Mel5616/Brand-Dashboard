@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
 import { randomBytes } from "crypto";
+import { resolveToken } from "@/lib/shopifyMint";
 
 // Weekly team brief. POST assembles a FROZEN snapshot (D2C results, upcoming
 // launches, needs-attention) from live data + the user's objectives/intro, and
@@ -34,7 +35,8 @@ async function topProductsWeek(weekStart: string, weekEnd: string, nameById: Map
   const since = iso(new Date(new Date(weekStart + "T00:00:00Z").getTime() - 864e5));
   const until = iso(new Date(new Date(weekEnd + "T00:00:00Z").getTime() + 864e5));
   const agg = new Map<string, { title: string; brand: string; qty: number; revenue: number }>();
-  await Promise.all(stores.map(async (st) => {
+  await Promise.all(stores.map(async (st0) => {
+    const st = { ...st0, token: (await resolveToken(st0 as any)) ?? st0.token };
     let cursor: string | null = null;
     for (let p = 0; p < 4; p++) {
       const after: string = cursor ? `, after: "${cursor}"` : "";

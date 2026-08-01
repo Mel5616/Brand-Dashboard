@@ -23,3 +23,14 @@ export async function mintToken(cred: StoreCred): Promise<string | null> {
   if (token) cache.set(cred.domain, { token, at: Date.now() });
   return token;
 }
+
+// Resolve a working token for a BRAND_SHOPIFY-style store entry: mint via
+// client-credentials if the store has them, else fall back to its static
+// token (older, unmigrated stores).
+export async function resolveToken(store: { domain: string; token?: string; clientId?: string; clientSecret?: string }): Promise<string | null> {
+  if (store.clientId && store.clientSecret) {
+    const t = await mintToken({ id: 0, name: "", domain: store.domain, clientId: store.clientId, clientSecret: store.clientSecret });
+    if (t) return t;
+  }
+  return store.token || null;
+}

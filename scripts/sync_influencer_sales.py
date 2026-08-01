@@ -13,6 +13,8 @@ Run: python3 scripts/sync_influencer_sales.py   (also in the Actions sync)
 
 import json, os, ssl, urllib.request
 from collections import defaultdict
+import sys; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from shopify_auth import store_token
 
 BASE_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_PATH = os.path.join(BASE_DIR, 'stores.config.json')
@@ -100,7 +102,7 @@ def main():
         config = json.load(f)
     by_name = {}
     for b in config.get('brands', []):
-        if b.get('domain') and b.get('token'):
+        if b.get('domain') and (b.get('token') or b.get('shopifyClientId')):
             by_name[b['name'].lower()] = b
 
     # Codes from influencer gifts and partnership deals, grouped per brand name.
@@ -133,7 +135,7 @@ def main():
         bid = target['id'] if target else b['id']
         for code in sorted(code_set):
             try:
-                months = fetch_code_orders(b['domain'], b['token'], code)
+                months = fetch_code_orders(b['domain'], store_token(b), code)
             except Exception as e:
                 errors.append(f'{brand_name}/{code}: {e}')
                 continue

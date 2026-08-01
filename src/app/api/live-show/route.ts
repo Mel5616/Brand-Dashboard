@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
+import { resolveToken } from "@/lib/shopifyMint";
 
 // Live show-day feed: real-time Shopify revenue for a tradeshow.
 // Reads the show + participating brands from Supabase, then queries each
@@ -318,7 +319,8 @@ export async function GET(req: Request) {
   const show = shows?.[0];
   if (!show) return NextResponse.json({ live: false });
 
-  const stores: Store[] = JSON.parse(brandsEnv);
+  const rawStores: Store[] = JSON.parse(brandsEnv);
+  const stores: Store[] = await Promise.all(rawStores.map(async s => ({ ...s, token: (await resolveToken(s as any)) ?? s.token })));
   const storeById = new Map(stores.map(s => [s.id, s]));
   const brandIds: number[] = (tbRows || []).map((r: any) => r.brand_id);
   const boothCreds = { url: process.env.BOOTH_SUPABASE_URL, key: process.env.BOOTH_SUPABASE_SERVICE_ROLE_KEY };

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
+import { resolveToken } from "@/lib/shopifyMint";
 
 // Live "week so far" for the D2C Weekly tab: the current business week
 // (Sun → now) computed straight from Shopify, same definition as the Sunday
@@ -32,7 +33,8 @@ export async function GET() {
   const since = iso(new Date(new Date(prevWeekStart + "T00:00:00Z").getTime() - 864e5));
 
   const byBrand = new Map<string, { brand: string; revenue: number; orders: number; prevRevenue: number; prevOrders: number }>();
-  await Promise.all(stores.map(async (st) => {
+  await Promise.all(stores.map(async (st0) => {
+    const st = { ...st0, token: (await resolveToken(st0 as any)) ?? st0.token };
     const row = { brand: st.name, revenue: 0, orders: 0, prevRevenue: 0, prevOrders: 0 };
     byBrand.set(st.name, row);
     let cursor: string | null = null;
