@@ -74,6 +74,7 @@ import { MerCard } from "./MerCard";
 import { AnnotationsCard, type Annotation } from "./AnnotationsCard";
 import { MonthInReview } from "./MonthInReview";
 import { BrandStrategy } from "./BrandStrategy";
+import { LtvPanel } from "./LtvPanel";
 import { Notifier } from "./Notifier";
 import { StockReport } from "./StockReport";
 import { fmt } from "@/lib/format";
@@ -1461,6 +1462,8 @@ export function DashboardTabs({
             <>
               <SectionBar title="Shopify · Sales" />
               <ShopifyBrandSales brands={brands} monthly={monthly} weekly={weekly} daily={brandDaily} months={monthKeys} latestI={latestI} canSync={role === "admin"} />
+
+              <LtvPanel brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} />
               <div className="flex items-center gap-2 mb-2">
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}

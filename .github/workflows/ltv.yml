@@ -1,0 +1,27 @@
+name: ltv-cohorts
+
+on:
+  schedule:
+    - cron: "0 20 2 * *"   # 2nd of the month, 6am AEST — cohorts move slowly
+  workflow_dispatch:
+
+jobs:
+  ltv:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Write stores.config.json
+        env:
+          STORES_CONFIG_JSON: ${{ secrets.STORES_CONFIG_JSON }}
+        run: |
+          printf '%s' "$STORES_CONFIG_JSON" > stores.config.json
+      - name: Sync LTV cohorts
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python3 -u scripts/sync_ltv.py
