@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { giftOk } from "@/lib/giftKey";
 import { createClient } from "@/lib/supabase/server";
 
 // Invoice upload for the team gift form. The form is public (no login), so this
@@ -8,6 +9,7 @@ const BUCKET = "influencer-invoices";
 const ALLOWED = new Set(["pdf", "png", "jpg", "jpeg", "webp", "heic"]);
 
 export async function POST(req: Request) {
+  if (!(await giftOk(req))) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   let form: FormData;
   try { form = await req.formData(); } catch { return NextResponse.json({ ok: false, error: "Bad upload" }, { status: 400 }); }
   const file = form.get("file") as File | null;

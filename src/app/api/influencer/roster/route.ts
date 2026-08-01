@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { giftOk } from "@/lib/giftKey";
 import { getAccess } from "@/lib/access";
 import { parseCount } from "@/lib/num";
 
@@ -15,7 +16,8 @@ function missing(status: number, body: string) {
   return status === 404 || /PGRST205|does not exist|schema cache/i.test(body);
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  if (!(await giftOk(req))) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false, influencers: [] }, { status: 500 });
   const [res, nRes] = await Promise.all([
     fetch(`${sbUrl}/rest/v1/influencers?select=*&order=name.asc.nullslast`, { headers: headers(), cache: "no-store" }),
@@ -31,6 +33,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  if (!(await giftOk(req))) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   let handle = (b.handle || "").trim();

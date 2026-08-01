@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { giftOk } from "@/lib/giftKey";
 import { getAccess } from "@/lib/access";
 import { parseCount } from "@/lib/num";
 
@@ -20,7 +21,8 @@ function missing(status: number, body: string) {
 }
 const sb = (path: string) => fetch(`${sbUrl}/rest/v1/${path}`, { headers: headers(), cache: "no-store" });
 
-export async function GET() {
+export async function GET(req: Request) {
+  if (!(await giftOk(req))) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false, entries: [] }, { status: 500 });
   // read: any signed-in user (Management view-only). The write handlers stay admin-only.
   if (!(await getAccess()).role) return NextResponse.json({ ok: false, error: "unauthorised", entries: [] }, { status: 401 });
@@ -36,6 +38,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  if (!(await giftOk(req))) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   if (!b.month_key) return NextResponse.json({ ok: false, error: "month required" }, { status: 400 });
@@ -105,6 +108,7 @@ export async function POST(req: Request) {
 
 // Update results / status on an existing gift (admin: reach, engagement, sales…)
 export async function PATCH(req: Request) {
+  if (!(await giftOk(req))) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { giftOk } from "@/lib/giftKey";
 import { createClient } from "@/lib/supabase/server";
 
 // Upload an influencer profile photo to Supabase Storage and store it on the roster
@@ -9,6 +10,7 @@ const BUCKET = "influencer-avatars";
 // Public like the invoice upload — the team logs gifts from /log-gift without
 // signing in. Image-only + size cap keeps it safe.
 export async function POST(req: Request) {
+  if (!(await giftOk(req))) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   let form: FormData;
   try { form = await req.formData(); } catch { return NextResponse.json({ error: "Bad form" }, { status: 400 }); }
   const file = form.get("file") as File | null;

@@ -14,6 +14,19 @@ const FY_MONTHS = INFLUENCER_FY_MONTHS;
 const BRANDS = ["UPPAbaby", "Gaia", "WonderFold", "SmarTrike", "Frida", "Nanit", "Hannie", "Magic", "Mamave", "Matchstick Monkey", "Zazu", "MiaMily"];
 const PLATFORMS = ["Instagram", "TikTok", "YouTube", "Multiple", "Other"];
 
+// The share link carries an access key (?k=...) — remembered per browser so
+// bookmarks made after the first visit keep working. All API calls send it.
+function giftKey(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    const fromUrl = new URLSearchParams(window.location.search).get("k");
+    if (fromUrl) { localStorage.setItem("giftFormKey", fromUrl); return fromUrl; }
+    return localStorage.getItem("giftFormKey") || "";
+  } catch { return ""; }
+}
+const gfetch = (url: string, opts: RequestInit = {}) =>
+  fetch(url, { ...opts, headers: { ...(opts.headers || {}), "x-gift-key": giftKey() } });
+
 export default function LogGift() {
   const [products, setProducts] = useState<Product[]>([]);
   const [needsSetup, setNeedsSetup] = useState(false);
@@ -32,11 +45,15 @@ export default function LogGift() {
   const [hFocus, setHFocus] = useState(false);
   const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
 
+  const [noKey, setNoKey] = useState(false);
   useEffect(() => {
-    fetch("/api/influencer/products").then(r => r.json()).then(d => {
+    gfetch("/api/influencer/products").then(r => {
+      if (r.status === 403) { setNoKey(true); return { ok: false }; }
+      return r.json();
+    }).then((d: any) => {
       setNeedsSetup(!!d.needsSetup); setProducts(d.products ?? []);
     }).catch(() => {});
-    fetch("/api/influencer/roster").then(r => r.json()).then(d => setInfluencers(d.influencers ?? [])).catch(() => {});
+    gfetch("/api/influencer/roster").then(r => r.json()).then(d => setInfluencers(d.influencers ?? [])).catch(() => {});
   }, []);
 
   const handleMatches = useMemo(() => {
@@ -72,15 +89,15 @@ export default function LogGift() {
     // Upload the invoice first (if attached) so its URL is stored on the entry.
     if (invoiceFile) {
       const fd = new FormData(); fd.set("file", invoiceFile);
-      const up = await fetch("/api/influencer/invoice", { method: "POST", body: fd }).then(r => r.json()).catch(() => null);
+      const up = await gfetch("/api/influencer/invoice", { method: "POST", body: fd }).then(r => r.json()).catch(() => null);
       if (up?.ok) { body.invoice_url = up.url; body.invoice_file = up.file; }
       else { setSaving(false); setErr(up?.error || "Invoice upload failed — try again or remove it."); return; }
     }
-    const res = await fetch("/api/influencer/entries", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()).catch(() => null);
+    const res = await gfetch("/api/influencer/entries", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()).catch(() => null);
     // Influencer photo (optional) — saved against the handle on the roster.
     if (res?.ok && photoFile && f.handle) {
       const pd = new FormData(); pd.set("file", photoFile); pd.set("handle", String(f.handle));
-      await fetch("/api/influencer/avatar", { method: "POST", body: pd }).catch(() => {});
+      await gfetch("/api/influencer/avatar", { method: "POST", body: pd }).catch(() => {});
       setPhotoFile(null);
     }
     setSaving(false);
@@ -99,6 +116,16 @@ export default function LogGift() {
 
   const input = "mt-1 w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-300";
   const label = "text-[12px] font-semibold text-gray-500";
+
+  if (noKey) return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-md text-center">
+        <div className="text-3xl mb-2">🔑</div>
+        <p className="text-lg font-semibold text-gray-800">This link needs its access key</p>
+        <p className="text-sm text-gray-400 mt-1">You may have an old bookmark. Ask Mel for the current gift-form link and open it once — after that your bookmark will work again.</p>
+      </div>
+    </div>
+  );
 
   if (needsSetup) return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">

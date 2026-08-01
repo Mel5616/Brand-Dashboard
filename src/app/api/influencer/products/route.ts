@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { giftOk } from "@/lib/giftKey";
 import { getAccess } from "@/lib/access";
 
 // Team-facing product list for the gift entry form. Returns ONLY name, style
@@ -16,7 +17,8 @@ function missing(status: number, body: string) {
   return status === 404 || /PGRST205|does not exist|schema cache/i.test(body);
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  if (!(await giftOk(req))) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false, products: [] }, { status: 500 });
   // NB: cost_price / cost_ratio deliberately excluded from the select
   const res = await fetch(`${sbUrl}/rest/v1/influencer_products?select=style_code,product_name,brand,rrp&order=product_name.asc`, {
@@ -30,6 +32,7 @@ export async function GET() {
 // Replace (or merge) the product catalogue from an uploaded CSV. Admin only.
 // Body: { rows: [{ style_code, product_name, brand, cost_price, rrp }], replace?: boolean }
 export async function POST(req: Request) {
+  if (!(await giftOk(req))) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
