@@ -100,6 +100,10 @@ def sync_checkouts(bid, domain, token):
             continue
         gross = float(ck.get('total_price') or 0)
         tax = float(ck.get('total_tax') or 0)
+        # Bot/junk carts inflate the numbers absurdly (single "abandoned"
+        # carts worth $40k+) — anything over $15k is not a real shopper.
+        if gross <= 0 or gross > 15000:
+            continue
         m = months.setdefault(mk, {'checkouts': 0, 'value': 0.0})
         m['checkouts'] += 1
         m['value'] += (gross - tax) if tax > 0 else gross / 1.1
