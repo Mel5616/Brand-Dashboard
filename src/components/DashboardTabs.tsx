@@ -1166,9 +1166,6 @@ export function DashboardTabs({
 
                   return (<>
                   <BrandShareCard brands={brands} monthly={monthly} monthKeys={monthKeys} channelSales={channelSales} role={role} fyLabel={fyLabel} />
-                  <MerCard channelSales={channelSales} googleAds={googleAds} metaAds={metaAds} pinterestAds={pinterestAds}
-                    marketingActuals={marketingActuals} targets={targets} marketingBudgets={marketingBudgets}
-                    monthKeys={monthKeys} monthLabels={monthLabels} fy={fy} fyLabel={fyLabel} role={role} />
                   {tiers.map(({ label, ids }) => (
                     <div key={label} className={label ? "mb-6" : ""}>
                       {label && (
