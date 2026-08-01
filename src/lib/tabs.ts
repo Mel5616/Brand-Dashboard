@@ -10,6 +10,7 @@ export type TabSection = { label: string; tabs: TabDef[] };
 export const TAB_SECTIONS: TabSection[] = [
   { label: "Overview", tabs: [
     { id: "brands", label: "Business Overview" },
+    { id: "strategy", label: "Strategy" },
     { id: "summary", label: "Digital Portfolio Summary" },
     { id: "insights", label: "Insights" },
     { id: "team-hub", label: "Team" },
@@ -20,6 +21,7 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "snapshot", label: "Brand Snapshot" },
     { id: "social-report", label: "Social Report" },
     { id: "d2c-weekly", label: "D2C Weekly" },
+    { id: "month-review", label: "Month in Review" },
     { id: "uppababy", label: "UPPAbaby" },
   ] },
   { label: "Revenue & Channels", tabs: [
