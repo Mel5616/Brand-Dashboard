@@ -107,8 +107,12 @@ async function buildSnapshot() {
   // vs full-week comparison. ──
   const dow = today.getDay();                       // 0 = Sun … 6 = Sat
   const thisSunday = new Date(today); thisSunday.setDate(today.getDate() - dow);          // start of the current week (Sun)
-  const weekStart = new Date(thisSunday); weekStart.setDate(thisSunday.getDate() - 7);    // last complete Sunday
-  const weekEndSat = new Date(thisSunday); weekEndSat.setDate(thisSunday.getDate() - 1);  // last complete Saturday
+  // The brief is composed Fri/Sat for the week ending that Saturday — so from
+  // Friday onward the reporting week is the CURRENT (nearly finished) week.
+  // Earlier in the week it stays the last completed Sun–Sat week.
+  const useCurrent = dow >= 5;
+  const weekStart = new Date(thisSunday); if (!useCurrent) weekStart.setDate(thisSunday.getDate() - 7);
+  const weekEndSat = new Date(thisSunday); weekEndSat.setDate(thisSunday.getDate() + (useCurrent ? 6 : -1));
   const prevStart = new Date(weekStart); prevStart.setDate(weekStart.getDate() - 7);
   const prevEnd = new Date(weekEndSat); prevEnd.setDate(weekEndSat.getDate() - 7);
   const sumDaily = (start: Date, end: Date, bid?: number) => (daily as any[])
@@ -121,7 +125,7 @@ async function buildSnapshot() {
   }).filter((m: any) => m.revenue > 0).sort((a: any, b: any) => b.revenue - a.revenue);
   const topProducts = await topProductsWeek(iso(weekStart), iso(weekEndSat), nameById).catch(() => []);
   const d2c = {
-    weekStart: iso(weekStart), weekEnd: iso(weekEndSat), partial: false,
+    weekStart: iso(weekStart), weekEnd: iso(weekEndSat), partial: useCurrent,
     total: Math.round(total),
     wowPct: prevTotal > 0 ? Math.round(((total - prevTotal) / prevTotal) * 100) : null,
     top: movers,   // every brand with D2C sales, biggest first — the team sees them all
