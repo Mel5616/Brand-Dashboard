@@ -86,6 +86,8 @@ def sync_brand(brand_id, name, domain, token):
             totalPriceSet {{ shopMoney {{ amount }} }} totalTaxSet {{ shopMoney {{ amount }} }} }} }}
           pageInfo {{ hasNextPage }} }} }}'''
         d = gql(domain, token, q)
+        if any('read_customers' in (e.get('message') or '') for e in d.get('errors') or []):
+            raise RuntimeError('app missing read_customers scope — tick it in Shopify admin')
         data = (d.get('data') or {}).get('orders') or {}
         edges = data.get('edges', [])
         for e in edges:
