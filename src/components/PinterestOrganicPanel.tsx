@@ -2,6 +2,7 @@
 
 import React from "react";
 import type { Brand } from "@/lib/db";
+import { SkeletonCard } from "./Skeleton";
 
 // Organic (non-paid) Pinterest performance: per-brand profile stats, monthly
 // engagement, and the top pins of the trailing 30 days as a visual grid.
@@ -32,7 +33,7 @@ export function PinterestOrganicPanel({ brands, brandFilter }: { brands: Brand[]
       .catch(() => setLoaded(true));
   }, []);
 
-  if (!loaded) return null;
+  if (!loaded) return <SkeletonCard title="Organic Pinterest" lines={4} />;
   if (needsSetup) {
     return (
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">

@@ -2,6 +2,7 @@
 
 import React from "react";
 import { fmtFull, fmt } from "@/lib/format";
+import { BRAND_LOGOS } from "@/lib/brandLogos";
 
 // Overview > Strategy — per-brand strategy scorecard: headline commitments
 // paced live against actuals, pillar RAG scorecards, phase checklists, and the
@@ -84,9 +85,11 @@ export function BrandStrategy({ brands, monthly, googleAds, metaAds, pinterestAd
           return (
             <button key={b.id} onClick={() => setSel(b.name)}
               className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-left hover:shadow-md hover:-translate-y-0.5 transition">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-3 h-3 rounded-full" style={{ background: b.color }} />
-                <span className="font-bold text-slate-800 text-sm">{b.name}</span>
+              <div className="flex items-center gap-2 mb-2 h-8">
+                {BRAND_LOGOS[b.id] ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={encodeURI(BRAND_LOGOS[b.id])} alt={b.name} className="h-7 max-w-[110px] object-contain" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                ) : (<><div className="w-3 h-3 rounded-full" style={{ background: b.color }} /><span className="font-bold text-slate-800 text-sm">{b.name}</span></>)}
               </div>
               {s?.revenue_commit ? (
                 <p className="text-[12px] text-slate-500">{fmt(Number(s.revenue_commit))} commitment · {Math.round((fytdRev(b.name) / Number(s.revenue_commit)) * 100)}% paced</p>

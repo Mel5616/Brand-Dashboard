@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { fmtFull } from "@/lib/format";
+import { SkeletonCard } from "./Skeleton";
 
 // Reports > D2C Weekly — the automated Sunday-7pm Shopify report across every
 // brand website, styled as a branded one-pager for stakeholders (Print → PDF).
@@ -109,7 +110,7 @@ export function D2CWeekly({ brands = [] }: { brands?: BrandRef[] }) {
   const report = useMemo(() => reports.find(r => r.week_start === sel)?.payload ?? null, [reports, sel]);
   const color = (name: string) => brands.find(b => b.name.toLowerCase() === name.toLowerCase())?.color ?? "#94a3b8";
 
-  if (loading) return <div className="p-8 text-center text-sm text-gray-400">Loading…</div>;
+  if (loading) return <div className="max-w-[900px]"><SkeletonCard title="D2C Weekly" lines={6} /></div>;
   if (needsSetup) return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-500">Run <code className="bg-gray-100 px-1 rounded">add_d2c_weekly_reports.sql</code> first.</div>;
   if (!report) return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">No reports yet — the first one generates Sunday 7pm (or run the d2c-weekly-report workflow manually).</div>;
 

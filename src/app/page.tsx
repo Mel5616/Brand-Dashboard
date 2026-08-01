@@ -6,6 +6,7 @@ import { DashboardTabs } from "@/components/DashboardTabs";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { AiInsightsPanel } from "@/components/AiInsightsPanel";
 import { UserMenu } from "@/components/UserMenu";
+import { FreshnessBadge } from "@/components/FreshnessBadge";
 
 export const revalidate = 0;
 
@@ -78,6 +79,7 @@ export default async function Dashboard(props: { searchParams: Promise<{ preview
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <FreshnessBadge />
             {isAdmin && <AiInsightsPanel insight={aiInsight} />}
             {isAdmin && (
               <NotificationCenter

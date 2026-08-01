@@ -13,6 +13,20 @@ const LOGO_SIZE: Record<number, string> = {
   8:  "w-16 h-8", // Frida — noticeably smaller (logo has little built-in padding)
 };
 
+// Tiny 12-month revenue trend — pure SVG, no chart lib needed at grid scale.
+function Spark({ data, color }: { data?: number[]; color: string }) {
+  const vals = (data ?? []).filter(v => Number.isFinite(v));
+  if (vals.length < 3 || vals.every(v => v === 0)) return null;
+  const w = 64, h = 20, max = Math.max(...vals), min = Math.min(...vals);
+  const span = max - min || 1;
+  const pts = vals.map((v, i) => `${(i / (vals.length - 1)) * w},${h - 2 - ((v - min) / span) * (h - 4)}`).join(" ");
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="shrink-0 opacity-70" aria-hidden>
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export type BrandPeriod = "monthly" | "weekly" | "fy";
 
 interface Props {
@@ -30,9 +44,10 @@ interface Props {
   // Whole-business FY revenue across all channels — the card's headline figure.
   wholeRevenue?: number;
   wholeLabel?: string;
+  spark?: number[];   // 12-month revenue series for the mini trend line
 }
 
-export function BrandCard({ brand, summary, onClick, hasGoogle, hasMeta, hasInstagram, igFollowers, target, roasAlert, pacePct, wholeRevenue, wholeLabel }: Props) {
+export function BrandCard({ brand, summary, onClick, hasGoogle, hasMeta, hasInstagram, igFollowers, target, roasAlert, pacePct, wholeRevenue, wholeLabel, spark }: Props) {
   const logo = BRAND_LOGOS[brand.id];
 
   const headlineRevenue = wholeRevenue ?? summary?.fy_revenue ?? 0;
@@ -73,9 +88,10 @@ export function BrandCard({ brand, summary, onClick, hasGoogle, hasMeta, hasInst
         )}
       </div>
 
-      {/* Brand name */}
-      <div className="px-5 pb-1">
+      {/* Brand name + 12-month trend */}
+      <div className="px-5 pb-1 flex items-end justify-between gap-2">
         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest truncate">{brand.name}</p>
+        <Spark data={spark} color={brand.color} />
       </div>
 
       {/* Metrics */}

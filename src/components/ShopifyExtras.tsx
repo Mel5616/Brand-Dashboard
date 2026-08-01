@@ -2,6 +2,7 @@
 
 import React from "react";
 import { fmtFull, fmt } from "@/lib/format";
+import { SkeletonCard } from "./Skeleton";
 
 // Panels unlocked by the expanded Shopify scopes:
 //  AbandonedCheckoutsPanel — Shopify tab: value walking away at checkout
@@ -39,7 +40,7 @@ const SetupNote = ({ title }: { title: string }) => (
 
 export function AbandonedCheckoutsPanel({ brands }: { brands: BrandRef[] }) {
   const d = useExtras();
-  if (!d) return null;
+  if (!d) return <SkeletonCard title="Abandoned checkouts" lines={4} />;
   if (d.needsSetup) return <SetupNote title="Abandoned checkouts" />;
   const rows = d.abandoned;
   if (!rows.length) return null;
@@ -89,7 +90,7 @@ export function AbandonedCheckoutsPanel({ brands }: { brands: BrandRef[] }) {
 export function LiveStockPanel({ brands }: { brands: BrandRef[] }) {
   const d = useExtras();
   const [open, setOpen] = React.useState<number | null>(null);
-  if (!d) return null;
+  if (!d) return <SkeletonCard title="Live Shopify stock" lines={4} />;
   if (d.needsSetup) return <SetupNote title="Live Shopify stock" />;
   const rows = d.stock;
   const byBrand = brands
@@ -141,7 +142,7 @@ export function LiveStockPanel({ brands }: { brands: BrandRef[] }) {
 export function DiscountCodesPanel({ brands }: { brands: BrandRef[] }) {
   const d = useExtras();
   const [q, setQ] = React.useState("");
-  if (!d) return null;
+  if (!d) return <SkeletonCard title="Code redemptions" lines={4} />;
   if (d.needsSetup) return <SetupNote title="Code redemptions" />;
   const rows = d.codes;
   if (!rows.length) return null;

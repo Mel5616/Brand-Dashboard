@@ -3,6 +3,7 @@
 import React from "react";
 import { fmtFull, fmt } from "@/lib/format";
 import { KIND_META, type Annotation } from "./AnnotationsCard";
+import { BRAND_LOGOS } from "@/lib/brandLogos";
 
 // Reports > Month in Review — the auto-written permanent record: one page per
 // brand per month, assembled live from the data the dashboard already holds
@@ -93,7 +94,10 @@ export function MonthInReview({ brands, monthly, targets, googleAds, metaAds, pi
             <div key={r.b.id} className="border border-gray-100 rounded-xl p-5 break-inside-avoid">
               <div className="flex items-center justify-between gap-3 flex-wrap mb-2">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ background: r.b.color }} />
+                  {BRAND_LOGOS[r.b.id] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={encodeURI(BRAND_LOGOS[r.b.id])} alt="" className="h-6 max-w-[90px] object-contain" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  ) : <div className="w-3 h-3 rounded-full" style={{ background: r.b.color }} />}
                   <span className="font-bold text-slate-800">{r.b.name}</span>
                 </div>
                 <div className="flex items-center gap-4 text-sm">

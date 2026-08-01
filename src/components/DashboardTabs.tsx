@@ -676,6 +676,23 @@ export function DashboardTabs({
     <TodoPanel />
     <BackInStockToast />
     <IdleLogout email={currentEmail} />
+    {/* Mobile bottom nav — thumb-reach shortcuts for the home-screen app */}
+    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur border-t border-gray-200 flex items-stretch pb-[env(safe-area-inset-bottom)]">
+      {(["brands", "tradeshows", "stock-report", "weekly-brief"] as TabId[])
+        .map(id => visibleTabs.find(t => t.id === id))
+        .filter((t): t is typeof TABS[number] => !!t)
+        .map(t => (
+          <button key={t.id} onClick={() => { setBrandFilter("all"); go(t.id as TabId); }}
+            className={`flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold ${active === t.id ? "text-emerald-600" : "text-gray-400"}`}>
+            {t.icon}
+            <span className="truncate max-w-[70px]">{t.label.split(" ")[0]}</span>
+          </button>
+        ))}
+      <button onClick={() => setMobileNavOpen(o => !o)} className="flex-1 flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold text-gray-400">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+        <span>Menu</span>
+      </button>
+    </nav>
     <aside ref={sideRef} onScroll={e => { sideScroll.current = e.currentTarget.scrollTop; }}
       className={`fixed top-[70px] left-0 w-[288px] h-[calc(100vh-70px)] bg-white border-r border-gray-200 flex flex-col z-20 lg:z-10 overflow-y-auto transform transition-transform duration-200 ease-out lg:translate-x-0 ${mobileNavOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"}`}>
       {/* Mobile: close the drawer */}
@@ -901,7 +918,7 @@ export function DashboardTabs({
       {commandPalette}
       <Sidebar />
       <div className="lg:ml-[288px]">
-        <main className="max-w-screen-2xl mx-auto px-6 py-8 space-y-8">
+        <main className="max-w-screen-2xl mx-auto px-6 py-8 pb-24 lg:pb-8 space-y-8">
 
           {/* Quick access: one pill per sidebar group — jump straight to its first tab */}
           {(() => {
@@ -1212,6 +1229,7 @@ export function DashboardTabs({
                               wholeRevenue={wholeRevenue}
                               wholeLabel={wholeLabel}
                               pacePct={pacePct}
+                              spark={monthKeys.slice(0, Math.max(3, monthKeys.indexOf(LATEST) + 1)).map((mk: string) => monthly.find((m: any) => m.brand_id === id && m.month_key === mk)?.revenue ?? 0)}
                             />
                           );
                         })}

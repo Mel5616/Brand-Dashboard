@@ -2,6 +2,7 @@
 
 import React from "react";
 import { fmtFull } from "@/lib/format";
+import { SkeletonCard } from "./Skeleton";
 
 // Customer value: repeat-purchase cohorts from Shopify order history. Answers
 // "what's a new customer worth over a year, and do they come back?" per brand.
@@ -23,7 +24,7 @@ export function LtvPanel({ brands }: { brands: { id: number; name: string; color
     fetch("/api/ltv").then(r => r.json()).then(d => { setRows(d.rows ?? []); setNeedsSetup(!!d.needsSetup); setLoaded(true); }).catch(() => setLoaded(true));
   }, []);
 
-  if (!loaded) return null;
+  if (!loaded) return <SkeletonCard title="Customer value (LTV)" lines={5} />;
   if (needsSetup) return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
       <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-2">Customer value (LTV)</h2>
