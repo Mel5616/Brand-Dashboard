@@ -182,6 +182,14 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: python3 -u scripts/sync_influencer_sales.py
 
+      - name: Shopify extras (abandoned checkouts, stock, discount codes)
+        if: ${{ always() }}
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python3 -u scripts/sync_shopify_extras.py
+
       - name: Metric exception alerts (revenue drops, spend spikes, ROAS)
         if: ${{ always() }}
         env:

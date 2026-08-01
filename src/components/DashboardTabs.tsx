@@ -75,6 +75,7 @@ import { AnnotationsCard, type Annotation } from "./AnnotationsCard";
 import { MonthInReview } from "./MonthInReview";
 import { BrandStrategy } from "./BrandStrategy";
 import { LtvPanel } from "./LtvPanel";
+import { AbandonedCheckoutsPanel, LiveStockPanel, DiscountCodesPanel, CrossCodeCard } from "./ShopifyExtras";
 import { Notifier } from "./Notifier";
 import { StockReport } from "./StockReport";
 import { fmt } from "@/lib/format";
@@ -1291,6 +1292,7 @@ export function DashboardTabs({
             <>
               <SectionBar title="Promotional Calendar" />
               <PromotionalCalendar canEdit={role === "admin"} brands={brands} fy={fy} month={monthSel} />
+              {role === "admin" && <CrossCodeCard />}
             </>
           )}
 
@@ -1464,6 +1466,8 @@ export function DashboardTabs({
               <ShopifyBrandSales brands={brands} monthly={monthly} weekly={weekly} daily={brandDaily} months={monthKeys} latestI={latestI} canSync={role === "admin"} />
 
               <LtvPanel brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} />
+
+              <AbandonedCheckoutsPanel brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} />
               <div className="flex items-center gap-2 mb-2">
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}
@@ -2087,7 +2091,10 @@ export function DashboardTabs({
           )}
 
           {/* ── Product Information — brand fact sheets (Operations) ── */}
-          {active === "stock-report" && <StockReport admin={role === "admin"} brands={brands.map((b: any) => ({ name: b.name, color: b.color }))} />}
+          {active === "stock-report" && (<>
+            <LiveStockPanel brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} />
+            <StockReport admin={role === "admin"} brands={brands.map((b: any) => ({ name: b.name, color: b.color }))} />
+          </>)}
 
           {active === "decks" && (
             <>
@@ -2162,7 +2169,10 @@ export function DashboardTabs({
           )}
 
           {/* ── Influencer tracker ── */}
-          {active === "influencer" && <InfluencerTracker canEdit={role === "admin"} />}
+          {active === "influencer" && (<>
+            <InfluencerTracker canEdit={role === "admin"} />
+            <DiscountCodesPanel brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} />
+          </>)}
 
           {/* ── Gifting (team view: % of budget + RRP, no cost) ── */}
           {active === "nanit" && <NanitTracker admin={role === "admin"} />}
