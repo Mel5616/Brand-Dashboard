@@ -1359,6 +1359,12 @@ export function DashboardTabs({
                 monthKeys={monthKeys}
                 monthLabels={monthLabels}
                 fyLabel={fyLabel}
+                fy={fy}
+                setFy={setFy}
+                wholeYear={wholeYear}
+                monthSel={wholeYear ? "all" : LATEST}
+                setMonthSel={setMonthSel}
+                monthOptions={monthOptions}
                 monthly={monthly}
                 targets={targets}
                 googleAds={googleAds}

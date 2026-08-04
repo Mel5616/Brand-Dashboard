@@ -2,15 +2,24 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { buildSnapshot, snapshotHtml, type SnapshotInput } from "@/lib/snapshot";
+import { FY_LIST, FY_LABEL, type FY } from "@/lib/fy";
 
 type Props = Omit<SnapshotInput, "brand" | "note"> & {
   brands: { id: number; name: string; live?: boolean }[];
   selected: number | "all";
   onSelect: (id: number) => void;
   canEdit: boolean;
+  // Reporting-basis picker — drives the SAME global FY/Month state as the
+  // sidebar selectors, so both stay in sync and there's only one source of truth.
+  fy: FY;
+  setFy: (fy: FY) => void;
+  wholeYear: boolean;
+  monthSel: string;
+  setMonthSel: (m: string) => void;
+  monthOptions: string[];
 };
 
-export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, monthKeys, monthLabels, fyLabel, ...data }: Props) {
+export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, monthKeys, monthLabels, fyLabel, fy, setFy, wholeYear, monthSel, setMonthSel, monthOptions, ...data }: Props) {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [frameH, setFrameH] = useState(1680);
   // Auto-size the iframe to its content so there's no fixed-height gap or clipping.
@@ -140,13 +149,37 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2 no-print">
-        <select
-          value={String(brandId)}
-          onChange={e => onSelect(Number(e.target.value))}
-          className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-        >
-          {live.map(b => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
-        </select>
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={String(brandId)}
+            onChange={e => onSelect(Number(e.target.value))}
+            className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+          >
+            {live.map(b => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
+          </select>
+          {/* Reporting basis — same global FY/Month state as the sidebar, surfaced
+              here too so it's obvious (and one click away) right before you send. */}
+          <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-lg pl-2.5 pr-1 py-1">
+            <span className="text-[10px] font-bold uppercase tracking-wide text-gray-400 shrink-0">FY</span>
+            <select
+              value={fy}
+              onChange={e => setFy(e.target.value as FY)}
+              className="text-sm text-gray-700 bg-transparent focus:outline-none cursor-pointer"
+            >
+              {FY_LIST.map(f => <option key={f} value={f}>{FY_LABEL[f]}</option>)}
+            </select>
+          </div>
+          <select
+            value={wholeYear ? "all" : monthSel}
+            onChange={e => setMonthSel(e.target.value)}
+            className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+          >
+            <option value="all">Full Year</option>
+            {[...monthOptions].reverse().map(mk => (
+              <option key={mk} value={mk}>{monthLabels[monthKeys.indexOf(mk)] ?? mk}</option>
+            ))}
+          </select>
+        </div>
         <div className="flex items-center gap-2">
           <button onClick={printIt} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-3.5 py-1.5 transition shadow-sm">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
