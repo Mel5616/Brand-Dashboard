@@ -53,7 +53,16 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
     return [...years].sort((a, b) => b - a);
   }, [rawMonthly]);
   const [calYear, setCalYear] = useState<number>(new Date().getFullYear());
+  // "" = auto (the latest month with data); otherwise a specific "YYYY-MM"
+  // the user picked — e.g. to send June then July as two separate reports.
+  const [calMonthSel, setCalMonthSel] = useState<string>("");
+  useEffect(() => { setCalMonthSel(""); }, [calYear]);
   const calMonthKeys = useMemo(() => Array.from({ length: 12 }, (_, i) => `${calYear}-${String(i + 1).padStart(2, "0")}`), [calYear]);
+  const calMonthOptions = useMemo(() => {
+    const now = new Date();
+    const cur = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    return calMonthKeys.filter(k => k <= cur);
+  }, [calMonthKeys]);
   const calMonthLabels = useMemo(() => calMonthKeys.map(k => {
     const [yy, mm] = k.split("-"); const d = new Date(Number(yy), Number(mm) - 1, 1);
     return `${d.toLocaleDateString("en-AU", { month: "short" })} ${yy.slice(2)}`;
@@ -72,7 +81,7 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
 
   const activeMonthKeys = basis === "calendar" ? calMonthKeys : monthKeys;
   const activeMonthLabels = basis === "calendar" ? calMonthLabels : monthLabels;
-  const activeMonth = basis === "calendar" ? calLatest : month;
+  const activeMonth = basis === "calendar" ? (calMonthOptions.includes(calMonthSel) ? calMonthSel : calLatest) : month;
   const activeFyLabel = basis === "calendar" ? `Calendar Year ${calYear}` : fyLabel;
   // Always slice from the RAW (unfiltered-by-FY) datasets by whichever month
   // keys are active — correct for both a normal FY and a cross-FY calendar year.
@@ -245,6 +254,7 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
               </select>
             </>
           ) : (
+            <>
             <select
               value={calYear}
               onChange={e => setCalYear(Number(e.target.value))}
@@ -252,6 +262,17 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
             >
               {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
+            <select
+              value={calMonthOptions.includes(calMonthSel) ? calMonthSel : ""}
+              onChange={e => setCalMonthSel(e.target.value)}
+              className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+            >
+              <option value="">Latest ({calMonthLabels[calMonthKeys.indexOf(calLatest)] ?? calLatest})</option>
+              {[...calMonthOptions].reverse().map(mk => (
+                <option key={mk} value={mk}>{calMonthLabels[calMonthKeys.indexOf(mk)] ?? mk}</option>
+              ))}
+            </select>
+            </>
           )}
         </div>
         <div className="flex items-center gap-2">
