@@ -143,6 +143,13 @@ export function uppababyHtml(u: Uppa, snap: Snapshot, periodLabel: string, trade
   const q = (x: typeof u.quarters[number]) => `<tr><td class="cn">${x.label}${x.partial ? "<span style='color:var(--grey);font-weight:600'> · to date</span>" : ""}</td><td>${fmtFull(x.t2025)}</td><td class="cy">${fmtFull(x.t2026)}</td><td class="${x.delta >= 0 ? "up" : "dn"}">${x.delta >= 0 ? "+" : "−"}${fmtFull(Math.abs(x.delta))}</td><td>${pctTag(x.pct)}</td></tr>`;
   const m = snap; // marketing numbers reused from the Snapshot computation
   const r = (k: string, v: string) => `<div class="r"><span class="k">${k}</span><span class="val">${v}</span></div>`;
+  // "Direct Sales" (uploaded sell-through report) vs the live Shopify D2C
+  // figure are genuinely different numbers, not a data error: the upload also
+  // includes spare parts and Coolkidz-website UPPAbaby sales invoiced outside
+  // the Shopify store, which the live pull can't see. Say so explicitly next
+  // to the Shopify card so nobody reads the gap as a mistake.
+  const directSalesYtd = u.channels.find(c => c.name === "DIRECT SALES")?.ytd2026 ?? 0;
+  const shopifyGap = directSalesYtd - m.ytdRev;
 
   return `<!DOCTYPE html><html lang="en-AU"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>UPPAbaby · ${esc(periodLabel)} Sales Report</title>
@@ -267,12 +274,11 @@ table.cmp th.cy{box-shadow:inset 0 -1px 0 var(--line);}
   </div>
 
   ${(() => {
-    const direct = u.channels.find(c => c.name === "DIRECT SALES")?.ytd2026 ?? 0;
-    if (direct <= 0 || tradeshowShare == null) return "";
+    if (directSalesYtd <= 0 || tradeshowShare == null) return "";
     const tsPct = Math.round(tradeshowShare * 100);
     const webPct = 100 - tsPct;
-    const tsAmt = direct * tradeshowShare;
-    const webAmt = direct - tsAmt;
+    const tsAmt = directSalesYtd * tradeshowShare;
+    const webAmt = directSalesYtd - tsAmt;
     const lbl = (p: number) => p >= 8 ? `${p}%` : "";
     return `<div class="sec">
     <div class="h">Direct Sales · Website vs Tradeshow</div>
@@ -295,13 +301,13 @@ table.cmp th.cy{box-shadow:inset 0 -1px 0 var(--line);}
   <div class="sec">
     <div class="h">Digital &amp; marketing · ${esc(m.monthLong)}</div>
     <div class="grid">
-      <div class="card"><div class="h">Direct to consumer · Shopify</div><div class="rows">${r("Revenue", fmtFull(m.monthRev))}${r("Orders", String(m.monthOrders))}${r("Average order value", fmtFull(m.aov))}${r("D2C revenue YTD", fmt(m.ytdRev))}</div></div>
+      <div class="card"><div class="h">Direct to consumer · Shopify</div><div class="rows">${r("Revenue", fmtFull(m.monthRev))}${r("Orders", String(m.monthOrders))}${r("Average order value", fmtFull(m.aov))}${r("D2C revenue YTD", fmt(m.ytdRev))}</div>${directSalesYtd > 0 ? `<p style="font-size:9.5px;color:var(--grey);line-height:1.5;margin-top:8px;font-weight:500">Shopify orders only. The Direct Sales total above (${fmt(directSalesYtd)} YTD) additionally includes spare parts and Coolkidz-website UPPAbaby sales invoiced outside Shopify — a ${fmt(Math.abs(shopifyGap))} difference.</p>` : ""}</div>
       <div class="card"><div class="h">Paid media</div><div class="rows">${r("Google ROAS", m.google.roas.toFixed(2) + "×")}${r("Meta ROAS", m.meta.roas.toFixed(2) + "×")}${r("Blended paid ROAS", m.blendedRoas.toFixed(2) + "×")}${r("Paid spend", fmtFull(m.google.spend + m.meta.spend))}</div></div>
       <div class="card"><div class="h">Email · Klaviyo</div><div class="rows">${r("Attributed revenue", fmtFull(m.email.rev))}${r("Open rate", m.email.openRate.toFixed(1) + "%")}${r("Click rate", m.email.clickRate.toFixed(1) + "%")}${r("Emails delivered", m.email.sent.toLocaleString())}</div></div>
       <div class="card"><div class="h">Social &amp; search</div><div class="rows">${r("Organic keywords", m.seo.keywords.toLocaleString())}${r("Est. organic visits/mo", Math.round(m.seo.traffic).toLocaleString())}${r("Traffic value", fmt(m.seo.value))}${r("Top IG post", m.igPosts[0] ? (m.igPosts[0].like_count + m.igPosts[0].comments_count).toLocaleString() + " eng." : "—")}</div></div>
     </div>
   </div>
 
-  <div class="foot"><strong>Private &amp; confidential.</strong> Prepared by Coolkidz Australia, official Australian distributor of UPPAbaby. Sell-through figures are calendar-year actuals by channel; "FORWARD" months are forecasts and excluded from year-to-date totals. Digital &amp; marketing data covers Coolkidz-run UPPAbaby channels. Please do not distribute without prior written permission.</div>
+  <div class="foot"><strong>Private &amp; confidential.</strong> Prepared by Coolkidz Australia, official Australian distributor of UPPAbaby. Sell-through figures are calendar-year actuals by channel; "FORWARD" months are forecasts and excluded from year-to-date totals. Digital &amp; marketing data covers Coolkidz-run UPPAbaby channels; the Shopify D2C figure reflects Shopify store orders only and does not include spare parts sales or Coolkidz-website UPPAbaby sales invoiced outside Shopify, which are captured in the Direct Sales channel total above. Please do not distribute without prior written permission.</div>
 </div></body></html>`;
 }
