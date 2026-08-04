@@ -48,7 +48,7 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
   // year (Jan–Dec, independent — a calendar year straddles two FYs).
   const [basis, setBasis] = useState<"fy" | "calendar">("fy");
   const yearOptions = useMemo(() => {
-    const years = new Set<number>(rawMonthly.map((m: any) => Number(m.month_key.slice(0, 4))).filter((y: number) => Number.isFinite(y)));
+    const years = new Set<number>(rawMonthly.filter((m: any) => (m.revenue ?? 0) > 0).map((m: any) => Number(m.month_key.slice(0, 4))).filter((y: number) => Number.isFinite(y)));
     years.add(new Date().getFullYear());
     return [...years].sort((a, b) => b - a);
   }, [rawMonthly]);
@@ -59,7 +59,9 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
     return `${d.toLocaleDateString("en-AU", { month: "short" })} ${yy.slice(2)}`;
   }), [calMonthKeys]);
   const calLatest = useMemo(() => {
-    const present = rawMonthly.map((m: any) => m.month_key);
+    // brand_monthly pre-creates a full year of rows (future months sit at
+    // revenue 0) — presence alone isn't "has data", so filter to real revenue.
+    const present = rawMonthly.filter((m: any) => (m.revenue ?? 0) > 0).map((m: any) => m.month_key);
     const inData = calMonthKeys.filter(k => present.includes(k));
     if (inData.length) return inData[inData.length - 1];
     const now = new Date();
