@@ -320,6 +320,15 @@ export function snapshotHtml(s: Snapshot): string {
     const kids = c.kids ? c.kids.map(k => `<div class="cr ck"><span class="dot sm" style="background:${k.color}"></span><span class="cn">${esc(k.name)}</span><span class="cv">${fmtFull(k.fy)}</span><span class="cp"></span></div>`).join("") : "";
     return row + kids;
   }).join("");
+  // Month-specific channel mix — a segmented bar (not a second pie, to keep the
+  // two time windows visually distinct) showing where THIS month's revenue
+  // landed, since the donut above is always the full selected year.
+  const monthChans = s.channelGroups
+    .map(c => ({ ...c, monthShare: s.wholeMonth > 0 ? (c.latest / s.wholeMonth) * 100 : 0 }))
+    .filter(c => c.latest > 0)
+    .sort((a, b) => b.latest - a.latest);
+  const monthBar = monthChans.map(c => `<div style="width:${c.monthShare.toFixed(2)}%;background:${c.color}" title="${esc(c.name)}: ${fmtFull(c.latest)}"></div>`).join("");
+  const monthLegend = monthChans.map(c => `<div class="cr"><span class="dot" style="background:${c.color}"></span><span class="cn">${esc(c.name)}</span><span class="cv">${fmtFull(c.latest)}</span><span class="cp">${c.monthShare.toFixed(0)}%</span></div>`).join("");
   const wholeSection = s.wholeFy > 0 ? `
   <div class="sec">
     <div class="h">Whole business · all channels</div>
@@ -333,6 +342,12 @@ export function snapshotHtml(s: Snapshot): string {
       <div style="display:flex;justify-content:center">${chanPie}</div>
       <div class="chanlist">${chanLegend}</div>
     </div>
+    ${monthChans.length ? `
+    <div class="trend" style="padding-bottom:14px">
+      <div class="tl">${esc(s.monthLong)} channel split · this month only</div>
+      <div class="chanbar" style="margin:8px 0 10px">${monthBar}</div>
+      <div class="chanlist" style="flex-direction:row;flex-wrap:wrap;gap:6px 18px">${monthLegend}</div>
+    </div>` : ""}
     <div class="trend"><div class="tl">Total revenue by month · ${esc(s.fyLabel)}</div>${svgArea(s.wholeTrend, s.monthLabelsAll)}</div>
   </div>` : "";
 
