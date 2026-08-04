@@ -157,13 +157,13 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
   }
   useEffect(() => { loadShares(); }, [brand?.id, activeMonth]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function createShare() {
+  async function createShare(neverExpire = false) {
     if (!brand) return;
     setSharing(true);
     try {
       const res = await fetch("/api/snapshot-share", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ brand_id: brand.id, brand: brand.name, month_key: activeMonth, label: `${monthName} ${activeFyLabel}`, html }),
+        body: JSON.stringify({ brand_id: brand.id, brand: brand.name, month_key: activeMonth, label: `${monthName} ${activeFyLabel}`, html, expiryDays: neverExpire ? "never" : 5 }),
       });
       const j = await res.json();
       if (j.ok) await loadShares();
@@ -179,8 +179,8 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
     await fetch(`/api/snapshot-share?id=${id}`, { method: "DELETE" }).catch(() => {});
     loadShares();
   }
-  async function extendShare(id: number) {
-    await fetch("/api/snapshot-share", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, expiryDays: 5 }) }).catch(() => {});
+  async function extendShare(id: number, neverExpire = false) {
+    await fetch("/api/snapshot-share", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, expiryDays: neverExpire ? "never" : 5 }) }).catch(() => {});
     loadShares();
   }
 
@@ -316,10 +316,15 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 no-print">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Shareable link · {monthName}</span>
-            <button onClick={createShare} disabled={sharing} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 rounded-lg px-3.5 py-1.5 transition">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5" /></svg>
-              {sharing ? "Creating..." : "Create share link"}
-            </button>
+            <div className="flex items-center rounded-lg overflow-hidden shadow-sm">
+              <button onClick={() => createShare(false)} disabled={sharing} title="Expires in 5 days" className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 pl-3.5 pr-3 py-1.5 transition">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5" /></svg>
+                {sharing ? "Creating..." : "Create share link"}
+              </button>
+              <button onClick={() => createShare(true)} disabled={sharing} title="Never expires" className="text-sm font-medium text-white bg-emerald-700 hover:bg-emerald-800 disabled:opacity-40 pl-2.5 pr-3 py-1.5 border-l border-emerald-500/40 transition">
+                ∞
+              </button>
+            </div>
           </div>
           {shareNeedsSetup ? (
             <p className="text-xs text-amber-600">Run <code className="bg-amber-50 px-1 rounded">supabase/add_snapshot_shares.sql</code> in Supabase, then reload.</p>
@@ -340,14 +345,15 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
                     const expired = exp != null && Date.now() > exp;
                     return <span className={`text-xs rounded-full px-2.5 py-1 ${expired ? "text-rose-600 bg-rose-50 font-medium" : "text-slate-400 bg-slate-50"}`}>{exp == null ? "No expiry" : expired ? "Expired" : `Expires ${new Date(exp).toLocaleDateString("en-AU", { dateStyle: "medium" })}`}</span>;
                   })()}
-                  <button onClick={() => extendShare(s.id)} className="text-xs text-emerald-600 hover:underline">Extend 5 days</button>
+                  <button onClick={() => extendShare(s.id, false)} className="text-xs text-emerald-600 hover:underline">Extend 5 days</button>
+                  {s.expires_at && <button onClick={() => extendShare(s.id, true)} className="text-xs text-emerald-600 hover:underline">Make permanent</button>}
                   <button onClick={() => deleteShare(s.id)} className="text-xs text-rose-400 hover:text-rose-600">Delete</button>
                 </div>
               ))}
               <button onClick={loadShares} className="text-[11px] text-slate-400 hover:text-slate-600">Refresh open status</button>
             </div>
           )}
-          <p className="text-[11px] text-gray-400 mt-2">Anyone with the link can view this report (no login). Each open is tracked. Links expire after 5 days — use Extend to renew.</p>
+          <p className="text-[11px] text-gray-400 mt-2">Anyone with the link can view this report (no login). Each open is tracked. The main button expires in 5 days (use Extend to renew) — the <strong>∞</strong> button creates a link that never expires.</p>
         </div>
       )}
 
