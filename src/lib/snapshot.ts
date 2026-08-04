@@ -13,7 +13,8 @@ export type SnapshotInput = {
   month: string;            // selected month_key, e.g. "2026-06"
   monthKeys: string[];      // FY month keys in order
   monthLabels: string[];    // matching short labels, e.g. "Jun"
-  fyLabel: string;          // e.g. "FY2025-26"
+  fyLabel: string;          // e.g. "FY2025-26" or "Calendar Year 2026"
+  calendarYear?: boolean;   // true when the report spans Jan–Dec instead of Jul–Jun
   monthly: { brand_id: number; month_key: string; revenue: number; orders: number }[];
   targets: { brand_id: number; month_key: string; revenue_target: number }[];
   googleAds: { brand_id: number; month_key: string; spend: number; roas: number; revenue?: number }[];
@@ -30,7 +31,7 @@ export type SnapshotInput = {
   shopifySources: { brand_id: number; month_key: string; source: string; revenue: number }[];
   instagramMedia: IgPost[];
   // Marketing budget vs spend (budgets already filtered to the FY, actuals to the FY months upstream)
-  marketingBudgets: { brand_id: number; channel: string; annual_budget: number }[];
+  marketingBudgets: { brand_id: number; channel: string; annual_budget: number; fy?: string }[];
   budgetTopups?: { brand_id: number; month_key: string; channel: string; amount: number }[];
   marketingActuals: { brand_id: number; month_key: string; channel: string; spend: number }[];
   // AI insight narrative + SEMrush organic data for the "opportunities to move" block
@@ -157,10 +158,15 @@ export function buildSnapshot(d: SnapshotInput) {
   // (the actuals table also carries Google/Meta lines, so exclude those to avoid double counting).
   // Per-channel monthly budget = the per-month override if set, else annual ÷ 12.
   const bRows = forBrand(d.marketingBudgets);
-  const annualBudget = sum(bRows.map((b: any) => b.annual_budget));
+  // A budget row may carry its own FY — needed when the report spans a calendar
+  // year, which straddles two financial years. Rows without one (the normal,
+  // already-FY-filtered case) apply to every month, matching prior behaviour.
+  const monthToFyKey = (mk: string) => { const [y, m] = mk.split("-").map(Number); const sy = m >= 7 ? y : y - 1; return `${sy}-${String((sy + 1) % 100).padStart(2, "0")}`; };
+  const bRowsFor = (mk: string) => bRows.filter((b: any) => !b.fy || b.fy === monthToFyKey(mk));
+  const annualBudget = sum(bRowsFor(month).map((b: any) => b.annual_budget));
   const bTopups = forBrand(d.budgetTopups ?? []);
   const ovr = (channel: string, mk: string): number | null => { const t = bTopups.find((x: any) => x.channel === channel && x.month_key === mk); return t ? (Number(t.amount) || 0) : null; };
-  const mBudget = (mk: string) => sum(bRows.map((b: any) => { const o = ovr(b.channel, mk); return o != null ? o : b.annual_budget / 12; }));
+  const mBudget = (mk: string) => sum(bRowsFor(mk).map((b: any) => { const o = ovr(b.channel, mk); return o != null ? o : b.annual_budget / 12; }));
   const monthsUpto = monthKeys.slice(0, idx + 1);
   const monthBudget = mBudget(month);
   const otherSpend = sum(forBrand(d.marketingActuals).filter(a => a.month_key === month && a.channel !== "Google Advertising" && a.channel !== "Social Media (Meta)").map(a => a.spend));
@@ -210,8 +216,13 @@ export function buildSnapshot(d: SnapshotInput) {
   const peakShare = Math.max(...seasonal.map(s => s.share), 0.001);
   const topShare = [...seasonal].sort((a, b) => b.share - a.share)[0];
 
+  const calendarYear = !!d.calendarYear;
+  const periodWord = calendarYear ? "year" : "financial year";
+  const periodCap = calendarYear ? "Year" : "Financial year";
+  const periodShort = calendarYear ? "CY" : "FY";
+
   return {
-    brand, month, monthName, monthLong, monthFull, fyLabel: d.fyLabel,
+    brand, month, monthName, monthLong, monthFull, fyLabel: d.fyLabel, periodWord, periodCap, periodShort,
     monthRev, monthOrders, aov, ytdRev, fyRevTotal, monthTarget, fyTarget, targetMultiple, returnRate,
     google: { spend: gSpend, rev: gRev, roas: gRoas, revDelta: delta(gRev, gRevPrev), roasDelta: delta(gRoas, gPrev?.roas ?? 0), topCampaign },
     meta: { spend: mSpend, rev: mRev, roas: mRoas, cpa: mCpa, revDelta: delta(mRev, mPrev?.revenue ?? 0), roasDelta: delta(mRoas, mPrev && mPrev.spend > 0 ? mPrev.revenue / mPrev.spend : 0), cpaDelta: delta(mCpa, mCpaPrev) },
@@ -286,7 +297,7 @@ export function snapshotHtml(s: Snapshot): string {
 
   const ytdNote = s.targetMultiple != null
     ? `${s.targetMultiple.toFixed(1)}× the full-year D2C target`
-    : `Direct-to-consumer revenue, financial year to date`;
+    : `Direct-to-consumer revenue, ${s.periodWord} to date`;
   const d2cTag = s.monthTarget > 0
     ? (s.monthRev >= s.monthTarget ? `${s.monthLong} revenue ran ahead of target` : `${Math.round((s.monthRev / s.monthTarget) * 100)}% of the ${s.monthLong} target`)
     : "";
@@ -313,7 +324,7 @@ export function snapshotHtml(s: Snapshot): string {
   <div class="sec">
     <div class="h">Whole business · all channels</div>
     <div class="kpis">
-      <div class="c"><div class="l">Total brand revenue · FY</div><div class="v">${fmt(s.wholeFy)}</div></div>
+      <div class="c"><div class="l">Total brand revenue · ${esc(s.periodShort)}</div><div class="v">${fmt(s.wholeFy)}</div></div>
       <div class="c"><div class="l">${esc(s.monthLong)} · all channels</div><div class="v">${fmt(s.wholeMonth)}</div></div>
       <div class="c"><div class="l">Channels</div><div class="v">${s.channelGroups.length}</div></div>
       <div class="c"><div class="l">Digital share</div><div class="v">${s.digitalShare.toFixed(0)}%</div></div>
@@ -341,7 +352,7 @@ export function snapshotHtml(s: Snapshot): string {
       <div class="c"><div class="l">${mkDiff >= 0 ? "Under budget" : "Over budget"}</div><div class="v">${fmt(Math.abs(mkDiff))}</div></div>
     </div>
     ${mk.channels.length ? `<div class="chanwrap"><div><div class="chanbar">${mkBar}</div></div><div class="chanlist">${mkLegend}</div></div>` : ""}
-    ${mk.ytdBudget > 0 ? `<div class="seostat" style="margin-top:10px">Financial year to date: <strong>${fmt(mk.ytdSpend)}</strong> spent of <strong>${fmt(mk.ytdBudget)}</strong> budgeted &middot; <strong>${Math.round((mk.ytdSpend / mk.ytdBudget) * 100)}%</strong> ${mk.ytdSpend <= mk.ytdBudget ? "of pace" : "over pace"}</div>` : ""}
+    ${mk.ytdBudget > 0 ? `<div class="seostat" style="margin-top:10px">${esc(s.periodCap)} to date: <strong>${fmt(mk.ytdSpend)}</strong> spent of <strong>${fmt(mk.ytdBudget)}</strong> budgeted &middot; <strong>${Math.round((mk.ytdSpend / mk.ytdBudget) * 100)}%</strong> ${mk.ytdSpend <= mk.ytdBudget ? "of pace" : "over pace"}</div>` : ""}
   </div>` : "";
 
   // Email · Klaviyo — the full monthly email dataset.
@@ -496,7 +507,7 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
   <div class="seostat" style="margin-top:16px;margin-bottom:8px">MER (revenue ÷ total spend) is the true efficiency measure. Per-platform ROAS (Google, Meta, email) is attributed inside each platform's own window, so those figures overlap and <strong>cannot be added together</strong>.</div>
 
   <div class="seasonal">
-    <div class="copy"><div class="t">Where the year's revenue lands</div><div class="d">Share of the financial year's direct-to-consumer revenue by month. The navy bars are the peak.</div></div>
+    <div class="copy"><div class="t">Where the year's revenue lands</div><div class="d">Share of the ${esc(s.periodWord)}'s direct-to-consumer revenue by month. The navy bars are the peak.</div></div>
     <div class="bars">${bars}</div>
   </div>
 
@@ -505,7 +516,7 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
       r(`${s.monthLong} revenue`, fmtFull(s.monthRev)),
       r(`${s.monthLong} orders`, String(s.monthOrders)),
       r(`Average order value`, fmtFull(s.aov)),
-      s.returnRate != null ? r(`FY return rate`, roundPct(s.returnRate)) : "",
+      s.returnRate != null ? r(`${s.periodShort} return rate`, roundPct(s.returnRate)) : "",
     ].join(""), d2cTag)}
     ${card(`Email · Klaviyo · ${s.monthLong}`, [
       r(`Attributed revenue`, `${fmtFull(s.email.rev)}${up(s.email.revDelta)}`),

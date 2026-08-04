@@ -589,6 +589,10 @@ export function DashboardTabs({
   // Unfiltered copies for the UPPAbaby report — it covers the uploaded sell-through
   // period (through the last complete month), which may sit in the prior FY.
   const rawMonthly = monthly, rawTargets = targets, rawGoogleAds = googleAds, rawMetaAds = metaAds, rawKlaviyo = klaviyo, rawGoogleAdsCampaigns = googleAdsCampaigns;
+  // Also unfiltered — needed for the Snapshot report's optional calendar-year
+  // mode (Jan–Dec straddles two financial years, so budgets carry their own `fy`).
+  const rawMarketingActuals = marketingActuals;
+  const rawMarketingBudgets = marketingBudgets;
   monthly          = inFy(monthly);
   googleAds        = inFy(googleAds);
   metaAds          = inFy(metaAds);
@@ -1365,6 +1369,14 @@ export function DashboardTabs({
                 monthSel={wholeYear ? "all" : LATEST}
                 setMonthSel={setMonthSel}
                 monthOptions={monthOptions}
+                rawMonthly={rawMonthly}
+                rawTargets={rawTargets}
+                rawGoogleAds={rawGoogleAds}
+                rawMetaAds={rawMetaAds}
+                rawKlaviyo={rawKlaviyo}
+                rawGoogleAdsCampaigns={rawGoogleAdsCampaigns}
+                rawMarketingActuals={rawMarketingActuals}
+                rawMarketingBudgets={rawMarketingBudgets}
                 monthly={monthly}
                 targets={targets}
                 googleAds={googleAds}

@@ -17,9 +17,19 @@ type Props = Omit<SnapshotInput, "brand" | "note"> & {
   monthSel: string;
   setMonthSel: (m: string) => void;
   monthOptions: string[];
+  // Unfiltered-by-FY copies — needed for calendar-year mode, which straddles
+  // two financial years, so the pre-filtered props above can't be reused.
+  rawMonthly: SnapshotInput["monthly"];
+  rawTargets: SnapshotInput["targets"];
+  rawGoogleAds: SnapshotInput["googleAds"];
+  rawMetaAds: SnapshotInput["metaAds"];
+  rawKlaviyo: SnapshotInput["klaviyo"];
+  rawGoogleAdsCampaigns: SnapshotInput["googleAdsCampaigns"];
+  rawMarketingActuals: SnapshotInput["marketingActuals"];
+  rawMarketingBudgets: SnapshotInput["marketingBudgets"];
 };
 
-export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, monthKeys, monthLabels, fyLabel, fy, setFy, wholeYear, monthSel, setMonthSel, monthOptions, ...data }: Props) {
+export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, monthKeys, monthLabels, fyLabel, fy, setFy, wholeYear, monthSel, setMonthSel, monthOptions, rawMonthly, rawTargets, rawGoogleAds, rawMetaAds, rawKlaviyo, rawGoogleAdsCampaigns, rawMarketingActuals, rawMarketingBudgets, ...data }: Props) {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [frameH, setFrameH] = useState(1680);
   // Auto-size the iframe to its content so there's no fixed-height gap or clipping.
@@ -33,6 +43,38 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
   // A snapshot is per brand — fall back to the first live brand when "all" is selected.
   const brandId = selected === "all" ? (live[0]?.id ?? brands[0]?.id) : selected;
   const brand = brands.find(b => b.id === brandId);
+
+  // Reporting basis: financial year (the global sidebar state) or calendar
+  // year (Jan–Dec, independent — a calendar year straddles two FYs).
+  const [basis, setBasis] = useState<"fy" | "calendar">("fy");
+  const yearOptions = useMemo(() => {
+    const years = new Set<number>(rawMonthly.map((m: any) => Number(m.month_key.slice(0, 4))).filter((y: number) => Number.isFinite(y)));
+    years.add(new Date().getFullYear());
+    return [...years].sort((a, b) => b - a);
+  }, [rawMonthly]);
+  const [calYear, setCalYear] = useState<number>(new Date().getFullYear());
+  const calMonthKeys = useMemo(() => Array.from({ length: 12 }, (_, i) => `${calYear}-${String(i + 1).padStart(2, "0")}`), [calYear]);
+  const calMonthLabels = useMemo(() => calMonthKeys.map(k => {
+    const [yy, mm] = k.split("-"); const d = new Date(Number(yy), Number(mm) - 1, 1);
+    return `${d.toLocaleDateString("en-AU", { month: "short" })} ${yy.slice(2)}`;
+  }), [calMonthKeys]);
+  const calLatest = useMemo(() => {
+    const present = rawMonthly.map((m: any) => m.month_key);
+    const inData = calMonthKeys.filter(k => present.includes(k));
+    if (inData.length) return inData[inData.length - 1];
+    const now = new Date();
+    const cur = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const past = calMonthKeys.filter(k => k <= cur);
+    return past.length ? past[past.length - 1] : calMonthKeys[0];
+  }, [calMonthKeys, rawMonthly]);
+
+  const activeMonthKeys = basis === "calendar" ? calMonthKeys : monthKeys;
+  const activeMonthLabels = basis === "calendar" ? calMonthLabels : monthLabels;
+  const activeMonth = basis === "calendar" ? calLatest : month;
+  const activeFyLabel = basis === "calendar" ? `Calendar Year ${calYear}` : fyLabel;
+  // Always slice from the RAW (unfiltered-by-FY) datasets by whichever month
+  // keys are active — correct for both a normal FY and a cross-FY calendar year.
+  const filterMk = <T extends { month_key: string }>(rows: T[]) => rows.filter(r => activeMonthKeys.includes(r.month_key));
 
   // Notes are stored per brand+month and fetched on change. needsSetup => table not created yet.
   const [note, setNote] = useState("");
@@ -57,18 +99,18 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
     if (!brand) return;
     let cancelled = false;
     setNoteState("loading");
-    fetch(`/api/snapshot-notes?brand=${brand.id}&month=${month}`)
+    fetch(`/api/snapshot-notes?brand=${brand.id}&month=${activeMonth}`)
       .then(r => r.json())
       .then(j => { if (cancelled) return; if (j.needsSetup) setNoteState("needsSetup"); else setNoteState("idle"); setNote(j.content ?? ""); setSavedNote(j.content ?? ""); setSavedInsights(j.insights ?? ""); setInsights((j.insights && j.insights.trim()) ? j.insights : aiDefault); })
       .catch(() => { if (!cancelled) setNoteState("error"); });
     return () => { cancelled = true; };
-  }, [brand?.id, month]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [brand?.id, activeMonth]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function saveNote() {
     if (!brand) return;
     setNoteState("saving");
     try {
-      const res = await fetch("/api/snapshot-notes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brand_id: brand.id, month_key: month, content: note, insights: savedInsights }) });
+      const res = await fetch("/api/snapshot-notes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brand_id: brand.id, month_key: activeMonth, content: note, insights: savedInsights }) });
       const j = await res.json();
       if (j.ok) { setSavedNote(note); setNoteState("saved"); setTimeout(() => setNoteState("idle"), 1800); }
       else setNoteState(j.needsSetup ? "needsSetup" : "error");
@@ -79,7 +121,7 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
     if (!brand) return;
     setInsState("saving");
     try {
-      const res = await fetch("/api/snapshot-notes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brand_id: brand.id, month_key: month, content: savedNote, insights }) });
+      const res = await fetch("/api/snapshot-notes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brand_id: brand.id, month_key: activeMonth, content: savedNote, insights }) });
       const j = await res.json();
       if (j.ok && !j.insightsUnsupported) { setSavedInsights(insights); setInsState("saved"); setTimeout(() => setInsState("idle"), 1800); }
       else setInsState("error");
@@ -90,20 +132,30 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
   // The saved note (not the in-progress edit) is what renders into the report.
   const html = useMemo(() => {
     if (!brand) return "";
-    return snapshotHtml(buildSnapshot({ brand, month, monthKeys, monthLabels, fyLabel, note: savedNote, insightsOverride: savedInsights, budgetTopups: topups, ...data }));
-  }, [brand, month, monthKeys, monthLabels, fyLabel, savedNote, savedInsights, topups, data]);
+    return snapshotHtml(buildSnapshot({
+      ...data, brand,
+      month: activeMonth, monthKeys: activeMonthKeys, monthLabels: activeMonthLabels, fyLabel: activeFyLabel,
+      calendarYear: basis === "calendar",
+      note: savedNote, insightsOverride: savedInsights, budgetTopups: topups,
+      monthly: filterMk(rawMonthly), targets: filterMk(rawTargets),
+      googleAds: filterMk(rawGoogleAds), metaAds: filterMk(rawMetaAds), klaviyo: filterMk(rawKlaviyo),
+      googleAdsCampaigns: filterMk(rawGoogleAdsCampaigns), marketingActuals: filterMk(rawMarketingActuals),
+      marketingBudgets: rawMarketingBudgets,
+    }));
+  }, [brand, activeMonth, activeMonthKeys, activeMonthLabels, activeFyLabel, basis, savedNote, savedInsights, topups, data,
+      rawMonthly, rawTargets, rawGoogleAds, rawMetaAds, rawKlaviyo, rawGoogleAdsCampaigns, rawMarketingActuals, rawMarketingBudgets]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const monthName = monthLabels[monthKeys.indexOf(month)] ?? month;
+  const monthName = activeMonthLabels[activeMonthKeys.indexOf(activeMonth)] ?? activeMonth;
 
   async function loadShares() {
     if (!brand) return;
     try {
-      const j = await fetch(`/api/snapshot-share?brand_id=${brand.id}&month_key=${month}`).then(r => r.json());
+      const j = await fetch(`/api/snapshot-share?brand_id=${brand.id}&month_key=${activeMonth}`).then(r => r.json());
       if (j.ok) { setShares(j.items); setShareNeedsSetup(false); }
       else if (j.needsSetup) setShareNeedsSetup(true);
     } catch { /* ignore */ }
   }
-  useEffect(() => { loadShares(); }, [brand?.id, month]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { loadShares(); }, [brand?.id, activeMonth]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function createShare() {
     if (!brand) return;
@@ -111,7 +163,7 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
     try {
       const res = await fetch("/api/snapshot-share", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ brand_id: brand.id, brand: brand.name, month_key: month, label: `${monthName} ${fyLabel}`, html }),
+        body: JSON.stringify({ brand_id: brand.id, brand: brand.name, month_key: activeMonth, label: `${monthName} ${activeFyLabel}`, html }),
       });
       const j = await res.json();
       if (j.ok) await loadShares();
@@ -157,28 +209,48 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
           >
             {live.map(b => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
           </select>
-          {/* Reporting basis — same global FY/Month state as the sidebar, surfaced
-              here too so it's obvious (and one click away) right before you send. */}
-          <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-lg pl-2.5 pr-1 py-1">
-            <span className="text-[10px] font-bold uppercase tracking-wide text-gray-400 shrink-0">FY</span>
-            <select
-              value={fy}
-              onChange={e => setFy(e.target.value as FY)}
-              className="text-sm text-gray-700 bg-transparent focus:outline-none cursor-pointer"
-            >
-              {FY_LIST.map(f => <option key={f} value={f}>{FY_LABEL[f]}</option>)}
-            </select>
+          {/* Reporting basis — Financial Year (drives the same global sidebar state)
+              or Calendar Year (independent — Jan–Dec straddles two FYs). Whichever
+              is picked here is what the report, print and share link all use. */}
+          <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg p-0.5">
+            <button type="button" onClick={() => setBasis("fy")}
+              className={`text-[11.5px] font-semibold rounded-md px-2.5 py-1 transition ${basis === "fy" ? "bg-white text-slate-700 shadow-sm" : "text-gray-400"}`}>
+              Financial Year
+            </button>
+            <button type="button" onClick={() => setBasis("calendar")}
+              className={`text-[11.5px] font-semibold rounded-md px-2.5 py-1 transition ${basis === "calendar" ? "bg-white text-slate-700 shadow-sm" : "text-gray-400"}`}>
+              Calendar Year
+            </button>
           </div>
-          <select
-            value={wholeYear ? "all" : monthSel}
-            onChange={e => setMonthSel(e.target.value)}
-            className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-          >
-            <option value="all">Full Year</option>
-            {[...monthOptions].reverse().map(mk => (
-              <option key={mk} value={mk}>{monthLabels[monthKeys.indexOf(mk)] ?? mk}</option>
-            ))}
-          </select>
+          {basis === "fy" ? (
+            <>
+              <select
+                value={fy}
+                onChange={e => setFy(e.target.value as FY)}
+                className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+              >
+                {FY_LIST.map(f => <option key={f} value={f}>{FY_LABEL[f]}</option>)}
+              </select>
+              <select
+                value={wholeYear ? "all" : monthSel}
+                onChange={e => setMonthSel(e.target.value)}
+                className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+              >
+                <option value="all">Full Year</option>
+                {[...monthOptions].reverse().map(mk => (
+                  <option key={mk} value={mk}>{monthLabels[monthKeys.indexOf(mk)] ?? mk}</option>
+                ))}
+              </select>
+            </>
+          ) : (
+            <select
+              value={calYear}
+              onChange={e => setCalYear(Number(e.target.value))}
+              className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+            >
+              {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <button onClick={printIt} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-3.5 py-1.5 transition shadow-sm">
