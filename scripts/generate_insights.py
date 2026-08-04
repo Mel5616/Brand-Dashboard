@@ -85,6 +85,13 @@ def main():
 
     brands  = sb_get("brands?select=id,name&order=id")
     summ    = sb_get("brand_summary?select=brand_id,fy_revenue,last_month_rev,mom_growth,yoy_growth,last_month_label")
+    monthly = sb_get("brand_monthly?select=brand_id,month_key,revenue,prev_revenue&order=month_key")
+    # brand_summary's "last month" rolls forward to the CURRENT in-progress
+    # month (by design, for live dashboard tiles) — comparing a few days of
+    # this month against a full prior month produces a fake ~90% "decline"
+    # every month, which then reads as a crisis once the AI writes it up. For
+    # narrative insights, always use the last fully COMPLETED month instead.
+    cur_key = datetime.utcnow().strftime("%Y-%m")
     google  = sb_get("google_ads?select=brand_id,month_key,spend,roas&order=month_key")
     meta    = sb_get("meta_ads?select=brand_id,month_key,spend,roas,revenue&order=month_key")
     klav    = sb_get("klaviyo_metrics?select=brand_id,month_key,revenue,open_rate,click_rate,emails_sent&order=month_key")
@@ -110,9 +117,20 @@ def main():
         if m and not (m.get("roas") or 0) and (m.get("spend") or 0) > 0:
             m["roas"] = (m.get("revenue") or 0) / m["spend"]  # roas column can be 0; derive it
         gs, sr = latest(gsc, bid), latest(semrush, bid)
-        rev = s.get("last_month_rev") or 0
-        mom = s.get("mom_growth") or 0
-        yoy = s.get("yoy_growth") or 0
+        mrows = sorted([r for r in monthly if r["brand_id"] == bid and r["month_key"] < cur_key], key=lambda r: r["month_key"])
+        last_complete = mrows[-1] if mrows else None
+        prev_complete = mrows[-2] if len(mrows) > 1 else None
+        if last_complete:
+            rev = last_complete.get("revenue") or 0
+            prev_rev = prev_complete.get("revenue") if prev_complete else 0
+            mom = round((rev - prev_rev) / prev_rev * 100, 1) if prev_rev else 0
+            yoy_base = last_complete.get("prev_revenue") or 0
+            yoy = round((rev - yoy_base) / yoy_base * 100, 1) if yoy_base else 0
+        else:
+            # No completed month yet (new brand) — fall back to the old figures.
+            rev = s.get("last_month_rev") or 0
+            mom = s.get("mom_growth") or 0
+            yoy = s.get("yoy_growth") or 0
         fy  = s.get("fy_revenue") or 0
         if not rev and not fy:
             continue
