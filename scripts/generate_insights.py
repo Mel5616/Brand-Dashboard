@@ -97,6 +97,14 @@ def main():
     klav    = sb_get("klaviyo_metrics?select=brand_id,month_key,revenue,open_rate,click_rate,emails_sent&order=month_key")
     gsc     = sb_get("gsc_metrics?select=brand_id,month_key,clicks,position&order=month_key")
     semrush = sb_get("semrush_metrics?select=brand_id,month_key,organic_keywords,traffic_value&order=month_key")
+    # Same fix as sales: drop the in-progress month everywhere the AI reads
+    # a "latest" row, or a brand's first few days of a new month (near-zero
+    # spend, near-zero email sends) reads as every channel suddenly collapsing.
+    google  = [r for r in google  if r.get("month_key", "") < cur_key]
+    meta    = [r for r in meta    if r.get("month_key", "") < cur_key]
+    klav    = [r for r in klav    if r.get("month_key", "") < cur_key]
+    gsc     = [r for r in gsc     if r.get("month_key", "") < cur_key]
+    semrush = [r for r in semrush if r.get("month_key", "") < cur_key]
     channel = sb_get("channel_sales?select=brand,customer_group,value")
 
     def _norm(x): return "".join(c for c in (x or "").lower() if c.isalnum())
