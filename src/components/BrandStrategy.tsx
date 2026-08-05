@@ -48,10 +48,13 @@ export function BrandStrategy({ brands, monthly, googleAds, metaAds, pinterestAd
 
   async function attachPdf(file: File) {
     if (!sel) return;
+    if (file.size > 25 * 1024 * 1024) { alert(`"${file.name}" is over 25MB — that's too large to attach. Compress it or export a smaller PDF.`); return; }
     const fd = new FormData(); fd.set("brand", sel); fd.set("file", file);
     setBusy(true);
-    await fetch("/api/strategy", { method: "POST", body: fd }).catch(() => {});
-    setBusy(false); load();
+    const d = await fetch("/api/strategy", { method: "POST", body: fd }).then(r => r.json()).catch(() => null);
+    setBusy(false);
+    if (!d?.ok) { alert(d?.error || "Couldn't attach the PDF — try again."); return; }
+    load();
   }
 
   if (needsSetup) return (
