@@ -24,7 +24,7 @@ type BucketKey = (typeof BUCKETS)[number]["key"];
 const bucketOf = (p: Priority): BucketKey => (BUCKETS.some(b => b.key === p.bucket) ? (p.bucket as BucketKey) : "week");
 type Meta = { priority?: "high" | "medium" | "low" | null; notes?: string | null };
 type Completion = { task_gid: string; name: string | null; project_label: string | null; due_on: string | null; created_at_asana: string | null; completed_at: string; source: string };
-type DesignCampaign = { id: string; campaign: string; brand: string; status: string; key_date: string | null; end_date: string | null; briefUrl: string | null; oneLiner: string };
+type DesignCampaign = { id: string; campaign: string; brand: string; status: string; key_date: string | null; end_date: string | null; briefUrl: string | null; oneLiner: string; brief: Record<string, any> | null };
 type BrandRef = { name: string; color: string };
 
 const inp = "text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400";
@@ -258,6 +258,15 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
     setMeta(m => ({ ...m, [gid]: { ...m[gid], priority: next } }));
     const d = await post({ action: "meta.set", gid, priority: next });
     if (!d.ok) { setMeta(m => ({ ...m, [gid]: { ...m[gid], priority: prev } })); setErr(d.error || "Couldn't save priority."); }
+  }
+  // Untick "Design required" on the campaign card without leaving this page —
+  // merges into the existing brief so complianceFlags/briefUrl etc. survive.
+  async function markDesignDone(c: DesignCampaign) {
+    setDesignCampaigns(prev => prev.filter(x => x.id !== c.id));
+    const nextBrief = { ...(c.brief ?? {}), designRequired: false };
+    const d = await fetch("/api/campaigns", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: c.id, brief: nextBrief }) })
+      .then(r => r.json()).catch(() => null);
+    if (!d?.ok) { setDesignCampaigns(prev => [...prev, c]); setErr("Couldn't update that campaign — try again."); }
   }
   function openNotes(gid: string) {
     setNotesFor(cur => cur === gid ? null : gid);
@@ -591,6 +600,12 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
                       })}
                     </span>
                   )}
+                  {admin && (
+                    <button onClick={() => markDesignDone(c)} title="Mark design done — unticks it on the campaign card"
+                      className="text-[10.5px] font-semibold text-emerald-600 border border-emerald-200 hover:bg-emerald-50 rounded-full px-2.5 py-0.5 shrink-0">
+                      ✓ Done
+                    </button>
+                  )}
                   {queued.has(gid)
                     ? <span className="text-[10.5px] font-semibold text-emerald-600 bg-emerald-50 rounded-full px-2 py-0.5 shrink-0">In the plan ✓</span>
                     : admin && (
@@ -611,7 +626,7 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
               );
             })}
           </div>
-          <p className="text-[11px] text-gray-400 mt-2">Flagged from the campaign calendar — untick &quot;🎨 Design required&quot; on the campaign card when the work is done.</p>
+          <p className="text-[11px] text-gray-400 mt-2">Flagged from the campaign calendar — click <strong>✓ Done</strong> above, or untick &quot;🎨 Design required&quot; on the campaign card itself.</p>
         </div>
       )}
 

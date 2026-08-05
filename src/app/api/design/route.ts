@@ -43,7 +43,7 @@ export async function GET() {
     meta: mRes.ok ? JSON.parse(mText || "[]") : [],
     completions: cRes.ok ? JSON.parse(cText || "[]") : [],
     designCampaigns: campRes.ok
-      ? JSON.parse(campText || "[]").map((c: any) => ({ id: c.id, campaign: c.campaign, brand: c.brand, status: c.status, key_date: c.key_date, end_date: c.end_date, briefUrl: c.share_token ? `/c/${c.share_token}` : null, oneLiner: c.brief?.oneLiner ?? "" }))
+      ? JSON.parse(campText || "[]").map((c: any) => ({ id: c.id, campaign: c.campaign, brand: c.brand, status: c.status, key_date: c.key_date, end_date: c.end_date, briefUrl: c.share_token ? `/c/${c.share_token}` : null, oneLiner: c.brief?.oneLiner ?? "", brief: c.brief ?? null }))
       : [],
     prioritiesSetup: pRes.ok || !missing(pRes.status, pText),
     metaSetup: mRes.ok,
