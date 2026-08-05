@@ -264,6 +264,11 @@ TRACKED_PRODUCT_SKUS = {
     'NAN-BMFD':  'Monitor · Flex Stand',
     'NAN-SLM':   'Sound Machine & Night Light',
 }
+# The camera lines only (excludes the sound machine) — used for the "camera units" total.
+CAMERA_SKUS = {'NAN-BMFS', 'NAN-BMWMW', 'NAN-BMFD'}
+# Expo/tradeshow-only bundle listings of the same model, under a different SKU —
+# fold into the canonical SKU so the breakdown doesn't show a duplicate row.
+SKU_ALIASES = {'EXPOBLK': 'NAN-BMWMW'}  # "Pro Camera + Wall Mount + Flex Stand (Black)"
 
 # ── Compute metrics ───────────────────────────────────────────────────────────
 
@@ -305,7 +310,7 @@ def compute_metrics(orders, refunded_orders=None, sales_start=None):
         for li in node.get('lineItems', {}).get('edges', []):
             item     = li['node']
             title    = item.get('title', '').strip()
-            sku      = (item.get('sku') or '').strip()
+            sku      = SKU_ALIASES.get((item.get('sku') or '').strip(), (item.get('sku') or '').strip())
             li_gross = float(item.get('originalTotalSet', {}).get('shopMoney', {}).get('amount', 0))
             li_amt   = round(li_gross / 1.1, 2)
             if title or sku:
@@ -314,15 +319,15 @@ def compute_metrics(orders, refunded_orders=None, sales_start=None):
                 key = sku if sku else f'T::{title}'
                 product_rev[key]          += li_amt
                 product_titles[key][title] += li_amt
-            # Camera unit sell-through: Shopify's own catalog productType is the
-            # authoritative signal (separates the monitor itself from stands/cases/etc).
-            product_type = ((item.get('product') or {}).get('productType') or '')
+            # Camera unit sell-through: classify by SKU (not productType — expo-priced
+            # listings of the same SKU ship with a blank productType, which would
+            # silently undercount tradeshow sales). Tracked across both the current
+            # and previous FY (fetch_all_orders already pulls that whole window).
             qty = int(item.get('quantity') or 0)
-            if product_type == 'Baby Monitor' and ym in MONTH_KEYS:
+            in_range = ym in MONTH_KEYS or ym in MONTH_KEYS_PREV
+            if sku in CAMERA_SKUS and in_range:
                 monthly_camera_units[ym] += qty
-            # Per-model breakdown, by SKU (also catches expo-exclusive listings of the
-            # same SKU that Shopify leaves with a blank productType).
-            if sku in TRACKED_PRODUCT_SKUS and ym in MONTH_KEYS:
+            if sku in TRACKED_PRODUCT_SKUS and in_range:
                 sku_units_monthly[sku][ym] += qty
 
         # Partial refunds on paid orders
@@ -392,7 +397,9 @@ def compute_metrics(orders, refunded_orders=None, sales_start=None):
         'product_rev': dict(product_rev),
         'product_titles': {k: dict(v) for k, v in product_titles.items()},
         'camera_units': [monthly_camera_units.get(ym, 0) for ym in MONTH_KEYS],
+        'camera_units_prev': [monthly_camera_units.get(ym, 0) for ym in MONTH_KEYS_PREV],
         'sku_units': {sku: [months.get(ym, 0) for ym in MONTH_KEYS] for sku, months in sku_units_monthly.items()},
+        'sku_units_prev': {sku: [months.get(ym, 0) for ym in MONTH_KEYS_PREV] for sku, months in sku_units_monthly.items()},
     }
 
 # ── Coolkidz store split: attribute its line items to the real brands ─────────
@@ -413,7 +420,7 @@ def compute_coolkidz_split(ck_orders, start_dates=None):
         for li in node.get('lineItems', {}).get('edges', []):
             item  = li['node']
             title = (item.get('title') or '').strip()
-            sku   = (item.get('sku') or '').strip()
+            sku   = SKU_ALIASES.get((item.get('sku') or '').strip(), (item.get('sku') or '').strip())
             prod  = item.get('product') or {}
             bid   = coolkidz_brand_id(title, prod.get('vendor', ''), prod.get('tags', []))
             if bid is None:
@@ -425,6 +432,7 @@ def compute_coolkidz_split(ck_orders, start_dates=None):
                 'monthly_rev': defaultdict(float), 'weekly_rev': defaultdict(float), 'daily_rev': defaultdict(float),
                 'mo_orders': defaultdict(set), 'wk_orders': defaultdict(set), 'dy_orders': defaultdict(set),
                 'product_rev': defaultdict(float), 'product_titles': defaultdict(lambda: defaultdict(float)),
+                'camera_units_monthly': defaultdict(int), 'sku_units_monthly': defaultdict(lambda: defaultdict(int)),
             })
             s['monthly_rev'][ym] += amt
             s['weekly_rev'][ws]  += amt
@@ -435,6 +443,15 @@ def compute_coolkidz_split(ck_orders, start_dates=None):
             key = sku if sku else f'T::{title}'
             s['product_rev'][key]          += amt
             s['product_titles'][key][title] += amt
+            # Same SKU-based camera/model classification as the brand's own store —
+            # this leg is the Coolkidz store's FULL order stream (no date/channel
+            # filter), which is also how its tradeshow booth till rings sales, so
+            # tradeshow + POS camera sales are naturally included here too.
+            qty = int(item.get('quantity') or 0)
+            if sku in CAMERA_SKUS:
+                s['camera_units_monthly'][ym] += qty
+            if sku in TRACKED_PRODUCT_SKUS:
+                s['sku_units_monthly'][sku][ym] += qty
     return split
 
 def merge_coolkidz(m, cs):
@@ -450,6 +467,21 @@ def merge_coolkidz(m, cs):
     for i, dk in enumerate(DAY_KEYS):
         m['daily_revenue'][i] += round(cs['daily_rev'].get(dk, 0))
         m['daily_orders'][i]  += len(cs['dy_orders'].get(dk, set()))
+    # merge camera/model units (Coolkidz-store online + its tradeshow booth till)
+    cu = cs.get('camera_units_monthly', {})
+    for i, mk in enumerate(MONTH_KEYS):
+        m['camera_units'][i] += cu.get(mk, 0)
+    for i, mk in enumerate(MONTH_KEYS_PREV):
+        m['camera_units_prev'][i] += cu.get(mk, 0)
+    for sku, months in cs.get('sku_units_monthly', {}).items():
+        if sku not in m['sku_units']:
+            m['sku_units'][sku] = [0] * len(MONTH_KEYS)
+        if sku not in m['sku_units_prev']:
+            m['sku_units_prev'][sku] = [0] * len(MONTH_KEYS_PREV)
+        for i, mk in enumerate(MONTH_KEYS):
+            m['sku_units'][sku][i] += months.get(mk, 0)
+        for i, mk in enumerate(MONTH_KEYS_PREV):
+            m['sku_units_prev'][sku][i] += months.get(mk, 0)
     # merge products + re-rank top 5
     pr, pt = m['product_rev'], m['product_titles']
     for k, v in cs['product_rev'].items():
@@ -513,6 +545,11 @@ def sync_brand(brand, ck_split=None):
             monthly_rows.append({'brand_id': bid, 'month_key': mk, 'revenue': m['revenue'][i], 'orders': m['orders_m'][i], 'prev_revenue': m['revenue_prev'][i], 'camera_units': m['camera_units'][i]})
         sb_upsert('brand_monthly', monthly_rows, on_conflict='brand_id,month_key')
 
+        # Backfill camera_units onto the PREVIOUS FY's existing rows too (revenue/orders for
+        # those months are already correct from earlier syncs — only this column is new).
+        prev_camera_rows = [{'brand_id': bid, 'month_key': mk, 'camera_units': m['camera_units_prev'][i]} for i, mk in enumerate(MONTH_KEYS_PREV)]
+        sb_upsert('brand_monthly', prev_camera_rows, on_conflict='brand_id,month_key')
+
         # Upsert weekly data
         weekly_rows = [{'brand_id': bid, 'week_start': WEEK_STARTS[i], 'revenue': m['weekly_revenue'][i], 'orders': m['weekly_orders'][i]} for i in range(13)]
         sb_upsert('brand_weekly', weekly_rows, on_conflict='brand_id,week_start')
@@ -533,6 +570,10 @@ def sync_brand(brand, ck_split=None):
         for sku, label in TRACKED_PRODUCT_SKUS.items():
             for i, mk in enumerate(MONTH_KEYS):
                 units = m['sku_units'].get(sku, [0] * len(MONTH_KEYS))[i]
+                if units:
+                    unit_rows.append({'brand_id': bid, 'sku': sku, 'label': label, 'month_key': mk, 'units': units})
+            for i, mk in enumerate(MONTH_KEYS_PREV):
+                units = m['sku_units_prev'].get(sku, [0] * len(MONTH_KEYS_PREV))[i]
                 if units:
                     unit_rows.append({'brand_id': bid, 'sku': sku, 'label': label, 'month_key': mk, 'units': units})
         if unit_rows:

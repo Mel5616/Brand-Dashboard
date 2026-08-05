@@ -282,7 +282,7 @@ export function svgPie(slices: { value: number; color: string }[], centerText = 
 }
 
 // Inline SVG area+line chart — no JS, so it survives in the downloaded HTML and the PDF.
-function svgArea(values: number[], labels: string[], color = "#2D4977", H = 168): string {
+function svgArea(values: number[], labels: string[], color = "#2D4977", H = 168, fmtValue: (n: number) => string = fmt): string {
   const W = 770, padX = 6, padTop = H < 100 ? 12 : 18, padBot = H < 100 ? 14 : 22;
   const max = Math.max(...values, 1), n = values.length;
   const x = (i: number) => padX + (n > 1 ? (i / (n - 1)) * (W - 2 * padX) : 0);
@@ -297,7 +297,7 @@ function svgArea(values: number[], labels: string[], color = "#2D4977", H = 168)
     <polygon points="${area}" fill="${color}" opacity="0.08"/>
     <polyline points="${line}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
     ${values.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="${i === peakI ? 3.6 : 2.2}" fill="${color}"/>`).join("")}
-    <text x="${x(peakI).toFixed(1)}" y="${(y(max) - 6).toFixed(1)}" text-anchor="middle" font-size="9" fill="${color}" font-weight="800">${fmt(max)}</text>
+    <text x="${x(peakI).toFixed(1)}" y="${(y(max) - 6).toFixed(1)}" text-anchor="middle" font-size="9" fill="${color}" font-weight="800">${fmtValue(max)}</text>
     ${ticks}
   </svg>`;
 }
@@ -552,7 +552,7 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
   ${s.hasCameraUnits ? `
   <div class="trend">
     <div class="tl">Camera unit sell-through by month · D2C only · ${esc(s.fyLabel)}</div>
-    ${svgArea(s.cameraTrend, s.monthLabelsAll)}
+    ${svgArea(s.cameraTrend, s.monthLabelsAll, "#2D4977", 168, (n) => n.toLocaleString())}
   </div>
   <div class="hero">
     <div class="cell"><div class="lab">Camera units YTD</div><div class="big">${s.ytdCameraUnits.toLocaleString()}</div><div class="note">D2C only · units sold, not bundled accessories</div></div>
@@ -565,7 +565,7 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
       ${s.modelBreakdown.map(m => `
         <div class="modelrow">
           <div class="modelhead"><span class="modellabel">${esc(m.label)}</span><span class="modelytd">${m.ytd.toLocaleString()} YTD</span></div>
-          ${svgArea(m.trend, s.monthLabelsAll, "#2D4977", 64)}
+          ${svgArea(m.trend, s.monthLabelsAll, "#2D4977", 64, (n) => n.toLocaleString())}
         </div>`).join("")}
     </div>
   </div>` : ""}
