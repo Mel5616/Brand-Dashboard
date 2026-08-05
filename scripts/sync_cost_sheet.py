@@ -122,7 +122,7 @@ def main():
     print(f"Cost sheet: {item.get('name')} (last modified {item.get('lastModifiedDateTime')})")
 
     ws = graph_get(token, f"/drives/{drive_id}/items/{item_id}/workbook/worksheets")
-    SKIP_SHEETS = {"New Testing Products", "Baby Bunting Cost Sheet"}
+    SKIP_SHEETS = {"New Testing Products", "Baby Bunting Cost Sheet", "4Moms"}  # 4Moms is an old, discontinued brand
     sheets = [w["name"] for w in ws.get("value", []) if w["name"] not in SKIP_SHEETS]
     print(f"{len(sheets)} worksheets: {', '.join(sheets)}\n")
 
