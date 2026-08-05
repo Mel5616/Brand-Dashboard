@@ -89,7 +89,9 @@ def parse_sheet(values: list[list]):
         name0, name1 = str(r[0]).strip(), str(r[1]).strip()
         if not name0 and not name1:
             continue
-        fob = num(r[3])
+        # Australian-sourced brands (e.g. Mamave) have no FOB $US — priced
+        # directly in AUD — so a real product row is either column having a value.
+        fob = num(r[3]) if num(r[3]) is not None else num(r[4])
         if fob is not None:
             row = {"category": category}
             for i, col in enumerate(COLS):
@@ -120,7 +122,8 @@ def main():
     print(f"Cost sheet: {item.get('name')} (last modified {item.get('lastModifiedDateTime')})")
 
     ws = graph_get(token, f"/drives/{drive_id}/items/{item_id}/workbook/worksheets")
-    sheets = [w["name"] for w in ws.get("value", [])]
+    SKIP_SHEETS = {"New Testing Products", "Baby Bunting Cost Sheet"}
+    sheets = [w["name"] for w in ws.get("value", []) if w["name"] not in SKIP_SHEETS]
     print(f"{len(sheets)} worksheets: {', '.join(sheets)}\n")
 
     errors = []
