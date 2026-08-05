@@ -104,8 +104,8 @@ export function CostSheet() {
                   <th className="text-left py-1.5">Style</th>
                   <th className="text-right py-1.5">FOB $US</th>
                   <th className="text-right py-1.5 cursor-pointer" onClick={() => setSortBy("landed_cost_aud")}>Landed cost</th>
-                  <th className="text-right py-1.5">Retail (ex GST)</th>
-                  <th className="text-right py-1.5">Wholesale</th>
+                  <th className="text-right py-1.5 bg-amber-50 text-amber-700">RRP (ex GST)</th>
+                  <th className="text-right py-1.5 bg-sky-50 text-sky-700">Wholesale</th>
                   <th className="text-right py-1.5">Bunting</th>
                   <th className="text-right py-1.5 cursor-pointer" onClick={() => setSortBy("retail_margin_pct")}>Retail margin</th>
                   <th className="text-right py-1.5 cursor-pointer" onClick={() => setSortBy("bunting_margin_pct")}>Bunting margin</th>
@@ -122,8 +122,8 @@ export function CostSheet() {
                     <td className="py-1.5 text-gray-400 font-mono text-[11px]">{i.style_code ?? "—"}</td>
                     <td className="py-1.5 text-right text-gray-400">{i.fob_usd != null ? `US$${i.fob_usd.toFixed(2)}` : "—"}</td>
                     <td className="py-1.5 text-right text-slate-600">{i.landed_cost_aud != null ? fmtFull(i.landed_cost_aud) : "—"}</td>
-                    <td className="py-1.5 text-right text-slate-600">{i.retail_excl_gst != null ? fmtFull(i.retail_excl_gst) : "—"}</td>
-                    <td className="py-1.5 text-right text-slate-600">{i.wholesale_excl_gst != null ? fmtFull(i.wholesale_excl_gst) : "—"}</td>
+                    <td className="py-1.5 text-right font-bold text-amber-700 bg-amber-50/60">{i.retail_excl_gst != null ? fmtFull(i.retail_excl_gst) : "—"}</td>
+                    <td className="py-1.5 text-right font-bold text-sky-700 bg-sky-50/60">{i.wholesale_excl_gst != null ? fmtFull(i.wholesale_excl_gst) : "—"}</td>
                     <td className="py-1.5 text-right text-slate-600">{i.bunting_excl_gst != null ? fmtFull(i.bunting_excl_gst) : "—"}</td>
                     <td className="py-1.5 text-right"><span className={`font-bold rounded px-1.5 py-0.5 ${marginCls(i.retail_margin_pct)}`}>{pct(i.retail_margin_pct)}</span></td>
                     <td className="py-1.5 text-right"><span className={`font-bold rounded px-1.5 py-0.5 ${marginCls(i.bunting_margin_pct)}`}>{pct(i.bunting_margin_pct)}</span></td>
