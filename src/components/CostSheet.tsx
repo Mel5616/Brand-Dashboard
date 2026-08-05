@@ -55,26 +55,10 @@ export function CostSheet() {
   const brands = React.useMemo(() => [...new Set(items.map(i => i.brand))].sort(), [items]);
   React.useEffect(() => { if (!brand && brands.length) setBrand(brands[0]); }, [brands, brand]);
 
-  if (!loaded) return <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">Loading…</div>;
-  if (needsSetup) return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-500">
-      Run <code className="bg-gray-100 px-1 rounded">supabase/add_cost_sheet.sql</code>, then the cost-sheet sync fills this in.
-    </div>
+  const brandItems = React.useMemo(
+    () => items.filter(i => i.brand === brand && (!q || i.product_name.toLowerCase().includes(q.toLowerCase()) || (i.style_code ?? "").toLowerCase().includes(q.toLowerCase()))),
+    [items, brand, q]
   );
-  if (!items.length) return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">
-      No cost sheet data yet — run <code className="bg-gray-100 px-1 rounded">scripts/sync_cost_sheet.py</code> (or wait for the next scheduled sync).
-    </div>
-  );
-
-  const brandItems = items.filter(i => i.brand === brand && (!q || i.product_name.toLowerCase().includes(q.toLowerCase()) || (i.style_code ?? "").toLowerCase().includes(q.toLowerCase())));
-  const m = meta.find(x => x.brand === brand);
-  const withMargin = brandItems.filter(i => i.retail_margin_pct != null);
-  const avgRetailMargin = withMargin.length ? withMargin.reduce((s, i) => s + (i.retail_margin_pct ?? 0), 0) / withMargin.length : null;
-  const lowest = withMargin.length ? [...withMargin].sort((a, b) => (a.retail_margin_pct ?? 0) - (b.retail_margin_pct ?? 0))[0] : null;
-  // Margin distribution — a tiny at-a-glance histogram in the header strip.
-  const dist = { red: withMargin.filter(i => (i.retail_margin_pct ?? 0) < 0.15).length, amber: withMargin.filter(i => (i.retail_margin_pct ?? 0) >= 0.15 && (i.retail_margin_pct ?? 0) < 0.30).length, green: withMargin.filter(i => (i.retail_margin_pct ?? 0) >= 0.30).length };
-  const distTotal = Math.max(1, dist.red + dist.amber + dist.green);
 
   // Sorting by a metric shows a flat ranked list; the default "name" view
   // groups by category (as stored in the sheet) so large brands read cleanly.
@@ -94,6 +78,26 @@ export function CostSheet() {
     }
     return [...byCat.entries()].sort((a, b) => a[0].localeCompare(b[0]));
   }, [brandItems, sortBy]);
+
+  if (!loaded) return <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">Loading…</div>;
+  if (needsSetup) return (
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-500">
+      Run <code className="bg-gray-100 px-1 rounded">supabase/add_cost_sheet.sql</code>, then the cost-sheet sync fills this in.
+    </div>
+  );
+  if (!items.length) return (
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">
+      No cost sheet data yet — run <code className="bg-gray-100 px-1 rounded">scripts/sync_cost_sheet.py</code> (or wait for the next scheduled sync).
+    </div>
+  );
+
+  const m = meta.find(x => x.brand === brand);
+  const withMargin = brandItems.filter(i => i.retail_margin_pct != null);
+  const avgRetailMargin = withMargin.length ? withMargin.reduce((s, i) => s + (i.retail_margin_pct ?? 0), 0) / withMargin.length : null;
+  const lowest = withMargin.length ? [...withMargin].sort((a, b) => (a.retail_margin_pct ?? 0) - (b.retail_margin_pct ?? 0))[0] : null;
+  // Margin distribution — a tiny at-a-glance histogram in the header strip.
+  const dist = { red: withMargin.filter(i => (i.retail_margin_pct ?? 0) < 0.15).length, amber: withMargin.filter(i => (i.retail_margin_pct ?? 0) >= 0.15 && (i.retail_margin_pct ?? 0) < 0.30).length, green: withMargin.filter(i => (i.retail_margin_pct ?? 0) >= 0.30).length };
+  const distTotal = Math.max(1, dist.red + dist.amber + dist.green);
 
   const th = (label: string, key: typeof sortBy, extra = "") =>
     <th onClick={() => setSortBy(key)} className={`text-right py-2 cursor-pointer select-none hover:text-slate-600 ${sortBy === key ? "text-slate-700" : ""} ${extra}`}>{label}{sortBy === key && " ▾"}</th>;
