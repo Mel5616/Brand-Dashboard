@@ -64,11 +64,53 @@ def num(v):
     return v if isinstance(v, (int, float)) else None
 
 
+def _norm(h) -> str:
+    return " ".join(str(h or "").split()).lower()
+
+
+def _field_for(norm_header: str):
+    """Map one sheet's own header text to our canonical column name. Sheets
+    drift from each other (e.g. SmarTrike inserts two extra 'FOB Proposed'
+    columns, shifting everything after) — matching by header text, not
+    position, is what keeps every brand's columns correctly aligned."""
+    h = norm_header
+    if h == "brand": return "brand"
+    if h == "product name": return "product_name"
+    if h == "style code": return "style_code"
+    if h == "fob $us": return "fob_usd"
+    if h == "fob cost $aud": return "fob_aud"
+    if h == "freight inbound": return "freight_inbound"
+    if h == "duty": return "duty"
+    if "landed cost" in h: return "landed_cost_aud"
+    if "retail aud" in h and "incl gst" in h: return "retail_incl_gst"
+    if "retail aud" in h and ("exc gst" in h or "excl gst" in h): return "retail_excl_gst"
+    if "wholesale aud" in h and "nz" not in h: return "wholesale_excl_gst"
+    if "bunting aud" in h: return "bunting_excl_gst"
+    if h.startswith("ck margin independents"): return "margin_independents_pct"
+    if h.startswith("ck margin") and "nz" in h: return "nz_margin_ck_pct"
+    if h.startswith("ck margin") and "bunting" in h: return "margin_bunting_pct"
+    if h.startswith("retail margin"): return "retail_margin_pct"
+    if "bunting margin" in h: return "bunting_margin_pct"
+    if "coolkidz margin direct" in h: return "direct_margin_pct"
+    if h.startswith("nz margin"): return "nz_margin_pct"
+    if "nz wholesale aud" in h: return "nz_wholesale_excl_gst"
+    return None
+
+
 def parse_sheet(values: list[list]):
     """Returns (meta, rows) for one brand worksheet's raw usedRange values."""
     header_idx = next((i for i, r in enumerate(values) if len(r) > 1 and str(r[0]).strip() == "Brand" and str(r[1]).strip() == "Product Name"), None)
     if header_idx is None:
         return None, []
+    # Column index for each canonical field, read from THIS sheet's own header
+    # row — never assumed to match any other sheet's layout.
+    col_idx: dict[str, int] = {}
+    for i, h in enumerate(values[header_idx]):
+        field = _field_for(_norm(h))
+        if field and field not in col_idx:
+            col_idx[field] = i
+    fob_usd_i, fob_aud_i = col_idx.get("fob_usd"), col_idx.get("fob_aud")
+
     # Exchange rate / freight sit in the row right after the "EXCHANGE RATE" label.
     exch_idx = next((i for i, r in enumerate(values) if r and str(r[0]).strip().upper() == "EXCHANGE RATE"), None)
     exchange_rate = freight_rate = None
@@ -82,21 +124,26 @@ def parse_sheet(values: list[list]):
             updated_label = str(r[0]).strip()
             break
 
+    def get(r, field):
+        i = col_idx.get(field)
+        if i is None or i >= len(r):
+            return None
+        v = r[i]
+        return (num(v) if field in NUMERIC_COLS else (str(v).strip() or None)) if v != "" else None
+
     rows = []
     category = None
     for r in values[header_idx + 1:]:
-        r = list(r) + [""] * (20 - len(r))  # pad
-        name0, name1 = str(r[0]).strip(), str(r[1]).strip()
+        name0 = str(r[0]).strip() if len(r) > 0 else ""
+        name1 = str(r[1]).strip() if len(r) > 1 else ""
         if not name0 and not name1:
             continue
         # Australian-sourced brands (e.g. Mamave) have no FOB $US — priced
         # directly in AUD — so a real product row is either column having a value.
-        fob = num(r[3]) if num(r[3]) is not None else num(r[4])
-        if fob is not None:
-            row = {"category": category}
-            for i, col in enumerate(COLS):
-                v = r[i] if i < len(r) else None
-                row[col] = (num(v) if col in NUMERIC_COLS else (str(v).strip() or None)) if v != "" else None
+        fob_usd_v = num(r[fob_usd_i]) if fob_usd_i is not None and fob_usd_i < len(r) else None
+        fob_aud_v = num(r[fob_aud_i]) if fob_aud_i is not None and fob_aud_i < len(r) else None
+        if fob_usd_v is not None or fob_aud_v is not None:
+            row = {"category": category, **{col: get(r, col) for col in COLS}}
             rows.append(row)
         elif name1:
             category = name1

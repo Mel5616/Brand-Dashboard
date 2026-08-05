@@ -102,6 +102,7 @@ export function CostSheet() {
                 <tr className="text-[10px] uppercase tracking-wider text-gray-400 border-b border-gray-100">
                   <th className="text-left py-1.5 cursor-pointer" onClick={() => setSortBy("name")}>Product</th>
                   <th className="text-left py-1.5">Style</th>
+                  <th className="text-right py-1.5">FOB $US</th>
                   <th className="text-right py-1.5 cursor-pointer" onClick={() => setSortBy("landed_cost_aud")}>Landed cost</th>
                   <th className="text-right py-1.5">Retail (ex GST)</th>
                   <th className="text-right py-1.5">Wholesale</th>
@@ -119,6 +120,7 @@ export function CostSheet() {
                       {i.category && <span className="block text-[10px] font-normal text-gray-400">{i.category}</span>}
                     </td>
                     <td className="py-1.5 text-gray-400 font-mono text-[11px]">{i.style_code ?? "—"}</td>
+                    <td className="py-1.5 text-right text-gray-400">{i.fob_usd != null ? `US$${i.fob_usd.toFixed(2)}` : "—"}</td>
                     <td className="py-1.5 text-right text-slate-600">{i.landed_cost_aud != null ? fmtFull(i.landed_cost_aud) : "—"}</td>
                     <td className="py-1.5 text-right text-slate-600">{i.retail_excl_gst != null ? fmtFull(i.retail_excl_gst) : "—"}</td>
                     <td className="py-1.5 text-right text-slate-600">{i.wholesale_excl_gst != null ? fmtFull(i.wholesale_excl_gst) : "—"}</td>
