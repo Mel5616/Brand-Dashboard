@@ -47,17 +47,19 @@ const KEY_PRAMS = ["Vista", "Cruz", "Minu"] as const;
 
 // Live Baby Bunting sell-through, from bb_weekly_model (already summed nationally
 // across stores/states per week). Monthly totals fold ALL models together (matching
-// the existing "Baby Bunting" channel); stock on hand is a snapshot of the latest
-// week, combining each key pram's current + legacy variants.
-export function buildBbSummary(modelWeeks: BbModelWeek[]) {
+// the existing "Baby Bunting" channel), scoped to the report's calendar year (Jan–Dec,
+// matching the rest of this report); stock on hand is a snapshot of the latest week,
+// combining each key pram's current + legacy variants.
+export function buildBbSummary(modelWeeks: BbModelWeek[], year: number) {
   const byMonth = new Map<string, { units: number; sales: number }>();
   for (const r of modelWeeks) {
     const mk = String(r.week_ending).slice(0, 7);
+    if (!mk.startsWith(String(year))) continue;
     const c = byMonth.get(mk) ?? { units: 0, sales: 0 };
     c.units += r.wk_units || 0; c.sales += r.wk_sales || 0;
     byMonth.set(mk, c);
   }
-  const months = [...byMonth.keys()].sort().slice(-12);
+  const months = Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, "0")}`).filter(mk => byMonth.has(mk));
   const monthly = months.map(mk => {
     const [y, m] = mk.split("-").map(Number);
     return { month_key: mk, label: MONTH_SHORT[(m || 1) - 1] ?? mk, ...byMonth.get(mk)! };
@@ -323,7 +325,7 @@ table.cmp th.cy{box-shadow:inset 0 -1px 0 var(--line);}
     <div class="h">Baby Bunting · live sell-through${bb.lastWeek ? ` (stock as at ${esc(bb.lastWeek)})` : ""}</div>
     ${bb.monthly.length ? `<div class="trend"><div class="tl">Units sold per month · all UPPAbaby lines</div>${svgBbBars(bb.monthly.map(m => m.units), bb.monthly.map(m => m.label))}</div>` : ""}
     ${bb.soh.length ? `<div class="hero" style="grid-template-columns:repeat(${bb.soh.length},1fr);margin-top:14px">
-      ${bb.soh.map(s => `<div class="c"><div class="l">${esc(s.model)} · stock on hand</div><div class="big">${s.units.toLocaleString()}</div><div class="note">units, current + legacy</div></div>`).join("")}
+      ${bb.soh.map(s => `<div class="c"><div class="l">${esc(s.model)} · stock on hand</div><div class="big">${s.units.toLocaleString()} units</div><div class="note">current + legacy</div></div>`).join("")}
     </div>` : ""}
   </div>` : ""}
 

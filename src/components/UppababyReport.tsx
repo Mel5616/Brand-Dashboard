@@ -82,7 +82,7 @@ export function UppababyReport({ brands, canUpload, month, monthKeys, monthLabel
     const monthlyCY = data.monthly.filter((m: any) => rKeys.includes(m.month_key));
     const targetsCY = data.targets.filter((t: any) => rKeys.includes(t.month_key));
     const snap = buildSnapshot({ brand, month: rMonth, monthKeys: rKeys, monthLabels: rLabels, fyLabel: rFyLabel, note: "", ...data, monthly: monthlyCY, targets: targetsCY });
-    const bb = bbModelWeeks && bbModelWeeks.length ? buildBbSummary(bbModelWeeks) : null;
+    const bb = bbModelWeeks && bbModelWeeks.length ? buildBbSummary(bbModelWeeks, ry) : null;
     return uppababyHtml(u, snap, periodLabel, tradeshowShare, bb);
   }, [brand, rows, fyLabel, data, bbModelWeeks]);
 
