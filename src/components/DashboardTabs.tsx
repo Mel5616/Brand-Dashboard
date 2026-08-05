@@ -75,13 +75,14 @@ import { AnnotationsCard, type Annotation } from "./AnnotationsCard";
 import { MonthInReview } from "./MonthInReview";
 import { BrandStrategy } from "./BrandStrategy";
 import { LtvPanel } from "./LtvPanel";
+import { CostSheet } from "./CostSheet";
 import { AbandonedCheckoutsPanel, LiveStockPanel, DiscountCodesPanel, CrossCodeCard } from "./ShopifyExtras";
 import { Notifier } from "./Notifier";
 import { StockReport } from "./StockReport";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "summary" | "brands" | "strategy" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "d2c-weekly" | "month-review" | "uppababy" | "sales" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "releases" | "event-concepts" | "decks" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "nanit" | "affiliates" | "pa-budget" | "pa-tracker" | "team";
+type TabId = "summary" | "brands" | "strategy" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "d2c-weekly" | "month-review" | "uppababy" | "sales" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "nanit" | "affiliates" | "pa-budget" | "pa-tracker" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -205,6 +206,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
   },
   {
+    id: "cost-sheet", label: "Cost Sheet",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m-6 4h6m-6 4h4M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" /></svg>,
+  },
+  {
     id: "event-concepts", label: "Event Concepts",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
   },
@@ -285,7 +290,7 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows"] },
   { label: "Plan", ids: ["campaign-calendar", "promotions", "calendar", "content", "events", "event-concepts", "decks", "show-deals"] },
   { label: "Creative", ids: ["tasks", "design-requests", "creative"] },
-  { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info", "brand-assets", "stock-report"] },
+  { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info", "brand-assets", "stock-report", "cost-sheet"] },
   { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads"] },
   { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting", "nanit", "releases", "affiliates", "pa-budget", "pa-tracker"] },
 ];
@@ -2130,6 +2135,11 @@ export function DashboardTabs({
           {active === "stock-report" && (<>
             <LiveStockPanel brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} />
             <StockReport admin={role === "admin"} brands={brands.map((b: any) => ({ name: b.name, color: b.color }))} />
+          </>)}
+
+          {active === "cost-sheet" && (<>
+            <SectionBar title="Cost Sheet" />
+            <CostSheet />
           </>)}
 
           {active === "decks" && (

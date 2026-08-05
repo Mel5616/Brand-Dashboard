@@ -53,6 +53,7 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "product-info", label: "Product Information" },
     { id: "brand-assets", label: "Brand Assets" },
     { id: "stock-report", label: "Stock Report" },
+    { id: "cost-sheet", label: "Cost Sheet" },
   ] },
   { label: "Paid", tabs: [
     { id: "google-ads", label: "Google Ads" },
