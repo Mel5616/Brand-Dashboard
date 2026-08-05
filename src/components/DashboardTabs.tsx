@@ -457,6 +457,7 @@ interface Props {
   eventbriteEvents: any[];
   asanaTasks: any[];
   salesBudget: any[];
+  productUnits: any[];
   boothFunnel: any;
   kpis: { label: string; value: string; sub: string }[];
   role?: "admin" | "member";
@@ -472,7 +473,7 @@ export function DashboardTabs({
   instagramOrganic, targets, klaviyo, ga4,
   marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, boothFunnel, kpis,
   gscMetrics, gscQueries, gscInsights, semrushMetrics, semrushCompetitors,
-  semrushKeywords, semrushPages, brandInsights, instagramMedia, channelSales, shopifySources, eventbriteEvents, asanaTasks, salesBudget,
+  semrushKeywords, semrushPages, brandInsights, instagramMedia, channelSales, shopifySources, eventbriteEvents, asanaTasks, salesBudget, productUnits,
   role = "admin", allowedTabs, currentEmail, lastSync,
 }: Props) {
   // No tab is hard-locked from members anymore — granted sections are viewable
@@ -1382,6 +1383,7 @@ export function DashboardTabs({
                 rawGoogleAdsCampaigns={rawGoogleAdsCampaigns}
                 rawMarketingActuals={rawMarketingActuals}
                 rawMarketingBudgets={rawMarketingBudgets}
+                rawProductUnits={productUnits}
                 monthly={monthly}
                 targets={targets}
                 googleAds={googleAds}

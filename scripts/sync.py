@@ -256,6 +256,15 @@ def fetch_refunded_orders(domain, token):
         cursor = edges[-1]['cursor']
     return all_orders
 
+# Individually-tracked SKUs for a per-model units breakdown (currently Nanit's
+# camera lines + sound machine — confirmed against the live Shopify catalog).
+TRACKED_PRODUCT_SKUS = {
+    'NAN-BMFS':  'Pro Monitor · Floor Stand',
+    'NAN-BMWMW': 'Pro Monitor · Wall Mount',
+    'NAN-BMFD':  'Monitor · Flex Stand',
+    'NAN-SLM':   'Sound Machine & Night Light',
+}
+
 # ── Compute metrics ───────────────────────────────────────────────────────────
 
 def compute_metrics(orders, refunded_orders=None, sales_start=None):
@@ -268,6 +277,7 @@ def compute_metrics(orders, refunded_orders=None, sales_start=None):
     product_rev     = defaultdict(float)               # key (sku or title) -> revenue
     product_titles  = defaultdict(lambda: defaultdict(float))  # key -> {title: revenue}
     monthly_camera_units = defaultdict(int)             # ym -> units where productType == 'Baby Monitor'
+    sku_units_monthly = defaultdict(lambda: defaultdict(int))  # sku -> {ym: units}, TRACKED_PRODUCT_SKUS only
     monthly_refunds = defaultdict(float)
     unique_customers = set()
     fy_orders_count = 0
@@ -307,8 +317,13 @@ def compute_metrics(orders, refunded_orders=None, sales_start=None):
             # Camera unit sell-through: Shopify's own catalog productType is the
             # authoritative signal (separates the monitor itself from stands/cases/etc).
             product_type = ((item.get('product') or {}).get('productType') or '')
+            qty = int(item.get('quantity') or 0)
             if product_type == 'Baby Monitor' and ym in MONTH_KEYS:
-                monthly_camera_units[ym] += int(item.get('quantity') or 0)
+                monthly_camera_units[ym] += qty
+            # Per-model breakdown, by SKU (also catches expo-exclusive listings of the
+            # same SKU that Shopify leaves with a blank productType).
+            if sku in TRACKED_PRODUCT_SKUS and ym in MONTH_KEYS:
+                sku_units_monthly[sku][ym] += qty
 
         # Partial refunds on paid orders
         refunded_amt = float(node.get('totalRefundedSet', {}).get('shopMoney', {}).get('amount', 0))
@@ -377,6 +392,7 @@ def compute_metrics(orders, refunded_orders=None, sales_start=None):
         'product_rev': dict(product_rev),
         'product_titles': {k: dict(v) for k, v in product_titles.items()},
         'camera_units': [monthly_camera_units.get(ym, 0) for ym in MONTH_KEYS],
+        'sku_units': {sku: [months.get(ym, 0) for ym in MONTH_KEYS] for sku, months in sku_units_monthly.items()},
     }
 
 # ── Coolkidz store split: attribute its line items to the real brands ─────────
@@ -510,6 +526,17 @@ def sync_brand(brand, ck_split=None):
         if m['top_products']:
             prod_rows = [{'brand_id': bid, 'rank': i+1, 'title': t, 'gross_sales': round(v)} for i, (t, v) in enumerate(m['top_products'])]
             sb_upsert('brand_products', prod_rows, on_conflict='brand_id,rank')
+
+        # Upsert per-SKU unit breakdown (delete+insert, like top products above)
+        sb_delete_where('brand_product_units', 'brand_id', bid)
+        unit_rows = []
+        for sku, label in TRACKED_PRODUCT_SKUS.items():
+            for i, mk in enumerate(MONTH_KEYS):
+                units = m['sku_units'].get(sku, [0] * len(MONTH_KEYS))[i]
+                if units:
+                    unit_rows.append({'brand_id': bid, 'sku': sku, 'label': label, 'month_key': mk, 'units': units})
+        if unit_rows:
+            sb_upsert('brand_product_units', unit_rows, on_conflict='brand_id,sku,month_key')
 
         # Upsert summary
         sb_upsert('brand_summary', [{

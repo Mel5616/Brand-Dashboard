@@ -16,6 +16,7 @@ export type SnapshotInput = {
   fyLabel: string;          // e.g. "FY2025-26" or "Calendar Year 2026"
   calendarYear?: boolean;   // true when the report spans Jan–Dec instead of Jul–Jun
   monthly: { brand_id: number; month_key: string; revenue: number; orders: number; camera_units?: number | null }[];
+  productUnits?: { brand_id: number; sku: string; label: string; month_key: string; units: number }[];
   targets: { brand_id: number; month_key: string; revenue_target: number }[];
   googleAds: { brand_id: number; month_key: string; spend: number; roas: number; revenue?: number }[];
   metaAds: { brand_id: number; month_key: string; spend: number; revenue: number; purchases: number }[];
@@ -74,6 +75,16 @@ export function buildSnapshot(d: SnapshotInput) {
   const hasCameraUnits = monthlyB.some(m => m.camera_units != null);
   const cameraTrend = monthKeys.map(mk => at(monthlyB, mk)?.camera_units ?? 0);
   const ytdCameraUnits = sum(monthlyB.filter(m => monthKeys.indexOf(m.month_key) <= idx).map(m => m.camera_units ?? 0));
+  // Per-model breakdown (e.g. camera lines + sound machine), tracked by SKU.
+  const productUnitsB = forBrand(d.productUnits ?? []);
+  const skuOrder = [...new Set(productUnitsB.map(p => p.sku))];
+  const modelBreakdown = skuOrder.map(sku => {
+    const rows = productUnitsB.filter(p => p.sku === sku);
+    const label = rows[0]?.label ?? sku;
+    const trend = monthKeys.map(mk => rows.find(r => r.month_key === mk)?.units ?? 0);
+    const ytd = sum(monthKeys.filter(mk => monthKeys.indexOf(mk) <= idx).map((mk, i) => trend[i]));
+    return { sku, label, trend, ytd };
+  }).sort((a, b) => b.ytd - a.ytd);
   const fyRevTotal = sum(monthlyB.map(m => m.revenue));
   const monthTarget = at(forBrand(d.targets), month)?.revenue_target ?? 0;
   const fyTarget = sum(forBrand(d.targets).map(t => t.revenue_target));
@@ -228,7 +239,7 @@ export function buildSnapshot(d: SnapshotInput) {
   return {
     brand, month, monthName, monthLong, monthFull, fyLabel: d.fyLabel, periodWord, periodCap, periodShort,
     monthRev, monthOrders, aov, ytdRev, fyRevTotal, monthTarget, fyTarget, targetMultiple, returnRate,
-    hasCameraUnits, cameraTrend, ytdCameraUnits,
+    hasCameraUnits, cameraTrend, ytdCameraUnits, modelBreakdown,
     google: { spend: gSpend, rev: gRev, roas: gRoas, revDelta: delta(gRev, gRevPrev), roasDelta: delta(gRoas, gPrev?.roas ?? 0), topCampaign },
     meta: { spend: mSpend, rev: mRev, roas: mRoas, cpa: mCpa, revDelta: delta(mRev, mPrev?.revenue ?? 0), roasDelta: delta(mRoas, mPrev && mPrev.spend > 0 ? mPrev.revenue / mPrev.spend : 0), cpaDelta: delta(mCpa, mCpaPrev) },
     blendedRoas, blendedDelta: delta(blendedRoas, blendedPrev), mer,
@@ -271,8 +282,8 @@ export function svgPie(slices: { value: number; color: string }[], centerText = 
 }
 
 // Inline SVG area+line chart — no JS, so it survives in the downloaded HTML and the PDF.
-function svgArea(values: number[], labels: string[], color = "#2D4977"): string {
-  const W = 770, H = 168, padX = 6, padTop = 18, padBot = 22;
+function svgArea(values: number[], labels: string[], color = "#2D4977", H = 168): string {
+  const W = 770, padX = 6, padTop = H < 100 ? 12 : 18, padBot = H < 100 ? 14 : 22;
   const max = Math.max(...values, 1), n = values.length;
   const x = (i: number) => padX + (n > 1 ? (i / (n - 1)) * (W - 2 * padX) : 0);
   const y = (v: number) => padTop + (1 - v / max) * (H - padTop - padBot);
@@ -485,6 +496,11 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
 .cr .dot.sm{width:7px;height:7px;}
 .trend{margin-top:16px;border:1px solid var(--line);padding:14px 16px 8px;}
 .trend .tl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--grey);font-weight:700;margin-bottom:6px;}
+.modelgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;}
+.modelrow{border:1px solid var(--line);border-radius:6px;padding:8px 10px 4px;}
+.modelhead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;}
+.modellabel{font-size:11px;font-weight:700;color:var(--ink);}
+.modelytd{font-size:11px;font-weight:800;color:#2D4977;}
 .iggrid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
 .igc{border:1px solid var(--line);border-radius:6px;overflow:hidden;background:#fbfcfd;}
 .igc .igimg{height:108px;background:#dde6ef;background-size:cover;background-position:center;}
@@ -540,6 +556,18 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
   </div>
   <div class="hero">
     <div class="cell"><div class="lab">Camera units YTD</div><div class="big">${s.ytdCameraUnits.toLocaleString()}</div><div class="note">D2C only · units sold, not bundled accessories</div></div>
+  </div>` : ""}
+
+  ${s.modelBreakdown.length ? `
+  <div class="trend">
+    <div class="tl">By model · D2C only · ${esc(s.fyLabel)}</div>
+    <div class="modelgrid">
+      ${s.modelBreakdown.map(m => `
+        <div class="modelrow">
+          <div class="modelhead"><span class="modellabel">${esc(m.label)}</span><span class="modelytd">${m.ytd.toLocaleString()} YTD</span></div>
+          ${svgArea(m.trend, s.monthLabelsAll, "#2D4977", 64)}
+        </div>`).join("")}
+    </div>
   </div>` : ""}
 
   <div class="grid">

@@ -27,9 +27,10 @@ type Props = Omit<SnapshotInput, "brand" | "note"> & {
   rawGoogleAdsCampaigns: SnapshotInput["googleAdsCampaigns"];
   rawMarketingActuals: SnapshotInput["marketingActuals"];
   rawMarketingBudgets: SnapshotInput["marketingBudgets"];
+  rawProductUnits: SnapshotInput["productUnits"];
 };
 
-export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, monthKeys, monthLabels, fyLabel, fy, setFy, wholeYear, monthSel, setMonthSel, monthOptions, rawMonthly, rawTargets, rawGoogleAds, rawMetaAds, rawKlaviyo, rawGoogleAdsCampaigns, rawMarketingActuals, rawMarketingBudgets, ...data }: Props) {
+export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, monthKeys, monthLabels, fyLabel, fy, setFy, wholeYear, monthSel, setMonthSel, monthOptions, rawMonthly, rawTargets, rawGoogleAds, rawMetaAds, rawKlaviyo, rawGoogleAdsCampaigns, rawMarketingActuals, rawMarketingBudgets, rawProductUnits, ...data }: Props) {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [frameH, setFrameH] = useState(1680);
   // Auto-size the iframe to its content so there's no fixed-height gap or clipping.
@@ -152,9 +153,10 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
       googleAds: filterMk(rawGoogleAds), metaAds: filterMk(rawMetaAds), klaviyo: filterMk(rawKlaviyo),
       googleAdsCampaigns: filterMk(rawGoogleAdsCampaigns), marketingActuals: filterMk(rawMarketingActuals),
       marketingBudgets: rawMarketingBudgets,
+      productUnits: filterMk(rawProductUnits ?? []),
     }));
   }, [brand, activeMonth, activeMonthKeys, activeMonthLabels, activeFyLabel, basis, savedNote, savedInsights, topups, data,
-      rawMonthly, rawTargets, rawGoogleAds, rawMetaAds, rawKlaviyo, rawGoogleAdsCampaigns, rawMarketingActuals, rawMarketingBudgets]); // eslint-disable-line react-hooks/exhaustive-deps
+      rawMonthly, rawTargets, rawGoogleAds, rawMetaAds, rawKlaviyo, rawGoogleAdsCampaigns, rawMarketingActuals, rawMarketingBudgets, rawProductUnits]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const monthName = activeMonthLabels[activeMonthKeys.indexOf(activeMonth)] ?? activeMonth;
 

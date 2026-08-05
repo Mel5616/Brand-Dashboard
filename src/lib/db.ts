@@ -270,6 +270,7 @@ export async function getDashboardData() {
     { data: eventbriteEvents },
     { data: asanaTasks },
     { data: salesBudget },
+    { data: productUnits },
   ] = await Promise.all([
     db.from("brands").select("*").order("id"),
     db.from("brand_summary").select("*"),
@@ -310,6 +311,7 @@ export async function getDashboardData() {
     db.from("eventbrite_events").select("*").order("start_at", { ascending: false }),
     db.from("asana_tasks").select("*").order("due_on", { ascending: true }),
     db.from("sales_budget").select("*"),
+    db.from("brand_product_units").select("*").order("month_key"),
   ]);
 
   return {
@@ -352,6 +354,7 @@ export async function getDashboardData() {
     eventbriteEvents: (eventbriteEvents ?? []) as EventbriteEvent[],
     asanaTasks: (asanaTasks ?? []) as AsanaTask[],
     salesBudget: (salesBudget ?? []) as SalesBudgetRow[],
+    productUnits: (productUnits ?? []) as { brand_id: number; sku: string; label: string; month_key: string; units: number }[],
   };
 }
 
