@@ -325,7 +325,7 @@ table.cmp th.cy{box-shadow:inset 0 -1px 0 var(--line);}
     <div class="h">Baby Bunting · live sell-through${bb.lastWeek ? ` (stock as at ${esc(bb.lastWeek)})` : ""}</div>
     ${bb.monthly.length ? `<div class="trend"><div class="tl">Units sold per month · all UPPAbaby lines</div>${svgBbBars(bb.monthly.map(m => m.units), bb.monthly.map(m => m.label))}</div>` : ""}
     ${bb.soh.length ? `<div class="hero" style="grid-template-columns:repeat(${bb.soh.length},1fr);margin-top:14px">
-      ${bb.soh.map(s => `<div class="c"><div class="l">${esc(s.model)} · stock on hand</div><div class="big">${s.units.toLocaleString()} units</div><div class="note">current + legacy</div></div>`).join("")}
+      ${bb.soh.map(s => `<div class="c"><div class="l">${esc(s.model)} · stock on hand</div><div class="big">${s.units.toLocaleString()} units</div></div>`).join("")}
     </div>` : ""}
   </div>` : ""}
 
