@@ -15,7 +15,7 @@ export type SnapshotInput = {
   monthLabels: string[];    // matching short labels, e.g. "Jun"
   fyLabel: string;          // e.g. "FY2025-26" or "Calendar Year 2026"
   calendarYear?: boolean;   // true when the report spans Jan–Dec instead of Jul–Jun
-  monthly: { brand_id: number; month_key: string; revenue: number; orders: number }[];
+  monthly: { brand_id: number; month_key: string; revenue: number; orders: number; camera_units?: number | null }[];
   targets: { brand_id: number; month_key: string; revenue_target: number }[];
   googleAds: { brand_id: number; month_key: string; spend: number; roas: number; revenue?: number }[];
   metaAds: { brand_id: number; month_key: string; spend: number; revenue: number; purchases: number }[];
@@ -70,6 +70,10 @@ export function buildSnapshot(d: SnapshotInput) {
   const aov = monthOrders > 0 ? monthRev / monthOrders : 0;
   // YTD = months elapsed up to and including the selected month
   const ytdRev = sum(monthlyB.filter(m => monthKeys.indexOf(m.month_key) <= idx).map(m => m.revenue));
+  // Camera unit sell-through (D2C only, Shopify productType = "Baby Monitor")
+  const hasCameraUnits = monthlyB.some(m => m.camera_units != null);
+  const cameraTrend = monthKeys.map(mk => at(monthlyB, mk)?.camera_units ?? 0);
+  const ytdCameraUnits = sum(monthlyB.filter(m => monthKeys.indexOf(m.month_key) <= idx).map(m => m.camera_units ?? 0));
   const fyRevTotal = sum(monthlyB.map(m => m.revenue));
   const monthTarget = at(forBrand(d.targets), month)?.revenue_target ?? 0;
   const fyTarget = sum(forBrand(d.targets).map(t => t.revenue_target));
@@ -224,6 +228,7 @@ export function buildSnapshot(d: SnapshotInput) {
   return {
     brand, month, monthName, monthLong, monthFull, fyLabel: d.fyLabel, periodWord, periodCap, periodShort,
     monthRev, monthOrders, aov, ytdRev, fyRevTotal, monthTarget, fyTarget, targetMultiple, returnRate,
+    hasCameraUnits, cameraTrend, ytdCameraUnits,
     google: { spend: gSpend, rev: gRev, roas: gRoas, revDelta: delta(gRev, gRevPrev), roasDelta: delta(gRoas, gPrev?.roas ?? 0), topCampaign },
     meta: { spend: mSpend, rev: mRev, roas: mRoas, cpa: mCpa, revDelta: delta(mRev, mPrev?.revenue ?? 0), roasDelta: delta(mRoas, mPrev && mPrev.spend > 0 ? mPrev.revenue / mPrev.spend : 0), cpaDelta: delta(mCpa, mCpaPrev) },
     blendedRoas, blendedDelta: delta(blendedRoas, blendedPrev), mer,
@@ -527,6 +532,15 @@ body{background:var(--bg);color:var(--ink);padding:28px 16px;-webkit-font-smooth
     <div class="copy"><div class="t">Where the year's revenue lands</div><div class="d">Share of the ${esc(s.periodWord)}'s direct-to-consumer revenue by month. The navy bars are the peak.</div></div>
     <div class="bars">${bars}</div>
   </div>
+
+  ${s.hasCameraUnits ? `
+  <div class="trend">
+    <div class="tl">Camera unit sell-through by month · D2C only · ${esc(s.fyLabel)}</div>
+    ${svgArea(s.cameraTrend, s.monthLabelsAll)}
+  </div>
+  <div class="hero">
+    <div class="cell"><div class="lab">Camera units YTD</div><div class="big">${s.ytdCameraUnits.toLocaleString()}</div><div class="note">D2C only · units sold, not bundled accessories</div></div>
+  </div>` : ""}
 
   <div class="grid">
     ${card(`Direct to consumer · Shopify`, [

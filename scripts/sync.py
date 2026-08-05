@@ -207,8 +207,9 @@ def fetch_all_orders(domain, token):
                   edges {{ node {{
                     title
                     sku
+                    quantity
                     originalTotalSet {{ shopMoney {{ amount }} }}
-                    product {{ vendor tags }}
+                    product {{ vendor tags productType }}
                   }} }}
                 }}
               }}
@@ -266,6 +267,7 @@ def compute_metrics(orders, refunded_orders=None, sales_start=None):
     daily_count     = defaultdict(int)
     product_rev     = defaultdict(float)               # key (sku or title) -> revenue
     product_titles  = defaultdict(lambda: defaultdict(float))  # key -> {title: revenue}
+    monthly_camera_units = defaultdict(int)             # ym -> units where productType == 'Baby Monitor'
     monthly_refunds = defaultdict(float)
     unique_customers = set()
     fy_orders_count = 0
@@ -302,6 +304,11 @@ def compute_metrics(orders, refunded_orders=None, sales_start=None):
                 key = sku if sku else f'T::{title}'
                 product_rev[key]          += li_amt
                 product_titles[key][title] += li_amt
+            # Camera unit sell-through: Shopify's own catalog productType is the
+            # authoritative signal (separates the monitor itself from stands/cases/etc).
+            product_type = ((item.get('product') or {}).get('productType') or '')
+            if product_type == 'Baby Monitor' and ym in MONTH_KEYS:
+                monthly_camera_units[ym] += int(item.get('quantity') or 0)
 
         # Partial refunds on paid orders
         refunded_amt = float(node.get('totalRefundedSet', {}).get('shopMoney', {}).get('amount', 0))
@@ -369,6 +376,7 @@ def compute_metrics(orders, refunded_orders=None, sales_start=None):
         'fy_orders': fy_orders_count,
         'product_rev': dict(product_rev),
         'product_titles': {k: dict(v) for k, v in product_titles.items()},
+        'camera_units': [monthly_camera_units.get(ym, 0) for ym in MONTH_KEYS],
     }
 
 # ── Coolkidz store split: attribute its line items to the real brands ─────────
@@ -486,7 +494,7 @@ def sync_brand(brand, ck_split=None):
         # Upsert monthly data
         monthly_rows = []
         for i, mk in enumerate(MONTH_KEYS):
-            monthly_rows.append({'brand_id': bid, 'month_key': mk, 'revenue': m['revenue'][i], 'orders': m['orders_m'][i], 'prev_revenue': m['revenue_prev'][i]})
+            monthly_rows.append({'brand_id': bid, 'month_key': mk, 'revenue': m['revenue'][i], 'orders': m['orders_m'][i], 'prev_revenue': m['revenue_prev'][i], 'camera_units': m['camera_units'][i]})
         sb_upsert('brand_monthly', monthly_rows, on_conflict='brand_id,month_key')
 
         # Upsert weekly data
