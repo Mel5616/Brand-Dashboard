@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { buildSnapshot, type SnapshotInput } from "@/lib/snapshot";
-import { buildUppababy, uppababyHtml, uppababyEmailSummary, parseUppababyGrid, type UppaRow } from "@/lib/uppababy";
+import { buildUppababy, buildBbSummary, uppababyHtml, uppababyEmailSummary, parseUppababyGrid, type UppaRow, type BbModelWeek } from "@/lib/uppababy";
 
 type Props = Omit<SnapshotInput, "brand" | "note"> & {
   brands: { id: number; name: string }[];
@@ -25,6 +25,14 @@ export function UppababyReport({ brands, canUpload, month, monthKeys, monthLabel
     }).catch(() => setState("empty"));
   }
   useEffect(() => { loadRows(); }, []);
+
+  // Live Baby Bunting sell-through (units by month, current stock for the key
+  // prams) — separate from the uploaded spreadsheet, sourced from bb_sell_through.
+  const [bbModelWeeks, setBbModelWeeks] = useState<BbModelWeek[] | null>(null);
+  useEffect(() => {
+    fetch("/api/bb").then(r => r.json()).then(d => setBbModelWeeks(d.ok ? (d.trends?.byModel ?? []) : []))
+      .catch(() => setBbModelWeeks([]));
+  }, []);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]; if (!file) return;
@@ -74,8 +82,9 @@ export function UppababyReport({ brands, canUpload, month, monthKeys, monthLabel
     const monthlyCY = data.monthly.filter((m: any) => rKeys.includes(m.month_key));
     const targetsCY = data.targets.filter((t: any) => rKeys.includes(t.month_key));
     const snap = buildSnapshot({ brand, month: rMonth, monthKeys: rKeys, monthLabels: rLabels, fyLabel: rFyLabel, note: "", ...data, monthly: monthlyCY, targets: targetsCY });
-    return uppababyHtml(u, snap, periodLabel, tradeshowShare);
-  }, [brand, rows, fyLabel, data]);
+    const bb = bbModelWeeks && bbModelWeeks.length ? buildBbSummary(bbModelWeeks) : null;
+    return uppababyHtml(u, snap, periodLabel, tradeshowShare, bb);
+  }, [brand, rows, fyLabel, data, bbModelWeeks]);
 
   const periodLabel = useMemo(() => {
     if (!rows.length) { const [y, mm] = month.split("-").map(Number); return new Date(y, (mm || 1) - 1, 1).toLocaleDateString("en-AU", { month: "long", year: "numeric" }); }

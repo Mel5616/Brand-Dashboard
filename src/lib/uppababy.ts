@@ -42,6 +42,37 @@ export function parseUppababyGrid(grid: any[][]): UppaRow[] {
   return out;
 }
 
+export type BbModelWeek = { week_ending: string; model: string; is_pram?: boolean; wk_units: number; wk_sales: number; soh_units: number };
+const KEY_PRAMS = ["Vista", "Cruz", "Minu"] as const;
+
+// Live Baby Bunting sell-through, from bb_weekly_model (already summed nationally
+// across stores/states per week). Monthly totals fold ALL models together (matching
+// the existing "Baby Bunting" channel); stock on hand is a snapshot of the latest
+// week, combining each key pram's current + legacy variants.
+export function buildBbSummary(modelWeeks: BbModelWeek[]) {
+  const byMonth = new Map<string, { units: number; sales: number }>();
+  for (const r of modelWeeks) {
+    const mk = String(r.week_ending).slice(0, 7);
+    const c = byMonth.get(mk) ?? { units: 0, sales: 0 };
+    c.units += r.wk_units || 0; c.sales += r.wk_sales || 0;
+    byMonth.set(mk, c);
+  }
+  const months = [...byMonth.keys()].sort().slice(-12);
+  const monthly = months.map(mk => {
+    const [y, m] = mk.split("-").map(Number);
+    return { month_key: mk, label: MONTH_SHORT[(m || 1) - 1] ?? mk, ...byMonth.get(mk)! };
+  });
+
+  const lastWeek = modelWeeks.reduce((mx, r) => r.week_ending > mx ? r.week_ending : mx, "");
+  const soh = KEY_PRAMS.map(model => {
+    const units = modelWeeks.filter(r => r.week_ending === lastWeek && (r.model === model || r.model === `${model} (legacy)`))
+      .reduce((s, r) => s + (r.soh_units || 0), 0);
+    return { model, units };
+  });
+  return { monthly, soh, lastWeek };
+}
+export type BbSummary = ReturnType<typeof buildBbSummary>;
+
 export type Uppa = ReturnType<typeof buildUppababy>;
 
 export function buildUppababy(rows: UppaRow[]) {
@@ -114,6 +145,20 @@ function svgCompare(s25: number[], s26: (number | null)[]): string {
     ${line(s25, "#cbd5e1", 2)}${line(s26, "#0891b2", 2.6)}${dots(s26, "#0891b2")}${ticks}</svg>`;
 }
 
+// Single-series units bar chart for the Baby Bunting monthly trend.
+function svgBbBars(values: number[], labels: string[]): string {
+  const W = 770, H = 130, padX = 6, padTop = 14, padBot = 20;
+  const max = Math.max(...values, 1), n = values.length;
+  const bw = (W - 2 * padX) / n;
+  const y = (v: number) => padTop + (1 - v / max) * (H - padTop - padBot);
+  const bars = values.map((v, i) => {
+    const x = padX + i * bw + bw * 0.15, w = bw * 0.7, h = (H - padBot) - y(v);
+    return `<rect x="${x.toFixed(1)}" y="${y(v).toFixed(1)}" width="${w.toFixed(1)}" height="${Math.max(0, h).toFixed(1)}" rx="2" fill="#0891b2"/>`;
+  }).join("");
+  const ticks = labels.map((l, i) => `<text x="${(padX + i * bw + bw / 2).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="8.5" fill="#94a3b8" font-weight="600">${esc(l)}</text>`).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block">${bars}${ticks}</svg>`;
+}
+
 // Compact, email-safe summary block (inline styles, table layout) to paste into an
 // email — a branded header, headline stats and a link through to the full report.
 export function uppababyEmailSummary(u: Uppa, shareUrl: string, periodLabel: string, origin: string): string {
@@ -138,7 +183,7 @@ export function uppababyEmailSummary(u: Uppa, shareUrl: string, periodLabel: str
 </table>`;
 }
 
-export function uppababyHtml(u: Uppa, snap: Snapshot, periodLabel: string, tradeshowShare: number | null = null): string {
+export function uppababyHtml(u: Uppa, snap: Snapshot, periodLabel: string, tradeshowShare: number | null = null, bb: BbSummary | null = null): string {
   const ch = (c: typeof u.channels[number]) => `<tr><td class="cn">${titleCase(c.name)}</td><td>${fmtFull(c.ytd2025)}</td><td class="cy">${fmtFull(c.ytd2026)}</td><td class="${c.delta >= 0 ? "up" : "dn"}">${c.delta >= 0 ? "+" : "−"}${fmtFull(Math.abs(c.delta))}</td><td class="${(c.pct ?? 0) >= 0 ? "up" : "dn"}">${pctTag(c.pct)}</td></tr>`;
   const q = (x: typeof u.quarters[number]) => `<tr><td class="cn">${x.label}${x.partial ? "<span style='color:var(--grey);font-weight:600'> · to date</span>" : ""}</td><td>${fmtFull(x.t2025)}</td><td class="cy">${fmtFull(x.t2026)}</td><td class="${x.delta >= 0 ? "up" : "dn"}">${x.delta >= 0 ? "+" : "−"}${fmtFull(Math.abs(x.delta))}</td><td>${pctTag(x.pct)}</td></tr>`;
   const m = snap; // marketing numbers reused from the Snapshot computation
@@ -272,6 +317,15 @@ table.cmp th.cy{box-shadow:inset 0 -1px 0 var(--line);}
     <tbody>${u.channels.map(ch).join("")}<tr class="tot"><td class="cn">Total</td><td>${fmtFull(u.total.ytd2025)}</td><td class="cy">${fmtFull(u.total.ytd2026)}</td><td class="${u.totalDelta >= 0 ? "up" : "dn"}">${u.totalDelta >= 0 ? "+" : "−"}${fmtFull(Math.abs(u.totalDelta))}</td><td>${pctTag(u.totalPct)}</td></tr></tbody></table>
     <div class="trend"><div class="tl">Monthly sales · 2025 vs 2026</div>${svgCompare(u.monthly2025, u.monthly2026)}<div class="lgnd"><span><i style="background:#cbd5e1"></i>2025</span><span><i style="background:#0891b2"></i>2026</span></div></div>
   </div>
+
+  ${bb && (bb.monthly.length || bb.soh.length) ? `
+  <div class="sec">
+    <div class="h">Baby Bunting · live sell-through${bb.lastWeek ? ` (stock as at ${esc(bb.lastWeek)})` : ""}</div>
+    ${bb.monthly.length ? `<div class="trend"><div class="tl">Units sold per month · all UPPAbaby lines</div>${svgBbBars(bb.monthly.map(m => m.units), bb.monthly.map(m => m.label))}</div>` : ""}
+    ${bb.soh.length ? `<div class="hero" style="grid-template-columns:repeat(${bb.soh.length},1fr);margin-top:14px">
+      ${bb.soh.map(s => `<div class="c"><div class="l">${esc(s.model)} · stock on hand</div><div class="big">${s.units.toLocaleString()}</div><div class="note">units, current + legacy</div></div>`).join("")}
+    </div>` : ""}
+  </div>` : ""}
 
   ${(() => {
     if (directSalesYtd <= 0 || tradeshowShare == null) return "";
