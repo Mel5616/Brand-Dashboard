@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 export type ReqType = "artwork" | "swatch" | "tune_up" | "product";
 
 export const TYPE_META: Record<ReqType, { label: string; emoji: string; guide: string }> = {
-  artwork: { label: "Artwork Request", emoji: "🎨", guide: "images" },
+  artwork: { label: "Artwork / POS", emoji: "🎨", guide: "images" },
   swatch: { label: "Swatch / Sample", emoji: "🧵", guide: "images" },
   tune_up: { label: "Tune-Up Nomination", emoji: "🔧", guide: "tune-up-days" },
   product: { label: "Product / Gifting", emoji: "🎁", guide: "product-and-gifting" },
