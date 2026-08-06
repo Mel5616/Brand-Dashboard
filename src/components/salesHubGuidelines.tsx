@@ -1,8 +1,8 @@
-// Sales Hub guideline pages — content sourced from "Working With Marketing"
+// Sales Hub guideline pages, content sourced from "Working With Marketing"
 // (Marketing, draft v0.1). No MDX pipeline exists in this repo, so this lives
-// as plain JSX rather than separate .mdx files — still versioned in git,
+// as plain JSX rather than separate .mdx files, still versioned in git,
 // still easy to edit. TBC markers are kept literal; don't quietly resolve them.
-// Built visual-first (icons, boxes, do/don't cards) — this is the version
+// Built visual-first (icons, boxes, do/don't cards), this is the version
 // meant to actually get read, not just linked to.
 
 const FILECAMP_URL = "https://coolkidz.filecamp.com/l";
@@ -10,7 +10,7 @@ const FILECAMP_URL = "https://coolkidz.filecamp.com/l";
 const TBC = () => <span className="text-amber-700 font-semibold text-xs tracking-wide">TBC</span>;
 
 // Big, hard-to-miss link out to the actual asset library. Flat colour, not a
-// gradient button — reads as a document callout, not a SaaS landing page.
+// gradient button, reads as a document callout, not a SaaS landing page.
 export function FilecampCard() {
   return (
     <a href={FILECAMP_URL} target="_blank" rel="noreferrer"
@@ -19,7 +19,7 @@ export function FilecampCard() {
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
       </div>
       <div className="flex-1 min-w-0">
-        <div className="font-semibold">Open the Asset Library — Filecamp</div>
+        <div className="font-semibold">Open the Asset Library · Filecamp</div>
         <div className="text-slate-400 text-[13px]">Every approved image lives here. Not in Filecamp, not approved.</div>
       </div>
       <svg className="w-4 h-4 text-slate-500 group-hover:translate-x-1 group-hover:text-white transition shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
@@ -47,8 +47,8 @@ const ICONS = {
   wrench: "M11 4.5A3.5 3.5 0 007.5 8c0 .35.05.68.14 1L3 13.64l1.5 1.5L8.86 11.36c.32.09.65.14 1 .14A3.5 3.5 0 0013.5 8m-2.5-3.5c1.05 0 2 .5 2.5 1.5m-2.5-1.5A3.5 3.5 0 007 8c0 1.93 1.57 3.5 3.5 3.5",
   help: "M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
 };
-// Colour is used ONLY as a thin accent (left rule + small glyph) — never a
-// filled background — so a page of these doesn't read as a pastel grid.
+// Colour is used ONLY as a thin accent (left rule + small glyph), never a
+// filled background, so a page of these doesn't read as a pastel grid.
 function DoCard({ title, note }: { title: React.ReactNode; note: React.ReactNode }) {
   return (
     <div className="flex gap-3 border-l-2 border-emerald-400 pl-3.5 py-1">
@@ -65,7 +65,7 @@ function DontCard({ title, note }: { title: React.ReactNode; note: React.ReactNo
     </div>
   );
 }
-// Understated eyebrow-style subheading — used throughout a page. Distinct
+// Understated eyebrow-style subheading, used throughout a page. Distinct
 // from Verdict (below), which is the bigger We-will / We-will-not divider.
 function Section({ icon, title, children }: { icon: string; title: string; children: React.ReactNode }) {
   return (
@@ -78,7 +78,7 @@ function Section({ icon, title, children }: { icon: string; title: string; child
     </div>
   );
 }
-// The two-sided "We will / We will not" divider — bigger, with a short
+// The two-sided "We will / We will not" divider, bigger, with a short
 // colour-coded rule under it rather than a filled icon badge.
 function Verdict({ positive, title, children }: { positive: boolean; title: string; children: React.ReactNode }) {
   return (
@@ -112,14 +112,14 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
     body: <>
       <FilecampCard />
       <Section icon={ICONS.info} title="Where images come from">
-        <p className="text-sm text-slate-600 mb-2">Every approved image lives in <strong>Filecamp</strong> (link above). If an image is not in the library, it is not approved — even if it appeared on our Instagram last week.</p>
-        <p className="text-sm text-slate-600">Global assets are the most common trap — overseas markets shoot different colourways/configs. <strong>If it's not in the AU library, assume it's not cleared for AU use.</strong></p>
+        <p className="text-sm text-slate-600 mb-2">Every approved image lives in <strong>Filecamp</strong> (link above). If an image is not in the library, it is not approved, even if it appeared on our Instagram last week.</p>
+        <p className="text-sm text-slate-600">Global assets are the most common trap. Overseas markets shoot different colourways/configs. <strong>If it's not in the AU library, assume it's not cleared for AU use.</strong></p>
       </Section>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1 mb-2">
         <Section icon={ICONS.check} title="You can do this yourself">
           <div className="space-y-3">
             <DoCard title="Use as supplied" note="Any library image, unaltered, on approved surfaces" />
-            <DoCard title="Crop to a standard ratio" note="Social/print crop OK — product stays whole, logo untouched" />
+            <DoCard title="Crop to a standard ratio" note="Social/print crop OK, product stays whole, logo untouched" />
             <DoCard title="Share the library link" note="Send the Filecamp link straight to a retail partner" />
           </div>
         </Section>
@@ -134,13 +134,13 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
         </Section>
       </div>
       <Section icon={ICONS.camera} title="Influencer, creator and UGC imagery">
-        <p className="text-sm text-slate-600">Creator content is licensed to us, for our channels, for a fixed term. <strong className="text-rose-600">It cannot be supplied to retailers</strong>, and cannot be used in print, POS or paid social without a written extension. Retailer asks for "that reel"? Answer is no — offer the equivalent library asset instead.</p>
+        <p className="text-sm text-slate-600">Creator content is licensed to us, for our channels, for a fixed term. <strong className="text-rose-600">It cannot be supplied to retailers</strong>, and cannot be used in print, POS or paid social without a written extension. Retailer asks for "that reel"? Answer is no. Offer the equivalent library asset instead.</p>
       </Section>
       <Section icon={ICONS.child} title="Images featuring children">
-        <p className="text-sm text-slate-600">Covered by a signed release (held in the Command Centre) specifying where/how long it can appear. Ask Marketing to check before committing new-context child photography to print — do not assume.</p>
+        <p className="text-sm text-slate-600">Covered by a signed release (held in the Command Centre) specifying where/how long it can appear. Ask Marketing to check before committing new-context child photography to print. Do not assume.</p>
       </Section>
       <Section icon={ICONS.clock} title="Expiry">
-        <p className="text-sm text-slate-600">Some assets carry an end date — expired ones are archived, not deleted. <strong>Local copies are the single biggest source of expired-asset breaches</strong> — always check Filecamp before reusing a saved file.</p>
+        <p className="text-sm text-slate-600">Some assets carry an end date. Expired ones are archived, not deleted. <strong>Local copies are the single biggest source of expired-asset breaches.</strong> Always check Filecamp before reusing a saved file.</p>
       </Section>
     </>,
   },
@@ -158,17 +158,17 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
         </Verdict>
         <Verdict positive={false} title="We will not">
           <DontCard title="Reshare to our story" note={<>Within 1 business day if it passes the checklist below <span className="text-rose-400">(proposed)</span></>} />
-          <DontCard title="Post a store promo to our grid" note="Reads as national + creates channel conflict — story reshare only" />
-          <DontCard title="Supply free product" note="Trade spend — use the Product Request form" />
+          <DontCard title="Post a store promo to our grid" note="Reads as national and creates channel conflict. Story reshare only." />
+          <DontCard title="Supply free product" note="Trade spend: use the Product Request form" />
           <DontCard title="Artwork with a price, no approved promo" note="Needs confirmed RRP + sign-off" />
           <DontCard title="Alter the logo" note="No recolour/crop/stretch/effects/busy backgrounds" />
-          <DontCard title="Approve artwork same day" note="See lead times — emergencies handled case by case" />
+          <DontCard title="Approve artwork same day" note="See lead times. Emergencies handled case by case." />
           <DontCard title="Supply creator content to retailers" note="Licensing doesn't extend that far" />
           <DontCard title="Name or compare a competitor" note="Including side-by-side imagery" />
           <DontCard title="Approve safety/medical/clinical claims" note="See claims below" />
         </Verdict>
       </div>
-      <Section icon={ICONS.check} title="Reshare checklist — all 8 must pass">
+      <Section icon={ICONS.check} title="Reshare checklist (all 8 must pass)">
         <div>
           <ChecklistItem n={1}>Correct brand handle tagged</ChecklistItem>
           <ChecklistItem n={2}>Product names spelled/styled correctly, incl. trademarks</ChecklistItem>
@@ -177,12 +177,12 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
           <ChecklistItem n={5}>No discounting breaching agreed pricing / promo window</ChecklistItem>
           <ChecklistItem n={6}>No competitor product visible or named</ChecklistItem>
           <ChecklistItem n={7}>No safety, medical or developmental claim</ChecklistItem>
-          <ChecklistItem n={8} highlight>Product shown safely — harness done up, capsule correctly installed, child correctly positioned, brake on if stationary</ChecklistItem>
+          <ChecklistItem n={8} highlight>Product shown safely, harness done up, capsule correctly installed, child correctly positioned, brake on if stationary</ChecklistItem>
         </div>
-        <p className="text-xs text-gray-400 mt-3">Point 8 is the one that catches people — tell stores up front, not at the point of refusal.</p>
+        <p className="text-xs text-gray-400 mt-3">Point 8 is the one that catches people. Tell stores up front, not at the point of refusal.</p>
       </Section>
       <Section icon={ICONS.info} title="Claims we never make or endorse">
-        <p className="text-sm text-slate-600">No "safest", no medical or developmental claim, no sleep claim, no clinical language — in store posts, retailer EDMs, product pages and our own content. If a claim needs a footnote to be true, it does not go out.</p>
+        <p className="text-sm text-slate-600">No "safest", no medical or developmental claim, no sleep claim, no clinical language. Applies to store posts, retailer EDMs, product pages and our own content. If a claim needs a footnote to be true, it does not go out.</p>
       </Section>
     </>,
   },
@@ -194,7 +194,7 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
       </Section>
       <Section icon={ICONS.hash} title="Naming and trademarks">
         <div className="space-y-2">
-          <DoCard title="UPPAbaby" note="Capital U, capital P, capital P, lowercase b — not Uppababy, not UppaBaby" />
+          <DoCard title="UPPAbaby" note="Capital U, capital P, capital P, lowercase b, not Uppababy, not UppaBaby" />
           <DoCard title="smarTrike Wonder™, Wonder+™, Wonder max™" note={'™ on first use, lowercase "max"'} />
           <DoCard title="Model generations as supplied" note="e.g. Vista V3, not vista v3" />
         </div>
@@ -217,7 +217,7 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
     id: "website", title: "Website guidelines", icon: ICONS.code, owner: "Marketing", version: "0.1", lastReviewed: "draft",
     body: <>
       <Section icon={ICONS.code} title="Product copy">
-        <p className="text-sm text-slate-600 mb-2">Use supplied copy as-is — rewritten copy is where most compliance risk enters the channel.</p>
+        <p className="text-sm text-slate-600 mb-2">Use supplied copy as-is. Rewritten copy is where most compliance risk enters the channel.</p>
         <div className="space-y-2">
           <DontCard title="Shortened or altered product name in the page title" note="" />
           <DontCard title="Feature lists adding capabilities the product doesn't have" note="" />
@@ -237,7 +237,7 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
       <Section icon={ICONS.ad} title="Brand terms and search">
         <p className="text-sm text-slate-600">No bidding on our brand / brand-plus-model terms without written agreement, no brand name in a domain/subdomain/store name. <TBC /> confirm current position, align with trading terms.</p>
       </Section>
-      <Section icon={ICONS.home} title="Our own brand sites — source of truth">
+      <Section icon={ICONS.home} title="Our own brand sites: source of truth">
         <p className="text-sm text-slate-600 mb-2">If a retailer page disagrees with our site, our site wins and the retailer page gets corrected.</p>
         <p className="text-[13px] font-mono text-slate-500 leading-relaxed">
           {["uppababy.com.au", "fridaaustralia.com.au", "nanit.com.au", "smartrike.com.au", "hannie.com.au", "magicbabyproducts.com.au", "wonderfold.com.au", "gaia-baby.com.au", "mamave.com.au", "matchstickmonkey.com.au", "zazu-kids.com.au", "miamily.com.au"].join("  ·  ")}
@@ -249,21 +249,21 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
     id: "product-and-gifting", title: "Free product, samples & gifting", icon: ICONS.gift, owner: "Marketing", version: "0.1", lastReviewed: "draft",
     body: <>
       <DontCard title="Marketing does not hold budget for free product" note={'Not for retailer competitions, staff incentives, customer giveaways, display units, or "just one for the manager".'} />
-      <p className="text-sm text-slate-600 my-3">All of it is trade spend — goes through your <strong>Sales Manager</strong>, via the Product Request form in this Hub, and needs a stated return: placement, posts, staff training, a sell-through commitment, something.</p>
+      <p className="text-sm text-slate-600 my-3">All of it is trade spend. It goes through your <strong>Sales Manager</strong>, via the Product Request form in this Hub, and needs a stated return: placement, posts, staff training, a sell-through commitment, something.</p>
       <Section icon={ICONS.check} title="The two exceptions">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <DoCard title="Swatches and fabric samples" note="Stock dependent, via the Swatch Request form" />
-          <DoCard title="Influencer / creator seeding" note="Marketing gifting budget, planned by brand — not ad hoc" />
+          <DoCard title="Influencer / creator seeding" note="Marketing gifting budget, planned by brand, not ad hoc" />
         </div>
       </Section>
-      <p className="text-xs text-gray-400 mt-3">If someone tells you Marketing approved free product verbally, it did not happen — send them the form.</p>
+      <p className="text-xs text-gray-400 mt-3">If someone tells you Marketing approved free product verbally, it did not happen. Send them the form.</p>
     </>,
   },
   {
     id: "tune-up-days", title: "Tune-Up Days", icon: ICONS.wrench, owner: "Marketing", version: "0.1", lastReviewed: "draft",
     body: <>
       <Section icon={ICONS.info} title="What it is">
-        <p className="text-sm text-slate-600">A free maintenance service event at a store, and the proof point for our 3-Year Warranty with Lifetime Service Support message — a <strong>selling tool</strong>, not just servicing.</p>
+        <p className="text-sm text-slate-600">A free maintenance service event at a store, and the proof point for our 3-Year Warranty with Lifetime Service Support message: a <strong>selling tool</strong>, not just servicing.</p>
       </Section>
       <Section icon={ICONS.cross} title="Non-negotiables">
         <div className="space-y-2">
@@ -279,7 +279,7 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
         <p className="text-sm text-slate-600">EDM 7 days out · SMS 4 days out · waitlist EDM 5 days out · registrations close 4 days prior · post-event survey on check-in.</p>
       </Section>
       <Section icon={ICONS.info} title="South Australia">
-        <p className="text-sm text-slate-600">Every second month, Marleston only — consistently lower demand.</p>
+        <p className="text-sm text-slate-600">Every second month, Marleston only (consistently lower demand).</p>
       </Section>
       <Section icon={ICONS.wrench} title="Warranty issues on the day">
         <DontCard title="Do not attempt to resolve" note="Direct to help.uppababy.com.au and hand over a Warranty Procedure Card" />

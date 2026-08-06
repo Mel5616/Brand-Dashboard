@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { GUIDELINE_SECTIONS, FilecampCard, Icon } from "./salesHubGuidelines";
+import { TYPE_META, STATES, inp, lbl, type ReqType, RequestFormPicker } from "./salesRequestForms";
 
-type ReqType = "artwork" | "swatch" | "tune_up" | "product";
 type Status = "new" | "triaged" | "in_progress" | "review" | "delivered" | "on_hold" | "declined";
 type Req = {
   id: string; request_type: ReqType; status: Status; requester_email: string; requester_name: string | null;
@@ -14,12 +14,6 @@ type Req = {
 type FileRow = { id: number; storage_path: string; file_name: string | null; kind: string | null; uploaded_by: string | null; created_at: string };
 type EventRow = { id: number; actor: string | null; from_status: string | null; to_status: string | null; note: string | null; created_at: string };
 
-const TYPE_META: Record<ReqType, { label: string; emoji: string; guide: string }> = {
-  artwork: { label: "Artwork Request", emoji: "🎨", guide: "images" },
-  swatch: { label: "Swatch / Sample", emoji: "🧵", guide: "images" },
-  tune_up: { label: "Tune-Up Nomination", emoji: "🔧", guide: "tune-up-days" },
-  product: { label: "Product / Gifting", emoji: "🎁", guide: "product-and-gifting" },
-};
 const STATUS_META: Record<Status, { label: string; cls: string }> = {
   new: { label: "New", cls: "bg-slate-100 text-slate-600" },
   triaged: { label: "Triaged", cls: "bg-sky-100 text-sky-700" },
@@ -29,17 +23,7 @@ const STATUS_META: Record<Status, { label: string; cls: string }> = {
   on_hold: { label: "On hold", cls: "bg-gray-100 text-gray-500" },
   declined: { label: "Declined", cls: "bg-rose-100 text-rose-700" },
 };
-const STATES = ["VIC", "NSW", "QLD", "WA", "SA", "TAS", "ACT", "NT"];
-const inp = "text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 w-full";
-const lbl = "text-xs font-semibold text-slate-500 mb-1 block";
 const dShort = (s?: string | null) => s ? new Date(s + (s.length === 10 ? "T00:00:00" : "")).toLocaleDateString("en-AU", { day: "numeric", month: "short" }) : "—";
-
-function RuleCard({ children }: { children: React.ReactNode }) {
-  return <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3 text-[13px] text-indigo-900 leading-relaxed mb-4">{children}</div>;
-}
-function Field({ label, children, required }: { label: string; children: React.ReactNode; required?: boolean }) {
-  return <div><span className={lbl}>{label}{required && <span className="text-rose-500"> *</span>}</span>{children}</div>;
-}
 
 export function SalesHub({ admin, brands }: { admin: boolean; brands: { name: string; color?: string }[] }) {
   const [items, setItems] = useState<Req[]>([]);
@@ -95,7 +79,7 @@ export function SalesHub({ admin, brands }: { admin: boolean; brands: { name: st
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-xl font-bold text-slate-800">Sales Hub</h2>
-          <p className="text-sm text-gray-400 mt-0.5">Request artwork, swatches, Tune-Up Days and product — plus the rules to check before you ask.</p>
+          <p className="text-sm text-gray-400 mt-0.5">Request artwork, swatches, Tune-Up Days and product, plus the rules to check before you ask.</p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => { setView("landing"); setDetailId(null); }} className={`text-sm font-medium rounded-lg px-3 py-1.5 border transition ${view === "landing" ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-slate-600 border-gray-200 hover:bg-gray-50"}`}>Home</button>
@@ -111,7 +95,7 @@ export function SalesHub({ admin, brands }: { admin: boolean; brands: { name: st
       ) : view === "guidelines" ? (
         <Guidelines active={guideId} onSelect={setGuideId} />
       ) : view === "new" ? (
-        <NewRequest type={newType} setType={setNewType} brands={brands} onCreated={id => { load(); setDetailId(id); setView("queue"); }} onCancel={() => setView("landing")} />
+        <RequestFormPicker type={newType} setType={setNewType} brands={brands} onCreated={id => { load(); setDetailId(id); setView("queue"); }} onCancel={() => setView("landing")} />
       ) : (
         <QueueView items={filtered} admin={admin} analytics={analytics} q={q} setQ={setQ} statusFilter={statusFilter} setStatusFilter={setStatusFilter} onOpen={id => setDetailId(id)} onNew={() => setView("new")} />
       )}
@@ -154,7 +138,7 @@ function Landing({ brands, mine, onPick, onOpenRequest, onGuide }: { brands: { n
       <FilecampCard />
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-        <h3 className="text-sm font-bold text-slate-700 mb-2">Rules — read before you ask</h3>
+        <h3 className="text-sm font-bold text-slate-700 mb-2">Rules, read before you ask</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {GUIDELINE_SECTIONS.map(g => (
             <button key={g.id} onClick={() => onGuide(g.id)} className="flex items-center gap-2.5 text-left text-sm text-slate-600 border border-gray-100 rounded-lg px-3 py-2.5 hover:bg-gray-50 hover:border-indigo-200 transition">
@@ -259,242 +243,6 @@ function QueueView({ items, admin, analytics, q, setQ, statusFilter, setStatusFi
   );
 }
 
-function AckBox({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <label className="flex items-start gap-2 text-sm text-slate-600 mt-4">
-      <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} className="mt-0.5" />
-      <span>{label}</span>
-    </label>
-  );
-}
-
-function NewRequest({ type, setType, brands, onCreated, onCancel }: { type: ReqType; setType: (t: ReqType) => void; brands: { name: string }[]; onCreated: (id: string) => void; onCancel: () => void }) {
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState("");
-  const [ack, setAck] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
-  const [f, setF] = useState<any>({});
-  useEffect(() => { setF({}); setAck(false); setErr(""); setFile(null); }, [type]);
-
-  async function submit(payload: { title: string; brand?: string; retailer?: string; store?: string; state?: string; end_use: string; needed_by?: string; brief: any }) {
-    if (!ack) { setErr("Please confirm you've read the rules first."); return; }
-    setBusy(true); setErr("");
-    const res = await fetch("/api/sales-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ request_type: type, requester_name: f.requester_name, ...payload }) }).then(r => r.json()).catch(() => ({ ok: false }));
-    if (!res.ok) { setBusy(false); setErr(res.error || "Couldn't submit."); return; }
-    if (file) {
-      const fd = new FormData(); fd.append("request_id", res.item.id); fd.append("kind", "attachment"); fd.append("file", file);
-      await fetch("/api/sales-requests/upload", { method: "POST", body: fd }).catch(() => {});
-    }
-    setBusy(false);
-    onCreated(res.item.id);
-  }
-
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 max-w-3xl">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex gap-1.5">
-          {(Object.keys(TYPE_META) as ReqType[]).map(t => (
-            <button key={t} onClick={() => setType(t)} className={`text-xs font-semibold rounded-full px-3 py-1.5 ${type === t ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>{TYPE_META[t].emoji} {TYPE_META[t].label}</button>
-          ))}
-        </div>
-        <button onClick={onCancel} className="text-sm text-gray-400 hover:text-gray-600">Cancel</button>
-      </div>
-
-      {type === "artwork" && <ArtworkForm brands={brands} f={f} setF={setF} file={file} setFile={setFile} ack={ack} setAck={setAck} onSubmit={submit} />}
-      {type === "swatch" && <SwatchForm brands={brands} f={f} setF={setF} ack={ack} setAck={setAck} onSubmit={submit} />}
-      {type === "tune_up" && <TuneUpForm f={f} setF={setF} file={file} setFile={setFile} ack={ack} setAck={setAck} onSubmit={submit} />}
-      {type === "product" && <ProductForm brands={brands} f={f} setF={setF} ack={ack} setAck={setAck} onSubmit={submit} />}
-
-      {err && <p className="text-sm text-rose-600 mt-3">{err}</p>}
-      <div className="mt-4 flex justify-end">
-        <button disabled={busy} onClick={() => (document.getElementById(`submit-${type}`) as HTMLButtonElement)?.click()} className="hidden" />
-      </div>
-    </div>
-  );
-}
-
-function ArtworkForm({ brands, f, setF, file, setFile, ack, setAck, onSubmit }: any) {
-  const [busy, setBusy] = useState(false);
-  const isResize = f.artworkRequestType === "resize";
-  async function go() {
-    setBusy(true);
-    await onSubmit({
-      title: `Artwork · ${f.brand ?? "brand TBC"} · ${f.artworkRequestType === "resize" ? "resize" : f.artworkRequestType === "copy_update" ? "copy update" : "new asset"}`,
-      brand: f.brand, retailer: f.retailer, end_use: f.whereAppears || "Not specified",
-      needed_by: f.live_date,
-      brief: { artworkRequestType: f.artworkRequestType, whereAppears: f.whereAppears, specs: f.specs, copy: f.copy, hasPrice: f.hasPrice, rrp: f.rrp, promoApprovedBy: f.promoApprovedBy, promoStart: f.promoStart, promoEnd: f.promoEnd, liveDate: f.live_date, inMarketUntil: f.inMarketUntil },
-    });
-    setBusy(false);
-  }
-  return (
-    <div className="space-y-3">
-      <RuleCard>Lead time depends on the type of request below — a resize of existing approved artwork is fastest. Artwork showing a price needs an approved promotion (confirmed RRP + sign-off + dates). We cannot turn artwork around same day.</RuleCard>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Brand" required><select className={inp} value={f.brand ?? ""} onChange={e => setF({ ...f, brand: e.target.value })}><option value="">Select…</option>{brands.map((b: any) => <option key={b.name} value={b.name}>{b.name}</option>)}</select></Field>
-        <Field label="Retailer / store" required><input className={inp} value={f.retailer ?? ""} onChange={e => setF({ ...f, retailer: e.target.value })} /></Field>
-      </div>
-      <Field label="Request type" required>
-        <div className="flex gap-3 text-sm">
-          {[["new", "New artwork"], ["resize", "Resize of existing approved artwork"], ["copy_update", "Copy update only"]].map(([v, l]) => (
-            <label key={v} className="flex items-center gap-1.5"><input type="radio" name="artworkRequestType" checked={f.artworkRequestType === v} onChange={() => setF({ ...f, artworkRequestType: v })} />{l}</label>
-          ))}
-        </div>
-      </Field>
-      <Field label="Where will it appear" required>
-        <select className={inp} value={f.whereAppears ?? ""} onChange={e => setF({ ...f, whereAppears: e.target.value })}>
-          <option value="">Select…</option>
-          {["In-store POS", "Retailer EDM", "Retailer social", "Catalogue or brochure", "Event", "Other"].map(o => <option key={o}>{o}</option>)}
-        </select>
-      </Field>
-      {!isResize && <Field label="Specs required" required><textarea className={inp} rows={2} placeholder="Format, width x height, unit (mm/px), file type — one per line" value={f.specs ?? ""} onChange={e => setF({ ...f, specs: e.target.value })} /></Field>}
-      {isResize && <Field label="Which existing artwork + new size" required><textarea className={inp} rows={2} value={f.specs ?? ""} onChange={e => setF({ ...f, specs: e.target.value })} /></Field>}
-      {!isResize && <Field label="Copy required"><textarea className={inp} rows={2} value={f.copy ?? ""} onChange={e => setF({ ...f, copy: e.target.value })} /></Field>}
-      <Field label="Does it include a price?" required>
-        <div className="flex gap-3 text-sm">
-          <label className="flex items-center gap-1.5"><input type="radio" name="hasPrice" checked={f.hasPrice === true} onChange={() => setF({ ...f, hasPrice: true })} />Yes</label>
-          <label className="flex items-center gap-1.5"><input type="radio" name="hasPrice" checked={f.hasPrice === false} onChange={() => setF({ ...f, hasPrice: false })} />No</label>
-        </div>
-      </Field>
-      {f.hasPrice && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-amber-50 border border-amber-100 rounded-xl p-3">
-          <Field label="RRP" required><input className={inp} value={f.rrp ?? ""} onChange={e => setF({ ...f, rrp: e.target.value })} /></Field>
-          <Field label="Who approved this promotion" required><input className={inp} value={f.promoApprovedBy ?? ""} onChange={e => setF({ ...f, promoApprovedBy: e.target.value })} /></Field>
-          <Field label="Promo start / end" required><div className="flex gap-1"><input type="date" className={inp} value={f.promoStart ?? ""} onChange={e => setF({ ...f, promoStart: e.target.value })} /><input type="date" className={inp} value={f.promoEnd ?? ""} onChange={e => setF({ ...f, promoEnd: e.target.value })} /></div></Field>
-        </div>
-      )}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Live date" required><input type="date" className={inp} value={f.live_date ?? ""} onChange={e => setF({ ...f, live_date: e.target.value })} /></Field>
-        <Field label="In-market until"><input type="date" className={inp} value={f.inMarketUntil ?? ""} onChange={e => setF({ ...f, inMarketUntil: e.target.value })} /></Field>
-      </div>
-      <Field label="Retailer spec sheet"><input type="file" onChange={e => setFile(e.target.files?.[0] ?? null)} className="text-sm" /></Field>
-      <AckBox label="I have read the Artwork and Image rules." checked={ack} onChange={setAck} />
-      <button id="submit-artwork" disabled={busy || !f.brand || !f.artworkRequestType || !f.whereAppears || f.hasPrice === undefined || !f.live_date} onClick={go} className="text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg px-4 py-2 mt-2">{busy ? "Submitting…" : "Submit request"}</button>
-    </div>
-  );
-}
-
-function SwatchForm({ brands, f, setF, ack, setAck, onSubmit }: any) {
-  const [busy, setBusy] = useState(false);
-  async function go() {
-    setBusy(true);
-    await onSubmit({
-      title: `Swatch · ${f.brand ?? "brand TBC"} · ${f.range ?? ""}`, brand: f.brand,
-      end_use: f.purpose || "Not specified", needed_by: f.needed_by,
-      brief: { range: f.range, colourways: f.colourways, quantity: f.quantity, purpose: f.purpose, shipName: f.shipName, shipPhone: f.shipPhone, shipAddress: f.shipAddress },
-    });
-    setBusy(false);
-  }
-  return (
-    <div className="space-y-3">
-      <RuleCard>Swatches are stock dependent and not guaranteed. If you need full product, use the Product Request form instead — this one is for swatches and fabric samples only.</RuleCard>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Brand" required><select className={inp} value={f.brand ?? ""} onChange={e => setF({ ...f, brand: e.target.value })}><option value="">Select…</option>{brands.map((b: any) => <option key={b.name} value={b.name}>{b.name}</option>)}</select></Field>
-        <Field label="Range" required><input className={inp} value={f.range ?? ""} onChange={e => setF({ ...f, range: e.target.value })} /></Field>
-      </div>
-      <Field label="Colourways required" required><input className={inp} placeholder="Comma separated" value={f.colourways ?? ""} onChange={e => setF({ ...f, colourways: e.target.value })} /></Field>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Quantity" required><input className={inp} value={f.quantity ?? ""} onChange={e => setF({ ...f, quantity: e.target.value })} /></Field>
-        <Field label="Purpose" required><select className={inp} value={f.purpose ?? ""} onChange={e => setF({ ...f, purpose: e.target.value })}><option value="">Select…</option>{["Store display", "Retailer sample", "Photography", "Other"].map(o => <option key={o}>{o}</option>)}</select></Field>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Field label="Ship to — contact" required><input className={inp} value={f.shipName ?? ""} onChange={e => setF({ ...f, shipName: e.target.value })} /></Field>
-        <Field label="Phone" required><input className={inp} value={f.shipPhone ?? ""} onChange={e => setF({ ...f, shipPhone: e.target.value })} /></Field>
-        <Field label="Needed by" required><input type="date" className={inp} value={f.needed_by ?? ""} onChange={e => setF({ ...f, needed_by: e.target.value })} /></Field>
-      </div>
-      <Field label="Address" required><input className={inp} value={f.shipAddress ?? ""} onChange={e => setF({ ...f, shipAddress: e.target.value })} /></Field>
-      <AckBox label="I have read the Artwork and Image rules." checked={ack} onChange={setAck} />
-      <button id="submit-swatch" disabled={busy || !f.brand || !f.range || !f.colourways || !f.quantity || !f.purpose || !f.shipName || !f.shipPhone || !f.shipAddress || !f.needed_by} onClick={go} className="text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg px-4 py-2 mt-2">{busy ? "Submitting…" : "Submit request"}</button>
-    </div>
-  );
-}
-
-function TuneUpForm({ f, setF, file, setFile, ack, setAck, onSubmit }: any) {
-  const [busy, setBusy] = useState(false);
-  const months = useMemo(() => Array.from({ length: 6 }, (_, i) => { const d = new Date(); d.setMonth(d.getMonth() + i + 1); return d.toLocaleDateString("en-AU", { month: "long", year: "numeric" }); }), []);
-  async function go() {
-    setBusy(true);
-    await onSubmit({
-      title: `Tune-Up nomination · ${f.retailer ?? ""} ${f.store ?? ""}`, retailer: f.retailer, store: f.store, state: f.state,
-      end_use: "Tune-Up Day at store", needed_by: undefined,
-      brief: { storeContact: f.storeContact, storeMobile: f.storeMobile, whyStore: f.whyStore, spaceAvailable: f.spaceAvailable, preferredMonth: f.preferredMonth, storeConfirmed: f.storeConfirmed },
-    });
-    setBusy(false);
-  }
-  return (
-    <div className="space-y-3">
-      <RuleCard>
-        Non-negotiables: once an event is published on Eventbrite and promoted, times cannot be changed — stores must confirm timing before go-live. The $20 refundable booking fee stays. Stores must be approved by Baby Bunting or the independent retailer before publishing.
-        Nominations are reviewed in a batch when the next six-month schedule is built.
-      </RuleCard>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Field label="State" required><select className={inp} value={f.state ?? ""} onChange={e => setF({ ...f, state: e.target.value })}><option value="">Select…</option>{STATES.map(s => <option key={s}>{s}</option>)}</select></Field>
-        <Field label="Retailer" required><input className={inp} value={f.retailer ?? ""} onChange={e => setF({ ...f, retailer: e.target.value })} /></Field>
-        <Field label="Store" required><input className={inp} value={f.store ?? ""} onChange={e => setF({ ...f, store: e.target.value })} /></Field>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Store contact name" required><input className={inp} value={f.storeContact ?? ""} onChange={e => setF({ ...f, storeContact: e.target.value })} /></Field>
-        <Field label="Store contact mobile" required><input className={inp} value={f.storeMobile ?? ""} onChange={e => setF({ ...f, storeMobile: e.target.value })} /></Field>
-      </div>
-      <Field label="Why this store" required><textarea className={inp} rows={2} placeholder="Customer requests received, pram sales last 12 months, prior Tune-Up attendance if any" value={f.whyStore ?? ""} onChange={e => setF({ ...f, whyStore: e.target.value })} /></Field>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Space for a 2.4m folding table + service area?" required>
-          <div className="flex gap-3 text-sm">
-            <label className="flex items-center gap-1.5"><input type="radio" name="spaceAvailable" checked={f.spaceAvailable === true} onChange={() => setF({ ...f, spaceAvailable: true })} />Yes</label>
-            <label className="flex items-center gap-1.5"><input type="radio" name="spaceAvailable" checked={f.spaceAvailable === false} onChange={() => setF({ ...f, spaceAvailable: false })} />No</label>
-          </div>
-        </Field>
-        <Field label="Photo of the space"><input type="file" onChange={e => setFile(e.target.files?.[0] ?? null)} className="text-sm" /></Field>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Preferred month" required><select className={inp} value={f.preferredMonth ?? ""} onChange={e => setF({ ...f, preferredMonth: e.target.value })}><option value="">Select…</option>{months.map(m => <option key={m}>{m}</option>)}</select></Field>
-        <Field label="Store has confirmed date and time availability" required>
-          <div className="flex gap-3 text-sm pt-2">
-            <label className="flex items-center gap-1.5"><input type="radio" name="storeConfirmed" checked={f.storeConfirmed === true} onChange={() => setF({ ...f, storeConfirmed: true })} />Yes</label>
-            <label className="flex items-center gap-1.5"><input type="radio" name="storeConfirmed" checked={f.storeConfirmed === false} onChange={() => setF({ ...f, storeConfirmed: false })} />No</label>
-          </div>
-        </Field>
-      </div>
-      <p className="text-xs text-gray-400">Nominations are reviewed when the next six-month schedule is built (per the manual, the second-half schedule is built toward the end of May) — you won't hear back immediately.</p>
-      <AckBox label="I have read the Tune-Up Day non-negotiables." checked={ack} onChange={setAck} />
-      <button id="submit-tune_up" disabled={busy || !f.state || !f.retailer || !f.store || !f.storeContact || !f.storeMobile || !f.whyStore || f.spaceAvailable === undefined || !f.preferredMonth || f.storeConfirmed === undefined} onClick={go} className="text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg px-4 py-2 mt-2">{busy ? "Submitting…" : "Submit nomination"}</button>
-    </div>
-  );
-}
-
-function ProductForm({ brands, f, setF, ack, setAck, onSubmit }: any) {
-  const [busy, setBusy] = useState(false);
-  async function go() {
-    setBusy(true);
-    await onSubmit({
-      title: `Product/gifting · ${f.brand ?? ""} · ${f.sku ?? ""}`, brand: f.brand,
-      end_use: f.purpose || "Not specified", needed_by: f.needed_by,
-      brief: { sku: f.sku, quantity: f.quantity, approxRrpValue: f.approxRrpValue, purpose: f.purpose, fundedBy: f.fundedBy, whatWeGet: f.whatWeGet },
-    });
-    setBusy(false);
-  }
-  return (
-    <div className="space-y-3">
-      <RuleCard>
-        Free product for giveaways, competitions, retailer incentives and staff seeding is a <strong>sales and trade spend decision, not a marketing budget line</strong>. This request goes to your Sales Manager. Marketing is notified for awareness only.
-      </RuleCard>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Field label="Brand" required><select className={inp} value={f.brand ?? ""} onChange={e => setF({ ...f, brand: e.target.value })}><option value="">Select…</option>{brands.map((b: any) => <option key={b.name} value={b.name}>{b.name}</option>)}</select></Field>
-        <Field label="SKU or product" required><input className={inp} value={f.sku ?? ""} onChange={e => setF({ ...f, sku: e.target.value })} /></Field>
-        <Field label="Quantity" required><input className={inp} value={f.quantity ?? ""} onChange={e => setF({ ...f, quantity: e.target.value })} /></Field>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Field label="Approx. RRP value" required><input className={inp} value={f.approxRrpValue ?? ""} onChange={e => setF({ ...f, approxRrpValue: e.target.value })} /></Field>
-        <Field label="Purpose" required><select className={inp} value={f.purpose ?? ""} onChange={e => setF({ ...f, purpose: e.target.value })}><option value="">Select…</option>{["Retailer competition", "Store staff incentive", "Customer giveaway", "Display", "Other"].map(o => <option key={o}>{o}</option>)}</select></Field>
-        <Field label="Who is funding it" required><select className={inp} value={f.fundedBy ?? ""} onChange={e => setF({ ...f, fundedBy: e.target.value })}><option value="">Select…</option>{["Retailer", "Coolkidz trade spend", "To be discussed"].map(o => <option key={o}>{o}</option>)}</select></Field>
-      </div>
-      <Field label="What Coolkidz gets in return" required><textarea className={inp} rows={2} placeholder="Placement, posts, staff training, sell-through commitment…" value={f.whatWeGet ?? ""} onChange={e => setF({ ...f, whatWeGet: e.target.value })} /></Field>
-      <Field label="Needed by" required><input type="date" className={inp} value={f.needed_by ?? ""} onChange={e => setF({ ...f, needed_by: e.target.value })} /></Field>
-      <AckBox label="I have read the Free Product, Samples & Gifting rules." checked={ack} onChange={setAck} />
-      <button id="submit-product" disabled={busy || !f.brand || !f.sku || !f.quantity || !f.approxRrpValue || !f.purpose || !f.fundedBy || !f.whatWeGet || !f.needed_by} onClick={go} className="text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg px-4 py-2 mt-2">{busy ? "Submitting…" : "Submit request"}</button>
-    </div>
-  );
-}
-
 function RequestDetail({ item, admin, onBack, onChanged }: { item: Req; admin: boolean; onBack: () => void; onChanged: () => void }) {
   const [files, setFiles] = useState<FileRow[]>([]);
   const [events, setEvents] = useState<EventRow[]>([]);
@@ -551,7 +299,7 @@ function RequestDetail({ item, admin, onBack, onChanged }: { item: Req; admin: b
         <div className="mt-4">
           <div className={lbl}>History</div>
           <div className="space-y-1.5">
-            {events.map(e => <div key={e.id} className="text-xs text-gray-500">{new Date(e.created_at).toLocaleDateString("en-AU")} · {e.actor} → {e.to_status ? STATUS_META[e.to_status as Status]?.label ?? e.to_status : ""}{e.note ? ` — ${e.note}` : ""}</div>)}
+            {events.map(e => <div key={e.id} className="text-xs text-gray-500">{new Date(e.created_at).toLocaleDateString("en-AU")} · {e.actor} → {e.to_status ? STATUS_META[e.to_status as Status]?.label ?? e.to_status : ""}{e.note ? `, ${e.note}` : ""}</div>)}
           </div>
         </div>
       )}
