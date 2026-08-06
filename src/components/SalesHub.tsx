@@ -178,7 +178,7 @@ function Landing({ brands, items, mine, tradeshows, calendarEvents, onPick, onOp
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {(Object.keys(TYPE_META) as ReqType[]).map(t => (
           <button key={t} onClick={() => onPick(t)} className="text-left bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md active:scale-[0.98] transition">
-            <div className={`h-28 bg-gradient-to-br ${TILE_ART[t].grad} relative overflow-hidden`}>
+            <div className={`aspect-square bg-gradient-to-br ${TILE_ART[t].grad} relative overflow-hidden`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={TILE_ART[t].photo} alt="" className="absolute inset-0 w-full h-full object-cover" />
             </div>
