@@ -34,11 +34,11 @@ const STEPS: { key: Status; label: string }[] = [
 const dShort = (s?: string | null) => s ? new Date(s + (s.length === 10 ? "T00:00:00" : "")).toLocaleDateString("en-AU", { day: "numeric", month: "short" }) : "—";
 const baloo = "font-[family-name:var(--font-baloo)]";
 const body = "font-[family-name:var(--font-manrope)]";
-const TILE_ART: Record<ReqType, { grad: string; art: React.ReactNode }> = {
-  artwork: { grad: "from-[#FFD9CC] to-[#FF9B7A]", art: <><circle cx="78" cy="14" r="22" fill="#fff" opacity=".3" /><rect x="14" y="30" width="34" height="26" rx="4" fill="#fff" opacity=".4" /></> },
-  swatch: { grad: "from-[#CDEFF7] to-[#7FD4EA]", art: <><rect x="18" y="10" width="24" height="24" rx="6" fill="#fff" opacity=".45" transform="rotate(12 30 22)" /><rect x="46" y="20" width="24" height="24" rx="6" fill="#fff" opacity=".35" transform="rotate(-8 58 32)" /></> },
-  tune_up: { grad: "from-[#DCEBD1] to-[#9FCB84]", art: <><circle cx="50" cy="32" r="20" fill="none" stroke="#fff" strokeWidth="5" opacity=".45" /><circle cx="50" cy="32" r="6" fill="#fff" opacity=".55" /></> },
-  product: { grad: "from-[#F6DDF2] to-[#E1A6D8]", art: <><rect x="30" y="16" width="40" height="30" rx="5" fill="#fff" opacity=".4" /><rect x="46" y="16" width="8" height="30" fill="#fff" opacity=".55" /></> },
+const TILE_ART: Record<ReqType, { grad: string; photo: string }> = {
+  artwork: { grad: "from-[#FFD9CC] to-[#FF9B7A]", photo: "/sales-hub/artwork.jpg" },
+  swatch: { grad: "from-[#CDEFF7] to-[#7FD4EA]", photo: "/sales-hub/swatch.jpg" },
+  tune_up: { grad: "from-[#DCEBD1] to-[#9FCB84]", photo: "/sales-hub/tune_up.jpg" },
+  product: { grad: "from-[#F6DDF2] to-[#E1A6D8]", photo: "/sales-hub/product.jpg" },
 };
 
 export function SalesHub({ admin, brands, tradeshows = [], calendarEvents = [] }: { admin: boolean; brands: { name: string; color?: string }[]; tradeshows?: { id: string; name: string; date_start: string }[]; calendarEvents?: { title: string; start_date: string }[] }) {
@@ -178,8 +178,9 @@ function Landing({ brands, items, mine, tradeshows, calendarEvents, onPick, onOp
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {(Object.keys(TYPE_META) as ReqType[]).map(t => (
           <button key={t} onClick={() => onPick(t)} className="text-left bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md active:scale-[0.98] transition">
-            <div className={`h-16 bg-gradient-to-br ${TILE_ART[t].grad} relative`}>
-              <svg viewBox="0 0 100 64" className="absolute inset-0 w-full h-full">{TILE_ART[t].art}</svg>
+            <div className={`h-28 bg-gradient-to-br ${TILE_ART[t].grad} relative overflow-hidden`}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={TILE_ART[t].photo} alt="" className="absolute inset-0 w-full h-full object-cover" />
             </div>
             <div className="px-3.5 py-3">
               <div className={`font-bold text-slate-800 text-[15px] ${baloo}`}>{TYPE_META[t].label.replace(" Request", "").replace(" / Sample", "").replace(" Nomination", "").replace(" / Gifting", "")}</div>
