@@ -159,7 +159,6 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
           <DontCard title="Reshare to our story" note="We will not prioritise stores on our feed and do not want to become an advertising feed for stores" />
           <DontCard title="Post a store promo to our grid" note="Reads as national and creates channel conflict. Story reshare only." />
           <DontCard title="Supply free product" note="Trade spend: use the Product Request form" />
-          <DontCard title="Artwork with a price, no approved promo" note="Needs confirmed RRP + sign-off" />
           <DontCard title="Alter the logo" note="No recolour/crop/stretch/effects/busy backgrounds" />
           <DontCard title="Approve artwork same day" note="See lead times. Emergencies handled case by case." />
           <DontCard title="Supply creator content to retailers" note="Licensing doesn't extend that far" />
