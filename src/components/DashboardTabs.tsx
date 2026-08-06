@@ -2151,7 +2151,9 @@ export function DashboardTabs({
           </>)}
 
           {active === "sales-hub" && (
-            <SalesHub admin={role === "admin"} brands={brands.map((b: any) => ({ name: b.name, color: b.color }))} />
+            <SalesHub admin={role === "admin"} brands={brands.map((b: any) => ({ name: b.name, color: b.color }))}
+              tradeshows={tradeshows.map((t: any) => ({ id: t.id, name: t.name, date_start: t.date_start }))}
+              calendarEvents={calendarEvents.map((e: any) => ({ title: e.title, start_date: e.start_date }))} />
           )}
 
           {active === "decks" && (

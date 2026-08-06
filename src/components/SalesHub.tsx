@@ -23,9 +23,25 @@ const STATUS_META: Record<Status, { label: string; cls: string }> = {
   on_hold: { label: "On hold", cls: "bg-gray-100 text-gray-500" },
   declined: { label: "Declined", cls: "bg-rose-100 text-rose-700" },
 };
+// Ordered steps for the visual stepper (declined/on_hold branch off, shown as a note instead).
+const STEPS: { key: Status; label: string }[] = [
+  { key: "new", label: "Submitted" },
+  { key: "triaged", label: "Triaged" },
+  { key: "in_progress", label: "In progress" },
+  { key: "review", label: "Review" },
+  { key: "delivered", label: "Delivered" },
+];
 const dShort = (s?: string | null) => s ? new Date(s + (s.length === 10 ? "T00:00:00" : "")).toLocaleDateString("en-AU", { day: "numeric", month: "short" }) : "—";
+const baloo = "font-[family-name:var(--font-baloo)]";
+const body = "font-[family-name:var(--font-manrope)]";
+const TILE_ART: Record<ReqType, { grad: string; art: React.ReactNode }> = {
+  artwork: { grad: "from-[#FFD9CC] to-[#FF9B7A]", art: <><circle cx="78" cy="14" r="22" fill="#fff" opacity=".3" /><rect x="14" y="30" width="34" height="26" rx="4" fill="#fff" opacity=".4" /></> },
+  swatch: { grad: "from-[#CDEFF7] to-[#7FD4EA]", art: <><rect x="18" y="10" width="24" height="24" rx="6" fill="#fff" opacity=".45" transform="rotate(12 30 22)" /><rect x="46" y="20" width="24" height="24" rx="6" fill="#fff" opacity=".35" transform="rotate(-8 58 32)" /></> },
+  tune_up: { grad: "from-[#DCEBD1] to-[#9FCB84]", art: <><circle cx="50" cy="32" r="20" fill="none" stroke="#fff" strokeWidth="5" opacity=".45" /><circle cx="50" cy="32" r="6" fill="#fff" opacity=".55" /></> },
+  product: { grad: "from-[#F6DDF2] to-[#E1A6D8]", art: <><rect x="30" y="16" width="40" height="30" rx="5" fill="#fff" opacity=".4" /><rect x="46" y="16" width="8" height="30" fill="#fff" opacity=".55" /></> },
+};
 
-export function SalesHub({ admin, brands }: { admin: boolean; brands: { name: string; color?: string }[] }) {
+export function SalesHub({ admin, brands, tradeshows = [], calendarEvents = [] }: { admin: boolean; brands: { name: string; color?: string }[]; tradeshows?: { id: string; name: string; date_start: string }[]; calendarEvents?: { title: string; start_date: string }[] }) {
   const [items, setItems] = useState<Req[]>([]);
   const [loading, setLoading] = useState(true);
   const [needsSetup, setNeedsSetup] = useState(false);
@@ -75,23 +91,28 @@ export function SalesHub({ admin, brands }: { admin: boolean; brands: { name: st
   const detail = detailId ? items.find(i => i.id === detailId) ?? null : null;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h2 className="text-xl font-bold text-slate-800">Sales Hub</h2>
-          <p className="text-sm text-gray-400 mt-0.5">Request artwork, swatches, Tune-Up Days and product, plus the rules to check before you ask.</p>
+    <div className={`space-y-4 ${body}`}>
+      {view !== "landing" && (
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <h2 className={`text-xl font-bold text-slate-800 ${baloo}`}>Sales Hub</h2>
+            <p className="text-sm text-gray-400 mt-0.5">Request artwork, swatches, Tune-Up Days and product, plus the rules to check before you ask.</p>
+          </div>
         </div>
+      )}
+      {!detail && (
         <div className="flex gap-2">
-          <button onClick={() => { setView("landing"); setDetailId(null); }} className={`text-sm font-medium rounded-lg px-3 py-1.5 border transition ${view === "landing" ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-slate-600 border-gray-200 hover:bg-gray-50"}`}>Home</button>
-          <button onClick={() => { setView("queue"); setDetailId(null); }} className={`text-sm font-medium rounded-lg px-3 py-1.5 border transition ${view === "queue" ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-slate-600 border-gray-200 hover:bg-gray-50"}`}>{admin ? "All requests" : "My requests"} ({items.length})</button>
-          <button onClick={() => { setView("guidelines"); setDetailId(null); }} className={`text-sm font-medium rounded-lg px-3 py-1.5 border transition ${view === "guidelines" ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-slate-600 border-gray-200 hover:bg-gray-50"}`}>Guidelines</button>
+          <button onClick={() => { setView("landing"); setDetailId(null); }} className={`text-sm font-semibold rounded-full px-4 py-2 border transition ${view === "landing" ? "bg-[#1E9DC2] text-white border-[#1E9DC2]" : "bg-white text-slate-600 border-gray-200 hover:bg-gray-50"}`}>🏠 Home</button>
+          <button onClick={() => { setView("queue"); setDetailId(null); }} className={`text-sm font-semibold rounded-full px-4 py-2 border transition ${view === "queue" ? "bg-[#1E9DC2] text-white border-[#1E9DC2]" : "bg-white text-slate-600 border-gray-200 hover:bg-gray-50"}`}>{admin ? "All requests" : "My requests"} ({items.length})</button>
+          <button onClick={() => { setView("guidelines"); setDetailId(null); }} className={`text-sm font-semibold rounded-full px-4 py-2 border transition ${view === "guidelines" ? "bg-[#1E9DC2] text-white border-[#1E9DC2]" : "bg-white text-slate-600 border-gray-200 hover:bg-gray-50"}`}>📖 Guidelines</button>
         </div>
-      </div>
+      )}
 
       {detail ? (
         <RequestDetail item={detail} admin={admin} onBack={() => setDetailId(null)} onChanged={load} />
       ) : view === "landing" ? (
-        <Landing brands={brands} mine={mine} onPick={t => { setNewType(t); setView("new"); }} onOpenRequest={id => setDetailId(id)} onGuide={id => { setGuideId(id); setView("guidelines"); }} />
+        <Landing brands={brands} items={items} mine={mine} tradeshows={tradeshows} calendarEvents={calendarEvents}
+          onPick={t => { setNewType(t); setView("new"); }} onOpenRequest={id => setDetailId(id)} onGuide={id => { setGuideId(id); setView("guidelines"); }} />
       ) : view === "guidelines" ? (
         <Guidelines active={guideId} onSelect={setGuideId} />
       ) : view === "new" ? (
@@ -103,34 +124,109 @@ export function SalesHub({ admin, brands }: { admin: boolean; brands: { name: st
   );
 }
 
-function Landing({ brands, mine, onPick, onOpenRequest, onGuide }: { brands: { name: string }[]; mine: Req[]; onPick: (t: ReqType) => void; onOpenRequest: (id: string) => void; onGuide: (id: string) => void }) {
+function Landing({ brands, items, mine, tradeshows, calendarEvents, onPick, onOpenRequest, onGuide }: {
+  brands: { name: string }[]; items: Req[]; mine: Req[];
+  tradeshows: { id: string; name: string; date_start: string }[]; calendarEvents: { title: string; start_date: string }[];
+  onPick: (t: ReqType) => void; onOpenRequest: (id: string) => void; onGuide: (id: string) => void;
+}) {
+  const now = Date.now();
+  const lights = useMemo(() => {
+    let onTrack = 0, inProgress = 0, overdue = 0;
+    for (const r of mine) {
+      const isOverdue = r.sla_due_at && new Date(r.sla_due_at).getTime() < now;
+      if (isOverdue) overdue++;
+      else if (r.status === "in_progress" || r.status === "review") inProgress++;
+      else onTrack++;
+    }
+    return { onTrack, inProgress, overdue };
+  }, [mine, now]);
+
+  const upcoming = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const a = tradeshows.filter(t => t.date_start >= today).map(t => ({ date: t.date_start, label: t.name }));
+    const b = calendarEvents.filter(e => e.start_date >= today).map(e => ({ date: e.start_date.slice(0, 10), label: e.title }));
+    return [...a, ...b].sort((x, y) => x.date.localeCompare(y.date)).slice(0, 5);
+  }, [tradeshows, calendarEvents]);
+
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* Branded hero */}
+      <div className="rounded-3xl bg-gradient-to-br from-[#3EC0E4] to-[#1E9DC2] px-6 py-7 sm:px-8 sm:py-9 shadow-sm">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logos/coolkidz-logo.png" alt="Coolkidz" className="h-6 mb-4 brightness-0 invert" />
+        <h2 className={`text-2xl sm:text-3xl font-extrabold text-white ${baloo}`}>Ask Marketing</h2>
+        <p className="text-white/85 text-sm mt-1 max-w-md">Artwork, swatches, Tune-Up Days &amp; product, in a minute, from your phone.</p>
+      </div>
+
+      {/* Traffic light status strip */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="rounded-2xl bg-emerald-50 py-4 text-center">
+          <div className={`text-3xl font-extrabold text-emerald-600 ${baloo}`}>{lights.onTrack}</div>
+          <div className="text-[10.5px] font-bold uppercase tracking-wide text-emerald-600 mt-0.5">On track</div>
+        </div>
+        <div className="rounded-2xl bg-amber-50 py-4 text-center">
+          <div className={`text-3xl font-extrabold text-amber-600 ${baloo}`}>{lights.inProgress}</div>
+          <div className="text-[10.5px] font-bold uppercase tracking-wide text-amber-600 mt-0.5">In progress</div>
+        </div>
+        <div className="rounded-2xl bg-rose-50 py-4 text-center">
+          <div className={`text-3xl font-extrabold text-rose-600 ${baloo}`}>{lights.overdue}</div>
+          <div className="text-[10.5px] font-bold uppercase tracking-wide text-rose-600 mt-0.5">Overdue</div>
+        </div>
+      </div>
+
+      {/* Request-type tiles — big, tappable, photographic */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {(Object.keys(TYPE_META) as ReqType[]).map(t => (
-          <button key={t} onClick={() => onPick(t)} className="text-left bg-white rounded-2xl border border-gray-100 shadow-sm p-4 hover:shadow-md hover:border-indigo-200 transition">
-            <div className="text-2xl">{TYPE_META[t].emoji}</div>
-            <div className="font-semibold text-slate-800 mt-2">{TYPE_META[t].label}</div>
-            <div className="text-xs text-gray-400 mt-1">{t === "product" ? "Routes to Sales leadership" : "Routes to Marketing"}</div>
+          <button key={t} onClick={() => onPick(t)} className="text-left bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md active:scale-[0.98] transition">
+            <div className={`h-16 bg-gradient-to-br ${TILE_ART[t].grad} relative`}>
+              <svg viewBox="0 0 100 64" className="absolute inset-0 w-full h-full">{TILE_ART[t].art}</svg>
+            </div>
+            <div className="px-3.5 py-3">
+              <div className={`font-bold text-slate-800 text-[15px] ${baloo}`}>{TYPE_META[t].label.replace(" Request", "").replace(" / Sample", "").replace(" Nomination", "").replace(" / Gifting", "")}</div>
+              <div className="text-[11px] text-gray-400 mt-0.5">{t === "product" ? "Routes to Sales leadership" : "Routes to Marketing"}</div>
+            </div>
           </button>
         ))}
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-bold text-slate-700">My open requests</h3>
+      {/* Coming up */}
+      {upcoming.length > 0 && (
+        <div>
+          <h3 className="text-[11px] font-bold uppercase tracking-wide text-gray-400 mb-2 px-1">Coming up</h3>
+          <div className="flex gap-2.5 overflow-x-auto pb-1">
+            {upcoming.map((u, i) => {
+              const d = new Date(u.date + "T00:00:00");
+              return (
+                <div key={i} className="shrink-0 w-24 bg-white rounded-xl border border-gray-100 shadow-sm px-3 py-2.5 text-center">
+                  <div className={`text-xl font-extrabold text-[#E85536] ${baloo}`}>{d.getDate()}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-wide text-gray-400">{d.toLocaleDateString("en-AU", { month: "short" })}</div>
+                  <div className="text-[10.5px] font-semibold text-slate-600 mt-1 leading-tight line-clamp-2">{u.label}</div>
+                </div>
+              );
+            })}
+          </div>
         </div>
+      )}
+
+      {/* My open requests */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+        <h3 className={`text-sm font-bold text-slate-700 mb-1 ${baloo}`}>My open requests</h3>
         {mine.length === 0 ? <p className="text-sm text-gray-400 py-4 text-center">No open requests.</p> : (
           <div className="divide-y divide-gray-100">
-            {mine.slice(0, 8).map(r => (
-              <button key={r.id} onClick={() => onOpenRequest(r.id)} className="w-full flex items-center justify-between gap-3 py-2.5 text-left hover:bg-gray-50 -mx-2 px-2 rounded-lg">
-                <div className="min-w-0">
-                  <div className="text-sm font-medium text-slate-700 truncate">{TYPE_META[r.request_type].emoji} {r.title}</div>
-                  <div className="text-[11px] text-gray-400">{r.brand ?? "—"} · needed {dShort(r.needed_by)}</div>
-                </div>
-                <span className={`text-[10.5px] font-bold px-2 py-1 rounded-full whitespace-nowrap ${STATUS_META[r.status].cls}`}>{STATUS_META[r.status].label}</span>
-              </button>
-            ))}
+            {mine.slice(0, 8).map(r => {
+              const isOverdue = r.sla_due_at && new Date(r.sla_due_at).getTime() < now;
+              const dot = isOverdue ? "bg-rose-500" : (r.status === "in_progress" || r.status === "review") ? "bg-amber-500" : "bg-emerald-500";
+              return (
+                <button key={r.id} onClick={() => onOpenRequest(r.id)} className="w-full flex items-center gap-3 py-3 text-left hover:bg-gray-50 -mx-2 px-2 rounded-lg">
+                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${dot}`} />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-semibold text-slate-700 truncate">{r.title}</div>
+                    <div className="text-[11px] text-gray-400">{r.brand ?? "—"} · needed {dShort(r.needed_by)}</div>
+                  </div>
+                  <span className="text-gray-300 text-lg">›</span>
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
@@ -138,11 +234,11 @@ function Landing({ brands, mine, onPick, onOpenRequest, onGuide }: { brands: { n
       <FilecampCard />
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-        <h3 className="text-sm font-bold text-slate-700 mb-2">Rules, read before you ask</h3>
+        <h3 className={`text-sm font-bold text-slate-700 mb-2 ${baloo}`}>Rules, read before you ask</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {GUIDELINE_SECTIONS.map(g => (
-            <button key={g.id} onClick={() => onGuide(g.id)} className="flex items-center gap-2.5 text-left text-sm text-slate-600 border border-gray-100 rounded-lg px-3 py-2.5 hover:bg-gray-50 hover:border-indigo-200 transition">
-              <span className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0"><Icon path={g.icon} className="w-4 h-4" /></span>
+            <button key={g.id} onClick={() => onGuide(g.id)} className="flex items-center gap-2.5 text-left text-sm text-slate-600 border border-gray-100 rounded-lg px-3 py-3 hover:bg-gray-50 hover:border-[#3EC0E4] transition">
+              <span className="w-8 h-8 rounded-lg bg-sky-50 text-[#1E9DC2] flex items-center justify-center shrink-0"><Icon path={g.icon} className="w-4 h-4" /></span>
               {g.title}
             </button>
           ))}
@@ -243,6 +339,30 @@ function QueueView({ items, admin, analytics, q, setQ, statusFilter, setStatusFi
   );
 }
 
+function Stepper({ status }: { status: Status }) {
+  const curIdx = STEPS.findIndex(s => s.key === status);
+  return (
+    <div className="mt-5 mb-1 pl-1">
+      {STEPS.map((s, i) => {
+        const state = i < curIdx ? "done" : i === curIdx ? "active" : "todo";
+        return (
+          <div key={s.key} className="flex gap-3.5">
+            <div className="flex flex-col items-center">
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold shrink-0 ${
+                state === "done" ? "bg-emerald-500 text-white" : state === "active" ? "bg-[#3EC0E4] text-white ring-4 ring-sky-50" : "bg-gray-100 text-gray-400 border-2 border-gray-200"
+              }`}>{state === "done" ? "✓" : i + 1}</div>
+              {i < STEPS.length - 1 && <div className={`w-[3px] flex-1 min-h-[26px] ${state === "done" ? "bg-emerald-500" : "bg-gray-200"}`} />}
+            </div>
+            <div className={`pb-6 ${baloo}`}>
+              <div className={`text-[14.5px] font-bold ${state === "active" ? "text-[#1E9DC2]" : state === "todo" ? "text-gray-400" : "text-slate-700"}`}>{s.label}</div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function RequestDetail({ item, admin, onBack, onChanged }: { item: Req; admin: boolean; onBack: () => void; onChanged: () => void }) {
   const [files, setFiles] = useState<FileRow[]>([]);
   const [events, setEvents] = useState<EventRow[]>([]);
@@ -261,17 +381,21 @@ function RequestDetail({ item, admin, onBack, onChanged }: { item: Req; admin: b
     setBusy(false); onChanged();
   }
 
+  const branchedOff = item.status === "declined" || item.status === "on_hold";
+
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 max-w-3xl">
       <button onClick={onBack} className="text-sm text-gray-400 hover:text-gray-600 mb-3">← Back</button>
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <div className="text-xs text-gray-400">{TYPE_META[item.request_type].emoji} {TYPE_META[item.request_type].label}</div>
-          <h3 className="text-lg font-bold text-slate-800">{item.title}</h3>
+          <h3 className={`text-lg font-bold text-slate-800 ${baloo}`}>{item.title}</h3>
           <div className="text-xs text-gray-400 mt-0.5">Requested by {item.requester_email} · {new Date(item.created_at).toLocaleDateString("en-AU")}</div>
         </div>
-        <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${STATUS_META[item.status].cls}`}>{STATUS_META[item.status].label}</span>
+        {branchedOff && <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${STATUS_META[item.status].cls}`}>{STATUS_META[item.status].label}</span>}
       </div>
+
+      {!branchedOff && <Stepper status={item.status} />}
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-sm">
         {item.brand && <div><div className={lbl}>Brand</div>{item.brand}</div>}

@@ -16,19 +16,35 @@ export const TYPE_META: Record<ReqType, { label: string; emoji: string; guide: s
   product: { label: "Product / Gifting", emoji: "🎁", guide: "product-and-gifting" },
 };
 export const STATES = ["VIC", "NSW", "QLD", "WA", "SA", "TAS", "ACT", "NT"];
-export const inp = "text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 w-full";
-export const lbl = "text-xs font-semibold text-slate-500 mb-1 block";
+export const baloo = "font-[family-name:var(--font-baloo)]";
+export const body = "font-[family-name:var(--font-manrope)]";
+// Big touch targets throughout — this is filled out on a phone in-store, not a desktop.
+export const inp = "text-[15px] font-semibold border-[1.5px] border-gray-200 rounded-xl px-4 py-3.5 min-h-[52px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#3EC0E4] focus:border-[#3EC0E4] w-full bg-white";
+export const lbl = "text-[11.5px] font-bold text-slate-500 uppercase tracking-wide mb-1.5 block";
 
 export function RuleCard({ children }: { children: React.ReactNode }) {
-  return <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-3 text-[13px] text-indigo-900 leading-relaxed mb-4">{children}</div>;
+  return <div className="bg-[#EAF4F8] border-l-[3px] border-[#1E9DC2] rounded-xl px-4 py-3.5 text-[13.5px] text-[#152A3B] leading-relaxed mb-4">{children}</div>;
 }
 export function Field({ label, children, required }: { label: string; children: React.ReactNode; required?: boolean }) {
   return <div><span className={lbl}>{label}{required && <span className="text-rose-500"> *</span>}</span>{children}</div>;
 }
+// Big tappable chips instead of tiny radio buttons — this is filled out on a phone.
+export function ChipGroup<T extends string | boolean>({ options, value, onChange }: { options: { value: T; label: string }[]; value: T | undefined; onChange: (v: T) => void }) {
+  return (
+    <div className="flex gap-2 flex-wrap">
+      {options.map(o => (
+        <button key={String(o.value)} type="button" onClick={() => onChange(o.value)}
+          className={`text-[13px] font-bold rounded-xl px-4 py-3 min-h-[48px] border-[1.5px] transition ${value === o.value ? "bg-[#3EC0E4] border-[#3EC0E4] text-white" : "bg-white border-gray-200 text-slate-600 hover:border-[#3EC0E4]"}`}>
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 export function AckBox({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <label className="flex items-start gap-2 text-sm text-slate-600 mt-4">
-      <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} className="mt-0.5" />
+    <label className="flex items-start gap-2.5 text-[13px] text-slate-600 mt-4 cursor-pointer">
+      <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} className="mt-0.5 w-[18px] h-[18px] accent-[#1E9DC2] shrink-0" />
       <span>{label}</span>
     </label>
   );
@@ -68,11 +84,11 @@ export function RequestFormPicker({ type, setType, brands, onCreated, onCancel, 
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 max-w-3xl">
+    <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm p-5 max-w-3xl ${body}`}>
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <div className="flex gap-1.5 flex-wrap">
+        <div className="flex gap-2 flex-wrap">
           {(Object.keys(TYPE_META) as ReqType[]).map(t => (
-            <button key={t} onClick={() => setType(t)} className={`text-xs font-semibold rounded-full px-3 py-1.5 ${type === t ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>{TYPE_META[t].emoji} {TYPE_META[t].label}</button>
+            <button key={t} onClick={() => setType(t)} className={`text-[12.5px] font-bold rounded-full px-4 py-2.5 transition ${type === t ? "bg-[#1E9DC2] text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>{TYPE_META[t].emoji} {TYPE_META[t].label}</button>
           ))}
         </div>
         {onCancel && <button onClick={onCancel} className="text-sm text-gray-400 hover:text-gray-600">Cancel</button>}
@@ -119,11 +135,8 @@ export function ArtworkForm({ brands, f, setF, file, setFile, ack, setAck, onSub
         <Field label="Retailer / store" required><input className={inp} value={f.retailer ?? ""} onChange={e => setF({ ...f, retailer: e.target.value })} /></Field>
       </div>
       <Field label="Request type" required>
-        <div className="flex gap-3 text-sm flex-wrap">
-          {[["new", "New artwork"], ["resize", "Resize of existing approved artwork"], ["copy_update", "Copy update only"]].map(([v, l]) => (
-            <label key={v} className="flex items-center gap-1.5"><input type="radio" name="artworkRequestType" checked={f.artworkRequestType === v} onChange={() => setF({ ...f, artworkRequestType: v })} />{l}</label>
-          ))}
-        </div>
+        <ChipGroup value={f.artworkRequestType} onChange={(v: string) => setF({ ...f, artworkRequestType: v })}
+          options={[{ value: "new", label: "New artwork" }, { value: "resize", label: "Resize of existing" }, { value: "copy_update", label: "Copy update only" }]} />
       </Field>
       <Field label="Where will it appear" required>
         <select className={inp} value={f.whereAppears ?? ""} onChange={e => setF({ ...f, whereAppears: e.target.value })}>
@@ -135,10 +148,7 @@ export function ArtworkForm({ brands, f, setF, file, setFile, ack, setAck, onSub
       {isResize && <Field label="Which existing artwork + new size" required><textarea className={inp} rows={2} value={f.specs ?? ""} onChange={e => setF({ ...f, specs: e.target.value })} /></Field>}
       {!isResize && <Field label="Copy required"><textarea className={inp} rows={2} value={f.copy ?? ""} onChange={e => setF({ ...f, copy: e.target.value })} /></Field>}
       <Field label="Does it include a price?" required>
-        <div className="flex gap-3 text-sm">
-          <label className="flex items-center gap-1.5"><input type="radio" name="hasPrice" checked={f.hasPrice === true} onChange={() => setF({ ...f, hasPrice: true })} />Yes</label>
-          <label className="flex items-center gap-1.5"><input type="radio" name="hasPrice" checked={f.hasPrice === false} onChange={() => setF({ ...f, hasPrice: false })} />No</label>
-        </div>
+        <ChipGroup value={f.hasPrice} onChange={(v: boolean) => setF({ ...f, hasPrice: v })} options={[{ value: true, label: "Yes" }, { value: false, label: "No" }]} />
       </Field>
       {f.hasPrice && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-amber-50 border border-amber-100 rounded-xl p-3">
@@ -153,7 +163,7 @@ export function ArtworkForm({ brands, f, setF, file, setFile, ack, setAck, onSub
       </div>
       <Field label="Retailer spec sheet"><input type="file" onChange={e => setFile(e.target.files?.[0] ?? null)} className="text-sm" /></Field>
       <AckBox label="I have read the Artwork and Image rules." checked={ack} onChange={setAck} />
-      <button id="submit-artwork" disabled={busy || !f.brand || !f.artworkRequestType || !f.whereAppears || f.hasPrice === undefined || !f.live_date} onClick={go} className="text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg px-4 py-2 mt-2">{busy ? "Submitting…" : "Submit request"}</button>
+      <button id="submit-artwork" disabled={busy || !f.brand || !f.artworkRequestType || !f.whereAppears || f.hasPrice === undefined || !f.live_date} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit request"}</button>
     </div>
   );
 }
@@ -188,7 +198,7 @@ export function SwatchForm({ brands, f, setF, ack, setAck, onSubmit }: any) {
       </div>
       <Field label="Address" required><input className={inp} value={f.shipAddress ?? ""} onChange={e => setF({ ...f, shipAddress: e.target.value })} /></Field>
       <AckBox label="I have read the Artwork and Image rules." checked={ack} onChange={setAck} />
-      <button id="submit-swatch" disabled={busy || !f.brand || !f.range || !f.colourways || !f.quantity || !f.purpose || !f.shipName || !f.shipPhone || !f.shipAddress || !f.needed_by} onClick={go} className="text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg px-4 py-2 mt-2">{busy ? "Submitting…" : "Submit request"}</button>
+      <button id="submit-swatch" disabled={busy || !f.brand || !f.range || !f.colourways || !f.quantity || !f.purpose || !f.shipName || !f.shipPhone || !f.shipAddress || !f.needed_by} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit request"}</button>
     </div>
   );
 }
@@ -223,25 +233,19 @@ export function TuneUpForm({ f, setF, file, setFile, ack, setAck, onSubmit }: an
       <Field label="Why this store" required><textarea className={inp} rows={2} placeholder="Customer requests received, pram sales last 12 months, prior Tune-Up attendance if any" value={f.whyStore ?? ""} onChange={e => setF({ ...f, whyStore: e.target.value })} /></Field>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Space for a 2.4m folding table + service area?" required>
-          <div className="flex gap-3 text-sm">
-            <label className="flex items-center gap-1.5"><input type="radio" name="spaceAvailable" checked={f.spaceAvailable === true} onChange={() => setF({ ...f, spaceAvailable: true })} />Yes</label>
-            <label className="flex items-center gap-1.5"><input type="radio" name="spaceAvailable" checked={f.spaceAvailable === false} onChange={() => setF({ ...f, spaceAvailable: false })} />No</label>
-          </div>
+          <ChipGroup value={f.spaceAvailable} onChange={(v: boolean) => setF({ ...f, spaceAvailable: v })} options={[{ value: true, label: "Yes" }, { value: false, label: "No" }]} />
         </Field>
         <Field label="Photo of the space"><input type="file" onChange={e => setFile(e.target.files?.[0] ?? null)} className="text-sm" /></Field>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Preferred month" required><select className={inp} value={f.preferredMonth ?? ""} onChange={e => setF({ ...f, preferredMonth: e.target.value })}><option value="">Select…</option>{months.map(m => <option key={m}>{m}</option>)}</select></Field>
         <Field label="Store has confirmed date and time availability" required>
-          <div className="flex gap-3 text-sm pt-2">
-            <label className="flex items-center gap-1.5"><input type="radio" name="storeConfirmed" checked={f.storeConfirmed === true} onChange={() => setF({ ...f, storeConfirmed: true })} />Yes</label>
-            <label className="flex items-center gap-1.5"><input type="radio" name="storeConfirmed" checked={f.storeConfirmed === false} onChange={() => setF({ ...f, storeConfirmed: false })} />No</label>
-          </div>
+          <ChipGroup value={f.storeConfirmed} onChange={(v: boolean) => setF({ ...f, storeConfirmed: v })} options={[{ value: true, label: "Yes" }, { value: false, label: "No" }]} />
         </Field>
       </div>
       <p className="text-xs text-gray-400">Nominations are reviewed when the next six-month schedule is built (per the manual, the second-half schedule is built toward the end of May), you won't hear back immediately.</p>
       <AckBox label="I have read the Tune-Up Day non-negotiables." checked={ack} onChange={setAck} />
-      <button id="submit-tune_up" disabled={busy || !f.state || !f.retailer || !f.store || !f.storeContact || !f.storeMobile || !f.whyStore || f.spaceAvailable === undefined || !f.preferredMonth || f.storeConfirmed === undefined} onClick={go} className="text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg px-4 py-2 mt-2">{busy ? "Submitting…" : "Submit nomination"}</button>
+      <button id="submit-tune_up" disabled={busy || !f.state || !f.retailer || !f.store || !f.storeContact || !f.storeMobile || !f.whyStore || f.spaceAvailable === undefined || !f.preferredMonth || f.storeConfirmed === undefined} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit nomination"}</button>
     </div>
   );
 }
@@ -275,7 +279,7 @@ export function ProductForm({ brands, f, setF, ack, setAck, onSubmit }: any) {
       <Field label="What Coolkidz gets in return" required><textarea className={inp} rows={2} placeholder="Placement, posts, staff training, sell-through commitment…" value={f.whatWeGet ?? ""} onChange={e => setF({ ...f, whatWeGet: e.target.value })} /></Field>
       <Field label="Needed by" required><input type="date" className={inp} value={f.needed_by ?? ""} onChange={e => setF({ ...f, needed_by: e.target.value })} /></Field>
       <AckBox label="I have read the Free Product, Samples & Gifting rules." checked={ack} onChange={setAck} />
-      <button id="submit-product" disabled={busy || !f.brand || !f.sku || !f.quantity || !f.approxRrpValue || !f.purpose || !f.fundedBy || !f.whatWeGet || !f.needed_by} onClick={go} className="text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg px-4 py-2 mt-2">{busy ? "Submitting…" : "Submit request"}</button>
+      <button id="submit-product" disabled={busy || !f.brand || !f.sku || !f.quantity || !f.approxRrpValue || !f.purpose || !f.fundedBy || !f.whatWeGet || !f.needed_by} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit request"}</button>
     </div>
   );
 }
