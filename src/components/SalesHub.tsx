@@ -467,7 +467,7 @@ function ProductForm({ brands, f, setF, ack, setAck, onSubmit }: any) {
   return (
     <div className="space-y-3">
       <RuleCard>
-        Free product for giveaways, competitions, retailer incentives and staff seeding is a <strong>sales and trade spend decision, not a marketing budget line</strong>. This request goes to your State Manager and the National Sales Manager. Marketing is notified for awareness only.
+        Free product for giveaways, competitions, retailer incentives and staff seeding is a <strong>sales and trade spend decision, not a marketing budget line</strong>. This request goes to your Sales Manager. Marketing is notified for awareness only.
       </RuleCard>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Field label="Brand" required><select className={inp} value={f.brand ?? ""} onChange={e => setF({ ...f, brand: e.target.value })}><option value="">Select…</option>{brands.map((b: any) => <option key={b.name} value={b.name}>{b.name}</option>)}</select></Field>
