@@ -50,6 +50,8 @@ const ICONS = {
   ruler: "M3 7a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7zM7 5v3M11 5v4M15 5v3M19 5v4",
   warn: "M12 9v3.75m0 3.75h.008v.008H12v-.008zM9.401 3.003c1.155-2 4.043-2 5.198 0l7.197 12.5c1.156 2-.288 4.5-2.599 4.5H4.803c-2.311 0-3.755-2.5-2.598-4.5L9.4 3.003z",
   down: "M12 4v12m0 0l-4-4m4 4l4-4M4 20h16",
+  megaphone: "M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M11 5.882L4.409 8.41a2.55 2.55 0 000 4.82L11 15.76M11 5.882l6.727-3.363c1.35-.675 2.921.322 2.921 1.832v13.298c0 1.51-1.571 2.507-2.921 1.832L11 15.76m0 0l.001-9.878",
+  flag: "M3 21V4a1 1 0 011-1h.5c1.5 0 3 .5 5 .5s3.5-1 5.5-1 3 .5 5 .5v10c-2 0-3-.5-5-.5s-3.5 1-5.5 1-3.5-.5-5.5-.5V21",
 };
 // Colour is used ONLY as a thin accent (left rule + small glyph), never a
 // filled background, so a page of these doesn't read as a pastel grid.
@@ -253,6 +255,60 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
           <p><strong className="text-slate-800">The asset is unaltered library imagery.</strong> No creator or influencer content, ever. Licensing doesn&apos;t cover retailer paid media and this is the breach most likely to reach us.</p>
           <p><strong className="text-slate-800">No claims, no price overlays, no badges added to the creative.</strong> If it needed marketing approval organically, it needs it before you put money behind it.</p>
         </div>
+      </Section>
+    </>,
+  },
+  {
+    id: "store-events", title: "Store events, activations and artwork", icon: ICONS.megaphone, owner: "Marketing", version: "0.1", lastReviewed: "draft",
+    body: <>
+      <Section icon={ICONS.megaphone} title="Store events, activations and artwork">
+        <p className="text-sm text-slate-600 mb-2">We want stores running events. An in-store activation with real product and a knowledgeable team beats almost anything we can do from head office. What we need to control is how the brands look while it&apos;s happening.</p>
+        <p className="text-sm text-slate-600 mb-3">Everything that goes out with a brand mark on it can be seen by that brand&apos;s global management team. They hold strict guidelines about how their brand is presented, and they don&apos;t distinguish between artwork we made and artwork a store made. It all reads as us. A single off-brand flyer on a store&apos;s Instagram can undo months of work with a global partner, and we&apos;re the ones who have that conversation.</p>
+        <div className="bg-[#EAF4F8] border-l-[3px] border-[#1E9DC2] rounded-xl px-4 py-3.5 text-sm text-[#152A3B] leading-relaxed">
+          So the rule is simple. <strong>If a brand mark appears on it, Marketing either makes it or approves it.</strong> No exceptions, no shortcuts, no &quot;it&apos;s just for the window&quot;.
+        </div>
+      </Section>
+      <Section icon={ICONS.flag} title="Brand event properties are not available to stores">
+        <p className="text-sm text-slate-600 mb-2">Some of our events are named properties with their own creative, speakers, partners and licensing. &quot;Nobody Told Me&quot; is a Coolkidz x Frida property. It runs under specific agreements with talent and partners, and those agreements do not extend to a store activation.</p>
+        <p className="text-sm text-slate-600 mb-2">Stores cannot use, adapt or borrow from a brand event property. That includes the name, the creative, the speaker line-up, the format or anything that reads as a local edition of it.</p>
+        <p className="text-sm text-slate-600 mb-3">Your event should be your event. We&apos;ll help you make it look good under your own name.</p>
+        <DontCard title="Don't name your event so it reads as ours" note={<>No &quot;Nobody Told Me at [store]&quot;, no near-miss variations, no &quot;official&quot; or &quot;presented by&quot; wording that implies the brand is running it. If your event name references one of our brands at all, run it past your rep first.</>} />
+      </Section>
+      <Section icon={ICONS.image} title="Who makes the artwork">
+        <p className="text-sm text-slate-600 mb-4">We&apos;re not the design team for every store&apos;s feed, and we can&apos;t be. Day to day posts are yours to make. What we take on is the bigger stuff, where the stakes and the reach justify it.</p>
+        <p className="text-[11px] font-bold tracking-[0.09em] uppercase text-slate-400 mb-2">We will produce artwork for</p>
+        <div className="space-y-2 mb-4">
+          <DoCard title="Launch activations and in-store events" note="" />
+          <DoCard title="Seasonal or campaign moments running across multiple stores" note="" />
+          <DoCard title="New brand or new range sell-in" note="" />
+          <DoCard title="Anything with real spend behind it" note="Print runs, or a display build" />
+          <DoCard title="Anything a global brand team is likely to see" note="" />
+        </div>
+        <p className="text-sm text-slate-600 mb-4">Request it through the Artwork Request form with the dates, the venue, the brands involved, the sizes you need and any copy that has to appear. Send more detail than feels necessary, we can always cut.</p>
+        <p className="text-[11px] font-bold tracking-[0.09em] uppercase text-slate-400 mb-2">You make your own for</p>
+        <p className="text-sm text-slate-600 mb-4">Everyday posts, stories, local promos and general product content. That&apos;s normal and we&apos;d rather you were posting than waiting on us.</p>
+        <p className="text-[11px] font-bold tracking-[0.09em] uppercase text-slate-400 mb-2">If you're making it yourself, the standard doesn't drop</p>
+        <div className="space-y-2 mb-4">
+          <DoCard title="Use library assets from Filecamp, as supplied" note="" />
+          <DoCard title="Logos as provided" note="Never rebuilt, recoloured or stretched" />
+          <DoCard title="No text, price or badges over product imagery" note="" />
+          <DoCard title="No AI generated or AI edited visuals" note="" />
+          <DoCard title="Correct brand names and product terminology" note="" />
+          <DoCard title="Nothing that reads as an official brand campaign rather than a store post" note="" />
+        </div>
+        <div className="bg-[#EAF4F8] border-l-[3px] border-[#1E9DC2] rounded-xl px-4 py-3.5 text-sm text-[#152A3B] leading-relaxed mb-4">
+          If it carries a brand mark and you&apos;re not certain it clears that list, send it to your rep before it goes out. A two minute check is cheaper for both of us than a takedown.
+        </div>
+        <p className="text-[11px] font-bold tracking-[0.09em] uppercase text-slate-400 mb-2">When we'll step in anyway</p>
+        <p className="text-sm text-slate-600">If something&apos;s gone out that doesn&apos;t meet the standard, we&apos;ll ask for it to come down and offer you a replacement. Tell us what you needed and we&apos;ll add it to the library.</p>
+      </Section>
+      <Section icon={ICONS.warn} title="Sales team: do not make your own assets">
+        <div className="space-y-3">
+          <WarnCard title="This one is on us, not the stores" note="Sales team members must never build their own artwork, and must never use AI to generate it." />
+        </div>
+        <p className="text-sm text-slate-600 mt-3 mb-2">AI looks like a shortcut and isn&apos;t. It gets logos subtly wrong, invents product features, produces prams that don&apos;t exist, distorts fabric and hardware, and generates children who don&apos;t match our casting or our releases. Most of it passes a glance and fails a proper look, which is exactly the kind of error that reaches a global brand team.</p>
+        <p className="text-sm text-slate-600 mb-2">Beyond that, generated imagery isn&apos;t a licensed asset, so it can&apos;t be used, supplied or defended. There&apos;s no version of it that becomes acceptable because the deadline is tight.</p>
+        <p className="text-sm text-slate-600"><strong>If you&apos;re under time pressure, call Marketing and say so.</strong> We would much rather rearrange our week than fix something afterwards.</p>
       </Section>
     </>,
   },
