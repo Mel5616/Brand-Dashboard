@@ -251,19 +251,46 @@ function Landing({ brands, items, mine, tradeshows, calendarEvents, onPick, onOp
   );
 }
 
+// Copies a guideline section's public /g/[id] link. Robust clipboard write with
+// an execCommand fallback, same pattern as NewProducts.tsx's copyLink.
+async function copyGuideLink(id: string, setMsg: (m: string) => void) {
+  const url = `${window.location.origin}/g/${id}`;
+  try {
+    if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(url); setMsg("Link copied."); return; }
+  } catch { /* fall through to the textarea fallback */ }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = url; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    const done = document.execCommand("copy");
+    document.body.removeChild(ta);
+    setMsg(done ? "Link copied." : `Couldn't copy automatically — link: ${url}`);
+  } catch {
+    setMsg(`Couldn't copy automatically — link: ${url}`);
+  }
+}
+
 function Guidelines({ active, onSelect }: { active: string; onSelect: (id: string) => void }) {
   const g = GUIDELINE_SECTIONS.find(x => x.id === active) ?? GUIDELINE_SECTIONS[0];
+  const [msg, setMsg] = useState("");
+  useEffect(() => { if (!msg) return; const t = setTimeout(() => setMsg(""), 2200); return () => clearTimeout(t); }, [msg]);
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-4">
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-2 h-fit lg:sticky lg:top-4">
         {GUIDELINE_SECTIONS.map(s => (
-          <button key={s.id} onClick={() => onSelect(s.id)} className={`w-full flex items-center gap-2.5 text-left text-sm rounded-lg px-3 py-2.5 transition ${s.id === g.id ? "bg-indigo-50 text-indigo-700 font-semibold" : "text-slate-600 hover:bg-gray-50"}`}>
-            <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${s.id === g.id ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-500"}`}><Icon path={s.icon} className="w-4 h-4" /></span>
-            {s.title}
-          </button>
+          <div key={s.id} className={`group flex items-center rounded-lg transition ${s.id === g.id ? "bg-indigo-50" : "hover:bg-gray-50"}`}>
+            <button onClick={() => onSelect(s.id)} className={`flex-1 min-w-0 flex items-center gap-2.5 text-left text-sm px-3 py-2.5 ${s.id === g.id ? "text-indigo-700 font-semibold" : "text-slate-600"}`}>
+              <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${s.id === g.id ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-500"}`}><Icon path={s.icon} className="w-4 h-4" /></span>
+              <span className="truncate">{s.title}</span>
+            </button>
+            <button onClick={() => copyGuideLink(s.id, setMsg)} title="Copy a link to this page" className="shrink-0 mr-2 w-7 h-7 rounded-lg flex items-center justify-center text-gray-300 hover:text-indigo-600 hover:bg-indigo-100 opacity-0 group-hover:opacity-100 transition">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5" /></svg>
+            </button>
+          </div>
         ))}
       </div>
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+        {msg && <div className="mb-4 text-[13px] font-semibold text-emerald-600 bg-emerald-50 rounded-lg px-3 py-2">{msg}</div>}
         <div className="prose-sm max-w-none text-slate-700">{g.body}</div>
         <div className="mt-6 pt-3 border-t border-gray-100 text-[11px] text-gray-400">Owner: {g.owner} · v{g.version} · last reviewed {g.lastReviewed}</div>
       </div>
