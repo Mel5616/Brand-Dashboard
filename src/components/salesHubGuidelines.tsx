@@ -89,6 +89,40 @@ function Verdict({ positive, title, children }: { positive: boolean; title: stri
     </div>
   );
 }
+// Instagram handles, one row per brand. `logo` points at a square crop dropped
+// into public/logos/instagram/ — until supplied, the coloured initial circle
+// is the fallback, not a broken image.
+const IG_HANDLES: { brand: string; handle: string; bg: string; logo?: string }[] = [
+  { brand: "UPPAbaby AU", handle: "uppababy_australia", bg: "#5B6B7A" },
+  { brand: "UPPAbaby NZ", handle: "uppababy_newzealand", bg: "#5B6B7A" },
+  { brand: "Frida", handle: "frida.aus", bg: "#3EC0E4" },
+  { brand: "Nanit", handle: "nanit_au", bg: "#1B2A5B" },
+  { brand: "smarTrike", handle: "smartrikeaus", bg: "#1E2A3A" },
+  { brand: "WonderFold", handle: "wonderfold.au", bg: "#2B2B2B" },
+  { brand: "Gaia Baby", handle: "gaiababynursery.au", bg: "#3D6B4F" },
+  { brand: "Hannie", handle: "hannie.australia", bg: "#111111" },
+  { brand: "Magic", handle: "magicbaby.australia", bg: "#111111" },
+  { brand: "Zazu", handle: "zazu_australia", bg: "#C0392B" },
+  { brand: "Mamave", handle: "_mamave", bg: "#D9724A" },
+  { brand: "Matchstick Monkey", handle: "matchstickmonkeyau", bg: "#8A8A8A" },
+  { brand: "MiaMily", handle: "miamily.au", bg: "#111111" },
+];
+function IgHandle({ brand, handle, bg, logo }: { brand: string; handle: string; bg: string; logo?: string }) {
+  return (
+    <a href={`https://instagram.com/${handle}`} target="_blank" rel="noreferrer" className="flex items-center gap-3 py-2 group">
+      {logo ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={logo} alt="" className="w-9 h-9 rounded-full object-cover shrink-0 border border-gray-100" />
+      ) : (
+        <span className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-white text-[13px] font-bold" style={{ backgroundColor: bg }}>{brand[0]}</span>
+      )}
+      <div className="min-w-0">
+        <div className="text-sm font-semibold text-slate-800 truncate">{brand}</div>
+        <div className="text-[12.5px] text-gray-500 truncate group-hover:text-[#1E9DC2] group-hover:underline">@{handle}</div>
+      </div>
+    </a>
+  );
+}
 function AskTile({ icon, situation, where }: { icon: string; situation: string; where: string }) {
   return (
     <div className="flex gap-3 items-start py-3 border-b border-gray-100">
@@ -167,7 +201,10 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
     id: "instagram", title: "Instagram guidelines", icon: ICONS.at, owner: "Marketing", version: "0.1", lastReviewed: "draft",
     body: <>
       <Section icon={ICONS.at} title="Handles">
-        <p className="text-sm text-slate-600">Tag the brand, not Coolkidz (the distributor, not consumer-facing). Full handle list: <TBC /></p>
+        <p className="text-sm text-slate-600 mb-3">Tag the brand, not Coolkidz (the distributor, not consumer-facing).</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 divide-y divide-gray-100 sm:divide-y-0">
+          {IG_HANDLES.map(h => <IgHandle key={h.handle} {...h} />)}
+        </div>
       </Section>
       <Section icon={ICONS.hash} title="Naming and trademarks">
         <div className="space-y-2">
@@ -187,38 +224,6 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
       </Section>
       <Section icon={ICONS.ad} title="Paid amplification">
         <p className="text-sm text-slate-600">Retailers must not run paid social on our brand assets without agreement. Boosting an already-approved organic post is usually fine; anything beyond that goes through your State Manager. <TBC /> confirm where the line sits.</p>
-      </Section>
-    </>,
-  },
-  {
-    id: "website", title: "Website guidelines", icon: ICONS.code, owner: "Marketing", version: "0.1", lastReviewed: "draft",
-    body: <>
-      <Section icon={ICONS.code} title="Product copy">
-        <p className="text-sm text-slate-600 mb-2">Use supplied copy as-is. Rewritten copy is where most compliance risk enters the channel.</p>
-        <div className="space-y-2">
-          <DontCard title="Shortened or altered product name in the page title" note="" />
-          <DontCard title="Feature lists adding capabilities the product doesn't have" note="" />
-          <DontCard title="Age/weight/height ranges from the US or UK spec" note="Must match the AU manual" />
-        </div>
-      </Section>
-      <Section icon={ICONS.image} title="Imagery">
-        <div className="space-y-2">
-          <DoCard title="Library assets only" note="At supplied resolution" />
-          <DontCard title="Badges, sale flashes or shipping claims overlaid" note="" />
-          <DontCard title="Lifestyle imagery not matching the page's colourway" note="" />
-        </div>
-      </Section>
-      <Section icon={ICONS.price} title="Pricing">
-        <p className="text-sm text-slate-600">Current RRP unless an approved promotion is running, ending on the agreed date.</p>
-      </Section>
-      <Section icon={ICONS.ad} title="Brand terms and search">
-        <p className="text-sm text-slate-600">No bidding on our brand / brand-plus-model terms without written agreement, no brand name in a domain/subdomain/store name. <TBC /> confirm current position, align with trading terms.</p>
-      </Section>
-      <Section icon={ICONS.home} title="Our own brand sites: source of truth">
-        <p className="text-sm text-slate-600 mb-2">If a retailer page disagrees with our site, our site wins and the retailer page gets corrected.</p>
-        <p className="text-[13px] font-mono text-slate-500 leading-relaxed">
-          {["uppababy.com.au", "fridaaustralia.com.au", "nanit.com.au", "smartrike.com.au", "hannie.com.au", "magicbabyproducts.com.au", "wonderfold.com.au", "gaia-baby.com.au", "mamave.com.au", "matchstickmonkey.com.au", "zazu-kids.com.au", "miamily.com.au"].join("  ·  ")}
-        </p>
       </Section>
     </>,
   },
