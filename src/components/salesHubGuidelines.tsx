@@ -7,21 +7,22 @@
 
 const FILECAMP_URL = "https://coolkidz.filecamp.com/l";
 
-const TBC = () => <span className="text-amber-600 font-bold bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5 text-xs">TBC</span>;
+const TBC = () => <span className="text-amber-700 font-semibold text-xs tracking-wide">TBC</span>;
 
-// Big, hard-to-miss link out to the actual asset library.
+// Big, hard-to-miss link out to the actual asset library. Flat colour, not a
+// gradient button — reads as a document callout, not a SaaS landing page.
 export function FilecampCard() {
   return (
     <a href={FILECAMP_URL} target="_blank" rel="noreferrer"
-      className="flex items-center gap-4 bg-gradient-to-br from-indigo-600 to-indigo-700 text-white rounded-2xl p-5 mb-5 shadow-sm hover:shadow-md hover:from-indigo-500 hover:to-indigo-600 transition group">
-      <div className="shrink-0 w-14 h-14 rounded-xl bg-white/15 flex items-center justify-center">
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+      className="flex items-center gap-4 bg-slate-900 text-white rounded-xl px-5 py-4 mb-6 hover:bg-slate-800 transition group">
+      <div className="shrink-0 w-10 h-10 rounded-full border border-white/25 flex items-center justify-center">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
       </div>
       <div className="flex-1 min-w-0">
-        <div className="font-bold text-lg">Open the Asset Library — Filecamp</div>
-        <div className="text-indigo-100 text-sm">Every approved image lives here. If it's not in Filecamp, it's not approved to use.</div>
+        <div className="font-semibold">Open the Asset Library — Filecamp</div>
+        <div className="text-slate-400 text-[13px]">Every approved image lives here. Not in Filecamp, not approved.</div>
       </div>
-      <svg className="w-5 h-5 text-indigo-200 group-hover:translate-x-1 transition shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+      <svg className="w-4 h-4 text-slate-500 group-hover:translate-x-1 group-hover:text-white transition shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
     </a>
   );
 }
@@ -46,46 +47,61 @@ const ICONS = {
   wrench: "M11 4.5A3.5 3.5 0 007.5 8c0 .35.05.68.14 1L3 13.64l1.5 1.5L8.86 11.36c.32.09.65.14 1 .14A3.5 3.5 0 0013.5 8m-2.5-3.5c1.05 0 2 .5 2.5 1.5m-2.5-1.5A3.5 3.5 0 007 8c0 1.93 1.57 3.5 3.5 3.5",
   help: "M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
 };
+// Colour is used ONLY as a thin accent (left rule + small glyph) — never a
+// filled background — so a page of these doesn't read as a pastel grid.
 function DoCard({ title, note }: { title: React.ReactNode; note: React.ReactNode }) {
   return (
-    <div className="flex gap-2.5 bg-emerald-50 border border-emerald-100 rounded-xl p-3">
-      <div className="shrink-0 w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center mt-0.5"><Icon path={ICONS.check} className="w-3.5 h-3.5" /></div>
-      <div><div className="font-bold text-emerald-800 text-sm">{title}</div><div className="text-emerald-700 text-[13px] mt-0.5">{note}</div></div>
+    <div className="flex gap-3 border-l-2 border-emerald-400 pl-3.5 py-1">
+      <Icon path={ICONS.check} className="w-4 h-4 text-emerald-500 shrink-0 mt-[3px]" />
+      <div><div className="font-semibold text-slate-800 text-sm leading-snug">{title}</div>{note && <div className="text-gray-500 text-[13px] mt-0.5 leading-snug">{note}</div>}</div>
     </div>
   );
 }
 function DontCard({ title, note }: { title: React.ReactNode; note: React.ReactNode }) {
   return (
-    <div className="flex gap-2.5 bg-rose-50 border border-rose-100 rounded-xl p-3">
-      <div className="shrink-0 w-6 h-6 rounded-full bg-rose-500 text-white flex items-center justify-center mt-0.5"><Icon path={ICONS.cross} className="w-3.5 h-3.5" /></div>
-      <div><div className="font-bold text-rose-800 text-sm">{title}</div><div className="text-rose-700 text-[13px] mt-0.5">{note}</div></div>
+    <div className="flex gap-3 border-l-2 border-rose-300 pl-3.5 py-1">
+      <Icon path={ICONS.cross} className="w-4 h-4 text-rose-400 shrink-0 mt-[3px]" />
+      <div><div className="font-semibold text-slate-800 text-sm leading-snug">{title}</div>{note && <div className="text-gray-500 text-[13px] mt-0.5 leading-snug">{note}</div>}</div>
     </div>
   );
 }
+// Understated eyebrow-style subheading — used throughout a page. Distinct
+// from Verdict (below), which is the bigger We-will / We-will-not divider.
 function Section({ icon, title, children }: { icon: string; title: string; children: React.ReactNode }) {
   return (
-    <div className="mb-5">
-      <div className="flex items-center gap-2 mb-2.5">
-        <div className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0"><Icon path={icon} className="w-4 h-4" /></div>
-        <h3 className="font-bold text-slate-800">{title}</h3>
+    <div className="mb-7">
+      <div className="flex items-center gap-2 mb-3">
+        <Icon path={icon} className="w-4 h-4 text-slate-400" />
+        <h3 className="text-[11px] font-bold tracking-[0.09em] uppercase text-slate-400">{title}</h3>
       </div>
       {children}
     </div>
   );
 }
+// The two-sided "We will / We will not" divider — bigger, with a short
+// colour-coded rule under it rather than a filled icon badge.
+function Verdict({ positive, title, children }: { positive: boolean; title: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-7">
+      <h3 className="text-base font-bold text-slate-800 mb-1">{title}</h3>
+      <div className={`w-8 h-[3px] rounded-full mb-3.5 ${positive ? "bg-emerald-400" : "bg-rose-300"}`} />
+      <div className="space-y-3.5">{children}</div>
+    </div>
+  );
+}
 function ChecklistItem({ n, children, highlight }: { n: number; children: React.ReactNode; highlight?: boolean }) {
   return (
-    <div className={`flex gap-3 items-start p-2.5 rounded-lg ${highlight ? "bg-amber-50 border border-amber-200" : ""}`}>
-      <div className={`shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mt-0.5 ${highlight ? "bg-amber-500 text-white" : "bg-slate-700 text-white"}`}>{n}</div>
-      <div className="text-sm text-slate-700">{children}</div>
+    <div className={`flex gap-3 items-start py-2.5 border-b border-gray-100 last:border-0 ${highlight ? "-mx-3 px-3 bg-amber-50/60 rounded-lg border-0" : ""}`}>
+      <div className={`shrink-0 w-5 h-5 rounded-full border flex items-center justify-center text-[11px] font-bold mt-0.5 ${highlight ? "border-amber-400 text-amber-600" : "border-slate-300 text-slate-500"}`}>{n}</div>
+      <div className="text-sm text-slate-700 leading-snug">{children}</div>
     </div>
   );
 }
 function AskTile({ icon, situation, where }: { icon: string; situation: string; where: string }) {
   return (
-    <div className="flex gap-3 items-center bg-white border border-gray-100 rounded-xl p-3 shadow-sm">
-      <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0"><Icon path={icon} /></div>
-      <div><div className="font-semibold text-slate-800 text-sm">{situation}</div><div className="text-gray-500 text-[13px]">{where}</div></div>
+    <div className="flex gap-3 items-start py-3 border-b border-gray-100">
+      <Icon path={icon} className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+      <div><div className="font-semibold text-slate-800 text-sm">{situation}</div><div className="text-gray-500 text-[13px] mt-0.5">{where}</div></div>
     </div>
   );
 }
@@ -99,16 +115,16 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
         <p className="text-sm text-slate-600 mb-2">Every approved image lives in <strong>Filecamp</strong> (link above). If an image is not in the library, it is not approved — even if it appeared on our Instagram last week.</p>
         <p className="text-sm text-slate-600">Global assets are the most common trap — overseas markets shoot different colourways/configs. <strong>If it's not in the AU library, assume it's not cleared for AU use.</strong></p>
       </Section>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1 mb-2">
         <Section icon={ICONS.check} title="You can do this yourself">
-          <div className="space-y-2">
+          <div className="space-y-3">
             <DoCard title="Use as supplied" note="Any library image, unaltered, on approved surfaces" />
             <DoCard title="Crop to a standard ratio" note="Social/print crop OK — product stays whole, logo untouched" />
             <DoCard title="Share the library link" note="Send the Filecamp link straight to a retail partner" />
           </div>
         </Section>
         <Section icon={ICONS.help} title="Ask Marketing first">
-          <div className="space-y-2">
+          <div className="space-y-3">
             <DontCard title="Any crop that cuts the product" note="" />
             <DontCard title="Text, price or a badge added" note="" />
             <DontCard title="Used next to a competitor product" note="" />
@@ -131,18 +147,16 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
   {
     id: "store-social", title: "Store social promotions", icon: ICONS.chat, owner: "Marketing", version: "0.1", lastReviewed: "draft",
     body: <>
-      <p className="mb-4 text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-2">💬 This is the section to send when a store asks "can you share our post".</p>
-      <Section icon={ICONS.check} title="We will">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <p className="mb-6 text-sm text-slate-500 italic">This is the section to send when a store asks "can you share our post".</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
+        <Verdict positive title="We will">
           <DoCard title="Supply approved artwork" note="Sized to spec, via the Artwork Request form" />
           <DoCard title="Supply product imagery + copy" note="From Filecamp, for the retailer's own channels" />
           <DoCard title="Support a Tune-Up Day" note="Where demand + operating requirements are met" />
           <DoCard title="Support co-funded activity" note="Via the trade marketing agreement + your State Manager" />
           <DoCard title="Product training & demo support" note="Arranged through your rep" />
-        </div>
-      </Section>
-      <Section icon={ICONS.cross} title="We will not">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        </Verdict>
+        <Verdict positive={false} title="We will not">
           <DontCard title="Reshare to our story" note={<>Within 1 business day if it passes the checklist below <span className="text-rose-400">(proposed)</span></>} />
           <DontCard title="Post a store promo to our grid" note="Reads as national + creates channel conflict — story reshare only" />
           <DontCard title="Supply free product" note="Trade spend — use the Product Request form" />
@@ -152,10 +166,10 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
           <DontCard title="Supply creator content to retailers" note="Licensing doesn't extend that far" />
           <DontCard title="Name or compare a competitor" note="Including side-by-side imagery" />
           <DontCard title="Approve safety/medical/clinical claims" note="See claims below" />
-        </div>
-      </Section>
+        </Verdict>
+      </div>
       <Section icon={ICONS.check} title="Reshare checklist — all 8 must pass">
-        <div className="space-y-1">
+        <div>
           <ChecklistItem n={1}>Correct brand handle tagged</ChecklistItem>
           <ChecklistItem n={2}>Product names spelled/styled correctly, incl. trademarks</ChecklistItem>
           <ChecklistItem n={3}>Imagery from the approved library, or accurate in-store photography</ChecklistItem>
@@ -165,13 +179,10 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
           <ChecklistItem n={7}>No safety, medical or developmental claim</ChecklistItem>
           <ChecklistItem n={8} highlight>Product shown safely — harness done up, capsule correctly installed, child correctly positioned, brake on if stationary</ChecklistItem>
         </div>
-        <p className="text-xs text-gray-400 mt-2">⚠️ Point 8 is the one that catches people — tell stores up front, not at the point of refusal.</p>
+        <p className="text-xs text-gray-400 mt-3">Point 8 is the one that catches people — tell stores up front, not at the point of refusal.</p>
       </Section>
       <Section icon={ICONS.info} title="Claims we never make or endorse">
-        <div className="flex flex-wrap gap-2">
-          {["No \"safest\"", "No medical/developmental claim", "No sleep claim", "No clinical language"].map(c => <span key={c} className="text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-100 rounded-full px-3 py-1.5">{c}</span>)}
-        </div>
-        <p className="text-sm text-slate-600 mt-2">Applies to store posts, retailer EDMs, product pages and our own content. If a claim needs a footnote to be true, it does not go out.</p>
+        <p className="text-sm text-slate-600">No "safest", no medical or developmental claim, no sleep claim, no clinical language — in store posts, retailer EDMs, product pages and our own content. If a claim needs a footnote to be true, it does not go out.</p>
       </Section>
     </>,
   },
@@ -189,11 +200,7 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
         </div>
       </Section>
       <Section icon={ICONS.info} title="Terminology">
-        <div className="flex flex-wrap gap-2">
-          <span className="text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-full px-3 py-1.5">Pram, not stroller</span>
-          <span className="text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-full px-3 py-1.5">Capsule, not infant car seat</span>
-          <span className="text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-full px-3 py-1.5">Use the product's own feature names</span>
-        </div>
+        <p className="text-sm text-slate-600"><strong className="text-slate-800">Pram</strong>, not stroller · <strong className="text-slate-800">Capsule</strong>, not infant car seat · use the product's own feature names, don't invent descriptive ones</p>
       </Section>
       <Section icon={ICONS.hash} title="Tagging and hashtags">
         <p className="text-sm text-slate-600">Tag the brand handle in the post (not just caption), tag the retailer where relevant. Brand hashtag list: <TBC /></p>
@@ -232,11 +239,9 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
       </Section>
       <Section icon={ICONS.home} title="Our own brand sites — source of truth">
         <p className="text-sm text-slate-600 mb-2">If a retailer page disagrees with our site, our site wins and the retailer page gets corrected.</p>
-        <div className="flex flex-wrap gap-1.5">
-          {["uppababy.com.au", "fridaaustralia.com.au", "nanit.com.au", "smartrike.com.au", "hannie.com.au", "magicbabyproducts.com.au", "wonderfold.com.au", "gaia-baby.com.au", "mamave.com.au", "matchstickmonkey.com.au", "zazu-kids.com.au", "miamily.com.au"].map(s => (
-            <span key={s} className="text-[11px] font-mono bg-slate-50 text-slate-600 border border-slate-200 rounded px-2 py-1">{s}</span>
-          ))}
-        </div>
+        <p className="text-[13px] font-mono text-slate-500 leading-relaxed">
+          {["uppababy.com.au", "fridaaustralia.com.au", "nanit.com.au", "smartrike.com.au", "hannie.com.au", "magicbabyproducts.com.au", "wonderfold.com.au", "gaia-baby.com.au", "mamave.com.au", "matchstickmonkey.com.au", "zazu-kids.com.au", "miamily.com.au"].join("  ·  ")}
+        </p>
       </Section>
     </>,
   },
@@ -271,9 +276,7 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
         <p className="text-sm text-slate-600">10:00–14:00 most states, 11:00–14:00 in SA. 15-min appointments, max 15 participants, 30-min lunch scheduled in. Two staff where possible: check-in/queue, and service.</p>
       </Section>
       <Section icon={ICONS.chat} title="Comms cadence">
-        <div className="flex flex-wrap gap-2">
-          {["EDM · 7 days out", "SMS · 4 days out", "Waitlist EDM · 5 days out", "Registrations close · 4 days prior", "Survey on check-in"].map(c => <span key={c} className="text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-full px-3 py-1.5">{c}</span>)}
-        </div>
+        <p className="text-sm text-slate-600">EDM 7 days out · SMS 4 days out · waitlist EDM 5 days out · registrations close 4 days prior · post-event survey on check-in.</p>
       </Section>
       <Section icon={ICONS.info} title="South Australia">
         <p className="text-sm text-slate-600">Every second month, Marleston only — consistently lower demand.</p>
@@ -288,7 +291,7 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
   },
   {
     id: "who-to-ask", title: "Who to ask", icon: ICONS.help, owner: "Marketing", version: "0.1", lastReviewed: "draft",
-    body: <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+    body: <div className="max-w-xl">
       <AskTile icon={ICONS.image} situation="Need artwork" where="Artwork Request form (this Hub)" />
       <AskTile icon={ICONS.camera} situation="Need swatches or fabric samples" where="Swatch Request form (this Hub)" />
       <AskTile icon={ICONS.wrench} situation="Want a Tune-Up Day at a store" where="Tune-Up Nomination form (this Hub)" />
