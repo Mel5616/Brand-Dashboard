@@ -159,14 +159,15 @@ export async function POST(req: Request) {
     const project_gid = String(b.project_gid || "").trim();
     if (!name || !project_gid) return NextResponse.json({ ok: false, error: "Task name and board required" }, { status: 400 });
     const data: any = { name, projects: [project_gid] };
-    if (b.notes) data.notes = String(b.notes).slice(0, 2000);
+    if (b.html_notes) data.html_notes = String(b.html_notes).slice(0, 20000);
+    else if (b.notes) data.notes = String(b.notes).slice(0, 2000);
     if (b.due_on) data.due_on = String(b.due_on).slice(0, 10);
     const res = await fetch(`${ASANA}/tasks`, { method: "POST", headers: asanaHeaders(), body: JSON.stringify({ data }) });
     const out = await res.json().catch(() => null);
     if (!res.ok || !out?.data?.gid) return NextResponse.json({ ok: false, error: `Asana: ${JSON.stringify(out).slice(0, 150)}` }, { status: 502 });
     const t = out.data;
     const row: any = {
-      gid: t.gid, name, notes: data.notes ?? "", assignee: null, due_on: data.due_on ?? null,
+      gid: t.gid, name, notes: t.notes ?? data.notes ?? "", assignee: null, due_on: data.due_on ?? null,
       completed: false, section: "", status: "", priority: "", project_gid,
       project_label: String(b.project_label || "").slice(0, 120) || null,
       permalink_url: t.permalink_url ?? null, modified_at: new Date().toISOString(),

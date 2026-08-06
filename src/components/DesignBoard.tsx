@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { RichNotesEditor } from "./RichNotesEditor";
+import { toAsanaHtmlNotes } from "@/lib/richNotes";
 
 // Design board: per-brand Asana boards grouped into EDM and Social sections,
 // brand cards in a grid with brand colours. The admin builds an ordered "This
@@ -281,7 +283,8 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
     if (!af.name.trim() || !af.project_gid) { setErr("Task name and board required."); return; }
     setBusy(true); setErr("");
     const label = boardsForAdd.find(([, g]) => g === af.project_gid)?.[0] || "";
-    const d = await post({ action: "task.create", ...af, project_label: label });
+    const html_notes = af.notes.trim() ? toAsanaHtmlNotes(af.notes) : "";
+    const d = await post({ action: "task.create", name: af.name, due_on: af.due_on, project_gid: af.project_gid, html_notes, project_label: label });
     setBusy(false);
     if (d.ok) { setTasks(p => [d.item, ...p]); setAf({ name: "", notes: "", due_on: "", project_gid: af.project_gid }); setShowAdd(false); }
     else setErr(d.error || "Couldn't create the task.");
@@ -495,7 +498,7 @@ export function DesignBoard({ admin, brands = [] }: { admin: boolean; brands?: B
           </select>
           <input type="date" value={af.due_on} onChange={e => setAf({ ...af, due_on: e.target.value })} className={inp} />
           <button onClick={createTask} disabled={busy} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2 disabled:opacity-60">{busy ? "Creating…" : "Add to Asana"}</button>
-          <textarea value={af.notes} onChange={e => setAf({ ...af, notes: e.target.value })} rows={2} placeholder="Brief / notes (optional)" className={`${inp} resize-y sm:col-span-2 lg:col-span-5`} />
+          <RichNotesEditor value={af.notes} onChange={html => setAf({ ...af, notes: html })} placeholder="Brief / notes (optional)" className="sm:col-span-2 lg:col-span-5" />
         </div>
       )}
 
