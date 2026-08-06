@@ -71,8 +71,9 @@ ${pdfUrl ? `<a id="pdfBtn" href="${pdfUrl}" target="_blank" rel="noopener" hidde
     post({ kind: "open", email: email || undefined });
     setInterval(function(){ if (document.visibilityState === "visible") post({ kind: "beat", seconds: 10 }); }, 10000);
   }
+  var storageKey = "deckViewerEmail:" + ${JSON.stringify(token)};
   var saved = null;
-  try { saved = localStorage.getItem("deckViewerEmail"); } catch (e) {}
+  try { saved = localStorage.getItem(storageKey); } catch (e) {}
   if (saved) { show(saved); return; }
   var input = document.getElementById("gateEmail");
   var agree = document.getElementById("gateAgree");
@@ -86,7 +87,7 @@ ${pdfUrl ? `<a id="pdfBtn" href="${pdfUrl}" target="_blank" rel="noopener" hidde
     var em = (input.value || "").trim().toLowerCase();
     if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(em)) { input.style.borderColor = "#ef4444"; return; }
     if (!agree.checked) { return; }
-    try { localStorage.setItem("deckViewerEmail", em); } catch (e) {}
+    try { localStorage.setItem(storageKey, em); } catch (e) {}
     show(em);
   });
 })();</script>
