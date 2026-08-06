@@ -194,27 +194,54 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
   {
     id: "store-social", title: "Store social promotions", icon: ICONS.chat, owner: "Marketing", version: "0.1", lastReviewed: "draft",
     body: <>
-      <p className="mb-6 text-sm text-slate-500 italic">This is the section to send when a store asks "can you share our post".</p>
+      <Section icon={ICONS.chat} title="How we work with store social">
+        <p className="text-sm text-slate-500 italic mb-3">This is the section to send when a store asks "can you share our post".</p>
+        <p className="text-sm text-slate-600 mb-2">We don&apos;t reshare store content, and we don&apos;t do collaborative posts. That isn&apos;t a judgement on any individual store, it&apos;s how the account has to work. We stock 12 brands across hundreds of stockists, and every reshare sets a precedent the next store will ask us to match. <strong>The moment we start, the feed stops being a brand channel and becomes an advertising feed for whoever asked most recently.</strong> It also creates channel conflict, because our audience reads anything on our grid as a national offer.</p>
+        <p className="text-sm text-slate-600">What we do instead is give you better material than a reshare would. Approved artwork sized to spec, product imagery and copy for your own channels, and support on the ground. Use it on your accounts, tag us, and we&apos;ll see it.</p>
+      </Section>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
         <Verdict positive title="We will">
           <DoCard title="Supply approved artwork" note="Sized to spec, via the Artwork Request form" />
-          <DoCard title="Supply product imagery + copy" note="From Filecamp, for the retailer's own channels" />
-          <DoCard title="Support a Tune-Up Day" note="Where demand + operating requirements are met" />
-          <DoCard title="Product training & demo support" note="Arranged through your rep" />
+          <DoCard title="Supply product imagery and copy" note="From Filecamp, for the retailer's own channels" />
+          <DoCard title="Support a Tune-Up Day" note="Where demand and operating requirements are met" />
+          <DoCard title="Product training and demo support" note="Arranged through your rep" />
         </Verdict>
         <Verdict positive={false} title="We will not">
-          <DontCard title="Reshare to our story" note="We will not prioritise stores on our feed and do not want to become an advertising feed for stores" />
-          <DontCard title="Post a store promo to our grid" note="Reads as national and creates channel conflict. Story reshare only." />
-          <DontCard title="Supply free product" note="Trade spend: use the Product Request form" />
-          <DontCard title="Alter the logo" note="No recolour/crop/stretch/effects/busy backgrounds" />
-          <DontCard title="Approve artwork same day" note="See lead times. Emergencies handled case by case." />
-          <DontCard title="Supply creator content to retailers" note="Licensing doesn't extend that far" />
-          <DontCard title="Name or compare a competitor" note="Including side-by-side imagery" />
-          <DontCard title="Approve safety/medical/clinical claims" note="See claims below" />
+          <DontCard title="Reshare your post to our story or grid" note="We don't prioritise individual stores on our channels" />
+          <DontCard title="Post as a collaborative post" note="Same reason. Collab invites won't be accepted" />
+          <DontCard title="Post a store promo" note="Reads as a national offer and creates channel conflict" />
+          <DontCard title="Supply free product" note="Trade spend, not marketing. Use the Product Request form" />
+          <DontCard title="Alter the logo" note="No recolour, crop, stretch, effects or busy backgrounds" />
+          <DontCard title="Approve artwork same day" note="See lead times. Genuine emergencies handled case by case" />
+          <DontCard title="Supply creator or influencer content" note="Our licensing doesn't extend to retailer channels" />
+          <DontCard title="Name or compare a competitor" note="Including side by side imagery" />
+          <DontCard title="Approve safety, medical or clinical claims" note="See claims below" />
         </Verdict>
       </div>
       <Section icon={ICONS.info} title="Claims we never make or endorse">
-        <p className="text-sm text-slate-600">No "safest", no medical or developmental claim, no sleep claim, no clinical language. Applies to store posts, retailer EDMs, product pages and our own content. If a claim needs a footnote to be true, it does not go out.</p>
+        <p className="text-sm text-slate-600 mb-2">No "safest". No medical, developmental or sleep claims. No clinical language.</p>
+        <p className="text-sm text-slate-600">This applies to store posts, retailer EDMs, product pages and our own content equally. If a claim needs a footnote to be true, it does not go out.</p>
+      </Section>
+      <Section icon={ICONS.at} title="Tag us so we see it">
+        <p className="text-sm text-slate-600 mb-2">Tag the brand account, not the Coolkidz account. We check tags, and strong store content often gets a mention to your rep and factored into how we plan support.</p>
+        <p className="text-sm text-slate-600">Please don&apos;t send collaborative post invites. We can&apos;t accept them and they&apos;ll sit unanswered.</p>
+      </Section>
+      <Section icon={ICONS.gift} title="Giveaways and competitions">
+        <p className="text-sm text-slate-600 mb-3">If you want to run a giveaway using our product, it&apos;s your promotion, not ours. That means:</p>
+        <div className="space-y-2.5 text-sm text-slate-600">
+          <p><strong className="text-slate-800">Prize product is trade spend.</strong> Request it through the Product Request form, before you announce it. Don&apos;t announce a prize you haven&apos;t secured.</p>
+          <p><strong className="text-slate-800">Your name goes on it.</strong> The post, the terms and conditions and the entry mechanic must make clear the store is running the promotion. Don&apos;t write anything that reads as though the brand is running or endorsing it.</p>
+          <p><strong className="text-slate-800">You handle the legals.</strong> Entry terms, eligibility, prize fulfilment and any state permit or trade promotion requirements are the store&apos;s responsibility. Rules differ by state and we can&apos;t advise on them.</p>
+          <p><strong className="text-slate-800">We won&apos;t cross-promote it.</strong> Same reason we don&apos;t reshare. Tag us and we&apos;ll see it.</p>
+          <p><strong className="text-slate-800">Use library imagery only,</strong> unaltered, with no added claims. The usual image rules apply.</p>
+        </div>
+      </Section>
+      <Section icon={ICONS.ad} title="Boosting and paid social">
+        <p className="text-sm text-slate-600 mb-3">Boosting a post that uses our supplied imagery is fine, with three conditions:</p>
+        <div className="space-y-2.5 text-sm text-slate-600">
+          <p><strong className="text-slate-800">The asset is unaltered library imagery.</strong> No creator or influencer content, ever. Licensing doesn&apos;t cover retailer paid media and this is the breach most likely to reach us.</p>
+          <p><strong className="text-slate-800">No claims, no price overlays, no badges added to the creative.</strong> If it needed marketing approval organically, it needs it before you put money behind it.</p>
+        </div>
       </Section>
     </>,
   },
