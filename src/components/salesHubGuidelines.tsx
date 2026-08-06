@@ -46,6 +46,8 @@ const ICONS = {
   gift: "M20 12v10H4V12M2 7h20v5H2V7zm10-5v20M12 7a2.5 2.5 0 11-2.5-2.5H12v2.5zm0 0a2.5 2.5 0 102.5-2.5H12v2.5z",
   wrench: "M11 4.5A3.5 3.5 0 007.5 8c0 .35.05.68.14 1L3 13.64l1.5 1.5L8.86 11.36c.32.09.65.14 1 .14A3.5 3.5 0 0013.5 8m-2.5-3.5c1.05 0 2 .5 2.5 1.5m-2.5-1.5A3.5 3.5 0 007 8c0 1.93 1.57 3.5 3.5 3.5",
   help: "M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+  mail: "M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z",
+  ruler: "M3 7a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7zM7 5v3M11 5v4M15 5v3M19 5v4",
 };
 // Colour is used ONLY as a thin accent (left rule + small glyph), never a
 // filled background, so a page of these doesn't read as a pastel grid.
@@ -139,34 +141,53 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
       <FilecampCard />
       <Section icon={ICONS.info} title="Where images come from">
         <p className="text-sm text-slate-600 mb-2">Every approved image lives in <strong>Filecamp</strong> (link above). If an image is not in the library, it is not approved, even if it appeared on our Instagram last week.</p>
-        <p className="text-sm text-slate-600">Global assets are the most common trap. Overseas markets shoot different colourways/configs. <strong>If it's not in the AU library, assume it's not cleared for AU use.</strong></p>
+        <p className="text-sm text-slate-600 mb-2">Global assets are the most common trap. Overseas markets shoot different colourways and configs. <strong>If it's not in the AU library, assume it's not cleared for AU use.</strong></p>
+        <p className="text-sm text-slate-600">Never source images from our website, a PDF, a screenshot or a Google search. Those files are compressed and often out of date.</p>
       </Section>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1 mb-2">
         <Section icon={ICONS.check} title="You can do this yourself">
           <div className="space-y-3">
             <DoCard title="Use as supplied" note="Any library image, unaltered, on approved surfaces" />
-            <DoCard title="Crop to a standard ratio" note="Social/print crop OK, product stays whole, logo untouched" />
-            <DoCard title="Share the library link" note="Send the Filecamp link straight to a retail partner" />
+            <DoCard title="Crop the background" note="Social and print crops are fine. Never crop the product, the logo or a child's face out of frame" />
+            <DoCard title="Share the library link" note="Send the Filecamp link straight to a retail partner. Always better than sending a file" />
           </div>
         </Section>
         <Section icon={ICONS.help} title="Ask Marketing first">
           <div className="space-y-3">
             <DontCard title="Any crop that cuts the product" note="" />
             <DontCard title="Text, price or a badge added" note="" />
-            <DontCard title="Used next to a competitor product" note="" />
+            <DontCard title="Any AI editing" note="Background removal, generative fill or expand, AI upscaling, placing product into a generated scene" />
             <DontCard title="Creator or influencer imagery" note="Different rules below" />
-            <DontCard title="New retailer-commissioned photography" note="" />
+            <DontCard title="New retailer-commissioned photography" note="See below" />
+            <DontCard title="Used next to a competitor product" note="" />
           </div>
         </Section>
       </div>
+      <Section icon={ICONS.mail} title="How to ask">
+        <div className="bg-[#EAF4F8] border-l-[3px] border-[#1E9DC2] rounded-xl px-4 py-3.5 text-sm text-[#152A3B] leading-relaxed">
+          Email <strong>marketing@coolkidz.com.au</strong> with the asset name, where it will appear, the live dates and the final size. We&apos;ll come back within 1 business day. <strong>One email with all four details saves three days of back and forth.</strong>
+        </div>
+      </Section>
+      <Section icon={ICONS.ruler} title="File specs">
+        <div className="space-y-2.5 text-sm text-slate-600">
+          <p><strong className="text-slate-800">Print:</strong> 300dpi at final printed size. If the file looks soft when you zoom to 100%, it&apos;s too small. Ask for a print version rather than enlarging it.</p>
+          <p><strong className="text-slate-800">Web and social:</strong> 72dpi, RGB, supplied size.</p>
+          <p><strong className="text-slate-800">Logos:</strong> use the supplied EPS or SVG from the logo folder. Don&apos;t recolour, stretch, add shadows or effects, or rebuild the logo yourself. Keep clear space around it.</p>
+          <p className="text-rose-600 font-semibold">Never upscale, never re-save a JPEG repeatedly, never screenshot.</p>
+        </div>
+      </Section>
       <Section icon={ICONS.camera} title="Influencer, creator and UGC imagery">
         <p className="text-sm text-slate-600">Creator content is licensed to us, for our channels, for a fixed term. <strong className="text-rose-600">It cannot be supplied to retailers</strong>, and cannot be used in print, POS or paid social without a written extension. Retailer asks for "that reel"? Answer is no. Offer the equivalent library asset instead.</p>
       </Section>
+      <Section icon={ICONS.camera} title="Retailer-commissioned photography">
+        <p className="text-sm text-slate-600">If a retailer wants to shoot our product themselves, talk to Marketing before it happens, not after. We need to agree on how the product is styled, whether our logo appears, and that we receive a copy of the final images. <TBC /> confirm the ownership and usage position you want stated here.</p>
+      </Section>
       <Section icon={ICONS.child} title="Images featuring children">
-        <p className="text-sm text-slate-600">Covered by a signed release (held in the Command Centre) specifying where/how long it can appear. Ask Marketing to check before committing new-context child photography to print. Do not assume.</p>
+        <p className="text-sm text-slate-600">Covered by a signed release (held in the Command Centre) specifying where and for how long it can appear. Ask Marketing to check before committing new-context child photography to print. Do not assume.</p>
       </Section>
       <Section icon={ICONS.clock} title="Expiry">
-        <p className="text-sm text-slate-600">Some assets carry an end date. Expired ones are archived, not deleted. <strong>Local copies are the single biggest source of expired-asset breaches.</strong> Always check Filecamp before reusing a saved file.</p>
+        <p className="text-sm text-slate-600 mb-2">Some assets carry an end date. Expired ones are archived, not deleted. <strong>Local copies are the single biggest source of expired-asset breaches.</strong> Always check Filecamp before reusing a saved file.</p>
+        <p className="text-sm text-slate-600">The end date sits on the asset detail panel in Filecamp. <TBC /> confirm the exact field name so we can point people at it.</p>
       </Section>
     </>,
   },
