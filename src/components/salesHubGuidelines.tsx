@@ -48,6 +48,8 @@ const ICONS = {
   help: "M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
   mail: "M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z",
   ruler: "M3 7a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7zM7 5v3M11 5v4M15 5v3M19 5v4",
+  warn: "M12 9v3.75m0 3.75h.008v.008H12v-.008zM9.401 3.003c1.155-2 4.043-2 5.198 0l7.197 12.5c1.156 2-.288 4.5-2.599 4.5H4.803c-2.311 0-3.755-2.5-2.598-4.5L9.4 3.003z",
+  down: "M12 4v12m0 0l-4-4m4 4l4-4M4 20h16",
 };
 // Colour is used ONLY as a thin accent (left rule + small glyph), never a
 // filled background, so a page of these doesn't read as a pastel grid.
@@ -64,6 +66,15 @@ function DontCard({ title, note }: { title: React.ReactNode; note: React.ReactNo
     <div className="flex gap-3 border-l-2 border-rose-300 pl-3.5 py-1">
       <Icon path={ICONS.cross} className="w-4 h-4 text-rose-400 shrink-0 mt-[3px]" />
       <div><div className="font-semibold text-slate-800 text-sm leading-snug">{title}</div>{note && <div className="text-gray-500 text-[13px] mt-0.5 leading-snug">{note}</div>}</div>
+    </div>
+  );
+}
+// Amber, distinct from Do/Don't — an escalation, not a rule.
+function WarnCard({ title, note }: { title: React.ReactNode; note: React.ReactNode }) {
+  return (
+    <div className="flex gap-3 border-l-2 border-amber-400 bg-amber-50/60 rounded-r-lg pl-3.5 pr-3 py-2.5">
+      <Icon path={ICONS.warn} className="w-4 h-4 text-amber-500 shrink-0 mt-[3px]" />
+      <div><div className="font-semibold text-slate-800 text-sm leading-snug">{title}</div>{note && <div className="text-gray-600 text-[13px] mt-0.5 leading-snug">{note}</div>}</div>
     </div>
   );
 }
@@ -256,22 +267,36 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
       </Section>
       <Section icon={ICONS.hash} title="Naming and trademarks">
         <div className="space-y-2">
-          <DoCard title="UPPAbaby" note="Capital U, capital P, capital P, lowercase b, not Uppababy, not UppaBaby" />
+          <DoCard title="UPPAbaby" note="Capital U, capital P, capital P, lowercase b. Not Uppababy, not UppaBaby" />
           <DoCard title="smarTrike Wonder™, Wonder+™, Wonder max™" note={'™ on first use, lowercase "max"'} />
           <DoCard title="Model generations as supplied" note="e.g. Vista V3, not vista v3" />
+          <DoCard title="Spell every brand as we spell it" note="smarTrike · WonderFold · Gaia Baby · Matchstick Monkey · MiaMily · Nanit · Frida · Hannie · Magic · Zazu · Mamave · UPPAbaby" />
         </div>
       </Section>
       <Section icon={ICONS.info} title="Terminology">
-        <p className="text-sm text-slate-600"><strong className="text-slate-800">Pram</strong>, not stroller · <strong className="text-slate-800">Capsule</strong>, not infant car seat · use the product's own feature names, don't invent descriptive ones</p>
+        <p className="text-sm text-slate-600 mb-3">Product language is brand specific. Don&apos;t apply one brand&apos;s words to another.</p>
+        <div className="space-y-2 text-sm text-slate-600">
+          <p><strong className="text-slate-800">UPPAbaby:</strong> pram, not stroller. Capsule, not infant car seat.</p>
+          <p><strong className="text-slate-800">WonderFold:</strong> stroller wagon.</p>
+          <p><strong className="text-slate-800">smarTrike Wonder:</strong> stroller-trike, or carry-on stroller.</p>
+          <p><strong className="text-slate-800">All brands:</strong> use the product&apos;s own feature names. Don&apos;t invent descriptive ones.</p>
+        </div>
       </Section>
       <Section icon={ICONS.hash} title="Tagging and hashtags">
-        <p className="text-sm text-slate-600">Tag the brand handle in the post (not just caption), tag the retailer where relevant. Brand hashtag list: <TBC /></p>
+        <p className="text-sm text-slate-600 mb-2">Tag the brand handle in the post itself, not just the caption. Tag the retailer where relevant.</p>
+        <p className="text-sm text-slate-600">Only tag brands that actually appear in the image. Tagging all twelve for reach reads as spam and drags unrelated brands into whatever the post says.</p>
       </Section>
-      <Section icon={ICONS.chat} title="When a customer complains in comments">
-        <DontCard title="Do not answer product faults, warranty or safety concerns in comments" note="Direct to help.uppababy.com.au (or the relevant brand path). Never delete a complaint. Never argue." />
+      <Section icon={ICONS.chat} title="When a customer complains">
+        <p className="text-sm text-slate-600 mb-3">Applies to comments and DMs equally.</p>
+        <div className="space-y-3">
+          <DontCard title="Don't answer product faults, warranty or safety concerns yourself" note="Direct them to the brand's support path. Never delete a complaint. Never argue." />
+          <WarnCard title="Safety matters escalate the same day" note="Anything involving injury, breakage, entrapment, a fall, or a customer mentioning a recall goes to your rep before you reply to anything at all. Don't investigate it, don't reassure, don't ask for photos. Pass it up." />
+        </div>
+        <p className="text-[11px] font-bold tracking-[0.09em] uppercase text-slate-400 mt-4 mb-1.5">Support paths</p>
+        <p className="text-sm text-slate-600"><strong className="text-slate-800">UPPAbaby:</strong> help.uppababy.com.au</p>
       </Section>
-      <Section icon={ICONS.ad} title="Paid amplification">
-        <p className="text-sm text-slate-600">Retailers must not run paid social on our brand assets without agreement. Boosting an already-approved organic post is usually fine; anything beyond that goes through your State Manager. <TBC /> confirm where the line sits.</p>
+      <Section icon={ICONS.down} title="If we ask for a post to come down">
+        <p className="text-sm text-slate-600">Occasionally we&apos;ll ask for something to be removed, usually because of a claim, an expired asset or a licensing issue. <strong>Please action it the same day.</strong> We&apos;ll always tell you why, and we&apos;ll offer replacement artwork where we can.</p>
       </Section>
     </>,
   },
