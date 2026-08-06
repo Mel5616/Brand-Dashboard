@@ -134,7 +134,6 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
       <p className="mb-4 text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-2">💬 This is the section to send when a store asks "can you share our post".</p>
       <Section icon={ICONS.check} title="We will">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <DoCard title="Reshare to our story" note={<>Within 1 business day if it passes the checklist below <span className="text-emerald-500">(proposed)</span></>} />
           <DoCard title="Supply approved artwork" note="Sized to spec, via the Artwork Request form" />
           <DoCard title="Supply product imagery + copy" note="From Filecamp, for the retailer's own channels" />
           <DoCard title="Support a Tune-Up Day" note="Where demand + operating requirements are met" />
@@ -144,6 +143,7 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
       </Section>
       <Section icon={ICONS.cross} title="We will not">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <DontCard title="Reshare to our story" note={<>Within 1 business day if it passes the checklist below <span className="text-rose-400">(proposed)</span></>} />
           <DontCard title="Post a store promo to our grid" note="Reads as national + creates channel conflict — story reshare only" />
           <DontCard title="Supply free product" note="Trade spend — use the Product Request form" />
           <DontCard title="Artwork with a price, no approved promo" note="Needs confirmed RRP + sign-off" />
