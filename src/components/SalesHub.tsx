@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { GUIDELINE_SECTIONS } from "./salesHubGuidelines";
+import { GUIDELINE_SECTIONS, FilecampCard, Icon } from "./salesHubGuidelines";
 
 type ReqType = "artwork" | "swatch" | "tune_up" | "product";
 type Status = "new" | "triaged" | "in_progress" | "review" | "delivered" | "on_hold" | "declined";
@@ -151,11 +151,16 @@ function Landing({ brands, mine, onPick, onOpenRequest, onGuide }: { brands: { n
         )}
       </div>
 
+      <FilecampCard />
+
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
         <h3 className="text-sm font-bold text-slate-700 mb-2">Rules — read before you ask</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {GUIDELINE_SECTIONS.map(g => (
-            <button key={g.id} onClick={() => onGuide(g.id)} className="text-left text-sm text-slate-600 border border-gray-100 rounded-lg px-3 py-2 hover:bg-gray-50 hover:border-indigo-200 transition">{g.title}</button>
+            <button key={g.id} onClick={() => onGuide(g.id)} className="flex items-center gap-2.5 text-left text-sm text-slate-600 border border-gray-100 rounded-lg px-3 py-2.5 hover:bg-gray-50 hover:border-indigo-200 transition">
+              <span className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0"><Icon path={g.icon} className="w-4 h-4" /></span>
+              {g.title}
+            </button>
           ))}
         </div>
       </div>
@@ -166,10 +171,13 @@ function Landing({ brands, mine, onPick, onOpenRequest, onGuide }: { brands: { n
 function Guidelines({ active, onSelect }: { active: string; onSelect: (id: string) => void }) {
   const g = GUIDELINE_SECTIONS.find(x => x.id === active) ?? GUIDELINE_SECTIONS[0];
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-4">
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-2 h-fit lg:sticky lg:top-4">
         {GUIDELINE_SECTIONS.map(s => (
-          <button key={s.id} onClick={() => onSelect(s.id)} className={`w-full text-left text-sm rounded-lg px-3 py-2 transition ${s.id === g.id ? "bg-indigo-50 text-indigo-700 font-semibold" : "text-slate-600 hover:bg-gray-50"}`}>{s.title}</button>
+          <button key={s.id} onClick={() => onSelect(s.id)} className={`w-full flex items-center gap-2.5 text-left text-sm rounded-lg px-3 py-2.5 transition ${s.id === g.id ? "bg-indigo-50 text-indigo-700 font-semibold" : "text-slate-600 hover:bg-gray-50"}`}>
+            <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${s.id === g.id ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-500"}`}><Icon path={s.icon} className="w-4 h-4" /></span>
+            {s.title}
+          </button>
         ))}
       </div>
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
