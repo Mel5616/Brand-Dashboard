@@ -144,9 +144,11 @@ function Landing({ brands, items, mine, tradeshows, calendarEvents, onPick, onOp
   const upcoming = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
     const a = tradeshows.filter(t => t.date_start >= today).map(t => ({ date: t.date_start, label: t.name }));
-    const b = calendarEvents.filter(e => e.start_date >= today).map(e => ({ date: e.start_date.slice(0, 10), label: e.title }));
+    const b = items
+      .filter(i => i.request_type === "tune_up" && i.needed_by && i.needed_by.slice(0, 10) >= today && !["delivered", "declined"].includes(i.status))
+      .map(i => ({ date: i.needed_by!.slice(0, 10), label: i.title }));
     return [...a, ...b].sort((x, y) => x.date.localeCompare(y.date)).slice(0, 5);
-  }, [tradeshows, calendarEvents]);
+  }, [tradeshows, items]);
 
   return (
     <div className="space-y-5">
