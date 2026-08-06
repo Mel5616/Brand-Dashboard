@@ -156,7 +156,7 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
           <DoCard title="Product training & demo support" note="Arranged through your rep" />
         </Verdict>
         <Verdict positive={false} title="We will not">
-          <DontCard title="Reshare to our story" note={<>Within 1 business day if it passes the checklist below <span className="text-rose-400">(proposed)</span></>} />
+          <DontCard title="Reshare to our story" note="We will not prioritise stores on our feed and do not want to become an advertising feed for stores" />
           <DontCard title="Post a store promo to our grid" note="Reads as national and creates channel conflict. Story reshare only." />
           <DontCard title="Supply free product" note="Trade spend: use the Product Request form" />
           <DontCard title="Artwork with a price, no approved promo" note="Needs confirmed RRP + sign-off" />
