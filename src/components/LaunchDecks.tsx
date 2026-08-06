@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 // Plan > Launch Decks: HTML strategy decks with per-recipient tracked share
 // links — who opened, how many times, how long they actually looked. Admin-only.
-type Deck = { id: number; title: string; brand: string | null; pdfUrl?: string | null; created_by: string | null; created_at: string };
+type Deck = { id: number; title: string; brand: string | null; category?: "launch" | "retailer"; pdfUrl?: string | null; created_by: string | null; created_at: string };
 type Share = { id: number; deck_id: number; token: string; label: string; created_at: string; allow_pdf?: boolean };
 type View = { share_id: number; session_id: string; viewer: string | null; seconds: number; opened_at: string; last_seen: string };
 
@@ -62,6 +62,7 @@ export function LaunchDecks({ brands }: { brands: { name: string }[] }) {
   const [busy, setBusy] = useState(false);
   const [title, setTitle] = useState("");
   const [brand, setBrand] = useState("");
+  const [category, setCategory] = useState<"launch" | "retailer">("launch");
   const fileRef = useRef<HTMLInputElement>(null);
   const [newLabel, setNewLabel] = useState<Record<number, string>>({});
   const [open, setOpen] = useState<number | null>(null);
@@ -97,7 +98,7 @@ export function LaunchDecks({ brands }: { brands: { name: string }[] }) {
     const CHUNK = 3 * 1024 * 1024;
     if (file.size <= CHUNK) {
       const fd = new FormData();
-      fd.append("title", title); fd.append("brand", brand); fd.append("file", file);
+      fd.append("title", title); fd.append("brand", brand); fd.append("category", category); fd.append("file", file);
       d = await fetch("/api/decks", { method: "POST", body: fd }).then(r => r.json()).catch(() => null);
     } else {
       // Big deck: upload in ~3MB parts (Vercel rejects bodies over ~4.5MB), then assemble.
@@ -114,11 +115,11 @@ export function LaunchDecks({ brands }: { brands: { name: string }[] }) {
       setMsg("Assembling deck…");
       const fd = new FormData();
       fd.append("action", "finish"); fd.append("upload_id", uploadId); fd.append("parts", String(parts));
-      fd.append("title", title); fd.append("brand", brand);
+      fd.append("title", title); fd.append("brand", brand); fd.append("category", category);
       d = await fetch("/api/decks", { method: "POST", body: fd }).then(x => x.json()).catch(() => null);
     }
     setBusy(false);
-    if (d?.ok) { setShowForm(false); setTitle(""); setBrand(""); if (fileRef.current) fileRef.current.value = ""; load(); setMsg("Deck loaded — a Team share link is ready."); }
+    if (d?.ok) { setShowForm(false); setTitle(""); setBrand(""); setCategory("launch"); if (fileRef.current) fileRef.current.value = ""; load(); setMsg("Deck loaded — a Team share link is ready."); }
     else setMsg(d?.error || "Couldn't load the deck.");
   }
   async function addShare(deckId: number) {
@@ -168,6 +169,13 @@ export function LaunchDecks({ brands }: { brands: { name: string }[] }) {
             </select>
           </div>
           <div className="mt-3">
+            <span className="text-[12px] font-semibold text-slate-600 block mb-1.5">Category *</span>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setCategory("launch")} className={`text-[12.5px] font-semibold rounded-lg px-3 py-1.5 border ${category === "launch" ? "bg-emerald-500 text-white border-emerald-500" : "bg-white text-slate-500 border-gray-200 hover:bg-gray-50"}`}>🚀 Launch Deck (internal)</button>
+              <button type="button" onClick={() => setCategory("retailer")} className={`text-[12.5px] font-semibold rounded-lg px-3 py-1.5 border ${category === "retailer" ? "bg-amber-500 text-white border-amber-500" : "bg-white text-slate-500 border-gray-200 hover:bg-gray-50"}`}>🏬 Retailer Timeline</button>
+            </div>
+          </div>
+          <div className="mt-3">
             <label className="text-[12px] font-semibold text-slate-600 block mb-1">Deck HTML file *</label>
             <input ref={fileRef} type="file" accept=".html,.htm" className="text-sm text-slate-600" />
           </div>
@@ -177,8 +185,22 @@ export function LaunchDecks({ brands }: { brands: { name: string }[] }) {
 
       {decks.length === 0 && <div className="bg-white rounded-2xl border border-gray-100 shadow-sm py-10 text-center text-gray-300 text-sm">No decks yet.</div>}
 
-      <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
-      {decks.map(d => {
+      {renderGroup("launch", "🚀 Launch Decks", "Internal strategy decks — never send these to a retailer.", "emerald")}
+      {renderGroup("retailer", "🏬 Retailer Timelines", "Built for external, retailer-facing sharing.", "amber")}
+    </div>
+  );
+
+  function renderGroup(cat: "launch" | "retailer", label: string, hint: string, accent: "emerald" | "amber") {
+    const list = decks.filter(d => (d.category ?? "launch") === cat);
+    if (!list.length) return null;
+    return (
+      <div>
+        <div className={`flex items-baseline gap-2 mb-2.5 ${accent === "amber" ? "" : ""}`}>
+          <h3 className={`text-[13px] font-bold uppercase tracking-wide ${accent === "amber" ? "text-amber-600" : "text-emerald-600"}`}>{label}</h3>
+          <span className="text-[11.5px] text-gray-400">{hint}</span>
+        </div>
+        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 items-start mb-6">
+      {list.map(d => {
         const dShares = shares.filter(s => s.deck_id === d.id);
         const opens = dShares.reduce((s, x) => s + (statFor.get(x.id)?.opens ?? 0), 0);
         const secs = dShares.reduce((s, x) => s + (statFor.get(x.id)?.seconds ?? 0), 0);
@@ -258,5 +280,6 @@ export function LaunchDecks({ brands }: { brands: { name: string }[] }) {
       })}
       </div>
     </div>
-  );
+    );
+  }
 }

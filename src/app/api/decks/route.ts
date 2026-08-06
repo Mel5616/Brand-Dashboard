@@ -12,7 +12,7 @@ export async function GET() {
   if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "Admins only" }, { status: 403 });
   const sb = await createClient();
   const [d, s, v] = await Promise.all([
-    sb.from("decks").select("id,title,brand,created_by,created_at").order("created_at", { ascending: false }),
+    sb.from("decks").select("id,title,brand,category,created_by,created_at").order("created_at", { ascending: false }),
     sb.from("deck_shares").select("*").order("created_at", { ascending: true }),
     sb.from("deck_views").select("share_id,session_id,viewer,seconds,opened_at,last_seen"),
   ]);
@@ -65,6 +65,7 @@ export async function POST(req: Request) {
     await sb.storage.from(UPLOAD_BUCKET).remove(Array.from({ length: parts }, (_, i) => `${uploadId}/${i}`)).catch(() => {});
     const { data, error } = await sb.from("decks").insert({
       title: title2, brand: String(form.get("brand") || "").trim().slice(0, 80) || null,
+      category: String(form.get("category") || "") === "retailer" ? "retailer" : "launch",
       html, created_by: access.user?.email ?? null,
     }).select("id,title").single();
     if (error) return NextResponse.json({ ok: false, error: error.message.slice(0, 200) }, { status: 500 });
@@ -84,6 +85,7 @@ export async function POST(req: Request) {
   const sb = await createClient();
   const { data, error } = await sb.from("decks").insert({
     title, brand: String(form.get("brand") || "").trim().slice(0, 80) || null,
+    category: String(form.get("category") || "") === "retailer" ? "retailer" : "launch",
     html, created_by: access.user?.email ?? null,
   }).select("id,title").single();
   if (error) return NextResponse.json({ ok: false, needsSetup: missing(error.message), error: error.message.slice(0, 200) }, { status: 500 });
