@@ -237,7 +237,7 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
         </div>
       </Section>
       <Section icon={ICONS.ad} title="Boosting and paid social">
-        <p className="text-sm text-slate-600 mb-3">Boosting a post that uses our supplied imagery is fine, with three conditions:</p>
+        <p className="text-sm text-slate-600 mb-3">Boosting a post that uses our supplied imagery is fine, with two conditions:</p>
         <div className="space-y-2.5 text-sm text-slate-600">
           <p><strong className="text-slate-800">The asset is unaltered library imagery.</strong> No creator or influencer content, ever. Licensing doesn&apos;t cover retailer paid media and this is the breach most likely to reach us.</p>
           <p><strong className="text-slate-800">No claims, no price overlays, no badges added to the creative.</strong> If it needed marketing approval organically, it needs it before you put money behind it.</p>
