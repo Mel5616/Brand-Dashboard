@@ -153,7 +153,6 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
           <DoCard title="Supply approved artwork" note="Sized to spec, via the Artwork Request form" />
           <DoCard title="Supply product imagery + copy" note="From Filecamp, for the retailer's own channels" />
           <DoCard title="Support a Tune-Up Day" note="Where demand + operating requirements are met" />
-          <DoCard title="Support co-funded activity" note="Via the trade marketing agreement + your State Manager" />
           <DoCard title="Product training & demo support" note="Arranged through your rep" />
         </Verdict>
         <Verdict positive={false} title="We will not">
