@@ -87,10 +87,6 @@ type TabId = "summary" | "brands" | "strategy" | "insights" | "campaign-calendar
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
-    id: "sales-hub", label: "Sales Hub",
-    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-1 8l-2 2-1-1" /></svg>,
-  },
-  {
     id: "brands", label: "Business Overview",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
   },
@@ -286,11 +282,14 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     id: "team", label: "Team",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 00-3-3.87" /></svg>,
   },
+  {
+    id: "sales-hub", label: "Sales Hub",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-1 8l-2 2-1-1" /></svg>,
+  },
 ];
 
 // Sidebar grouping — how you market (top) vs where you sell (bottom).
 const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
-  { label: "Sales Hub", ids: ["sales-hub"] },
   { label: "Overview", ids: ["brands", "strategy", "summary", "insights", "team-hub", "weekly-brief"] },
   { label: "Reports", ids: ["report", "snapshot", "social-report", "d2c-weekly", "month-review", "uppababy"] },
   { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows"] },
@@ -299,6 +298,7 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info", "brand-assets", "stock-report", "cost-sheet"] },
   { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads"] },
   { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting", "nanit", "releases", "affiliates", "pa-budget", "pa-tracker"] },
+  { label: "Sales Hub", ids: ["sales-hub"] },
 ];
 
 // Influencer pages collapse under an "Influencers" dropdown in the sidebar.
