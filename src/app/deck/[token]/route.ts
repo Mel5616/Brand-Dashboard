@@ -34,8 +34,11 @@ const wrapper = (token: string, title: string, pdfUrl: string | null, origin: st
   iframe{display:block;width:100%;height:100%;border:0}
   #gate{position:fixed;inset:0;z-index:99999;background:rgba(12,20,33,.94);backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:center}
   #gate .card{background:#fff;border-radius:18px;padding:34px 36px;max-width:380px;width:calc(100% - 48px);text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.4)}
-  #gate input{border:1.5px solid #e2e8f0;border-radius:10px;padding:11px 14px;font-size:14px;outline:none;text-align:center;width:100%;box-sizing:border-box}
+  #gate input[type=email]{border:1.5px solid #e2e8f0;border-radius:10px;padding:11px 14px;font-size:14px;outline:none;text-align:center;width:100%;box-sizing:border-box}
   #gate button{background:#e2593c;color:#fff;border:0;border-radius:10px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;width:100%}
+  #gate button:disabled{opacity:.5;cursor:not-allowed}
+  #gate .agree{display:flex;align-items:flex-start;gap:8px;text-align:left;font-size:12px;color:#64748b;line-height:1.4;cursor:pointer}
+  #gate .agree input{margin-top:2px;flex-shrink:0}
   #pdfBtn{position:fixed;right:18px;bottom:18px;z-index:9999;background:#e2593c;color:#fff;text-decoration:none;font-size:12.5px;font-weight:700;letter-spacing:.05em;padding:10px 16px;border-radius:999px;box-shadow:0 4px 14px rgba(0,0,0,.3)}
 </style></head>
 <body>
@@ -45,7 +48,8 @@ const wrapper = (token: string, title: string, pdfUrl: string | null, origin: st
   <p style="font-size:13px;color:#64748b;line-height:1.5;margin:0 0 18px">Enter your email address to view — it identifies your session for the Coolkidz team.</p>
   <form id="gateForm" style="display:flex;flex-direction:column;gap:10px">
     <input id="gateEmail" type="email" required placeholder="you@company.com" autocomplete="email" />
-    <button type="submit">View deck →</button>
+    <label class="agree"><input id="gateAgree" type="checkbox" required /><span>I agree this deck is private and confidential and will not be shared outside my organisation.</span></label>
+    <button id="gateSubmit" type="submit" disabled>View deck →</button>
   </form>
 </div></div>
 ${pdfUrl ? `<a id="pdfBtn" href="${pdfUrl}" target="_blank" rel="noopener" hidden>⬇ PDF</a>` : ""}
@@ -71,11 +75,17 @@ ${pdfUrl ? `<a id="pdfBtn" href="${pdfUrl}" target="_blank" rel="noopener" hidde
   try { saved = localStorage.getItem("deckViewerEmail"); } catch (e) {}
   if (saved) { show(saved); return; }
   var input = document.getElementById("gateEmail");
+  var agree = document.getElementById("gateAgree");
+  var submitBtn = document.getElementById("gateSubmit");
   setTimeout(function(){ try { input.focus(); } catch (e) {} }, 50);
+  function refreshBtn() { submitBtn.disabled = !agree.checked; }
+  agree.addEventListener("change", refreshBtn);
+  refreshBtn();
   document.getElementById("gateForm").addEventListener("submit", function(ev){
     ev.preventDefault();
     var em = (input.value || "").trim().toLowerCase();
     if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(em)) { input.style.borderColor = "#ef4444"; return; }
+    if (!agree.checked) { return; }
     try { localStorage.setItem("deckViewerEmail", em); } catch (e) {}
     show(em);
   });
