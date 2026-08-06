@@ -89,14 +89,6 @@ function Verdict({ positive, title, children }: { positive: boolean; title: stri
     </div>
   );
 }
-function ChecklistItem({ n, children, highlight }: { n: number; children: React.ReactNode; highlight?: boolean }) {
-  return (
-    <div className={`flex gap-3 items-start py-2.5 border-b border-gray-100 last:border-0 ${highlight ? "-mx-3 px-3 bg-amber-50/60 rounded-lg border-0" : ""}`}>
-      <div className={`shrink-0 w-5 h-5 rounded-full border flex items-center justify-center text-[11px] font-bold mt-0.5 ${highlight ? "border-amber-400 text-amber-600" : "border-slate-300 text-slate-500"}`}>{n}</div>
-      <div className="text-sm text-slate-700 leading-snug">{children}</div>
-    </div>
-  );
-}
 function AskTile({ icon, situation, where }: { icon: string; situation: string; where: string }) {
   return (
     <div className="flex gap-3 items-start py-3 border-b border-gray-100">
@@ -166,19 +158,6 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
           <DontCard title="Approve safety/medical/clinical claims" note="See claims below" />
         </Verdict>
       </div>
-      <Section icon={ICONS.check} title="Reshare checklist (all 8 must pass)">
-        <div>
-          <ChecklistItem n={1}>Correct brand handle tagged</ChecklistItem>
-          <ChecklistItem n={2}>Product names spelled/styled correctly, incl. trademarks</ChecklistItem>
-          <ChecklistItem n={3}>Imagery from the approved library, or accurate in-store photography</ChecklistItem>
-          <ChecklistItem n={4}>Price shown is current RRP, or no price</ChecklistItem>
-          <ChecklistItem n={5}>No discounting breaching agreed pricing / promo window</ChecklistItem>
-          <ChecklistItem n={6}>No competitor product visible or named</ChecklistItem>
-          <ChecklistItem n={7}>No safety, medical or developmental claim</ChecklistItem>
-          <ChecklistItem n={8} highlight>Product shown safely, harness done up, capsule correctly installed, child correctly positioned, brake on if stationary</ChecklistItem>
-        </div>
-        <p className="text-xs text-gray-400 mt-3">Point 8 is the one that catches people. Tell stores up front, not at the point of refusal.</p>
-      </Section>
       <Section icon={ICONS.info} title="Claims we never make or endorse">
         <p className="text-sm text-slate-600">No "safest", no medical or developmental claim, no sleep claim, no clinical language. Applies to store posts, retailer EDMs, product pages and our own content. If a claim needs a footnote to be true, it does not go out.</p>
       </Section>
