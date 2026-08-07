@@ -188,7 +188,7 @@ export function CostSheet() {
                   <th className="text-left py-2">Style</th>
                   <th className="text-right py-2">FOB $US</th>
                   {th("Landed cost", "landed_cost_aud")}
-                  <th className="text-right py-2 text-amber-600">RRP ex GST</th>
+                  <th className="text-right py-2 text-amber-600">RRP incl GST</th>
                   <th className="text-right py-2 text-sky-600">Wholesale</th>
                   <th className="text-right py-2">Bunting</th>
                   {th("Retail margin", "retail_margin_pct", "pr-2")}

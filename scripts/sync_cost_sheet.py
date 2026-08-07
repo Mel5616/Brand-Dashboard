@@ -97,7 +97,7 @@ def _field_for(norm_header: str):
     return None
 
 
-def parse_sheet(values: list[list], sheet_name: str | None = None):
+def parse_sheet(values: list[list]):
     """Returns (meta, rows) for one brand worksheet's raw usedRange values."""
     header_idx = next((i for i, r in enumerate(values) if len(r) > 1 and str(r[0]).strip() == "Brand" and str(r[1]).strip() == "Product Name"), None)
     if header_idx is None:
@@ -109,11 +109,12 @@ def parse_sheet(values: list[list], sheet_name: str | None = None):
         field = _field_for(_norm(h))
         if field and field not in col_idx:
             col_idx[field] = i
-    # SmarTrike's RRP is the shelf/GST-inclusive price, not the ex-GST figure
-    # every other brand uses — swap which column feeds "retail_excl_gst" (the
-    # one the UI shows as "RRP ex GST") so it displays SmarTrike's Incl GST
-    # column instead. Only SmarTrike; every other brand keeps ex-GST as RRP.
-    if sheet_name == "SmarTrike" and "retail_incl_gst" in col_idx and "retail_excl_gst" in col_idx:
+    # RRP is the GST-inclusive shelf price everywhere, not the ex-GST figure —
+    # swap which column feeds "retail_excl_gst" (the field the UI shows as
+    # "RRP ex GST") so it displays the sheet's Incl GST column instead, for
+    # every brand. Matched by header text as usual, so this works regardless
+    # of which literal column letter "Incl GST" sits in on a given sheet.
+    if "retail_incl_gst" in col_idx and "retail_excl_gst" in col_idx:
         col_idx["retail_incl_gst"], col_idx["retail_excl_gst"] = col_idx["retail_excl_gst"], col_idx["retail_incl_gst"]
     fob_usd_i, fob_aud_i = col_idx.get("fob_usd"), col_idx.get("fob_aud")
 
@@ -186,7 +187,7 @@ def main():
             d = graph_get(token, f"/drives/{drive_id}/items/{item_id}/workbook/worksheets/{enc}/usedRange")
         except Exception as e:
             print(f"  ✗ {name}: {e}"); errors.append(f"{name}: {e}"); continue
-        meta, rows = parse_sheet(d.get("values", []), name)
+        meta, rows = parse_sheet(d.get("values", []))
         if meta is None:
             print(f"  {name}: no cost-sheet header found, skipped")
             continue
