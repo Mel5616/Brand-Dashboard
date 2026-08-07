@@ -15,6 +15,7 @@ const CHANNEL_COLORS: Record<string, string> = {
   "Google Advertising":   "#4285F4",
   "Social Media (Meta)":  "#1877F2",
   "Pinterest Ads":        "#E60023",
+  "Amazon Ads":           "#FF9900",
   "Klaviyo":              "#7c3aed",
   "Influencer Marketing": "#f59e0b",
   "Photography":          "#ec4899",

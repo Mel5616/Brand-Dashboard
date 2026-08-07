@@ -8,7 +8,7 @@ type Topup = { brand_id: number; month_key: string; channel: string; amount: num
 type Actual = { brand_id: number; month_key: string; channel: string; spend: number; note?: string; invoice_url?: string | null };
 
 // Canonical marketing channels for the year (templates always offer all of these).
-const CHANNELS = ["Google Advertising", "Social Media (Meta)", "TikTok Ads", "Pinterest Ads", "Partnerships & Affiliates", "Influencer Marketing", "Klaviyo", "Shopify", "Photography", "Printing", "Events", "Giveaways"];
+const CHANNELS = ["Google Advertising", "Social Media (Meta)", "TikTok Ads", "Pinterest Ads", "Amazon Ads", "Partnerships & Affiliates", "Influencer Marketing", "Klaviyo", "Shopify", "Photography", "Printing", "Events", "Giveaways"];
 
 // Human label for a month key, e.g. "2025-07" -> "Jul 25".
 const labelOf = (mk: string) => {

@@ -24,6 +24,7 @@ const CHANNEL_COLORS: Record<string, string> = {
   "Photography":          "#ec4899",
   "Shopify":              "#96bf48",
   "Pinterest Ads":        "#E60023",
+  "Amazon Ads":           "#FF9900",
 };
 const FALLBACK_COLORS = ["#6366f1","#14b8a6","#f97316","#e11d48","#8b5cf6","#0ea5e9"];
 
