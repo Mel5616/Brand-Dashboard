@@ -37,6 +37,37 @@ function MarginBar({ v }: { v: number | null }) {
   );
 }
 
+// Some brands' live sheets have no category sub-header rows at all (a flat
+// product list — SmarTrike, Mamave, MiaMily, Hannie as of Aug 2026), so every
+// row comes through with category === null. Rather than dump them all into
+// one "Other" bucket, cluster by a shared name prefix (1 word, then 2 words)
+// so families like "Wonder ..." / "Xtend ..." still read as groups. Only
+// used when the whole brand has no real categories — a per-item category
+// from the sheet always wins.
+function inferCategories(items: Item[]): Map<string, string> {
+  const words1 = new Map<string, number>();
+  const words2 = new Map<string, number>();
+  for (const i of items) {
+    const w = i.product_name.trim().split(/\s+/);
+    if (w[0]) words1.set(w[0], (words1.get(w[0]) ?? 0) + 1);
+    if (w.length > 1) { const k2 = w.slice(0, 2).join(" "); words2.set(k2, (words2.get(k2) ?? 0) + 1); }
+  }
+  // A first-word cluster covering almost everything (e.g. every MiaMily
+  // product starts with "Multi") isn't a useful group — fall through to the
+  // two-word prefix for those instead.
+  const dominant1 = [...words1.values()].some(n => items.length > 3 && n >= items.length * 0.8);
+  const out = new Map<string, string>();
+  for (const i of items) {
+    const w = i.product_name.trim().split(/\s+/);
+    const w1 = w[0];
+    const w2 = w.length > 1 ? w.slice(0, 2).join(" ") : null;
+    if (!dominant1 && w1 && (words1.get(w1) ?? 0) >= 2) out.set(i.product_name, w1);
+    else if (w2 && (words2.get(w2) ?? 0) >= 2) out.set(i.product_name, w2);
+    else out.set(i.product_name, "Other");
+  }
+  return out;
+}
+
 export function CostSheet() {
   const [items, setItems] = React.useState<Item[]>([]);
   const [meta, setMeta] = React.useState<Meta[]>([]);
@@ -71,9 +102,11 @@ export function CostSheet() {
       });
       return [["", flat]];
     }
+    const allNull = brandItems.length > 0 && brandItems.every(i => i.category == null);
+    const inferred = allNull ? inferCategories(brandItems) : null;
     const byCat = new Map<string, Item[]>();
     for (const i of [...brandItems].sort((a, b) => a.product_name.localeCompare(b.product_name))) {
-      const k = i.category ?? "Other";
+      const k = i.category ?? inferred?.get(i.product_name) ?? "Other";
       byCat.set(k, [...(byCat.get(k) ?? []), i]);
     }
     return [...byCat.entries()].sort((a, b) => a[0].localeCompare(b[0]));
