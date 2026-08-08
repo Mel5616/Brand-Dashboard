@@ -112,7 +112,7 @@ const IG_HANDLES: { brand: string; handle: string; bg: string; logo?: string }[]
   { brand: "UPPAbaby NZ", handle: "uppababy_newzealand", bg: "#5B6B7A", logo: "/logos/instagram/uppababy.jpg" },
   { brand: "Frida", handle: "frida.aus", bg: "#3EC0E4", logo: "/logos/instagram/frida.jpg" },
   { brand: "Nanit", handle: "nanit_au", bg: "#1B2A5B", logo: "/logos/instagram/nanit.jpg" },
-  { brand: "smarTrike", handle: "smartrikeaus", bg: "#1E2A3A" },
+  { brand: "smarTrike", handle: "smartrikeaus", bg: "#1E2A3A", logo: "/logos/instagram/smartrike.jpg" },
   { brand: "WonderFold", handle: "wonderfold.au", bg: "#2B2B2B", logo: "/logos/instagram/wonderfold.jpg" },
   { brand: "Gaia Baby", handle: "gaiababynursery.au", bg: "#3D6B4F", logo: "/logos/instagram/gaia-baby.jpg" },
   { brand: "Hannie", handle: "hannie.australia", bg: "#111111", logo: "/logos/instagram/hannie.jpg" },
