@@ -74,6 +74,7 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false }: { bran
   const [form, setForm] = useState(emptyForm);
   const [products, setProducts] = useState<Product[]>([{ ...emptyProduct }]);
   const [deliverables, setDeliverables] = useState<Deliverable[]>([{ ...emptyDeliverable }]);
+  const [editId, setEditId] = useState<string | null>(null);
   const [catalog, setCatalog] = useState<CatalogProduct[]>([]);
   const [openProductRow, setOpenProductRow] = useState<number | null>(null);
 
@@ -118,8 +119,39 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false }: { bran
   }, [inflPick, form.exclusivity_category, exclusivity]);
 
   function resetForm() {
-    setInfl(emptyInfluencer); setInflPick(""); setForm(emptyForm);
+    setInfl(emptyInfluencer); setInflPick(""); setForm(emptyForm); setEditId(null);
     setProducts([{ ...emptyProduct }]); setDeliverables([{ ...emptyDeliverable }]);
+  }
+
+  function startEdit(a: Agreement) {
+    const i = a.influencers;
+    setInfl({ full_name: i.full_name, email: i.email, phone: i.phone ?? "", instagram_handle: i.instagram_handle ?? "", tiktok_handle: i.tiktok_handle ?? "", address_line1: i.address_line1 ?? "", address_line2: i.address_line2 ?? "", suburb: i.suburb ?? "", state: i.state ?? "", postcode: i.postcode ?? "", is_po_box: i.is_po_box, abn: i.abn ?? "" });
+    setInflPick(i.id);
+    setForm({
+      brand_id: String(a.brand_id), agreement_type: a.agreement_type, campaign_name: a.campaign_name ?? "",
+      agreement_date: (a.agreement_date ?? "").slice(0, 10) || new Date().toISOString().slice(0, 10),
+      content_due_days: a.content_due_days, minimum_live_period_months: a.minimum_live_period_months,
+      exclusivity_applies: a.exclusivity_applies, exclusivity_category: a.exclusivity_category ?? "", exclusivity_months: a.exclusivity_months,
+      usage_term_months: a.usage_term_months, usage_paid_media: a.usage_paid_media, usage_retail_partners: a.usage_retail_partners, usage_print: a.usage_print,
+      discount_code: a.discount_code ?? "", discount_start: "", discount_end: "",
+      representative_name: "", representative_position: "",
+    });
+    setProducts(a.influencer_agreement_products?.length ? a.influencer_agreement_products.map(p => ({ ...p })) : [{ ...emptyProduct }]);
+    setDeliverables(a.influencer_agreement_deliverables?.length ? a.influencer_agreement_deliverables.map(d => ({ ...d, due_date: (d.due_date ?? "").slice(0, 10) || null })) : [{ ...emptyDeliverable }]);
+    setEditId(a.id);
+    setShowForm(true);
+    setExpanded(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function saveEdit() {
+    setMsg("");
+    if (!form.brand_id) return setMsg("Pick a brand.");
+    if (!infl.full_name.trim() || !infl.email.trim()) return setMsg("Influencer name and email are required.");
+    const body = { id: editId, action: "update", influencer: infl, ...form, products, deliverables: deliverables.map(d => ({ ...d, due_date: d.due_date || null })) };
+    const d = await fetch("/api/influencer-agreements", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()).catch(() => null);
+    if (d?.ok) { setShowForm(false); resetForm(); load(); setMsg("Draft updated."); }
+    else setMsg(d?.error || "Couldn't save changes.");
   }
 
   async function create(draft: boolean) {
@@ -182,6 +214,7 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false }: { bran
 
       {showForm && (
         <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-5 space-y-4">
+          {editId && <p className="text-sm font-bold text-amber-600">Editing draft {agreements.find(a => a.id === editId)?.reference}</p>}
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-600 mb-2">Influencer</p>
             <div className="grid sm:grid-cols-3 gap-2 mb-2">
@@ -333,8 +366,14 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false }: { bran
           </div>
 
           <div className="flex flex-wrap gap-2 pt-1">
-            <button onClick={() => create(true)} className="text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg px-5 py-2.5">Save as draft · preview first</button>
-            <button onClick={() => create(false)} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2.5">Create &amp; email agreement</button>
+            {editId ? (
+              <button onClick={saveEdit} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2.5">Save changes</button>
+            ) : (
+              <>
+                <button onClick={() => create(true)} className="text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg px-5 py-2.5">Save as draft · preview first</button>
+                <button onClick={() => create(false)} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2.5">Create &amp; email agreement</button>
+              </>
+            )}
             <button onClick={() => { setShowForm(false); resetForm(); }} className="text-sm font-semibold text-gray-400 hover:text-gray-600 rounded-lg px-3 py-2.5">Cancel</button>
           </div>
         </div>
@@ -380,6 +419,7 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false }: { bran
                           <td className="px-3 py-2.5 text-right text-[12px] text-gray-400">{fmtD(a.signed_at || a.sent_at)}</td>
                           <td className="px-5 py-2.5 text-right whitespace-nowrap" onClick={e => e.stopPropagation()}>
                             {a.status === "draft" && <button disabled={busyId === a.id} onClick={() => act(a.id, "send")} className="text-[12px] font-semibold text-emerald-600 hover:underline mr-2.5 disabled:opacity-50">Send</button>}
+                            {a.status === "draft" && <button onClick={() => startEdit(a)} className="text-[12px] font-semibold text-amber-600 hover:underline mr-2.5">Edit</button>}
                             {a.status === "sent" && <button disabled={busyId === a.id} onClick={() => act(a.id, "resend")} className="text-[12px] font-semibold text-sky-600 hover:underline mr-2.5 disabled:opacity-50">Resend</button>}
                             {(a.status === "draft" || a.status === "sent") && <a href={`/agreement/${a.token}`} target="_blank" rel="noreferrer" className="text-[12px] font-semibold text-violet-600 hover:underline mr-2.5">👁 View</a>}
                             {a.status === "sent" && <button onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/agreement/${a.token}`); setMsg("Signing link copied."); }} className="text-[12px] font-semibold text-slate-500 hover:underline mr-2.5">⧉ Link</button>}

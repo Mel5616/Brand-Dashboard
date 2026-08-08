@@ -207,6 +207,83 @@ export async function PATCH(req: Request) {
   const a = (await get.json().catch(() => []))[0];
   if (!a) return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
 
+  if (b.action === "update") {
+    if (a.status !== "draft") return NextResponse.json({ ok: false, error: "Only a draft can be edited — void it and start again if it's already sent" }, { status: 400 });
+    const brandId = Number(b.brand_id) || a.brand_id;
+    const infl = b.influencer || {};
+    if (!String(infl.full_name || "").trim() || !String(infl.email || "").trim())
+      return NextResponse.json({ ok: false, error: "Influencer name and email required" }, { status: 400 });
+
+    // Reuse-by-email, same as create — editing may have switched to a
+    // different (or newly-typed) influencer entirely.
+    const findInfl = await fetch(`${sbUrl}/rest/v1/agreement_influencers?email=ilike.${encodeURIComponent(String(infl.email).trim())}&limit=1`, { headers: h(), cache: "no-store" });
+    let influencerId = (await findInfl.json().catch(() => []))[0]?.id as string | undefined;
+    const inflRow = {
+      full_name: String(infl.full_name).trim().slice(0, 160), email: String(infl.email).trim().slice(0, 200),
+      phone: infl.phone ? String(infl.phone).slice(0, 40) : null,
+      instagram_handle: infl.instagram_handle ? String(infl.instagram_handle).replace(/^@/, "").slice(0, 60) : null,
+      tiktok_handle: infl.tiktok_handle ? String(infl.tiktok_handle).replace(/^@/, "").slice(0, 60) : null,
+      address_line1: infl.address_line1 ? String(infl.address_line1).slice(0, 200) : null,
+      address_line2: infl.address_line2 ? String(infl.address_line2).slice(0, 200) : null,
+      suburb: infl.suburb ? String(infl.suburb).slice(0, 100) : null,
+      state: infl.state ? String(infl.state).slice(0, 10) : null,
+      postcode: infl.postcode ? String(infl.postcode).slice(0, 10) : null,
+      is_po_box: !!infl.is_po_box, abn: infl.abn ? String(infl.abn).slice(0, 30) : null,
+    };
+    if (influencerId) {
+      await fetch(`${sbUrl}/rest/v1/agreement_influencers?id=eq.${influencerId}`, { method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify(inflRow) });
+    } else {
+      const ins = await fetch(`${sbUrl}/rest/v1/agreement_influencers`, { method: "POST", headers: h({ Prefer: "return=representation" }), body: JSON.stringify(inflRow) });
+      const created = (await ins.json().catch(() => []))[0];
+      if (!ins.ok || !created) return NextResponse.json({ ok: false, error: "Couldn't save the influencer" }, { status: 500 });
+      influencerId = created.id;
+    }
+
+    const agreementType = AGREEMENT_TYPES[b.agreement_type] ? b.agreement_type : a.agreement_type;
+    const agreementDate = b.agreement_date || a.agreement_date;
+    const exclusivityApplies = AGREEMENT_TYPES[agreementType].requiresExclusivity && b.exclusivity_applies !== false;
+    const exclusivityMonths = Number(b.exclusivity_months) || 6;
+    const exclusivityEnd = exclusivityApplies ? new Date(new Date(agreementDate).setMonth(new Date(agreementDate).getMonth() + exclusivityMonths)).toISOString().slice(0, 10) : null;
+    const contentDueDays = Number(b.content_due_days) || 21;
+    const contentDueDate = new Date(new Date(agreementDate).setDate(new Date(agreementDate).getDate() + contentDueDays)).toISOString().slice(0, 10);
+    const exclusivityCategory = b.exclusivity_category ? String(b.exclusivity_category).slice(0, 200) : a.exclusivity_category;
+
+    const products = (Array.isArray(b.products) ? b.products : []).filter((p: any) => p?.product_name).map((p: any) => ({
+      product_name: String(p.product_name).slice(0, 160), variant: p.variant ? String(p.variant).slice(0, 100) : null,
+      quantity: Number(p.quantity) || 1, rrp: p.rrp != null && p.rrp !== "" ? Number(p.rrp) : null,
+      cost_price: p.cost_price != null && p.cost_price !== "" ? Number(p.cost_price) : null,
+    }));
+    const deliverables = (Array.isArray(b.deliverables) ? b.deliverables : []).filter((d: any) => d?.deliverable_type).map((d: any) => ({
+      deliverable_type: String(d.deliverable_type).slice(0, 80), platform: String(d.platform || "Instagram").slice(0, 40),
+      quantity: Number(d.quantity) || 1, due_date: d.due_date || contentDueDate,
+    }));
+
+    const agreementRow = {
+      influencer_id: influencerId, brand_id: brandId, agreement_type: agreementType,
+      campaign_name: b.campaign_name ? String(b.campaign_name).slice(0, 160) : null, agreement_date: agreementDate,
+      content_due_days: contentDueDays, content_due_date: contentDueDate, minimum_live_period_months: Number(b.minimum_live_period_months) || 6,
+      exclusivity_applies: exclusivityApplies, exclusivity_category: exclusivityCategory,
+      exclusivity_months: exclusivityMonths, exclusivity_end_date: exclusivityEnd,
+      usage_term_months: Number(b.usage_term_months) || 12, usage_paid_media: !!b.usage_paid_media,
+      usage_retail_partners: b.usage_retail_partners !== false, usage_print: !!b.usage_print,
+      discount_code: b.discount_code ? String(b.discount_code).slice(0, 40) : null,
+      discount_start: b.discount_start || null, discount_end: b.discount_end || null,
+      representative_name: b.representative_name ? String(b.representative_name).slice(0, 120) : null,
+      representative_position: b.representative_position ? String(b.representative_position).slice(0, 120) : null,
+      updated_at: new Date().toISOString(),
+    };
+    const upd = await fetch(`${sbUrl}/rest/v1/influencer_agreements?id=eq.${id}`, { method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify(agreementRow) });
+    if (!upd.ok) { const t = await upd.text(); return NextResponse.json({ ok: false, error: t.slice(0, 300) }, { status: 500 }); }
+
+    // Products/deliverables are small lists edited as a whole — replace
+    // rather than diff, same as how the create form builds them.
+    await fetch(`${sbUrl}/rest/v1/influencer_agreement_products?agreement_id=eq.${id}`, { method: "DELETE", headers: h({ Prefer: "return=minimal" }) });
+    await fetch(`${sbUrl}/rest/v1/influencer_agreement_deliverables?agreement_id=eq.${id}`, { method: "DELETE", headers: h({ Prefer: "return=minimal" }) });
+    if (products.length) await fetch(`${sbUrl}/rest/v1/influencer_agreement_products`, { method: "POST", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify(products.map((p: any) => ({ ...p, agreement_id: id }))) });
+    if (deliverables.length) await fetch(`${sbUrl}/rest/v1/influencer_agreement_deliverables`, { method: "POST", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify(deliverables.map((d: any) => ({ ...d, agreement_id: id }))) });
+
+    return NextResponse.json({ ok: true });
+  }
   if (b.action === "send") {
     if (a.status !== "draft") return NextResponse.json({ ok: false, error: "Already sent" }, { status: 400 });
     const err = validateForSend({ agreement_type: a.agreement_type, exclusivity_applies: a.exclusivity_applies, exclusivity_category: a.exclusivity_category });
