@@ -85,7 +85,7 @@ export default async function AgreementPage({ params }: { params: Promise<{ toke
       <div className="max-w-2xl mx-auto">
         {preview && (
           <div className="mb-3 rounded-xl bg-amber-50 border border-amber-200 px-4 py-2.5 text-[13px] text-amber-800 font-semibold">
-            👁 Preview — this is exactly what {i.full_name} will see. The link hasn&apos;t been emailed yet; use &quot;Send&quot; on the dashboard when you&apos;re happy.
+            👁 Preview — this is exactly what {i.full_name}{" "}will see. The link hasn&apos;t been emailed yet; use &quot;Send&quot; on the dashboard when you&apos;re happy.
           </div>
         )}
         <div className="bg-[#132741] rounded-t-2xl px-7 py-5">
