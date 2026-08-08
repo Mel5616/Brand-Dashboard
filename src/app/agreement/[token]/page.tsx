@@ -14,10 +14,10 @@ const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const AGREEMENT_CSS = `
 .agreement { font-size: 13.5px; }
-.agreement .doc-head { padding-bottom: 16px; margin-bottom: 18px; border-bottom: 1px solid #e2e8f0; }
+.agreement .doc-head { padding-bottom: 22px; margin-bottom: 22px; border-bottom: 1px solid #e2e8f0; }
 .agreement .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #1E9DC2; margin: 0 0 8px; }
-.agreement h1 { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 8px; letter-spacing: -0.01em; line-height: 1.25; }
-.agreement .doc-meta { font-size: 12.5px; color: #64748b; margin: 0; }
+.agreement h1 { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 12px; letter-spacing: -0.01em; line-height: 1.25; }
+.agreement .doc-meta { display: inline-block; font-size: 12.5px; font-weight: 600; color: #152A3B; background: #EAF4F8; border-radius: 999px; padding: 6px 14px; margin: 0; }
 .agreement h3 { font-size: 13.5px; font-weight: 700; color: #0f172a; margin: 24px 0 8px; padding-top: 16px; border-top: 1px solid #f1f5f9; }
 .agreement h3:first-of-type { padding-top: 0; border-top: 0; margin-top: 18px; }
 .agreement p { font-size: 13.5px; line-height: 1.7; color: #334155; margin: 0 0 8px; }
