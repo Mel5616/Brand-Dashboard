@@ -15,8 +15,8 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointEleme
 
 type SpendRow = { brand_id?: number; month_key: string; spend: number };
 
-export function MerCard({ channelSales, googleAds, metaAds, pinterestAds, marketingActuals, targets, marketingBudgets, monthKeys, monthLabels, fy, fyLabel, role }: {
-  channelSales: any[]; googleAds: SpendRow[]; metaAds: SpendRow[]; pinterestAds: SpendRow[];
+export function MerCard({ channelSales, googleAds, metaAds, pinterestAds, amazonAds, marketingActuals, targets, marketingBudgets, monthKeys, monthLabels, fy, fyLabel, role }: {
+  channelSales: any[]; googleAds: SpendRow[]; metaAds: SpendRow[]; pinterestAds: SpendRow[]; amazonAds: SpendRow[];
   marketingActuals: any[]; targets: any[]; marketingBudgets: any[];
   monthKeys: string[]; monthLabels: string[]; fy: string; fyLabel: string; role: string | null;
 }) {
@@ -33,8 +33,8 @@ export function MerCard({ channelSales, googleAds, metaAds, pinterestAds, market
   const revenue = monthKeys.map(mk => sum(channelSales, mk, "month_key", "value"));
   const cost = monthKeys.map(mk =>
     sum(googleAds, mk, "month_key", "spend") + sum(metaAds, mk, "month_key", "spend") +
-    sum(pinterestAds, mk, "month_key", "spend") + sum(marketingActuals, mk, "month_key", "spend") +
-    sum(inflSpend, mk, "month_key", "spend"));
+    sum(pinterestAds, mk, "month_key", "spend") + sum(amazonAds, mk, "month_key", "spend") +
+    sum(marketingActuals, mk, "month_key", "spend") + sum(inflSpend, mk, "month_key", "spend"));
 
   // Only months with real revenue count (channel sales upload lags the month end)
   const liveIdx = monthKeys.map((_, i) => i).filter(i => revenue[i] > 0);

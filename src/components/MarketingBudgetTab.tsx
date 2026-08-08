@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { BrandBudgetOverview } from "./BrandBudgetOverview";
 import { BudgetDataTools } from "./BudgetDataTools";
+import { AmazonAdsCard } from "./AmazonAdsCard";
 import {
   Chart as ChartJS, ArcElement, BarElement, CategoryScale, LinearScale,
   LineElement, PointElement, Filler, Tooltip, Legend,
@@ -24,7 +25,6 @@ const CHANNEL_COLORS: Record<string, string> = {
   "Photography":          "#ec4899",
   "Shopify":              "#96bf48",
   "Pinterest Ads":        "#E60023",
-  "Amazon Ads":           "#FF9900",
 };
 const FALLBACK_COLORS = ["#6366f1","#14b8a6","#f97316","#e11d48","#8b5cf6","#0ea5e9"];
 
@@ -344,7 +344,10 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
       ) : (
       <>
       {canEdit && (
-        <div className="no-print"><BudgetDataTools brands={brands} marketingBudgets={marketingBudgets} monthKeys={MONTH_KEYS} fy={fy} fyLabel={fyLabel} topups={topups} /></div>
+        <div className="no-print">
+          <BudgetDataTools brands={brands} marketingBudgets={marketingBudgets} monthKeys={MONTH_KEYS} fy={fy} fyLabel={fyLabel} topups={topups} />
+          <AmazonAdsCard brands={brands} />
+        </div>
       )}
       {/* Print-only title */}
       <div className="hidden print:block">

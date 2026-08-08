@@ -119,6 +119,16 @@ export type PinterestAdsRow = {
   roas: number;
 };
 
+export type AmazonAdsRow = {
+  brand_id: number;
+  month_key: string;
+  spend: number;
+  sales: number;
+  impressions: number;
+  clicks: number;
+  note: string | null;
+};
+
 export type CommissionFactoryRow = {
   brand_id: number;
   month_key: string;
@@ -245,6 +255,7 @@ export async function getDashboardData() {
     { data: googleAds },
     { data: metaAds },
     { data: pinterestAds },
+    { data: amazonAds },
     { data: commissionFactory },
     { data: metaAdsPlatform },
     { data: instagramOrganic },
@@ -286,6 +297,7 @@ export async function getDashboardData() {
     db.from("google_ads").select("*").order("month_key"),
     db.from("meta_ads").select("*").order("month_key"),
     db.from("pinterest_ads").select("*").order("month_key"),
+    db.from("amazon_ads").select("*").order("month_key"),
     db.from("commission_factory").select("*").order("month_key"),
     db.from("meta_ads_platform").select("brand_id,month_key,platform,spend,impressions,clicks,purchases,revenue,reach").order("month_key"),
     db.from("instagram_organic").select("brand_id,month_key,followers,reach,profile_views,accounts_engaged").order("month_key"),
@@ -329,6 +341,7 @@ export async function getDashboardData() {
     googleAds: (googleAds ?? []) as GoogleAdsRow[],
     metaAds: (metaAds ?? []) as MetaAdsRow[],
     pinterestAds: (pinterestAds ?? []) as PinterestAdsRow[],
+    amazonAds: (amazonAds ?? []) as AmazonAdsRow[],
     commissionFactory: (commissionFactory ?? []) as CommissionFactoryRow[],
     metaAdsPlatform: (metaAdsPlatform ?? []) as MetaAdsPlatformRow[],
     instagramOrganic: (instagramOrganic ?? []) as InstagramOrganicRow[],

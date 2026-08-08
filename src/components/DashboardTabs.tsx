@@ -439,6 +439,7 @@ interface Props {
   googleAds: any[];
   metaAds: any[];
   pinterestAds: any[];
+  amazonAds: any[];
   commissionFactory: any[];
   metaAdsPlatform: any[];
   instagramOrganic: any[];
@@ -475,7 +476,7 @@ interface Props {
 export function DashboardTabs({
   brands, summaries, monthly, weekly, brandDaily, products,
   tradeshows, tradeshowBrands, tradeshowSales,
-  weekLabels, googleAds, metaAds, pinterestAds, commissionFactory, metaAdsPlatform,
+  weekLabels, googleAds, metaAds, pinterestAds, amazonAds, commissionFactory, metaAdsPlatform,
   instagramOrganic, targets, klaviyo, ga4,
   marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, boothFunnel, kpis,
   gscMetrics, gscQueries, gscInsights, semrushMetrics, semrushCompetitors,
@@ -609,6 +610,7 @@ export function DashboardTabs({
   googleAds        = inFy(googleAds);
   metaAds          = inFy(metaAds);
   pinterestAds     = inFy(pinterestAds);
+  amazonAds        = inFy(amazonAds);
   metaAdsPlatform  = inFy(metaAdsPlatform);
   instagramOrganic = inFy(instagramOrganic);
   targets          = inFy(targets);
@@ -1098,7 +1100,7 @@ export function DashboardTabs({
 
               <BrandShareCard brands={brands} monthly={monthly} monthKeys={monthKeys} channelSales={channelSales} role={role} fyLabel={fyLabel} />
 
-              <MerCard channelSales={channelSales} googleAds={googleAds} metaAds={metaAds} pinterestAds={pinterestAds}
+              <MerCard channelSales={channelSales} googleAds={googleAds} metaAds={metaAds} pinterestAds={pinterestAds} amazonAds={amazonAds}
                 marketingActuals={marketingActuals} targets={targets} marketingBudgets={marketingBudgets}
                 monthKeys={monthKeys} monthLabels={monthLabels} fy={fy} fyLabel={fyLabel} role={role} />
 
