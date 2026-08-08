@@ -45,7 +45,7 @@ const emptyForm = {
   brand_id: "", agreement_type: "gifted_social", campaign_name: "", agreement_date: new Date().toISOString().slice(0, 10),
   content_due_days: 21, minimum_live_period_months: 6, exclusivity_applies: true, exclusivity_category: "", exclusivity_months: 6,
   usage_term_months: 12, usage_paid_media: false, usage_retail_partners: true, usage_print: false,
-  discount_code: "", discount_start: "", discount_end: "", representative_name: "", representative_position: "",
+  discount_code: "", discount_start: "", discount_end: "", representative_name: "Melanie Kingsford", representative_position: "Marketing Director",
 };
 
 export function InfluencerAgreements({ brands: brandsIn, admin = false }: { brands: { id: number; name: string }[]; admin?: boolean }) {

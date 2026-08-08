@@ -105,12 +105,10 @@ export function renderAgreementHtml(a: AgreementForRender): string {
   ).join("\n");
 
   const usageChannels = [
-    "Coolkidz and Brand owned social media channels (organic)",
-    "Coolkidz and Brand websites",
+    "Coolkidz and Brand owned social media channels, both organic and paid, including paid amplification of the Influencer's own posts and use as advertising creative",
+    "Coolkidz and Brand websites and product listings",
     "email marketing",
-    ...(a.usage_paid_media ? ["paid social and paid digital advertising, including creator whitelisting where separately agreed"] : []),
-    ...(a.usage_retail_partners ? ["supply to Coolkidz retail partners for use in their own channels and in-store, on the same terms"] : []),
-    ...(a.usage_print ? ["printed trade and consumer materials, and trade show display"] : []),
+    "trade and retailer facing material, including sell-in presentations, catalogues and in-store display",
   ].map(c => `<li>${c}</li>`).join("\n");
 
   // Clauses are keyed, not hard-numbered — some are conditional (Disclosure,
@@ -142,7 +140,7 @@ export function renderAgreementHtml(a: AgreementForRender): string {
     },
     {
       key: "disclosure", title: "Disclosure", show: showDisclosure, body: () => `
-<p>The Influencer must clearly and prominently disclose that the Products were gifted by Coolkidz, on every piece of content produced under this Agreement.</p>
+<p>The Influencer must clearly and prominently disclose that the Products were gifted by the Brand, on every piece of content produced under this Agreement.</p>
 <p>Disclosure must:</p>
 <ul>
   <li>appear at the start of the caption or within the first three seconds of video, not buried in hashtags or behind a "more" link</li>
@@ -171,6 +169,7 @@ export function renderAgreementHtml(a: AgreementForRender): string {
       key: "licence", title: "Content Licence", show: true, body: () => `
 <p>The Influencer grants Coolkidz a non-exclusive, royalty-free, worldwide licence to use, reproduce, edit, crop and re-publish content created under this Agreement for a period of ${a.usage_term_months} months from the date each item is ${a.agreement_type === "ugc_only" ? "delivered" : "published"}, across:</p>
 <ul>${usageChannels}</ul>
+<p>The Influencer will supply the original, unwatermarked files for each deliverable to ${ENTITY.email} within 7 days of publishing.</p>
 <p>Coolkidz will credit the Influencer where the format reasonably allows.</p>
 <p>The Influencer:</p>
 <ul>
@@ -180,9 +179,9 @@ export function renderAgreementHtml(a: AgreementForRender): string {
 </ul>`,
     },
     {
-      key: "exclusivity", title: "Exclusivity", show: showExclusivity, body: () => `
-<p>For ${a.exclusivity_months} months from the date of this Agreement, the Influencer will not create paid or gifted promotional content for any competing brand in the category: <strong>${esc(a.exclusivity_category || "[not yet set — draft preview only, blocked from sending]")}</strong>.</p>
-<p>This restriction applies only to that category. It does not restrict the Influencer's content in any other category, or their ordinary personal or editorial content.</p>`,
+      key: "exclusivity", title: "Exclusivity", show: showExclusivity, body: n => `
+<p>From the date of this Agreement until 14 days after the last deliverable at clause ${n("deliverables")} is published, the Influencer will not publish paid or gifted content for a brand that competes directly with the Products.</p>
+<p>This does not restrict the Influencer's own unpaid use of, or organic commentary about, any product.</p>`,
     },
     {
       key: "discount", title: "Discount Codes", show: true, body: () => a.discount_code ? `
@@ -191,12 +190,8 @@ export function renderAgreementHtml(a: AgreementForRender): string {
     },
     {
       key: "compensation", title: "Compensation", show: true, body: n => `
-<p>No fee is payable under this Agreement. The consideration to the Influencer is the supply of the Products at clause ${n("products")} and the licence-free use of their own content.</p>
+<p>No fee is payable under this Agreement. The consideration to the Influencer is the supply of the Products at clause ${n("products")}. In exchange, the Influencer completes the deliverables at clause ${n("deliverables")} and grants the licence at clause ${n("licence")}.</p>
 <p>This clause applies to this Agreement only and does not prevent Coolkidz and the Influencer entering a separate paid arrangement in future.</p>`,
-    },
-    {
-      key: "additional", title: "Additional Products and Accessories", show: true, body: n => `
-<p>Coolkidz may decline any request for additional products or accessories not listed at clause ${n("products")}.</p>`,
     },
     {
       key: "shipping", title: "Shipping and Delivery", show: true, body: () => `
@@ -205,7 +200,8 @@ export function renderAgreementHtml(a: AgreementForRender): string {
     {
       key: "incomplete", title: "If Deliverables Are Not Completed", show: true, body: n => `
 <p>If the Influencer does not complete the deliverables at clause ${n("deliverables")} by the due date, Coolkidz will give written notice and allow 14 days to remedy.</p>
-<p>If the deliverables remain incomplete after that period, Coolkidz may, at its election, either arrange collection of the Products at its own cost, or invoice the Influencer for the cost price of the Products. Coolkidz will not do both.</p>`,
+<p>If the deliverables remain incomplete after that period, Coolkidz may, at its election, either arrange collection of the Products at its own cost, or invoice the Influencer for the cost price of the Products. Coolkidz will not do both.</p>
+<p>If the Influencer removes a published item before the end of the visibility period at clause ${n("deliverables")}, Coolkidz will give written notice and allow 14 days for it to be restored, or replaced with equivalent content. If it is not, this clause applies as though the deliverable had not been completed.</p>`,
     },
     {
       key: "privacy", title: "Privacy", show: true, body: () => `
@@ -213,13 +209,14 @@ export function renderAgreementHtml(a: AgreementForRender): string {
     },
     {
       key: "term", title: "Term and Termination", show: true, body: n => `
-<p>This Agreement starts on the date at the top and continues until ${showExclusivity ? `the later of the completion of the deliverables at clause ${n("deliverables")} and the end of the exclusivity period at clause ${n("exclusivity")}` : `the deliverables at clause ${n("deliverables")} are complete`}.</p>
+<p>This Agreement starts on the date at the top and continues until the later of completion of the deliverables at clause ${n("deliverables")} and expiry of the licence at clause ${n("licence")}.</p>
 <p>Either party may terminate on written notice if the other materially breaches the Agreement and does not remedy the breach within 14 days.</p>
 <p>Clauses ${n("standards")}, ${n("children")}, ${n("licence")} and ${n("privacy")} survive termination.</p>`,
     },
     {
       key: "general", title: "General", show: true, body: () => `
 <ul>
+  <li>The Influencer warrants that they are 18 years of age or older.</li>
   <li>This Agreement is governed by the laws of ${ENTITY.governingLaw}.</li>
   <li>This Agreement is the entire agreement between the parties on this subject and replaces any earlier discussion or document.</li>
   <li>Any variation must be in writing and agreed by both parties.</li>
@@ -244,9 +241,8 @@ export function renderAgreementHtml(a: AgreementForRender): string {
 
   return `
 <div class="agreement">
+${a.reference ? `<div class="eyebrow">${esc(a.reference)}</div>` : ""}
 <h1>INFLUENCER COLLABORATION AGREEMENT</h1>
-<h2>${esc(a.brand_display_name)}</h2>
-<div class="meta-strip">${a.reference ? `Reference <strong>${esc(a.reference)}</strong> · ` : ""}Effective <strong>${fmtDate(a.agreement_date)}</strong> · ${type.label}</div>
 
 <p>This Collaboration Agreement ("Agreement") is made effective as of <strong>${fmtDate(a.agreement_date)}</strong> by and between <strong>${ENTITY.legalName}</strong> (ABN ${ENTITY.abn}) of ${ENTITY.address}, the authorised Australian distributor of <strong>${esc(a.brand_display_name)}</strong> ("Coolkidz"), and <strong>${esc(a.influencer_name)}</strong>${a.influencer_abn ? ` (ABN ${esc(a.influencer_abn)})` : ""} of ${esc(a.influencer_address)} ("the Influencer").</p>
 <p>In this Agreement, "the Brand" means ${esc(a.brand_display_name)}, and "the Products" means the items listed at clause ${numberOf("products")}.</p>

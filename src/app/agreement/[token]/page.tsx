@@ -1,19 +1,21 @@
+import type { Metadata } from "next";
 import { renderAgreementHtml } from "@/lib/agreementTemplate";
 import { BRAND_LOGOS_WHITE } from "@/lib/brandLogos";
 import { AgreementSignForm } from "./AgreementSignForm";
 
 // PUBLIC influencer signing page — tokenised, no login. Invalid/signed/void
-// tokens get a polite dead end.
+// tokens get a polite dead end. The token stops guessing, not forwarding or
+// scraping — this page carries a private residential address pre-signing,
+// so it's kept out of search results as defence in depth.
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 export const revalidate = 0;
 const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const AGREEMENT_CSS = `
 .agreement { font-size: 13.5px; }
-.agreement h1 { font-size: 21px; font-weight: 800; color: #0f172a; margin: 0 0 2px; letter-spacing: -0.01em; }
-.agreement h2 { font-size: 15px; font-weight: 700; color: #1E9DC2; margin: 0 0 10px; }
-.agreement .meta-strip { font-size: 12px; color: #64748b; background: #f8fafc; border: 1px solid #eef2f6; border-radius: 8px; padding: 7px 12px; margin: 0 0 20px; }
-.agreement .meta-strip strong { color: #334155; }
+.agreement .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #1E9DC2; margin: 0 0 6px; }
+.agreement h1 { font-size: 21px; font-weight: 800; color: #0f172a; margin: 0 0 14px; letter-spacing: -0.01em; }
 .agreement h3 { font-size: 13.5px; font-weight: 700; color: #0f172a; margin: 24px 0 8px; padding-top: 16px; border-top: 1px solid #f1f5f9; }
 .agreement h3:first-of-type { padding-top: 0; border-top: 0; margin-top: 18px; }
 .agreement p { font-size: 13.5px; line-height: 1.7; color: #334155; margin: 0 0 8px; }
@@ -89,14 +91,10 @@ export default async function AgreementPage({ params }: { params: Promise<{ toke
       <div className="max-w-2xl mx-auto">
         {preview && (
           <div className="mb-3 rounded-xl bg-amber-50 border border-amber-200 px-4 py-2.5 text-[13px] text-amber-800 font-semibold">
-            👁 Preview — this is exactly what {i.full_name}{" "}will see. The link hasn&apos;t been emailed yet; use &quot;Send&quot; on the dashboard when you&apos;re happy.
+            👁 Preview — this is exactly what {i.full_name.split(" ")[0]} will see. The link hasn&apos;t been emailed yet; use &quot;Send&quot; on the dashboard when you&apos;re happy.
           </div>
         )}
-        <div className="bg-[#132741] rounded-t-2xl px-7 py-6 flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-white text-xl font-bold">Collaboration agreement</h1>
-            <p className="text-white/70 text-sm mt-0.5">{a.reference}</p>
-          </div>
+        <div className="bg-[#132741] rounded-t-2xl px-7 py-6 flex items-center justify-end">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={brandLogo} alt={a.brands.name} className={`h-14 w-auto max-w-[220px] object-contain shrink-0 ${isCoolkidz ? "brightness-0 invert" : ""}`} />
         </div>
