@@ -4,11 +4,17 @@ import { useEffect, useMemo, useState } from "react";
 
 // Command Centre — one screen that answers: what needs me today, which brands
 // are off track, who's delivering. Phase 1+2 of command-page-build-brief.md:
-// header strip, action queue (3 triggers), data freshness footer. Governing
-// rule: nothing appears unless it's an exception — an empty queue is the win,
-// not a blank state to apologise for.
+// header strip, action queue, data freshness footer. Governing rule: nothing
+// appears unless it's an exception — an empty queue is the win, not a blank
+// state to apologise for.
+//
+// Five queue triggers: design requests + blogs + campaigns (the original
+// three), plus metric_alerts (revenue drop / spend spike / ROAS collapse —
+// already computed nightly, reused as-is) and genuinely failing syncs. This
+// is meant to be the one place that catches everything worth knowing about,
+// so scattered per-tab warnings don't need separate checking.
 
-type QueueItem = { type: string; id: string; title: string; brand: string | null; owner: string | null; daysLate: number; href: string };
+type QueueItem = { type: string; id: string; title: string; brand: string | null; owner: string | null; daysLate: number; href: string; detail?: string };
 type Freshness = { source: string; ok: boolean; ran_at: string; message?: string };
 type Data = {
   header: { revenueActual: number; revenueBudget: number; revenueVariancePct: number | null; spendActual: number; spendBudget: number; spendVariancePct: number | null; monthElapsedPct: number; daysRemaining: number; queueCount: number };
@@ -19,6 +25,8 @@ const TYPE_META: Record<string, { label: string; verb: string }> = {
   design_request: { label: "Design request", verb: "overdue" },
   blog: { label: "Blog", verb: "overdue" },
   campaign: { label: "Campaign", verb: "launching" },
+  metric_alert: { label: "Metric alert", verb: "flagged" },
+  sync_failure: { label: "Data feed", verb: "failing" },
 };
 
 const money = (n: number) => n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2)}M` : n >= 1000 ? `$${(n / 1000).toFixed(0)}K` : `$${Math.round(n)}`;
@@ -168,6 +176,7 @@ export function CommandCentre() {
                         {item.daysLate >= 0 ? `${item.daysLate}d ${TYPE_META[item.type]?.verb ?? "late"}` : `in ${-item.daysLate}d`}
                       </span>
                     </p>
+                    {item.detail && <p className="text-[11.5px] text-gray-400 truncate mt-0.5">{item.detail}</p>}
                   </div>
                   <SnoozeRow item={item} onDone={load} />
                   <a href={item.href} className="text-gray-300 hover:text-emerald-600 shrink-0">

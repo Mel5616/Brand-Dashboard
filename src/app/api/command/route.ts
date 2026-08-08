@@ -2,10 +2,17 @@ import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
 
 // Command Centre data — admin-only. Aggregates the header strip, the action
-// queue (3 triggers: design requests, blog overdue, campaigns at risk), and
-// the data freshness footer, per command-page-build-brief.md phases 1-2.
-// Everything reads from tables that already exist; the only new state is
-// command_thresholds (tunable numbers) and command_snoozes.
+// queue, and the data freshness footer, per command-page-build-brief.md
+// phases 1-2. Everything reads from tables that already exist; the only new
+// state is command_thresholds (tunable numbers) and command_snoozes.
+//
+// Queue triggers, five total: design requests past SLA, Blogs-project Asana
+// tasks past due, campaigns launching within the risk window, metric_alerts
+// (revenue_drop / spend_spike / roas_collapse — already computed nightly by
+// scripts/metric_alerts.py, deduped, thresholded — reused as-is rather than
+// re-deriving the same signal client-side a third time), and a genuinely
+// failing sync source (not just stale — that's freshness-footer territory,
+// this is "the feed is broken and someone needs to look at it").
 export const revalidate = 0;
 const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -44,9 +51,11 @@ export async function GET() {
   const monthElapsedPct = Math.round((dayOfMonth / daysInMonth) * 100);
   const daysRemaining = daysInMonth - dayOfMonth;
 
+  const alertsSince = new Date(Date.now() - 7 * 86_400_000).toISOString();
+
   const [
     thresholdsRes, revenueRes, salesBudgetRes, actualsRes, budgetsRes, topupsRes,
-    requestsRes, campaignsRes, blogsRes, syncRes,
+    requestsRes, campaignsRes, blogsRes, syncRes, metricAlertsRes, brandsRes,
   ] = await Promise.all([
     sbGet("command_thresholds?select=*"),
     sbGet(`brand_daily?select=revenue&day=gte.${monthStart}&day=lte.${today}`),
@@ -62,7 +71,14 @@ export async function GET() {
     sbGet(`campaigns?select=id,campaign,brand,owner,status,key_date&status=in.(Planned,Pipeline,Build)`),
     sbGet(`asana_tasks?select=gid,name,assignee,due_on,permalink_url,brand_id&project_label=eq.Blogs&completed=eq.false&due_on=lt.${today}`),
     sbGet("sync_status?select=*"),
+    // Last 7 days only — metric_alerts has no resolved flag, a row from
+    // weeks ago is history, not something still needing attention today.
+    sbGet(`metric_alerts?select=id,kind,severity,brand_id,title,detail,created_at&created_at=gte.${alertsSince}&order=created_at.desc`),
+    sbGet("brands?select=id,name"),
   ]);
+  // "__alert_state__" is alert_sync.py's own dedup marker, not a real data
+  // source — never show it as a feed, in the footer or the failure trigger.
+  syncRes.rows = syncRes.rows.filter((r: any) => !String(r.source || "").startsWith("__"));
 
   const needsSetup = missing(thresholdsRes.status, thresholdsRes.text) || missing(requestsRes.status, requestsRes.text);
   const riskWindow = Number(thresholdsRes.rows.find((r: any) => r.key === "campaign_risk_window_days")?.value_numeric) || 14;
@@ -83,9 +99,10 @@ export async function GET() {
   }, 0);
   const spendVariancePct = spendBudget > 0 ? Math.round(((spendActual - spendBudget) / spendBudget) * 1000) / 10 : null;
 
-  // Action queue — three triggers, merged, sorted by days overdue.
-  type QueueItem = { type: string; id: string; title: string; brand: string | null; owner: string | null; daysLate: number; href: string };
+  // Action queue — five triggers, merged, sorted by days overdue.
+  type QueueItem = { type: string; id: string; title: string; brand: string | null; owner: string | null; daysLate: number; href: string; detail?: string };
   const queue: QueueItem[] = [];
+  const brandName = (bid: number | null) => brandsRes.rows.find((b: any) => b.id === bid)?.name ?? null;
 
   for (const r of requestsRes.rows) {
     const due = r.sla_due_at ? String(r.sla_due_at).slice(0, 10) : r.needed_by;
@@ -109,6 +126,19 @@ export async function GET() {
     queue.push({
       type: "campaign", id: String(r.id), title: r.campaign, brand: r.brand, owner: r.owner,
       daysLate: daysLate(kd, today), href: "/?tab=campaign-calendar",
+    });
+  }
+  for (const r of metricAlertsRes.rows) {
+    queue.push({
+      type: "metric_alert", id: String(r.id), title: r.title, brand: brandName(r.brand_id), owner: null,
+      daysLate: Math.max(0, daysLate(String(r.created_at).slice(0, 10), today)), href: "/?tab=brands", detail: r.detail,
+    });
+  }
+  for (const r of syncRes.rows) {
+    if (r.ok) continue; // genuinely failing, not just stale — staleness alone stays footer-only
+    queue.push({
+      type: "sync_failure", id: r.source, title: `${r.source} sync failing`, brand: null, owner: null,
+      daysLate: Math.max(0, daysLate(String(r.ran_at).slice(0, 10), today)), href: "/?tab=brands", detail: r.message,
     });
   }
   queue.sort((a, b) => b.daysLate - a.daysLate);
