@@ -53,14 +53,24 @@ export async function GET() {
 
   const alertsSince = new Date(Date.now() - 7 * 86_400_000).toISOString();
 
+  // Channels the Budget tab already sources live from a synced ad platform
+  // rather than manual entry — excluded from marketing_actuals below so
+  // they're not double-counted once added back in from their own table.
+  const LIVE_CHANNELS = "(Google Advertising,Social Media (Meta),Pinterest Ads,Influencer Marketing)";
+
   const [
     thresholdsRes, revenueRes, salesBudgetRes, actualsRes, budgetsRes, topupsRes,
     requestsRes, campaignsRes, blogsRes, syncRes, metricAlertsRes, brandsRes,
+    googleAdsRes, metaAdsRes, pinterestAdsRes, influencerRes,
   ] = await Promise.all([
     sbGet("command_thresholds?select=*"),
     sbGet(`brand_daily?select=revenue&day=gte.${monthStart}&day=lte.${today}`),
     sbGet(`sales_budget?select=target&month_key=eq.${monthKey}`),
-    sbGet(`marketing_actuals?select=spend&month_key=eq.${monthKey}`),
+    // Google/Meta/Pinterest/Influencer are excluded here — they're live-sourced
+    // from their own synced tables below, same split the Budget tab uses.
+    // marketing_actuals stays the source for everything else (print, agency,
+    // tradeshows, etc.) since those aren't on an ad platform to sync from.
+    sbGet(`marketing_actuals?select=spend&month_key=eq.${monthKey}&channel=not.in.${LIVE_CHANNELS}`),
     sbGet("marketing_budgets?select=brand_id,channel,annual_budget"),
     sbGet(`budget_topups?select=brand_id,channel,amount&month_key=eq.${monthKey}`),
     sbGet(`marketing_requests?select=id,request_type,status,brand,title,assignee_email,needed_by,sla_due_at&status=not.in.(delivered,declined)`),
@@ -75,6 +85,10 @@ export async function GET() {
     // weeks ago is history, not something still needing attention today.
     sbGet(`metric_alerts?select=id,kind,severity,brand_id,title,detail,created_at&created_at=gte.${alertsSince}&order=created_at.desc`),
     sbGet("brands?select=id,name"),
+    sbGet(`google_ads?select=spend&month_key=eq.${monthKey}`),
+    sbGet(`meta_ads?select=spend&month_key=eq.${monthKey}`),
+    sbGet(`pinterest_ads?select=spend&month_key=eq.${monthKey}`),
+    sbGet(`influencer_entries?select=total_cost&month_key=eq.${monthKey}`),
   ]);
   // "__alert_state__" is alert_sync.py's own dedup marker, not a real data
   // source — never show it as a feed, in the footer or the failure trigger.
@@ -86,18 +100,33 @@ export async function GET() {
 
   // Header strip — revenue and spend are portfolio totals, not per-channel
   // pace (that mapping already lives on the Sales Budget tab; a single
-  // top-line number doesn't need it).
+  // top-line number doesn't need it). Variance is against the budget
+  // PRORATED to today's date, not the whole month's target — comparing 9
+  // days of actual against a 30-day target always looks like a huge miss
+  // early in the month even when perfectly on pace (same "pace" concept
+  // the Sales Budget tab already uses).
+  const elapsedFrac = dayOfMonth / daysInMonth;
   const revenueActual = revenueRes.rows.reduce((s: number, r: any) => s + (Number(r.revenue) || 0), 0);
   const revenueBudget = salesBudgetRes.rows.reduce((s: number, r: any) => s + (Number(r.target) || 0), 0);
-  const revenueVariancePct = revenueBudget > 0 ? Math.round(((revenueActual - revenueBudget) / revenueBudget) * 1000) / 10 : null;
+  const revenueBudgetToDate = revenueBudget * elapsedFrac;
+  const revenueVariancePct = revenueBudgetToDate > 0 ? Math.round(((revenueActual - revenueBudgetToDate) / revenueBudgetToDate) * 1000) / 10 : null;
 
-  const spendActual = actualsRes.rows.reduce((s: number, r: any) => s + (Number(r.spend) || 0), 0);
+  // marketing_actuals (manual, non-live channels) + Google/Meta/Pinterest/
+  // Influencer pulled live from their own synced tables — same split the
+  // Budget tab uses, so this never sits at $0 just because nobody's typed
+  // anything into the manual entry sheet yet this month.
+  const spendActual = actualsRes.rows.reduce((s: number, r: any) => s + (Number(r.spend) || 0), 0)
+    + googleAdsRes.rows.reduce((s: number, r: any) => s + (Number(r.spend) || 0), 0)
+    + metaAdsRes.rows.reduce((s: number, r: any) => s + (Number(r.spend) || 0), 0)
+    + pinterestAdsRes.rows.reduce((s: number, r: any) => s + (Number(r.spend) || 0), 0)
+    + influencerRes.rows.reduce((s: number, r: any) => s + (Number(r.total_cost) || 0), 0);
   const topupFor = (bid: number, ch: string) => topupsRes.rows.find((t: any) => t.brand_id === bid && t.channel === ch);
   const spendBudget = budgetsRes.rows.reduce((s: number, r: any) => {
     const t = topupFor(r.brand_id, r.channel);
     return s + (t ? Number(t.amount) || 0 : (Number(r.annual_budget) || 0) / 12);
   }, 0);
-  const spendVariancePct = spendBudget > 0 ? Math.round(((spendActual - spendBudget) / spendBudget) * 1000) / 10 : null;
+  const spendBudgetToDate = spendBudget * elapsedFrac;
+  const spendVariancePct = spendBudgetToDate > 0 ? Math.round(((spendActual - spendBudgetToDate) / spendBudgetToDate) * 1000) / 10 : null;
 
   // Action queue — five triggers, merged, sorted by days overdue.
   type QueueItem = { type: string; id: string; title: string; brand: string | null; owner: string | null; daysLate: number; href: string; detail?: string };
