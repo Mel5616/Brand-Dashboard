@@ -346,7 +346,6 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
       {canEdit && (
         <div className="no-print">
           <BudgetDataTools brands={brands} marketingBudgets={marketingBudgets} monthKeys={MONTH_KEYS} fy={fy} fyLabel={fyLabel} topups={topups} />
-          <AmazonAdsCard brands={brands} />
         </div>
       )}
       {/* Print-only title */}
@@ -369,6 +368,8 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
           </div>
         ))}
       </div>
+
+      {canEdit && <AmazonAdsCard brands={brands} />}
 
       {/* Run-rate forecast */}
       {forecast != null && (

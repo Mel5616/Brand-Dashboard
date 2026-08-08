@@ -1,9 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend } from "chart.js";
+import { Bar } from "react-chartjs-2";
 import { fmtFull } from "@/lib/format";
 
-type Brand = { id: number; name: string };
+ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
+
+type Brand = { id: number; name: string; color?: string };
 type Row = { brand_id: number; month_key: string; spend: number; sales: number; impressions: number; clicks: number; note: string | null };
 
 const labelOf = (mk: string) => {
@@ -11,6 +15,8 @@ const labelOf = (mk: string) => {
   const d = new Date(Number(y), Number(m) - 1, 1);
   return `${d.toLocaleDateString("en-AU", { month: "short" })} ${y.slice(2)}`;
 };
+const roasColor = (r: number) => r >= 4 ? "text-emerald-600 bg-emerald-50" : r >= 2 ? "text-amber-600 bg-amber-50" : "text-rose-600 bg-rose-50";
+const FALLBACK_COLORS = ["#FF9900", "#6366f1", "#14b8a6", "#f97316", "#e11d48", "#8b5cf6", "#0ea5e9"];
 
 // Amazon's own "Advertised product brand" spelling doesn't always match ours
 // 1:1 (case, sub-lines like "Frida Mom") — normalise and fold known aliases
@@ -45,7 +51,9 @@ export function AmazonAdsCard({ brands }: { brands: Brand[] }) {
   }
   useEffect(() => { load(); }, []);
 
-  const brandName = (id: number) => brands.find(b => b.id === id)?.name ?? `#${id}`;
+  const brand = (id: number) => brands.find(b => b.id === id);
+  const brandName = (id: number) => brand(id)?.name ?? `#${id}`;
+  const brandColor = (id: number, i: number) => brand(id)?.color || FALLBACK_COLORS[i % FALLBACK_COLORS.length];
 
   async function handleFile(file: File) {
     setMsg(""); setBusy("Reading report…");
@@ -106,16 +114,23 @@ export function AmazonAdsCard({ brands }: { brands: Brand[] }) {
   const byMonth = new Map<string, Row[]>();
   for (const r of rows) byMonth.set(r.month_key, [...(byMonth.get(r.month_key) ?? []), r]);
   const months = [...byMonth.keys()].sort().reverse();
+  const latest = months[0];
+  const latestRows = latest ? (byMonth.get(latest) ?? []).slice().sort((a, b) => b.spend - a.spend) : [];
+  const latestSpend = latestRows.reduce((s, r) => s + r.spend, 0);
+  const latestSales = latestRows.reduce((s, r) => s + r.sales, 0);
+  const latestClicks = latestRows.reduce((s, r) => s + r.clicks, 0);
+  const latestImpr = latestRows.reduce((s, r) => s + r.impressions, 0);
+  const latestRoas = latestSpend > 0 ? latestSales / latestSpend : 0;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4">
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
       <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
-        <div>
-          <h3 className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: "#FF9900" }} />
-            Amazon Ads
-          </h3>
-          <p className="text-xs text-gray-400 mt-0.5">Results, not a planned budget line — spend + attributed sales per brand, uploaded from Amazon Ads console each month.</p>
+        <div className="flex items-center gap-2.5">
+          <span className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-white font-bold text-[13px]" style={{ background: "#FF9900" }}>a</span>
+          <div>
+            <h3 className="text-sm font-semibold text-slate-700">Amazon Ads</h3>
+            <p className="text-xs text-gray-400">Results, not a planned budget line — spend + attributed sales per brand, uploaded from Amazon Ads console each month.</p>
+          </div>
         </div>
         <button onClick={() => setOpen(o => !o)} className="text-xs font-semibold text-[#1E9DC2] hover:underline shrink-0">{open ? "Hide" : "Upload a report"}</button>
       </div>
@@ -132,8 +147,54 @@ export function AmazonAdsCard({ brands }: { brands: Brand[] }) {
       )}
       {msg && <p className="text-xs text-gray-500 mt-2">{msg}</p>}
 
+      {latest && (
+        <>
+          {/* Headline strip for the latest month */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+            <div className="bg-gray-50 rounded-lg px-3 py-2.5">
+              <p className="text-[11px] text-gray-400">{labelOf(latest)} spend</p>
+              <p className="text-xl font-bold text-gray-900">{fmtFull(latestSpend)}</p>
+            </div>
+            <div className="bg-gray-50 rounded-lg px-3 py-2.5">
+              <p className="text-[11px] text-gray-400">Attributed sales</p>
+              <p className="text-xl font-bold text-gray-900">{fmtFull(latestSales)}</p>
+            </div>
+            <div className="bg-gray-50 rounded-lg px-3 py-2.5">
+              <p className="text-[11px] text-gray-400">Blended ROAS</p>
+              <p className={`text-xl font-bold ${latestRoas >= 4 ? "text-emerald-600" : latestRoas >= 2 ? "text-amber-600" : "text-rose-600"}`}>{latestRoas.toFixed(1)}×</p>
+            </div>
+            <div className="bg-gray-50 rounded-lg px-3 py-2.5">
+              <p className="text-[11px] text-gray-400">Clicks · CTR</p>
+              <p className="text-xl font-bold text-gray-900">{latestClicks.toLocaleString()} <span className="text-[11px] font-medium text-gray-400">· {latestImpr > 0 ? ((latestClicks / latestImpr) * 100).toFixed(2) + "%" : "—"}</span></p>
+            </div>
+          </div>
+
+          {/* Spend vs Sales by brand */}
+          <div className="mt-4 h-52">
+            <Bar
+              data={{
+                labels: latestRows.map(r => brandName(r.brand_id)),
+                datasets: [
+                  { label: "Spend", data: latestRows.map(r => r.spend), backgroundColor: "#cbd5e1", borderRadius: 4, yAxisID: "y" },
+                  { label: "Sales", data: latestRows.map(r => r.sales), backgroundColor: latestRows.map((r, i) => brandColor(r.brand_id, i)), borderRadius: 4, yAxisID: "y1" },
+                ],
+              }}
+              options={{
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: "top", labels: { boxWidth: 10, font: { size: 11 } } }, tooltip: { callbacks: { label: (c: any) => ` ${c.dataset.label}: ${fmtFull(c.parsed.y)}` } } },
+                scales: {
+                  x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                  y: { position: "left", ticks: { callback: (v: any) => fmtFull(v), font: { size: 10 } }, grid: { color: "#f3f4f6" }, title: { display: true, text: "Spend", font: { size: 10 } } },
+                  y1: { position: "right", ticks: { callback: (v: any) => fmtFull(v), font: { size: 10 } }, grid: { display: false }, title: { display: true, text: "Sales", font: { size: 10 } } },
+                },
+              }}
+            />
+          </div>
+        </>
+      )}
+
       {months.length > 0 && (
-        <div className="mt-3 space-y-3">
+        <div className="mt-4 space-y-3">
           {months.slice(0, 6).map(mk => {
             const mrows = (byMonth.get(mk) ?? []).slice().sort((a, b) => b.spend - a.spend);
             const totSpend = mrows.reduce((s, r) => s + r.spend, 0);
@@ -142,21 +203,47 @@ export function AmazonAdsCard({ brands }: { brands: Brand[] }) {
               <div key={mk} className="border border-gray-100 rounded-xl overflow-hidden">
                 <div className="flex items-center justify-between bg-gray-50 px-3 py-1.5">
                   <span className="text-xs font-bold text-slate-600">{labelOf(mk)}</span>
-                  <span className="text-xs text-gray-500">{fmtFull(totSpend)} spend · {fmtFull(totSales)} sales · {totSpend > 0 ? (totSales / totSpend).toFixed(1) + "×" : "—"} ROAS</span>
+                  <span className="text-xs text-gray-500">{fmtFull(totSpend)} spend · {fmtFull(totSales)} sales · {totSpend > 0 ? (totSales / totSpend).toFixed(1) + "×" : "—"} blended ROAS</span>
                 </div>
                 <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-[10.5px] uppercase tracking-wide text-gray-400">
+                      <th className="text-left font-semibold px-3 py-1.5">Brand</th>
+                      <th className="text-right font-semibold px-3 py-1.5">Spend</th>
+                      <th className="text-right font-semibold px-3 py-1.5">Sales</th>
+                      <th className="text-right font-semibold px-3 py-1.5">ROAS</th>
+                      <th className="text-right font-semibold px-3 py-1.5">Impr.</th>
+                      <th className="text-right font-semibold px-3 py-1.5">Clicks</th>
+                      <th className="text-right font-semibold px-3 py-1.5">CTR</th>
+                      <th className="px-3 py-1.5"></th>
+                    </tr>
+                  </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {mrows.map(r => (
-                      <tr key={r.brand_id} className="hover:bg-gray-50/60">
-                        <td className="px-3 py-1.5 text-slate-700">{brandName(r.brand_id)}</td>
-                        <td className="px-3 py-1.5 text-right text-slate-600">{fmtFull(r.spend)}</td>
-                        <td className="px-3 py-1.5 text-right text-slate-600">{fmtFull(r.sales)}</td>
-                        <td className="px-3 py-1.5 text-right font-semibold text-emerald-600">{r.spend > 0 ? (r.sales / r.spend).toFixed(1) + "×" : "—"}</td>
-                        <td className="px-3 py-1.5 text-right">
-                          <button onClick={() => del(r.brand_id, r.month_key)} className="text-gray-300 hover:text-rose-500 text-xs">✕</button>
-                        </td>
-                      </tr>
-                    ))}
+                    {mrows.map((r, i) => {
+                      const roas = r.spend > 0 ? r.sales / r.spend : 0;
+                      const ctr = r.impressions > 0 ? (r.clicks / r.impressions) * 100 : null;
+                      return (
+                        <tr key={r.brand_id} className="hover:bg-gray-50/60">
+                          <td className="px-3 py-1.5 text-slate-700">
+                            <span className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full shrink-0" style={{ background: brandColor(r.brand_id, i) }} />
+                              {brandName(r.brand_id)}
+                            </span>
+                          </td>
+                          <td className="px-3 py-1.5 text-right text-slate-600">{fmtFull(r.spend)}</td>
+                          <td className="px-3 py-1.5 text-right text-slate-600">{fmtFull(r.sales)}</td>
+                          <td className="px-3 py-1.5 text-right">
+                            <span className={`text-xs font-bold rounded-full px-2 py-0.5 ${roasColor(roas)}`}>{roas.toFixed(1)}×</span>
+                          </td>
+                          <td className="px-3 py-1.5 text-right text-gray-400">{r.impressions > 0 ? r.impressions.toLocaleString() : "—"}</td>
+                          <td className="px-3 py-1.5 text-right text-gray-400">{r.clicks > 0 ? r.clicks.toLocaleString() : "—"}</td>
+                          <td className="px-3 py-1.5 text-right text-gray-400">{ctr != null ? ctr.toFixed(2) + "%" : "—"}</td>
+                          <td className="px-3 py-1.5 text-right">
+                            <button onClick={() => del(r.brand_id, r.month_key)} className="text-gray-300 hover:text-rose-500 text-xs">✕</button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
