@@ -664,6 +664,18 @@ export function DashboardTabs({
   useLayoutEffect(() => {
     if (sideRef.current) sideRef.current.scrollTop = sideScroll.current;
   }, [active]);
+  // Sidebar group section headers, keyed by group label — so the quick-access
+  // pills above the main content can scroll that section into view in the
+  // sidebar, not just switch the active tab.
+  const sidebarGroupRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  function scrollSidebarToGroup(label: string) {
+    // Wait two frames: the sidebar's own scroll-restore layout effect (above)
+    // runs on the same "active changes" commit, so scrolling immediately
+    // would get overwritten by it.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      sidebarGroupRefs.current[label]?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }));
+  }
 
   function go(id: TabId) { setActive(id); setMobileNavOpen(false); }
   // Tabs (with their sidebar group) for the ⌘K palette.
@@ -811,7 +823,7 @@ export function DashboardTabs({
             const paTabs = g.tabs.filter(t => PARTNERSHIP_IDS.includes(t.id as TabId));
             const collapsed = collapsedGroups.has(g.label);
             return (
-              <div key={g.label} className="mb-2">
+              <div key={g.label} ref={el => { sidebarGroupRefs.current[g.label] = el; }} className="mb-2">
                 <button onClick={() => toggleGroup(g.label)}
                   className="w-full flex items-center justify-between bg-slate-700 text-white rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] mb-1.5 shadow-sm hover:bg-slate-600 transition-colors">
                   <span>{g.label}</span>
@@ -949,7 +961,7 @@ export function DashboardTabs({
                 {groups.map(g => {
                   const isActive = TAB_GROUPS.find(x => x.label === g.label)!.ids.includes(active);
                   return (
-                    <button key={g.label} onClick={() => go(g.first as TabId)}
+                    <button key={g.label} onClick={() => { go(g.first as TabId); scrollSidebarToGroup(g.label); }}
                       className={`shrink-0 text-[11px] font-bold uppercase tracking-[0.1em] rounded-full px-3.5 py-1.5 transition-colors ${
                         isActive ? "bg-slate-800 text-white shadow-sm" : "bg-white text-slate-500 border border-gray-200 hover:border-slate-300 hover:text-slate-700"}`}>
                       {g.label}
