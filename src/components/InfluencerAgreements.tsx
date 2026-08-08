@@ -25,6 +25,7 @@ type ExclRow = { agreement_id: string; reference: string; influencer_id: string;
 type OverdueRow = { id: string; reference: string; brand: string; full_name: string; email: string; deliverable_type: string; quantity: number; due_date: string; days_overdue: number };
 type RoiRow = { brand: string; agreements: number; total_rrp_gifted: number; total_cost_gifted: number; total_reach: number; total_engagement: number };
 type BrandConfig = { brand_id: number; code: string; tier: string | null; instagram_handle: string | null; exclusivity_category: string | null; naming_rule: string | null };
+type CatalogProduct = { style_code: string; product_name: string; brand: string; rrp: number | null };
 
 const AGREEMENT_TYPES: Record<string, string> = { gifted_social: "Gifted collaboration", ugc_only: "UGC licence (no posting)", event_attendance: "Event attendance" };
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -73,6 +74,8 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false }: { bran
   const [form, setForm] = useState(emptyForm);
   const [products, setProducts] = useState<Product[]>([{ ...emptyProduct }]);
   const [deliverables, setDeliverables] = useState<Deliverable[]>([{ ...emptyDeliverable }]);
+  const [catalog, setCatalog] = useState<CatalogProduct[]>([]);
+  const [openProductRow, setOpenProductRow] = useState<number | null>(null);
 
   function load() {
     fetch("/api/influencer-agreements").then(r => r.json()).then(d => {
@@ -81,6 +84,16 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false }: { bran
     }).catch(() => {}).finally(() => setLoading(false));
   }
   useEffect(() => { load(); }, []);
+  // The real product catalogue (same list the gift-log form uses) — lets the
+  // product field autocomplete with a real RRP instead of being typed blind.
+  useEffect(() => { fetch("/api/influencer/products").then(r => r.json()).then(d => setCatalog(d?.products ?? [])).catch(() => {}); }, []);
+  const catalogMatches = (q: string, brandName?: string) => {
+    const s = q.trim().toLowerCase();
+    if (s.length < 2) return [];
+    const inBrand = brandName ? catalog.filter(p => p.brand?.toLowerCase() === brandName.toLowerCase()) : catalog;
+    const pool = inBrand.length ? inBrand : catalog; // fall back to the full catalogue if this brand has no matches
+    return pool.filter(p => p.product_name.toLowerCase().includes(s) || p.style_code.toLowerCase().includes(s)).slice(0, 8);
+  };
 
   const selectedBrand = brands.find(b => String(b.id) === form.brand_id);
   // Brand-select prefills exclusivity category + a tier-based month suggestion
@@ -256,16 +269,36 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false }: { bran
               <button onClick={() => setProducts(p => [...p, { ...emptyProduct }])} className="text-[12px] font-semibold text-emerald-600">+ Add product</button>
             </div>
             <div className="space-y-2">
-              {products.map((p, i) => (
-                <div key={i} className="grid grid-cols-[1fr_1fr_60px_90px_90px_24px] gap-2 items-center">
-                  <input value={p.product_name} onChange={e => setProducts(ps => ps.map((x, j) => j === i ? { ...x, product_name: e.target.value } : x))} placeholder="Product *" className={inp} />
+              {products.map((p, i) => {
+                const matches = openProductRow === i ? catalogMatches(p.product_name, selectedBrand?.name) : [];
+                return (
+                <div key={i} className="grid grid-cols-[1fr_1fr_60px_90px_90px_24px] gap-2 items-center relative">
+                  <div className="relative">
+                    <input value={p.product_name}
+                      onChange={e => { setProducts(ps => ps.map((x, j) => j === i ? { ...x, product_name: e.target.value } : x)); setOpenProductRow(i); }}
+                      onFocus={() => setOpenProductRow(i)} onBlur={() => setTimeout(() => setOpenProductRow(o => o === i ? null : o), 150)}
+                      placeholder="Product * — search the catalogue" className={inp} autoComplete="off" />
+                    {matches.length > 0 && (
+                      <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
+                        {matches.map(m => (
+                          <button key={m.style_code} type="button"
+                            onMouseDown={() => { setProducts(ps => ps.map((x, j) => j === i ? { ...x, product_name: m.product_name, rrp: m.rrp } : x)); setOpenProductRow(null); }}
+                            className="w-full text-left px-3 py-2 text-[12.5px] hover:bg-emerald-50 border-b border-gray-50 last:border-0">
+                            <div className="font-semibold text-slate-700">{m.product_name}</div>
+                            <div className="text-gray-400 text-[11px]">{m.brand} · {m.style_code} · RRP {m.rrp != null ? `$${m.rrp}` : "—"}</div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <input value={p.variant ?? ""} onChange={e => setProducts(ps => ps.map((x, j) => j === i ? { ...x, variant: e.target.value } : x))} placeholder="Variant" className={inp} />
                   <input type="number" min={1} value={p.quantity} onChange={e => setProducts(ps => ps.map((x, j) => j === i ? { ...x, quantity: Number(e.target.value) } : x))} className={inp} />
                   <input type="number" value={p.rrp ?? ""} onChange={e => setProducts(ps => ps.map((x, j) => j === i ? { ...x, rrp: e.target.value === "" ? null : Number(e.target.value) } : x))} placeholder="RRP" className={inp} />
                   {admin && <input type="number" value={p.cost_price ?? ""} onChange={e => setProducts(ps => ps.map((x, j) => j === i ? { ...x, cost_price: e.target.value === "" ? null : Number(e.target.value) } : x))} placeholder="Cost" className={inp} title="Admin only, never shown to the influencer" />}
                   {products.length > 1 && <button onClick={() => setProducts(ps => ps.filter((_, j) => j !== i))} className="text-gray-300 hover:text-rose-500">✕</button>}
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

@@ -109,6 +109,19 @@ export async function POST(req: Request) {
     influencerId = created.id;
   }
 
+  // Also keep the Influencer Tracker roster in sync — one shared directory of
+  // known influencers rather than two disconnected lists. Roster is keyed by
+  // @handle, so this only fires when an Instagram handle is on file; other
+  // fields are only sent if present so this never wipes tracker-only data
+  // (e.g. followers, notes) the tracker itself has recorded.
+  if (inflRow.instagram_handle) {
+    const handle = "@" + inflRow.instagram_handle.replace(/^@+/, "");
+    await fetch(`${sbUrl}/rest/v1/influencers?on_conflict=handle`, {
+      method: "POST", headers: h({ Prefer: "resolution=merge-duplicates,return=minimal" }),
+      body: JSON.stringify({ handle, name: inflRow.full_name, platform: "Instagram", contact: inflRow.email, updated_at: new Date().toISOString() }),
+    }).catch(() => {});
+  }
+
   const draft = !!b.draft;
   const agreementType = AGREEMENT_TYPES[b.agreement_type] ? b.agreement_type : "gifted_social";
   const agreementDate = b.agreement_date || new Date().toISOString().slice(0, 10);
