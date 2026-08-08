@@ -14,6 +14,20 @@ const BASE = "https://marketing.coolkidz.com.au";
 const missing = (status: number, body: string) => status === 404 || /PGRST205|does not exist|schema cache/i.test(body);
 const canUse = (acc: { role: string | null; allowedTabs: string[] }) => acc.role === "admin" || (!!acc.role && acc.allowedTabs.includes("influencer-agreements"));
 
+// Clause 7 ties exclusivity to "14 days after the last deliverable is
+// published" rather than a fixed months-from-signing term. Before every
+// deliverable has actually gone live this is a moving estimate off each
+// one's due_date; once a deliverable posts, its real posted_at replaces
+// the estimate, so the date tightens up and locks in once all are live.
+function exclusivityEndFromDeliverables(deliverables: { due_date?: string | null; posted_at?: string | null }[]): string | null {
+  const dates = deliverables.map(d => d.posted_at || d.due_date).filter(Boolean) as string[];
+  if (!dates.length) return null;
+  const latest = dates.reduce((a, b) => (a > b ? a : b));
+  const end = new Date(latest);
+  end.setDate(end.getDate() + 14);
+  return end.toISOString().slice(0, 10);
+}
+
 function signingEmail(a: { reference: string; brand_name: string; influencer_name: string; token: string }) {
   return shell(`
     <p style="font-size:15px">Hi ${a.influencer_name.split(" ")[0]},</p>
@@ -127,7 +141,6 @@ export async function POST(req: Request) {
   const agreementDate = b.agreement_date || new Date().toISOString().slice(0, 10);
   const exclusivityApplies = AGREEMENT_TYPES[agreementType].requiresExclusivity && b.exclusivity_applies !== false;
   const exclusivityMonths = Number(b.exclusivity_months) || 6;
-  const exclusivityEnd = exclusivityApplies ? new Date(new Date(agreementDate).setMonth(new Date(agreementDate).getMonth() + exclusivityMonths)).toISOString().slice(0, 10) : null;
   const contentDueDays = Number(b.content_due_days) || 21;
   const contentDueDate = new Date(new Date(agreementDate).setDate(new Date(agreementDate).getDate() + contentDueDays)).toISOString().slice(0, 10);
   const exclusivityCategory = b.exclusivity_category ? String(b.exclusivity_category).slice(0, 200) : cfg.exclusivity_category;
@@ -146,6 +159,7 @@ export async function POST(req: Request) {
     deliverable_type: String(d.deliverable_type).slice(0, 80), platform: String(d.platform || "Instagram").slice(0, 40),
     quantity: Number(d.quantity) || 1, due_date: d.due_date || contentDueDate,
   }));
+  const exclusivityEnd = exclusivityApplies ? exclusivityEndFromDeliverables(deliverables) : null;
 
   const reference = await nextReference(cfg.code);
   const agreementRow = {
@@ -243,7 +257,6 @@ export async function PATCH(req: Request) {
     const agreementDate = b.agreement_date || a.agreement_date;
     const exclusivityApplies = AGREEMENT_TYPES[agreementType].requiresExclusivity && b.exclusivity_applies !== false;
     const exclusivityMonths = Number(b.exclusivity_months) || 6;
-    const exclusivityEnd = exclusivityApplies ? new Date(new Date(agreementDate).setMonth(new Date(agreementDate).getMonth() + exclusivityMonths)).toISOString().slice(0, 10) : null;
     const contentDueDays = Number(b.content_due_days) || 21;
     const contentDueDate = new Date(new Date(agreementDate).setDate(new Date(agreementDate).getDate() + contentDueDays)).toISOString().slice(0, 10);
     const exclusivityCategory = b.exclusivity_category ? String(b.exclusivity_category).slice(0, 200) : a.exclusivity_category;
@@ -257,6 +270,7 @@ export async function PATCH(req: Request) {
       deliverable_type: String(d.deliverable_type).slice(0, 80), platform: String(d.platform || "Instagram").slice(0, 40),
       quantity: Number(d.quantity) || 1, due_date: d.due_date || contentDueDate,
     }));
+    const exclusivityEnd = exclusivityApplies ? exclusivityEndFromDeliverables(deliverables) : null;
 
     const agreementRow = {
       influencer_id: influencerId, brand_id: brandId, agreement_type: agreementType,
@@ -312,7 +326,8 @@ export async function PATCH(req: Request) {
       products, deliverables,
     });
     const sentAt = new Date().toISOString();
-    await fetch(`${sbUrl}/rest/v1/influencer_agreements?id=eq.${id}`, { method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify({ status: "sent", sent_at: sentAt, rendered_html: html }) });
+    const exclusivityEnd = a.exclusivity_applies ? exclusivityEndFromDeliverables(deliverables) : null;
+    await fetch(`${sbUrl}/rest/v1/influencer_agreements?id=eq.${id}`, { method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify({ status: "sent", sent_at: sentAt, rendered_html: html, exclusivity_end_date: exclusivityEnd }) });
     const mail = await sendMail({ to: [i.email], subject: `Your ${a.brands.name} collaboration agreement — ${a.reference}`, html: signingEmail({ reference: a.reference, brand_name: a.brands.name, influencer_name: i.full_name, token: a.token }) });
     return NextResponse.json({ ok: true, emailed: mail.ok, emailError: mail.ok ? undefined : mail.error });
   }
@@ -342,6 +357,15 @@ export async function PATCH(req: Request) {
     if (b.engagement !== undefined) fields.engagement = b.engagement === "" ? null : Number(b.engagement);
     if (b.status === "live" && !fields.posted_at) fields.posted_at = new Date().toISOString().slice(0, 10);
     await fetch(`${sbUrl}/rest/v1/influencer_agreement_deliverables?id=eq.${did}`, { method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify(fields) });
+    // A deliverable going live moves the actual "14 days after publish"
+    // point Clause 7 refers to — re-tighten the exclusivity lock date
+    // from a fresh read of every deliverable on this agreement.
+    if (a.exclusivity_applies) {
+      const delRes = await fetch(`${sbUrl}/rest/v1/influencer_agreement_deliverables?agreement_id=eq.${id}&select=due_date,posted_at`, { headers: h(), cache: "no-store" });
+      const deliverables = await delRes.json().catch(() => []);
+      const exclusivityEnd = exclusivityEndFromDeliverables(deliverables);
+      await fetch(`${sbUrl}/rest/v1/influencer_agreements?id=eq.${id}`, { method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify({ exclusivity_end_date: exclusivityEnd }) });
+    }
     return NextResponse.json({ ok: true });
   }
   return NextResponse.json({ ok: false, error: "Unknown action" }, { status: 400 });
