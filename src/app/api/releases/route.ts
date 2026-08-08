@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
 import { TERMS_VERSION } from "@/lib/releaseTerms";
 import { sendMail, shell } from "@/lib/releaseMail";
+import { buildReleasePdf } from "@/lib/releasePdf";
 
 // Media releases — admin CRUD. Guardians sign via the public /sign/[token] page.
 export const revalidate = 0;
@@ -113,6 +114,35 @@ export async function PATCH(req: Request) {
       html: signingEmail({ ...r, ...upd }),
     });
     return NextResponse.json({ ok: true, emailed: mail.ok });
+  }
+  if (b.action === "email-copy") {
+    // Re-send the guardian their signed copy — e.g. they lost the original email.
+    if (r.status !== "signed") return NextResponse.json({ ok: false, error: "Only a signed release has a copy to send" }, { status: 400 });
+    let pdfBytes: Uint8Array | null = null;
+    if (r.pdf_path) {
+      const stored = await fetch(`${sbUrl}/storage/v1/object/media-releases/${r.pdf_path}`, { headers: h() });
+      if (stored.ok) pdfBytes = new Uint8Array(await stored.arrayBuffer());
+    }
+    if (!pdfBytes) {
+      // Stored copy missing — rebuild from the signature on file so Send still works.
+      let sig: Uint8Array | null = null;
+      if (r.signature_image_path) {
+        const s = await fetch(`${sbUrl}/storage/v1/object/media-releases/${r.signature_image_path}`, { headers: h() });
+        if (s.ok) sig = new Uint8Array(await s.arrayBuffer());
+      }
+      const logo = await fetch(`${BASE}/logos/coolkidz-logo.png`).then(x => (x.ok ? x.arrayBuffer() : null)).then(x => (x ? new Uint8Array(x) : null)).catch(() => null);
+      pdfBytes = await buildReleasePdf(r as any, sig, logo);
+    }
+    const mail = await sendMail({
+      to: [r.guardian_email],
+      subject: `Your signed photography release for ${r.child_first_name}`,
+      html: shell(`
+        <p style="font-size:15px">Hi ${r.guardian_name.split(" ")[0]},</p>
+        <p style="font-size:14px;line-height:1.6">Here's a fresh copy of the signed photography release for <strong>${r.child_first_name}</strong> (${r.brand}), executed on <strong>${new Date(r.signed_at).toLocaleDateString("en-AU", { timeZone: "Australia/Sydney", day: "numeric", month: "long", year: "numeric" })}</strong>.</p>
+        <p style="font-size:12.5px;color:#64748b;line-height:1.6">You can withdraw this permission at any time by emailing <a href="mailto:marketing@coolkidz.com.au">marketing@coolkidz.com.au</a>.</p>`),
+      attachments: [{ filename: `Coolkidz-media-release-${r.child_first_name}.pdf`, content: Buffer.from(pdfBytes).toString("base64") }],
+    });
+    return NextResponse.json({ ok: true, emailed: mail.ok, emailError: mail.ok ? undefined : mail.error });
   }
   if (b.action === "void") {
     if (r.status === "signed") return NextResponse.json({ ok: false, error: "Already signed — use withdraw" }, { status: 400 });

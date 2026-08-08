@@ -82,8 +82,11 @@ export function MediaReleases({ brands, admin = false }: { brands: { id: number;
     setBusyId(id);
     const d = await fetch("/api/releases", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, action } ) }).then(r => r.json()).catch(() => null);
     setBusyId(null);
-    if (d?.ok) { load(); if (action === "resend") setMsg(d.emailed ? "Fresh link emailed." : "Link refreshed but the email failed."); }
-    else setMsg(d?.error || "Action failed.");
+    if (d?.ok) {
+      load();
+      if (action === "resend") setMsg(d.emailed ? "Fresh link emailed." : "Link refreshed but the email failed.");
+      if (action === "email-copy") setMsg(d.emailed ? "Signed copy emailed to the guardian." : `Couldn't send the email (${d.emailError || "check RESEND_API_KEY"}).`);
+    } else setMsg(d?.error || "Action failed.");
   }
   async function openFile(path: string | null) {
     if (!path) return;
@@ -216,6 +219,10 @@ export function MediaReleases({ brands, admin = false }: { brands: { id: number;
                           <button disabled={busyId === r.id} onClick={() => act(r.id, "resend")} className="text-[12px] font-semibold text-sky-600 hover:underline mr-2.5 disabled:opacity-50">Resend</button>
                           {r.status === "sent" && <button disabled={busyId === r.id} onClick={() => act(r.id, "void")} className="text-[12px] font-semibold text-gray-400 hover:underline mr-2.5 disabled:opacity-50">Void</button>}
                         </>
+                      )}
+                      {r.status === "signed" && (
+                        <button disabled={busyId === r.id} onClick={() => act(r.id, "email-copy")} title={`Email a copy of the signed release to ${r.guardian_email}`}
+                          className="text-[12px] font-semibold text-sky-600 hover:underline mr-2.5 disabled:opacity-50">Send</button>
                       )}
                       {r.status === "signed" && admin && (
                         <button disabled={busyId === r.id} onClick={() => { if (confirm(`Mark ${r.child_first_name}'s release as withdrawn? The signed record is kept.`)) act(r.id, "withdraw"); }}
