@@ -156,6 +156,7 @@ def main():
         print("No Asana projects configured (ASANA_PROJECT_ID etc.) — skipping"); return
 
     all_rows = []
+    all_fetched_gids = set()  # every gid Asana returned this run, any status — for reconciliation
     completed_gids = []   # completed or stale — pruned from the dashboard mirror
     completion_rows = []  # recent completions → design_completions (throughput stats)
     # Staleness cutoff: anything due (or, with no due date, last modified) more
@@ -180,6 +181,7 @@ def main():
             else:
                 print(f"Asana error {e.code} for {label}: {body[:200]}")
             continue
+        all_fetched_gids.update(t["gid"] for t in tasks)
         for t in tasks:
             if t.get("completed"):
                 completed_gids.append(t["gid"])   # past work — never brought in
@@ -295,6 +297,23 @@ def main():
     keep = ",".join(g for g, _ in projects)
     if keep:
         sb("DELETE", f"/rest/v1/asana_tasks?project_gid=not.in.({keep})")
+    # Reconciliation: a task removed from a project's board (unassigned, not
+    # completed) just vanishes from that project's Asana fetch — it never
+    # shows up as "completed" so the pruning above never catches it, and it
+    # sits in the mirror forever. Anything still tagged to a project we did
+    # fetch this run, but that Asana didn't actually return, is gone from
+    # that board and gets purged here.
+    try:
+        st_r, b_r = sb("GET", f"/rest/v1/asana_tasks?project_gid=in.({keep})&select=gid&limit=5000")
+        existing_gids = {r["gid"] for r in json.loads(b_r.decode())} if st_r == 200 else set()
+        ghost_gids = list(existing_gids - all_fetched_gids)
+        for i in range(0, len(ghost_gids), 100):
+            chunk = ",".join(ghost_gids[i:i+100])
+            sb("DELETE", f"/rest/v1/asana_tasks?gid=in.({chunk})")
+        if ghost_gids:
+            print(f"  reconciliation: removed {len(ghost_gids)} tasks no longer on their Asana board", flush=True)
+    except Exception as e:
+        print(f"  reconciliation skipped: {e}", flush=True)
     # Completion history (throughput stats). Table may not exist yet — tolerate.
     seen_c = set(); comps = []
     for r in completion_rows:
