@@ -1,5 +1,5 @@
 import { renderAgreementHtml } from "@/lib/agreementTemplate";
-import { BRAND_LOGOS } from "@/lib/brandLogos";
+import { BRAND_LOGOS_WHITE } from "@/lib/brandLogos";
 import { AgreementSignForm } from "./AgreementSignForm";
 
 // PUBLIC influencer signing page — tokenised, no login. Invalid/signed/void
@@ -77,7 +77,11 @@ export default async function AgreementPage({ params }: { params: Promise<{ toke
       products: a.influencer_agreement_products ?? [], deliverables: a.influencer_agreement_deliverables ?? [],
     });
   }
-  const brandLogo = BRAND_LOGOS[a.brand_id] || "/logos/coolkidz-logo.png";
+  // Coolkidz's own logo isn't in the white set (it's handled with a filter
+  // wherever it appears on a dark background); every brand logo is a real
+  // white-on-transparent asset, so it sits directly on the navy header.
+  const isCoolkidz = a.brand_id === 9;
+  const brandLogo = isCoolkidz ? "/logos/coolkidz-logo.png" : (BRAND_LOGOS_WHITE[a.brand_id] || "/logos/coolkidz-logo.png");
 
   return (
     <main className="min-h-screen bg-slate-50 py-8 px-4">
@@ -89,13 +93,8 @@ export default async function AgreementPage({ params }: { params: Promise<{ toke
           </div>
         )}
         <div className="bg-[#132741] rounded-t-2xl px-7 py-5">
-          {/* White chip behind the brand logo — logos vary from mono to full
-              colour, so this is the one background every one of them reads
-              correctly against, rather than assuming they're all white line-art. */}
-          <div className="inline-block bg-white rounded-lg px-3 py-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={brandLogo} alt={a.brands.name} className="h-6 w-auto max-w-[140px] object-contain" />
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={brandLogo} alt={a.brands.name} className={`h-7 w-auto max-w-[160px] object-contain ${isCoolkidz ? "brightness-0 invert" : ""}`} />
           <h1 className="text-white text-xl font-bold mt-3">Collaboration agreement</h1>
           <p className="text-white/70 text-sm mt-0.5">{a.reference}</p>
         </div>
