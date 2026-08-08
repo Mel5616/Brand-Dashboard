@@ -92,11 +92,13 @@ export default async function AgreementPage({ params }: { params: Promise<{ toke
             👁 Preview — this is exactly what {i.full_name}{" "}will see. The link hasn&apos;t been emailed yet; use &quot;Send&quot; on the dashboard when you&apos;re happy.
           </div>
         )}
-        <div className="bg-[#132741] rounded-t-2xl px-7 py-5">
+        <div className="bg-[#132741] rounded-t-2xl px-7 py-6 flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-white text-xl font-bold">Collaboration agreement</h1>
+            <p className="text-white/70 text-sm mt-0.5">{a.reference}</p>
+          </div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={brandLogo} alt={a.brands.name} className={`h-7 w-auto max-w-[160px] object-contain ${isCoolkidz ? "brightness-0 invert" : ""}`} />
-          <h1 className="text-white text-xl font-bold mt-3">Collaboration agreement</h1>
-          <p className="text-white/70 text-sm mt-0.5">{a.reference}</p>
+          <img src={brandLogo} alt={a.brands.name} className={`h-14 w-auto max-w-[220px] object-contain shrink-0 ${isCoolkidz ? "brightness-0 invert" : ""}`} />
         </div>
         <div className="bg-white rounded-b-2xl border border-t-0 border-gray-100 shadow-sm p-7">
           {/* eslint-disable-next-line react/no-danger */}
