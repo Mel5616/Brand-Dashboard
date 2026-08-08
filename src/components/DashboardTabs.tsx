@@ -65,6 +65,7 @@ import { BrandAssets } from "./BrandAssets";
 import { BlogHub } from "./BlogHub";
 import { BlogPipeline } from "./BlogPipeline";
 import { MediaReleases } from "./MediaReleases";
+import { InfluencerAgreements } from "./InfluencerAgreements";
 import { EventConcepts } from "./EventConcepts";
 import { LaunchDecks } from "./LaunchDecks";
 import { TodoPanel } from "./TodoPanel";
@@ -83,7 +84,7 @@ import { StockReport } from "./StockReport";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "summary" | "brands" | "strategy" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "d2c-weekly" | "month-review" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "nanit" | "affiliates" | "pa-budget" | "pa-tracker" | "team";
+type TabId = "summary" | "brands" | "strategy" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "d2c-weekly" | "month-review" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "nanit" | "affiliates" | "pa-budget" | "pa-tracker" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -223,6 +224,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>,
   },
   {
+    id: "influencer-agreements", label: "Influencer Agreements",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-3-3v6m-7 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+  },
+  {
     id: "product-info", label: "Product Information",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
   },
@@ -297,12 +302,12 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Creative", ids: ["tasks", "design-requests", "creative"] },
   { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info", "brand-assets", "stock-report", "cost-sheet"] },
   { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads"] },
-  { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting", "nanit", "releases", "affiliates", "pa-budget", "pa-tracker"] },
+  { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting", "influencer-agreements", "nanit", "releases", "affiliates", "pa-budget", "pa-tracker"] },
   { label: "Sales Hub", ids: ["sales-hub"] },
 ];
 
 // Influencer pages collapse under an "Influencers" dropdown in the sidebar.
-const INFLUENCER_IDS: TabId[] = ["influencer", "gifting", "nanit", "releases"];
+const INFLUENCER_IDS: TabId[] = ["influencer", "gifting", "influencer-agreements", "nanit", "releases"];
 
 // Brand share of revenue donut + bars. D2C basis for everyone (matches the
 // team-visible cards); whole-business basis (monthly channel export) admin-only.
@@ -2188,6 +2193,13 @@ export function DashboardTabs({
             <>
               <SectionBar title="Media Releases" />
               <MediaReleases brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} admin={role === "admin"} />
+            </>
+          )}
+
+          {active === "influencer-agreements" && (
+            <>
+              <SectionBar title="Influencer Agreements" />
+              <InfluencerAgreements brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} admin={role === "admin"} />
             </>
           )}
 
