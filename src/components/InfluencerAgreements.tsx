@@ -126,6 +126,8 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false }: { bran
     setMsg("");
     if (!form.brand_id) return setMsg("Pick a brand.");
     if (!infl.full_name.trim() || !infl.email.trim()) return setMsg("Influencer name and email are required.");
+    if (!draft && form.agreement_type !== "ugc_only" && form.exclusivity_applies && !form.exclusivity_category.trim())
+      return setMsg("Exclusivity category is required before sending (or turn exclusivity off for this agreement).");
     const body = { draft, influencer: infl, ...form, products, deliverables: deliverables.map(d => ({ ...d, due_date: d.due_date || null })) };
     const d = await fetch("/api/influencer-agreements", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()).catch(() => null);
     if (d?.ok) {

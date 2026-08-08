@@ -1,4 +1,5 @@
 import { renderAgreementHtml } from "@/lib/agreementTemplate";
+import { BRAND_LOGOS } from "@/lib/brandLogos";
 import { AgreementSignForm } from "./AgreementSignForm";
 
 // PUBLIC influencer signing page — tokenised, no login. Invalid/signed/void
@@ -8,16 +9,23 @@ const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const AGREEMENT_CSS = `
-.agreement h1 { font-size: 20px; font-weight: 800; color: #0f172a; margin: 0 0 2px; }
-.agreement h2 { font-size: 15px; font-weight: 700; color: #475569; margin: 0 0 16px; }
-.agreement h3 { font-size: 13.5px; font-weight: 700; color: #0f172a; margin: 20px 0 6px; }
+.agreement { font-size: 13.5px; }
+.agreement h1 { font-size: 21px; font-weight: 800; color: #0f172a; margin: 0 0 2px; letter-spacing: -0.01em; }
+.agreement h2 { font-size: 15px; font-weight: 700; color: #1E9DC2; margin: 0 0 10px; }
+.agreement .meta-strip { font-size: 12px; color: #64748b; background: #f8fafc; border: 1px solid #eef2f6; border-radius: 8px; padding: 7px 12px; margin: 0 0 20px; }
+.agreement .meta-strip strong { color: #334155; }
+.agreement h3 { font-size: 13.5px; font-weight: 700; color: #0f172a; margin: 24px 0 8px; padding-top: 16px; border-top: 1px solid #f1f5f9; }
+.agreement h3:first-of-type { padding-top: 0; border-top: 0; margin-top: 18px; }
 .agreement p { font-size: 13.5px; line-height: 1.7; color: #334155; margin: 0 0 8px; }
-.agreement ul { font-size: 13.5px; line-height: 1.7; color: #334155; margin: 0 0 8px; padding-left: 20px; }
-.agreement li { margin-bottom: 2px; }
-.agreement strong { color: #0f172a; }
-.agreement table.sign-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
-.agreement table.sign-table th { text-align: left; padding: 6px 8px; border-bottom: 2px solid #e2e8f0; color: #64748b; font-size: 11px; text-transform: uppercase; }
-.agreement table.sign-table td { padding: 6px 8px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+.agreement ul { font-size: 13.5px; line-height: 1.7; color: #334155; margin: 0 0 8px; padding-left: 1.3em; list-style: none; }
+.agreement li { margin-bottom: 4px; position: relative; }
+.agreement li::before { content: "•"; color: #1E9DC2; position: absolute; left: -1.1em; font-weight: 700; }
+.agreement strong { color: #0f172a; font-weight: 700; }
+.agreement .callout { background: #EAF4F8; border-left: 3px solid #1E9DC2; border-radius: 6px; padding: 9px 14px; margin: 4px 0 12px; font-size: 13.5px; color: #152A3B; }
+.agreement table.sign-table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 13px; }
+.agreement table.sign-table th { text-align: left; padding: 8px; background: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #64748b; font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; }
+.agreement table.sign-table td { padding: 8px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+.agreement .doc-footer { margin-top: 22px; padding-top: 14px; border-top: 1px solid #e2e8f0; font-size: 10.5px; line-height: 1.7; color: #94a3b8; }
 `;
 
 function DeadEnd({ msg }: { msg: string }) {
@@ -46,18 +54,30 @@ export default async function AgreementPage({ params }: { params: Promise<{ toke
   if (!preview && a.status !== "sent") return <DeadEnd msg="This link isn't active" />;
 
   const i = a.influencers;
-  const html = a.rendered_html || renderAgreementHtml({
-    agreement_type: a.agreement_type, agreement_date: a.agreement_date,
-    influencer_name: i.full_name, influencer_abn: i.abn, influencer_handle: i.instagram_handle,
-    influencer_address: [i.address_line1, i.address_line2, i.suburb, i.state, i.postcode].filter(Boolean).join(", ") || "—",
-    brand_display_name: a.brands.name, brand_instagram_handle: null,
-    content_due_days: a.content_due_days, minimum_live_period_months: a.minimum_live_period_months,
-    exclusivity_applies: a.exclusivity_applies, exclusivity_category: a.exclusivity_category, exclusivity_months: a.exclusivity_months,
-    usage_term_months: a.usage_term_months, usage_paid_media: a.usage_paid_media, usage_retail_partners: a.usage_retail_partners, usage_print: a.usage_print,
-    discount_code: a.discount_code, discount_start: a.discount_start, discount_end: a.discount_end,
-    representative_name: a.representative_name, representative_position: a.representative_position,
-    products: a.influencer_agreement_products ?? [], deliverables: a.influencer_agreement_deliverables ?? [],
-  });
+  let html = a.rendered_html;
+  if (!html) {
+    // Draft preview, rendered live rather than snapshotted — needs the
+    // brand's Instagram handle for the "tag @handle" line, which only
+    // lives in the config table, not on the agreement row.
+    const cfgRes = await fetch(`${sbUrl}/rest/v1/influencer_agreement_brand_config?brand_id=eq.${a.brand_id}&limit=1`, {
+      headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}` }, cache: "no-store",
+    });
+    const cfg = (await cfgRes.json().catch(() => []))[0];
+    html = renderAgreementHtml({
+      reference: a.reference,
+      agreement_type: a.agreement_type, agreement_date: a.agreement_date,
+      influencer_name: i.full_name, influencer_abn: i.abn, influencer_handle: i.instagram_handle,
+      influencer_address: [i.address_line1, i.address_line2, i.suburb, i.state, i.postcode].filter(Boolean).join(", ") || "—",
+      brand_display_name: a.brands.name, brand_instagram_handle: cfg?.instagram_handle ?? null,
+      content_due_days: a.content_due_days, minimum_live_period_months: a.minimum_live_period_months,
+      exclusivity_applies: a.exclusivity_applies, exclusivity_category: a.exclusivity_category, exclusivity_months: a.exclusivity_months,
+      usage_term_months: a.usage_term_months, usage_paid_media: a.usage_paid_media, usage_retail_partners: a.usage_retail_partners, usage_print: a.usage_print,
+      discount_code: a.discount_code, discount_start: a.discount_start, discount_end: a.discount_end,
+      representative_name: a.representative_name, representative_position: a.representative_position,
+      products: a.influencer_agreement_products ?? [], deliverables: a.influencer_agreement_deliverables ?? [],
+    });
+  }
+  const brandLogo = BRAND_LOGOS[a.brand_id] || "/logos/coolkidz-logo.png";
 
   return (
     <main className="min-h-screen bg-slate-50 py-8 px-4">
@@ -69,9 +89,14 @@ export default async function AgreementPage({ params }: { params: Promise<{ toke
           </div>
         )}
         <div className="bg-[#132741] rounded-t-2xl px-7 py-5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logos/coolkidz-logo.png" alt="Coolkidz Australia" className="h-8 w-auto brightness-0 invert" />
-          <h1 className="text-white text-xl font-bold mt-2.5">Collaboration agreement</h1>
+          {/* White chip behind the brand logo — logos vary from mono to full
+              colour, so this is the one background every one of them reads
+              correctly against, rather than assuming they're all white line-art. */}
+          <div className="inline-block bg-white rounded-lg px-3 py-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={brandLogo} alt={a.brands.name} className="h-6 w-auto max-w-[140px] object-contain" />
+          </div>
+          <h1 className="text-white text-xl font-bold mt-3">Collaboration agreement</h1>
           <p className="text-white/70 text-sm mt-0.5">{a.reference}</p>
         </div>
         <div className="bg-white rounded-b-2xl border border-t-0 border-gray-100 shadow-sm p-7">

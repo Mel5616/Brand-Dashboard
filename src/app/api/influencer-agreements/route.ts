@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
-import { renderAgreementHtml, ENTITY, TEMPLATE_VERSION, AGREEMENT_TYPES } from "@/lib/agreementTemplate";
+import { renderAgreementHtml, validateForSend, ENTITY, TEMPLATE_VERSION, AGREEMENT_TYPES } from "@/lib/agreementTemplate";
 import { sendMail, shell } from "@/lib/agreementMail";
 
 // Influencer Agreements — admin CRUD + send. Influencers sign via the public
@@ -130,6 +130,12 @@ export async function POST(req: Request) {
   const exclusivityEnd = exclusivityApplies ? new Date(new Date(agreementDate).setMonth(new Date(agreementDate).getMonth() + exclusivityMonths)).toISOString().slice(0, 10) : null;
   const contentDueDays = Number(b.content_due_days) || 21;
   const contentDueDate = new Date(new Date(agreementDate).setDate(new Date(agreementDate).getDate() + contentDueDays)).toISOString().slice(0, 10);
+  const exclusivityCategory = b.exclusivity_category ? String(b.exclusivity_category).slice(0, 200) : cfg.exclusivity_category;
+
+  if (!draft) {
+    const err = validateForSend({ agreement_type: agreementType, exclusivity_applies: exclusivityApplies, exclusivity_category: exclusivityCategory });
+    if (err) return NextResponse.json({ ok: false, error: err }, { status: 400 });
+  }
 
   const products = (Array.isArray(b.products) ? b.products : []).filter((p: any) => p?.product_name).map((p: any) => ({
     product_name: String(p.product_name).slice(0, 160), variant: p.variant ? String(p.variant).slice(0, 100) : null,
@@ -147,7 +153,7 @@ export async function POST(req: Request) {
     template_version: TEMPLATE_VERSION, campaign_name: b.campaign_name ? String(b.campaign_name).slice(0, 160) : null,
     status: draft ? "draft" : "sent", agreement_date: agreementDate,
     content_due_days: contentDueDays, content_due_date: contentDueDate, minimum_live_period_months: Number(b.minimum_live_period_months) || 6,
-    exclusivity_applies: exclusivityApplies, exclusivity_category: b.exclusivity_category ? String(b.exclusivity_category).slice(0, 200) : cfg.exclusivity_category,
+    exclusivity_applies: exclusivityApplies, exclusivity_category: exclusivityCategory,
     exclusivity_months: exclusivityMonths, exclusivity_end_date: exclusivityEnd,
     usage_term_months: Number(b.usage_term_months) || 12, usage_paid_media: !!b.usage_paid_media,
     usage_retail_partners: b.usage_retail_partners !== false, usage_print: !!b.usage_print,
@@ -172,6 +178,7 @@ export async function POST(req: Request) {
   // Snapshot the exact contract text the influencer will see and sign —
   // never regenerated from a possibly-later-edited template.
   const html = renderAgreementHtml({
+    reference,
     agreement_type: agreementType, agreement_date: agreementDate,
     influencer_name: inflRow.full_name, influencer_abn: inflRow.abn, influencer_handle: inflRow.instagram_handle,
     influencer_address: [inflRow.address_line1, inflRow.address_line2, inflRow.suburb, inflRow.state, inflRow.postcode].filter(Boolean).join(", ") || "—",
@@ -202,19 +209,24 @@ export async function PATCH(req: Request) {
 
   if (b.action === "send") {
     if (a.status !== "draft") return NextResponse.json({ ok: false, error: "Already sent" }, { status: 400 });
+    const err = validateForSend({ agreement_type: a.agreement_type, exclusivity_applies: a.exclusivity_applies, exclusivity_category: a.exclusivity_category });
+    if (err) return NextResponse.json({ ok: false, error: err }, { status: 400 });
     // Re-render from current row + sub-rows (in case the draft was edited since creation).
-    const [prodRes, delRes] = await Promise.all([
+    const [prodRes, delRes, cfgRes] = await Promise.all([
       fetch(`${sbUrl}/rest/v1/influencer_agreement_products?agreement_id=eq.${id}`, { headers: h(), cache: "no-store" }),
       fetch(`${sbUrl}/rest/v1/influencer_agreement_deliverables?agreement_id=eq.${id}`, { headers: h(), cache: "no-store" }),
+      fetch(`${sbUrl}/rest/v1/influencer_agreement_brand_config?brand_id=eq.${a.brand_id}&limit=1`, { headers: h(), cache: "no-store" }),
     ]);
     const products = await prodRes.json().catch(() => []);
     const deliverables = await delRes.json().catch(() => []);
+    const cfg = (await cfgRes.json().catch(() => []))[0];
     const i = a.influencers;
     const html = renderAgreementHtml({
+      reference: a.reference,
       agreement_type: a.agreement_type, agreement_date: a.agreement_date,
       influencer_name: i.full_name, influencer_abn: i.abn, influencer_handle: i.instagram_handle,
       influencer_address: [i.address_line1, i.address_line2, i.suburb, i.state, i.postcode].filter(Boolean).join(", ") || "—",
-      brand_display_name: a.brands.name, brand_instagram_handle: null,
+      brand_display_name: a.brands.name, brand_instagram_handle: cfg?.instagram_handle ?? null,
       content_due_days: a.content_due_days, minimum_live_period_months: a.minimum_live_period_months,
       exclusivity_applies: a.exclusivity_applies, exclusivity_category: a.exclusivity_category, exclusivity_months: a.exclusivity_months,
       usage_term_months: a.usage_term_months, usage_paid_media: a.usage_paid_media, usage_retail_partners: a.usage_retail_partners, usage_print: a.usage_print,
