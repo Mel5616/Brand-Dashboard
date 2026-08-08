@@ -108,19 +108,19 @@ function Verdict({ positive, title, children }: { positive: boolean; title: stri
 // into public/logos/instagram/ — until supplied, the coloured initial circle
 // is the fallback, not a broken image.
 const IG_HANDLES: { brand: string; handle: string; bg: string; logo?: string }[] = [
-  { brand: "UPPAbaby AU", handle: "uppababy_australia", bg: "#5B6B7A" },
-  { brand: "UPPAbaby NZ", handle: "uppababy_newzealand", bg: "#5B6B7A" },
-  { brand: "Frida", handle: "frida.aus", bg: "#3EC0E4" },
-  { brand: "Nanit", handle: "nanit_au", bg: "#1B2A5B" },
-  { brand: "smarTrike", handle: "smartrikeaus", bg: "#1E2A3A" },
-  { brand: "WonderFold", handle: "wonderfold.au", bg: "#2B2B2B" },
-  { brand: "Gaia Baby", handle: "gaiababynursery.au", bg: "#3D6B4F" },
-  { brand: "Hannie", handle: "hannie.australia", bg: "#111111" },
-  { brand: "Magic", handle: "magicbaby.australia", bg: "#111111" },
-  { brand: "Zazu", handle: "zazu_australia", bg: "#C0392B" },
-  { brand: "Mamave", handle: "_mamave", bg: "#D9724A" },
-  { brand: "Matchstick Monkey", handle: "matchstickmonkeyau", bg: "#8A8A8A" },
-  { brand: "MiaMily", handle: "miamily.au", bg: "#111111" },
+  { brand: "UPPAbaby AU", handle: "uppababy_australia", bg: "#5B6B7A", logo: "/logos/instagram/uppababy.jpg" },
+  { brand: "UPPAbaby NZ", handle: "uppababy_newzealand", bg: "#5B6B7A", logo: "/logos/instagram/uppababy.jpg" },
+  { brand: "Frida", handle: "frida.aus", bg: "#3EC0E4", logo: "/logos/instagram/frida.jpg" },
+  { brand: "Nanit", handle: "nanit_au", bg: "#1B2A5B", logo: "/logos/instagram/nanit.jpg" },
+  { brand: "smarTrike", handle: "smartrikeaus", bg: "#1E2A3A", logo: "/logos/instagram/smartrike.jpg" },
+  { brand: "WonderFold", handle: "wonderfold.au", bg: "#2B2B2B", logo: "/logos/instagram/wonderfold.jpg" },
+  { brand: "Gaia Baby", handle: "gaiababynursery.au", bg: "#3D6B4F", logo: "/logos/instagram/gaia-baby.jpg" },
+  { brand: "Hannie", handle: "hannie.australia", bg: "#111111", logo: "/logos/instagram/hannie.jpg" },
+  { brand: "Magic", handle: "magicbaby.australia", bg: "#111111", logo: "/logos/instagram/magic.jpg" },
+  { brand: "Zazu", handle: "zazu_australia", bg: "#C0392B", logo: "/logos/instagram/zazu.jpg" },
+  { brand: "Mamave", handle: "_mamave", bg: "#D9724A", logo: "/logos/instagram/mamave.jpg" },
+  { brand: "Matchstick Monkey", handle: "matchstickmonkeyau", bg: "#8A8A8A", logo: "/logos/instagram/matchstick-monkey.jpg" },
+  { brand: "MiaMily", handle: "miamily.au", bg: "#111111", logo: "/logos/instagram/miamily.jpg" },
 ];
 function IgHandle({ brand, handle, bg, logo }: { brand: string; handle: string; bg: string; logo?: string }) {
   return (
