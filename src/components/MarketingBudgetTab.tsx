@@ -369,8 +369,6 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
         ))}
       </div>
 
-      {canEdit && <AmazonAdsCard brands={brands} />}
-
       {/* Run-rate forecast */}
       {forecast != null && (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-3 flex items-center justify-between flex-wrap gap-2 text-sm">
@@ -615,6 +613,8 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
       <p className="text-center text-xs text-gray-300 pb-4">
         Google, Meta &amp; Pinterest actuals are live from the ad platforms · all other expenses are uploaded above
       </p>
+
+      {canEdit && <AmazonAdsCard brands={brands} />}
       </>
       )}
     </div>
