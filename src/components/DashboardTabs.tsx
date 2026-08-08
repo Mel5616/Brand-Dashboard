@@ -502,6 +502,13 @@ export function DashboardTabs({
     : TABS.filter(t => effectiveTabs.includes(t.id) && !FINANCIAL.includes(t.id));
   const firstTab = (visibleTabs[0]?.id ?? "brands") as TabId;
   const [active, setActive] = useState<TabId>(firstTab);
+  // Deep-link support (?tab=sales-hub) — lets other pages (e.g. /command) link
+  // straight to a specific section instead of dropping the user on the default tab.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("tab");
+    if (q && TABS.some(t => t.id === q) && visibleTabs.some(t => t.id === q)) setActive(q as TabId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [influencersOpen, setInfluencersOpen] = useState<boolean>(() => INFLUENCER_IDS.includes(firstTab));
   const [partnershipsOpen, setPartnershipsOpen] = useState<boolean>(() => PARTNERSHIP_IDS.includes(firstTab));
   const [mobileNavOpen, setMobileNavOpen] = useState(false); // slide-in nav drawer on small screens
@@ -781,6 +788,12 @@ export function DashboardTabs({
         </div>
       )}
       <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
+        {role === "admin" && (
+          <a href="/command" className="flex items-center gap-2.5 px-3 py-2 mb-2 rounded-lg text-sm font-bold bg-slate-900 text-white hover:bg-slate-800 transition-colors">
+            <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            Command
+          </a>
+        )}
         {(() => {
           const visIds = new Set(visibleTabs.map(t => t.id));
           const grouped = new Set(TAB_GROUPS.flatMap(g => g.ids));
