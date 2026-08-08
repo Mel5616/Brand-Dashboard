@@ -241,8 +241,11 @@ export function renderAgreementHtml(a: AgreementForRender): string {
 
   return `
 <div class="agreement">
+<div class="doc-head">
 ${a.reference ? `<div class="eyebrow">${esc(a.reference)}</div>` : ""}
 <h1>INFLUENCER COLLABORATION AGREEMENT</h1>
+<p class="doc-meta">Effective ${fmtDate(a.agreement_date)} &nbsp;·&nbsp; ${esc(type.label)}</p>
+</div>
 
 <p>This Collaboration Agreement ("Agreement") is made effective as of <strong>${fmtDate(a.agreement_date)}</strong> by and between <strong>${ENTITY.legalName}</strong> (ABN ${ENTITY.abn}) of ${ENTITY.address}, the authorised Australian distributor of <strong>${esc(a.brand_display_name)}</strong> ("Coolkidz"), and <strong>${esc(a.influencer_name)}</strong>${a.influencer_abn ? ` (ABN ${esc(a.influencer_abn)})` : ""} of ${esc(a.influencer_address)} ("the Influencer").</p>
 <p>In this Agreement, "the Brand" means ${esc(a.brand_display_name)}, and "the Products" means the items listed at clause ${numberOf("products")}.</p>
