@@ -156,7 +156,7 @@ function Landing({ brands, items, mine, tradeshows, calendarEvents, onPick, onOp
       <div className="rounded-3xl bg-gradient-to-br from-[#3EC0E4] to-[#1E9DC2] px-6 py-7 sm:px-8 sm:py-9 shadow-sm">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logos/coolkidz-logo.png" alt="Coolkidz" className="h-6 mb-4 brightness-0 invert" />
-        <h2 className={`text-2xl sm:text-3xl font-extrabold text-white ${baloo}`}>Ask Marketing</h2>
+        <h2 className={`text-2xl sm:text-3xl font-extrabold text-white ${baloo}`}>Marketing Guidelines and Requests</h2>
         <p className="text-white/85 text-sm mt-1 max-w-md">Artwork, swatches, Tune-Up Days &amp; product, in a minute, from your phone.</p>
       </div>
 
