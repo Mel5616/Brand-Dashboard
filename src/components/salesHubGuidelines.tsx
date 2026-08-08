@@ -93,6 +93,42 @@ function Section({ icon, title, children }: { icon: string; title: string; child
     </div>
   );
 }
+// A "how it's spelled" reference chip — for the brand-name glossary grid.
+// Deliberately not a DoCard: these are facts to look up, not rules to
+// follow, so a wall of repeated green checkmarks would be noise here.
+function SpellingChip({ name }: { name: string }) {
+  return (
+    <span className="inline-flex items-center bg-white border border-gray-200 rounded-full px-3.5 py-1.5 text-[13px] font-bold text-slate-800 shadow-sm">
+      {name}
+    </span>
+  );
+}
+// A single naming gotcha: the correct form, and — where there's a common
+// mistake — the wrong version struck through right next to it, so the
+// contrast is visible in one glance instead of buried in a sentence.
+function SpellingRule({ correct, wrong, note }: { correct: React.ReactNode; wrong?: string; note?: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-3 py-2.5 border-b border-gray-50 last:border-0">
+      <Icon path={ICONS.warn} className="w-4 h-4 text-amber-500 shrink-0 mt-[3px]" />
+      <div className="text-sm leading-snug">
+        <span className="font-semibold text-slate-800">{correct}</span>
+        {wrong && <span className="text-rose-400 line-through decoration-rose-300 ml-2 font-medium">{wrong}</span>}
+        {note && <div className="text-gray-500 text-[13px] mt-0.5">{note}</div>}
+      </div>
+    </div>
+  );
+}
+// Definition-list row for brand-specific terminology — a label column and a
+// rule column, so the page reads as a lookup table, not a wall of bolded
+// sentence-openers.
+function TermRow({ brand, rule }: { brand: string; rule: React.ReactNode }) {
+  return (
+    <div className="grid grid-cols-[minmax(96px,132px)_1fr] gap-4 py-2.5 border-b border-gray-50 last:border-0 items-baseline">
+      <span className="text-[11.5px] font-bold text-slate-800 uppercase tracking-wide">{brand}</span>
+      <span className="text-sm text-slate-600 leading-snug">{rule}</span>
+    </div>
+  );
+}
 // The two-sided "We will / We will not" divider, bigger, with a short
 // colour-coded rule under it rather than a filled icon badge.
 function Verdict({ positive, title, children }: { positive: boolean; title: string; children: React.ReactNode }) {
@@ -322,20 +358,24 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
         </div>
       </Section>
       <Section icon={ICONS.hash} title="Naming and trademarks">
-        <div className="space-y-2">
-          <DoCard title="UPPAbaby" note="Capital U, capital P, capital P, lowercase b. Not Uppababy, not UppaBaby" />
-          <DoCard title="smarTrike Wonder™, Wonder+™, Wonder max™" note={'™ on first use, lowercase "max"'} />
-          <DoCard title="Model generations as supplied" note="e.g. Vista V3, not vista v3" />
-          <DoCard title="Spell every brand as we spell it" note="smarTrike · WonderFold · Gaia Baby · Matchstick Monkey · MiaMily · Nanit · Frida · Hannie · Magic · Zazu · Mamave · UPPAbaby" />
+        <p className="text-sm text-slate-600 mb-3">The correct spelling for every brand — copy straight from here if unsure.</p>
+        <div className="flex flex-wrap gap-2 mb-5">
+          {["UPPAbaby", "smarTrike", "WonderFold", "Gaia Baby", "Matchstick Monkey", "MiaMily", "Nanit", "Frida", "Hannie", "Magic", "Zazu", "Mamave"].map(n => <SpellingChip key={n} name={n} />)}
+        </div>
+        <p className="text-[11px] font-bold tracking-[0.09em] uppercase text-slate-400 mb-1">Common mistakes to watch for</p>
+        <div>
+          <SpellingRule correct="UPPAbaby" wrong="Uppababy, UppaBaby" note="Capital U, capital P, capital P, lowercase b." />
+          <SpellingRule correct="smarTrike Wonder™, Wonder+™, Wonder max™" note={'™ on first use, lowercase "max"'} />
+          <SpellingRule correct="Model generations as supplied" wrong="vista v3" note="e.g. Vista V3" />
         </div>
       </Section>
       <Section icon={ICONS.info} title="Terminology">
         <p className="text-sm text-slate-600 mb-3">Product language is brand specific. Don&apos;t apply one brand&apos;s words to another.</p>
-        <div className="space-y-2 text-sm text-slate-600">
-          <p><strong className="text-slate-800">UPPAbaby:</strong> pram, not stroller. Capsule, not infant car seat.</p>
-          <p><strong className="text-slate-800">WonderFold:</strong> stroller wagon.</p>
-          <p><strong className="text-slate-800">smarTrike Wonder:</strong> stroller-trike, or carry-on stroller.</p>
-          <p><strong className="text-slate-800">All brands:</strong> use the product&apos;s own feature names. Don&apos;t invent descriptive ones.</p>
+        <div>
+          <TermRow brand="UPPAbaby" rule="Pram, not stroller. Capsule, not infant car seat." />
+          <TermRow brand="WonderFold" rule="Stroller wagon." />
+          <TermRow brand="smarTrike Wonder" rule="Stroller-trike, or carry-on stroller." />
+          <TermRow brand="All brands" rule="Use the product's own feature names. Don't invent descriptive ones." />
         </div>
       </Section>
       <Section icon={ICONS.hash} title="Tagging and hashtags">
