@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 // managers can't gift the same creator in the same month without seeing it.
 // Coolkidz Australia Pty Ltd is the contracting party on every agreement,
 // never the brand. Public signing at /agreement/[token], emailed from
-// influencers@coolkidz.com.au. See src/lib/agreementTemplate.ts for the
+// partnerships@coolkidz.com.au. See src/lib/agreementTemplate.ts for the
 // clause text and src/app/api/influencer-agreements/route.ts for the API.
 
 type Influencer = { id: string; full_name: string; email: string; phone: string | null; instagram_handle: string | null; tiktok_handle: string | null; address_line1: string | null; address_line2: string | null; suburb: string | null; state: string | null; postcode: string | null; is_po_box: boolean; abn: string | null };

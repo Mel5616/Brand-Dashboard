@@ -12,7 +12,7 @@ export const ENTITY = {
   abn: "98 293 897 047",
   address: "1 Beyer Road, Braeside VIC 3195",
   phone: "1300 722 302",
-  email: "influencers@coolkidz.com.au",
+  email: "partnerships@coolkidz.com.au",
   governingLaw: "Victoria, Australia",
 };
 

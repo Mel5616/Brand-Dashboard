@@ -1,9 +1,9 @@
 // Resend helper for the influencer agreements flow. Server-side only.
-// Sent from influencers@coolkidz.com.au, not marketing@ — its own inbox so
+// Sent from partnerships@coolkidz.com.au, not marketing@ — its own inbox so
 // replies (questions before signing, address changes) land with whoever owns
 // influencer relationships, not the shared marketing inbox.
-const FROM = "Coolkidz Influencers <influencers@coolkidz.com.au>";
-const REPLY_TO = "influencers@coolkidz.com.au";
+const FROM = "Coolkidz Partnerships <partnerships@coolkidz.com.au>";
+const REPLY_TO = "partnerships@coolkidz.com.au";
 
 export async function sendMail(opts: { to: string[]; subject: string; html: string; attachments?: { filename: string; content: string }[] }) {
   const key = process.env.RESEND_API_KEY;
@@ -23,6 +23,6 @@ export function shell(inner: string) {
       <img src="https://marketing.coolkidz.com.au/logos/coolkidz-logo.png" alt="Coolkidz Australia" height="30" style="display:block;height:30px" />
     </div>
     <div style="border:1px solid #e2e8f0;border-top:0;border-radius:0 0 12px 12px;padding:26px 28px">${inner}</div>
-    <p style="color:#94a3b8;font-size:11px;text-align:center;margin-top:14px">Coolkidz Australia Pty Ltd · 1 Beyer Road, Braeside, Victoria 3195 · influencers@coolkidz.com.au</p>
+    <p style="color:#94a3b8;font-size:11px;text-align:center;margin-top:14px">Coolkidz Australia Pty Ltd · 1 Beyer Road, Braeside, Victoria 3195 · partnerships@coolkidz.com.au</p>
   </div>`;
 }

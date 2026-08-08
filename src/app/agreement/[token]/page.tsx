@@ -26,7 +26,7 @@ function DeadEnd({ msg }: { msg: string }) {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 max-w-md text-center">
         <p className="text-2xl mb-2">🤝</p>
         <h1 className="text-lg font-bold text-slate-800">{msg}</h1>
-        <p className="text-sm text-gray-500 mt-2 leading-relaxed">If you were expecting to sign a collaboration agreement, contact <a className="text-emerald-600 font-semibold" href="mailto:influencers@coolkidz.com.au">influencers@coolkidz.com.au</a> and we&apos;ll send a fresh link.</p>
+        <p className="text-sm text-gray-500 mt-2 leading-relaxed">If you were expecting to sign a collaboration agreement, contact <a className="text-emerald-600 font-semibold" href="mailto:partnerships@coolkidz.com.au">partnerships@coolkidz.com.au</a> and we&apos;ll send a fresh link.</p>
       </div>
     </main>
   );
@@ -35,7 +35,7 @@ function DeadEnd({ msg }: { msg: string }) {
 export default async function AgreementPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   if (!/^[0-9a-f-]{36}$/.test(token) || !sbUrl || !sbKey) return <DeadEnd msg="This link isn't valid" />;
-  const res = await fetch(`${sbUrl}/rest/v1/influencer_agreements?token=eq.${token}&select=*,brands(name),influencers(*),influencer_agreement_products(*),influencer_agreement_deliverables(*)&limit=1`, {
+  const res = await fetch(`${sbUrl}/rest/v1/influencer_agreements?token=eq.${token}&select=*,brands(name),influencers:agreement_influencers(*),influencer_agreement_products(*),influencer_agreement_deliverables(*)&limit=1`, {
     headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}` }, cache: "no-store",
   });
   const a = (await res.json().catch(() => []))[0];
@@ -79,7 +79,7 @@ export default async function AgreementPage({ params }: { params: Promise<{ toke
           <div className="agreement" dangerouslySetInnerHTML={{ __html: html }} />
           <AgreementSignForm token={token} influencerName={i.full_name} preview={preview} />
         </div>
-        <p className="text-center text-[11px] text-gray-400 mt-4">Coolkidz Australia Pty Ltd · 1 Beyer Road, Braeside, Victoria 3195 · influencers@coolkidz.com.au</p>
+        <p className="text-center text-[11px] text-gray-400 mt-4">Coolkidz Australia Pty Ltd · 1 Beyer Road, Braeside, Victoria 3195 · partnerships@coolkidz.com.au</p>
       </div>
     </main>
   );

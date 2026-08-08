@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   const token = String(b.token || "");
   if (!/^[0-9a-f-]{36}$/.test(token)) return NextResponse.json({ ok: false, error: "Bad token" }, { status: 400 });
 
-  const get = await fetch(`${sbUrl}/rest/v1/influencer_agreements?token=eq.${token}&select=*,brands(name),influencers(*)&limit=1`, { headers: h(), cache: "no-store" });
+  const get = await fetch(`${sbUrl}/rest/v1/influencer_agreements?token=eq.${token}&select=*,brands(name),influencers:agreement_influencers(*)&limit=1`, { headers: h(), cache: "no-store" });
   const a = (await get.json().catch(() => []))[0];
   if (!a) return NextResponse.json({ ok: false, error: "This link isn't valid." }, { status: 404 });
   if (a.status === "signed") return NextResponse.json({ ok: false, error: "This agreement has already been signed." }, { status: 409 });
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
     attachments: [{ filename: `Coolkidz-${a.reference}.html`, content: Buffer.from(signedHtml).toString("base64") }],
   });
   await sendMail({
-    to: ["influencers@coolkidz.com.au"],
+    to: ["partnerships@coolkidz.com.au"],
     subject: `✅ Agreement signed — ${a.reference} (${i.full_name} · ${a.brands.name})`,
     html: shell(`<p style="font-size:14px;line-height:1.7"><strong>${i.full_name}</strong> signed <strong>${a.reference}</strong> · ${a.brands.name}. View it on the dashboard under Influencers → Agreements.</p>`),
   });

@@ -38,10 +38,10 @@ async function nextReference(brandCode: string): Promise<string> {
 export async function GET() {
   const acc = await getAccess();
   if (!canUse(acc)) return NextResponse.json({ ok: false, error: "No access" }, { status: 403 });
-  const select = "select=*,brands(id,name),influencers(*),influencer_agreement_products(*),influencer_agreement_deliverables(*)";
+  const select = "select=*,brands(id,name),influencers:agreement_influencers(*),influencer_agreement_products(*),influencer_agreement_deliverables(*)";
   const [agrRes, infRes, overdueRes, exclRes, roiRes, cfgRes] = await Promise.all([
     fetch(`${sbUrl}/rest/v1/influencer_agreements?${select}&order=created_at.desc&limit=1000`, { headers: h(), cache: "no-store" }),
-    fetch(`${sbUrl}/rest/v1/influencers?select=*&order=full_name.asc&limit=2000`, { headers: h(), cache: "no-store" }),
+    fetch(`${sbUrl}/rest/v1/agreement_influencers?select=*&order=full_name.asc&limit=2000`, { headers: h(), cache: "no-store" }),
     fetch(`${sbUrl}/rest/v1/v_overdue_deliverables?select=*`, { headers: h(), cache: "no-store" }),
     fetch(`${sbUrl}/rest/v1/v_active_exclusivity?select=*`, { headers: h(), cache: "no-store" }),
     acc.role === "admin" ? fetch(`${sbUrl}/rest/v1/v_gifting_roi?select=*`, { headers: h(), cache: "no-store" }) : Promise.resolve(null),
@@ -84,7 +84,7 @@ export async function POST(req: Request) {
 
   // Reuse the influencer by email if they already exist (case-insensitive);
   // otherwise create them. This is the whole point of the register.
-  const findInfl = await fetch(`${sbUrl}/rest/v1/influencers?email=ilike.${encodeURIComponent(String(infl.email).trim())}&limit=1`, { headers: h(), cache: "no-store" });
+  const findInfl = await fetch(`${sbUrl}/rest/v1/agreement_influencers?email=ilike.${encodeURIComponent(String(infl.email).trim())}&limit=1`, { headers: h(), cache: "no-store" });
   let influencerId = (await findInfl.json().catch(() => []))[0]?.id as string | undefined;
   const inflRow = {
     full_name: String(infl.full_name).trim().slice(0, 160),
@@ -101,9 +101,9 @@ export async function POST(req: Request) {
     abn: infl.abn ? String(infl.abn).slice(0, 30) : null,
   };
   if (influencerId) {
-    await fetch(`${sbUrl}/rest/v1/influencers?id=eq.${influencerId}`, { method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify(inflRow) });
+    await fetch(`${sbUrl}/rest/v1/agreement_influencers?id=eq.${influencerId}`, { method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify(inflRow) });
   } else {
-    const ins = await fetch(`${sbUrl}/rest/v1/influencers`, { method: "POST", headers: h({ Prefer: "return=representation" }), body: JSON.stringify(inflRow) });
+    const ins = await fetch(`${sbUrl}/rest/v1/agreement_influencers`, { method: "POST", headers: h({ Prefer: "return=representation" }), body: JSON.stringify(inflRow) });
     const created = (await ins.json().catch(() => []))[0];
     if (!ins.ok || !created) return NextResponse.json({ ok: false, error: "Couldn't save the influencer" }, { status: 500 });
     influencerId = created.id;
@@ -183,7 +183,7 @@ export async function PATCH(req: Request) {
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   const id = String(b.id || "");
   if (!id) return NextResponse.json({ ok: false }, { status: 400 });
-  const get = await fetch(`${sbUrl}/rest/v1/influencer_agreements?id=eq.${id}&select=*,brands(name),influencers(*)&limit=1`, { headers: h(), cache: "no-store" });
+  const get = await fetch(`${sbUrl}/rest/v1/influencer_agreements?id=eq.${id}&select=*,brands(name),influencers:agreement_influencers(*)&limit=1`, { headers: h(), cache: "no-store" });
   const a = (await get.json().catch(() => []))[0];
   if (!a) return NextResponse.json({ ok: false, error: "Not found" }, { status: 404 });
 

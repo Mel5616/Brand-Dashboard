@@ -17,7 +17,10 @@ create table if not exists influencer_agreement_brand_config (
 
 -- One row per person, across all brands — the point of the module: two brand
 -- managers can no longer gift the same creator in the same month unknowingly.
-create table if not exists influencers (
+-- Named agreement_influencers, not influencers — a table of that name
+-- already exists for the separate Influencer Tracker feature (handle/name/
+-- platform/followers), with a different shape.
+create table if not exists agreement_influencers (
   id                    uuid primary key default gen_random_uuid(),
   full_name             text not null,
   email                 text not null,
@@ -37,12 +40,12 @@ create table if not exists influencers (
   created_at            timestamptz not null default now(),
   unique (email)
 );
-create index if not exists influencers_handle_idx on influencers (lower(instagram_handle));
+create index if not exists agreement_influencers_handle_idx on agreement_influencers (lower(instagram_handle));
 
 create table if not exists influencer_agreements (
   id                          uuid primary key default gen_random_uuid(),
   reference                   text not null unique,       -- e.g. 'UB-2026-0043'
-  influencer_id               uuid not null references influencers(id),
+  influencer_id               uuid not null references agreement_influencers(id),
   brand_id                    int not null references brands(id),
   agreement_type              text not null default 'gifted_social',  -- gifted_social | ugc_only | event_attendance
   template_version            text not null default '2.0',
@@ -118,7 +121,7 @@ create table if not exists influencer_agreement_deliverables (
 create index if not exists influencer_agreement_deliverables_agr_idx on influencer_agreement_deliverables (agreement_id, status);
 
 alter table influencer_agreement_brand_config disable row level security;
-alter table influencers disable row level security;
+alter table agreement_influencers disable row level security;
 alter table influencer_agreements disable row level security;
 alter table influencer_agreement_products disable row level security;
 alter table influencer_agreement_deliverables disable row level security;
@@ -136,7 +139,7 @@ select
   a.exclusivity_end_date,
   (a.exclusivity_end_date - current_date) as days_remaining
 from influencer_agreements a
-join influencers i on i.id = a.influencer_id
+join agreement_influencers i on i.id = a.influencer_id
 join brands b      on b.id = a.brand_id
 where a.exclusivity_applies
   and a.exclusivity_end_date >= current_date
@@ -150,7 +153,7 @@ select
   (current_date - d.due_date) as days_overdue
 from influencer_agreement_deliverables d
 join influencer_agreements a on a.id = d.agreement_id
-join influencers i on i.id = a.influencer_id
+join agreement_influencers i on i.id = a.influencer_id
 join brands b      on b.id = a.brand_id
 where d.status = 'pending'
   and d.due_date < current_date
