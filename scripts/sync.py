@@ -596,8 +596,14 @@ def sync_brand(brand, ck_split=None):
         return True
 
     except Exception as e:
+        # A transient error here (rate limit, dropped connection, incomplete
+        # read on a big order fetch — this has hit UPPAbaby, our highest-volume
+        # brand) is not the same thing as "this brand isn't live". Flipping
+        # live=False on any hiccup silently hid a real, trading brand from
+        # every "live brands" filter until the next successful sync happened
+        # to run without a blip. Leave the existing live flag alone; only the
+        # comingSoon/no-domain path above is a genuine "not live yet" case.
         print(f'       ✗ Error: {e}')
-        sb_upsert('brands', [{'id': bid, 'name': name, 'color': brand.get('color','#666'), 'init': brand.get('init','?'), 'live': False}], on_conflict='id')
         return False
 
 # ── Tradeshow sync ────────────────────────────────────────────────────────────
