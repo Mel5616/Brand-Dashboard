@@ -24,6 +24,7 @@ import { PromotionalCalendar } from "./PromotionalCalendar";
 import { SyncStatus } from "./SyncStatus";
 import { PartnershipsBudget } from "./PartnershipsBudget";
 import { PartnershipsTracker } from "./PartnershipsTracker";
+import { Documents } from "./Documents";
 import { SeoPanel } from "./SeoPanel";
 import { InsightsPanel } from "./InsightsPanel";
 import { SocialPanel } from "./SocialPanel";
@@ -84,7 +85,7 @@ import { StockReport } from "./StockReport";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "summary" | "brands" | "strategy" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "d2c-weekly" | "month-review" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "nanit" | "affiliates" | "pa-budget" | "pa-tracker" | "team";
+type TabId = "summary" | "brands" | "strategy" | "insights" | "campaign-calendar" | "promotions" | "report" | "snapshot" | "social-report" | "d2c-weekly" | "month-review" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "nanit" | "affiliates" | "pa-budget" | "pa-tracker" | "documents" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -284,6 +285,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 00-3-3.87" /></svg>,
   },
   {
+    id: "documents", label: "Documents",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+  },
+  {
     id: "team", label: "Team",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 00-3-3.87" /></svg>,
   },
@@ -302,7 +307,7 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Creative", ids: ["tasks", "design-requests", "creative"] },
   { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info", "brand-assets", "stock-report", "cost-sheet"] },
   { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads"] },
-  { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting", "influencer-agreements", "nanit", "releases", "affiliates", "pa-budget", "pa-tracker"] },
+  { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting", "influencer-agreements", "nanit", "releases", "affiliates", "pa-budget", "pa-tracker", "documents"] },
   { label: "Sales Hub", ids: ["sales-hub"] },
 ];
 
@@ -386,7 +391,7 @@ function BrandShareCard({ brands, monthly, monthKeys, channelSales, role, fyLabe
   );
 }
 // Partnerships pages collapse under a "Partnerships & Affiliates" dropdown.
-const PARTNERSHIP_IDS: TabId[] = ["pa-budget", "pa-tracker", "affiliates"];
+const PARTNERSHIP_IDS: TabId[] = ["pa-budget", "pa-tracker", "affiliates", "documents"];
 
 // Inline SVG donut for the Business overview channel split.
 function ChannelDonut({ slices, total, size = 150 }: { slices: { value: number; color: string }[]; total: number; size?: number }) {
@@ -2319,6 +2324,12 @@ export function DashboardTabs({
             <>
               <SectionBar title="Partnerships & Affiliates · Tracker" />
               <PartnershipsTracker brandNames={brands.map((b: any) => b.name)} admin={role === "admin"} />
+            </>
+          )}
+          {active === "documents" && (
+            <>
+              <SectionBar title="Partnerships & Affiliates · Documents" />
+              <Documents brands={brands.map((b: any) => ({ name: b.name }))} />
             </>
           )}
 
