@@ -3,7 +3,7 @@ import { Confetti } from "./Confetti";
 
 // Renders a weekly brief. Shared by the public /w/[token] page and the compose
 // preview so they never drift. Pure presentation — no data fetching.
-type Objective = { text: string; done?: boolean };
+type Objective = { text: string; done?: boolean; assignee?: string };
 type Snapshot = {
   generatedAt?: string;
   d2c?: { weekStart: string | null; weekEnd?: string | null; partial?: boolean; total: number; wowPct: number | null; top: { brand: string; color?: string | null; revenue: number; wow: number | null }[]; fallers: { brand: string; wow: number | null }[]; topProducts?: { title: string; brand: string; qty: number; revenue: number }[] };
@@ -104,7 +104,8 @@ export function WeeklyBriefSheet({ brief }: { brief: Brief }) {
                 <span className={`mt-0.5 w-4 h-4 rounded border shrink-0 flex items-center justify-center ${o.done ? "bg-emerald-500 border-emerald-500" : "bg-white border-gray-300"}`}>
                   {o.done && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                 </span>
-                <span className={`text-[15px] leading-snug ${o.done ? "text-gray-400 line-through" : "text-slate-700"}`}>{linkify(o.text)}</span>
+                <span className={`text-[15px] leading-snug flex-1 ${o.done ? "text-gray-400 line-through" : "text-slate-700"}`}>{linkify(o.text)}</span>
+                {o.assignee && <span className="shrink-0 text-[11px] font-semibold text-emerald-700 bg-emerald-50 rounded-full px-2.5 py-0.5 mt-0.5">{o.assignee}</span>}
               </li>
             ))}
           </ul>

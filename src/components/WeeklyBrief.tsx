@@ -6,7 +6,7 @@ import { WeeklyBriefSheet, type Brief } from "./WeeklyBriefSheet";
 // Compose + publish a weekly team brief. You write the objectives/intro; the D2C
 // snapshot, upcoming launches and needs-attention are assembled live and frozen at
 // publish. Publish returns a token link the team opens without logging in.
-type Objective = { text: string; done: boolean };
+type Objective = { text: string; done: boolean; assignee?: string };
 type Saved = { id: string; share_token: string; week_label: string; published_at: string | null };
 
 const defaultLabel = () => {
@@ -26,11 +26,13 @@ export function WeeklyBrief() {
   const [celebrate, setCelebrate] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [needsSetup, setNeedsSetup] = useState(false);
+  const [staff, setStaff] = useState<{ name: string }[]>([]);
   const jh = { "Content-Type": "application/json" };
 
   useEffect(() => {
     fetch("/api/weekly-brief?preview=1").then(r => r.json()).then(d => { if (d.ok) setSnapshot(d.snapshot); }).catch(() => {});
     fetch("/api/weekly-brief").then(r => r.json()).then(d => { if (d.needsSetup) setNeedsSetup(true); else if (d.ok) setPast(d.items ?? []); }).catch(() => {});
+    fetch("/api/team-hub").then(r => r.json()).then(d => { if (d.ok) setStaff((d.members ?? []).filter((m: any) => m.active !== false)); }).catch(() => {});
   }, []);
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -136,6 +138,11 @@ export function WeeklyBrief() {
                   <input value={o.text} onChange={e => setObj(i, { text: e.target.value })}
                     onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); if (i === objectives.length - 1) setObjectives(p => [...p, { text: "", done: false }]); } }}
                     placeholder="Add an objective…" className={`${inp} flex-1`} />
+                  <select value={o.assignee ?? ""} onChange={e => setObj(i, { assignee: e.target.value || undefined })}
+                    title="Assign to" className="text-sm border border-gray-200 rounded-lg px-2 py-2 text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400 w-32 shrink-0">
+                    <option value="">Unassigned</option>
+                    {staff.map(s => <option key={s.name} value={s.name}>{s.name}</option>)}
+                  </select>
                   <button onClick={() => setObjectives(p => p.filter((_, j) => j !== i).length ? p.filter((_, j) => j !== i) : [{ text: "", done: false }])} className="text-gray-300 hover:text-rose-500 text-sm px-1">✕</button>
                 </div>
               ))}
