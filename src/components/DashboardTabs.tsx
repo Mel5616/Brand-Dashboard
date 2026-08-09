@@ -272,7 +272,7 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>,
   },
   {
-    id: "affiliates", label: "Affiliates",
+    id: "affiliates", label: "Commission Factory",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5m6.5-6.5l1.5-1.5a4 4 0 115.656 5.656l-3 3a4 4 0 01-5.656 0" /></svg>,
   },
   {
@@ -386,7 +386,7 @@ function BrandShareCard({ brands, monthly, monthKeys, channelSales, role, fyLabe
   );
 }
 // Partnerships pages collapse under a "Partnerships & Affiliates" dropdown.
-const PARTNERSHIP_IDS: TabId[] = ["pa-budget", "pa-tracker"];
+const PARTNERSHIP_IDS: TabId[] = ["pa-budget", "pa-tracker", "affiliates"];
 
 // Inline SVG donut for the Business overview channel split.
 function ChannelDonut({ slices, total, size = 150 }: { slices: { value: number; color: string }[]; total: number; size?: number }) {
@@ -2291,7 +2291,7 @@ export function DashboardTabs({
             const cfFilter: "all" | number = brandFilter !== "all" && CF_BRAND_IDS.includes(brandFilter as number) ? brandFilter : "all";
             return (
               <>
-                <SectionBar title="Affiliates · Commission Factory" />
+                <SectionBar title="Partnerships & Affiliates · Commission Factory" />
                 <div className="flex items-center gap-2 mb-3">
                   <select
                     value={cfFilter === "all" ? "all" : String(cfFilter)}
