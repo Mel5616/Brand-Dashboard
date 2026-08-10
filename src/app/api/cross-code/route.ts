@@ -23,12 +23,15 @@ export async function POST(req: Request) {
   if (acc.role !== "admin") return NextResponse.json({ ok: false, error: "Admins only" }, { status: 403 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   const code = String(b.code || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 40);
-  const percent = Math.min(90, Math.max(1, Number(b.percent) || 0));
+  const discountType = b.discount_type === "fixed_amount" ? "fixed_amount" : "percentage";
+  const percent = discountType === "percentage" ? Math.min(90, Math.max(1, Number(b.percent) || 0)) : 0;
+  const amount = discountType === "fixed_amount" ? Math.min(10000, Math.max(0.01, Number(b.amount) || 0)) : 0;
   const starts = /^\d{4}-\d{2}-\d{2}$/.test(b.starts_at || "") ? b.starts_at : null;
   const ends = /^\d{4}-\d{2}-\d{2}$/.test(b.ends_at || "") ? b.ends_at : null;
   const storeIds: number[] = Array.isArray(b.store_ids) ? b.store_ids.map(Number) : [];
-  if (!code || !percent || storeIds.length === 0)
-    return NextResponse.json({ ok: false, error: "Code, percent and at least one store required" }, { status: 400 });
+  const value = discountType === "percentage" ? percent : amount;
+  if (!code || !value || storeIds.length === 0)
+    return NextResponse.json({ ok: false, error: "Code, a discount value and at least one store required" }, { status: 400 });
 
   const targets = storeCreds().filter(s => storeIds.includes(s.id));
   const results: { brand: string; ok: boolean; error?: string }[] = [];
@@ -47,7 +50,12 @@ export async function POST(req: Request) {
         startsAt: (starts ? new Date(starts + "T00:00:00+10:00") : new Date()).toISOString(),
         ...(ends ? { endsAt: new Date(ends + "T23:59:59+10:00").toISOString() } : {}),
         customerSelection: { all: true },
-        customerGets: { value: { percentage: percent / 100 }, items: { all: true } },
+        customerGets: {
+          value: discountType === "percentage"
+            ? { percentage: percent / 100 }
+            : { discountAmount: { amount: amount.toFixed(2), appliesOnEachItem: false } },
+          items: { all: true },
+        },
         appliesOncePerCustomer: true,
       },
     };
@@ -63,7 +71,10 @@ export async function POST(req: Request) {
 
   await fetch(`${sbUrl}/rest/v1/cross_site_codes`, {
     method: "POST", headers: h({ Prefer: "return=minimal" }),
-    body: JSON.stringify({ code, percent, starts_at: starts, ends_at: ends, results, created_by: (acc.user as any)?.email ?? null }),
+    body: JSON.stringify({
+      code, discount_type: discountType, percent: discountType === "percentage" ? percent : null, amount: discountType === "fixed_amount" ? amount : null,
+      starts_at: starts, ends_at: ends, results, created_by: (acc.user as any)?.email ?? null,
+    }),
   }).catch(() => {});
   return NextResponse.json({ ok: true, results });
 }

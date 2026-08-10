@@ -181,7 +181,7 @@ export function CrossCodeCard() {
   const [stores, setStores] = React.useState<{ id: number; name: string }[]>([]);
   const [history, setHistory] = React.useState<any[]>([]);
   const [sel, setSel] = React.useState<Set<number>>(new Set());
-  const [f, setF] = React.useState({ code: "", percent: "", starts_at: "", ends_at: "" });
+  const [f, setF] = React.useState({ code: "", discount_type: "percentage" as "percentage" | "fixed_amount", percent: "", amount: "", starts_at: "", ends_at: "" });
   const [busy, setBusy] = React.useState(false);
   const [results, setResults] = React.useState<{ brand: string; ok: boolean; error?: string }[] | null>(null);
 
@@ -193,11 +193,16 @@ export function CrossCodeCard() {
   React.useEffect(load, [load]);
   if (!stores.length) return null;
 
+  const isFixed = f.discount_type === "fixed_amount";
+  const value = isFixed ? f.amount : f.percent;
+  const label = isFixed ? `$${f.amount} off` : `${f.percent}% off`;
+
   async function create() {
-    if (!f.code.trim() || !Number(f.percent) || sel.size === 0) return;
-    if (!confirm(`Create ${f.code.toUpperCase()} (${f.percent}% off) on ${sel.size} store(s)? This makes a LIVE discount code.`)) return;
+    if (!f.code.trim() || !Number(value) || sel.size === 0) return;
+    if (!confirm(`Create ${f.code.toUpperCase()} (${label}) on ${sel.size} store(s)? This makes a LIVE discount code.`)) return;
     setBusy(true); setResults(null);
-    const d = await fetch("/api/cross-code", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...f, percent: Number(f.percent), store_ids: [...sel] }) }).then(r => r.json()).catch(() => null);
+    const body = { code: f.code, discount_type: f.discount_type, percent: Number(f.percent), amount: Number(f.amount), starts_at: f.starts_at, ends_at: f.ends_at, store_ids: [...sel] };
+    const d = await fetch("/api/cross-code", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()).catch(() => null);
     setBusy(false);
     setResults(d?.results ?? [{ brand: "request", ok: false, error: d?.error || "failed" }]);
     load();
@@ -210,10 +215,18 @@ export function CrossCodeCard() {
       <p className="text-xs text-gray-400 mt-0.5 mb-3">Create one code across every selected website in a single click (e.g. an event code). Admin only — the code goes live immediately.</p>
       <div className="flex flex-wrap items-center gap-2 mb-2">
         <input value={f.code} onChange={e => setF(p => ({ ...p, code: e.target.value.toUpperCase() }))} placeholder="CODE e.g. NTM40" className={`${inp} font-mono w-36`} />
-        <input value={f.percent} onChange={e => setF(p => ({ ...p, percent: e.target.value }))} placeholder="% off" type="number" className={`${inp} w-20`} />
+        <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+          <button type="button" onClick={() => setF(p => ({ ...p, discount_type: "percentage" }))}
+            className={`text-[12px] font-semibold px-2.5 py-1.5 ${!isFixed ? "bg-slate-800 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}>%</button>
+          <button type="button" onClick={() => setF(p => ({ ...p, discount_type: "fixed_amount" }))}
+            className={`text-[12px] font-semibold px-2.5 py-1.5 border-l border-gray-200 ${isFixed ? "bg-slate-800 text-white" : "bg-white text-gray-500 hover:bg-gray-50"}`}>$</button>
+        </div>
+        {isFixed
+          ? <input value={f.amount} onChange={e => setF(p => ({ ...p, amount: e.target.value }))} placeholder="$ off e.g. 40" type="number" className={`${inp} w-24`} />
+          : <input value={f.percent} onChange={e => setF(p => ({ ...p, percent: e.target.value }))} placeholder="% off" type="number" className={`${inp} w-20`} />}
         <input value={f.starts_at} onChange={e => setF(p => ({ ...p, starts_at: e.target.value }))} type="date" className={inp} title="Starts" />
         <input value={f.ends_at} onChange={e => setF(p => ({ ...p, ends_at: e.target.value }))} type="date" className={inp} title="Ends" />
-        <button onClick={create} disabled={busy || !f.code.trim() || !Number(f.percent) || sel.size === 0}
+        <button onClick={create} disabled={busy || !f.code.trim() || !Number(value) || sel.size === 0}
           className="text-[12.5px] font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-4 py-2 disabled:opacity-40">
           {busy ? "Creating…" : `Create on ${sel.size} store${sel.size === 1 ? "" : "s"}`}
         </button>
@@ -232,7 +245,7 @@ export function CrossCodeCard() {
         </div>
       )}
       {history.length > 0 && (
-        <p className="text-[11px] text-gray-300">Previously created: {history.slice(0, 5).map((x: any) => `${x.code} (${Math.round(x.percent)}%)`).join(" · ")}</p>
+        <p className="text-[11px] text-gray-300">Previously created: {history.slice(0, 5).map((x: any) => `${x.code} (${x.discount_type === "fixed_amount" ? `$${x.amount} off` : `${Math.round(x.percent)}%`})`).join(" · ")}</p>
       )}
     </div>
   );
