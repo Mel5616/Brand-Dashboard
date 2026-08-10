@@ -30,6 +30,7 @@ export async function POST(req: Request) {
   const ends = /^\d{4}-\d{2}-\d{2}$/.test(b.ends_at || "") ? b.ends_at : null;
   const storeIds: number[] = Array.isArray(b.store_ids) ? b.store_ids.map(Number) : [];
   const value = discountType === "percentage" ? percent : amount;
+  const minSpend = b.min_spend != null && b.min_spend !== "" ? Math.max(0, Number(b.min_spend) || 0) : null;
   if (!code || !value || storeIds.length === 0)
     return NextResponse.json({ ok: false, error: "Code, a discount value and at least one store required" }, { status: 400 });
 
@@ -56,6 +57,7 @@ export async function POST(req: Request) {
             : { discountAmount: { amount: amount.toFixed(2), appliesOnEachItem: false } },
           items: { all: true },
         },
+        ...(minSpend ? { minimumRequirement: { subtotal: { greaterThanOrEqualToSubtotal: minSpend.toFixed(2) } } } : {}),
         appliesOncePerCustomer: true,
       },
     };
@@ -73,7 +75,7 @@ export async function POST(req: Request) {
     method: "POST", headers: h({ Prefer: "return=minimal" }),
     body: JSON.stringify({
       code, discount_type: discountType, percent: discountType === "percentage" ? percent : null, amount: discountType === "fixed_amount" ? amount : null,
-      starts_at: starts, ends_at: ends, results, created_by: (acc.user as any)?.email ?? null,
+      min_spend: minSpend, starts_at: starts, ends_at: ends, results, created_by: (acc.user as any)?.email ?? null,
     }),
   }).catch(() => {});
   return NextResponse.json({ ok: true, results });
