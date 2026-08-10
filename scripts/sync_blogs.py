@@ -190,6 +190,21 @@ def sync_articles(bid, brand):
             if len(arts) < 250:
                 break
     sb_upsert("blog_articles", rows, "brand_id,article_id")
+    # A prior run may have hit the 403 branch above and fallen back to
+    # sync_articles_public(), which stores the same article under a
+    # different article_id ("path:...", vs the real numeric Shopify id
+    # written here). Those never get cleaned up by an upsert (different
+    # on_conflict key), so every brand that ever had one bad run ends up
+    # permanently double-counted. Now that the real API call just
+    # succeeded, any leftover "path:" rows for this brand are stale —
+    # remove them.
+    try:
+        req = urllib.request.Request(
+            f"{URL}/rest/v1/blog_articles?brand_id=eq.{bid}&article_id=like.path:*",
+            method="DELETE", headers={"Authorization": f"Bearer {KEY}", "apikey": KEY})
+        urllib.request.urlopen(req, context=CTX, timeout=30)
+    except Exception:
+        pass  # best-effort cleanup — a failure here shouldn't fail the sync
     return len(rows)
 
 # ── GA4 blog page metrics ────────────────────────────────────────────────────
