@@ -120,9 +120,15 @@ def summarise(ev):
         cost = (tc.get("cost") or {}).get("value")  # minor units (cents)
         if cost:
             gross += q * (cost / 100.0)
-    cap = ev.get("capacity")
+    # Eventbrite's event-level "capacity" is a general venue setting, separate
+    # from each ticket type's own quantity available — it's the ticket-type
+    # quantities that actually gate sales and drive the "Sold Out" badge on
+    # Eventbrite's own event list. The two can drift (e.g. someone corrects a
+    # ticket type's quantity without touching the venue capacity field), so
+    # prefer the ticket-class sum — it's what the organiser actually sees.
+    cap = sum(int(tc.get("quantity_total") or 0) for tc in (ev.get("ticket_classes") or [])) or None
     if not cap:
-        cap = sum(int(tc.get("quantity_total") or 0) for tc in (ev.get("ticket_classes") or [])) or None
+        cap = ev.get("capacity")
     addr = ((ev.get("venue") or {}).get("address")) or {}
     venue = ((ev.get("venue") or {}).get("name")) or addr.get("city") or ""
     state = norm_state(addr.get("region"))
