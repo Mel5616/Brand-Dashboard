@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement,
   PointElement, Tooltip, Legend,
@@ -32,6 +32,26 @@ function Delta({ now, prev, invert = false }: { now: number; prev: number; inver
 
 const fmtAud = (n: number) => (n >= 1000 ? `$${(n / 1000).toFixed(1)}K` : `$${Math.round(n)}`);
 
+const GAP_STATUS: Record<string, { label: string; cls: string }> = {
+  open: { label: "Open", cls: "border-gray-200 text-gray-500 bg-white" },
+  in_progress: { label: "In progress", cls: "border-amber-200 text-amber-700 bg-amber-50" },
+  done: { label: "Done", cls: "border-emerald-200 text-emerald-700 bg-emerald-50" },
+};
+
+function GapStatusPicker({ status, onChange }: { status: string; onChange: (s: string) => void }) {
+  const s = GAP_STATUS[status] ?? GAP_STATUS.open;
+  return (
+    <select
+      value={status}
+      onChange={e => onChange(e.target.value)}
+      className={`text-[11px] font-medium rounded-full border px-2 py-0.5 outline-none cursor-pointer ${s.cls}`}
+      onClick={e => e.stopPropagation()}
+    >
+      {Object.entries(GAP_STATUS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+    </select>
+  );
+}
+
 export function SeoPanel({
   scope, brands, gscMetrics, gscQueries, gscInsights, semrushMetrics, semrushCompetitors, semrushKeywords, semrushPages, semrushKeywordGaps, monthKeys, monthLabels,
 }: {
@@ -52,6 +72,20 @@ export function SeoPanel({
   const semOf = (id: number) => semrushMetrics.filter(m => m.brand_id === id).sort((a, b) => a.month_key.localeCompare(b.month_key)).slice(-1)[0];
   const has = (id: number) => gscMetrics.some(m => m.brand_id === id && (m.clicks > 0 || m.impressions > 0)) || !!semOf(id);
   const seoBrands = brands.filter(b => has(b.id));
+
+  const [gapStatus, setGapStatus] = useState<Record<string, string>>({});
+  useEffect(() => {
+    fetch("/api/seo-gap-status").then(r => r.json()).then(d => {
+      if (!d.ok) return;
+      const m: Record<string, string> = {};
+      for (const it of d.items ?? []) m[`${it.brand_id}:${it.phrase}`] = it.status;
+      setGapStatus(m);
+    }).catch(() => {});
+  }, []);
+  function setGap(brand_id: number, phrase: string, status: string) {
+    setGapStatus(m => ({ ...m, [`${brand_id}:${phrase}`]: status }));
+    fetch("/api/seo-gap-status", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brand_id, phrase, status }) }).catch(() => {});
+  }
 
   if (seoBrands.length === 0) {
     return (
@@ -150,7 +184,7 @@ export function SeoPanel({
               <thead>
                 <tr className="text-[11px] text-gray-400 uppercase tracking-wide text-right border-b border-gray-100">
                   <th className="text-left font-medium py-1.5">Brand</th><th className="text-left font-medium py-1.5">Keyword</th>
-                  <th className="font-medium">Search vol.</th><th className="font-medium">Competitors</th><th className="text-left font-medium">Best ranked by</th>
+                  <th className="font-medium">Search vol.</th><th className="font-medium">Competitors</th><th className="text-left font-medium">Best ranked by</th><th className="text-left font-medium">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -161,6 +195,9 @@ export function SeoPanel({
                     <td className="font-semibold">{g.search_volume.toLocaleString()}</td>
                     <td>{g.competitor_count}</td>
                     <td className="text-left text-[12.5px] text-gray-500 max-w-[200px] truncate" title={g.best_url ?? undefined}>{g.best_competitor} · pos {g.best_position}</td>
+                    <td className="text-left">
+                      <GapStatusPicker status={gapStatus[`${g.brand_id}:${g.phrase}`] ?? "open"} onChange={s => setGap(g.brand_id, g.phrase, s)} />
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -275,7 +312,7 @@ export function SeoPanel({
                 <thead>
                   <tr className="text-[11px] text-gray-400 uppercase tracking-wide text-right border-b border-gray-100">
                     <th className="text-left font-medium py-1.5">Keyword</th>
-                    <th className="font-medium">Search vol.</th><th className="font-medium">CPC</th><th className="font-medium">Competitors</th><th className="text-left font-medium">Best ranked by</th>
+                    <th className="font-medium">Search vol.</th><th className="font-medium">CPC</th><th className="font-medium">Competitors</th><th className="text-left font-medium">Best ranked by</th><th className="text-left font-medium">Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -284,6 +321,9 @@ export function SeoPanel({
                       <td className="text-left py-1.5 font-medium max-w-[280px] truncate" title={g.phrase}>{g.phrase}</td>
                       <td className="font-semibold">{g.search_volume.toLocaleString()}</td><td>${g.cpc.toFixed(2)}</td><td>{g.competitor_count}</td>
                       <td className="text-left text-[12.5px] text-gray-500 max-w-[200px] truncate" title={g.best_url ?? undefined}>{g.best_competitor} · pos {g.best_position}</td>
+                      <td className="text-left">
+                        <GapStatusPicker status={gapStatus[`${g.brand_id}:${g.phrase}`] ?? "open"} onChange={s => setGap(g.brand_id, g.phrase, s)} />
+                      </td>
                     </tr>
                   ))}
                 </tbody>
