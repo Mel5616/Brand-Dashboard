@@ -34,15 +34,14 @@ const STEPS: { key: Status; label: string }[] = [
 const dShort = (s?: string | null) => s ? new Date(s + (s.length === 10 ? "T00:00:00" : "")).toLocaleDateString("en-AU", { day: "numeric", month: "short" }) : "—";
 const baloo = "font-[family-name:var(--font-baloo)]";
 const body = "font-[family-name:var(--font-manrope)]";
-// filecamp/comms have no dedicated photography yet — omitting `photo` falls
-// back to a big centred emoji on the gradient instead of a broken image.
+// Falls back to a big centred emoji on the gradient if a type has no photo.
 const TILE_ART: Record<ReqType, { grad: string; photo?: string }> = {
   artwork: { grad: "from-[#FFD9CC] to-[#FF9B7A]", photo: "/sales-hub/artwork.jpg" },
   swatch: { grad: "from-[#CDEFF7] to-[#7FD4EA]", photo: "/sales-hub/swatch.jpg" },
   tune_up: { grad: "from-[#DCEBD1] to-[#9FCB84]", photo: "/sales-hub/tune_up.jpg" },
   product: { grad: "from-[#F6DDF2] to-[#E1A6D8]", photo: "/sales-hub/product.jpg" },
-  filecamp: { grad: "from-[#D9E4F5] to-[#9EB6E0]" },
-  comms: { grad: "from-[#FDE8D2] to-[#F0B26B]" },
+  filecamp: { grad: "from-[#D9E4F5] to-[#9EB6E0]", photo: "/sales-hub/filecamp.jpg" },
+  comms: { grad: "from-[#FDE8D2] to-[#F0B26B]", photo: "/sales-hub/comms.jpg" },
 };
 
 export function SalesHub({ admin, brands, tradeshows = [], calendarEvents = [] }: { admin: boolean; brands: { name: string; color?: string }[]; tradeshows?: { id: string; name: string; date_start: string }[]; calendarEvents?: { title: string; start_date: string }[] }) {
