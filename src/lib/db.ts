@@ -274,6 +274,7 @@ export async function getDashboardData() {
     { data: semrushCompetitors },
     { data: semrushKeywords },
     { data: semrushPages },
+    { data: semrushKeywordGaps },
     { data: brandInsights },
     { data: instagramMedia },
     { data: channelSales },
@@ -316,6 +317,7 @@ export async function getDashboardData() {
     db.from("semrush_competitors").select("*"),
     db.from("semrush_keywords").select("*"),
     db.from("semrush_pages").select("*"),
+    db.from("semrush_keyword_gaps").select("*"),
     db.from("brand_insights").select("*"),
     db.from("instagram_media").select("*").order("posted_at", { ascending: false }),
     db.from("channel_sales").select("*"),
@@ -360,6 +362,7 @@ export async function getDashboardData() {
     semrushCompetitors: (semrushCompetitors ?? []) as SemrushCompetitorRow[],
     semrushKeywords: (semrushKeywords ?? []) as SemrushKeywordRow[],
     semrushPages: (semrushPages ?? []) as SemrushPageRow[],
+    semrushKeywordGaps: (semrushKeywordGaps ?? []) as SemrushKeywordGapRow[],
     brandInsights: (brandInsights ?? []) as BrandInsightRow[],
     instagramMedia: (instagramMedia ?? []) as InstagramMediaRow[],
     channelSales: (channelSales ?? []) as ChannelSaleRow[],
@@ -390,3 +393,4 @@ export type GscQueryRow = { brand_id: number; month_key: string; query: string; 
 export type GscInsight = { brand_id: number; generated_at: string; content: string };
 export type SemrushMetricRow = { brand_id: number; month_key: string; organic_keywords: number; organic_traffic: number; traffic_value: number; semrush_rank: number };
 export type SemrushCompetitorRow = { brand_id: number; month_key: string; competitor: string; relevance: number; common_keywords: number; organic_keywords: number; organic_traffic: number };
+export type SemrushKeywordGapRow = { brand_id: number; month_key: string; phrase: string; search_volume: number; cpc: number; competitor_count: number; best_competitor: string | null; best_position: number | null; best_url: string | null };

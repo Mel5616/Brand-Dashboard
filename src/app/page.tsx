@@ -45,7 +45,7 @@ export default async function Dashboard(props: { searchParams: Promise<{ preview
     weekLabels, lastSync, googleAds, metaAds, pinterestAds, amazonAds, commissionFactory, metaAdsPlatform,
     instagramOrganic, targets, klaviyo, ga4, marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, aiInsight,
     gscMetrics, gscQueries, gscInsights, semrushMetrics, semrushCompetitors,
-    semrushKeywords, semrushPages, brandInsights, instagramMedia, channelSales, shopifySources, eventbriteEvents, asanaTasks, salesBudget,
+    semrushKeywords, semrushPages, semrushKeywordGaps, brandInsights, instagramMedia, channelSales, shopifySources, eventbriteEvents, asanaTasks, salesBudget,
     productUnits,
   } = await getDashboardData();
 
@@ -144,6 +144,7 @@ export default async function Dashboard(props: { searchParams: Promise<{ preview
         semrushCompetitors={semrushCompetitors}
         semrushKeywords={semrushKeywords}
         semrushPages={semrushPages}
+        semrushKeywordGaps={semrushKeywordGaps}
         brandInsights={brandInsights}
         instagramMedia={instagramMedia}
         channelSales={channelSales}

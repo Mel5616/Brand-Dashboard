@@ -467,6 +467,7 @@ interface Props {
   semrushCompetitors: any[];
   semrushKeywords: any[];
   semrushPages: any[];
+  semrushKeywordGaps: any[];
   brandInsights: any[];
   instagramMedia: any[];
   channelSales: any[];
@@ -490,7 +491,7 @@ export function DashboardTabs({
   instagramOrganic, targets, klaviyo, ga4,
   marketingBudgets, marketingActuals, googleAdsCampaigns, calendarEvents, boothFunnel, kpis,
   gscMetrics, gscQueries, gscInsights, semrushMetrics, semrushCompetitors,
-  semrushKeywords, semrushPages, brandInsights, instagramMedia, channelSales, shopifySources, eventbriteEvents, asanaTasks, salesBudget, productUnits,
+  semrushKeywords, semrushPages, semrushKeywordGaps, brandInsights, instagramMedia, channelSales, shopifySources, eventbriteEvents, asanaTasks, salesBudget, productUnits,
   role = "admin", allowedTabs, currentEmail, lastSync,
 }: Props) {
   // No tab is hard-locked from members anymore — granted sections are viewable
@@ -2102,7 +2103,7 @@ export function DashboardTabs({
                   {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
                 </select>
               </div>
-              <SeoPanel scope={brandFilter} brands={brands} gscMetrics={gscMetrics} gscQueries={gscQueries} gscInsights={gscInsights} semrushMetrics={semrushMetrics} semrushCompetitors={semrushCompetitors} semrushKeywords={semrushKeywords} semrushPages={semrushPages} monthKeys={monthKeys} monthLabels={monthLabels} />
+              <SeoPanel scope={brandFilter} brands={brands} gscMetrics={gscMetrics} gscQueries={gscQueries} gscInsights={gscInsights} semrushMetrics={semrushMetrics} semrushCompetitors={semrushCompetitors} semrushKeywords={semrushKeywords} semrushPages={semrushPages} semrushKeywordGaps={semrushKeywordGaps} monthKeys={monthKeys} monthLabels={monthLabels} />
             </>
           )}
 

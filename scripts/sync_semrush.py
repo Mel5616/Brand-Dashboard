@@ -137,7 +137,39 @@ def sync_brand(key, brand_id, name, domain, mk):
         "traffic": int(float(p.get("Traffic", 0) or 0))} for p in (pgs or []) if p.get("Url")]
     sb_upsert("semrush_pages", prows, "brand_id,month_key,url")
 
-    print(f"    {metric['organic_keywords']:,} keywords · {metric['organic_traffic']:,} traffic · ${metric['traffic_value']:,.0f} value · {len(crows)} competitors · {len(krows)} kw · {len(prows)} pages", flush=True)
+    # Keyword gap: what the top competitors rank for that we don't (or barely
+    # do). Pulls each of the top 2 competitors' own keyword lists (same call
+    # as our own, just pointed at their domain) and diffs against `seen`
+    # (our own top 100 by traffic). Weekly cron, so the extra API cost is
+    # low — 2 more domain_organic calls per brand, once a week.
+    gap_candidates: dict[str, dict] = {}
+    for comp in sorted(crows, key=lambda c: -c["relevance"])[:2]:
+        cdomain = comp["competitor"]
+        if not cdomain:
+            continue
+        ckws, _ = semrush(key, {"type": "domain_organic", "domain": cdomain, "database": DATABASE,
+            "export_columns": "Ph,Po,Nq,Cp,Ur", "display_limit": "60", "display_sort": "nq_desc"})
+        for w in (ckws or []):
+            ph = w.get("Keyword", "")
+            vol = int(float(w.get("Search Volume", 0) or 0))
+            if not ph or ph in seen or vol < 30:  # `seen` = our own top-100 keyword phrases, from the loop above
+                continue
+            pos = int(float(w.get("Position", 0) or 0))
+            g = gap_candidates.setdefault(ph, {"search_volume": vol, "cpc": round(float(w.get("CPC", 0) or 0), 2), "competitors": []})
+            g["competitors"].append({"name": cdomain, "position": pos, "url": w.get("Url", "")})
+
+    grows = []
+    for ph, g in gap_candidates.items():
+        best = min(g["competitors"], key=lambda c: c["position"] or 999)
+        grows.append({"brand_id": brand_id, "month_key": mk, "phrase": ph,
+            "search_volume": g["search_volume"], "cpc": g["cpc"],
+            "competitor_count": len(g["competitors"]),
+            "best_competitor": best["name"], "best_position": best["position"], "best_url": best["url"]})
+    grows.sort(key=lambda g: (-g["competitor_count"], -g["search_volume"]))
+    grows = grows[:40]
+    sb_upsert("semrush_keyword_gaps", grows, "brand_id,month_key,phrase")
+
+    print(f"    {metric['organic_keywords']:,} keywords · {metric['organic_traffic']:,} traffic · ${metric['traffic_value']:,.0f} value · {len(crows)} competitors · {len(krows)} kw · {len(prows)} pages · {len(grows)} gap kw", flush=True)
 
 def main():
     with open(CONFIG_PATH) as f:

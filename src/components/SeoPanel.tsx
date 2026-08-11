@@ -6,7 +6,7 @@ import {
   PointElement, Tooltip, Legend,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
-import type { Brand, GscMetricRow, GscQueryRow, GscInsight, SemrushMetricRow, SemrushCompetitorRow, SemrushKeywordRow, SemrushPageRow } from "@/lib/db";
+import type { Brand, GscMetricRow, GscQueryRow, GscInsight, SemrushMetricRow, SemrushCompetitorRow, SemrushKeywordRow, SemrushPageRow, SemrushKeywordGapRow } from "@/lib/db";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Tooltip, Legend);
 
@@ -33,7 +33,7 @@ function Delta({ now, prev, invert = false }: { now: number; prev: number; inver
 const fmtAud = (n: number) => (n >= 1000 ? `$${(n / 1000).toFixed(1)}K` : `$${Math.round(n)}`);
 
 export function SeoPanel({
-  scope, brands, gscMetrics, gscQueries, gscInsights, semrushMetrics, semrushCompetitors, semrushKeywords, semrushPages, monthKeys, monthLabels,
+  scope, brands, gscMetrics, gscQueries, gscInsights, semrushMetrics, semrushCompetitors, semrushKeywords, semrushPages, semrushKeywordGaps, monthKeys, monthLabels,
 }: {
   scope: number | "all";
   brands: Brand[];
@@ -44,6 +44,7 @@ export function SeoPanel({
   semrushCompetitors: SemrushCompetitorRow[];
   semrushKeywords: SemrushKeywordRow[];
   semrushPages: SemrushPageRow[];
+  semrushKeywordGaps: SemrushKeywordGapRow[];
   monthKeys: string[];
   monthLabels: string[];
 }) {
@@ -71,6 +72,18 @@ export function SeoPanel({
     }).sort((a, b) => (b.latest?.clicks ?? 0) - (a.latest?.clicks ?? 0) || ((b.sem?.traffic_value ?? 0) - (a.sem?.traffic_value ?? 0)));
 
     const tot = rows.reduce((a, r) => ({ clicks: a.clicks + (r.latest?.clicks ?? 0), val: a.val + (r.sem?.traffic_value ?? 0) }), { clicks: 0, val: 0 });
+
+    // Cross-brand opportunity rollups — each brand's latest SEMrush month only.
+    const latestGapMonth = (bid: number) => semrushKeywordGaps.filter(g => g.brand_id === bid).map(g => g.month_key).sort().slice(-1)[0];
+    const allGaps = seoBrands.flatMap(b => {
+      const mk = latestGapMonth(b.id);
+      return semrushKeywordGaps.filter(g => g.brand_id === b.id && g.month_key === mk).map(g => ({ ...g, brand: b }));
+    }).sort((a, b) => (b.competitor_count - a.competitor_count) || (b.search_volume - a.search_volume)).slice(0, 15);
+
+    const allOpps = seoBrands.flatMap(b => {
+      const mk = semOf(b.id)?.month_key;
+      return semrushKeywords.filter(k => k.brand_id === b.id && k.month_key === mk && k.position >= 11 && k.position <= 20).map(k => ({ ...k, brand: b }));
+    }).sort((a, b) => b.search_volume - a.search_volume).slice(0, 15);
 
     return (
       <div className="space-y-4">
@@ -104,6 +117,56 @@ export function SeoPanel({
             </tbody>
           </table>
         </div>
+
+        {allOpps.length > 0 && (
+          <div className="bg-amber-50/40 rounded-xl border border-amber-100 p-5 overflow-x-auto">
+            <h3 className="font-semibold text-amber-800 mb-0.5">Quick wins across the portfolio</h3>
+            <p className="text-xs text-amber-700/70 mb-3">Page 2 (positions 11–20) with real search volume, biggest first — the fastest push-to-page-1 candidates across every brand.</p>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-[11px] text-amber-700/70 uppercase tracking-wide text-right border-b border-amber-100">
+                  <th className="text-left font-medium py-1.5">Brand</th><th className="text-left font-medium py-1.5">Keyword</th>
+                  <th className="font-medium">Position</th><th className="font-medium">Search vol.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allOpps.map(k => (
+                  <tr key={`${k.brand.id}-${k.phrase}`} className="text-right border-b border-amber-100/50 text-slate-700">
+                    <td className="text-left py-1.5"><span className="inline-flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: k.brand.color }} />{k.brand.name}</span></td>
+                    <td className="text-left font-medium max-w-[280px] truncate" title={k.phrase}>{k.phrase}</td>
+                    <td>{k.position}</td><td className="font-semibold">{k.search_volume.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {allGaps.length > 0 && (
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 overflow-x-auto">
+            <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-0.5">Content gaps across the portfolio</h3>
+            <p className="text-xs text-gray-400 mb-3">Terms your competitors rank for that you don&apos;t — the ones multiple competitors cover are the strongest signal there&apos;s real demand.</p>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-[11px] text-gray-400 uppercase tracking-wide text-right border-b border-gray-100">
+                  <th className="text-left font-medium py-1.5">Brand</th><th className="text-left font-medium py-1.5">Keyword</th>
+                  <th className="font-medium">Search vol.</th><th className="font-medium">Competitors</th><th className="text-left font-medium">Best ranked by</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allGaps.map(g => (
+                  <tr key={`${g.brand_id}-${g.phrase}`} className="text-right border-b border-gray-50 text-slate-700">
+                    <td className="text-left py-1.5"><span className="inline-flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: g.brand.color }} />{g.brand.name}</span></td>
+                    <td className="text-left font-medium max-w-[260px] truncate" title={g.phrase}>{g.phrase}</td>
+                    <td className="font-semibold">{g.search_volume.toLocaleString()}</td>
+                    <td>{g.competitor_count}</td>
+                    <td className="text-left text-[12.5px] text-gray-500 max-w-[200px] truncate" title={g.best_url ?? undefined}>{g.best_competitor} · pos {g.best_position}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     );
   }
@@ -112,12 +175,16 @@ export function SeoPanel({
   const brand = brands.find(b => b.id === scope)!;
   const hasGsc = gscMetrics.some(m => m.brand_id === scope && (m.clicks > 0 || m.impressions > 0));
   const sem = semOf(scope);
-  const comps = semrushCompetitors.filter(c => c.brand_id === scope).sort((a, b) => b.relevance - a.relevance).slice(0, 6);
   const semMonth = sem?.month_key;
+  // Was missing the month_key filter — blended this month's and last month's
+  // rows for the same domain, which is why the same competitor could appear
+  // twice with different numbers.
+  const comps = semrushCompetitors.filter(c => c.brand_id === scope && c.month_key === semMonth).sort((a, b) => b.relevance - a.relevance).slice(0, 6);
   const kws = semrushKeywords.filter(k => k.brand_id === scope && k.month_key === semMonth);
   const topKw = [...kws].sort((a, b) => b.traffic_pct - a.traffic_pct).slice(0, 15);
   const opps = kws.filter(k => k.position >= 11 && k.position <= 20).sort((a, b) => b.search_volume - a.search_volume).slice(0, 10);
   const pages = semrushPages.filter(p => p.brand_id === scope && p.month_key === semMonth).sort((a, b) => b.traffic - a.traffic).slice(0, 10);
+  const pageGaps = semrushKeywordGaps.filter(g => g.brand_id === scope && g.month_key === semMonth).sort((a, b) => (b.competitor_count - a.competitor_count) || (b.search_volume - a.search_volume)).slice(0, 15);
   if (!hasGsc && !sem) {
     return (
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-10 text-center">
@@ -193,6 +260,30 @@ export function SeoPanel({
                     <tr key={k.phrase} className="text-right border-b border-amber-100/50 text-slate-700">
                       <td className="text-left py-1.5 font-medium max-w-[320px] truncate" title={k.phrase}>{k.phrase}</td>
                       <td>{k.position}</td><td className="font-semibold">{k.search_volume.toLocaleString()}</td><td>${k.cpc.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {pageGaps.length > 0 && (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5 overflow-x-auto">
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-0.5">Keyword gap</h3>
+              <p className="text-xs text-gray-400 mb-3">Terms your top competitors rank for that you don&apos;t — the more competitors covering it, the stronger the demand signal.</p>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-[11px] text-gray-400 uppercase tracking-wide text-right border-b border-gray-100">
+                    <th className="text-left font-medium py-1.5">Keyword</th>
+                    <th className="font-medium">Search vol.</th><th className="font-medium">CPC</th><th className="font-medium">Competitors</th><th className="text-left font-medium">Best ranked by</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pageGaps.map(g => (
+                    <tr key={g.phrase} className="text-right border-b border-gray-50 text-slate-700">
+                      <td className="text-left py-1.5 font-medium max-w-[280px] truncate" title={g.phrase}>{g.phrase}</td>
+                      <td className="font-semibold">{g.search_volume.toLocaleString()}</td><td>${g.cpc.toFixed(2)}</td><td>{g.competitor_count}</td>
+                      <td className="text-left text-[12.5px] text-gray-500 max-w-[200px] truncate" title={g.best_url ?? undefined}>{g.best_competitor} · pos {g.best_position}</td>
                     </tr>
                   ))}
                 </tbody>
