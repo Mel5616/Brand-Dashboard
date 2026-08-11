@@ -191,7 +191,7 @@ function Landing({ brands, items, mine, tradeshows, calendarEvents, onPick, onOp
                 : <span className="text-5xl opacity-80">{TYPE_META[t].emoji}</span>}
             </div>
             <div className="px-3.5 py-3">
-              <div className={`font-bold text-slate-800 text-[15px] ${baloo}`}>{TYPE_META[t].label.replace(" Request", "").replace(" / Sample", "").replace(" Nomination", "").replace(" / Gifting", "")}</div>
+              <div className={`font-bold text-slate-800 text-[15px] ${baloo}`}>{TYPE_META[t].label.replace(" Request", "").replace("Swatch / Sample", "Swatches").replace(" Nomination", "").replace(" / Gifting", "")}</div>
               <div className="text-[11px] text-gray-400 mt-0.5">{t === "product" ? "Routes to Sales leadership" : "Routes to Marketing"}</div>
             </div>
           </button>
