@@ -7,13 +7,15 @@ import { useEffect, useMemo, useState } from "react";
 // form (src/app/request/page.tsx, shared-key gated). Only the submit
 // endpoint/headers/identity-collection differ between the two.
 
-export type ReqType = "artwork" | "swatch" | "tune_up" | "product";
+export type ReqType = "artwork" | "swatch" | "tune_up" | "product" | "filecamp" | "comms";
 
 export const TYPE_META: Record<ReqType, { label: string; emoji: string; guide: string }> = {
   artwork: { label: "Artwork / POS", emoji: "🎨", guide: "images" },
   swatch: { label: "Swatch / Sample", emoji: "🧵", guide: "images" },
   tune_up: { label: "Tune-Up Nomination", emoji: "🔧", guide: "tune-up-days" },
   product: { label: "Product / Gifting", emoji: "🎁", guide: "product-and-gifting" },
+  filecamp: { label: "FileCamp", emoji: "🗂️", guide: "filecamp" },
+  comms: { label: "Add to Comms List", emoji: "📧", guide: "comms" },
 };
 export const STATES = ["VIC", "NSW", "QLD", "WA", "SA", "TAS", "ACT", "NT"];
 export const baloo = "font-[family-name:var(--font-baloo)]";
@@ -105,6 +107,8 @@ export function RequestFormPicker({ type, setType, brands, onCreated, onCancel, 
       {type === "swatch" && <SwatchForm brands={brands} f={f} setF={setF} ack={ack} setAck={setAck} onSubmit={submit} />}
       {type === "tune_up" && <TuneUpForm f={f} setF={setF} file={file} setFile={setFile} ack={ack} setAck={setAck} onSubmit={submit} />}
       {type === "product" && <ProductForm brands={brands} f={f} setF={setF} ack={ack} setAck={setAck} onSubmit={submit} />}
+      {type === "filecamp" && <FileCampForm brands={brands} f={f} setF={setF} file={file} setFile={setFile} ack={ack} setAck={setAck} onSubmit={submit} />}
+      {type === "comms" && <CommsForm brands={brands} f={f} setF={setF} ack={ack} setAck={setAck} onSubmit={submit} />}
 
       {err && <p className="text-sm text-rose-600 mt-3">{err}</p>}
       <div className="mt-4 flex justify-end">
@@ -280,6 +284,138 @@ export function ProductForm({ brands, f, setF, ack, setAck, onSubmit }: any) {
       <Field label="Needed by" required><input type="date" className={inp} value={f.needed_by ?? ""} onChange={e => setF({ ...f, needed_by: e.target.value })} /></Field>
       <AckBox label="I have read the Free Product, Samples & Gifting rules." checked={ack} onChange={setAck} />
       <button id="submit-product" disabled={busy || !f.brand || !f.sku || !f.quantity || !f.approxRrpValue || !f.purpose || !f.fundedBy || !f.whatWeGet || !f.needed_by} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit request"}</button>
+    </div>
+  );
+}
+
+const FILECAMP_REASONS = [
+  { value: "pricelist_update", label: "Pricelist update" },
+  { value: "missing_assets", label: "Missing images / fact sheets" },
+  { value: "social_content", label: "Social content" },
+  { value: "user_access", label: "User access" },
+];
+
+export function FileCampForm({ brands, f, setF, file, setFile, ack, setAck, onSubmit }: any) {
+  const [busy, setBusy] = useState(false);
+  const reason = f.filecampReason;
+  async function go() {
+    setBusy(true);
+    const titles: Record<string, string> = {
+      pricelist_update: `FileCamp · ${f.brand ?? "brand TBC"} · pricelist update`,
+      missing_assets: `FileCamp · ${f.brand ?? "brand TBC"} · missing ${f.whatsMissing ?? "assets"}${f.sku ? ` (${f.sku})` : ""}`,
+      social_content: `FileCamp · ${f.brand ?? "brand TBC"} · social content`,
+      user_access: `FileCamp · user access · ${f.fullName ?? ""}`,
+    };
+    await onSubmit({
+      title: titles[reason] ?? "FileCamp request",
+      brand: f.brand,
+      end_use: reason === "user_access" ? (f.accessReason || "FileCamp user access") : "FileCamp",
+      needed_by: reason === "pricelist_update" ? f.effectiveDate : reason === "social_content" ? f.neededBy : undefined,
+      brief: {
+        filecampReason: reason, sku: f.sku, whatsMissing: f.whatsMissing, notes: f.notes,
+        contentNeeded: f.contentNeeded, format: f.format,
+        fullName: f.fullName, email: f.email, accessReason: f.accessReason, brandsNeeded: f.brandsNeeded,
+      },
+    });
+    setBusy(false);
+  }
+  const ready =
+    reason === "pricelist_update" ? !!(f.brand && f.effectiveDate) :
+    reason === "missing_assets" ? !!(f.brand && f.sku && f.whatsMissing) :
+    reason === "social_content" ? !!(f.brand && f.contentNeeded && f.format) :
+    reason === "user_access" ? !!(f.fullName && f.email && f.accessReason) : false;
+  return (
+    <div className="space-y-3">
+      <RuleCard>FileCamp is the asset library, and for some brands also holds pricelists and fact sheets. Access requests need a real business reason, unreleased artwork and pricing live in here.</RuleCard>
+      <Field label="What do you need" required>
+        <ChipGroup value={reason} onChange={(v: string) => setF({ ...f, filecampReason: v })} options={FILECAMP_REASONS} />
+      </Field>
+
+      {reason === "pricelist_update" && <>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Brand" required><select className={inp} value={f.brand ?? ""} onChange={e => setF({ ...f, brand: e.target.value })}><option value="">Select…</option>{brands.map((b: any) => <option key={b.name} value={b.name}>{b.name}</option>)}</select></Field>
+          <Field label="Effective date" required><input type="date" className={inp} value={f.effectiveDate ?? ""} onChange={e => setF({ ...f, effectiveDate: e.target.value })} /></Field>
+        </div>
+        <Field label="New pricelist file"><input type="file" onChange={e => setFile(e.target.files?.[0] ?? null)} className="text-sm" /></Field>
+        <Field label="Notes"><textarea className={inp} rows={2} value={f.notes ?? ""} onChange={e => setF({ ...f, notes: e.target.value })} /></Field>
+      </>}
+
+      {reason === "missing_assets" && <>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Brand" required><select className={inp} value={f.brand ?? ""} onChange={e => setF({ ...f, brand: e.target.value })}><option value="">Select…</option>{brands.map((b: any) => <option key={b.name} value={b.name}>{b.name}</option>)}</select></Field>
+          <Field label="SKU / product" required><input className={inp} value={f.sku ?? ""} onChange={e => setF({ ...f, sku: e.target.value })} /></Field>
+        </div>
+        <Field label="What's missing" required>
+          <ChipGroup value={f.whatsMissing} onChange={(v: string) => setF({ ...f, whatsMissing: v })} options={[{ value: "images", label: "Images" }, { value: "fact_sheet", label: "Fact sheet" }, { value: "both", label: "Both" }]} />
+        </Field>
+        <Field label="Notes"><textarea className={inp} rows={2} placeholder="Colourway, angle, anything specific" value={f.notes ?? ""} onChange={e => setF({ ...f, notes: e.target.value })} /></Field>
+      </>}
+
+      {reason === "social_content" && <>
+        <Field label="Brand" required><select className={inp} value={f.brand ?? ""} onChange={e => setF({ ...f, brand: e.target.value })}><option value="">Select…</option>{brands.map((b: any) => <option key={b.name} value={b.name}>{b.name}</option>)}</select></Field>
+        <Field label="Content needed" required><textarea className={inp} rows={2} value={f.contentNeeded ?? ""} onChange={e => setF({ ...f, contentNeeded: e.target.value })} /></Field>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Format" required>
+            <select className={inp} value={f.format ?? ""} onChange={e => setF({ ...f, format: e.target.value })}>
+              <option value="">Select…</option>
+              {["Instagram post", "Instagram story", "Website banner", "EDM", "Other"].map(o => <option key={o}>{o}</option>)}
+            </select>
+          </Field>
+          <Field label="Needed by"><input type="date" className={inp} value={f.neededBy ?? ""} onChange={e => setF({ ...f, neededBy: e.target.value })} /></Field>
+        </div>
+      </>}
+
+      {reason === "user_access" && <>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Full name" required><input className={inp} value={f.fullName ?? ""} onChange={e => setF({ ...f, fullName: e.target.value })} /></Field>
+          <Field label="Email" required><input type="email" className={inp} value={f.email ?? ""} onChange={e => setF({ ...f, email: e.target.value })} /></Field>
+        </div>
+        <Field label="Reason for access" required><input className={inp} placeholder="e.g. new starter, retailer marketing contact" value={f.accessReason ?? ""} onChange={e => setF({ ...f, accessReason: e.target.value })} /></Field>
+        <Field label="Brands needed"><input className={inp} placeholder="Comma separated, or 'all'" value={f.brandsNeeded ?? ""} onChange={e => setF({ ...f, brandsNeeded: e.target.value })} /></Field>
+      </>}
+
+      <AckBox label="I have read the FileCamp request rules." checked={ack} onChange={setAck} />
+      <button id="submit-filecamp" disabled={busy || !reason || !ready} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit request"}</button>
+    </div>
+  );
+}
+
+export function CommsForm({ brands, f, setF, ack, setAck, onSubmit }: any) {
+  const [busy, setBusy] = useState(false);
+  async function go() {
+    setBusy(true);
+    await onSubmit({
+      title: `Add to comms · ${f.brand ?? ""} · ${f.customerName ?? ""}`, brand: f.brand,
+      end_use: `Added to ${f.channel ?? "comms"} list`, needed_by: undefined,
+      brief: { customerName: f.customerName, customerEmail: f.customerEmail, customerMobile: f.customerMobile, channel: f.channel, optInMethod: f.optInMethod, notes: f.notes },
+    });
+    setBusy(false);
+  }
+  return (
+    <div className="space-y-3">
+      <RuleCard>Consent is not optional. Under the Spam Act 2003 we can only add someone who has clearly opted in, verbal interest at an event counts only if it was an explicit opt-in, casual chat does not.</RuleCard>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Field label="Brand" required><select className={inp} value={f.brand ?? ""} onChange={e => setF({ ...f, brand: e.target.value })}><option value="">Select…</option>{brands.map((b: any) => <option key={b.name} value={b.name}>{b.name}</option>)}</select></Field>
+        <Field label="Channel" required>
+          <select className={inp} value={f.channel ?? ""} onChange={e => setF({ ...f, channel: e.target.value })}>
+            <option value="">Select…</option>
+            {["Email / EDM", "SMS", "Loyalty program", "Other"].map(o => <option key={o}>{o}</option>)}
+          </select>
+        </Field>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Field label="Customer name" required><input className={inp} value={f.customerName ?? ""} onChange={e => setF({ ...f, customerName: e.target.value })} /></Field>
+        <Field label="Customer email or mobile" required><input className={inp} value={f.customerEmail ?? ""} onChange={e => setF({ ...f, customerEmail: e.target.value })} /></Field>
+      </div>
+      <Field label="How did they opt in" required>
+        <select className={inp} value={f.optInMethod ?? ""} onChange={e => setF({ ...f, optInMethod: e.target.value })}>
+          <option value="">Select…</option>
+          {["In-store sign-up form", "Verbal at an event (explicit opt-in)", "Competition entry", "Website form", "Other"].map(o => <option key={o}>{o}</option>)}
+        </select>
+      </Field>
+      <Field label="Notes"><textarea className={inp} rows={2} value={f.notes ?? ""} onChange={e => setF({ ...f, notes: e.target.value })} /></Field>
+      <AckBox label="I confirm this customer explicitly opted in, and I have read the comms rules." checked={ack} onChange={setAck} />
+      <button id="submit-comms" disabled={busy || !f.brand || !f.channel || !f.customerName || !f.customerEmail || !f.optInMethod} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit request"}</button>
     </div>
   );
 }

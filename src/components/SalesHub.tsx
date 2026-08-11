@@ -34,11 +34,15 @@ const STEPS: { key: Status; label: string }[] = [
 const dShort = (s?: string | null) => s ? new Date(s + (s.length === 10 ? "T00:00:00" : "")).toLocaleDateString("en-AU", { day: "numeric", month: "short" }) : "—";
 const baloo = "font-[family-name:var(--font-baloo)]";
 const body = "font-[family-name:var(--font-manrope)]";
-const TILE_ART: Record<ReqType, { grad: string; photo: string }> = {
+// filecamp/comms have no dedicated photography yet — omitting `photo` falls
+// back to a big centred emoji on the gradient instead of a broken image.
+const TILE_ART: Record<ReqType, { grad: string; photo?: string }> = {
   artwork: { grad: "from-[#FFD9CC] to-[#FF9B7A]", photo: "/sales-hub/artwork.jpg" },
   swatch: { grad: "from-[#CDEFF7] to-[#7FD4EA]", photo: "/sales-hub/swatch.jpg" },
   tune_up: { grad: "from-[#DCEBD1] to-[#9FCB84]", photo: "/sales-hub/tune_up.jpg" },
   product: { grad: "from-[#F6DDF2] to-[#E1A6D8]", photo: "/sales-hub/product.jpg" },
+  filecamp: { grad: "from-[#D9E4F5] to-[#9EB6E0]" },
+  comms: { grad: "from-[#FDE8D2] to-[#F0B26B]" },
 };
 
 export function SalesHub({ admin, brands, tradeshows = [], calendarEvents = [] }: { admin: boolean; brands: { name: string; color?: string }[]; tradeshows?: { id: string; name: string; date_start: string }[]; calendarEvents?: { title: string; start_date: string }[] }) {
@@ -180,9 +184,11 @@ function Landing({ brands, items, mine, tradeshows, calendarEvents, onPick, onOp
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {(Object.keys(TYPE_META) as ReqType[]).map(t => (
           <button key={t} onClick={() => onPick(t)} className="text-left bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md active:scale-[0.98] transition">
-            <div className={`aspect-square bg-gradient-to-br ${TILE_ART[t].grad} relative overflow-hidden`}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={TILE_ART[t].photo} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            <div className={`aspect-square bg-gradient-to-br ${TILE_ART[t].grad} relative overflow-hidden flex items-center justify-center`}>
+              {TILE_ART[t].photo
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={TILE_ART[t].photo} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                : <span className="text-5xl opacity-80">{TYPE_META[t].emoji}</span>}
             </div>
             <div className="px-3.5 py-3">
               <div className={`font-bold text-slate-800 text-[15px] ${baloo}`}>{TYPE_META[t].label.replace(" Request", "").replace(" / Sample", "").replace(" Nomination", "").replace(" / Gifting", "")}</div>

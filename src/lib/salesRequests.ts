@@ -11,10 +11,11 @@ export const missing = (s: number, b: string) => s === 404 || /PGRST205|does not
 export const MARKETING_ROTA = ["mel@coolkidz.com.au"];
 export const BASE = "https://marketing.coolkidz.com.au";
 
-export const REQUEST_TYPES = ["artwork", "swatch", "tune_up", "product"] as const;
+export const REQUEST_TYPES = ["artwork", "swatch", "tune_up", "product", "filecamp", "comms"] as const;
 export const STATUSES = ["new", "triaged", "in_progress", "review", "delivered", "on_hold", "declined"] as const;
 export const GUIDELINE_LINKS: Record<string, string> = {
   artwork: "images", swatch: "images", tune_up: "tune-up-days", product: "product-and-gifting",
+  filecamp: "filecamp", comms: "comms",
 };
 
 // Business-day add, weekends only (no AU public holiday calendar yet).
@@ -37,6 +38,13 @@ export function slaDays(request_type: string, brief: any): number | null {
     return specCount > 1 ? 15 : 10;
   }
   if (request_type === "swatch") return 5;
+  if (request_type === "filecamp") {
+    const reason = brief?.filecampReason;
+    if (reason === "user_access") return 2;
+    if (reason === "pricelist_update") return 3;
+    return 5; // missing_assets, social_content — may need new photography/copy sourced
+  }
+  if (request_type === "comms") return 2;
   return null; // tune_up reviewed in the next schedule build; product has no marketing SLA
 }
 

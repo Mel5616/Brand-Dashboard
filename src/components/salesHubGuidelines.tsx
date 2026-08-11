@@ -441,12 +441,49 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
     </>,
   },
   {
+    id: "filecamp", title: "FileCamp requests", icon: ICONS.image, owner: "Marketing", version: "0.1", lastReviewed: "draft",
+    body: <>
+      <FilecampCard />
+      <Section icon={ICONS.info} title="What goes through this form">
+        <p className="text-sm text-slate-600">FileCamp is the asset library (see Images above) and, for some brands, also holds current pricelists and fact sheets. This form covers the four things people most often need from it, that <strong>aren&apos;t</strong> a straight artwork or swatch request.</p>
+      </Section>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+        <DoCard title="Pricelist update" note="A brand's pricing has changed and the FileCamp copy needs to match" />
+        <DoCard title="Missing images or fact sheets" note="A SKU has no photography, or no fact sheet, in the library" />
+        <DoCard title="Social content" note="Ready-to-post assets for a store's own channels, not brand paid media" />
+        <DoCard title="User access" note="A new starter, or a retailer contact, needs a FileCamp login" />
+      </div>
+      <Section icon={ICONS.warn} title="Access requests need a real business reason">
+        <p className="text-sm text-slate-600">FileCamp holds unreleased artwork and pricing. <TBC /> confirm who signs off external (retailer) access before it's granted — until then, treat every external request as needing a Marketing check first, not an automatic yes.</p>
+      </Section>
+    </>,
+  },
+  {
+    id: "comms", title: "Adding customers to comms", icon: ICONS.mail, owner: "Marketing", version: "0.1", lastReviewed: "draft",
+    body: <>
+      <Section icon={ICONS.info} title="What this is for">
+        <p className="text-sm text-slate-600">Adding a specific customer to a brand's email/SMS list, e.g. someone who asked in-store or at an event, and wants to hear about that brand directly. Not for bulk lists or store databases, one customer at a time.</p>
+      </Section>
+      <WarnCard title="Consent is not optional" note="Under the Spam Act 2003, we can only email or text someone who has clearly asked to be added. Verbal interest at a Tune-Up Day counts if it was an explicit opt-in, casual chat does not." />
+      <Section icon={ICONS.check} title="What we need from you">
+        <div className="space-y-2">
+          <DoCard title="Customer name and email (or mobile for SMS)" note="" />
+          <DoCard title="Which brand's list" note="Lists are brand-specific, not portfolio-wide" />
+          <DoCard title="Confirmation they opted in, and how" note="In-store form, verbal at an event, competition entry, etc." />
+        </div>
+      </Section>
+      <p className="text-xs text-gray-400">Customers go into the brand's proper email platform, never a personal inbox or a spreadsheet. <TBC /> confirm expected turnaround.</p>
+    </>,
+  },
+  {
     id: "who-to-ask", title: "Who to ask", icon: ICONS.help, owner: "Marketing", version: "0.1", lastReviewed: "draft",
     body: <div className="max-w-xl">
       <AskTile icon={ICONS.image} situation="Need artwork" where="Artwork Request form (this Hub)" />
       <AskTile icon={ICONS.camera} situation="Need swatches or fabric samples" where="Swatch Request form (this Hub)" />
       <AskTile icon={ICONS.wrench} situation="Want a Tune-Up Day at a store" where="Tune-Up Nomination form (this Hub)" />
       <AskTile icon={ICONS.gift} situation="Want free product for anything" where="Product Request form → Sales leadership" />
+      <AskTile icon={ICONS.image} situation="Pricelist, missing assets, social content or FileCamp access" where="FileCamp Request form (this Hub)" />
+      <AskTile icon={ICONS.mail} situation="A customer wants onto a brand's email/SMS list" where="Add to Comms List form (this Hub)" />
       <AskTile icon={ICONS.chat} situation="Store wants us to share their post" where="Check the reshare checklist first, then tag us" />
       <AskTile icon={ICONS.code} situation="Retailer page has wrong copy or imagery" where="Flag to Marketing with the URL" />
       <AskTile icon={ICONS.child} situation="Customer complaint or warranty issue" where="Warranty helpdesk, help.uppababy.com.au" />
