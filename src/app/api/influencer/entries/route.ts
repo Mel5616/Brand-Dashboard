@@ -57,8 +57,12 @@ export async function POST(req: Request) {
         brand = p.brand ?? brand;
         product_name = p.product_name ?? product_name;
         if (rrp == null && p.rrp != null) rrp = Number(p.rrp);
-        if (p.cost_price != null) gifting_cost = Number(p.cost_price);           // exact cost
-        else if (p.cost_ratio != null && rrp != null) gifting_cost = round(rrp * Number(p.cost_ratio)); // ratio
+        // Catalogue rows imported without a real cost often carry a literal 0
+        // rather than null (198 of 716 products, confirmed) — treat that as
+        // unset too, so the RRP x brand-avg-ratio fallback below actually
+        // engages instead of silently reporting a $0 gift cost.
+        if (p.cost_price != null && Number(p.cost_price) > 0) gifting_cost = Number(p.cost_price);           // exact cost
+        else if (p.cost_ratio != null && Number(p.cost_ratio) > 0 && rrp != null) gifting_cost = round(rrp * Number(p.cost_ratio)); // ratio
       }
     }
   }

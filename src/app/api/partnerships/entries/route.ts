@@ -38,8 +38,12 @@ async function resolveLine(raw: any): Promise<{ style_code: string | null; produ
         brand = p.brand ?? brand;
         product_name = p.product_name ?? product_name;
         if (rrp == null && p.rrp != null) rrp = Number(p.rrp);
-        if (p.cost_price != null) unitCost = Number(p.cost_price);
-        else if (p.cost_ratio != null && rrp != null) unitCost = round(rrp * Number(p.cost_ratio));
+        // Catalogue rows imported without a real cost often carry a literal 0
+        // rather than null (198 of 716 products, confirmed) — treat that as
+        // unset too, so the RRP x brand-avg-ratio fallback below actually
+        // engages instead of silently reporting a $0 gift cost.
+        if (p.cost_price != null && Number(p.cost_price) > 0) unitCost = Number(p.cost_price);
+        else if (p.cost_ratio != null && Number(p.cost_ratio) > 0 && rrp != null) unitCost = round(rrp * Number(p.cost_ratio));
       }
     }
   }
