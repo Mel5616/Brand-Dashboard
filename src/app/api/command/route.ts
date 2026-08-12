@@ -61,7 +61,7 @@ export async function GET() {
   const [
     thresholdsRes, revenueRes, salesBudgetRes, actualsRes, budgetsRes, topupsRes,
     requestsRes, campaignsRes, blogsRes, syncRes, metricAlertsRes, brandsRes,
-    googleAdsRes, metaAdsRes, pinterestAdsRes, influencerRes,
+    googleAdsRes, metaAdsRes, pinterestAdsRes, influencerRes, signalsRes,
   ] = await Promise.all([
     sbGet("command_thresholds?select=*"),
     sbGet(`brand_daily?select=revenue&day=gte.${monthStart}&day=lte.${today}`),
@@ -89,12 +89,16 @@ export async function GET() {
     sbGet(`meta_ads?select=spend&month_key=eq.${monthKey}`),
     sbGet(`pinterest_ads?select=spend&month_key=eq.${monthKey}`),
     sbGet(`influencer_entries?select=total_cost&month_key=eq.${monthKey}`),
+    // Weekly Command stage 2 — exception signals diffed nightly from
+    // brand_context_packs. Tier A merges into the live queue below; Tier B/C
+    // stays out of the daily queue and surfaces as its own roll-up section.
+    sbGet("brand_signals?select=*&order=updated_at.desc"),
   ]);
   // "__alert_state__" is alert_sync.py's own dedup marker, not a real data
   // source — never show it as a feed, in the footer or the failure trigger.
   syncRes.rows = syncRes.rows.filter((r: any) => !String(r.source || "").startsWith("__"));
 
-  const needsSetup = missing(thresholdsRes.status, thresholdsRes.text) || missing(requestsRes.status, requestsRes.text);
+  const needsSetup = missing(thresholdsRes.status, thresholdsRes.text) || missing(requestsRes.status, requestsRes.text) || missing(signalsRes.status, signalsRes.text);
   const riskWindow = Number(thresholdsRes.rows.find((r: any) => r.key === "campaign_risk_window_days")?.value_numeric) || 14;
   const riskWindowFuture = new Date(Date.now() + riskWindow * 86_400_000).toISOString().slice(0, 10);
 
@@ -170,7 +174,21 @@ export async function GET() {
       daysLate: Math.max(0, daysLate(String(r.ran_at).slice(0, 10), today)), href: "/?tab=brands", detail: r.message,
     });
   }
+  // Weekly Command stage 2 — only Tier A signals join the live daily queue.
+  // Tier B/C stay out of it entirely and surface as a separate roll-up
+  // (returned below) so they don't compete with what genuinely needs Mel
+  // today. This is structural, not a per-user preference.
+  for (const r of signalsRes.rows) {
+    if (r.tier !== "A") continue;
+    queue.push({
+      type: "brand_signal", id: String(r.id), title: r.headline, brand: brandName(r.brand_id),
+      owner: null, daysLate: Math.max(0, daysLate(String(r.updated_at).slice(0, 10), today)), href: "/?tab=brands", detail: r.suggested_action || r.detail,
+    });
+  }
   queue.sort((a, b) => b.daysLate - a.daysLate);
+  const signalRollup = signalsRes.rows.filter((r: any) => r.tier === "B" || r.tier === "C").map((r: any) => ({
+    id: r.id, brand: brandName(r.brand_id), tier: r.tier, type: r.type, headline: r.headline, detail: r.detail, suggested_action: r.suggested_action, updated_at: r.updated_at,
+  }));
 
   // Snoozed items drop out until their resurface date.
   const snoozeRes = await sbGet(`command_snoozes?select=item_type,item_id,resurface_at&resurface_at=gte.${today}`);
@@ -189,6 +207,7 @@ export async function GET() {
     queue: visibleQueue,
     riskWindow,
     freshness,
+    signalRollup,
   });
 }
 

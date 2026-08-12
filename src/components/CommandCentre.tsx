@@ -16,9 +16,10 @@ import { useEffect, useMemo, useState } from "react";
 
 type QueueItem = { type: string; id: string; title: string; brand: string | null; owner: string | null; daysLate: number; href: string; detail?: string };
 type Freshness = { source: string; ok: boolean; ran_at: string; message?: string };
+type SignalRow = { id: string; brand: string | null; tier: string; type: string; headline: string; detail: string | null; suggested_action: string | null; updated_at: string };
 type Data = {
   header: { revenueActual: number; revenueBudget: number; revenueVariancePct: number | null; spendActual: number; spendBudget: number; spendVariancePct: number | null; monthElapsedPct: number; daysRemaining: number; queueCount: number };
-  queue: QueueItem[]; freshness: Freshness[]; needsSetup?: boolean;
+  queue: QueueItem[]; freshness: Freshness[]; needsSetup?: boolean; signalRollup: SignalRow[];
 };
 
 const TYPE_META: Record<string, { label: string; verb: string }> = {
@@ -27,6 +28,7 @@ const TYPE_META: Record<string, { label: string; verb: string }> = {
   campaign: { label: "Campaign", verb: "launching" },
   metric_alert: { label: "Metric alert", verb: "flagged" },
   sync_failure: { label: "Data feed", verb: "failing" },
+  brand_signal: { label: "Signal", verb: "flagged" },
 };
 
 const money = (n: number) => n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2)}M` : n >= 1000 ? `$${(n / 1000).toFixed(0)}K` : `$${Math.round(n)}`;
@@ -187,6 +189,26 @@ export function CommandCentre() {
             </div>
           )}
         </Collapsible>
+
+        {/* Tier B/C signals — deliberately kept out of "Needs you today".
+            Lower priority by design, not urgent, worth a weekly skim. */}
+        {data.signalRollup.length > 0 && (
+          <Collapsible id="rollup" title="This week's roll-up" count={data.signalRollup.length}>
+            <div className="divide-y divide-gray-50">
+              {data.signalRollup.map(s => (
+                <div key={s.id} className="py-2.5">
+                  <p className="text-sm font-semibold text-slate-800">{s.headline}</p>
+                  <p className="text-[12px] text-gray-400">
+                    {s.brand ? `${s.brand} · ` : ""}Tier {s.tier}
+                  </p>
+                  {(s.suggested_action || s.detail) && (
+                    <p className="text-[11.5px] text-gray-400 mt-0.5">{s.suggested_action || s.detail}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Collapsible>
+        )}
 
         {/* Band 6: Data freshness footer */}
         <Collapsible id="freshness" title="Data freshness">
