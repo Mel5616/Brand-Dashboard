@@ -1,0 +1,32 @@
+name: Weekly Command — build context packs (nightly)
+
+# Reads Supabase only (no external API), so this can run nightly cheaply.
+# Feeds stage 2 (exception signals) via week-on-week diff of these packs.
+on:
+  schedule:
+    - cron: "0 17 * * *"   # 03:00 AEST daily
+  workflow_dispatch: {}
+
+concurrency:
+  group: context-packs
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Write config (gitignored secret)
+        env:
+          STORES_CONFIG_JSON: ${{ secrets.STORES_CONFIG_JSON }}
+        run: printf '%s' "$STORES_CONFIG_JSON" > stores.config.json
+      - name: Build context packs
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python3 scripts/build_context_packs.py
