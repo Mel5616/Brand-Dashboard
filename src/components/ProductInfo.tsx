@@ -28,15 +28,51 @@ export function ProductInfo({ brandNames = [], admin = false }: { brandNames?: s
 
   async function upload() {
     if (!brand || (!htmlFile && !pdfFile)) { setErr("Pick a brand and attach the HTML and/or PDF."); return; }
+    for (const f of [htmlFile, pdfFile]) if (f && f.size > 20 * 1024 * 1024) { setErr(`${f.name} is over 20MB.`); return; }
     setBusy(true); setErr("");
-    const fd = new FormData();
-    fd.set("brand_name", brand); fd.set("version", version);
-    if (htmlFile) fd.set("html", htmlFile);
-    if (pdfFile) fd.set("pdf", pdfFile);
-    const r = await fetch("/api/fact-sheets", { method: "POST", body: fd }).then(x => x.json()).catch(() => ({ ok: false, error: "Upload failed" }));
-    setBusy(false);
-    if (!r.ok) { setErr(r.error || "Upload failed"); return; }
-    setAdding(false); setHtmlFile(null); setPdfFile(null); setVersion("1"); load();
+    const CHUNK = 3 * 1024 * 1024;
+    // Conservative — two files just under CHUNK riding along directly in the
+    // same "finish" request could together exceed Vercel's ~4.5MB body cap,
+    // so the direct-attach cutoff is well below the chunk size itself.
+    const DIRECT_MAX = 1.5 * 1024 * 1024;
+    const uploadId = crypto.randomUUID();
+
+    // Either file over the chunk size needs splitting (Vercel caps request
+    // bodies ~3-4.5MB) — html and pdf are chunked independently since either
+    // can be the big one, then reassembled together in one "finish" call.
+    async function chunkUpload(file: File, slot: "html" | "pdf"): Promise<number> {
+      const parts = Math.ceil(file.size / CHUNK);
+      for (let i = 0; i < parts; i++) {
+        setErr(`Uploading ${slot.toUpperCase()}… part ${i + 1} of ${parts}`);
+        const fd = new FormData();
+        fd.append("action", "part"); fd.append("upload_id", uploadId); fd.append("slot", slot); fd.append("seq", String(i));
+        fd.append("part", file.slice(i * CHUNK, (i + 1) * CHUNK));
+        const r = await fetch("/api/fact-sheets", { method: "POST", body: fd }).then(x => x.json()).catch(() => null);
+        if (!r?.ok) throw new Error(r?.error || `Upload failed at ${slot} part ${i + 1} — try again.`);
+      }
+      return parts;
+    }
+
+    try {
+      const fd = new FormData();
+      fd.set("action", "finish"); fd.set("upload_id", uploadId); fd.set("brand_name", brand); fd.set("version", version);
+      if (htmlFile) {
+        if (htmlFile.size <= DIRECT_MAX) fd.set("html", htmlFile);
+        else fd.set("html_parts", String(await chunkUpload(htmlFile, "html")));
+      }
+      if (pdfFile) {
+        if (pdfFile.size <= DIRECT_MAX) fd.set("pdf", pdfFile);
+        else fd.set("pdf_parts", String(await chunkUpload(pdfFile, "pdf")));
+      }
+      setErr("Assembling…");
+      const r = await fetch("/api/fact-sheets", { method: "POST", body: fd }).then(x => x.json()).catch(() => ({ ok: false, error: "Upload failed" }));
+      if (!r.ok) { setErr(r.error || "Upload failed"); setBusy(false); return; }
+      setAdding(false); setHtmlFile(null); setPdfFile(null); setVersion("1"); setErr(""); load();
+    } catch (e: any) {
+      setErr(e?.message || "Upload failed");
+    } finally {
+      setBusy(false);
+    }
   }
   async function remove(id: string, brandName: string) {
     if (!window.confirm(`Remove this fact sheet (${brandName})?`)) return;
