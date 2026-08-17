@@ -94,6 +94,28 @@ export async function GET(req: Request) {
     commission_pct: r.sale_value > 0 ? ((r.commission / r.sale_value) * 100) : null,
   }));
 
+  // Top products sold — from commission_factory_items (the transaction-level
+  // row only has a cart total, not what was actually in it). Separate table,
+  // separate query; a sync from before this existed just means no item rows
+  // for those older transactions, not an error.
+  let topProducts: { sku: string; product_name: string | null; units: number; sale_value: number; commission: number }[] = [];
+  let itemsQ = `${sbUrl}/rest/v1/commission_factory_items?select=sku,product_name,status,quantity,sale_value,commission&date=gte.${from}&date=lte.${to}`;
+  if (brand && brand !== "all" && /^\d+$/.test(brand)) itemsQ += `&brand_id=eq.${brand}`;
+  const itemsRes = await fetch(itemsQ, { headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}` }, cache: "no-store" });
+  if (itemsRes.ok) {
+    const itemRows = (JSON.parse((await itemsRes.text()) || "[]") as { sku: string; product_name: string | null; status: string; quantity: number; sale_value: number; commission: number }[])
+      .filter(i => (i.status || "") !== "Void");
+    const pm = new Map<string, { sku: string; product_name: string | null; units: number; sale_value: number; commission: number }>();
+    for (const i of itemRows) {
+      const cur = pm.get(i.sku) ?? { sku: i.sku, product_name: i.product_name, units: 0, sale_value: 0, commission: 0 };
+      cur.units += Number(i.quantity) || 0;
+      cur.sale_value += Number(i.sale_value) || 0;
+      cur.commission += Number(i.commission) || 0;
+      pm.set(i.sku, cur);
+    }
+    topProducts = [...pm.values()].sort((a, b) => b.sale_value - a.sale_value).slice(0, 15);
+  }
+
   return NextResponse.json({
     ok: true,
     transactions: rows.length,
@@ -103,5 +125,6 @@ export async function GET(req: Request) {
     invoices: [...invMap.values()].sort((a, b) => b.cost - a.cost),
     monthly: [...monthlyMap.values()].sort((a, b) => a.month_key.localeCompare(b.month_key)),
     transactionRows,
+    topProducts,
   });
 }

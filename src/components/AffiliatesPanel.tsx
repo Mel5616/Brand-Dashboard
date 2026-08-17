@@ -29,10 +29,12 @@ export function AffiliatesPanel({ rows, brands, brandFilter, monthKeys, fyLabel,
   rows: CFRow[]; brands: Brand[]; brandFilter: "all" | number; monthKeys: string[]; fyLabel: string; admin: boolean;
 }) {
   type TxnRow = { date: string; status: string; affiliate: string | null; order_id: string | null; coupon: string | null; sale_value: number; commission: number; override_fee: number; commission_pct: number | null };
+  type ProductRoll = { sku: string; product_name: string | null; units: number; sale_value: number; commission: number };
   const [tops, setTops] = useState<{
     affiliates: Roll[]; coupons: Roll[]; distinctAffiliates: number;
     invoices: { invoice_id: string; transactions: number; cost: number }[];
     monthly: { month_key: string; sales: number; cost: number }[]; transactionRows: TxnRow[];
+    topProducts: ProductRoll[];
   } | null>(null);
   const from = `${monthKeys[0]}-01`;
   const to = (() => { const [y, m] = monthKeys[monthKeys.length - 1].split("-").map(Number); return `${y}-${String(m).padStart(2, "0")}-${new Date(y, m, 0).getDate()}`; })();
@@ -43,6 +45,7 @@ export function AffiliatesPanel({ rows, brands, brandFilter, monthKeys, fyLabel,
       .then(r => r.json()).then(d => { if (d.ok) setTops({
         affiliates: d.affiliates ?? [], coupons: d.coupons ?? [], distinctAffiliates: d.distinctAffiliates ?? 0,
         invoices: d.invoices ?? [], monthly: d.monthly ?? [], transactionRows: d.transactionRows ?? [],
+        topProducts: d.topProducts ?? [],
       }); })
       .catch(() => { /* panel still works from the monthly rollup */ });
   }, [from, to, brandFilter]);
@@ -215,6 +218,34 @@ export function AffiliatesPanel({ rows, brands, brandFilter, monthKeys, fyLabel,
       <div className="grid lg:grid-cols-2 gap-4">
         <Top title="Top affiliates" items={tops?.affiliates ?? []} empty="No affiliate activity yet." />
         <Top title="Coupon performance" items={tops?.coupons ?? []} empty="No coupon-attributed sales yet." />
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-1">Top products sold</p>
+        <p className="text-xs text-gray-400 mb-3">By CF-attributed sale value — line-item detail from each transaction&apos;s cart, not just the cart total. Void excluded.</p>
+        {(tops?.topProducts ?? []).length === 0 ? (
+          <p className="text-sm text-gray-400">No product line items in this range yet.</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-[11px] text-gray-400 uppercase tracking-wide text-left border-b border-gray-100">
+                <th className="font-medium py-1.5">Product</th><th className="font-medium">SKU</th>
+                <th className="font-medium text-right">Units</th><th className="font-medium text-right">Sale value</th><th className="font-medium text-right">Commission</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(tops?.topProducts ?? []).map(p => (
+                <tr key={p.sku} className="border-b border-gray-50 text-slate-700">
+                  <td className="py-1.5 max-w-[320px] truncate" title={p.product_name ?? undefined}>{p.product_name ?? p.sku}</td>
+                  <td className="font-mono text-[12px] text-gray-500">{p.sku}</td>
+                  <td className="text-right">{p.units.toLocaleString()}</td>
+                  <td className="text-right font-semibold">{fmtFull(p.sale_value)}</td>
+                  <td className="text-right">{fmtFull(p.commission)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 overflow-x-auto">

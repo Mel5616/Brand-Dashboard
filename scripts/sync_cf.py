@@ -139,6 +139,30 @@ def sync_brand(brand_id, name, api_key):
     } for t in real if t.get('Id') and (t.get('DateCreated') or '')[:10]]
     sb_upsert('commission_factory_transactions', raw, 'id')
 
+    # Line items — CF's Items[] array on each transaction (Sku, product name,
+    # category, per-item sale value/commission). A multi-item cart produces
+    # one row per item, sharing the transaction's Id. This is the only source
+    # for "top products sold" — the transaction-level row above only has a
+    # cart total, not what was actually in it.
+    items = []
+    for t in real:
+        tid = t.get('Id')
+        tdate = (t.get('DateCreated') or '')[:10]
+        if not tid or not tdate:
+            continue
+        for it in (t.get('Items') or []):
+            sku = it.get('Sku')
+            if not sku:
+                continue
+            items.append({
+                'transaction_id': int(tid), 'brand_id': brand_id, 'date': tdate, 'status': t.get('Status'),
+                'sku': sku, 'product_name': it.get('Name'), 'category': it.get('Category'),
+                'quantity': int(float(it.get('Quantity') or 1)),
+                'sale_value': round(float(it.get('SaleValue') or 0), 2),
+                'commission': round(float(it.get('Commission') or 0), 2),
+            })
+    sb_upsert('commission_factory_items', items, 'transaction_id,sku')
+
     # Monthly rollup, split by status. Statuses change over time (Pending →
     # Approved), so clear this brand's rows for the window before reinserting,
     # otherwise a stale Pending row keeps its old totals forever.
@@ -161,7 +185,7 @@ def sync_brand(brand_id, name, api_key):
 
     cost = sum(r['commission'] + r['override_fee'] for r in raw)
     sales = sum(r['sale_value'] for r in raw)
-    print(f'✓  {len(raw)} txns, ${sales:,.0f} attributed, ${cost:,.2f} cost ({skipped} test rows skipped)')
+    print(f'✓  {len(raw)} txns, {len(items)} line items, ${sales:,.0f} attributed, ${cost:,.2f} cost ({skipped} test rows skipped)')
     return None
 
 def main():
