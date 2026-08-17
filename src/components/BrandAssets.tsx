@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 // Operations > Brand Assets — one place linking out to wherever each brand's
 // assets actually live (Brandfolder, Dropbox, Drive, supplier portals).
@@ -33,13 +33,29 @@ export function BrandAssets({ brands = [], admin }: { brands?: BrandRef[]; admin
   const [f, setF] = useState({ brand: "", label: "", url: "", notes: "", username: "", password: "" });
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
+  const [images, setImages] = useState<Record<string, string>>({});
+  const [uploadingFor, setUploadingFor] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch("/api/brand-assets").then(r => r.json()).then(d => {
       if (d.needsSetup) setNeedsSetup(true);
       else if (d.ok) setLinks(d.links ?? []);
     }).catch(() => {}).finally(() => setLoading(false));
+    fetch("/api/brand-assets/image").then(r => r.json()).then(d => {
+      if (d.ok) setImages(Object.fromEntries((d.images ?? []).map((i: any) => [i.brand, i.image_url])));
+    }).catch(() => {});
   }, []);
+
+  async function uploadImage(brand: string, file: File) {
+    setUploadingFor(brand);
+    const fd = new FormData();
+    fd.set("brand", brand); fd.set("file", file);
+    const d = await fetch("/api/brand-assets/image", { method: "POST", body: fd }).then(r => r.json()).catch(() => null);
+    setUploadingFor(null);
+    if (d?.ok) setImages(p => ({ ...p, [brand]: d.image_url }));
+    else setErr(d?.error || "Couldn't upload the image.");
+  }
 
   const grouped = useMemo(() => {
     const m = new Map<string, Link[]>();
@@ -94,7 +110,7 @@ export function BrandAssets({ brands = [], admin }: { brands?: BrandRef[]; admin
   if (needsSetup) return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-500">Run <code className="bg-gray-100 px-1 rounded">add_brand_asset_links.sql</code> first.</div>;
 
   return (
-    <div className="space-y-4 max-w-[1000px]">
+    <div className="space-y-4 max-w-[1400px]">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-slate-800">Brand assets</h1>
@@ -109,18 +125,42 @@ export function BrandAssets({ brands = [], admin }: { brands?: BrandRef[]; admin
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">No links yet{admin ? " — click + Add link to start (e.g. Frida → Brandfolder)." : "."}</div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => {
+        const file = e.target.files?.[0];
+        const brand = fileRef.current?.dataset.brand;
+        if (file && brand) uploadImage(brand, file);
+        e.target.value = "";
+      }} />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {grouped.map(g => (
-          <div key={g.brand} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-3 px-4 py-3.5 rounded-t-2xl" style={{ background: `linear-gradient(120deg, ${color(g.brand)}, ${color(g.brand)}99)` }}>
-              <span className="w-9 h-9 rounded-full bg-white/90 grid place-items-center text-[13px] font-black shrink-0" style={{ color: color(g.brand) }}>
-                {g.brand.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
-              </span>
-              <div className="min-w-0">
-                <p className="text-[15px] font-bold text-white leading-tight">{g.brand}</p>
-                <p className="text-[10.5px] text-white/70">{g.links.length} {g.links.length === 1 ? "source" : "sources"}</p>
+          <div key={g.brand} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+            <div className="relative aspect-square group/img" style={{ background: images[g.brand] ? undefined : `linear-gradient(135deg, ${color(g.brand)}, ${color(g.brand)}99)` }}>
+              {images[g.brand] ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={images[g.brand]} alt={g.brand} className="absolute inset-0 w-full h-full object-cover" />
+              ) : (
+                <span className="absolute inset-0 grid place-items-center text-white/90 text-4xl font-black">
+                  {g.brand.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
+                </span>
+              )}
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 pt-8 pb-3 flex items-end justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-[16px] font-bold text-white leading-tight drop-shadow">{g.brand}</p>
+                  <p className="text-[10.5px] text-white/80">{g.links.length} {g.links.length === 1 ? "source" : "sources"}</p>
+                </div>
+                {admin && <button onClick={() => startAdd(g.brand)} className="w-7 h-7 rounded-full bg-white/25 hover:bg-white/40 text-white text-[15px] leading-none font-bold grid place-items-center shrink-0" title="Add a link for this brand">＋</button>}
               </div>
-              {admin && <button onClick={() => startAdd(g.brand)} className="ml-auto w-7 h-7 rounded-full bg-white/20 hover:bg-white/35 text-white text-[15px] leading-none font-bold grid place-items-center" title="Add a link for this brand">＋</button>}
+              {admin && (
+                <button
+                  onClick={() => { if (fileRef.current) { fileRef.current.dataset.brand = g.brand; fileRef.current.click(); } }}
+                  disabled={uploadingFor === g.brand}
+                  className="absolute top-2 right-2 text-[10.5px] font-semibold bg-white/90 hover:bg-white text-slate-700 rounded-full px-2.5 py-1 opacity-0 group-hover/img:opacity-100 transition-opacity disabled:opacity-100"
+                  title="Set a lifestyle image for this brand"
+                >
+                  {uploadingFor === g.brand ? "Uploading…" : "📷 Photo"}
+                </button>
+              )}
             </div>
             <div className="px-4 py-2 divide-y divide-gray-50">
               {g.links.map(l => {
