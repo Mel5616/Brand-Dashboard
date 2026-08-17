@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
-import { getAccess } from "@/lib/access";
+import { getAccess, canManage } from "@/lib/access";
 import { mintToken, storeCreds } from "@/lib/shopifyMint";
 
-// Cross-site discount code creator (write_discounts). Admin-only: creates the
-// same percentage code on every selected store and records the result.
+// Cross-site discount code creator (write_discounts): creates the same
+// percentage/fixed-amount code on every selected store and records the
+// result. Lives on the Discount Codes tab — admins always have access;
+// members can too if that tab is explicitly granted (canManage), since Mel
+// wants to delegate code creation to specific staff, not just admins.
 export const revalidate = 0;
 export const maxDuration = 60;
 const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -12,7 +15,7 @@ const h = (extra: Record<string, string> = {}) => ({ apikey: sbKey!, Authorizati
 
 export async function GET() {
   const acc = await getAccess();
-  if (acc.role !== "admin") return NextResponse.json({ ok: false }, { status: 403 });
+  if (acc.role !== "admin" && !acc.allowedTabs?.includes("discount-codes")) return NextResponse.json({ ok: false }, { status: 403 });
   const res = await fetch(`${sbUrl}/rest/v1/cross_site_codes?select=*&order=created_at.desc&limit=20`, { headers: h(), cache: "no-store" });
   const text = await res.text();
   return NextResponse.json({ ok: true, stores: storeCreds().map(s => ({ id: s.id, name: s.name })), items: res.ok ? JSON.parse(text || "[]") : [], needsSetup: !res.ok });
@@ -20,7 +23,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const acc = await getAccess();
-  if (acc.role !== "admin") return NextResponse.json({ ok: false, error: "Admins only" }, { status: 403 });
+  if (!(await canManage("discount-codes"))) return NextResponse.json({ ok: false, error: "Not permitted" }, { status: 403 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   const code = String(b.code || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 40);
   const discountType = b.discount_type === "fixed_amount" ? "fixed_amount" : "percentage";

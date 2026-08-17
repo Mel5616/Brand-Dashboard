@@ -140,12 +140,18 @@ def sync_codes(bid, domain, token):
             d, _ = shop_get(domain, token, f'price_rules/{r["id"]}/discount_codes.json?limit=250')
         except Exception:
             continue
-        for c in d.get('discount_codes', []):
+        codes = d.get('discount_codes', [])
+        # codes_in_rule lets the dashboard tell a "main" promo code (the sole
+        # code on its own rule) apart from a bulk-generated batch (hundreds of
+        # unique codes under one rule — the pattern affiliate/loyalty apps use).
+        codes_in_rule = len(codes)
+        for c in codes:
             rows.append({'brand_id': bid, 'code': (c.get('code') or '')[:80],
                          'usage_count': int(c.get('usage_count') or 0),
                          'value_type': r.get('value_type'),
                          'value': abs(float(r.get('value') or 0)),
-                         'starts_at': r.get('starts_at'), 'ends_at': r.get('ends_at')})
+                         'starts_at': r.get('starts_at'), 'ends_at': r.get('ends_at'),
+                         'usage_limit': r.get('usage_limit'), 'codes_in_rule': codes_in_rule})
     upsert('shop_discount_codes', [r for r in rows if r['code']], 'brand_id,code')
     return len(rows)
 

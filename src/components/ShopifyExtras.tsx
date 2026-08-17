@@ -177,7 +177,7 @@ export function DiscountCodesPanel({ brands }: { brands: BrandRef[] }) {
   );
 }
 
-export function CrossCodeCard() {
+export function CrossCodeCard({ canCreate = true }: { canCreate?: boolean }) {
   const [stores, setStores] = React.useState<{ id: number; name: string }[]>([]);
   const [history, setHistory] = React.useState<any[]>([]);
   const [sel, setSel] = React.useState<Set<number>>(new Set());
@@ -212,7 +212,11 @@ export function CrossCodeCard() {
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mt-4">
       <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Cross-site discount code</h2>
-      <p className="text-xs text-gray-400 mt-0.5 mb-3">Create one code across every selected website in a single click (e.g. an event code). Admin only — the code goes live immediately.</p>
+      <p className="text-xs text-gray-400 mt-0.5 mb-3">
+        Create one code across every selected website in a single click (e.g. an event code) — the code goes live immediately.
+        {!canCreate && <span className="text-amber-600 font-medium"> You have view-only access — ask an admin to grant you this tab to create codes.</span>}
+      </p>
+      <fieldset disabled={!canCreate} className="contents">
       <div className="flex flex-wrap items-center gap-2 mb-2">
         <input value={f.code} onChange={e => setF(p => ({ ...p, code: e.target.value.toUpperCase() }))} placeholder="CODE e.g. NTM40" className={`${inp} font-mono w-36`} />
         <div className="flex rounded-lg border border-gray-200 overflow-hidden">
@@ -240,6 +244,7 @@ export function CrossCodeCard() {
           </button>
         ))}
       </div>
+      </fieldset>
       {results && (
         <div className="text-[12.5px] space-y-0.5 mb-2">
           {results.map(r => <p key={r.brand} className={r.ok ? "text-emerald-600" : "text-rose-600"}>{r.ok ? "✓" : "✗"} {r.brand}{r.error ? ` — ${r.error}` : ""}</p>)}
