@@ -89,7 +89,7 @@ export async function GET(req: Request) {
   // Individual transactions, most recent first, capped so the payload stays
   // sane — this is a detail table, not a metric input.
   const transactionRows = [...rows].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 200).map(r => ({
-    date: r.date, status: r.status, affiliate: r.affiliate, order_id: r.order_id,
+    date: r.date, status: r.status, affiliate: r.affiliate, order_id: r.order_id, coupon: r.coupon,
     sale_value: r.sale_value, commission: r.commission, override_fee: r.override_fee,
     commission_pct: r.sale_value > 0 ? ((r.commission / r.sale_value) * 100) : null,
   }));

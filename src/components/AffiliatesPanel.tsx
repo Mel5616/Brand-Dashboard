@@ -28,7 +28,7 @@ type SubInvoice = {
 export function AffiliatesPanel({ rows, brands, brandFilter, monthKeys, fyLabel, admin }: {
   rows: CFRow[]; brands: Brand[]; brandFilter: "all" | number; monthKeys: string[]; fyLabel: string; admin: boolean;
 }) {
-  type TxnRow = { date: string; status: string; affiliate: string | null; order_id: string | null; sale_value: number; commission: number; override_fee: number; commission_pct: number | null };
+  type TxnRow = { date: string; status: string; affiliate: string | null; order_id: string | null; coupon: string | null; sale_value: number; commission: number; override_fee: number; commission_pct: number | null };
   const [tops, setTops] = useState<{
     affiliates: Roll[]; coupons: Roll[]; distinctAffiliates: number;
     invoices: { invoice_id: string; transactions: number; cost: number }[];
@@ -227,7 +227,7 @@ export function AffiliatesPanel({ rows, brands, brandFilter, monthKeys, fyLabel,
             <thead>
               <tr className="text-[11px] text-gray-400 uppercase tracking-wide text-left border-b border-gray-100">
                 <th className="font-medium py-1.5">Date</th><th className="font-medium">Affiliate</th><th className="font-medium">Order</th>
-                <th className="font-medium">Status</th><th className="font-medium text-right">Sale value</th>
+                <th className="font-medium">Code</th><th className="font-medium">Status</th><th className="font-medium text-right">Sale value</th>
                 <th className="font-medium text-right">Commission</th><th className="font-medium text-right">Commission %</th>
               </tr>
             </thead>
@@ -237,6 +237,7 @@ export function AffiliatesPanel({ rows, brands, brandFilter, monthKeys, fyLabel,
                   <td className="py-1.5 whitespace-nowrap">{dMY(t.date)}</td>
                   <td className="max-w-[180px] truncate" title={t.affiliate ?? undefined}>{t.affiliate ?? "—"}</td>
                   <td className="font-mono text-[12px] text-gray-500">{t.order_id ?? "—"}</td>
+                  <td className="font-mono text-[12px] text-violet-700">{t.coupon || "—"}</td>
                   <td>
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${t.status === "Approved" ? "bg-emerald-100 text-emerald-700" : t.status === "Void" ? "bg-rose-100 text-rose-600" : "bg-amber-100 text-amber-700"}`}>{t.status}</span>
                   </td>
