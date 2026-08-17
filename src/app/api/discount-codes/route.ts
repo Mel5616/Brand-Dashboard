@@ -26,14 +26,17 @@ type Row = {
 // filtered — some brands have 10,000+ codes and PostgREST caps result pages,
 // so filtering client-side after a plain fetch was silently truncating.
 //
-// NULL handling is deliberate, not an oversight: Postgres's `not.gt.1` etc.
-// evaluate to NULL (excluded) when the column itself is null, so a code
-// whose price rule hasn't been reclassified yet (older sync data, or a
-// store with more rules than the sync's cap) drops out of this list rather
-// than defaulting to "main". For a tab whose whole point is filtering out
-// junk, under-showing is the safer failure mode than flooding it with
-// unclassified bulk codes.
-const MAIN_FILTER = "usage_limit=not.eq.1&codes_in_rule=not.gt.1&title_shared_count=not.gt.2";
+// codes_in_rule/title_shared_count: NULL means "not yet classified" (older
+// sync data, or a store with more price rules than the sync's cap) and is
+// deliberately excluded — under-showing is the safer failure mode than
+// flooding this tab with unclassified bulk codes.
+//
+// usage_limit is different: NULL there is a real, common Shopify value
+// meaning "no usage limit set" (unlimited use) — the normal case for a
+// genuine promo code, not a data gap. Treating it the same as the other two
+// NULLs silently dropped real main codes (e.g. the cross-site CHCM40/NTM40
+// codes both have usage_limit=null) — this must stay an explicit OR.
+const MAIN_FILTER = "codes_in_rule=not.gt.1&title_shared_count=not.gt.2&or=(usage_limit.is.null,usage_limit.neq.1)";
 
 export async function GET() {
   if (!(await getAccess()).role) return NextResponse.json({ ok: false }, { status: 401 });
