@@ -67,14 +67,18 @@ export async function GET(req: Request) {
     invMap.set(r.invoice_id, cur);
   }
 
-  // Monthly Attributed sales vs Total cost (commission + override fee),
-  // Approved transactions only — the "how effective is the platform" view.
+  // Monthly Attributed sales vs Total cost (commission + override fee) — the
+  // "how effective is the platform" view. Deliberately LIVE: includes Pending
+  // alongside Approved (rows already excludes Void), same basis as the KPI
+  // band above, so a newly-launched program shows something meaningful
+  // during CF's validation window instead of a flat cost-only chart. This
+  // is real-time, not a snapshot — if a Pending transaction later gets
+  // voided, it drops out of both sales and cost on the next load.
   // Subscription fees aren't in commission_factory_transactions at all, so
   // the client adds those in from the subscription-invoice rows it already
   // holds rather than this route reaching into a second table.
   const monthlyMap = new Map<string, { month_key: string; sales: number; cost: number }>();
   for (const r of rows) {
-    if (r.status !== "Approved") continue;
     const mk = r.date.slice(0, 7);
     const cur = monthlyMap.get(mk) ?? { month_key: mk, sales: 0, cost: 0 };
     cur.sales += Number(r.sale_value) || 0;

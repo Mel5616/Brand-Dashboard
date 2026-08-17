@@ -184,8 +184,8 @@ export function AffiliatesPanel({ rows, brands, brandFilter, monthKeys, fyLabel,
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-1">Platform effectiveness</p>
         <p className="text-xs text-gray-400 mb-3">
-          Attributed sales vs total cost (commission + fees + the monthly subscription fee), Approved transactions only, by month.
-          Net across this range: {fmtFull(totalSalesAllMonths - totalCostAllMonths)}.
+          Attributed sales vs total cost (commission + fees + the monthly subscription fee), by month. Live — includes Pending
+          alongside Approved, so it shifts on its own if a Pending transaction later gets voided. Net across this range: {fmtFull(totalSalesAllMonths - totalCostAllMonths)}.
         </p>
         {chartSeries.every(r => !r.sales && !r.cost) ? (
           <p className="text-sm text-gray-400">Nothing approved in this range yet.</p>
