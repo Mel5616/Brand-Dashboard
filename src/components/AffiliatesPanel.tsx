@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { fmt, fmtFull } from "@/lib/format";
 
 // Commission Factory affiliate performance.
@@ -16,9 +16,13 @@ export const CF_BRAND_IDS = [0, 5]; // Nanit, UPPAbaby
 type CFRow = { brand_id: number; month_key: string; status: string; transactions: number; sale_value: number; commission: number; override_fee: number };
 type Brand = { id: number; name: string; color?: string };
 type Roll = { name: string; transactions: number; sale_value: number; cost: number };
+type SubInvoice = {
+  id: string; brand_id: number; invoice_no: string; period_month: string; invoice_date: string; due_date: string | null;
+  subtotal: number; gst: number; total: number; amount_paid: number; amount_due: number; file_url: string | null; file_name: string | null;
+};
 
-export function AffiliatesPanel({ rows, brands, brandFilter, monthKeys, fyLabel }: {
-  rows: CFRow[]; brands: Brand[]; brandFilter: "all" | number; monthKeys: string[]; fyLabel: string;
+export function AffiliatesPanel({ rows, brands, brandFilter, monthKeys, fyLabel, admin }: {
+  rows: CFRow[]; brands: Brand[]; brandFilter: "all" | number; monthKeys: string[]; fyLabel: string; admin: boolean;
 }) {
   const [tops, setTops] = useState<{ affiliates: Roll[]; coupons: Roll[]; distinctAffiliates: number; invoices: { invoice_id: string; transactions: number; cost: number }[] } | null>(null);
   const from = `${monthKeys[0]}-01`;
@@ -30,6 +34,19 @@ export function AffiliatesPanel({ rows, brands, brandFilter, monthKeys, fyLabel 
       .then(r => r.json()).then(d => { if (d.ok) setTops({ affiliates: d.affiliates ?? [], coupons: d.coupons ?? [], distinctAffiliates: d.distinctAffiliates ?? 0, invoices: d.invoices ?? [] }); })
       .catch(() => { /* panel still works from the monthly rollup */ });
   }, [from, to, brandFilter]);
+
+  // CF's monthly platform SUBSCRIPTION invoices (e.g. "Grow technology plan")
+  // — a flat fee, entirely separate from affiliate commission/override fee.
+  // Not exposed by CF's Transactions API, so entered manually with the PDF.
+  const [subInvoices, setSubInvoices] = useState<SubInvoice[]>([]);
+  const [subNeedsSetup, setSubNeedsSetup] = useState(false);
+  const loadSubInvoices = () => fetch("/api/cf-invoices").then(r => r.json()).then(d => {
+    if (d.needsSetup) setSubNeedsSetup(true); else if (d.ok) setSubInvoices(d.rows ?? []);
+  }).catch(() => {});
+  useEffect(() => { loadSubInvoices(); }, []);
+  const subInScope = useMemo(
+    () => subInvoices.filter(i => (brandFilter === "all" || i.brand_id === brandFilter) && monthKeys.includes(i.period_month)),
+    [subInvoices, brandFilter, monthKeys]);
 
   const inScope = useMemo(
     () => rows.filter(r => (brandFilter === "all" || r.brand_id === brandFilter) && monthKeys.includes(r.month_key)),
@@ -49,7 +66,7 @@ export function AffiliatesPanel({ rows, brands, brandFilter, monthKeys, fyLabel 
   const rate = sales > 0 ? (cost / sales) * 100 : 0;
   const roi = cost > 0 ? sales / cost : 0;
 
-  if (inScope.length === 0) {
+  if (inScope.length === 0 && subInScope.length === 0 && !admin) {
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
         <p className="text-slate-600 font-medium">No affiliate transactions yet</p>
@@ -71,22 +88,30 @@ export function AffiliatesPanel({ rows, brands, brandFilter, monthKeys, fyLabel 
     { label: "Affiliates", value: (tops?.distinctAffiliates ?? 0).toLocaleString(), sub: brandFilter === "all" ? "across both sites" : "have driven a sale" },
   ];
 
-  // Monthly invoice cost per brand — what Commission Factory actually bills
-  // (commission + its platform fee) for approved transactions, by month.
-  // Pending/Void aren't a real invoiced cost yet, so they're excluded here
-  // even though they still show in the KPI band above.
+  // Monthly invoice cost per brand — two genuinely different things CF bills
+  // for, kept as separate rows rather than blended into one number since
+  // they carry different GST treatment: commission + override fee on
+  // Approved transactions (excl GST, from CF's Transactions API), and the
+  // flat monthly platform subscription fee (incl GST, from the manually
+  // uploaded PDF invoices below). Pending/Void aren't a real invoiced cost.
   const brandName = (id: number) => brands.find(b => b.id === id)?.name ?? `Brand ${id}`;
   const invoiceRows = useMemo(() => {
-    const m = new Map<string, { month_key: string; brand_id: number; cost: number }>();
+    const m = new Map<string, { month_key: string; brand_id: number; commission_cost: number; subscription_cost: number }>();
+    const cell = (mk: string, bid: number) => {
+      const k = `${mk}:${bid}`;
+      const cur = m.get(k) ?? { month_key: mk, brand_id: bid, commission_cost: 0, subscription_cost: 0 };
+      m.set(k, cur);
+      return cur;
+    };
     for (const r of inScope) {
       if (r.status !== "Approved") continue;
-      const k = `${r.month_key}:${r.brand_id}`;
-      const cur = m.get(k) ?? { month_key: r.month_key, brand_id: r.brand_id, cost: 0 };
-      cur.cost += r.commission + r.override_fee;
-      m.set(k, cur);
+      cell(r.month_key, r.brand_id).commission_cost += r.commission + r.override_fee;
+    }
+    for (const i of subInScope) {
+      cell(i.period_month, i.brand_id).subscription_cost += i.total;
     }
     return [...m.values()].sort((a, b) => b.month_key.localeCompare(a.month_key) || a.brand_id - b.brand_id);
-  }, [inScope]);
+  }, [inScope, subInScope]);
 
   const Top = ({ title, items, empty }: { title: string; items: Roll[]; empty: string }) => (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
@@ -139,21 +164,24 @@ export function AffiliatesPanel({ rows, brands, brandFilter, monthKeys, fyLabel 
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-1">Monthly invoice cost</p>
-        <p className="text-xs text-gray-400 mb-3">Commission + platform fee on Approved transactions — Pending and Void aren&apos;t a real invoiced cost yet.</p>
+        <p className="text-xs text-gray-400 mb-3">Commission + platform fee (excl GST, Approved transactions only) and the flat monthly subscription fee (incl GST) — kept separate since they&apos;re billed differently.</p>
         {invoiceRows.length === 0 ? (
-          <p className="text-sm text-gray-400">No approved transactions in this range yet.</p>
+          <p className="text-sm text-gray-400">Nothing invoiced in this range yet.</p>
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr className="text-[11px] text-gray-400 uppercase tracking-wide text-left border-b border-gray-100">
-                <th className="font-medium py-1.5">Month</th><th className="font-medium">Brand</th><th className="font-medium text-right">Invoiced cost</th>
+                <th className="font-medium py-1.5">Month</th><th className="font-medium">Brand</th>
+                <th className="font-medium text-right">Commission + fees</th><th className="font-medium text-right">Subscription</th><th className="font-medium text-right">Total</th>
               </tr>
             </thead>
             <tbody>
               {invoiceRows.map(r => (
                 <tr key={`${r.month_key}-${r.brand_id}`} className="border-b border-gray-50 text-slate-700">
                   <td className="py-1.5">{r.month_key}</td><td>{brandName(r.brand_id)}</td>
-                  <td className="text-right font-semibold">{fmtFull(r.cost)}</td>
+                  <td className="text-right">{r.commission_cost ? fmtFull(r.commission_cost) : "—"}</td>
+                  <td className="text-right">{r.subscription_cost ? fmtFull(r.subscription_cost) : "—"}</td>
+                  <td className="text-right font-semibold">{fmtFull(r.commission_cost + r.subscription_cost)}</td>
                 </tr>
               ))}
             </tbody>
@@ -185,6 +213,114 @@ export function AffiliatesPanel({ rows, brands, brandFilter, monthKeys, fyLabel 
           </table>
         )}
       </div>
+      <SubscriptionInvoices brands={brands} rows={subInScope.length || !admin ? subInScope : subInvoices} admin={admin} onAdded={loadSubInvoices} needsSetup={subNeedsSetup} />
+    </div>
+  );
+}
+
+const today = () => new Date().toISOString().slice(0, 10);
+const dMY = (s: string) => s ? new Date(s + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "";
+
+function SubscriptionInvoices({ brands, rows, admin, onAdded, needsSetup }: {
+  brands: Brand[]; rows: SubInvoice[]; admin: boolean; onAdded: () => void; needsSetup: boolean;
+}) {
+  const cfBrands = brands.filter(b => CF_BRAND_IDS.includes(b.id));
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [f, setF] = useState({ brand_id: String(cfBrands[0]?.id ?? ""), invoice_no: "", period_month: new Date().toISOString().slice(0, 7), invoice_date: today(), due_date: "", subtotal: "", gst: "", total: "", amount_paid: "", amount_due: "0" });
+  const set = (patch: Partial<typeof f>) => setF(p => ({ ...p, ...patch }));
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const inp = "w-full text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400";
+
+  async function add() {
+    setBusy(true); setErr("");
+    try {
+      const fd = new FormData();
+      for (const [k, v] of Object.entries(f)) fd.set(k, v);
+      const file = fileRef.current?.files?.[0]; if (file) fd.set("file", file);
+      const d = await fetch("/api/cf-invoices", { method: "POST", body: fd }).then(r => r.json());
+      if (d.ok) {
+        setF(p => ({ ...p, invoice_no: "", subtotal: "", gst: "", total: "", amount_paid: "", amount_due: "0" }));
+        if (fileRef.current) fileRef.current.value = "";
+        onAdded();
+      } else { setErr(d.error || "Could not save."); }
+    } finally { setBusy(false); }
+  }
+  async function remove(id: string) {
+    if (typeof window !== "undefined" && !window.confirm("Delete this invoice?")) return;
+    const d = await fetch(`/api/cf-invoices?id=${encodeURIComponent(id)}`, { method: "DELETE" }).then(r => r.json());
+    if (d.ok) onAdded();
+  }
+  const brandName = (id: number) => brands.find(b => b.id === id)?.name ?? `Brand ${id}`;
+
+  if (needsSetup) return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-sm text-gray-500">
+      Run <code className="bg-gray-100 px-1 rounded">add_cf_subscription_invoices.sql</code> in Supabase to track CF&apos;s monthly subscription invoices.
+    </div>
+  );
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-1">Subscription invoices</p>
+      <p className="text-xs text-gray-400 mb-3">
+        Commission Factory&apos;s flat monthly platform fee (e.g. &quot;Grow technology plan&quot;) — emailed as a PDF, not exposed by its API, so logged here manually.
+      </p>
+
+      {admin && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 gap-2 mb-4 items-end">
+          <label className="block"><span className="text-[10px] uppercase tracking-wider text-gray-400">Brand</span>
+            <select value={f.brand_id} onChange={e => set({ brand_id: e.target.value })} className={inp}>
+              {cfBrands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+            </select></label>
+          <label className="block"><span className="text-[10px] uppercase tracking-wider text-gray-400">Invoice no.</span>
+            <input value={f.invoice_no} onChange={e => set({ invoice_no: e.target.value })} className={inp} placeholder="CF-93814-…" /></label>
+          <label className="block"><span className="text-[10px] uppercase tracking-wider text-gray-400">Period</span>
+            <input type="month" value={f.period_month} onChange={e => set({ period_month: e.target.value })} className={inp} /></label>
+          <label className="block"><span className="text-[10px] uppercase tracking-wider text-gray-400">Invoice date</span>
+            <input type="date" value={f.invoice_date} onChange={e => set({ invoice_date: e.target.value })} className={inp} /></label>
+          <label className="block"><span className="text-[10px] uppercase tracking-wider text-gray-400">Due date</span>
+            <input type="date" value={f.due_date} onChange={e => set({ due_date: e.target.value })} className={inp} /></label>
+          <label className="block"><span className="text-[10px] uppercase tracking-wider text-gray-400">Subtotal</span>
+            <input value={f.subtotal} onChange={e => set({ subtotal: e.target.value })} inputMode="decimal" className={inp} placeholder="500" /></label>
+          <label className="block"><span className="text-[10px] uppercase tracking-wider text-gray-400">GST</span>
+            <input value={f.gst} onChange={e => set({ gst: e.target.value })} inputMode="decimal" className={inp} placeholder="50" /></label>
+          <label className="block"><span className="text-[10px] uppercase tracking-wider text-gray-400">Total (incl GST)</span>
+            <input value={f.total} onChange={e => set({ total: e.target.value })} inputMode="decimal" className={inp} placeholder="550" /></label>
+          <label className="block"><span className="text-[10px] uppercase tracking-wider text-gray-400">PDF</span>
+            <input ref={fileRef} type="file" accept="application/pdf" className="text-xs w-full" /></label>
+          <div className="col-span-2 sm:col-span-4 lg:col-span-9 flex items-center gap-3">
+            <button onClick={add} disabled={busy || !f.invoice_no || !f.total} className="bg-emerald-600 text-white text-xs font-semibold px-4 py-2 rounded-lg disabled:opacity-40">
+              {busy ? "Saving…" : "Add invoice"}
+            </button>
+            {err && <span className="text-xs text-rose-500">{err}</span>}
+          </div>
+        </div>
+      )}
+
+      {rows.length === 0 ? (
+        <p className="text-sm text-gray-400">None uploaded for this range yet.</p>
+      ) : (
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-[11px] text-gray-400 uppercase tracking-wide text-left border-b border-gray-100">
+              <th className="font-medium py-1.5">Period</th><th className="font-medium">Brand</th><th className="font-medium">Invoice #</th>
+              <th className="font-medium">Date</th><th className="font-medium text-right">Total</th><th className="font-medium"></th>{admin && <th />}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(r => (
+              <tr key={r.id} className="border-b border-gray-50 text-slate-700">
+                <td className="py-1.5">{r.period_month}</td><td>{brandName(r.brand_id)}</td>
+                <td className="font-mono text-[12.5px]">{r.invoice_no}</td>
+                <td className="text-gray-500">{dMY(r.invoice_date)}</td>
+                <td className="text-right font-semibold">{fmtFull(r.total)}</td>
+                <td>{r.file_url && <a href={r.file_url} target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline text-[12px]">PDF</a>}</td>
+                {admin && <td className="text-right"><button onClick={() => remove(r.id)} className="text-gray-300 hover:text-rose-500" title="Delete">✕</button></td>}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }

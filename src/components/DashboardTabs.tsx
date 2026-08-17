@@ -2309,7 +2309,7 @@ export function DashboardTabs({
                   </select>
                   <span className="text-[11px] text-gray-400">UPPAbaby and Nanit only</span>
                 </div>
-                <AffiliatesPanel rows={commissionFactory} brands={cfBrands} brandFilter={cfFilter} monthKeys={monthKeys} fyLabel={fyLabel} />
+                <AffiliatesPanel rows={commissionFactory} brands={cfBrands} brandFilter={cfFilter} monthKeys={monthKeys} fyLabel={fyLabel} admin={role === "admin"} />
               </>
             );
           })()}
