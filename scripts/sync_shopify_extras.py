@@ -15,6 +15,7 @@ import os
 import ssl
 import urllib.parse
 import urllib.request
+from collections import defaultdict
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_PATH = os.path.join(BASE_DIR, 'stores.config.json')
@@ -134,24 +135,42 @@ def sync_stock(bid, domain, token):
 
 def sync_codes(bid, domain, token):
     rows = []
-    rules = list(paged(domain, token, 'price_rules.json?limit=250', 'price_rules'))[:150]
+    # Raised from 150 -> 1000 (some stores run into thousands of price rules,
+    # e.g. UPPAbaby has 6,215 — mostly single-use codes from an affiliate/
+    # referral app, each on its own rule). 1000 catches the vast majority of
+    # real, currently-relevant promo codes without materially slowing the
+    # shared nightly sync; very old bulk-code batches beyond that may still
+    # slip through unclassified.
+    rules = list(paged(domain, token, 'price_rules.json?limit=250', 'price_rules'))[:1000]
+
+    # Title-based batch detection: bulk-generated codes (affiliate/referral
+    # apps) typically create ONE price rule per code, so codes_in_rule reads
+    # 1 for those too — it doesn't distinguish them from a real promo code.
+    # What does: a bulk batch's rules share an identical/templated title
+    # across hundreds of separate rules; a real promo code's rule has its
+    # own distinct title. Confirmed against real UPPAbaby data.
+    title_counts = defaultdict(int)
+    for r in rules:
+        title_counts[r.get('title') or ''] += 1
+
     for r in rules:
         try:
             d, _ = shop_get(domain, token, f'price_rules/{r["id"]}/discount_codes.json?limit=250')
         except Exception:
             continue
         codes = d.get('discount_codes', [])
-        # codes_in_rule lets the dashboard tell a "main" promo code (the sole
-        # code on its own rule) apart from a bulk-generated batch (hundreds of
-        # unique codes under one rule — the pattern affiliate/loyalty apps use).
+        # codes_in_rule: a secondary signal (many codes sharing ONE rule is
+        # also a bulk pattern, just a less common one than one-rule-per-code).
         codes_in_rule = len(codes)
+        title = r.get('title') or ''
         for c in codes:
             rows.append({'brand_id': bid, 'code': (c.get('code') or '')[:80],
                          'usage_count': int(c.get('usage_count') or 0),
                          'value_type': r.get('value_type'),
                          'value': abs(float(r.get('value') or 0)),
                          'starts_at': r.get('starts_at'), 'ends_at': r.get('ends_at'),
-                         'usage_limit': r.get('usage_limit'), 'codes_in_rule': codes_in_rule})
+                         'usage_limit': r.get('usage_limit'), 'codes_in_rule': codes_in_rule,
+                         'rule_title': title[:200], 'title_shared_count': title_counts[title]})
     upsert('shop_discount_codes', [r for r in rows if r['code']], 'brand_id,code')
     return len(rows)
 
