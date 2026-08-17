@@ -11,7 +11,7 @@ const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const missing = (s: number, b: string) => s === 404 || /PGRST205|does not exist|schema cache/i.test(b);
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-type Txn = { brand_id: number; date: string; status: string; sale_value: number; commission: number; override_fee: number; affiliate: string | null; affiliate_id: string | null; coupon: string | null; invoice_id: string | null };
+type Txn = { brand_id: number; date: string; status: string; sale_value: number; commission: number; override_fee: number; affiliate: string | null; affiliate_id: string | null; coupon: string | null; invoice_id: string | null; order_id: string | null };
 
 export async function GET(req: Request) {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
@@ -23,7 +23,7 @@ export async function GET(req: Request) {
   const brand = url.searchParams.get("brand");
   if (!DATE.test(from) || !DATE.test(to)) return NextResponse.json({ ok: false, error: "bad range" }, { status: 400 });
 
-  let q = `${sbUrl}/rest/v1/commission_factory_transactions?select=brand_id,date,status,sale_value,commission,override_fee,affiliate,affiliate_id,coupon,invoice_id&date=gte.${from}&date=lte.${to}`;
+  let q = `${sbUrl}/rest/v1/commission_factory_transactions?select=brand_id,date,status,sale_value,commission,override_fee,affiliate,affiliate_id,coupon,invoice_id,order_id&date=gte.${from}&date=lte.${to}`;
   if (brand && brand !== "all" && /^\d+$/.test(brand)) q += `&brand_id=eq.${brand}`;
 
   const res = await fetch(q, { headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}` }, cache: "no-store" });
@@ -67,6 +67,29 @@ export async function GET(req: Request) {
     invMap.set(r.invoice_id, cur);
   }
 
+  // Monthly Attributed sales vs Total cost (commission + override fee),
+  // Approved transactions only — the "how effective is the platform" view.
+  // Subscription fees aren't in commission_factory_transactions at all, so
+  // the client adds those in from the subscription-invoice rows it already
+  // holds rather than this route reaching into a second table.
+  const monthlyMap = new Map<string, { month_key: string; sales: number; cost: number }>();
+  for (const r of rows) {
+    if (r.status !== "Approved") continue;
+    const mk = r.date.slice(0, 7);
+    const cur = monthlyMap.get(mk) ?? { month_key: mk, sales: 0, cost: 0 };
+    cur.sales += Number(r.sale_value) || 0;
+    cur.cost += (Number(r.commission) || 0) + (Number(r.override_fee) || 0);
+    monthlyMap.set(mk, cur);
+  }
+
+  // Individual transactions, most recent first, capped so the payload stays
+  // sane — this is a detail table, not a metric input.
+  const transactionRows = [...rows].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 200).map(r => ({
+    date: r.date, status: r.status, affiliate: r.affiliate, order_id: r.order_id,
+    sale_value: r.sale_value, commission: r.commission, override_fee: r.override_fee,
+    commission_pct: r.sale_value > 0 ? ((r.commission / r.sale_value) * 100) : null,
+  }));
+
   return NextResponse.json({
     ok: true,
     transactions: rows.length,
@@ -74,5 +97,7 @@ export async function GET(req: Request) {
     coupons: roll(r => r.coupon),
     distinctAffiliates: affiliateKeys.size,
     invoices: [...invMap.values()].sort((a, b) => b.cost - a.cost),
+    monthly: [...monthlyMap.values()].sort((a, b) => a.month_key.localeCompare(b.month_key)),
+    transactionRows,
   });
 }
