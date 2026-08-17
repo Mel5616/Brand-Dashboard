@@ -20,14 +20,14 @@ type Roll = { name: string; transactions: number; sale_value: number; cost: numb
 export function AffiliatesPanel({ rows, brands, brandFilter, monthKeys, fyLabel }: {
   rows: CFRow[]; brands: Brand[]; brandFilter: "all" | number; monthKeys: string[]; fyLabel: string;
 }) {
-  const [tops, setTops] = useState<{ affiliates: Roll[]; coupons: Roll[] } | null>(null);
+  const [tops, setTops] = useState<{ affiliates: Roll[]; coupons: Roll[]; distinctAffiliates: number; invoices: { invoice_id: string; transactions: number; cost: number }[] } | null>(null);
   const from = `${monthKeys[0]}-01`;
   const to = (() => { const [y, m] = monthKeys[monthKeys.length - 1].split("-").map(Number); return `${y}-${String(m).padStart(2, "0")}-${new Date(y, m, 0).getDate()}`; })();
 
   useEffect(() => {
     const b = brandFilter === "all" ? "all" : String(brandFilter);
     fetch(`/api/affiliates?from=${from}&to=${to}&brand=${b}`, { cache: "no-store" })
-      .then(r => r.json()).then(d => { if (d.ok) setTops({ affiliates: d.affiliates ?? [], coupons: d.coupons ?? [] }); })
+      .then(r => r.json()).then(d => { if (d.ok) setTops({ affiliates: d.affiliates ?? [], coupons: d.coupons ?? [], distinctAffiliates: d.distinctAffiliates ?? 0, invoices: d.invoices ?? [] }); })
       .catch(() => { /* panel still works from the monthly rollup */ });
   }, [from, to, brandFilter]);
 
@@ -68,7 +68,25 @@ export function AffiliatesPanel({ rows, brands, brandFilter, monthKeys, fyLabel 
     { label: "Effective rate", value: `${rate.toFixed(1)}%`, sub: "cost ÷ attributed sales" },
     { label: "Return on cost", value: `${roi.toFixed(1)}×`, sub: "attributed sales per $1" },
     { label: "Transactions", value: txns.toLocaleString(), sub: `${sum(pending, r => r.transactions)} not yet approved` },
+    { label: "Affiliates", value: (tops?.distinctAffiliates ?? 0).toLocaleString(), sub: brandFilter === "all" ? "across both sites" : "have driven a sale" },
   ];
+
+  // Monthly invoice cost per brand — what Commission Factory actually bills
+  // (commission + its platform fee) for approved transactions, by month.
+  // Pending/Void aren't a real invoiced cost yet, so they're excluded here
+  // even though they still show in the KPI band above.
+  const brandName = (id: number) => brands.find(b => b.id === id)?.name ?? `Brand ${id}`;
+  const invoiceRows = useMemo(() => {
+    const m = new Map<string, { month_key: string; brand_id: number; cost: number }>();
+    for (const r of inScope) {
+      if (r.status !== "Approved") continue;
+      const k = `${r.month_key}:${r.brand_id}`;
+      const cur = m.get(k) ?? { month_key: r.month_key, brand_id: r.brand_id, cost: 0 };
+      cur.cost += r.commission + r.override_fee;
+      m.set(k, cur);
+    }
+    return [...m.values()].sort((a, b) => b.month_key.localeCompare(a.month_key) || a.brand_id - b.brand_id);
+  }, [inScope]);
 
   const Top = ({ title, items, empty }: { title: string; items: Roll[]; empty: string }) => (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
@@ -117,6 +135,55 @@ export function AffiliatesPanel({ rows, brands, brandFilter, monthKeys, fyLabel 
       <div className="grid lg:grid-cols-2 gap-4">
         <Top title="Top affiliates" items={tops?.affiliates ?? []} empty="No affiliate activity yet." />
         <Top title="Coupon performance" items={tops?.coupons ?? []} empty="No coupon-attributed sales yet." />
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-1">Monthly invoice cost</p>
+        <p className="text-xs text-gray-400 mb-3">Commission + platform fee on Approved transactions — Pending and Void aren&apos;t a real invoiced cost yet.</p>
+        {invoiceRows.length === 0 ? (
+          <p className="text-sm text-gray-400">No approved transactions in this range yet.</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-[11px] text-gray-400 uppercase tracking-wide text-left border-b border-gray-100">
+                <th className="font-medium py-1.5">Month</th><th className="font-medium">Brand</th><th className="font-medium text-right">Invoiced cost</th>
+              </tr>
+            </thead>
+            <tbody>
+              {invoiceRows.map(r => (
+                <tr key={`${r.month_key}-${r.brand_id}`} className="border-b border-gray-50 text-slate-700">
+                  <td className="py-1.5">{r.month_key}</td><td>{brandName(r.brand_id)}</td>
+                  <td className="text-right font-semibold">{fmtFull(r.cost)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-1">Invoices</p>
+        <p className="text-xs text-gray-400 mb-3">Commission Factory&apos;s own invoice numbers, once it issues a payout invoice covering a transaction — not every approved transaction has one immediately.</p>
+        {(tops?.invoices ?? []).length === 0 ? (
+          <p className="text-sm text-gray-400">No invoices issued yet for transactions in this range.</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-[11px] text-gray-400 uppercase tracking-wide text-left border-b border-gray-100">
+                <th className="font-medium py-1.5">Invoice #</th><th className="font-medium text-right">Transactions</th><th className="font-medium text-right">Cost</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(tops?.invoices ?? []).map(inv => (
+                <tr key={inv.invoice_id} className="border-b border-gray-50 text-slate-700">
+                  <td className="py-1.5 font-mono text-[12.5px]">{inv.invoice_id}</td>
+                  <td className="text-right">{inv.transactions}</td>
+                  <td className="text-right font-semibold">{fmtFull(inv.cost)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

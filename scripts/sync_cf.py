@@ -129,9 +129,13 @@ def sync_brand(brand_id, name, api_key):
         'commission':   round(float(t.get('Commission') or 0), 2),
         'override_fee': round(float(t.get('OverrideFee') or 0), 2),
         'affiliate':    t.get('AffiliateBusinessName') or t.get('AffiliateContactName'),
+        'affiliate_id': str(t['AffiliateId']) if t.get('AffiliateId') is not None else None,
         'coupon':       (t.get('CouponCode') or None),
         'order_id':     t.get('OrderId'),
         'currency':     t.get('ReportedCurrencyCode'),
+        # Null until CF actually issues a payout invoice covering this
+        # transaction — not every real transaction has one yet.
+        'invoice_id':   str(t['InvoiceId']) if t.get('InvoiceId') is not None else None,
     } for t in real if t.get('Id') and (t.get('DateCreated') or '')[:10]]
     sb_upsert('commission_factory_transactions', raw, 'id')
 
