@@ -6,6 +6,7 @@ import { GoogleAdsChart } from "./GoogleAdsChart";
 import { MetaAdsChart } from "./MetaAdsChart";
 import { PinterestAdsChart } from "./PinterestAdsChart";
 import { PinterestOrganicPanel } from "./PinterestOrganicPanel";
+import { AmazonAdsCard } from "./AmazonAdsCard";
 import { AdsDailyRange } from "./AdsDailyRange";
 import { CommandPalette } from "./CommandPalette";
 import { SyncStatusPanel } from "./SyncStatusPanel";
@@ -86,7 +87,7 @@ import { StockReport } from "./StockReport";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "summary" | "brands" | "strategy" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "report" | "snapshot" | "social-report" | "d2c-weekly" | "month-review" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "nanit" | "affiliates" | "pa-budget" | "pa-tracker" | "documents" | "team";
+type TabId = "summary" | "brands" | "strategy" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "report" | "snapshot" | "social-report" | "d2c-weekly" | "month-review" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "nanit" | "affiliates" | "pa-budget" | "pa-tracker" | "documents" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -168,6 +169,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
     id: "pinterest-ads", label: "Pinterest Ads",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19c-.5 1.5-1 3-1 3m1-3c.7-2.5 1.2-4.5 1.5-6M12 3a7 7 0 00-3 13.3M10.5 13c.4.6 1.1 1 2 1 2 0 3.5-2 3.5-4.5S14.5 5 12 5" /></svg>,
+  },
+  {
+    id: "amazon-ads", label: "Amazon Ads",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18" /></svg>,
   },
   {
     id: "email", label: "Email",
@@ -311,7 +316,7 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Plan", ids: ["campaign-calendar", "promotions", "discount-codes", "calendar", "content", "events", "event-concepts", "decks", "show-deals"] },
   { label: "Creative", ids: ["tasks", "design-requests", "creative"] },
   { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info", "brand-assets", "stock-report", "cost-sheet"] },
-  { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads"] },
+  { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads", "amazon-ads"] },
   { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting", "influencer-agreements", "nanit", "releases", "affiliates", "pa-budget", "pa-tracker", "documents"] },
   { label: "Sales Hub", ids: ["sales-hub"] },
 ];
@@ -1947,6 +1952,14 @@ export function DashboardTabs({
               <AdsDailyRange platform="pinterest" brandFilter={brandFilter} accent="#E60023" />
 
               <PinterestOrganicPanel brands={brands} brandFilter={brandFilter} />
+            </>
+          )}
+
+          {/* ── Amazon Ads (no live API — results uploaded from the Amazon Ads console) ── */}
+          {active === "amazon-ads" && (
+            <>
+              <SectionBar title="Amazon Ads" />
+              <AmazonAdsCard brands={brands} admin={role === "admin"} />
             </>
           )}
 

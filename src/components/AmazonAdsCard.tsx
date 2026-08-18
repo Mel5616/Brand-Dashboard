@@ -35,7 +35,7 @@ function matchBrand(name: string, brands: Brand[]): number | null {
 // same as Google/Meta/Pinterest. No live API (needs an approved Amazon Ads
 // developer app), so it's filled by uploading the "Advertised product"
 // report from Amazon Ads console each month.
-export function AmazonAdsCard({ brands }: { brands: Brand[] }) {
+export function AmazonAdsCard({ brands, admin = true }: { brands: Brand[]; admin?: boolean }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [needsSetup, setNeedsSetup] = useState(false);
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
@@ -132,10 +132,10 @@ export function AmazonAdsCard({ brands }: { brands: Brand[] }) {
             <p className="text-xs text-gray-400">Results, not a planned budget line — spend + attributed sales per brand, uploaded from Amazon Ads console each month.</p>
           </div>
         </div>
-        <button onClick={() => setOpen(o => !o)} className="text-xs font-semibold text-[#1E9DC2] hover:underline shrink-0">{open ? "Hide" : "Upload a report"}</button>
+        {admin && <button onClick={() => setOpen(o => !o)} className="text-xs font-semibold text-[#1E9DC2] hover:underline shrink-0">{open ? "Hide" : "Upload a report"}</button>}
       </div>
 
-      {open && (
+      {admin && open && (
         <div className="mt-3 border-t border-gray-100 pt-3 flex items-center gap-2 flex-wrap">
           <input type="month" value={month} onChange={e => setMonth(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-2 py-1.5" />
           <label className="text-sm font-semibold text-white bg-[#1E9DC2] hover:bg-[#187ea3] rounded-lg px-3 py-1.5 cursor-pointer">
@@ -239,7 +239,7 @@ export function AmazonAdsCard({ brands }: { brands: Brand[] }) {
                           <td className="px-3 py-1.5 text-right text-gray-400">{r.clicks > 0 ? r.clicks.toLocaleString() : "—"}</td>
                           <td className="px-3 py-1.5 text-right text-gray-400">{ctr != null ? ctr.toFixed(2) + "%" : "—"}</td>
                           <td className="px-3 py-1.5 text-right">
-                            <button onClick={() => del(r.brand_id, r.month_key)} className="text-gray-300 hover:text-rose-500 text-xs">✕</button>
+                            {admin && <button onClick={() => del(r.brand_id, r.month_key)} className="text-gray-300 hover:text-rose-500 text-xs">✕</button>}
                           </td>
                         </tr>
                       );

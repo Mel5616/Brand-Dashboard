@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { BrandBudgetOverview } from "./BrandBudgetOverview";
 import { BudgetDataTools } from "./BudgetDataTools";
-import { AmazonAdsCard } from "./AmazonAdsCard";
 import {
   Chart as ChartJS, ArcElement, BarElement, CategoryScale, LinearScale,
   LineElement, PointElement, Filler, Tooltip, Legend,
@@ -613,8 +612,6 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
       <p className="text-center text-xs text-gray-300 pb-4">
         Google, Meta &amp; Pinterest actuals are live from the ad platforms · all other expenses are uploaded above
       </p>
-
-      {canEdit && <AmazonAdsCard brands={brands} />}
       </>
       )}
     </div>

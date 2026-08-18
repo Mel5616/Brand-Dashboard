@@ -60,6 +60,7 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "google-ads", label: "Google Ads" },
     { id: "meta-ads", label: "Meta Ads" },
     { id: "pinterest-ads", label: "Pinterest Ads" },
+    { id: "amazon-ads", label: "Amazon Ads" },
   ] },
   { label: "Owned & Earned", tabs: [
     { id: "email", label: "Email" },
