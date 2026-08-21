@@ -46,7 +46,7 @@ export async function PATCH(req: Request) {
   if (b.content_type !== undefined) fields.content_type = b.content_type || null;
   if (b.status !== undefined) fields.status = b.status || null;
   if (b.posted_at !== undefined) fields.posted_at = b.posted_at || null;
-  for (const k of ["likes", "reach"] as const) {
+  for (const k of ["likes", "reach", "engagements", "shares", "saves", "new_followers"] as const) {
     if (b[k] !== undefined) fields[k] = parseCount(b[k]);
   }
   // The Instagram/profile link lives on the roster (keyed by handle), shared across
@@ -71,7 +71,11 @@ export async function PATCH(req: Request) {
       posted_at: p.posted_at || null,
       likes: parseCount(p.likes),
       reach: parseCount(p.reach),
-    })).filter((p: any) => p.url || p.likes != null || p.reach != null || p.posted_at);
+      engagements: parseCount(p.engagement),
+      shares: parseCount(p.shares),
+      saves: parseCount(p.saves),
+      new_followers: parseCount(p.new_followers),
+    })).filter((p: any) => p.url || p.likes != null || p.reach != null || p.engagements != null || p.shares != null || p.saves != null || p.new_followers != null || p.posted_at);
     await fetch(`${sbUrl}/rest/v1/influencer_content?entry_id=eq.${encodeURIComponent(String(b.id))}`, { method: "DELETE", headers: h });
     if (pieces.length) {
       const ins = await fetch(`${sbUrl}/rest/v1/influencer_content`, { method: "POST", headers: h, body: JSON.stringify(pieces) });
@@ -80,6 +84,10 @@ export async function PATCH(req: Request) {
     const sum = (k: string) => pieces.reduce((s: number, p: any) => s + (p[k] ?? 0), 0);
     fields.likes = pieces.some((p: any) => p.likes != null) ? sum("likes") : null;
     fields.reach = pieces.some((p: any) => p.reach != null) ? sum("reach") : null;
+    fields.engagements = pieces.some((p: any) => p.engagements != null) ? sum("engagements") : null;
+    fields.shares = pieces.some((p: any) => p.shares != null) ? sum("shares") : null;
+    fields.saves = pieces.some((p: any) => p.saves != null) ? sum("saves") : null;
+    fields.new_followers = pieces.some((p: any) => p.new_followers != null) ? sum("new_followers") : null;
     fields.content_url = pieces[0]?.url ?? null;
     fields.content_type = pieces[0]?.content_type ?? null;
     fields.posted_at = pieces.map((p: any) => p.posted_at).filter(Boolean).sort()[0] ?? null;

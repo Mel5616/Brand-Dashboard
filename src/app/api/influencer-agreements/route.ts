@@ -16,6 +16,9 @@ const missing = (status: number, body: string) => status === 404 || /PGRST205|do
 const canUse = (acc: { role: string | null; allowedTabs: string[] }) => acc.role === "admin" || (!!acc.role && acc.allowedTabs.includes("influencer-agreements"));
 // Confirmed with Mel directly — where the approved gift order sheet is emailed.
 const ORDERS_EMAIL = "orders@coolkidz.com.au";
+// Sign-off is restricted to Mel personally, not any admin — she asked for
+// "approved by Me" specifically.
+const ORDER_SHEET_APPROVER = "mel@coolkidz.com.au";
 
 // Clause 7 ties exclusivity to "14 days after the last deliverable is
 // published" rather than a fixed months-from-signing term. Before every
@@ -354,7 +357,7 @@ export async function PATCH(req: Request) {
     // Hard gate: the order sheet is watermarked "not yet approved" until this
     // fires, and this is the only path that emails it to Accounts — approval
     // and send happen as one action, per Mel's own confirmed workflow.
-    if (acc.role !== "admin") return NextResponse.json({ ok: false, error: "Admin only" }, { status: 403 });
+    if ((acc.user?.email || "").toLowerCase() !== ORDER_SHEET_APPROVER) return NextResponse.json({ ok: false, error: "Only Mel can approve and send the gift order sheet" }, { status: 403 });
     if (a.status !== "signed") return NextResponse.json({ ok: false, error: "Only a signed agreement can be approved" }, { status: 400 });
     const approvedAt = new Date().toISOString();
     const approvedBy = (acc.user as any)?.email ?? "unknown";

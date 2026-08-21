@@ -83,6 +83,8 @@ export async function GET() {
     rrp: e.rrp != null ? Math.round(Number(e.rrp)) : null,
     status: e.status ?? null, content_url: e.content_url ?? null, content_type: e.content_type ?? null,
     likes: e.likes != null ? Number(e.likes) : null, reach: e.reach != null ? Number(e.reach) : null,
+    engagements: e.engagements != null ? Number(e.engagements) : null, shares: e.shares != null ? Number(e.shares) : null,
+    saves: e.saves != null ? Number(e.saves) : null, new_followers: e.new_followers != null ? Number(e.new_followers) : null,
     posted_at: e.posted_at ?? null, affiliate_code: e.affiliate_code ?? null,
     avatar_url: rosterBy.get(e.handle)?.avatar_url ?? null,
     profile_url: rosterBy.get(e.handle)?.profile_url ?? null,

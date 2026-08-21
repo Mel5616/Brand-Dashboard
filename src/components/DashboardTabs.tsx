@@ -2244,7 +2244,7 @@ export function DashboardTabs({
           {active === "influencer-agreements" && (
             <>
               <SectionBar title="Influencer Agreements" />
-              <InfluencerAgreements brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} admin={role === "admin"} />
+              <InfluencerAgreements brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} admin={role === "admin"} currentEmail={currentEmail} />
             </>
           )}
 

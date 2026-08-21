@@ -12,6 +12,7 @@ type Gift = {
   product_name: string | null; rrp: number | null; status: string | null; content_url: string | null;
   content_type: string | null; likes: number | null; reach: number | null; posted_at: string | null;
   avatar_url: string | null; profile_url: string | null; affiliate_code: string | null;
+  engagements: number | null; shares: number | null; saves: number | null; new_followers: number | null;
 };
 type TopInf = { handle: string; likes: number; name: string | null; followers: number | null; avatar_url: string | null };
 type Social = { posts: number; likes: number; reach: number };
@@ -276,6 +277,14 @@ function PostCard({ g, editing, onEdit, onClose, onSaved }: { g: Gift; editing: 
             <div><p className="text-base font-bold text-slate-800">{compact(g.reach)}</p><p className="text-[10px] text-gray-400">👁 Reach</p></div>
             <div><p className="text-base font-bold text-slate-800">{er != null ? er.toFixed(1) + "%" : "—"}</p><p className="text-[10px] text-gray-400">⚡ Eng.</p></div>
           </div>
+          {(g.engagements != null || g.shares != null || g.saves != null || g.new_followers != null) && (
+            <div className="grid grid-cols-4 gap-2 mt-2 text-center">
+              <div><p className="text-sm font-bold text-slate-700">{compact(g.engagements)}</p><p className="text-[9px] text-gray-400">💬 Engagement</p></div>
+              <div><p className="text-sm font-bold text-slate-700">{compact(g.shares)}</p><p className="text-[9px] text-gray-400">↗ Shares</p></div>
+              <div><p className="text-sm font-bold text-slate-700">{compact(g.saves)}</p><p className="text-[9px] text-gray-400">🔖 Saves</p></div>
+              <div><p className="text-sm font-bold text-slate-700">{compact(g.new_followers)}</p><p className="text-[9px] text-gray-400">＋Followers</p></div>
+            </div>
+          )}
           <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-50 text-[11px]">
             <span className="text-gray-400">{g.content_type || "Post"} · {g.posted_at ? new Date(g.posted_at + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" }) : mon(g.month_key)}</span>
             <span className="flex items-center gap-3">
@@ -295,7 +304,10 @@ function PostCard({ g, editing, onEdit, onClose, onSaved }: { g: Gift; editing: 
   );
 }
 
-type Piece = { url: string; content_type: string; posted_at: string; likes: string; reach: string };
+type Piece = {
+  url: string; content_type: string; posted_at: string; likes: string; reach: string;
+  engagement: string; shares: string; saves: string; new_followers: string;
+};
 
 function PostEditor({ g, onClose, onSaved }: { g: Gift; onClose: () => void; onSaved: () => void }) {
   // Up to 5 content pieces per gift. Loaded from influencer_content; falls back
@@ -303,6 +315,8 @@ function PostEditor({ g, onClose, onSaved }: { g: Gift; onClose: () => void; onS
   const [pieces, setPieces] = useState<Piece[]>([{
     url: g.content_url || "", content_type: g.content_type || "Reel",
     posted_at: g.posted_at || "", likes: g.likes != null ? String(g.likes) : "", reach: g.reach != null ? String(g.reach) : "",
+    engagement: g.engagements != null ? String(g.engagements) : "", shares: g.shares != null ? String(g.shares) : "",
+    saves: g.saves != null ? String(g.saves) : "", new_followers: g.new_followers != null ? String(g.new_followers) : "",
   }]);
   useEffect(() => {
     fetch(`/api/influencer/post?entry_id=${g.id}`).then(r => r.json()).then(d => {
@@ -310,6 +324,8 @@ function PostEditor({ g, onClose, onSaved }: { g: Gift; onClose: () => void; onS
         setPieces(d.pieces.map((p: any) => ({
           url: p.url || "", content_type: p.content_type || "Reel", posted_at: p.posted_at || "",
           likes: p.likes != null ? String(p.likes) : "", reach: p.reach != null ? String(p.reach) : "",
+          engagement: p.engagements != null ? String(p.engagements) : "", shares: p.shares != null ? String(p.shares) : "",
+          saves: p.saves != null ? String(p.saves) : "", new_followers: p.new_followers != null ? String(p.new_followers) : "",
         })));
       }
     }).catch(() => {});
@@ -374,11 +390,15 @@ function PostEditor({ g, onClose, onSaved }: { g: Gift; onClose: () => void; onS
               <input type="date" value={p.posted_at} onChange={e => setPiece(i, { posted_at: e.target.value })} className={inp} />
               <input value={p.likes} onChange={e => setPiece(i, { likes: e.target.value })} inputMode="numeric" placeholder="Likes" className={inp} />
               <input value={p.reach} onChange={e => setPiece(i, { reach: e.target.value })} inputMode="numeric" placeholder="Reach / views" className={inp} />
+              <input value={p.engagement} onChange={e => setPiece(i, { engagement: e.target.value })} inputMode="numeric" placeholder="Engagement" className={inp} />
+              <input value={p.new_followers} onChange={e => setPiece(i, { new_followers: e.target.value })} inputMode="numeric" placeholder="New followers" className={inp} />
+              <input value={p.shares} onChange={e => setPiece(i, { shares: e.target.value })} inputMode="numeric" placeholder="Shares" className={inp} />
+              <input value={p.saves} onChange={e => setPiece(i, { saves: e.target.value })} inputMode="numeric" placeholder="Saves" className={inp} />
             </div>
           </div>
         ))}
         {pieces.length < 5 && (
-          <button onClick={() => setPieces(prev => [...prev, { url: "", content_type: "Reel", posted_at: "", likes: "", reach: "" }])}
+          <button onClick={() => setPieces(prev => [...prev, { url: "", content_type: "Reel", posted_at: "", likes: "", reach: "", engagement: "", shares: "", saves: "", new_followers: "" }])}
             className="w-full text-[12px] font-semibold text-emerald-600 border border-dashed border-emerald-200 rounded-lg py-1.5 hover:bg-emerald-50/50">
             ＋ Add another content piece ({pieces.length}/5)
           </button>

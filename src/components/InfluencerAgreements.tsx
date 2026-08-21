@@ -60,7 +60,13 @@ const emptyForm = {
   discount_code: "", discount_start: "", discount_end: "", representative_name: "Melanie Kingsford", representative_position: "Marketing Director",
 };
 
-export function InfluencerAgreements({ brands: brandsIn, admin = false }: { brands: { id: number; name: string }[]; admin?: boolean }) {
+// Approving a gift order sheet — and sending it to Accounts — is restricted to
+// Mel personally, not just any admin (she asked "can the approve and send only
+// be done by me"). Enforced again server-side in the approve_order_sheet action.
+const ORDER_SHEET_APPROVER = "mel@coolkidz.com.au";
+
+export function InfluencerAgreements({ brands: brandsIn, admin = false, currentEmail }: { brands: { id: number; name: string }[]; admin?: boolean; currentEmail?: string }) {
+  const canApprove = admin && (currentEmail ?? "").toLowerCase() === ORDER_SHEET_APPROVER;
   const [agreements, setAgreements] = useState<Agreement[]>([]);
   const [influencers, setInfluencers] = useState<Influencer[]>([]);
   const [overdue, setOverdue] = useState<OverdueRow[]>([]);
@@ -457,9 +463,9 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false }: { bran
                             <a href={`/api/influencer-agreements/order-sheet?id=${a.id}`} target="_blank" rel="noreferrer" className="text-[12px] font-semibold text-teal-600 hover:underline mr-2.5" title="Printable order sheet — name, delivery address, products, for invoicing or Shopify entry">🖨 Order sheet</a>
                             {a.status === "signed" && (a.order_sheet_approved_at
                               ? <span className="text-[11px] font-semibold text-emerald-600" title={`Approved by ${a.order_sheet_approved_by || "—"}`}>✓ Sent to Accounts {fmtD(a.order_sheet_sent_at)}</span>
-                              : admin
-                                ? <button disabled={busyId === a.id} onClick={() => { if (confirm(`Approve the gift order sheet for ${a.reference} and email it to orders@coolkidz.com.au?`)) act(a.id, "approve_order_sheet"); }} className="text-[12px] font-semibold text-white bg-amber-500 hover:bg-amber-600 rounded-md px-2 py-1 disabled:opacity-50">Approve & send</button>
-                                : <span className="text-[11px] font-semibold text-amber-600">⏳ Awaiting approval</span>)}
+                              : canApprove
+                                ? <button disabled={busyId === a.id} onClick={() => { if (confirm(`You've reviewed the order sheet for ${a.reference} — approve it and email it to orders@coolkidz.com.au?`)) act(a.id, "approve_order_sheet"); }} className="text-[12px] font-semibold text-white bg-amber-500 hover:bg-amber-600 rounded-md px-2 py-1 disabled:opacity-50">Approve & send</button>
+                                : <span className="text-[11px] font-semibold text-amber-600">⏳ Awaiting Mel's approval</span>)}
                           </td>
                         </tr>
                         {isOpen && (
