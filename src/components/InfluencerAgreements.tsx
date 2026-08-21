@@ -9,6 +9,14 @@ import { useEffect, useMemo, useState } from "react";
 // partnerships@coolkidz.com.au. See src/lib/agreementTemplate.ts for the
 // clause text and src/app/api/influencer-agreements/route.ts for the API.
 
+// Who can be the "Coolkidz Representative" on an agreement — marks who
+// actually made it, so that name (not always Mel's) shows on the signed doc.
+const REPRESENTATIVES = [
+  { name: "Melanie Kingsford", position: "Marketing Director" },
+  { name: "Nicky O'Brien", position: "Social" },
+  { name: "Alicia Lambert", position: "Social" },
+];
+
 type Influencer = { id: string; full_name: string; email: string; phone: string | null; instagram_handle: string | null; tiktok_handle: string | null; address_line1: string | null; address_line2: string | null; suburb: string | null; state: string | null; postcode: string | null; is_po_box: boolean; abn: string | null };
 type Product = { id?: string; product_name: string; variant: string | null; quantity: number; rrp: number | null; cost_price: number | null };
 type Deliverable = { id?: string; deliverable_type: string; platform: string; quantity: number; due_date: string | null; status: string; live_url: string | null; reach: number | null; engagement: number | null };
@@ -360,9 +368,23 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false }: { bran
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-600 mb-2">Signed on Coolkidz&apos;s behalf by</p>
             <div className="grid sm:grid-cols-2 gap-2">
-              <input value={form.representative_name} onChange={e => setForm(p => ({ ...p, representative_name: e.target.value }))} placeholder="Representative name" className={inp} />
+              <select
+                value={REPRESENTATIVES.some(r => r.name === form.representative_name) ? form.representative_name : "__other__"}
+                onChange={e => {
+                  const rep = REPRESENTATIVES.find(r => r.name === e.target.value);
+                  if (rep) setForm(p => ({ ...p, representative_name: rep.name, representative_position: rep.position }));
+                  else setForm(p => ({ ...p, representative_name: "" }));
+                }}
+                className={inp}
+              >
+                {REPRESENTATIVES.map(r => <option key={r.name} value={r.name}>{r.name}</option>)}
+                <option value="__other__">Other…</option>
+              </select>
               <input value={form.representative_position} onChange={e => setForm(p => ({ ...p, representative_position: e.target.value }))} placeholder="Position" className={inp} />
             </div>
+            {!REPRESENTATIVES.some(r => r.name === form.representative_name) && (
+              <input value={form.representative_name} onChange={e => setForm(p => ({ ...p, representative_name: e.target.value }))} placeholder="Representative name" className={`${inp} mt-2`} />
+            )}
           </div>
 
           <div className="flex flex-wrap gap-2 pt-1">
