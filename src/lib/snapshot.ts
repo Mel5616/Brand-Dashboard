@@ -41,6 +41,7 @@ export type SnapshotInput = {
   semrushKeywords: { brand_id: number; month_key: string; phrase: string; position: number; search_volume: number; cpc: number; url: string }[];
   note?: string;            // editable commentary rendered into the report
   insightsOverride?: string; // edited "Insights and opportunities" text; replaces the AI version
+  hideInsights?: boolean;    // suppresses the whole "Insights and opportunities" section (AI text + SEO table) for this brand/month
 };
 
 // Rates may arrive as a fraction (0.515) or already as a percentage (51.5). Normalise to a percentage.
@@ -248,7 +249,7 @@ export function buildSnapshot(d: SnapshotInput) {
     seasonal, peakShare, peakMonthKey: topShare?.month_key,
     wholeFy, wholeMonth, wholeTrend, digitalShare, channelRows, channelGroups,
     marketing: { annualBudget, monthBudget, spend: mktSpend, channels: mktChannels, ytdSpend, ytdBudget },
-    aiInsight, seo,
+    aiInsight, seo, hideInsights: !!d.hideInsights,
     igPosts, monthLabelsAll: monthLabels,
     note: d.note ?? "",
   };
@@ -419,7 +420,7 @@ export function snapshotHtml(s: Snapshot): string {
     <div class="h" style="margin-top:24px">SEO opportunities</div>
     <div class="seostat">SEMrush organic visibility: <strong>${s.seo.keywords.toLocaleString()}</strong> keywords · <strong>${Math.round(s.seo.traffic).toLocaleString()}</strong> est. visits/mo · <strong>${fmt(s.seo.value)}</strong> traffic value</div>
     <table class="optbl"><thead><tr><th>Opportunity to move &middot; ranks 4&ndash;20</th><th class="r">Searches/mo</th><th class="r">CPC</th></tr></thead><tbody>${oppRows}</tbody></table>` : "";
-  const aiSection = (aiBlock || seoBlock) ? `
+  const aiSection = (!s.hideInsights && (aiBlock || seoBlock)) ? `
   <div class="sec">
     <div class="h">Insights and opportunities</div>
     ${aiBlock}
@@ -427,7 +428,7 @@ export function snapshotHtml(s: Snapshot): string {
   </div>` : "";
 
   const notesSection = (s.note && s.note.trim()) ? `
-  <div class="notes"><div class="h">Notes &amp; commentary</div><div class="ntext">${esc(s.note.trim()).replace(/\n/g, "<br>")}</div></div>` : "";
+  <div class="notes"><div class="h">Notes</div><div class="ntext">${esc(s.note.trim()).replace(/\n/g, "<br>")}</div></div>` : "";
 
   return `<!DOCTYPE html>
 <html lang="en-AU"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">

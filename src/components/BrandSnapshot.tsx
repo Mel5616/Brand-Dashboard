@@ -98,6 +98,8 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
   const [insights, setInsights] = useState("");
   const [savedInsights, setSavedInsights] = useState("");
   const [insState, setInsState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [hideInsights, setHideInsights] = useState(false);
+  const [savedHideInsights, setSavedHideInsights] = useState(false);
 
   // Open-tracked share links for this brand + month.
   const [topups, setTopups] = useState<any[]>([]);
@@ -113,7 +115,7 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
     setNoteState("loading");
     fetch(`/api/snapshot-notes?brand=${brand.id}&month=${activeMonth}`)
       .then(r => r.json())
-      .then(j => { if (cancelled) return; if (j.needsSetup) setNoteState("needsSetup"); else setNoteState("idle"); setNote(j.content ?? ""); setSavedNote(j.content ?? ""); setSavedInsights(j.insights ?? ""); setInsights((j.insights && j.insights.trim()) ? j.insights : aiDefault); })
+      .then(j => { if (cancelled) return; if (j.needsSetup) setNoteState("needsSetup"); else setNoteState("idle"); setNote(j.content ?? ""); setSavedNote(j.content ?? ""); setSavedInsights(j.insights ?? ""); setInsights((j.insights && j.insights.trim()) ? j.insights : aiDefault); setHideInsights(!!j.hideInsights); setSavedHideInsights(!!j.hideInsights); })
       .catch(() => { if (!cancelled) setNoteState("error"); });
     return () => { cancelled = true; };
   }, [brand?.id, activeMonth]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -122,7 +124,7 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
     if (!brand) return;
     setNoteState("saving");
     try {
-      const res = await fetch("/api/snapshot-notes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brand_id: brand.id, month_key: activeMonth, content: note, insights: savedInsights }) });
+      const res = await fetch("/api/snapshot-notes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brand_id: brand.id, month_key: activeMonth, content: note, insights: savedInsights, hideInsights: savedHideInsights }) });
       const j = await res.json();
       if (j.ok) { setSavedNote(note); setNoteState("saved"); setTimeout(() => setNoteState("idle"), 1800); }
       else setNoteState(j.needsSetup ? "needsSetup" : "error");
@@ -133,13 +135,25 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
     if (!brand) return;
     setInsState("saving");
     try {
-      const res = await fetch("/api/snapshot-notes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brand_id: brand.id, month_key: activeMonth, content: savedNote, insights }) });
+      const res = await fetch("/api/snapshot-notes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brand_id: brand.id, month_key: activeMonth, content: savedNote, insights, hideInsights: savedHideInsights }) });
       const j = await res.json();
       if (j.ok && !j.insightsUnsupported) { setSavedInsights(insights); setInsState("saved"); setTimeout(() => setInsState("idle"), 1800); }
       else setInsState("error");
     } catch { setInsState("error"); }
   }
   function resetInsights() { setInsights(aiDefault); }
+
+  // Hiding is a discrete toggle, not a draft — saves immediately on click.
+  async function toggleHideInsights() {
+    if (!brand) return;
+    const next = !hideInsights;
+    setHideInsights(next);
+    try {
+      const res = await fetch("/api/snapshot-notes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brand_id: brand.id, month_key: activeMonth, content: savedNote, insights: savedInsights, hideInsights: next }) });
+      const j = await res.json();
+      if (j.ok) setSavedHideInsights(next); else setHideInsights(!next);
+    } catch { setHideInsights(!next); }
+  }
 
   // The saved note (not the in-progress edit) is what renders into the report.
   const html = useMemo(() => {
@@ -148,14 +162,14 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
       ...data, brand,
       month: activeMonth, monthKeys: activeMonthKeys, monthLabels: activeMonthLabels, fyLabel: activeFyLabel,
       calendarYear: basis === "calendar",
-      note: savedNote, insightsOverride: savedInsights, budgetTopups: topups,
+      note: savedNote, insightsOverride: savedInsights, hideInsights: savedHideInsights, budgetTopups: topups,
       monthly: filterMk(rawMonthly), targets: filterMk(rawTargets),
       googleAds: filterMk(rawGoogleAds), metaAds: filterMk(rawMetaAds), klaviyo: filterMk(rawKlaviyo),
       googleAdsCampaigns: filterMk(rawGoogleAdsCampaigns), marketingActuals: filterMk(rawMarketingActuals),
       marketingBudgets: rawMarketingBudgets,
       productUnits: filterMk(rawProductUnits ?? []),
     }));
-  }, [brand, activeMonth, activeMonthKeys, activeMonthLabels, activeFyLabel, basis, savedNote, savedInsights, topups, data,
+  }, [brand, activeMonth, activeMonthKeys, activeMonthLabels, activeFyLabel, basis, savedNote, savedInsights, savedHideInsights, topups, data,
       rawMonthly, rawTargets, rawGoogleAds, rawMetaAds, rawKlaviyo, rawGoogleAdsCampaigns, rawMarketingActuals, rawMarketingBudgets, rawProductUnits]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const monthName = activeMonthLabels[activeMonthKeys.indexOf(activeMonth)] ?? activeMonth;
@@ -291,6 +305,10 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
           <div className="flex items-center justify-between mb-2">
             <label className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Insights & opportunities {savedInsights ? "· edited" : "· AI"}</label>
             <div className="flex items-center gap-3">
+              <label className="flex items-center gap-1.5 text-xs text-gray-500 font-medium cursor-pointer select-none">
+                <input type="checkbox" checked={hideInsights} onChange={toggleHideInsights} className="rounded border-gray-300" />
+                Hide this section from the report
+              </label>
               {insState === "saved" && <span className="text-xs text-emerald-600 font-medium">Saved</span>}
               {insState === "error" && <span className="text-xs text-red-500 font-medium">Save failed</span>}
               <button onClick={resetInsights} disabled={insights === aiDefault} className="text-xs font-medium text-gray-500 hover:text-gray-700 disabled:opacity-40">Reset to AI</button>
@@ -302,9 +320,10 @@ export function BrandSnapshot({ brands, selected, onSelect, canEdit, month, mont
           <textarea
             value={insights}
             onChange={e => setInsights(e.target.value)}
+            disabled={hideInsights}
             placeholder="The AI-written insights appear here. Edit them and save to replace what shows in the report."
             rows={7}
-            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 text-gray-700 leading-relaxed focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-y"
+            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 text-gray-700 leading-relaxed focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-y disabled:opacity-50 disabled:bg-gray-50"
           />
         </div>
       )}
