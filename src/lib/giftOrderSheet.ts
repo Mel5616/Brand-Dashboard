@@ -15,7 +15,7 @@ type Influencer = {
 };
 type OrderSheetInput = {
   reference: string; agreement_date: string | null; campaign_name: string | null; status: string;
-  brand_name: string; influencer: Influencer; products: Product[];
+  brand_name: string; influencer: Influencer; products: Product[]; representative_name: string | null;
 };
 
 const esc = (s: string) => (s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -27,13 +27,18 @@ export function buildGiftOrderSheet(a: OrderSheetInput): string {
   const addressLines = [i.address_line1, i.address_line2, [i.suburb, i.state, i.postcode].filter(Boolean).join(" ")].filter(Boolean);
   const totalRrp = a.products.reduce((s, p) => s + (Number(p.rrp) || 0) * (p.quantity || 1), 0);
 
+  // Every agreement type in this system is a gift, never a paid fee (see the
+  // "Consideration" clause — no fee is ever payable). The order sheet is
+  // going to Accounts / whoever keys the order in, so the total needs to
+  // read as "nothing owed" at a glance rather than as an invoice amount —
+  // RRP still shown per line as reference value (useful for shipping /
+  // declared value), just not as a headline dollar figure to pay.
   const productRows = a.products.length ? a.products.map(p => `
     <tr>
       <td>${esc(p.product_name)}${p.variant ? ` <span class="muted">(${esc(p.variant)})</span>` : ""}</td>
       <td class="r">${p.quantity}</td>
-      <td class="r">${money(p.rrp)}</td>
-      <td class="r">${money((Number(p.rrp) || 0) * (p.quantity || 1))}</td>
-    </tr>`).join("") : `<tr><td colspan="4" class="muted">No products on this agreement.</td></tr>`;
+      <td class="r muted">${money(p.rrp)}</td>
+    </tr>`).join("") : `<tr><td colspan="3" class="muted">No products on this agreement.</td></tr>`;
 
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -57,20 +62,24 @@ export function buildGiftOrderSheet(a: OrderSheetInput): string {
   .r { text-align: right; }
   tfoot td { border-bottom: none; border-top: 2px solid #1e293b; font-weight: 700; padding-top: 10px; }
   .status { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 999px; background: #ecfdf5; color: #047857; text-transform: capitalize; }
+  .nocost { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 999px; background: #eff6ff; color: #1d4ed8; }
   .foot { margin-top: 32px; font-size: 11px; color: #94a3b8; text-align: center; }
-  @media print { body { padding: 0; } }
+  .dl { display: block; margin: 0 auto 24px; font-size: 13px; font-weight: 700; color: #fff; background: #132741; border: 0; border-radius: 8px; padding: 10px 20px; cursor: pointer; }
+  @media print { body { padding: 0; } .no-print { display: none; } }
 </style>
 </head>
 <body>
+  <button class="dl no-print" onclick="window.print()">⬇ Download PDF</button>
   <div class="head">
     <div>
-      <h1>Gift order sheet</h1>
+      <h1>Gift order sheet <span class="nocost">Gifted — no cost</span></h1>
       <div class="sub">${esc(a.brand_name)} · Coolkidz Australia Pty Ltd</div>
     </div>
     <div class="ref">
       <b>${esc(a.reference)}</b>
       ${fmtDate(a.agreement_date)}<br>
       <span class="status">${esc(a.status)}</span>
+      ${a.representative_name ? `<div class="muted" style="margin-top:4px">Created by ${esc(a.representative_name)}</div>` : ""}
     </div>
   </div>
 
@@ -91,13 +100,12 @@ export function buildGiftOrderSheet(a: OrderSheetInput): string {
   </div>
 
   <table>
-    <thead><tr><th>Product</th><th class="r">Qty</th><th class="r">RRP</th><th class="r">Total</th></tr></thead>
+    <thead><tr><th>Product</th><th class="r">Qty</th><th class="r">RRP (ref. only)</th></tr></thead>
     <tbody>${productRows}</tbody>
-    <tfoot><tr><td colspan="3">Total RRP</td><td class="r">${money(totalRrp)}</td></tr></tfoot>
+    <tfoot><tr><td colspan="2">Amount payable</td><td class="r" style="color:#1d4ed8">No cost — gifted</td></tr></tfoot>
   </table>
+  <p class="muted" style="text-align:right;margin-top:-4px">Total RRP value (reference only, not payable): ${money(totalRrp)}</p>
 
-  <p class="foot">${esc(ENTITY.legalName)} · ${esc(ENTITY.address)} · ${esc(ENTITY.email)} — generated from the signed Influencer Agreement, for invoicing / order entry only, not a tax invoice.</p>
-
-  <script>window.onload = () => setTimeout(() => window.print(), 200);</script>
+  <p class="foot">${esc(ENTITY.legalName)} · ${esc(ENTITY.address)} · ${esc(ENTITY.email)} — generated from the signed Influencer Agreement, for order entry only, not a tax invoice.</p>
 </body></html>`;
 }
