@@ -19,7 +19,10 @@ const REPRESENTATIVES = [
 
 type Influencer = { id: string; full_name: string; email: string; phone: string | null; instagram_handle: string | null; tiktok_handle: string | null; address_line1: string | null; address_line2: string | null; suburb: string | null; state: string | null; postcode: string | null; is_po_box: boolean; abn: string | null };
 type Product = { id?: string; product_name: string; variant: string | null; quantity: number; rrp: number | null; cost_price: number | null };
-type Deliverable = { id?: string; deliverable_type: string; platform: string; quantity: number; due_date: string | null; status: string; live_url: string | null; reach: number | null; engagement: number | null };
+type Deliverable = {
+  id?: string; deliverable_type: string; platform: string; quantity: number; due_date: string | null; status: string; live_url: string | null;
+  reach: number | null; engagement: number | null; shares: number | null; saves: number | null; new_followers: number | null;
+};
 type Agreement = {
   id: string; reference: string; status: string; agreement_type: string; campaign_name: string | null;
   agreement_date: string | null; token: string; brand_id: number; brands: { id: number; name: string };
@@ -31,7 +34,7 @@ type Agreement = {
 };
 type ExclRow = { agreement_id: string; reference: string; influencer_id: string; full_name: string; instagram_handle: string | null; brand: string; exclusivity_category: string; exclusivity_end_date: string; days_remaining: number };
 type OverdueRow = { id: string; reference: string; brand: string; full_name: string; email: string; deliverable_type: string; quantity: number; due_date: string; days_overdue: number };
-type RoiRow = { brand: string; agreements: number; total_rrp_gifted: number; total_cost_gifted: number; total_reach: number; total_engagement: number };
+type RoiRow = { brand: string; agreements: number; total_rrp_gifted: number; total_cost_gifted: number; total_reach: number; total_engagement: number; total_shares: number; total_saves: number; total_new_followers: number };
 type BrandConfig = { brand_id: number; code: string; tier: string | null; instagram_handle: string | null; exclusivity_category: string | null; naming_rule: string | null };
 type CatalogProduct = { style_code: string; product_name: string; brand: string; rrp: number | null };
 
@@ -47,7 +50,7 @@ const fmtD = (s: string | null) => s ? new Date(s + (s.length === 10 ? "T00:00:0
 const fmtMoney = (n: number | null | undefined) => n == null ? "—" : `$${Number(n).toLocaleString("en-AU", { maximumFractionDigits: 0 })}`;
 
 const emptyProduct: Product = { product_name: "", variant: "", quantity: 1, rrp: null, cost_price: null };
-const emptyDeliverable: Deliverable = { deliverable_type: "grid post", platform: "Instagram", quantity: 1, due_date: null, status: "pending", live_url: null, reach: null, engagement: null };
+const emptyDeliverable: Deliverable = { deliverable_type: "grid post", platform: "Instagram", quantity: 1, due_date: null, status: "pending", live_url: null, reach: null, engagement: null, shares: null, saves: null, new_followers: null };
 const emptyInfluencer = { full_name: "", email: "", phone: "", instagram_handle: "", tiktok_handle: "", address_line1: "", address_line2: "", suburb: "", state: "", postcode: "", is_po_box: false, abn: "" };
 const emptyForm = {
   brand_id: "", agreement_type: "gifted_social", campaign_name: "", agreement_date: new Date().toISOString().slice(0, 10),
@@ -72,6 +75,8 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false }: { bran
   const [showForm, setShowForm] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
+  const [resultsOpenId, setResultsOpenId] = useState<string | null>(null);
+  const [resultsDraft, setResultsDraft] = useState<{ reach: string; engagement: string; shares: string; saves: string; new_followers: string }>({ reach: "", engagement: "", shares: "", saves: "", new_followers: "" });
   const [brandF, setBrandF] = useState("");
   const [statusF, setStatusF] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -464,15 +469,54 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false }: { bran
                                 </div>
                                 <div>
                                   <p className="font-bold text-slate-600 mb-1">Deliverables</p>
-                                  {a.influencer_agreement_deliverables?.length ? a.influencer_agreement_deliverables.map(d => (
-                                    <div key={d.id} className="flex items-center gap-2 mb-1.5">
-                                      <select value={d.status} onChange={e => updateDeliverable(a.id, d.id!, { status: e.target.value })} className="text-[11px] border border-gray-200 rounded px-1.5 py-1">
-                                        {["pending", "submitted", "live", "overdue", "waived"].map(s => <option key={s}>{s}</option>)}
-                                      </select>
-                                      <span className="text-slate-600">{d.quantity} x {d.deliverable_type} · {d.platform} · due {fmtD(d.due_date)}</span>
-                                      {d.live_url && <a href={d.live_url} target="_blank" rel="noreferrer" className="text-emerald-600 hover:underline">link</a>}
+                                  {a.influencer_agreement_deliverables?.length ? a.influencer_agreement_deliverables.map(d => {
+                                    const hasResults = [d.reach, d.engagement, d.shares, d.saves, d.new_followers].some(v => v != null);
+                                    const isOpenR = resultsOpenId === d.id;
+                                    return (
+                                    <div key={d.id} className="mb-1.5">
+                                      <div className="flex items-center gap-2">
+                                        <select value={d.status} onChange={e => updateDeliverable(a.id, d.id!, { status: e.target.value })} className="text-[11px] border border-gray-200 rounded px-1.5 py-1">
+                                          {["pending", "submitted", "live", "overdue", "waived"].map(s => <option key={s}>{s}</option>)}
+                                        </select>
+                                        <span className="text-slate-600">{d.quantity} x {d.deliverable_type} · {d.platform} · due {fmtD(d.due_date)}</span>
+                                        {d.live_url && <a href={d.live_url} target="_blank" rel="noreferrer" className="text-emerald-600 hover:underline">link</a>}
+                                        <button
+                                          onClick={() => {
+                                            if (isOpenR) { setResultsOpenId(null); return; }
+                                            setResultsOpenId(d.id!);
+                                            setResultsDraft({
+                                              reach: d.reach?.toString() ?? "", engagement: d.engagement?.toString() ?? "",
+                                              shares: d.shares?.toString() ?? "", saves: d.saves?.toString() ?? "", new_followers: d.new_followers?.toString() ?? "",
+                                            });
+                                          }}
+                                          className={`text-[11px] font-semibold ${hasResults ? "text-slate-500" : "text-emerald-600"} hover:underline`}
+                                        >
+                                          {hasResults ? "results" : "+ results"}
+                                        </button>
+                                      </div>
+                                      {isOpenR && (
+                                        <div className="flex flex-wrap items-end gap-2 mt-1.5 ml-1 p-2 bg-white border border-gray-100 rounded-lg">
+                                          {([["reach", "Reach"], ["engagement", "Engagement"], ["shares", "Shares"], ["saves", "Saves"], ["new_followers", "New followers"]] as const).map(([key, label]) => (
+                                            <label key={key} className="text-[10px] text-gray-400">
+                                              {label}
+                                              <input
+                                                type="number" inputMode="numeric" value={resultsDraft[key]}
+                                                onChange={e => setResultsDraft(p => ({ ...p, [key]: e.target.value }))}
+                                                className="block w-20 mt-0.5 text-[12px] border border-gray-200 rounded px-1.5 py-1"
+                                              />
+                                            </label>
+                                          ))}
+                                          <button
+                                            onClick={() => { updateDeliverable(a.id, d.id!, resultsDraft); setResultsOpenId(null); }}
+                                            className="text-[11px] font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded px-2.5 py-1.5"
+                                          >
+                                            Save
+                                          </button>
+                                        </div>
+                                      )}
                                     </div>
-                                  )) : <p className="text-gray-400">—</p>}
+                                  );
+                                  }) : <p className="text-gray-400">—</p>}
                                 </div>
                               </div>
                             </td>
@@ -529,9 +573,9 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false }: { bran
       {panel === "roi" && admin && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <table className="w-full text-sm">
-            <thead><tr className="text-[10px] uppercase tracking-wider text-gray-400 border-b border-gray-100"><th className="text-left px-5 py-2.5">Brand</th><th className="text-right px-3 py-2.5">Agreements</th><th className="text-right px-3 py-2.5">RRP gifted</th><th className="text-right px-3 py-2.5">Cost gifted</th><th className="text-right px-3 py-2.5">Reach</th><th className="text-right px-5 py-2.5">Engagement</th></tr></thead>
+            <thead><tr className="text-[10px] uppercase tracking-wider text-gray-400 border-b border-gray-100"><th className="text-left px-5 py-2.5">Brand</th><th className="text-right px-3 py-2.5">Agreements</th><th className="text-right px-3 py-2.5">RRP gifted</th><th className="text-right px-3 py-2.5">Cost gifted</th><th className="text-right px-3 py-2.5">Reach</th><th className="text-right px-3 py-2.5">Engagement</th><th className="text-right px-3 py-2.5">Shares</th><th className="text-right px-3 py-2.5">Saves</th><th className="text-right px-5 py-2.5">New followers</th></tr></thead>
             <tbody>
-              {roi.length === 0 && <tr><td colSpan={6} className="px-5 py-10 text-center text-gray-300">No delivered content yet.</td></tr>}
+              {roi.length === 0 && <tr><td colSpan={9} className="px-5 py-10 text-center text-gray-300">No delivered content yet.</td></tr>}
               {roi.map(r => (
                 <tr key={r.brand} className="border-b border-gray-50 last:border-0">
                   <td className="px-5 py-2.5 font-semibold text-slate-700">{r.brand}</td>
@@ -539,7 +583,10 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false }: { bran
                   <td className="px-3 py-2.5 text-right text-slate-600">{fmtMoney(r.total_rrp_gifted)}</td>
                   <td className="px-3 py-2.5 text-right text-slate-600">{fmtMoney(r.total_cost_gifted)}</td>
                   <td className="px-3 py-2.5 text-right text-slate-600">{(r.total_reach ?? 0).toLocaleString()}</td>
-                  <td className="px-5 py-2.5 text-right text-slate-600">{(r.total_engagement ?? 0).toLocaleString()}</td>
+                  <td className="px-3 py-2.5 text-right text-slate-600">{(r.total_engagement ?? 0).toLocaleString()}</td>
+                  <td className="px-3 py-2.5 text-right text-slate-600">{(r.total_shares ?? 0).toLocaleString()}</td>
+                  <td className="px-3 py-2.5 text-right text-slate-600">{(r.total_saves ?? 0).toLocaleString()}</td>
+                  <td className="px-5 py-2.5 text-right text-slate-600">{(r.total_new_followers ?? 0).toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>

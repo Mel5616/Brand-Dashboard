@@ -355,6 +355,9 @@ export async function PATCH(req: Request) {
     if (b.live_url !== undefined) fields.live_url = b.live_url ? String(b.live_url).slice(0, 300) : null;
     if (b.reach !== undefined) fields.reach = b.reach === "" ? null : Number(b.reach);
     if (b.engagement !== undefined) fields.engagement = b.engagement === "" ? null : Number(b.engagement);
+    if (b.shares !== undefined) fields.shares = b.shares === "" ? null : Number(b.shares);
+    if (b.saves !== undefined) fields.saves = b.saves === "" ? null : Number(b.saves);
+    if (b.new_followers !== undefined) fields.new_followers = b.new_followers === "" ? null : Number(b.new_followers);
     if (b.status === "live" && !fields.posted_at) fields.posted_at = new Date().toISOString().slice(0, 10);
     await fetch(`${sbUrl}/rest/v1/influencer_agreement_deliverables?id=eq.${did}`, { method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify(fields) });
     // A deliverable going live moves the actual "14 days after publish"
