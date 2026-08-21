@@ -351,10 +351,23 @@ def sync_gsc_pages(token, bid, brand, months):
                 data = json.loads(r.read().decode())
         except Exception as e:
             print(f"  ✗ {brand['name']} GSC {mk}: {e}"); continue
-        rows = [{"brand_id": bid, "month_key": mk, "page": row["keys"][0].split("?")[0].rstrip("/"),
-                 "clicks": int(row.get("clicks", 0)), "impressions": int(row.get("impressions", 0)),
-                 "ctr": round(float(row.get("ctr", 0)) * 100, 2), "position": round(float(row.get("position", 0)), 1)}
-                for row in data.get("rows", [])]
+        # Stripping the query string/trailing slash can make two distinct GSC
+        # rows collapse onto the same page — aggregate those before upserting,
+        # since Postgres' ON CONFLICT can't affect the same row twice in one
+        # batch (it previously crashed the whole sync with a 500).
+        by_page: dict = {}
+        for row in data.get("rows", []):
+            page = row["keys"][0].split("?")[0].rstrip("/")
+            impressions = int(row.get("impressions", 0))
+            agg = by_page.setdefault(page, {"clicks": 0, "impressions": 0, "pos_weighted": 0.0})
+            agg["clicks"] += int(row.get("clicks", 0))
+            agg["impressions"] += impressions
+            agg["pos_weighted"] += float(row.get("position", 0)) * impressions
+        rows = [{"brand_id": bid, "month_key": mk, "page": page,
+                 "clicks": agg["clicks"], "impressions": agg["impressions"],
+                 "ctr": round(agg["clicks"] / agg["impressions"] * 100, 2) if agg["impressions"] else 0.0,
+                 "position": round(agg["pos_weighted"] / agg["impressions"], 1) if agg["impressions"] else 0.0}
+                for page, agg in by_page.items()]
         sb_upsert("blog_gsc_pages", rows, "brand_id,month_key,page")
         total += len(rows)
     return total
@@ -379,10 +392,21 @@ def sync_gsc_page_queries(token, bid, brand, months):
                 data = json.loads(r.read().decode())
         except Exception as e:
             print(f"  ✗ {brand['name']} GSC queries {mk}: {e}"); continue
-        rows = [{"brand_id": bid, "month_key": mk, "page": row["keys"][0].split("?")[0].rstrip("/"),
-                 "query": row["keys"][1][:200], "clicks": int(row.get("clicks", 0)),
-                 "impressions": int(row.get("impressions", 0)), "position": round(float(row.get("position", 0)), 1)}
-                for row in data.get("rows", [])]
+        # Same page-normalization collision as sync_gsc_pages — aggregate any
+        # (page, query) duplicates before upserting.
+        by_pq: dict = {}
+        for row in data.get("rows", []):
+            page = row["keys"][0].split("?")[0].rstrip("/")
+            query = row["keys"][1][:200]
+            impressions = int(row.get("impressions", 0))
+            agg = by_pq.setdefault((page, query), {"clicks": 0, "impressions": 0, "pos_weighted": 0.0})
+            agg["clicks"] += int(row.get("clicks", 0))
+            agg["impressions"] += impressions
+            agg["pos_weighted"] += float(row.get("position", 0)) * impressions
+        rows = [{"brand_id": bid, "month_key": mk, "page": page, "query": query,
+                 "clicks": agg["clicks"], "impressions": agg["impressions"],
+                 "position": round(agg["pos_weighted"] / agg["impressions"], 1) if agg["impressions"] else 0.0}
+                for (page, query), agg in by_pq.items()]
         sb_upsert("blog_gsc_queries", rows, "brand_id,month_key,page,query")
         total += len(rows)
     return total
