@@ -539,15 +539,23 @@ def sync_brand(brand, ck_split=None):
         # Upsert brand row
         sb_upsert('brands', [{'id': bid, 'name': name, 'color': brand.get('color','#666'), 'init': brand.get('init','?'), 'live': True, 'synced_at': now}], on_conflict='id')
 
-        # Upsert monthly data
+        # Upsert monthly data. camera_units is only ever meaningful for a brand
+        # that actually sells one of CAMERA_SKUS (Nanit) — writing 0 for every
+        # other brand made the Snapshot's "does this brand sell cameras"
+        # check (`camera_units != null`) true for everyone, since 0 isn't
+        # null. Write None (-> SQL null) instead when the brand never had a
+        # camera-SKU line item at all, so the section only ever renders where
+        # it applies.
+        brand_has_cameras = any(m['camera_units']) or any(m['camera_units_prev'])
         monthly_rows = []
         for i, mk in enumerate(MONTH_KEYS):
-            monthly_rows.append({'brand_id': bid, 'month_key': mk, 'revenue': m['revenue'][i], 'orders': m['orders_m'][i], 'prev_revenue': m['revenue_prev'][i], 'camera_units': m['camera_units'][i]})
+            monthly_rows.append({'brand_id': bid, 'month_key': mk, 'revenue': m['revenue'][i], 'orders': m['orders_m'][i], 'prev_revenue': m['revenue_prev'][i],
+                                  'camera_units': m['camera_units'][i] if brand_has_cameras else None})
         sb_upsert('brand_monthly', monthly_rows, on_conflict='brand_id,month_key')
 
         # Backfill camera_units onto the PREVIOUS FY's existing rows too (revenue/orders for
         # those months are already correct from earlier syncs — only this column is new).
-        prev_camera_rows = [{'brand_id': bid, 'month_key': mk, 'camera_units': m['camera_units_prev'][i]} for i, mk in enumerate(MONTH_KEYS_PREV)]
+        prev_camera_rows = [{'brand_id': bid, 'month_key': mk, 'camera_units': (m['camera_units_prev'][i] if brand_has_cameras else None)} for i, mk in enumerate(MONTH_KEYS_PREV)]
         sb_upsert('brand_monthly', prev_camera_rows, on_conflict='brand_id,month_key')
 
         # Upsert weekly data
