@@ -75,7 +75,7 @@ export default async function AgreementPage({ params }: { params: Promise<{ toke
       brand_display_name: a.brands.name, brand_instagram_handle: cfg?.instagram_handle ?? null,
       content_due_days: a.content_due_days, minimum_live_period_months: a.minimum_live_period_months,
       exclusivity_applies: a.exclusivity_applies, exclusivity_category: a.exclusivity_category, exclusivity_months: a.exclusivity_months,
-      usage_term_months: a.usage_term_months, usage_paid_media: a.usage_paid_media, usage_retail_partners: a.usage_retail_partners, usage_print: a.usage_print,
+      usage_term_months: a.usage_term_months, usage_paid_media: a.usage_paid_media, usage_retail_partners: a.usage_retail_partners, usage_print: a.usage_print, usage_original_files: a.usage_original_files,
       discount_code: a.discount_code, discount_start: a.discount_start, discount_end: a.discount_end,
       representative_name: a.representative_name, representative_position: a.representative_position,
       products: a.influencer_agreement_products ?? [], deliverables: a.influencer_agreement_deliverables ?? [],

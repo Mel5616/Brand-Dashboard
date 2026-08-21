@@ -26,8 +26,9 @@ export const DEFAULTS = {
   exclusivityMonths: 6,
   usageTermMonths: 12,
   usagePaidMedia: false,
-  usageRetailPartners: true,
+  usageRetailPartners: false,
   usagePrint: false,
+  usageOriginalFiles: false,
   discountActiveDays: 7,
 };
 
@@ -65,6 +66,7 @@ export type AgreementForRender = {
   usage_paid_media: boolean;
   usage_retail_partners: boolean;
   usage_print: boolean;
+  usage_original_files: boolean;
   discount_code?: string | null;
   discount_start?: string | null;
   discount_end?: string | null;
@@ -104,12 +106,18 @@ export function renderAgreementHtml(a: AgreementForRender): string {
     `<li>${d.quantity} x ${esc(d.deliverable_type)} on ${esc(d.platform)}, due ${fmtDate(d.due_date)}</li>`
   ).join("\n");
 
+  // Every usage right beyond organic use is opt-in from Coolkidz's side, not
+  // granted by default — a.usage_paid_media / usage_retail_partners /
+  // usage_original_files each gate a real clause 6 grant, not just a
+  // display label. Unchecked means genuinely not licensed for that use.
   const usageChannels = [
-    "Coolkidz and Brand owned social media channels, both organic and paid, including paid amplification of the Influencer's own posts and use as advertising creative",
+    a.usage_paid_media
+      ? "Coolkidz and Brand owned social media channels, both organic and paid, including paid amplification of the Influencer's own posts and use as advertising creative"
+      : "Coolkidz and Brand owned social media channels (organic)",
     "Coolkidz and Brand websites and product listings",
     "email marketing",
-    "trade and retailer facing material, including sell-in presentations, catalogues and in-store display",
-  ].map(c => `<li>${c}</li>`).join("\n");
+    a.usage_retail_partners ? "trade and retailer facing material, including sell-in presentations, catalogues and in-store display" : null,
+  ].filter(Boolean).map(c => `<li>${c}</li>`).join("\n");
 
   // Clauses are keyed, not hard-numbered — some are conditional (Disclosure,
   // Exclusivity), so the visible clause number is whatever position survives
@@ -169,7 +177,7 @@ export function renderAgreementHtml(a: AgreementForRender): string {
       key: "licence", title: "Content Licence", show: true, body: () => `
 <p>The Influencer grants Coolkidz a non-exclusive, royalty-free, worldwide licence to use, reproduce, edit, crop and re-publish content created under this Agreement for a period of ${a.usage_term_months} months from the date each item is ${a.agreement_type === "ugc_only" ? "delivered" : "published"}, across:</p>
 <ul>${usageChannels}</ul>
-<p>The Influencer will supply the original, unwatermarked files for each deliverable to ${ENTITY.email} within 7 days of publishing.</p>
+${a.usage_original_files ? `<p>The Influencer will supply the original, unwatermarked files for each deliverable to ${ENTITY.email} within 7 days of publishing.</p>` : ""}
 <p>Coolkidz will credit the Influencer where the format reasonably allows.</p>
 <p>The Influencer:</p>
 <ul>

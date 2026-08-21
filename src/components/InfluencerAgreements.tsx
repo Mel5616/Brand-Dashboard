@@ -28,7 +28,7 @@ type Agreement = {
   agreement_date: string | null; token: string; brand_id: number; brands: { id: number; name: string };
   influencers: Influencer; content_due_days: number; minimum_live_period_months: number;
   exclusivity_applies: boolean; exclusivity_category: string | null; exclusivity_months: number; exclusivity_end_date: string | null;
-  usage_term_months: number; usage_paid_media: boolean; usage_retail_partners: boolean; usage_print: boolean;
+  usage_term_months: number; usage_paid_media: boolean; usage_retail_partners: boolean; usage_print: boolean; usage_original_files: boolean;
   discount_code: string | null; sent_at: string | null; signed_at: string | null; signed_name: string | null;
   influencer_agreement_products: Product[]; influencer_agreement_deliverables: Deliverable[];
 };
@@ -55,7 +55,7 @@ const emptyInfluencer = { full_name: "", email: "", phone: "", instagram_handle:
 const emptyForm = {
   brand_id: "", agreement_type: "gifted_social", campaign_name: "", agreement_date: new Date().toISOString().slice(0, 10),
   content_due_days: 21, minimum_live_period_months: 6, exclusivity_applies: true, exclusivity_category: "", exclusivity_months: 6,
-  usage_term_months: 12, usage_paid_media: false, usage_retail_partners: true, usage_print: false,
+  usage_term_months: 12, usage_paid_media: false, usage_retail_partners: false, usage_print: false, usage_original_files: false,
   discount_code: "", discount_start: "", discount_end: "", representative_name: "Melanie Kingsford", representative_position: "Marketing Director",
 };
 
@@ -145,7 +145,7 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false }: { bran
       agreement_date: (a.agreement_date ?? "").slice(0, 10) || new Date().toISOString().slice(0, 10),
       content_due_days: a.content_due_days, minimum_live_period_months: a.minimum_live_period_months,
       exclusivity_applies: a.exclusivity_applies, exclusivity_category: a.exclusivity_category ?? "", exclusivity_months: a.exclusivity_months,
-      usage_term_months: a.usage_term_months, usage_paid_media: a.usage_paid_media, usage_retail_partners: a.usage_retail_partners, usage_print: a.usage_print,
+      usage_term_months: a.usage_term_months, usage_paid_media: a.usage_paid_media, usage_retail_partners: a.usage_retail_partners, usage_print: a.usage_print, usage_original_files: a.usage_original_files,
       discount_code: a.discount_code ?? "", discount_start: "", discount_end: "",
       representative_name: "", representative_position: "",
     });
@@ -298,9 +298,10 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false }: { bran
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-600 mb-2">Usage rights &amp; discount</p>
             <div className="flex flex-wrap gap-4 mb-2">
               <label className="flex items-center gap-1.5 text-[12.5px] text-slate-600">Licence term <input type="number" min={1} value={form.usage_term_months} onChange={e => setForm(p => ({ ...p, usage_term_months: Number(e.target.value) }))} className={`${inp} w-16`} /> months</label>
-              <label className="flex items-center gap-1.5 text-[12.5px] text-slate-600 cursor-pointer"><input type="checkbox" checked={form.usage_paid_media} onChange={e => setForm(p => ({ ...p, usage_paid_media: e.target.checked }))} className="accent-emerald-500" />Paid media rights</label>
-              <label className="flex items-center gap-1.5 text-[12.5px] text-slate-600 cursor-pointer"><input type="checkbox" checked={form.usage_retail_partners} onChange={e => setForm(p => ({ ...p, usage_retail_partners: e.target.checked }))} className="accent-emerald-500" />Retail partner sublicence</label>
+              <label className="flex items-center gap-1.5 text-[12.5px] text-slate-600 cursor-pointer"><input type="checkbox" checked={form.usage_paid_media} onChange={e => setForm(p => ({ ...p, usage_paid_media: e.target.checked }))} className="accent-emerald-500" />Paid amplification</label>
+              <label className="flex items-center gap-1.5 text-[12.5px] text-slate-600 cursor-pointer"><input type="checkbox" checked={form.usage_retail_partners} onChange={e => setForm(p => ({ ...p, usage_retail_partners: e.target.checked }))} className="accent-emerald-500" />Trade and retail use</label>
               <label className="flex items-center gap-1.5 text-[12.5px] text-slate-600 cursor-pointer"><input type="checkbox" checked={form.usage_print} onChange={e => setForm(p => ({ ...p, usage_print: e.target.checked }))} className="accent-emerald-500" />Print rights</label>
+              <label className="flex items-center gap-1.5 text-[12.5px] text-slate-600 cursor-pointer"><input type="checkbox" checked={form.usage_original_files} onChange={e => setForm(p => ({ ...p, usage_original_files: e.target.checked }))} className="accent-emerald-500" />Supply of original files</label>
             </div>
             <div className="grid sm:grid-cols-3 gap-2">
               <input value={form.discount_code} onChange={e => setForm(p => ({ ...p, discount_code: e.target.value }))} placeholder="Discount code (optional)" className={inp} />
@@ -465,7 +466,7 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false }: { bran
                                     <p key={j} className="text-slate-600">{p.quantity} x {p.product_name}{p.variant ? ` (${p.variant})` : ""} — RRP {fmtMoney(p.rrp)}{admin && p.cost_price != null ? ` · cost ${fmtMoney(p.cost_price)}` : ""}</p>
                                   )) : <p className="text-gray-400">—</p>}
                                   {a.exclusivity_applies && <p className="text-slate-600 mt-2"><strong>Exclusivity:</strong> {a.exclusivity_category} until {fmtD(a.exclusivity_end_date)}</p>}
-                                  <p className="text-slate-600 mt-1"><strong>Usage rights:</strong> {a.usage_term_months}mo · {[a.usage_paid_media && "paid media", a.usage_retail_partners && "retail partners", a.usage_print && "print"].filter(Boolean).join(", ") || "organic only"}</p>
+                                  <p className="text-slate-600 mt-1"><strong>Usage rights:</strong> {a.usage_term_months}mo · {[a.usage_paid_media && "paid amplification", a.usage_retail_partners && "trade/retail", a.usage_print && "print", a.usage_original_files && "original files"].filter(Boolean).join(", ") || "organic only"}</p>
                                   {a.signed_name && <p className="text-slate-600 mt-1"><strong>Signed by:</strong> {a.signed_name}</p>}
                                 </div>
                                 <div>
