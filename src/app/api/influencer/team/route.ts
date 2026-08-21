@@ -19,12 +19,13 @@ export async function GET() {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   if (!(await getAccess()).role) return NextResponse.json({ ok: false, error: "auth" }, { status: 401 });
 
-  const [mbRes, brRes, eRes, rRes, ibRes] = await Promise.all([
+  const [mbRes, brRes, eRes, rRes, ibRes, saRes] = await Promise.all([
     sb(`marketing_budgets?select=brand_id,annual_budget&channel=eq.Influencer%20Marketing&fy=eq.${INFLUENCER_BUDGET_FY}`),
     sb("brands?select=id,name"),
     sb("influencer_entries?select=*&order=month_key.desc"),
     sb("influencers?select=handle,name,followers,avatar_url,profile_url"),
     sb("influencer_budgets?select=brand,month_key,budget"),
+    sb("influencer_special_allocations?select=*&order=created_at.asc"),
   ]);
   const eText = await eRes.text();
   if (!eRes.ok) return NextResponse.json({ ok: false, needsSetup: missing(eRes.status, eText) });
@@ -58,7 +59,10 @@ export async function GET() {
     const a = bucket(name); a.budget += Number(r.annual_budget) || 0; a.monthly = Math.round(a.budget / 12);
   }
   for (const [brand, total] of gridFy) { const a = bucket(brand); a.budget = total; a.monthly = gridCur.get(brand) ?? 0; }
-  for (const e of entries) { const a = bucket(e.brand || "—"); a.spend += Number(e.total_cost) || 0; a.rrp += Number(e.rrp) || 0; a.gifts++; }
+  // Special-allocation gifts (e.g. supplier-funded stock) never count as budget
+  // spend — they're tracked separately below, by quantity against a cap.
+  const budgetEntries = entries.filter(e => e.special_allocation_id == null);
+  for (const e of budgetEntries) { const a = bucket(e.brand || "—"); a.spend += Number(e.total_cost) || 0; a.rrp += Number(e.rrp) || 0; a.gifts++; }
 
   const pct = (used: number, budget: number) => budget > 0 ? Math.round((used / budget) * 100) : (used > 0 ? 100 : 0);
   const brands = Object.entries(agg)
@@ -72,15 +76,22 @@ export async function GET() {
 
   const totBudget = Object.values(agg).reduce((s, a) => s + a.budget, 0);
   const totMonthly = Object.values(agg).reduce((s, a) => s + a.monthly, 0);
-  const totSpend = entries.reduce((s, e) => s + (Number(e.total_cost) || 0), 0);
+  const totSpend = budgetEntries.reduce((s, e) => s + (Number(e.total_cost) || 0), 0);
   const overall = {
     used_pct: pct(totSpend, totBudget), left_pct: Math.max(0, 100 - pct(totSpend, totBudget)),
     budget: Math.round(totBudget), monthly: Math.round(totMonthly),   // total FY + this month ($)
   };
 
+  // Gifts funded outside the budget entirely — tracked by quantity sent vs a cap.
+  const saRows = saRes.ok ? (JSON.parse(await saRes.text() || "[]") as any[]) : [];
+  const specialAllocations = saRows.map(r => ({
+    id: r.id, name: r.name, brand: r.brand, target_qty: r.target_qty,
+    sent: entries.filter(e => e.special_allocation_id === r.id).length,
+  }));
+
   const gifts = entries.slice(0, 120).map(e => ({
     id: e.id, month_key: e.month_key, handle: e.handle, platform: e.platform, brand: e.brand, product_name: e.product_name,
-    rrp: e.rrp != null ? Math.round(Number(e.rrp)) : null,
+    rrp: e.rrp != null ? Math.round(Number(e.rrp)) : null, special_allocation_id: e.special_allocation_id ?? null,
     status: e.status ?? null, content_url: e.content_url ?? null, content_type: e.content_type ?? null,
     likes: e.likes != null ? Number(e.likes) : null, reach: e.reach != null ? Number(e.reach) : null,
     engagements: e.engagements != null ? Number(e.engagements) : null, shares: e.shares != null ? Number(e.shares) : null,
@@ -111,5 +122,5 @@ export async function GET() {
     .sort((a, b) => b.likes - a.likes)
     .slice(0, 8);
 
-  return NextResponse.json({ ok: true, fyLabel: INFLUENCER_FY_LABEL, overall, brands, gifts, social, topInfluencers });
+  return NextResponse.json({ ok: true, fyLabel: INFLUENCER_FY_LABEL, overall, brands, gifts, social, topInfluencers, specialAllocations });
 }

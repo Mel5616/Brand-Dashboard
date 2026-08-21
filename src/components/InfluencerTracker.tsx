@@ -7,7 +7,7 @@ import { compactNum } from "@/lib/num";
 // Admin reporting for influencer gifting: brand × month cost spend vs budget.
 // Cost figures are shown here (this is your dashboard); the team form never does.
 
-type Entry = { id: number; month_key: string; handle: string | null; platform: string | null; brand: string | null; product_name: string | null; rrp: number | null; gifting_cost: number | null; influencer_cost: number | null; total_cost: number | null; created_at: string; status?: string | null; content_url?: string | null; reach?: number | null; engagements?: number | null; sales_value?: number | null; affiliate_code?: string | null; invoice_url?: string | null; invoice_file?: string | null };
+type Entry = { id: number; month_key: string; handle: string | null; platform: string | null; brand: string | null; product_name: string | null; rrp: number | null; gifting_cost: number | null; influencer_cost: number | null; total_cost: number | null; created_at: string; status?: string | null; content_url?: string | null; reach?: number | null; engagements?: number | null; sales_value?: number | null; affiliate_code?: string | null; invoice_url?: string | null; invoice_file?: string | null; special_allocation_id?: number | null };
 type TrackedRow = { code: string; month_key: string; orders: number; revenue: number };
 type Budget = { brand: string; month_key: string; budget: number };
 type Influencer = { handle: string; name: string | null; platform: string | null; followers: number | null; contact: string | null; notes: string | null };
@@ -174,7 +174,9 @@ export function InfluencerTracker({ canEdit = false }: { canEdit?: boolean }) {
     const actual: Record<string, Record<string, number>> = {};
     const budget: Record<string, Record<string, number>> = {};
     const seen = new Set<string>();
+    // Special-allocation gifts (funded outside the budget entirely) never count as spend here.
     for (const e of entries) {
+      if (e.special_allocation_id != null) continue;
       const b = e.brand || "—"; seen.add(b);
       (actual[b] ??= {})[e.month_key] = (actual[b]?.[e.month_key] ?? 0) + (e.total_cost ?? 0);
     }

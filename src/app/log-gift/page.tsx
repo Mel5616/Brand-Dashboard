@@ -8,10 +8,11 @@ import { compactNum } from "@/lib/num";
 // any cost. Cost is computed server-side when the entry is saved.
 
 type Product = { style_code: string; product_name: string; brand: string; rrp: number | null };
+type Allocation = { id: number; name: string; brand: string | null; target_qty: number; sent: number };
 
 // Months of the influencer gifting financial year (shared with the admin tracker).
 const FY_MONTHS = INFLUENCER_FY_MONTHS;
-const BRANDS = ["UPPAbaby", "Gaia", "WonderFold", "SmarTrike", "Frida", "Nanit", "Hannie", "Magic", "Mamave", "Matchstick Monkey", "Zazu", "MiaMily"];
+const BRANDS = ["UPPAbaby", "Gaia", "WonderFold", "SmarTrike", "Frida", "Nanit", "Hannie", "Magic", "Mamave", "Matchstick Monkey", "Zazu", "MiaMily", "Minus"];
 const PLATFORMS = ["Instagram", "TikTok", "YouTube", "Multiple", "Other"];
 
 // The share link carries an access key (?k=...) — remembered per browser so
@@ -29,6 +30,7 @@ const gfetch = (url: string, opts: RequestInit = {}) =>
 
 export default function LogGift() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [allocations, setAllocations] = useState<Allocation[]>([]);
   const [needsSetup, setNeedsSetup] = useState(false);
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
@@ -54,6 +56,7 @@ export default function LogGift() {
       setNeedsSetup(!!d.needsSetup); setProducts(d.products ?? []);
     }).catch(() => {});
     gfetch("/api/influencer/roster").then(r => r.json()).then(d => setInfluencers(d.influencers ?? [])).catch(() => {});
+    gfetch("/api/influencer/special-allocations").then(r => r.json()).then(d => setAllocations(d.allocations ?? [])).catch(() => {});
   }, []);
 
   const handleMatches = useMemo(() => {
@@ -213,6 +216,16 @@ export default function LogGift() {
               </select>
             </div>
           </div>
+
+          {allocations.length > 0 && (
+            <div>
+              <label className={label}>Special allocation <span className="text-gray-300 font-normal">(optional — stock outside the normal gifting budget)</span></label>
+              <select value={f.special_allocation_id ?? ""} onChange={e => set("special_allocation_id", e.target.value || undefined)} className={input}>
+                <option value="">None — counts against the normal budget</option>
+                {allocations.map(a => <option key={a.id} value={a.id}>{a.name} ({a.sent}/{a.target_qty} sent)</option>)}
+              </select>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div>

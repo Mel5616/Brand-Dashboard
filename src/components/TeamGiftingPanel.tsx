@@ -13,10 +13,12 @@ type Gift = {
   content_type: string | null; likes: number | null; reach: number | null; posted_at: string | null;
   avatar_url: string | null; profile_url: string | null; affiliate_code: string | null;
   engagements: number | null; shares: number | null; saves: number | null; new_followers: number | null;
+  special_allocation_id: number | null;
 };
 type TopInf = { handle: string; likes: number; name: string | null; followers: number | null; avatar_url: string | null };
 type Social = { posts: number; likes: number; reach: number };
-type Data = { fyLabel: string; overall: { used_pct: number; left_pct: number; budget: number; monthly: number }; brands: Brand[]; gifts: Gift[]; social: Social; topInfluencers: TopInf[] };
+type SpecialAllocation = { id: number; name: string; brand: string | null; target_qty: number; sent: number };
+type Data = { fyLabel: string; overall: { used_pct: number; left_pct: number; budget: number; monthly: number }; brands: Brand[]; gifts: Gift[]; social: Social; topInfluencers: TopInf[]; specialAllocations: SpecialAllocation[] };
 
 function Avatar({ url, name, size = 40 }: { url: string | null; name: string | null; size?: number }) {
   const initial = (name || "?").replace(/^@/, "")[0]?.toUpperCase() || "?";
@@ -202,13 +204,34 @@ export function TeamGiftingPanel() {
         )}
       </div>
 
+      {/* Special allocations — gifted stock funded outside the budget entirely,
+          tracked by quantity sent against a cap rather than by $ spend. */}
+      {data.specialAllocations.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-slate-700 mb-3">Special allocations <span className="font-normal text-gray-400">— outside the gifting budget</span></h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {data.specialAllocations.map(a => {
+              const pct = a.target_qty > 0 ? Math.min(100, Math.round((a.sent / a.target_qty) * 100)) : 0;
+              return (
+                <div key={a.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-col items-center text-center">
+                  <p className="text-sm font-semibold text-slate-700 truncate w-full" title={a.name}>{a.name}</p>
+                  <p className="text-2xl font-bold text-slate-800 mt-2 leading-none">{a.sent}<span className="text-sm font-medium text-gray-400"> / {a.target_qty}</span></p>
+                  <div className="w-full mt-2"><Bar used={pct} /></div>
+                  <p className="text-[11px] text-gray-400 mt-1.5">{pct}% sent · {Math.max(0, a.target_qty - a.sent)} remaining</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Post board */}
-      <PostBoard gifts={data.gifts} editing={editing} setEditing={setEditing} onSaved={() => { setEditing(null); load(); }} />
+      <PostBoard gifts={data.gifts} editing={editing} setEditing={setEditing} onSaved={() => { setEditing(null); load(); }} allocations={data.specialAllocations} />
     </div>
   );
 }
 
-function PostBoard({ gifts, editing, setEditing, onSaved }: { gifts: Gift[]; editing: number | null; setEditing: (id: number | null) => void; onSaved: () => void }) {
+function PostBoard({ gifts, editing, setEditing, onSaved, allocations }: { gifts: Gift[]; editing: number | null; setEditing: (id: number | null) => void; onSaved: () => void; allocations: SpecialAllocation[] }) {
   const [brand, setBrand] = useState("");
   const [sort, setSort] = useState<"newest" | "brand" | "month">("newest");
   const brands = Array.from(new Set(gifts.map(g => g.brand).filter(Boolean))) as string[];
@@ -236,7 +259,7 @@ function PostBoard({ gifts, editing, setEditing, onSaved }: { gifts: Gift[]; edi
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {list.map(g => (
-            <PostCard key={g.id} g={g} editing={editing === g.id} onEdit={() => setEditing(g.id)} onClose={() => setEditing(null)} onSaved={onSaved} />
+            <PostCard key={g.id} g={g} editing={editing === g.id} onEdit={() => setEditing(g.id)} onClose={() => setEditing(null)} onSaved={onSaved} allocationName={allocations.find(a => a.id === g.special_allocation_id)?.name} />
           ))}
         </div>
       )}
@@ -244,7 +267,7 @@ function PostBoard({ gifts, editing, setEditing, onSaved }: { gifts: Gift[]; edi
   );
 }
 
-function PostCard({ g, editing, onEdit, onClose, onSaved }: { g: Gift; editing: boolean; onEdit: () => void; onClose: () => void; onSaved: () => void }) {
+function PostCard({ g, editing, onEdit, onClose, onSaved, allocationName }: { g: Gift; editing: boolean; onEdit: () => void; onClose: () => void; onSaved: () => void; allocationName?: string }) {
   const er = engRate(g.likes, g.reach);
   if (editing) return <PostEditor g={g} onClose={onClose} onSaved={onSaved} />;
   return (
@@ -252,7 +275,9 @@ function PostCard({ g, editing, onEdit, onClose, onSaved }: { g: Gift; editing: 
       {/* Brand band on top */}
       <div className="flex items-center justify-between px-4 py-2 bg-slate-50 border-b border-gray-100">
         <span className="text-[11px] font-bold uppercase tracking-wide text-slate-600 truncate">{g.brand || "—"}</span>
-        <span className="text-[10px] text-gray-400 shrink-0">{mon(g.month_key)}</span>
+        {allocationName
+          ? <span className="text-[9px] font-semibold text-violet-600 bg-violet-50 rounded-full px-2 py-0.5 shrink-0" title="Outside the gifting budget">🎁 {allocationName}</span>
+          : <span className="text-[10px] text-gray-400 shrink-0">{mon(g.month_key)}</span>}
       </div>
       <div className="p-4">
       <div className="flex items-start gap-3">
