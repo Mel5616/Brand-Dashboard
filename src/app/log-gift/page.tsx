@@ -12,7 +12,7 @@ type Allocation = { id: number; name: string; brand: string | null; target_qty: 
 
 // Months of the influencer gifting financial year (shared with the admin tracker).
 const FY_MONTHS = INFLUENCER_FY_MONTHS;
-const BRANDS = ["UPPAbaby", "Gaia", "WonderFold", "SmarTrike", "Frida", "Nanit", "Hannie", "Magic", "Mamave", "Matchstick Monkey", "Zazu", "MiaMily", "Minus"];
+const BRANDS = ["UPPAbaby", "Gaia", "WonderFold", "SmarTrike", "Frida", "Nanit", "Hannie", "Magic", "Mamave", "Matchstick Monkey", "Zazu", "MiaMily"];
 const PLATFORMS = ["Instagram", "TikTok", "YouTube", "Multiple", "Other"];
 
 // The share link carries an access key (?k=...) — remembered per browser so

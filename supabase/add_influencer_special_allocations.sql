@@ -16,5 +16,5 @@ alter table influencer_special_allocations disable row level security;
 alter table influencer_entries add column if not exists special_allocation_id bigint references influencer_special_allocations(id);
 
 insert into influencer_special_allocations (name, brand, target_qty) values
-  ('Minus pram gifting', 'Minus', 40),
+  ('UPPAbaby MINU V3 Stroller gifting', 'UPPAbaby', 40),
   ('Nanit floor camera gifting', 'Nanit', 30);
