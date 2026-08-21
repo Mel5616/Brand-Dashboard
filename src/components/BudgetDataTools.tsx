@@ -151,6 +151,18 @@ export function BudgetDataTools({ brands, marketingBudgets, monthKeys, fy, fyLab
     XLSX.writeFile(wb, `marketing_expenses_${fy}.xlsx`);
   }
 
+  // Matches a channel from the file against the canonical CHANNELS list —
+  // case-insensitively, and tolerant of a stray/missing trailing "s"
+  // ("Event" vs "Events"). Otherwise the exact typed string is kept as its
+  // own channel: it inserts fine, but then silently never appears anywhere
+  // in the Budget tab (which only ever displays the canonical list) —
+  // exactly the "I uploaded it but it didn't go in" failure mode.
+  function matchChannel(raw: string): { channel: string; changed: boolean } {
+    const norm = (s: string) => s.trim().toLowerCase().replace(/s$/, "");
+    const hit = CHANNELS.find(c => norm(c) === norm(raw));
+    return hit ? { channel: hit, changed: hit !== raw } : { channel: raw, changed: false };
+  }
+
   async function uploadExpenses(file: File) {
     setBusy("exp"); setMsg("");
     try {
@@ -158,17 +170,19 @@ export function BudgetDataTools({ brands, marketingBudgets, monthKeys, fy, fyLab
       const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
       const grid = XLSX.utils.sheet_to_json<any>(wb.Sheets[wb.SheetNames[0]], { defval: "" });
       const get = (r: any, name: string) => { const k = Object.keys(r).find(k => k.trim().toLowerCase() === name); return k ? r[k] : ""; };
-      const out: Actual[] = []; const unmatched = new Set<string>();
+      const out: Actual[] = []; const unmatched = new Set<string>(); const unknownChannels = new Set<string>();
       for (const r of grid) {
-        const bid = idByName(get(r, "brand")); const mk = toMonthKey(get(r, "month")); const channel = String(get(r, "channel") || "").trim();
+        const bid = idByName(get(r, "brand")); const mk = toMonthKey(get(r, "month")); const rawChannel = String(get(r, "channel") || "").trim();
         if (bid == null) { if (get(r, "brand")) unmatched.add(String(get(r, "brand"))); continue; }
-        if (!mk || !channel) continue;
+        if (!mk || !rawChannel) continue;
+        const { channel, changed } = matchChannel(rawChannel);
+        if (changed || !CHANNELS.includes(channel)) unknownChannels.add(`${rawChannel}${changed ? ` → ${channel}` : ""}`);
         const spend = Number(String(get(r, "spend")).replace(/[^0-9.-]/g, "")) || 0;
         out.push({ brand_id: bid, month_key: mk, channel, spend, note: String(get(r, "note") || "") });
       }
       if (!out.length) { setMsg("No expense rows found — use the Month, Brand, Channel, Spend, Note columns."); setBusy(""); return; }
       const res = await fetch("/api/marketing-actuals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows: out }) }).then(r => r.json()).catch(() => ({ ok: false }));
-      setMsg(res.ok ? `✓ Loaded ${res.count} expense lines${unmatched.size ? ` (unmatched brands: ${[...unmatched].join(", ")})` : ""}. Reloading…` : (res.error || "Upload failed."));
+      setMsg(res.ok ? `✓ Loaded ${res.count} expense lines${unmatched.size ? ` (unmatched brands: ${[...unmatched].join(", ")})` : ""}${unknownChannels.size ? ` (channel names: ${[...unknownChannels].join(", ")})` : ""}. Reloading…` : (res.error || "Upload failed."));
       if (res.ok) setTimeout(() => window.location.reload(), 1500);
     } catch { setMsg("Couldn't read that file."); }
     setBusy("");
