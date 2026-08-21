@@ -30,6 +30,7 @@ type Agreement = {
   exclusivity_applies: boolean; exclusivity_category: string | null; exclusivity_months: number; exclusivity_end_date: string | null;
   usage_term_months: number; usage_paid_media: boolean; usage_retail_partners: boolean; usage_print: boolean; usage_original_files: boolean;
   discount_code: string | null; sent_at: string | null; signed_at: string | null; signed_name: string | null;
+  order_sheet_approved_at: string | null; order_sheet_approved_by: string | null; order_sheet_sent_at: string | null;
   influencer_agreement_products: Product[]; influencer_agreement_deliverables: Deliverable[];
 };
 type ExclRow = { agreement_id: string; reference: string; influencer_id: string; full_name: string; instagram_handle: string | null; brand: string; exclusivity_category: string; exclusivity_end_date: string; days_remaining: number };
@@ -453,7 +454,12 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false }: { bran
                             {a.status === "sent" && <button onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/agreement/${a.token}`); setMsg("Signing link copied."); }} className="text-[12px] font-semibold text-slate-500 hover:underline mr-2.5">⧉ Link</button>}
                             {(a.status === "draft" || a.status === "sent") && <button disabled={busyId === a.id} onClick={() => act(a.id, "void")} className="text-[12px] font-semibold text-gray-400 hover:underline mr-2.5 disabled:opacity-50">Void</button>}
                             {a.status === "signed" && admin && <button disabled={busyId === a.id} onClick={() => { if (confirm(`Terminate ${a.reference}? The signed record is kept.`)) act(a.id, "terminate"); }} className="text-[12px] font-semibold text-rose-500 hover:underline disabled:opacity-50 mr-2.5">Terminate</button>}
-                            <a href={`/api/influencer-agreements/order-sheet?id=${a.id}`} target="_blank" rel="noreferrer" className="text-[12px] font-semibold text-teal-600 hover:underline" title="Printable order sheet — name, delivery address, products, for invoicing or Shopify entry">🖨 Order sheet</a>
+                            <a href={`/api/influencer-agreements/order-sheet?id=${a.id}`} target="_blank" rel="noreferrer" className="text-[12px] font-semibold text-teal-600 hover:underline mr-2.5" title="Printable order sheet — name, delivery address, products, for invoicing or Shopify entry">🖨 Order sheet</a>
+                            {a.status === "signed" && (a.order_sheet_approved_at
+                              ? <span className="text-[11px] font-semibold text-emerald-600" title={`Approved by ${a.order_sheet_approved_by || "—"}`}>✓ Sent to Accounts {fmtD(a.order_sheet_sent_at)}</span>
+                              : admin
+                                ? <button disabled={busyId === a.id} onClick={() => { if (confirm(`Approve the gift order sheet for ${a.reference} and email it to orders@coolkidz.com.au?`)) act(a.id, "approve_order_sheet"); }} className="text-[12px] font-semibold text-white bg-amber-500 hover:bg-amber-600 rounded-md px-2 py-1 disabled:opacity-50">Approve & send</button>
+                                : <span className="text-[11px] font-semibold text-amber-600">⏳ Awaiting approval</span>)}
                           </td>
                         </tr>
                         {isOpen && (

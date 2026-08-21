@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
 import { renderAgreementHtml, validateForSend, ENTITY, TEMPLATE_VERSION, AGREEMENT_TYPES } from "@/lib/agreementTemplate";
 import { sendMail, shell } from "@/lib/agreementMail";
+import { buildGiftOrderSheet } from "@/lib/giftOrderSheet";
 
 // Influencer Agreements — admin CRUD + send. Influencers sign via the public
 // /agreement/[token] page. Coolkidz Australia Pty Ltd is the contracting
@@ -13,6 +14,8 @@ const h = (extra: Record<string, string> = {}) => ({ apikey: sbKey!, Authorizati
 const BASE = "https://marketing.coolkidz.com.au";
 const missing = (status: number, body: string) => status === 404 || /PGRST205|does not exist|schema cache/i.test(body);
 const canUse = (acc: { role: string | null; allowedTabs: string[] }) => acc.role === "admin" || (!!acc.role && acc.allowedTabs.includes("influencer-agreements"));
+// Confirmed with Mel directly — where the approved gift order sheet is emailed.
+const ORDERS_EMAIL = "orders@coolkidz.com.au";
 
 // Clause 7 ties exclusivity to "14 days after the last deliverable is
 // published" rather than a fixed months-from-signing term. Before every
@@ -345,6 +348,29 @@ export async function PATCH(req: Request) {
   if (b.action === "terminate") {
     if (acc.role !== "admin") return NextResponse.json({ ok: false, error: "Admin only" }, { status: 403 });
     await fetch(`${sbUrl}/rest/v1/influencer_agreements?id=eq.${id}`, { method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify({ status: "terminated" }) });
+    return NextResponse.json({ ok: true });
+  }
+  if (b.action === "approve_order_sheet") {
+    // Hard gate: the order sheet is watermarked "not yet approved" until this
+    // fires, and this is the only path that emails it to Accounts — approval
+    // and send happen as one action, per Mel's own confirmed workflow.
+    if (acc.role !== "admin") return NextResponse.json({ ok: false, error: "Admin only" }, { status: 403 });
+    if (a.status !== "signed") return NextResponse.json({ ok: false, error: "Only a signed agreement can be approved" }, { status: 400 });
+    const approvedAt = new Date().toISOString();
+    const approvedBy = (acc.user as any)?.email ?? "unknown";
+    const prodRes = await fetch(`${sbUrl}/rest/v1/influencer_agreement_products?agreement_id=eq.${id}`, { headers: h(), cache: "no-store" });
+    const products = await prodRes.json().catch(() => []);
+    const html = buildGiftOrderSheet({
+      reference: a.reference, agreement_date: a.agreement_date, campaign_name: a.campaign_name, status: a.status,
+      brand_name: a.brands?.name ?? "—", influencer: a.influencers, products, representative_name: a.representative_name ?? null,
+      approved_at: approvedAt, approved_by: approvedBy, forEmail: true,
+    });
+    const mail = await sendMail({ to: [ORDERS_EMAIL], subject: `Gift order — ${a.reference} — ${a.influencers?.full_name ?? ""}`, html });
+    if (!mail.ok) return NextResponse.json({ ok: false, error: `Approved, but the email to Accounts failed to send: ${mail.error}` }, { status: 500 });
+    await fetch(`${sbUrl}/rest/v1/influencer_agreements?id=eq.${id}`, {
+      method: "PATCH", headers: h({ Prefer: "return=minimal" }),
+      body: JSON.stringify({ order_sheet_approved_at: approvedAt, order_sheet_approved_by: approvedBy, order_sheet_sent_at: approvedAt }),
+    });
     return NextResponse.json({ ok: true });
   }
   if (b.action === "deliverable") {

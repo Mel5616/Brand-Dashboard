@@ -17,7 +17,7 @@ export async function GET(req: Request) {
   const id = new URL(req.url).searchParams.get("id");
   if (!id) return new Response("Missing id", { status: 400 });
 
-  const select = "select=reference,agreement_date,campaign_name,status,representative_name,brands(name),influencers:agreement_influencers(*),influencer_agreement_products(*)";
+  const select = "select=reference,agreement_date,campaign_name,status,representative_name,order_sheet_approved_at,order_sheet_approved_by,brands(name),influencers:agreement_influencers(*),influencer_agreement_products(*)";
   const res = await fetch(`${sbUrl}/rest/v1/influencer_agreements?id=eq.${id}&${select}&limit=1`, { headers: h(), cache: "no-store" });
   if (!res.ok) return new Response("Could not load the agreement", { status: 502 });
   const rows = await res.json();
@@ -28,6 +28,7 @@ export async function GET(req: Request) {
     reference: a.reference, agreement_date: a.agreement_date, campaign_name: a.campaign_name, status: a.status,
     brand_name: a.brands?.name ?? "—", influencer: a.influencers, products: a.influencer_agreement_products ?? [],
     representative_name: a.representative_name ?? null,
+    approved_at: a.order_sheet_approved_at ?? null, approved_by: a.order_sheet_approved_by ?? null,
   });
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
 }

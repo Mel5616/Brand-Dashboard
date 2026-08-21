@@ -10,6 +10,7 @@ type Alert = {
   level: "warning" | "info";
   title: string;
   detail: string;
+  href?: string;
 };
 
 interface Props {
@@ -26,6 +27,7 @@ const LATEST = "2026-05";
 
 export function NotificationCenter({ brands, summaries, googleAds, metaAds, targets, marketingBudgets, marketingActuals }: Props) {
   const [open, setOpen] = useState(false);
+  const [pendingApprovals, setPendingApprovals] = useState<{ id: string; reference: string; brand: string; influencer: string }[]>([]);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -36,7 +38,24 @@ export function NotificationCenter({ brands, summaries, googleAds, metaAds, targ
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  useEffect(() => {
+    fetch("/api/influencer-agreements/pending-approvals")
+      .then(r => r.json())
+      .then(d => { if (d.ok) setPendingApprovals(d.items); })
+      .catch(() => {});
+  }, []);
+
   const alerts: Alert[] = [];
+
+  for (const p of pendingApprovals) {
+    alerts.push({
+      id: `order-approval-${p.id}`,
+      brand: p.brand, brandColor: "#7c3aed", level: "warning",
+      title: "Gift order sheet awaiting sign-off",
+      detail: `${p.influencer} · ${p.reference}`,
+      href: "/?tab=influencer-agreements",
+    });
+  }
 
   for (const brand of brands.filter(b => b.live)) {
     const color  = brand.color ?? "#6366f1";
@@ -146,19 +165,30 @@ export function NotificationCenter({ brands, summaries, googleAds, metaAds, targ
             </div>
           ) : (
             <div className="max-h-96 overflow-y-auto divide-y divide-gray-50">
-              {alerts.map(a => (
-                <div key={a.id} className="px-4 py-3 flex gap-3 hover:bg-gray-50 transition-colors">
-                  <div className="w-1 rounded-full flex-shrink-0 self-stretch" style={{ background: a.brandColor }} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-bold text-gray-700 truncate">{a.brand}</span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600 font-semibold flex-shrink-0">⚠ Warning</span>
+              {alerts.map(a => {
+                const Row = (
+                  <>
+                    <div className="w-1 rounded-full flex-shrink-0 self-stretch" style={{ background: a.brandColor }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-gray-700 truncate">{a.brand}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600 font-semibold flex-shrink-0">⚠ Warning</span>
+                      </div>
+                      <p className="text-xs font-semibold text-gray-800 mt-0.5">{a.title}</p>
+                      <p className="text-[11px] text-gray-400 mt-0.5">{a.detail}</p>
                     </div>
-                    <p className="text-xs font-semibold text-gray-800 mt-0.5">{a.title}</p>
-                    <p className="text-[11px] text-gray-400 mt-0.5">{a.detail}</p>
+                  </>
+                );
+                return a.href ? (
+                  <a key={a.id} href={a.href} onClick={() => setOpen(false)} className="px-4 py-3 flex gap-3 hover:bg-gray-50 transition-colors">
+                    {Row}
+                  </a>
+                ) : (
+                  <div key={a.id} className="px-4 py-3 flex gap-3 hover:bg-gray-50 transition-colors">
+                    {Row}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

@@ -16,6 +16,8 @@ type Influencer = {
 type OrderSheetInput = {
   reference: string; agreement_date: string | null; campaign_name: string | null; status: string;
   brand_name: string; influencer: Influencer; products: Product[]; representative_name: string | null;
+  approved_at: string | null; approved_by: string | null;
+  forEmail?: boolean; // omits the interactive Download button (email clients strip onclick anyway) and the "not approved" banner (this variant is only ever sent once approved)
 };
 
 const esc = (s: string) => (s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -65,11 +67,16 @@ export function buildGiftOrderSheet(a: OrderSheetInput): string {
   .nocost { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 999px; background: #eff6ff; color: #1d4ed8; }
   .foot { margin-top: 32px; font-size: 11px; color: #94a3b8; text-align: center; }
   .dl { display: block; margin: 0 auto 24px; font-size: 13px; font-weight: 700; color: #fff; background: #132741; border: 0; border-radius: 8px; padding: 10px 20px; cursor: pointer; }
+  .pending-banner { background: #fef3c7; border: 2px solid #f59e0b; color: #92400e; font-weight: 700; font-size: 13px; text-align: center; padding: 12px; border-radius: 8px; margin-bottom: 20px; }
+  .approved-banner { background: #ecfdf5; border: 1px solid #6ee7b7; color: #047857; font-size: 12px; text-align: center; padding: 8px; border-radius: 8px; margin-bottom: 20px; }
   @media print { body { padding: 0; } .no-print { display: none; } }
 </style>
 </head>
 <body>
-  <button class="dl no-print" onclick="window.print()">⬇ Download PDF</button>
+  ${!a.forEmail ? `<button class="dl no-print" onclick="window.print()">⬇ Download PDF</button>` : ""}
+  ${!a.approved_at
+    ? `<div class="pending-banner">⚠ NOT YET APPROVED — awaiting Mel's sign-off. Do not send to Accounts.</div>`
+    : `<div class="approved-banner">✓ Approved by ${esc(a.approved_by || "—")} on ${fmtDate(a.approved_at.slice(0, 10))}</div>`}
   <div class="head">
     <div>
       <h1>Gift order sheet <span class="nocost">Gifted — no cost</span></h1>
