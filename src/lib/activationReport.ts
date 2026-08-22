@@ -399,7 +399,7 @@ export function buildActivationReport(a: ActivationReportInput): string {
   <h2>Competitor landscape</h2>
   <div class="grid">${competitorCards}</div>
 
-  <h2>The spine</h2>
+  <h2>A look ahead</h2>
   <div class="panel">${spineHtml}</div>
 
   <h2>Where the money goes</h2>
