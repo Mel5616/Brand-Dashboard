@@ -7,7 +7,7 @@ import { ENTITY } from "./agreementTemplate";
 // prototype (frida-q4-activation-plan.html) — this leaves the building, so
 // it's held to that bar rather than the plainer internal-only reports.
 
-type Competitor = { name: string; notes: string | null; source_links?: string[] };
+type Competitor = { name: string; notes: string | null; source_links?: string[]; image_url?: string | null };
 type ShowRow = { name: string; date_start: string; date_end: string; state: string; location: string; status: "upcoming" | "live" | "past" };
 type Phase = { key: string; label: string; sub: string | null; start_date: string; end_date: string; color: string };
 type Pillar = { key: string; label: string; color: string; share_pct: number; note: string | null };
@@ -80,9 +80,12 @@ export function buildActivationReport(a: ActivationReportInput): string {
   const competitorCards = a.competitors.length ? a.competitors.map(c => `
     <div class="card comp-card">
       <div class="comp-bar"></div>
-      <h3>${esc(c.name)}</h3>
-      <ul>${notesToList(c.notes).map(l => `<li>${esc(l)}</li>`).join("") || `<li class="muted">No notes yet.</li>`}</ul>
-      ${c.source_links?.length ? `<p class="sources">${c.source_links.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener">↗ ${esc(domainOf(u))}</a>`).join(" &nbsp;·&nbsp; ")}</p>` : ""}
+      ${c.image_url ? `<img class="comp-img" src="${esc(c.image_url)}" alt="${esc(c.name)}">` : ""}
+      <div class="comp-body">
+        <h3>${esc(c.name)}</h3>
+        <ul>${notesToList(c.notes).map(l => `<li>${esc(l)}</li>`).join("") || `<li class="muted">No notes yet.</li>`}</ul>
+        ${c.source_links?.length ? `<p class="sources">${c.source_links.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener">↗ ${esc(domainOf(u))}</a>`).join(" &nbsp;·&nbsp; ")}</p>` : ""}
+      </div>
     </div>`).join("") : `<p class="muted">No competitors tracked yet.</p>`;
 
   // ---- Phase axis ----
@@ -102,7 +105,7 @@ export function buildActivationReport(a: ActivationReportInput): string {
 
   // ---- Marker lanes (shows + trade dates), auto-staggered ----
   const GAP = 16;
-  const ROW_H = 50;
+  const ROW_H = 62;
   function renderLane(items: { x: number; label: string; date: string; end?: string | null; confirmed: boolean; kind: string }[], tag: string) {
     const rows: number[][] = [];
     const placed = items.slice().sort((x, y) => x.x - y.x).map(t => {
@@ -124,7 +127,16 @@ export function buildActivationReport(a: ActivationReportInput): string {
   const markersHtml = (showItems.length ? renderLane(showItems, "Baby expos") : "") + (tradeItems.length ? renderLane(tradeItems, "Retail moments") : "");
 
   // ---- Campaign bars, packed into non-overlapping tracks ----
-  const barItems = a.campaigns.map(c => ({ ...c, s: pos(c.key_date), e: pos(c.end_date || c.key_date) }));
+  // Compute the RENDERED width (with its min-width floor) up front, and pack
+  // using that — packing on the raw date span let same-day-ish campaigns
+  // land in the same track and then visually collide once the min-width
+  // floor was applied on render.
+  const MIN_BAR = 13;
+  const barItems = a.campaigns.map(c => {
+    const s = pos(c.key_date);
+    const e = Math.min(100, Math.max(pos(c.end_date || c.key_date), s + MIN_BAR));
+    return { ...c, s, e };
+  });
   const tracks: (typeof barItems)[] = [];
   for (const b of barItems) {
     let row = tracks.find(r => r.every(x => b.e < x.s - 1 || b.s > x.e + 1));
@@ -133,7 +145,7 @@ export function buildActivationReport(a: ActivationReportInput): string {
   }
   const pillarColor = (key: string | null) => a.pillars.find(p => p.key === key)?.color ?? "#64748b";
   const tracksHtml = tracks.map(row => `<div class="track">${row.map(b => `
-    <div class="bar${b.confirmed ? "" : " unconfirmed"}" style="left:${b.s}%;width:${Math.max(b.e - b.s, 6)}%;background:${pillarColor(b.pillar)}" title="${esc(b.campaign)}">
+    <div class="bar${b.confirmed ? "" : " unconfirmed"}" style="left:${b.s}%;width:${b.e - b.s}%;background:${pillarColor(b.pillar)}" title="${esc(b.campaign)}">
       ${esc(b.campaign)}<span class="wk">${fmtDateShort(b.key_date)}</span>
     </div>`).join("")}</div>`).join("");
 
@@ -141,13 +153,12 @@ export function buildActivationReport(a: ActivationReportInput): string {
     + (showItems.length ? `<span><i style="background:${accent};border-radius:2px"></i>Baby expo</span>` : "")
     + `<span><i style="background:repeating-linear-gradient(45deg,#94a3b8 0 4px,#fff 4px 8px)"></i>Not yet confirmed</span>`;
 
-  // Percent-based positioning needs real pixel width to avoid label overlap —
-  // scale the minimum width with how many months are in view (more months,
-  // more room), scrolling horizontally rather than compressing.
-  const spineMinWidth = Math.max(820, rulerMonths.length * 230);
+  // No horizontal scroll — the spine always fits the panel's width. Crowding
+  // is resolved with height instead: the marker lanes stagger into as many
+  // rows as they need (see renderLane), so dense weeks get taller, not wider.
   const spineHtml = (a.phases.length || a.campaigns.length) ? `
     <div class="spine">
-      <div class="spine-inner" style="min-width:${spineMinWidth}px">
+      <div class="spine-inner">
         ${markersHtml ? `<div class="markers">${markersHtml}</div>` : ""}
         ${axisHtml}
         ${rulerHtml}
@@ -245,8 +256,10 @@ export function buildActivationReport(a: ActivationReportInput): string {
   .ad-img img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #f1f5f9; }
   .ad-img figcaption { font-size: 10.5px; color: #64748b; padding: 6px 8px; }
   .card { position: relative; background: #fff; border: 1px solid #e2e6ea; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 2px rgba(15,23,42,0.03); }
-  .comp-card { padding: 16px 18px 16px 20px; }
-  .comp-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: ${accent}; }
+  .comp-card { padding: 0; }
+  .comp-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: ${accent}; z-index: 1; }
+  .comp-img { width: 100%; height: 130px; object-fit: cover; display: block; background: #f1f5f9; }
+  .comp-body { padding: 16px 18px 16px 20px; }
   .sources { font-size: 10.5px; margin: 10px 0 0; padding-top: 8px; border-top: 1px solid #f1f5f9; }
   .sources a { color: #4C6278; text-decoration: none; }
   .sources a:hover { text-decoration: underline; }
@@ -262,12 +275,12 @@ export function buildActivationReport(a: ActivationReportInput): string {
   .muted { color: #94a3b8; font-size: 12.5px; }
 
   .panel { background: #fff; border: 1px solid #e2e6ea; border-radius: 12px; padding: 26px 26px 22px; }
-  .spine { overflow-x: auto; padding-bottom: 2px; }
+  .spine { padding-bottom: 2px; }
   .spine-inner { width: 100%; }
-  .markers { display: flex; flex-direction: column; gap: 20px; padding-bottom: 14px; }
-  .lane { position: relative; border-bottom: 1px dashed #e2e6ea; padding-bottom: 14px; }
+  .markers { display: flex; flex-direction: column; gap: 28px; padding-bottom: 16px; }
+  .lane { position: relative; border-bottom: 1px dashed #e2e6ea; padding-bottom: 16px; }
   .lane-tag { position: absolute; left: 0; top: 0; font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; }
-  .marker { position: absolute; bottom: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; width: 156px; }
+  .marker { position: absolute; bottom: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; width: 132px; }
   .marker .lbl { font-size: 10.5px; font-weight: 600; line-height: 1.3; text-align: center; color: #0f172a; padding-bottom: 5px; }
   .marker .dte { font-size: 9.5px; color: #94a3b8; display: block; font-weight: 500; margin-top: 1px; }
   .marker .stem { width: 1px; background: #94a3b8; opacity: .4; }
@@ -284,7 +297,7 @@ export function buildActivationReport(a: ActivationReportInput): string {
   .ruler .m:first-child { border-left: 0; padding-left: 0; }
   .tracks { position: relative; padding-top: 16px; }
   .track { position: relative; height: 28px; margin-bottom: 5px; background: #f8fafc; border-radius: 5px; }
-  .bar { position: absolute; top: 2px; height: 24px; border-radius: 5px; display: flex; align-items: center; padding: 0 9px; gap: 6px; font-size: 11px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; }
+  .bar { position: absolute; top: 2px; height: 24px; border-radius: 5px; display: flex; align-items: center; padding: 0 9px; gap: 6px; font-size: 11px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .bar .wk { font-size: 9.5px; opacity: .8; font-weight: 500; }
   .bar.unconfirmed { background-image: repeating-linear-gradient(45deg,rgba(255,255,255,.25) 0 6px,transparent 6px 12px); }
   .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 14px; padding-top: 12px; border-top: 1px solid #e2e6ea; }

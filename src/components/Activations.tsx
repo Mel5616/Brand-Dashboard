@@ -12,7 +12,7 @@ import type { Tradeshow } from "@/lib/db";
 // builder used for the shared link — what Mel sees is what Global gets.
 
 type Brand = { id: number; name: string; live?: boolean; color?: string; init?: string };
-type Competitor = { id: number; brand_id: number; name: string; notes: string | null; source_links: string[]; updated_at: string; updated_by: string | null };
+type Competitor = { id: number; brand_id: number; name: string; notes: string | null; source_links: string[]; image_url: string | null; updated_at: string; updated_by: string | null };
 type Campaign = { id: string; campaign: string; brand: string; channel: string; status: string; key_date: string; end_date?: string | null; note: string; pillar?: string | null; confirmed?: boolean };
 type Creative = { id: number; brand_id: number; campaign_name: string | null; ad_group: string | null; headlines: string[]; descriptions: string[]; clicks: number; impressions: number };
 type AdImage = { id: number; brand_id: number; campaign_name: string | null; asset_group: string | null; image_url: string };
@@ -120,7 +120,7 @@ export function Activations({ brands, tradeshows, tradeshowBrands, admin = false
     return buildActivationReport({
       brand_name: brand.name, brand_color: brand.color, brand_init: brand.init, generated_at: new Date().toISOString(),
       window: windowRange,
-      competitors: competitors.map(c => ({ name: c.name, notes: c.notes, source_links: c.source_links })),
+      competitors: competitors.map(c => ({ name: c.name, notes: c.notes, source_links: c.source_links, image_url: c.image_url })),
       tradeshows: windowShows.map(t => ({ name: t.name, date_start: t.date_start, date_end: t.date_end, state: t.state, location: t.location, status: showStatus(t) })),
       phases: phases.map(p => ({ key: p.key, label: p.label, sub: p.sub, start_date: p.start_date, end_date: p.end_date, color: p.color })),
       pillars: pillars.map(p => ({ key: p.key, label: p.label, color: p.color, share_pct: p.share_pct, note: p.note })),
@@ -166,6 +166,15 @@ export function Activations({ brands, tradeshows, tradeshowBrands, admin = false
     if (!confirm("Remove this competitor?")) return;
     const d = await fetch(`/api/brand-competitors?id=${id}`, { method: "DELETE" }).then(r => r.json());
     if (d.ok) setCompetitors(prev => prev.filter(c => c.id !== id));
+  }
+  const [uploadingComp, setUploadingComp] = useState<number | null>(null);
+  async function uploadCompetitorImage(id: number, file: File) {
+    setUploadingComp(id);
+    const fd = new FormData(); fd.append("file", file); fd.append("id", String(id));
+    const d = await fetch("/api/brand-competitors/image", { method: "POST", body: fd }).then(r => r.json()).catch(() => null);
+    setUploadingComp(null);
+    if (d?.ok) setCompetitors(prev => prev.map(c => c.id === id ? { ...c, image_url: d.url } : c));
+    else setMsg(d?.error || "Couldn't upload the photo.");
   }
 
   // Generic activation-plan CRUD (phases/pillars/tradeDates/decisions/asks)
@@ -263,6 +272,21 @@ export function Activations({ brands, tradeshows, tradeshowBrands, admin = false
                           </div>
                         ) : (
                           <>
+                            <label className="relative block -m-3.5 mb-2.5 cursor-pointer group/img">
+                              {c.image_url ? (
+                                <img src={c.image_url} alt={c.name} className="w-full h-28 object-cover rounded-t-xl" />
+                              ) : (
+                                <div className="w-full h-16 rounded-t-xl bg-gray-50 border-b border-dashed border-gray-200 flex items-center justify-center text-[11px] text-gray-400 group-hover/img:bg-gray-100">
+                                  {uploadingComp === c.id ? "Uploading…" : "+ Add photo"}
+                                </div>
+                              )}
+                              {c.image_url && (
+                                <span className="absolute inset-0 rounded-t-xl bg-black/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center text-white text-[11px] font-semibold transition-opacity">
+                                  {uploadingComp === c.id ? "Uploading…" : "Change photo"}
+                                </span>
+                              )}
+                              <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadCompetitorImage(c.id, f); e.currentTarget.value = ""; }} />
+                            </label>
                             <div className="flex items-start justify-between gap-2">
                               <p className="font-semibold text-slate-800 text-sm">{c.name}</p>
                               <div className="flex gap-2 shrink-0">
