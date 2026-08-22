@@ -6,7 +6,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // Public paths (login, auth callback, the team gift form, and API routes) pass
 // through — per-route financial gating is enforced in the routes themselves.
 
-const PUBLIC = ["/login", "/auth", "/log-gift", "/request", "/p", "/c", "/s", "/deals", "/w", "/brief", "/nanit", "/sign", "/deck", "/doc", "/g", "/agreement", "/api/signout"];
+const PUBLIC = ["/login", "/auth", "/log-gift", "/request", "/p", "/c", "/s", "/deals", "/w", "/brief", "/nanit", "/sign", "/deck", "/doc", "/g", "/agreement", "/activation", "/api/signout"];
 // The only /api endpoints reachable without a session: the public team gift
 // form and the public Sales Hub request form (both gated by their own shared
 // key inside the route, see src/lib/giftKey.ts / src/lib/salesRequestKey.ts).

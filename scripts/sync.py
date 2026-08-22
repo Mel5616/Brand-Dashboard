@@ -1023,6 +1023,60 @@ def fetch_google_ads_campaigns(customer_id, creds):
         })
     return rows
 
+def fetch_google_ads_creatives(customer_id, creds, top_n=8):
+    """Top-performing responsive search ad copy (last 90 days), for the
+    Activations report's ad-copy panel. Aggregated over the window, not
+    broken out by day/month — this is "what's live and working now"."""
+    access_token = _google_access_token(creds)
+    cid = customer_id.replace('-', '')
+    start = (_date.today() - _td(days=90)).isoformat()
+
+    query = f'''
+    SELECT campaign.name, ad_group.name,
+           ad_group_ad.ad.responsive_search_ad.headlines,
+           ad_group_ad.ad.responsive_search_ad.descriptions,
+           ad_group_ad.ad.final_urls,
+           metrics.clicks, metrics.impressions
+    FROM ad_group_ad
+    WHERE segments.date >= '{start}' AND segments.date <= '{RANGE_END}'
+      AND ad_group_ad.status = 'ENABLED'
+      AND ad_group_ad.ad.type = 'RESPONSIVE_SEARCH_AD'
+    ORDER BY metrics.clicks DESC
+    LIMIT 200
+    '''
+    url = f'https://googleads.googleapis.com/v24/customers/{cid}/googleAds:search'
+    ctx = ssl.create_default_context()
+    req = urllib.request.Request(url, data=json.dumps({'query': query}).encode(), method='POST')
+    req.add_header('Authorization', f'Bearer {access_token}')
+    req.add_header('developer-token', creds['developerToken'])
+    req.add_header('Content-Type', 'application/json')
+    req.add_header('login-customer-id', '8923727576')
+    with urllib.request.urlopen(req, context=ctx, timeout=30) as r:
+        data = json.loads(r.read().decode())
+
+    # One ad can shard across multiple result rows (e.g. by network) even
+    # with no segment selected — aggregate defensively by (campaign, ad group).
+    agg = {}
+    for row in data.get('results', []):
+        rsa = row.get('adGroupAd', {}).get('ad', {}).get('responsiveSearchAd', {})
+        headlines = [h.get('text', '') for h in rsa.get('headlines', []) if h.get('text')]
+        descriptions = [d.get('text', '') for d in rsa.get('descriptions', []) if d.get('text')]
+        if not headlines:
+            continue
+        key = (row.get('campaign', {}).get('name', ''), row.get('adGroup', {}).get('name', ''))
+        met = row.get('metrics', {})
+        a = agg.setdefault(key, {
+            'headlines': headlines, 'descriptions': descriptions,
+            'final_url': (row.get('adGroupAd', {}).get('ad', {}).get('finalUrls') or [None])[0],
+            'clicks': 0, 'impressions': 0,
+        })
+        a['clicks'] += int(met.get('clicks', 0))
+        a['impressions'] += int(met.get('impressions', 0))
+
+    ranked = sorted(({'campaign_name': k[0], 'ad_group': k[1], **v} for k, v in agg.items()),
+                     key=lambda r: r['clicks'], reverse=True)
+    return ranked[:top_n]
+
 def sync_google_ads(config):
     if not os.path.exists(GOOGLE_ADS_CREDS_PATH):
         return
@@ -1062,6 +1116,18 @@ def sync_google_ads(config):
                     print(f'       {len(daily_db)} daily rows synced')
             except Exception as de:
                 print(f'       ⚠ daily sync skipped: {de}')
+
+            # Top ad copy for the Activations report — wholesale-replaced per
+            # brand each run (this is "what's live now", not a trend).
+            try:
+                creatives = fetch_google_ads_creatives(cid, creds)
+                if creatives:
+                    sb_delete_where('google_ads_creatives', 'brand_id', bid)
+                    creative_db = [{'brand_id': bid, **r} for r in creatives]
+                    sb_upsert('google_ads_creatives', creative_db)
+                    print(f'       {len(creative_db)} ad copy sets synced')
+            except Exception as ce:
+                print(f'       ⚠ ad copy sync skipped: {ce}')
 
             may = next((r for r in rows if r['month_key'] == '2026-05'), {})
             print(f'       May spend: ${may.get("spend",0):,.2f} | ROAS: {may.get("roas",0):.2f} | Clicks: {may.get("clicks",0):,}')

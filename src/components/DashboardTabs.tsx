@@ -57,6 +57,7 @@ import { TeamGiftingPanel } from "./TeamGiftingPanel";
 import { TeamPanel } from "./TeamPanel";
 import { BoothFunnel } from "./BoothFunnel";
 import { BrandSnapshot } from "./BrandSnapshot";
+import { Activations } from "./Activations";
 import { UppababyReport } from "./UppababyReport";
 import { EventsPanel } from "./EventsPanel";
 import { TasksPanel } from "./TasksPanel";
@@ -87,7 +88,7 @@ import { StockReport } from "./StockReport";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "summary" | "brands" | "strategy" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "report" | "snapshot" | "social-report" | "d2c-weekly" | "month-review" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "nanit" | "affiliates" | "pa-budget" | "pa-tracker" | "documents" | "team";
+type TabId = "summary" | "brands" | "strategy" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "month-review" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "nanit" | "affiliates" | "pa-budget" | "pa-tracker" | "documents" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -125,6 +126,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
     id: "snapshot", label: "Brand Snapshot",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a2 2 0 012-2h12a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V5z M8 7h8M8 11h8M8 15h5" /></svg>,
+  },
+  {
+    id: "activations", label: "Activations",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>,
   },
   {
     id: "social-report", label: "Social Report",
@@ -311,7 +316,7 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
 // Sidebar grouping — how you market (top) vs where you sell (bottom).
 const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Overview", ids: ["brands", "strategy", "summary", "insights", "team-hub", "weekly-brief"] },
-  { label: "Reports", ids: ["report", "snapshot", "social-report", "d2c-weekly", "month-review", "uppababy"] },
+  { label: "Reports", ids: ["report", "snapshot", "activations", "social-report", "d2c-weekly", "month-review", "uppababy"] },
   { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows"] },
   { label: "Plan", ids: ["campaign-calendar", "promotions", "discount-codes", "calendar", "content", "events", "event-concepts", "decks", "show-deals"] },
   { label: "Creative", ids: ["tasks", "design-requests", "creative"] },
@@ -1466,6 +1471,14 @@ export function DashboardTabs({
                 semrushMetrics={semrushMetrics}
                 semrushKeywords={semrushKeywords}
               />
+            </>
+          )}
+
+          {/* ── Activations (per-brand competitor landscape, tradeshows, 6-month plan, ad copy — shareable to Global) ── */}
+          {active === "activations" && (
+            <>
+              <SectionBar title="Activations" />
+              <Activations brands={brands} tradeshows={tradeshows} tradeshowBrands={tradeshowBrands} admin={role === "admin"} />
             </>
           )}
 
