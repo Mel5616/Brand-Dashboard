@@ -38,6 +38,22 @@ export type ActivationReportInput = {
   adImages: AdImage[];
 };
 
+// Brand logo by normalized name (files live in /public/logos — same map used
+// by the Brief print route). Add brands here as their logo file is confirmed.
+const BRAND_LOGO: Record<string, string> = {
+  nanit: "/logos/Nanit_Logo Lockup_Midnight Mist.svg",
+  frida: "/logos/Frida_logo_main.png",
+  gaiababy: "/logos/GaiaBaby-Logo-Portrait-Colour.jpg",
+  magic: "/logos/MCC_logo_MAGIC_black_c.png",
+  matchstickmonkey: "/logos/Matchstick Monkey Logo.jpg",
+  miamily: "/logos/MiaMily_logo+flag_1.png",
+  zazu: "/logos/ZAZU logo_HR.jpg",
+  uppababy: "/logos/UPPAbaby Logo.jpg",
+  smartrike: "/logos/Smartrike Logo.png",
+  hannie: "/logos/hannie.jpg",
+  coolkidz: "/logos/Coolkidz Logo.png",
+};
+
 const esc = (s: string) => (s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const fmtDate = (s: string | null | undefined) => s ? new Date(s + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "—";
 const fmtDateShort = (s: string) => new Date(s + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" });
@@ -47,8 +63,13 @@ const monthLabel = (mk: string) => new Date(mk + "-01T00:00:00").toLocaleDateStr
 const DAY = 86400000;
 
 export function buildActivationReport(a: ActivationReportInput): string {
-  const accent = a.brand_color || "#132741";
+  // A fixed report accent (the muted editorial palette) rather than the
+  // brand's own dashboard color — this report has its own designed look,
+  // consistent across brands, independent of whatever accent each brand
+  // uses in the rest of the dashboard.
+  const accent = "#4C6278";
   const monogram = (a.brand_init || a.brand_name.slice(0, 2)).toUpperCase();
+  const logoPath = BRAND_LOGO[a.brand_name.toLowerCase().replace(/[^a-z0-9]/g, "")];
   const W0 = new Date(a.window.start + "T00:00:00").getTime();
   const W1 = new Date(a.window.end + "T00:00:00").getTime();
   const span = Math.max(1, (W1 - W0) / DAY);
@@ -78,7 +99,8 @@ export function buildActivationReport(a: ActivationReportInput): string {
   }).join("")}</div>`;
 
   // ---- Marker lanes (shows + trade dates), auto-staggered ----
-  const GAP = 12;
+  const GAP = 16;
+  const ROW_H = 50;
   function renderLane(items: { x: number; label: string; date: string; end?: string | null; confirmed: boolean; kind: string }[], tag: string) {
     const rows: number[][] = [];
     const placed = items.slice().sort((x, y) => x.x - y.x).map(t => {
@@ -90,10 +112,10 @@ export function buildActivationReport(a: ActivationReportInput): string {
     const markers = placed.map(t => `
       <div class="marker" style="left:${t.x}%" data-kind="${t.kind}">
         <span class="lbl">${esc(t.label)}${t.confirmed ? "" : ` <span class="tbc">TBC</span>`}<span class="dte">${fmtDateShort(t.date)}${t.end ? ` – ${fmtDateShort(t.end)}` : ""}</span></span>
-        <span class="stem" style="height:${12 + t.r * 34}px"></span>
+        <span class="stem" style="height:${16 + t.r * ROW_H}px"></span>
         <span class="pip"></span>
       </div>`).join("");
-    return `<div class="lane" style="height:${58 + (depth - 1) * 34}px"><span class="lane-tag">${tag}</span>${markers}</div>`;
+    return `<div class="lane" style="height:${78 + (depth - 1) * ROW_H}px"><span class="lane-tag">${tag}</span>${markers}</div>`;
   }
   const showItems = a.tradeshows.map(s => ({ x: pos(s.date_start), label: s.name, date: s.date_start, end: s.date_end, confirmed: true, kind: "show" }));
   const tradeItems = a.tradeDates.map(t => ({ x: pos(t.date), label: t.label, date: t.date, end: t.end_date, confirmed: t.confirmed, kind: t.kind }));
@@ -120,7 +142,7 @@ export function buildActivationReport(a: ActivationReportInput): string {
   // Percent-based positioning needs real pixel width to avoid label overlap —
   // scale the minimum width with how many months are in view (more months,
   // more room), scrolling horizontally rather than compressing.
-  const spineMinWidth = Math.max(760, rulerMonths.length * 190);
+  const spineMinWidth = Math.max(820, rulerMonths.length * 230);
   const spineHtml = (a.phases.length || a.campaigns.length) ? `
     <div class="spine">
       <div class="spine-inner" style="min-width:${spineMinWidth}px">
@@ -207,6 +229,7 @@ export function buildActivationReport(a: ActivationReportInput): string {
   body { font-family: -apple-system, "Segoe UI", sans-serif; color: #12161d; max-width: 980px; margin: 0 auto; padding: 0 32px 48px; background: #f2f4f6; }
   .head { display: flex; align-items: center; gap: 16px; padding: 36px 0 20px; }
   .mono { width: 52px; height: 52px; border-radius: 14px; background: ${accent}; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; flex-shrink: 0; }
+  .brand-logo { max-height: 52px; max-width: 180px; width: auto; height: auto; object-fit: contain; flex-shrink: 0; }
   .head h1 { font-size: 25px; margin: 0 0 3px; color: #0f172a; }
   .head .sub { font-size: 12.5px; color: #64748b; }
   .head .gen { margin-left: auto; text-align: right; font-size: 11.5px; color: #94a3b8; }
@@ -233,28 +256,28 @@ export function buildActivationReport(a: ActivationReportInput): string {
   .pill { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; border: 1px solid #e2e6ea; }
   .muted { color: #94a3b8; font-size: 12.5px; }
 
-  .panel { background: #fff; border: 1px solid #e2e6ea; border-radius: 12px; padding: 18px 20px; }
+  .panel { background: #fff; border: 1px solid #e2e6ea; border-radius: 12px; padding: 26px 26px 22px; }
   .spine { overflow-x: auto; padding-bottom: 2px; }
   .spine-inner { width: 100%; }
-  .markers { display: flex; flex-direction: column; gap: 6px; padding-bottom: 6px; }
-  .lane { position: relative; border-bottom: 1px dashed #e2e6ea; padding-bottom: 8px; }
+  .markers { display: flex; flex-direction: column; gap: 20px; padding-bottom: 14px; }
+  .lane { position: relative; border-bottom: 1px dashed #e2e6ea; padding-bottom: 14px; }
   .lane-tag { position: absolute; left: 0; top: 0; font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; }
-  .marker { position: absolute; bottom: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; width: 130px; }
-  .marker .lbl { font-size: 10.5px; font-weight: 600; line-height: 1.25; text-align: center; color: #0f172a; padding-bottom: 4px; }
-  .marker .dte { font-size: 9.5px; color: #94a3b8; display: block; font-weight: 500; }
+  .marker { position: absolute; bottom: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; width: 156px; }
+  .marker .lbl { font-size: 10.5px; font-weight: 600; line-height: 1.3; text-align: center; color: #0f172a; padding-bottom: 5px; }
+  .marker .dte { font-size: 9.5px; color: #94a3b8; display: block; font-weight: 500; margin-top: 1px; }
   .marker .stem { width: 1px; background: #94a3b8; opacity: .4; }
   .marker .pip { width: 8px; height: 8px; border-radius: 50%; background: ${accent}; }
   .marker[data-kind="show"] .pip { border-radius: 2px; background: ${accent}; }
-  .marker[data-kind="peak"] .pip { background: #e11d48; }
-  .marker[data-kind="peak"] .lbl { color: #e11d48; }
-  .tbc { display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; padding: 1px 5px; border-radius: 3px; background: #FFF3D6; color: #8A5B00; border: 1px solid #F0DCA8; }
-  .axis { position: relative; display: flex; height: 32px; border-radius: 6px; overflow: hidden; border: 1px solid #e2e6ea; margin-top: 6px; }
+  .marker[data-kind="peak"] .pip { background: #9C4F4C; }
+  .marker[data-kind="peak"] .lbl { color: #9C4F4C; }
+  .tbc { display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; padding: 1px 5px; border-radius: 3px; background: #F3E3D8; color: #8A5040; border: 1px solid #E8CDBB; }
+  .axis { position: relative; display: flex; height: 34px; border-radius: 6px; overflow: hidden; border: 1px solid #e2e6ea; margin-top: 10px; }
   .phase { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; font-weight: 800; color: #fff; }
   .phase small { font-weight: 500; font-size: 9.5px; opacity: .85; }
-  .ruler { display: flex; border-bottom: 1px solid #e2e6ea; margin-top: 4px; }
-  .ruler .m { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; padding: 4px 0 6px 6px; border-left: 1px solid #e2e6ea; }
+  .ruler { display: flex; border-bottom: 1px solid #e2e6ea; margin-top: 10px; }
+  .ruler .m { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; padding: 4px 0 8px 6px; border-left: 1px solid #e2e6ea; }
   .ruler .m:first-child { border-left: 0; padding-left: 0; }
-  .tracks { position: relative; padding-top: 12px; }
+  .tracks { position: relative; padding-top: 16px; }
   .track { position: relative; height: 28px; margin-bottom: 5px; background: #f8fafc; border-radius: 5px; }
   .bar { position: absolute; top: 2px; height: 24px; border-radius: 5px; display: flex; align-items: center; padding: 0 9px; gap: 6px; font-size: 11px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; }
   .bar .wk { font-size: 9.5px; opacity: .8; font-weight: 500; }
@@ -307,7 +330,7 @@ export function buildActivationReport(a: ActivationReportInput): string {
 </head>
 <body>
   <div class="head">
-    <div class="mono">${esc(monogram)}</div>
+    ${logoPath ? `<img class="brand-logo" src="${esc(logoPath)}" alt="${esc(a.brand_name)}">` : `<div class="mono">${esc(monogram)}</div>`}
     <div>
       <h1>Activations · ${esc(a.brand_name)}</h1>
       <div class="sub">${fmtDate(a.window.start)} to ${fmtDate(a.window.end)} — competitor landscape, tradeshows and the activation plan</div>
