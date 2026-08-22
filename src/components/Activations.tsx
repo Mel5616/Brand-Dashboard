@@ -16,6 +16,8 @@ type Competitor = { id: number; brand_id: number; name: string; notes: string | 
 type Campaign = { id: string; campaign: string; brand: string; channel: string; status: string; key_date: string; end_date?: string | null; note: string; pillar?: string | null; confirmed?: boolean };
 type Creative = { id: number; brand_id: number; campaign_name: string | null; ad_group: string | null; headlines: string[]; descriptions: string[]; clicks: number; impressions: number };
 type AdImage = { id: number; brand_id: number; campaign_name: string | null; asset_group: string | null; image_url: string };
+type MetaCreative = { id: number; brand_id: number; campaign_name: string | null; ad_name: string | null; title: string | null; body: string | null; clicks: number; impressions: number };
+type MetaAdImage = { id: number; brand_id: number; campaign_name: string | null; ad_name: string | null; image_url: string };
 type ShareLink = { id: number; token: string; label: string | null; created_at: string; open_count: number; expires_at: string | null };
 type Phase = { id: number; brand_id: number; key: string; label: string; sub: string | null; start_date: string; end_date: string; color: string; sort_order: number };
 type Pillar = { id: number; brand_id: number; key: string; label: string; color: string; share_pct: number; note: string | null; sort_order: number };
@@ -52,6 +54,8 @@ export function Activations({ brands, tradeshows, tradeshowBrands, admin = false
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [creatives, setCreatives] = useState<Creative[]>([]);
   const [adImages, setAdImages] = useState<AdImage[]>([]);
+  const [metaCreatives, setMetaCreatives] = useState<MetaCreative[]>([]);
+  const [metaImages, setMetaImages] = useState<MetaAdImage[]>([]);
   const [creativesNeedsSetup, setCreativesNeedsSetup] = useState(false);
   const [shares, setShares] = useState<ShareLink[]>([]);
 
@@ -75,11 +79,13 @@ export function Activations({ brands, tradeshows, tradeshowBrands, admin = false
     Promise.all([
       fetch(`/api/brand-competitors?brand_id=${brandId}`).then(r => r.json()),
       fetch(`/api/google-ads-creatives?brand_id=${brandId}`).then(r => r.json()),
+      fetch(`/api/meta-ads-creatives?brand_id=${brandId}`).then(r => r.json()),
       admin ? fetch(`/api/activation-share?brand_id=${brandId}`).then(r => r.json()) : Promise.resolve({ items: [] }),
       fetch(`/api/activation-plan?brand_id=${brandId}`).then(r => r.json()),
-    ]).then(([c, ad, sh, plan]) => {
+    ]).then(([c, ad, meta, sh, plan]) => {
       setCompetitors(c.competitors ?? []); setCompNeedsSetup(!!c.needsSetup);
       setCreatives(ad.creatives ?? []); setAdImages(ad.images ?? []); setCreativesNeedsSetup(!!ad.needsSetup);
+      setMetaCreatives(meta.creatives ?? []); setMetaImages(meta.images ?? []);
       setShares(sh.items ?? []);
       if (plan.needsSetup) { setPlanNeedsSetup(true); setLoading(false); return; }
       setPhases(plan.phases ?? []); setPillars(plan.pillars ?? []); setTradeDates(plan.tradeDates ?? []);
@@ -132,9 +138,11 @@ export function Activations({ brands, tradeshows, tradeshowBrands, admin = false
       asks: asks.map(a => ({ audience: a.audience, ask: a.ask, why: a.why })),
       adCreatives: creatives.map(c => ({ ad_group: c.ad_group, campaign_name: c.campaign_name, headlines: c.headlines, descriptions: c.descriptions, clicks: c.clicks })),
       adImages: adImages.map(i => ({ campaign_name: i.campaign_name, asset_group: i.asset_group, image_url: i.image_url })),
+      metaCreatives: metaCreatives.map(c => ({ campaign_name: c.campaign_name, ad_name: c.ad_name, title: c.title, body: c.body, clicks: c.clicks })),
+      metaImages: metaImages.map(i => ({ campaign_name: i.campaign_name, ad_name: i.ad_name, image_url: i.image_url })),
       sectionNotes,
     });
-  }, [brand, windowRange, competitors, windowShows, phases, pillars, tradeDates, brandCampaigns, budget, decisions, asks, creatives, adImages, sectionNotes]);
+  }, [brand, windowRange, competitors, windowShows, phases, pillars, tradeDates, brandCampaigns, budget, decisions, asks, creatives, adImages, metaCreatives, metaImages, sectionNotes]);
 
   // Live preview iframe, auto-sized to its content (same pattern as Brand Snapshot).
   const frameRef = useRef<HTMLIFrameElement>(null);

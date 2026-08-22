@@ -69,6 +69,21 @@ def sb_upsert(table, rows, on_conflict=None):
     except urllib.error.HTTPError as e:
         print(f'  ✗ Supabase {table}: {e.code} {e.read().decode()[:300]}')
 
+def sb_delete_where(table, column, value):
+    if not SUPABASE_URL or not SUPABASE_SVC_KEY:
+        return
+    url = f'{SUPABASE_URL}/rest/v1/{table}?{column}=eq.{value}'
+    req = urllib.request.Request(url, method='DELETE')
+    req.add_header('Authorization', f'Bearer {SUPABASE_SVC_KEY}')
+    req.add_header('apikey', SUPABASE_ANON_KEY)
+    req.add_header('Prefer', 'return=minimal')
+    ctx = ssl.create_default_context()
+    try:
+        with urllib.request.urlopen(req, context=ctx, timeout=30) as r:
+            return r.status
+    except urllib.error.HTTPError as e:
+        print(f'  ✗ Supabase delete {table}: {e.code} {e.read().decode()[:200]}')
+
 def meta_get(url):
     ctx = ssl.create_default_context()
     req = urllib.request.Request(url)
@@ -126,6 +141,44 @@ def parse_row(row):
         "cpm":         round(spend / impr * 1000, 2) if impr > 0 else 0,
         "cpc":         round(spend / clicks, 2) if clicks > 0 else 0,
     }
+
+def fetch_meta_ad_creatives(account_id, access_token, top_n=8):
+    """Top-performing live ad copy + creative image (last 90 days), for the
+    Marketing Snapshot report — mirrors fetch_google_ads_creatives."""
+    params = {
+        "fields": "name,campaign{name},insights.date_preset(last_90d){clicks,impressions},"
+                  "creative{title,body,image_url,thumbnail_url}",
+        "effective_status": json.dumps(["ACTIVE"]),
+        "access_token": access_token,
+        "limit": 100,
+    }
+    url = f"https://graph.facebook.com/{API_VERSION}/{account_id}/ads?{urllib.parse.urlencode(params)}"
+    ads = []
+    while url and len(ads) < 300:
+        resp = meta_get(url)
+        if "error" in resp:
+            raise RuntimeError(f"Meta API error: {resp['error'].get('message', resp['error'])}")
+        ads.extend(resp.get("data", []))
+        url = resp.get("paging", {}).get("next")
+
+    ranked = []
+    for ad in ads:
+        cr = ad.get("creative") or {}
+        body = (cr.get("body") or "").strip()
+        title = (cr.get("title") or "").strip()
+        if not body and not title:
+            continue
+        insights = (ad.get("insights", {}).get("data") or [{}])[0]
+        ranked.append({
+            "campaign_name": (ad.get("campaign") or {}).get("name", ""),
+            "ad_name": ad.get("name", ""),
+            "title": title, "body": body,
+            "image_url": cr.get("image_url") or cr.get("thumbnail_url") or "",
+            "clicks": int(float(insights.get("clicks", 0))),
+            "impressions": int(float(insights.get("impressions", 0))),
+        })
+    ranked.sort(key=lambda r: r["clicks"], reverse=True)
+    return ranked[:top_n]
 
 def sync_brand(brand_id, name, account_id, access_token):
     print(f"  {name} ({account_id}) ...", end=" ", flush=True)
@@ -194,8 +247,28 @@ def sync_brand(brand_id, name, account_id, access_token):
     if plat_upserts:
         sb_upsert("meta_ads_platform", plat_upserts, on_conflict="brand_id,month_key,platform")
 
+    # Top ad copy + creative images for the Marketing Snapshot report —
+    # wholesale-replaced per brand each run (what's live now, not a trend).
+    n_creative = 0
+    try:
+        creatives = fetch_meta_ad_creatives(account_id, access_token)
+        if creatives:
+            sb_delete_where("meta_ads_creatives", "brand_id", brand_id)
+            sb_delete_where("meta_ads_images", "brand_id", brand_id)
+            creative_db = [{"brand_id": brand_id, "campaign_name": c["campaign_name"], "ad_name": c["ad_name"],
+                             "title": c["title"], "body": c["body"], "clicks": c["clicks"], "impressions": c["impressions"]}
+                            for c in creatives]
+            sb_upsert("meta_ads_creatives", creative_db)
+            image_db = [{"brand_id": brand_id, "campaign_name": c["campaign_name"], "ad_name": c["ad_name"], "image_url": c["image_url"]}
+                        for c in creatives if c["image_url"]]
+            if image_db:
+                sb_upsert("meta_ads_images", image_db)
+            n_creative = len(creative_db)
+    except Exception as ce:
+        print(f"  ⚠ ad creative sync skipped: {ce}", end=" ")
+
     if upserts or plat_upserts:
-        print(f"✓  {len(upserts)} months, {len(plat_upserts)} platform rows, {len(daily_upserts)} daily rows")
+        print(f"✓  {len(upserts)} months, {len(plat_upserts)} platform rows, {len(daily_upserts)} daily rows, {n_creative} ad creatives")
     else:
         print("—  no data")
 

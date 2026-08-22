@@ -18,6 +18,8 @@ type Decision = { due_label: string | null; question: string; recommendation: st
 type Ask = { audience: string; ask: string; why: string | null };
 type Creative = { ad_group: string | null; campaign_name: string | null; headlines: string[]; descriptions: string[]; clicks: number };
 type AdImage = { campaign_name: string | null; asset_group: string | null; image_url: string };
+type MetaCreative = { campaign_name: string | null; ad_name: string | null; title: string | null; body: string | null; clicks: number };
+type MetaAdImage = { campaign_name: string | null; ad_name: string | null; image_url: string };
 
 export type ActivationReportInput = {
   brand_name: string;
@@ -36,6 +38,8 @@ export type ActivationReportInput = {
   asks: Ask[];
   adCreatives: Creative[];
   adImages: AdImage[];
+  metaCreatives: MetaCreative[];
+  metaImages: MetaAdImage[];
   sectionNotes?: Record<string, string>;
 };
 
@@ -248,6 +252,21 @@ export function buildActivationReport(a: ActivationReportInput): string {
       <figcaption>${esc(img.campaign_name || "—")}${img.asset_group ? ` <span class="muted">· ${esc(img.asset_group)}</span>` : ""}</figcaption>
     </figure>`).join("")}</div>` : `<p class="muted">No live creative images synced yet (Performance Max campaigns only).</p>`;
 
+  const metaBlocks = a.metaCreatives.length ? a.metaCreatives.map(c => `
+    <div class="card">
+      <div class="card-body">
+        <h3>${esc(c.campaign_name || "—")}${c.ad_name ? ` <span class="muted">· ${esc(c.ad_name)}</span>` : ""}</h3>
+        ${c.title ? `<p class="label">Headline</p><p class="show-meta">${esc(c.title)}</p>` : ""}
+        ${c.body ? `<p class="label">Primary text</p><p class="show-meta">${esc(c.body)}</p>` : ""}
+      </div>
+    </div>`).join("") : `<p class="muted">No live ad copy synced yet.</p>`;
+
+  const metaGallery = a.metaImages.length ? `<div class="img-grid">${a.metaImages.map(img => `
+    <figure class="ad-img">
+      <img src="${esc(img.image_url)}" alt="${esc(img.campaign_name || "Ad creative")}" loading="lazy">
+      <figcaption>${esc(img.campaign_name || "—")}${img.ad_name ? ` <span class="muted">· ${esc(img.ad_name)}</span>` : ""}</figcaption>
+    </figure>`).join("")}</div>` : `<p class="muted">No live creative images synced yet.</p>`;
+
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Activations · ${esc(a.brand_name)}</title>
@@ -399,6 +418,10 @@ export function buildActivationReport(a: ActivationReportInput): string {
   <h2>Google Ads — live creative</h2>
   ${imageGallery}
   <div class="grid" style="margin-top:14px">${adBlocks}</div>
+
+  <h2>Meta Ads — live creative</h2>
+  ${metaGallery}
+  <div class="grid" style="margin-top:14px">${metaBlocks}</div>
 
   <button class="dl no-print" onclick="window.print()">⬇ Download PDF</button>
   <p class="foot">${esc(ENTITY.legalName)} · ${esc(ENTITY.address)} · prepared for internal/partner sharing.</p>
