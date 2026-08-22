@@ -12,7 +12,7 @@ import type { Tradeshow } from "@/lib/db";
 // builder used for the shared link — what Mel sees is what Global gets.
 
 type Brand = { id: number; name: string; live?: boolean; color?: string; init?: string };
-type Competitor = { id: number; brand_id: number; name: string; notes: string | null; updated_at: string; updated_by: string | null };
+type Competitor = { id: number; brand_id: number; name: string; notes: string | null; source_links: string[]; updated_at: string; updated_by: string | null };
 type Campaign = { id: string; campaign: string; brand: string; channel: string; status: string; key_date: string; end_date?: string | null; note: string; pillar?: string | null; confirmed?: boolean };
 type Creative = { id: number; brand_id: number; campaign_name: string | null; ad_group: string | null; headlines: string[]; descriptions: string[]; clicks: number; impressions: number };
 type AdImage = { id: number; brand_id: number; campaign_name: string | null; asset_group: string | null; image_url: string };
@@ -120,7 +120,7 @@ export function Activations({ brands, tradeshows, tradeshowBrands, admin = false
     return buildActivationReport({
       brand_name: brand.name, brand_color: brand.color, brand_init: brand.init, generated_at: new Date().toISOString(),
       window: windowRange,
-      competitors: competitors.map(c => ({ name: c.name, notes: c.notes })),
+      competitors: competitors.map(c => ({ name: c.name, notes: c.notes, source_links: c.source_links })),
       tradeshows: windowShows.map(t => ({ name: t.name, date_start: t.date_start, date_end: t.date_end, state: t.state, location: t.location, status: showStatus(t) })),
       phases: phases.map(p => ({ key: p.key, label: p.label, sub: p.sub, start_date: p.start_date, end_date: p.end_date, color: p.color })),
       pillars: pillars.map(p => ({ key: p.key, label: p.label, color: p.color, share_pct: p.share_pct, note: p.note })),
@@ -144,19 +144,22 @@ export function Activations({ brands, tradeshows, tradeshowBrands, admin = false
     if (h > 0) setFrameH(h + 4);
   }
 
-  // Competitor add/edit
-  const [newComp, setNewComp] = useState({ name: "", notes: "" });
+  // Competitor add/edit — links entered one per line, split to an array on save.
+  const linesToLinks = (s: string) => s.split("\n").map(l => l.trim()).filter(Boolean);
+  const [newComp, setNewComp] = useState({ name: "", notes: "", links: "" });
   const [editingComp, setEditingComp] = useState<number | null>(null);
-  const [editCompDraft, setEditCompDraft] = useState({ name: "", notes: "" });
+  const [editCompDraft, setEditCompDraft] = useState({ name: "", notes: "", links: "" });
   async function addCompetitor() {
     if (!brandId || !newComp.name.trim()) return;
-    const d = await fetch("/api/brand-competitors", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brand_id: brandId, ...newComp }) }).then(r => r.json());
-    if (d.ok) { setCompetitors(prev => [...prev, d.competitor].sort((a, b) => a.name.localeCompare(b.name))); setNewComp({ name: "", notes: "" }); }
+    const body = { brand_id: brandId, name: newComp.name, notes: newComp.notes, source_links: linesToLinks(newComp.links) };
+    const d = await fetch("/api/brand-competitors", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
+    if (d.ok) { setCompetitors(prev => [...prev, d.competitor].sort((a, b) => a.name.localeCompare(b.name))); setNewComp({ name: "", notes: "", links: "" }); }
     else setMsg(d.error || "Couldn't add competitor.");
   }
   async function saveCompetitor(id: number) {
-    const d = await fetch("/api/brand-competitors", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, ...editCompDraft }) }).then(r => r.json());
-    if (d.ok) { setCompetitors(prev => prev.map(c => c.id === id ? { ...c, ...editCompDraft } : c)); setEditingComp(null); }
+    const body = { id, name: editCompDraft.name, notes: editCompDraft.notes, source_links: linesToLinks(editCompDraft.links) };
+    const d = await fetch("/api/brand-competitors", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
+    if (d.ok) { setCompetitors(prev => prev.map(c => c.id === id ? { ...c, name: editCompDraft.name, notes: editCompDraft.notes, source_links: linesToLinks(editCompDraft.links) } : c)); setEditingComp(null); }
     else setMsg(d.error || "Couldn't save.");
   }
   async function removeCompetitor(id: number) {
@@ -252,6 +255,7 @@ export function Activations({ brands, tradeshows, tradeshowBrands, admin = false
                           <div className="space-y-2">
                             <input value={editCompDraft.name} onChange={e => setEditCompDraft(p => ({ ...p, name: e.target.value }))} className={inp + " w-full"} />
                             <textarea value={editCompDraft.notes} onChange={e => setEditCompDraft(p => ({ ...p, notes: e.target.value }))} rows={4} placeholder="One point per line" className={inp + " w-full"} />
+                            <textarea value={editCompDraft.links} onChange={e => setEditCompDraft(p => ({ ...p, links: e.target.value }))} rows={2} placeholder="Source article links, one per line" className={inp + " w-full"} />
                             <div className="flex gap-2">
                               <button onClick={() => saveCompetitor(c.id)} className="text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-1.5">Save</button>
                               <button onClick={() => setEditingComp(null)} className="text-xs text-slate-500 px-2">Cancel</button>
@@ -262,13 +266,18 @@ export function Activations({ brands, tradeshows, tradeshowBrands, admin = false
                             <div className="flex items-start justify-between gap-2">
                               <p className="font-semibold text-slate-800 text-sm">{c.name}</p>
                               <div className="flex gap-2 shrink-0">
-                                <button onClick={() => { setEditingComp(c.id); setEditCompDraft({ name: c.name, notes: c.notes ?? "" }); }} className="text-[11px] text-amber-600 hover:underline">Edit</button>
+                                <button onClick={() => { setEditingComp(c.id); setEditCompDraft({ name: c.name, notes: c.notes ?? "", links: (c.source_links ?? []).join("\n") }); }} className="text-[11px] text-amber-600 hover:underline">Edit</button>
                                 <button onClick={() => removeCompetitor(c.id)} className="text-[11px] text-rose-500 hover:underline">Remove</button>
                               </div>
                             </div>
                             <ul className="mt-2 space-y-1 text-[12.5px] text-slate-600 list-disc pl-4">
                               {(c.notes ?? "").split("\n").map(l => l.replace(/^-\s*/, "").trim()).filter(Boolean).map((l, i) => <li key={i}>{l}</li>)}
                             </ul>
+                            {(c.source_links ?? []).length > 0 && (
+                              <p className="mt-2 pt-2 border-t border-gray-50 text-[11px] text-sky-600 space-x-2">
+                                {(c.source_links ?? []).map((u, i) => <a key={i} href={u} target="_blank" rel="noreferrer" className="hover:underline">↗ {(() => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return u; } })()}</a>)}
+                              </p>
+                            )}
                           </>
                         )}
                       </div>
@@ -276,6 +285,7 @@ export function Activations({ brands, tradeshows, tradeshowBrands, admin = false
                     <div className="border border-dashed border-gray-200 rounded-xl p-3.5 space-y-2">
                       <input value={newComp.name} onChange={e => setNewComp(p => ({ ...p, name: e.target.value }))} placeholder="Competitor name" className={inp + " w-full"} />
                       <textarea value={newComp.notes} onChange={e => setNewComp(p => ({ ...p, notes: e.target.value }))} rows={3} placeholder="One point per line" className={inp + " w-full"} />
+                      <textarea value={newComp.links} onChange={e => setNewComp(p => ({ ...p, links: e.target.value }))} rows={2} placeholder="Source article links, one per line" className={inp + " w-full"} />
                       <button onClick={addCompetitor} disabled={!newComp.name.trim()} className="text-xs font-semibold text-emerald-600 disabled:opacity-40 hover:underline">+ Add competitor</button>
                     </div>
                   </div>

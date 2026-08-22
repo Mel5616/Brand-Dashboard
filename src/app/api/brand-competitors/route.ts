@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   const name = String(b.name ?? "").trim();
   if (!b.brand_id || !name) return NextResponse.json({ ok: false, error: "brand_id and name required" }, { status: 400 });
-  const row = { brand_id: Number(b.brand_id), name, notes: b.notes ?? null, updated_by: acc.user!.email, updated_at: new Date().toISOString() };
+  const row = { brand_id: Number(b.brand_id), name, notes: b.notes ?? null, source_links: Array.isArray(b.source_links) ? b.source_links : [], updated_by: acc.user!.email, updated_at: new Date().toISOString() };
   const res = await fetch(`${sbUrl}/rest/v1/brand_competitors`, { method: "POST", headers: hdr({ Prefer: "return=representation" }), body: JSON.stringify(row) });
   const text = await res.text();
   if (!res.ok) return NextResponse.json({ ok: false, needsSetup: missing(res.status, text), error: text.slice(0, 200) }, { status: 500 });
@@ -44,6 +44,7 @@ export async function PATCH(req: Request) {
   const fields: Record<string, any> = { updated_by: acc.user!.email, updated_at: new Date().toISOString() };
   if (b.name !== undefined) fields.name = String(b.name).trim();
   if (b.notes !== undefined) fields.notes = b.notes;
+  if (b.source_links !== undefined) fields.source_links = Array.isArray(b.source_links) ? b.source_links : [];
   const res = await fetch(`${sbUrl}/rest/v1/brand_competitors?id=eq.${encodeURIComponent(String(b.id))}`, { method: "PATCH", headers: hdr({ Prefer: "return=minimal" }), body: JSON.stringify(fields) });
   return NextResponse.json({ ok: res.ok }, { status: res.ok ? 200 : 500 });
 }

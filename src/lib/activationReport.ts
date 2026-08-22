@@ -7,7 +7,7 @@ import { ENTITY } from "./agreementTemplate";
 // prototype (frida-q4-activation-plan.html) — this leaves the building, so
 // it's held to that bar rather than the plainer internal-only reports.
 
-type Competitor = { name: string; notes: string | null };
+type Competitor = { name: string; notes: string | null; source_links?: string[] };
 type ShowRow = { name: string; date_start: string; date_end: string; state: string; location: string; status: "upcoming" | "live" | "past" };
 type Phase = { key: string; label: string; sub: string | null; start_date: string; end_date: string; color: string };
 type Pillar = { key: string; label: string; color: string; share_pct: number; note: string | null };
@@ -76,11 +76,13 @@ export function buildActivationReport(a: ActivationReportInput): string {
   const pos = (d: string) => Math.min(100, Math.max(0, ((new Date(d + "T00:00:00").getTime() - W0) / DAY / span) * 100));
 
   // ---- Competitors ----
+  const domainOf = (u: string) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return u; } };
   const competitorCards = a.competitors.length ? a.competitors.map(c => `
     <div class="card comp-card">
       <div class="comp-bar"></div>
       <h3>${esc(c.name)}</h3>
       <ul>${notesToList(c.notes).map(l => `<li>${esc(l)}</li>`).join("") || `<li class="muted">No notes yet.</li>`}</ul>
+      ${c.source_links?.length ? `<p class="sources">${c.source_links.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener">↗ ${esc(domainOf(u))}</a>`).join(" &nbsp;·&nbsp; ")}</p>` : ""}
     </div>`).join("") : `<p class="muted">No competitors tracked yet.</p>`;
 
   // ---- Phase axis ----
@@ -245,6 +247,9 @@ export function buildActivationReport(a: ActivationReportInput): string {
   .card { position: relative; background: #fff; border: 1px solid #e2e6ea; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 2px rgba(15,23,42,0.03); }
   .comp-card { padding: 16px 18px 16px 20px; }
   .comp-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: ${accent}; }
+  .sources { font-size: 10.5px; margin: 10px 0 0; padding-top: 8px; border-top: 1px solid #f1f5f9; }
+  .sources a { color: #4C6278; text-decoration: none; }
+  .sources a:hover { text-decoration: underline; }
   .card h3 { font-size: 14px; margin: 0 0 8px; color: #0f172a; }
   .card ul { margin: 0; padding-left: 18px; font-size: 12.5px; line-height: 1.65; color: #475569; }
   .card .label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin: 10px 0 4px; }
