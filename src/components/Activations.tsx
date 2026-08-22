@@ -274,7 +274,7 @@ export function Activations({ brands, tradeshows, tradeshowBrands, admin = false
                           <>
                             <label className="relative block -m-3.5 mb-2.5 cursor-pointer group/img">
                               {c.image_url ? (
-                                <img src={c.image_url} alt={c.name} className="w-full h-28 object-cover rounded-t-xl" />
+                                <img src={c.image_url} alt={c.name} className="w-full h-48 object-cover rounded-t-xl" />
                               ) : (
                                 <div className="w-full h-16 rounded-t-xl bg-gray-50 border-b border-dashed border-gray-200 flex items-center justify-center text-[11px] text-gray-400 group-hover/img:bg-gray-100">
                                   {uploadingComp === c.id ? "Uploading…" : "+ Add photo"}

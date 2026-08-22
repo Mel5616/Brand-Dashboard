@@ -258,7 +258,7 @@ export function buildActivationReport(a: ActivationReportInput): string {
   .card { position: relative; background: #fff; border: 1px solid #e2e6ea; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 2px rgba(15,23,42,0.03); }
   .comp-card { padding: 0; }
   .comp-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: ${accent}; z-index: 1; }
-  .comp-img { width: 100%; height: 130px; object-fit: cover; display: block; background: #f1f5f9; }
+  .comp-img { width: 100%; height: 200px; object-fit: cover; display: block; background: #f1f5f9; }
   .comp-body { padding: 16px 18px 16px 20px; }
   .sources { font-size: 10.5px; margin: 10px 0 0; padding-top: 8px; border-top: 1px solid #f1f5f9; }
   .sources a { color: #4C6278; text-decoration: none; }
