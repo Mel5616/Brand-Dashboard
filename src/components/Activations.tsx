@@ -13,7 +13,7 @@ import type { Tradeshow } from "@/lib/db";
 
 type Brand = { id: number; name: string; live?: boolean; color?: string; init?: string };
 type Competitor = { id: number; brand_id: number; name: string; notes: string | null; source_links: string[]; image_url: string | null; updated_at: string; updated_by: string | null };
-type Campaign = { id: string; campaign: string; brand: string; channel: string; status: string; key_date: string; end_date?: string | null; note: string; pillar?: string | null; confirmed?: boolean };
+type Campaign = { id: string; campaign: string; brand: string; channel: string; status: string; key_date: string; end_date?: string | null; note: string; pillar?: string | null; confirmed?: boolean; image_url?: string | null };
 type Creative = { id: number; brand_id: number; campaign_name: string | null; ad_group: string | null; headlines: string[]; descriptions: string[]; clicks: number; impressions: number };
 type AdImage = { id: number; brand_id: number; campaign_name: string | null; asset_group: string | null; image_url: string };
 type MetaCreative = { id: number; brand_id: number; campaign_name: string | null; ad_name: string | null; title: string | null; body: string | null; clicks: number; impressions: number };
@@ -132,7 +132,7 @@ export function Activations({ brands, tradeshows, tradeshowBrands, admin = false
       phases: phases.map(p => ({ key: p.key, label: p.label, sub: p.sub, start_date: p.start_date, end_date: p.end_date, color: p.color })),
       pillars: pillars.map(p => ({ key: p.key, label: p.label, color: p.color, share_pct: p.share_pct, note: p.note })),
       tradeDates: tradeDates.map(t => ({ date: t.date, end_date: t.end_date, label: t.label, kind: t.kind, confirmed: t.confirmed })),
-      campaigns: brandCampaigns.map(c => ({ id: c.id, campaign: c.campaign, channel: c.channel, status: c.status, key_date: c.key_date, end_date: c.end_date ?? null, pillar: c.pillar ?? null, confirmed: c.confirmed !== false, note: c.note })),
+      campaigns: brandCampaigns.map(c => ({ id: c.id, campaign: c.campaign, channel: c.channel, status: c.status, key_date: c.key_date, end_date: c.end_date ?? null, pillar: c.pillar ?? null, confirmed: c.confirmed !== false, note: c.note, image_url: c.image_url ?? null })),
       budget,
       decisions: decisions.map(d => ({ due_label: d.due_label, question: d.question, recommendation: d.recommendation })),
       asks: asks.map(a => ({ audience: a.audience, ask: a.ask, why: a.why })),

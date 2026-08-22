@@ -477,8 +477,10 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                           draggable={canEdit}
                           onDragStart={canEdit ? (e => { setDragId(c.id); e.dataTransfer.effectAllowed = "move"; }) : undefined}
                           onDragEnd={canEdit ? (() => { setDragId(null); setDragOver(null); }) : undefined}
-                          className={`bg-white rounded-xl border border-gray-100 shadow-sm p-3 space-y-1.5 cursor-pointer hover:border-emerald-200 hover:shadow transition motion-reduce:transition-none focus:outline-none focus:ring-2 focus:ring-emerald-400 ${canEdit ? "active:cursor-grabbing" : ""} ${dragId === c.id ? "opacity-40" : ""}`}
+                          className={`bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden cursor-pointer hover:border-emerald-200 hover:shadow transition motion-reduce:transition-none focus:outline-none focus:ring-2 focus:ring-emerald-400 ${canEdit ? "active:cursor-grabbing" : ""} ${dragId === c.id ? "opacity-40" : ""}`}
                         >
+                          {c.image_url && <img src={c.image_url} alt="" className="w-full h-28 object-cover" />}
+                          <div className={`space-y-1.5 px-3 pb-3 ${c.image_url ? "pt-1.5" : "pt-3"}`}>
                           <div className="flex items-start gap-1">
                             <span className="flex-1 font-semibold text-slate-800 text-sm leading-snug">{c.campaign || <span className="text-gray-300">Untitled campaign</span>}</span>
                             {canEdit && <button aria-label="Delete campaign" onClick={e => { e.stopPropagation(); delRow(c.id); }} className="shrink-0 text-gray-300 hover:text-red-500 rounded px-1 text-sm">✕</button>}
@@ -526,6 +528,7 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                                 🎨 {(c.brief as any)?.designRequired ? "Design required ✓" : "Design required"}
                               </button>
                             )}
+                          </div>
                           </div>
                         </article>
                       );

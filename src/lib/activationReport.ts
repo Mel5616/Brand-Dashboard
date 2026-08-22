@@ -12,7 +12,7 @@ type ShowRow = { name: string; date_start: string; date_end: string; state: stri
 type Phase = { key: string; label: string; sub: string | null; start_date: string; end_date: string; color: string };
 type Pillar = { key: string; label: string; color: string; share_pct: number; note: string | null };
 type TradeDate = { date: string; end_date: string | null; label: string; kind: "trade" | "peak"; confirmed: boolean };
-type SpineCampaign = { id: string; campaign: string; channel: string | null; status: string | null; key_date: string; end_date: string | null; pillar: string | null; confirmed: boolean; note?: string | null };
+type SpineCampaign = { id: string; campaign: string; channel: string | null; status: string | null; key_date: string; end_date: string | null; pillar: string | null; confirmed: boolean; note?: string | null; image_url?: string | null };
 type BudgetMonth = { month_key: string; planned: number; actual: number };
 type Decision = { due_label: string | null; question: string; recommendation: string | null };
 type Ask = { audience: string; ask: string; why: string | null };
@@ -209,7 +209,7 @@ export function buildActivationReport(a: ActivationReportInput): string {
   const cardsHtml = a.campaigns.length ? `<div class="grid cards3">${a.campaigns.map(c => {
     const p = a.pillars.find(x => x.key === c.pillar);
     return `<div class="card">
-      <div class="card-strip" style="background:${p?.color ?? "#94a3b8"}"></div>
+      ${c.image_url ? `<img class="card-img" src="${esc(c.image_url)}" alt="${esc(c.campaign)}" onerror="this.remove()">` : `<div class="card-strip" style="background:${p?.color ?? "#94a3b8"}"></div>`}
       <div class="card-body">
         <div class="meta">
           ${p ? `<span class="pill" style="color:${p.color};border-color:${p.color}">${esc(p.label)}</span>` : ""}
@@ -304,6 +304,7 @@ export function buildActivationReport(a: ActivationReportInput): string {
   .card .label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin: 10px 0 4px; }
   .card-body { padding: 14px 16px; }
   .card-strip { height: 4px; }
+  .card-img { width: 100%; height: 130px; object-fit: cover; display: block; background: #f1f5f9; }
   .card .meta { display: flex; gap: 6px; margin-bottom: 6px; }
   .card .obj { font-size: 12px; color: #64748b; margin: 4px 0 0; white-space: pre-line; }
   .card-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 8px; border-top: 1px solid #f1f5f9; font-size: 11px; }
