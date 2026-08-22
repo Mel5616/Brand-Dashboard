@@ -128,7 +128,7 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a2 2 0 012-2h12a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V5z M8 7h8M8 11h8M8 15h5" /></svg>,
   },
   {
-    id: "activations", label: "Activations",
+    id: "activations", label: "Marketing Snapshot",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>,
   },
   {
@@ -316,10 +316,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
 // Sidebar grouping — how you market (top) vs where you sell (bottom).
 const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Overview", ids: ["brands", "strategy", "summary", "insights", "team-hub", "weekly-brief"] },
-  { label: "Reports", ids: ["report", "snapshot", "activations", "social-report", "d2c-weekly", "month-review", "uppababy"] },
+  { label: "Reports", ids: ["report", "snapshot", "social-report", "d2c-weekly", "month-review", "uppababy"] },
   { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows"] },
-  { label: "Plan", ids: ["campaign-calendar", "promotions", "discount-codes", "calendar", "content", "events", "event-concepts", "decks", "show-deals"] },
-  { label: "Creative", ids: ["tasks", "design-requests", "creative"] },
+  { label: "Plan", ids: ["campaign-calendar", "promotions", "discount-codes", "calendar", "content", "events", "show-deals", "activations"] },
+  { label: "Creative", ids: ["tasks", "design-requests", "creative", "event-concepts", "decks"] },
   { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info", "brand-assets", "stock-report", "cost-sheet"] },
   { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads", "amazon-ads"] },
   { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting", "influencer-agreements", "nanit", "releases", "affiliates", "pa-budget", "pa-tracker", "documents"] },
@@ -1477,7 +1477,7 @@ export function DashboardTabs({
           {/* ── Activations (per-brand competitor landscape, tradeshows, 6-month plan, ad copy — shareable to Global) ── */}
           {active === "activations" && (
             <>
-              <SectionBar title="Activations" />
+              <SectionBar title="Marketing Snapshot" />
               <Activations brands={brands} tradeshows={tradeshows} tradeshowBrands={tradeshowBrands} admin={role === "admin"} />
             </>
           )}
