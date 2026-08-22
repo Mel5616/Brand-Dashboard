@@ -210,6 +210,13 @@ def fetch_meta_ad_creatives(account_id, access_token, top_n=5):
     ranked = []
     for r in prelim:
         image_url = hash_url.get(r.pop("image_hash")) or r.pop("fallback_image_url")
+        # Catalogue/dynamic-product ads have no uploaded image_hash to resolve —
+        # Meta only ever serves those through a small social-share crop
+        # (recognisable by this proxy path), and there's no full-res version
+        # reachable via the API. Drop the image rather than show it blurry;
+        # the ad copy still comes through in the text section.
+        if image_url and ("emg1/v/t13" in image_url or "p64x64" in image_url):
+            image_url = ""
         r["image_url"] = image_url
         ranked.append(r)
     ranked.sort(key=lambda r: r["clicks"], reverse=True)
