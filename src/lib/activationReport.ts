@@ -1,15 +1,21 @@
 import { ENTITY } from "./agreementTemplate";
 
-// Self-contained HTML for the Activations report — a per-brand snapshot of
-// competitor activity, upcoming tradeshows and a 6-month forward marketing
-// plan, built to hand to Global. Print/PDF via the browser, same pattern as
-// the Brand Snapshot / Gift order sheet reports. Visual (cards, timeline,
-// ticket-style show dates) rather than plain tables — this one leaves the
-// building, so it's held to a higher bar than the internal-only reports.
+// Self-contained HTML for the Activations report — the "spine": a single
+// timeline axis carrying phases, trade-date markers (expos + retail moments)
+// and campaign bars, plus a live budget burn chart, pillar allocation model,
+// campaign cards and open decisions/asks. Modelled directly on Mel's own
+// prototype (frida-q4-activation-plan.html) — this leaves the building, so
+// it's held to that bar rather than the plainer internal-only reports.
 
 type Competitor = { name: string; notes: string | null };
 type ShowRow = { name: string; date_start: string; date_end: string; state: string; location: string; status: "upcoming" | "live" | "past" };
-type CampaignRow = { campaign: string; channel: string; status: string; key_date: string; end_date?: string | null; note?: string | null };
+type Phase = { key: string; label: string; sub: string | null; start_date: string; end_date: string; color: string };
+type Pillar = { key: string; label: string; color: string; share_pct: number; note: string | null };
+type TradeDate = { date: string; end_date: string | null; label: string; kind: "trade" | "peak"; confirmed: boolean };
+type SpineCampaign = { id: string; campaign: string; channel: string | null; status: string | null; key_date: string; end_date: string | null; pillar: string | null; confirmed: boolean; note?: string | null };
+type BudgetMonth = { month_key: string; planned: number; actual: number };
+type Decision = { due_label: string | null; question: string; recommendation: string | null };
+type Ask = { audience: string; ask: string; why: string | null };
 type Creative = { ad_group: string | null; campaign_name: string | null; headlines: string[]; descriptions: string[]; clicks: number };
 
 export type ActivationReportInput = {
@@ -17,24 +23,36 @@ export type ActivationReportInput = {
   brand_color?: string | null;
   brand_init?: string | null;
   generated_at: string;
+  window: { start: string; end: string };
   competitors: Competitor[];
   tradeshows: ShowRow[];
-  campaigns: CampaignRow[];
+  phases: Phase[];
+  pillars: Pillar[];
+  tradeDates: TradeDate[];
+  campaigns: SpineCampaign[];
+  budget: { months: BudgetMonth[]; total: number } | null;
+  decisions: Decision[];
+  asks: Ask[];
   adCreatives: Creative[];
 };
 
 const esc = (s: string) => (s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const fmtDate = (s: string | null | undefined) => s ? new Date(s + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "—";
-const fmtDay = (s: string) => new Date(s + "T00:00:00").getDate();
-const fmtMon = (s: string) => new Date(s + "T00:00:00").toLocaleDateString("en-AU", { month: "short" }).toUpperCase();
+const fmtDateShort = (s: string) => new Date(s + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" });
+const money = (n: number | null) => n == null ? "TBC" : "$" + Math.round(n).toLocaleString("en-AU");
 const notesToList = (notes: string | null) => (notes ?? "").split("\n").map(l => l.replace(/^-\s*/, "").trim()).filter(Boolean);
-
-const PIN = `<svg viewBox="0 0 20 20" fill="currentColor" width="11" height="11" style="vertical-align:-1.5px"><path d="M10 1.5c-3 0-5.5 2.4-5.5 5.5 0 3.9 5.5 11.5 5.5 11.5S15.5 10.9 15.5 7c0-3.1-2.5-5.5-5.5-5.5Zm0 7.6a2.1 2.1 0 1 1 0-4.2 2.1 2.1 0 0 1 0 4.2Z"/></svg>`;
+const monthLabel = (mk: string) => new Date(mk + "-01T00:00:00").toLocaleDateString("en-AU", { month: "short" });
+const DAY = 86400000;
 
 export function buildActivationReport(a: ActivationReportInput): string {
   const accent = a.brand_color || "#132741";
   const monogram = (a.brand_init || a.brand_name.slice(0, 2)).toUpperCase();
+  const W0 = new Date(a.window.start + "T00:00:00").getTime();
+  const W1 = new Date(a.window.end + "T00:00:00").getTime();
+  const span = Math.max(1, (W1 - W0) / DAY);
+  const pos = (d: string) => Math.min(100, Math.max(0, ((new Date(d + "T00:00:00").getTime() - W0) / DAY / span) * 100));
 
+  // ---- Competitors ----
   const competitorCards = a.competitors.length ? a.competitors.map(c => `
     <div class="card comp-card">
       <div class="comp-bar"></div>
@@ -42,52 +60,129 @@ export function buildActivationReport(a: ActivationReportInput): string {
       <ul>${notesToList(c.notes).map(l => `<li>${esc(l)}</li>`).join("") || `<li class="muted">No notes yet.</li>`}</ul>
     </div>`).join("") : `<p class="muted">No competitors tracked yet.</p>`;
 
-  // Upcoming/live first (ascending — what's next matters most to a reader
-  // outside the building), past shows collapsed below.
-  const upcoming = a.tradeshows.filter(s => s.status !== "past").sort((x, y) => x.date_start.localeCompare(y.date_start));
-  const past = a.tradeshows.filter(s => s.status === "past").sort((x, y) => y.date_start.localeCompare(x.date_start));
+  // ---- Phase axis ----
+  const axisHtml = a.phases.length ? `<div class="axis">${a.phases.map(p => {
+    const w = pos(p.end_date) - pos(p.start_date);
+    return `<div class="phase" style="width:${w}%;background:${p.color}">${esc(p.label)}${p.sub ? `<small>${esc(p.sub)}</small>` : ""}</div>`;
+  }).join("")}</div>` : "";
 
-  const showCard = (s: ShowRow) => `
-    <div class="show-card ${s.status}">
-      <div class="show-date">
-        <span class="d">${fmtDay(s.date_start)}</span>
-        <span class="m">${fmtMon(s.date_start)}</span>
-      </div>
-      <div class="show-body">
-        <div class="show-top">
-          <span class="show-name">${esc(s.name)}</span>
-          <span class="status ${s.status}">${s.status}</span>
+  // ---- Month ruler ----
+  const rulerMonths: string[] = [];
+  { const d = new Date(a.window.start + "T00:00:00"); d.setDate(1); const end = new Date(a.window.end + "T00:00:00");
+    while (d <= end) { rulerMonths.push(d.toISOString().slice(0, 10)); d.setMonth(d.getMonth() + 1); } }
+  const rulerHtml = `<div class="ruler">${rulerMonths.map((d, i) => {
+    const next = rulerMonths[i + 1] ? pos(rulerMonths[i + 1]) : 100;
+    return `<div class="m" style="width:${next - pos(d)}%">${new Date(d + "T00:00:00").toLocaleDateString("en-AU", { month: "short", year: "numeric" })}</div>`;
+  }).join("")}</div>`;
+
+  // ---- Marker lanes (shows + trade dates), auto-staggered ----
+  const GAP = 12;
+  function renderLane(items: { x: number; label: string; date: string; end?: string | null; confirmed: boolean; kind: string }[], tag: string) {
+    const rows: number[][] = [];
+    const placed = items.slice().sort((x, y) => x.x - y.x).map(t => {
+      let r = rows.findIndex(row => row.every(px => Math.abs(px - t.x) > GAP));
+      if (r === -1) { rows.push([t.x]); r = rows.length - 1; } else rows[r].push(t.x);
+      return { ...t, r };
+    });
+    const depth = Math.max(rows.length, 1);
+    const markers = placed.map(t => `
+      <div class="marker" style="left:${t.x}%" data-kind="${t.kind}">
+        <span class="lbl">${esc(t.label)}${t.confirmed ? "" : ` <span class="tbc">TBC</span>`}<span class="dte">${fmtDateShort(t.date)}${t.end ? ` – ${fmtDateShort(t.end)}` : ""}</span></span>
+        <span class="stem" style="height:${12 + t.r * 34}px"></span>
+        <span class="pip"></span>
+      </div>`).join("");
+    return `<div class="lane" style="height:${58 + (depth - 1) * 34}px"><span class="lane-tag">${tag}</span>${markers}</div>`;
+  }
+  const showItems = a.tradeshows.map(s => ({ x: pos(s.date_start), label: s.name, date: s.date_start, end: s.date_end, confirmed: true, kind: "show" }));
+  const tradeItems = a.tradeDates.map(t => ({ x: pos(t.date), label: t.label, date: t.date, end: t.end_date, confirmed: t.confirmed, kind: t.kind }));
+  const markersHtml = (showItems.length ? renderLane(showItems, "Baby expos") : "") + (tradeItems.length ? renderLane(tradeItems, "Retail moments") : "");
+
+  // ---- Campaign bars, packed into non-overlapping tracks ----
+  const barItems = a.campaigns.map(c => ({ ...c, s: pos(c.key_date), e: pos(c.end_date || c.key_date) }));
+  const tracks: (typeof barItems)[] = [];
+  for (const b of barItems) {
+    let row = tracks.find(r => r.every(x => b.e < x.s - 1 || b.s > x.e + 1));
+    if (!row) { row = []; tracks.push(row); }
+    row.push(b);
+  }
+  const pillarColor = (key: string | null) => a.pillars.find(p => p.key === key)?.color ?? "#6B7280";
+  const tracksHtml = tracks.map(row => `<div class="track">${row.map(b => `
+    <div class="bar${b.confirmed ? "" : " unconfirmed"}" style="left:${b.s}%;width:${Math.max(b.e - b.s, 6)}%;background:${pillarColor(b.pillar)}" title="${esc(b.campaign)}">
+      ${esc(b.campaign)}<span class="wk">${fmtDateShort(b.key_date)}</span>
+    </div>`).join("")}</div>`).join("");
+
+  const legendHtml = a.pillars.filter(p => p.key !== "reserve").map(p => `<span><i style="background:${p.color}"></i>${esc(p.label)}</span>`).join("")
+    + (showItems.length ? `<span><i style="background:${accent};border-radius:2px"></i>Baby expo</span>` : "")
+    + `<span><i style="background:repeating-linear-gradient(45deg,#94a3b8 0 4px,#fff 4px 8px)"></i>Not yet confirmed</span>`;
+
+  const spineHtml = (a.phases.length || a.campaigns.length) ? `
+    <div class="spine">
+      ${markersHtml ? `<div class="markers">${markersHtml}</div>` : ""}
+      ${axisHtml}
+      ${rulerHtml}
+      <div class="tracks">${tracksHtml}</div>
+      <div class="legend">${legendHtml}</div>
+    </div>` : `<p class="muted">Add phases and campaigns to build the spine.</p>`;
+
+  // ---- Budget burn ----
+  const budgetHtml = a.budget && a.budget.months.length ? (() => {
+    const max = Math.max(...a.budget!.months.map(m => m.planned), 1);
+    const cols = a.budget!.months.map(m => {
+      const h = Math.max(4, (m.planned / max) * 100);
+      const segs = a.pillars.filter(p => p.key !== "reserve" || a.pillars.length <= 1).map(p => `<div class="burn-seg" style="height:${p.share_pct}%;background:${p.color}"></div>`).join("");
+      return `<div class="burn-col"><div class="burn-val">${money(m.planned)}</div><div class="burn-stack" style="height:${h}%">${segs}</div></div>`;
+    }).join("");
+    const labels = a.budget!.months.map(m => `<div><div class="m">${monthLabel(m.month_key)}</div><div class="p">${money(m.actual)} spent</div></div>`).join("");
+    return `<div class="burn-grid">${cols}</div><div class="burn-labels">${labels}</div>`;
+  })() : `<p class="muted">${a.budget ? "No budget set for this window yet." : "Budget figures are admin-only."}</p>`;
+
+  const allocHtml = a.pillars.length ? a.pillars.map(p => `
+    <div class="alloc-row">
+      <span class="sw" style="background:${p.color}"></span>
+      <span class="nm"><b>${esc(p.label)}</b><span>${esc(p.note || "")}</span></span>
+      <span class="pc">${p.share_pct}%</span>
+      <span class="amt">${a.budget ? money(a.budget.total * p.share_pct / 100) : "TBC"}</span>
+    </div>`).join("") : `<p class="muted">No pillar allocation set yet.</p>`;
+
+  // ---- Campaign cards ----
+  const cardsHtml = a.campaigns.length ? `<div class="grid cards3">${a.campaigns.map(c => {
+    const p = a.pillars.find(x => x.key === c.pillar);
+    return `<div class="card">
+      <div class="card-strip" style="background:${p?.color ?? "#94a3b8"}"></div>
+      <div class="card-body">
+        <div class="meta">
+          ${p ? `<span class="pill" style="color:${p.color};border-color:${p.color}">${esc(p.label)}</span>` : ""}
+          ${c.confirmed ? "" : `<span class="tbc">TBC</span>`}
         </div>
-        <p class="show-meta">${fmtDate(s.date_start)} – ${fmtDate(s.date_end)}</p>
-        <p class="show-meta">${PIN} ${esc(s.location)}${s.state ? `, ${esc(s.state)}` : ""}</p>
+        <h3>${esc(c.campaign)}</h3>
+        <p class="show-meta">${fmtDate(c.key_date)}${c.end_date ? ` – ${fmtDate(c.end_date)}` : ""}</p>
+        ${c.note ? `<p class="obj">${esc(c.note)}</p>` : ""}
+        <div class="card-foot"><span class="status">${esc(c.status || "—")}</span><span class="muted">${esc(c.channel || "—")}</span></div>
       </div>
     </div>`;
+  }).join("")}</div>` : `<p class="muted">Nothing planned in this window yet.</p>`;
 
-  const showsHtml = a.tradeshows.length ? `
-    ${upcoming.length ? `<div class="show-grid">${upcoming.map(showCard).join("")}</div>` : `<p class="muted">Nothing scheduled yet.</p>`}
-    ${past.length ? `<p class="sub-label">Recently attended</p><div class="show-grid">${past.map(showCard).join("")}</div>` : ""}
-  ` : `<p class="muted">No tradeshows on record for this brand.</p>`;
-
-  const timelineHtml = a.campaigns.length ? `<div class="timeline">${a.campaigns.map(c => `
-    <div class="tl-row">
-      <div class="tl-date">${fmtDay(c.key_date)} <span class="m">${fmtMon(c.key_date)}</span></div>
-      <div class="tl-line"><span class="tl-dot"></span></div>
-      <div class="tl-card">
-        <div class="show-top">
-          <span class="show-name">${esc(c.campaign)}</span>
-          <span class="status">${esc(c.status || "—")}</span>
-        </div>
-        <p class="show-meta">${esc(c.channel || "—")}${c.end_date ? ` · through ${fmtDate(c.end_date)}` : ""}</p>
-      </div>
-    </div>`).join("")}</div>` : `<p class="muted">Nothing planned in the next 6 months yet.</p>`;
+  // ---- Decisions / asks ----
+  const decisionsHtml = a.decisions.length ? a.decisions.map(d => `
+    <div class="list-row">
+      <span class="when">${esc(d.due_label || "TBC")}</span>
+      <span class="what"><b>${esc(d.question)}</b>${d.recommendation ? `<span class="rec"><b>Recommendation</b>${esc(d.recommendation)}</span>` : ""}</span>
+    </div>`).join("") : `<p class="muted">No open decisions.</p>`;
+  const asksHtml = a.asks.length ? a.asks.map(x => `
+    <div class="list-row">
+      <span class="when">${esc(x.audience)}</span>
+      <span class="what"><b>${esc(x.ask)}</b>${x.why ? `<span>${esc(x.why)}</span>` : ""}</span>
+    </div>`).join("") : `<p class="muted">Nothing outstanding.</p>`;
 
   const adBlocks = a.adCreatives.length ? a.adCreatives.map(c => `
     <div class="card">
-      <h3>${esc(c.campaign_name || "—")}${c.ad_group ? ` <span class="muted">· ${esc(c.ad_group)}</span>` : ""}</h3>
-      <p class="label">Headlines</p>
-      <ul>${c.headlines.map(h => `<li>${esc(h)}</li>`).join("")}</ul>
-      <p class="label">Descriptions</p>
-      <ul>${c.descriptions.map(d => `<li>${esc(d)}</li>`).join("")}</ul>
+      <div class="card-body">
+        <h3>${esc(c.campaign_name || "—")}${c.ad_group ? ` <span class="muted">· ${esc(c.ad_group)}</span>` : ""}</h3>
+        <p class="label">Headlines</p>
+        <ul>${c.headlines.map(h => `<li>${esc(h)}</li>`).join("")}</ul>
+        <p class="label">Descriptions</p>
+        <ul>${c.descriptions.map(d => `<li>${esc(d)}</li>`).join("")}</ul>
+      </div>
     </div>`).join("") : `<p class="muted">No live ad copy synced yet.</p>`;
 
   return `<!DOCTYPE html>
@@ -95,54 +190,100 @@ export function buildActivationReport(a: ActivationReportInput): string {
 <title>Activations · ${esc(a.brand_name)}</title>
 <style>
   * { box-sizing: border-box; }
-  body { font-family: -apple-system, "Segoe UI", sans-serif; color: #1e293b; max-width: 900px; margin: 0 auto; padding: 0 32px 48px; background: #f8fafc; }
-  .head { display: flex; align-items: center; gap: 16px; padding: 36px 0 24px; }
-  .mono { width: 52px; height: 52px; border-radius: 14px; background: ${accent}; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; letter-spacing: 0.02em; flex-shrink: 0; }
+  body { font-family: -apple-system, "Segoe UI", sans-serif; color: #12161d; max-width: 980px; margin: 0 auto; padding: 0 32px 48px; background: #f2f4f6; }
+  .head { display: flex; align-items: center; gap: 16px; padding: 36px 0 20px; }
+  .mono { width: 52px; height: 52px; border-radius: 14px; background: ${accent}; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; flex-shrink: 0; }
   .head h1 { font-size: 25px; margin: 0 0 3px; color: #0f172a; }
   .head .sub { font-size: 12.5px; color: #64748b; }
   .head .gen { margin-left: auto; text-align: right; font-size: 11.5px; color: #94a3b8; }
-  .accent-bar { height: 4px; border-radius: 3px; background: linear-gradient(90deg, ${accent}, ${accent}55); margin-bottom: 28px; }
+  .accent-bar { height: 4px; border-radius: 3px; background: linear-gradient(90deg, ${accent}, ${accent}55); margin-bottom: 24px; }
   h2 { font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.1em; color: #0f172a; font-weight: 800; margin: 34px 0 14px; display: flex; align-items: center; gap: 8px; }
   h2::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: ${accent}; display: inline-block; }
-  .sub-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin: 18px 0 10px; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .card { position: relative; background: #fff; border: 1px solid #e8edf3; border-radius: 12px; padding: 16px 18px; box-shadow: 0 1px 2px rgba(15,23,42,0.03); }
-  .comp-card { padding-left: 20px; overflow: hidden; }
+  .grid.cards3 { grid-template-columns: repeat(3, 1fr); }
+  .card { position: relative; background: #fff; border: 1px solid #e2e6ea; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 2px rgba(15,23,42,0.03); }
+  .comp-card { padding: 16px 18px 16px 20px; }
   .comp-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: ${accent}; }
   .card h3 { font-size: 14px; margin: 0 0 8px; color: #0f172a; }
   .card ul { margin: 0; padding-left: 18px; font-size: 12.5px; line-height: 1.65; color: #475569; }
   .card .label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin: 10px 0 4px; }
+  .card-body { padding: 14px 16px; }
+  .card-strip { height: 4px; }
+  .card .meta { display: flex; gap: 6px; margin-bottom: 6px; }
+  .card .obj { font-size: 12px; color: #64748b; margin: 4px 0 0; }
+  .card-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 8px; border-top: 1px solid #f1f5f9; font-size: 11px; }
+  .pill { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; border: 1px solid #e2e6ea; }
   .muted { color: #94a3b8; font-size: 12.5px; }
 
-  .show-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 4px; }
-  .show-card { display: flex; gap: 12px; background: #fff; border: 1px solid #e8edf3; border-radius: 12px; padding: 12px 14px; box-shadow: 0 1px 2px rgba(15,23,42,0.03); }
-  .show-card.live { border-color: #6ee7b7; background: #f0fdf9; }
-  .show-date { flex-shrink: 0; width: 46px; height: 46px; border-radius: 10px; background: #f1f5f9; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.05; }
-  .show-card.upcoming .show-date { background: ${accent}14; }
-  .show-date .d { font-size: 17px; font-weight: 800; color: #0f172a; }
-  .show-date .m { font-size: 9px; font-weight: 700; letter-spacing: 0.05em; color: #64748b; }
-  .show-body { min-width: 0; flex: 1; }
-  .show-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-  .show-name { font-size: 13.5px; font-weight: 700; color: #0f172a; }
-  .show-meta { font-size: 11.5px; color: #64748b; margin: 2px 0 0; }
+  .panel { background: #fff; border: 1px solid #e2e6ea; border-radius: 12px; padding: 18px 20px; }
+  .spine { overflow-x: auto; }
+  .markers { display: flex; flex-direction: column; gap: 6px; padding-bottom: 6px; }
+  .lane { position: relative; border-bottom: 1px dashed #e2e6ea; padding-bottom: 8px; }
+  .lane-tag { position: absolute; left: 0; top: 0; font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; }
+  .marker { position: absolute; bottom: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; width: 130px; }
+  .marker .lbl { font-size: 10.5px; font-weight: 600; line-height: 1.25; text-align: center; color: #0f172a; padding-bottom: 4px; }
+  .marker .dte { font-size: 9.5px; color: #94a3b8; display: block; font-weight: 500; }
+  .marker .stem { width: 1px; background: #94a3b8; opacity: .4; }
+  .marker .pip { width: 8px; height: 8px; border-radius: 50%; background: ${accent}; }
+  .marker[data-kind="show"] .pip { border-radius: 2px; background: ${accent}; }
+  .marker[data-kind="peak"] .pip { background: #A32D5C; }
+  .marker[data-kind="peak"] .lbl { color: #A32D5C; }
+  .tbc { display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; padding: 1px 5px; border-radius: 3px; background: #FFF3D6; color: #8A5B00; border: 1px solid #F0DCA8; }
+  .axis { position: relative; display: flex; height: 32px; border-radius: 6px; overflow: hidden; border: 1px solid #e2e6ea; margin-top: 6px; }
+  .phase { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; font-weight: 800; color: #fff; }
+  .phase small { font-weight: 500; font-size: 9.5px; opacity: .85; }
+  .ruler { display: flex; border-bottom: 1px solid #e2e6ea; margin-top: 4px; }
+  .ruler .m { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; padding: 4px 0 6px 6px; border-left: 1px solid #e2e6ea; }
+  .ruler .m:first-child { border-left: 0; padding-left: 0; }
+  .tracks { position: relative; padding-top: 12px; }
+  .track { position: relative; height: 28px; margin-bottom: 5px; background: #f8fafc; border-radius: 5px; }
+  .bar { position: absolute; top: 2px; height: 24px; border-radius: 5px; display: flex; align-items: center; padding: 0 9px; gap: 6px; font-size: 11px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; }
+  .bar .wk { font-size: 9.5px; opacity: .8; font-weight: 500; }
+  .bar.unconfirmed { background-image: repeating-linear-gradient(45deg,rgba(255,255,255,.25) 0 6px,transparent 6px 12px); }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 14px; padding-top: 12px; border-top: 1px solid #e2e6ea; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: #64748b; }
+  .legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 
-  .timeline { position: relative; padding-left: 2px; }
-  .tl-row { display: grid; grid-template-columns: 46px 20px 1fr; gap: 0; align-items: stretch; }
-  .tl-date { font-size: 13px; font-weight: 800; color: #0f172a; padding-top: 12px; text-align: right; padding-right: 10px; white-space: nowrap; }
-  .tl-date .m { display: block; font-size: 9px; font-weight: 700; color: #94a3b8; letter-spacing: 0.05em; }
-  .tl-line { display: flex; flex-direction: column; align-items: center; }
-  .tl-line::before { content: ""; width: 2px; flex: 1; background: #e2e8f0; }
-  .tl-row:last-child .tl-line::before { background: transparent; }
-  .tl-dot { width: 10px; height: 10px; border-radius: 50%; background: ${accent}; margin-top: 16px; flex-shrink: 0; box-shadow: 0 0 0 3px ${accent}22; }
-  .tl-card { padding: 10px 0 18px 14px; }
+  .show-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .show-card { display: flex; gap: 12px; background: #fff; border: 1px solid #e2e6ea; border-radius: 12px; padding: 12px 14px; }
+  .show-date { flex-shrink: 0; width: 44px; height: 44px; border-radius: 10px; background: #f1f5f9; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .show-date .d { font-size: 16px; font-weight: 800; color: #0f172a; }
+  .show-date .m { font-size: 9px; font-weight: 700; color: #64748b; }
+  .show-name { font-size: 13px; font-weight: 700; color: #0f172a; }
+  .show-meta { font-size: 11px; color: #64748b; margin: 2px 0 0; }
+  .status { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: #eff6ff; color: #1d4ed8; }
 
-  .status { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: #eff6ff; color: #1d4ed8; text-transform: capitalize; flex-shrink: 0; }
-  .status.live { background: #ecfdf5; color: #047857; }
-  .status.past { background: #f1f5f9; color: #94a3b8; }
+  .two-col { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; }
+  .burn-grid { display: flex; align-items: flex-end; gap: 12px; height: 150px; border-bottom: 1px solid #e2e6ea; }
+  .burn-col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; gap: 2px; }
+  .burn-stack { display: flex; flex-direction: column-reverse; border-radius: 5px 5px 0 0; overflow: hidden; }
+  .burn-seg { min-height: 2px; }
+  .burn-val { font-size: 11px; font-weight: 600; text-align: center; padding-bottom: 4px; }
+  .burn-labels { display: flex; gap: 12px; padding-top: 8px; }
+  .burn-labels div { flex: 1; text-align: center; }
+  .burn-labels .m { font-size: 12.5px; font-weight: 800; }
+  .burn-labels .p { font-size: 9.5px; color: #94a3b8; }
+  .alloc-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid #f1f5f9; }
+  .alloc-row:last-child { border-bottom: 0; }
+  .alloc-row .sw { width: 10px; height: 22px; border-radius: 3px; flex: none; }
+  .alloc-row .nm { flex: 1; min-width: 0; }
+  .alloc-row .nm b { display: block; font-size: 12.5px; font-weight: 600; }
+  .alloc-row .nm span { font-size: 10.5px; color: #94a3b8; }
+  .alloc-row .pc { font-size: 11px; color: #64748b; width: 34px; text-align: right; }
+  .alloc-row .amt { font-size: 13px; font-weight: 600; width: 84px; text-align: right; }
+
+  .list-row { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid #f1f5f9; align-items: flex-start; }
+  .list-row:last-child { border-bottom: 0; }
+  .list-row .when { font-size: 11px; font-weight: 600; width: 100px; flex: none; }
+  .list-row .what b { font-size: 13px; font-weight: 600; display: block; }
+  .list-row .what span { font-size: 11.5px; color: #64748b; display: block; margin-top: 2px; }
+  .rec { font-size: 11.5px; color: #12161d; background: #f2f4f6; border-left: 2px solid ${accent}; padding: 6px 10px; border-radius: 0 5px 5px 0; margin-top: 6px; display: block; }
+  .rec b { font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: ${accent}; display: block; margin-bottom: 2px; }
+
   .foot { margin-top: 44px; font-size: 11px; color: #94a3b8; text-align: center; }
   .dl { display: block; margin: 20px auto 0; font-size: 13px; font-weight: 700; color: #fff; background: ${accent}; border: 0; border-radius: 8px; padding: 10px 20px; cursor: pointer; }
-  @media print { body { padding: 0 24px; background: #fff; } .no-print { display: none; } }
-  @media (max-width: 640px) { .grid, .show-grid { grid-template-columns: 1fr; } }
+  @media print { body { padding: 0 24px; background: #fff; } .no-print { display: none; } @page { size: A4 landscape; margin: 10mm; } }
+  @media (max-width: 720px) { .grid, .grid.cards3, .show-grid, .two-col { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -150,7 +291,7 @@ export function buildActivationReport(a: ActivationReportInput): string {
     <div class="mono">${esc(monogram)}</div>
     <div>
       <h1>Activations · ${esc(a.brand_name)}</h1>
-      <div class="sub">Competitor landscape, tradeshows and the 6-month forward marketing plan</div>
+      <div class="sub">${fmtDate(a.window.start)} to ${fmtDate(a.window.end)} — competitor landscape, tradeshows and the activation plan</div>
     </div>
     <div class="gen">Generated<br>${fmtDate(a.generated_at.slice(0, 10))}</div>
   </div>
@@ -159,11 +300,23 @@ export function buildActivationReport(a: ActivationReportInput): string {
   <h2>Competitor landscape</h2>
   <div class="grid">${competitorCards}</div>
 
-  <h2>Tradeshows</h2>
-  ${showsHtml}
+  <h2>The spine</h2>
+  <div class="panel">${spineHtml}</div>
 
-  <h2>Activation plan — next 6 months</h2>
-  ${timelineHtml}
+  <h2>Where the money goes</h2>
+  <div class="two-col">
+    <div class="panel">${budgetHtml}</div>
+    <div class="panel">${allocHtml}</div>
+  </div>
+
+  <h2>Campaigns</h2>
+  ${cardsHtml}
+
+  <h2>Open decisions</h2>
+  <div class="panel">${decisionsHtml}</div>
+
+  <h2>Asks of Global</h2>
+  <div class="panel">${asksHtml}</div>
 
   <h2>Google Ads — top copy live now</h2>
   <div class="grid">${adBlocks}</div>

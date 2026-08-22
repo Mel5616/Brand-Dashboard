@@ -18,7 +18,7 @@ function isMissingTable(status: number, body: string) {
   return status === 404 || /PGRST205|does not exist|schema cache/i.test(body);
 }
 
-const FIELDS = ["horizon", "campaign", "brand", "tier", "owner", "channel", "status", "key_date", "end_date", "note", "sort_order", "brief", "image_url"];
+const FIELDS = ["horizon", "campaign", "brand", "tier", "owner", "channel", "status", "key_date", "end_date", "note", "sort_order", "brief", "image_url", "pillar", "confirmed"];
 const DATE_FIELDS = new Set(["key_date", "end_date"]);
 function clean(b: any) {
   const row: Record<string, any> = {};
