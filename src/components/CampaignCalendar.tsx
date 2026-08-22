@@ -510,7 +510,7 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                             );
                           })()}
                           <p className="text-[11px] text-gray-400">Owner {c.owner || "TBC"}{c.channel ? ` · ${c.channel}` : ""}</p>
-                          {c.note && <p className="text-[11px] text-gray-500 leading-snug">{c.note}</p>}
+                          {c.note && <p className="text-[11px] text-gray-500 leading-snug whitespace-pre-line">{c.note}</p>}
                           <div className="flex items-center justify-between gap-2">
                             {c.share_token
                               ? <a href={`/c/${c.share_token}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}

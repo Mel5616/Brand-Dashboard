@@ -269,7 +269,7 @@ export function buildActivationReport(a: ActivationReportInput): string {
   .card-body { padding: 14px 16px; }
   .card-strip { height: 4px; }
   .card .meta { display: flex; gap: 6px; margin-bottom: 6px; }
-  .card .obj { font-size: 12px; color: #64748b; margin: 4px 0 0; }
+  .card .obj { font-size: 12px; color: #64748b; margin: 4px 0 0; white-space: pre-line; }
   .card-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 8px; border-top: 1px solid #f1f5f9; font-size: 11px; }
   .pill { font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; border: 1px solid #e2e6ea; }
   .muted { color: #94a3b8; font-size: 12.5px; }
