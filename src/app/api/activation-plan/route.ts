@@ -101,11 +101,14 @@ export async function POST(req: Request) {
   if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
-  const table = TABLES[b.kind];
-  if (!table || !b.brand_id) return NextResponse.json({ ok: false, error: "bad kind/brand_id" }, { status: 400 });
+  // Dispatch key is "resource", never "kind" — several row shapes (e.g. a
+  // trade date's own trade/peak type) legitimately have their own "kind"
+  // field, and reusing the name let it silently clobber this one.
+  const table = TABLES[b.resource];
+  if (!table || !b.brand_id) return NextResponse.json({ ok: false, error: "bad resource/brand_id" }, { status: 400 });
 
   // Notes key on (brand_id, section) — upsert rather than always-insert.
-  if (b.kind === "note") {
+  if (b.resource === "note") {
     if (!b.section) return NextResponse.json({ ok: false, error: "section required" }, { status: 400 });
     const row = { brand_id: b.brand_id, section: b.section, body: b.body ?? "", updated_at: new Date().toISOString() };
     const res = await fetch(`${sbUrl}/rest/v1/activation_notes?on_conflict=brand_id,section`, { method: "POST", headers: hdr({ Prefer: "resolution=merge-duplicates,return=minimal" }), body: JSON.stringify(row) });
@@ -113,7 +116,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  const { kind, ...row } = b;
+  const { resource, ...row } = b;
   const res = await fetch(`${sbUrl}/rest/v1/${table}`, { method: "POST", headers: hdr({ Prefer: "return=representation" }), body: JSON.stringify(row) });
   const text = await res.text();
   if (!res.ok) return NextResponse.json({ ok: false, needsSetup: missing(res.status, text), error: text.slice(0, 200) }, { status: 500 });
@@ -124,9 +127,9 @@ export async function PATCH(req: Request) {
   if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
-  const table = TABLES[b.kind];
-  if (!table || !b.id) return NextResponse.json({ ok: false, error: "bad kind/id" }, { status: 400 });
-  const { kind, id, ...fields } = b;
+  const table = TABLES[b.resource];
+  if (!table || !b.id) return NextResponse.json({ ok: false, error: "bad resource/id" }, { status: 400 });
+  const { resource, id, ...fields } = b;
   const res = await fetch(`${sbUrl}/rest/v1/${table}?id=eq.${encodeURIComponent(String(id))}`, { method: "PATCH", headers: hdr({ Prefer: "return=minimal" }), body: JSON.stringify(fields) });
   return NextResponse.json({ ok: res.ok }, { status: res.ok ? 200 : 500 });
 }
@@ -135,10 +138,10 @@ export async function DELETE(req: Request) {
   if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   const url = new URL(req.url);
-  const kind = url.searchParams.get("kind") || "";
+  const resource = url.searchParams.get("resource") || "";
   const id = url.searchParams.get("id");
-  const table = TABLES[kind];
-  if (!table || !id) return NextResponse.json({ ok: false, error: "bad kind/id" }, { status: 400 });
+  const table = TABLES[resource];
+  if (!table || !id) return NextResponse.json({ ok: false, error: "bad resource/id" }, { status: 400 });
   const res = await fetch(`${sbUrl}/rest/v1/${table}?id=eq.${encodeURIComponent(id)}`, { method: "DELETE", headers: hdr({ Prefer: "return=minimal" }) });
   return NextResponse.json({ ok: res.ok }, { status: res.ok ? 200 : 500 });
 }

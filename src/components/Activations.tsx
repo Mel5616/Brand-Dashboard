@@ -188,15 +188,18 @@ export function Activations({ brands, tradeshows, tradeshowBrands, admin = false
   }
 
   // Generic activation-plan CRUD (phases/pillars/tradeDates/decisions/asks)
-  async function planAdd(kind: string, row: any, onOk: (item: any) => void) {
-    const d = await fetch("/api/activation-plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, brand_id: brandId, ...row }) }).then(r => r.json());
+  // "resource" (not "kind") is the dispatch key for /api/activation-plan —
+  // several row shapes (e.g. a trade date's own trade/peak type) legitimately
+  // have their own "kind" field, which must never collide with this one.
+  async function planAdd(resource: string, row: any, onOk: (item: any) => void) {
+    const d = await fetch("/api/activation-plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...row, resource, brand_id: brandId }) }).then(r => r.json());
     if (d.ok) onOk(d.item); else setMsg(d.error || "Couldn't add.");
   }
-  async function planSave(kind: string, id: number, fields: any) {
-    await fetch("/api/activation-plan", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, id, ...fields }) }).then(r => r.json());
+  async function planSave(resource: string, id: number, fields: any) {
+    await fetch("/api/activation-plan", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...fields, resource, id }) }).then(r => r.json());
   }
-  async function planRemove(kind: string, id: number, onOk: () => void) {
-    const d = await fetch(`/api/activation-plan?kind=${kind}&id=${id}`, { method: "DELETE" }).then(r => r.json());
+  async function planRemove(resource: string, id: number, onOk: () => void) {
+    const d = await fetch(`/api/activation-plan?resource=${resource}&id=${id}`, { method: "DELETE" }).then(r => r.json());
     if (d.ok) onOk();
   }
 
@@ -478,7 +481,7 @@ function PhaseAdd({ brandId, onAdd }: { brandId: number | undefined; onAdd: (ite
   async function add() {
     if (!brandId || !f.label || !f.start_date || !f.end_date) return;
     const key = f.key || f.label.toLowerCase().replace(/\s+/g, "-");
-    const d = await fetch("/api/activation-plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "phase", brand_id: brandId, ...f, key }) }).then(r => r.json());
+    const d = await fetch("/api/activation-plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ resource: "phase", brand_id: brandId, ...f, key }) }).then(r => r.json());
     if (d.ok) { onAdd(d.item); setF({ key: "", label: "", sub: "", start_date: "", end_date: "", color: "#132741" }); }
   }
   return (
@@ -498,7 +501,7 @@ function PillarAdd({ brandId, onAdd }: { brandId: number | undefined; onAdd: (it
   async function add() {
     if (!brandId || !f.label) return;
     const key = f.key || f.label.toLowerCase().replace(/\s+/g, "-");
-    const d = await fetch("/api/activation-plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "pillar", brand_id: brandId, ...f, key }) }).then(r => r.json());
+    const d = await fetch("/api/activation-plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ resource: "pillar", brand_id: brandId, ...f, key }) }).then(r => r.json());
     if (d.ok) { onAdd(d.item); setF({ key: "", label: "", color: "#132741", share_pct: 0, note: "" }); }
   }
   return (
@@ -522,7 +525,7 @@ function SectionNoteEditor({ brandId, sectionKey, label, value, onSaved }: { bra
   async function save() {
     if (!brandId) return;
     setSaving(true);
-    const d = await fetch("/api/activation-plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "note", brand_id: brandId, section: sectionKey, body: draft }) }).then(r => r.json());
+    const d = await fetch("/api/activation-plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ resource: "note", brand_id: brandId, section: sectionKey, body: draft }) }).then(r => r.json());
     setSaving(false);
     if (d.ok) onSaved(draft);
   }
