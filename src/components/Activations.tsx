@@ -10,7 +10,7 @@ import type { Tradeshow } from "@/lib/db";
 // open-tracked share-link pattern, just its own report rather than the
 // monthly performance one.
 
-type Brand = { id: number; name: string; live?: boolean };
+type Brand = { id: number; name: string; live?: boolean; color?: string; init?: string };
 type Competitor = { id: number; brand_id: number; name: string; notes: string | null; updated_at: string; updated_by: string | null };
 type Campaign = { id: string; campaign: string; brand: string; channel: string; status: string; key_date: string; end_date?: string | null; note: string };
 type Creative = { id: number; brand_id: number; campaign_name: string | null; ad_group: string | null; headlines: string[]; descriptions: string[]; clicks: number; impressions: number };
@@ -105,7 +105,7 @@ export function Activations({ brands, tradeshows, tradeshowBrands, admin = false
     if (!brand) return;
     setSharing(true);
     const html = buildActivationReport({
-      brand_name: brand.name, generated_at: new Date().toISOString(),
+      brand_name: brand.name, brand_color: brand.color, brand_init: brand.init, generated_at: new Date().toISOString(),
       competitors: competitors.map(c => ({ name: c.name, notes: c.notes })),
       tradeshows: brandShows.map(t => ({ name: t.name, date_start: t.date_start, date_end: t.date_end, state: t.state, location: t.location, status: showStatus(t) })),
       campaigns: brandCampaigns.map(c => ({ campaign: c.campaign, channel: c.channel, status: c.status, key_date: c.key_date, end_date: c.end_date, note: c.note })),
@@ -198,16 +198,28 @@ export function Activations({ brands, tradeshows, tradeshowBrands, admin = false
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <h3 className="text-sm font-semibold text-slate-700 mb-3">Tradeshows</h3>
             {brandShows.length === 0 ? <p className="text-xs text-gray-400">No tradeshows on record for {brand?.name}.</p> : (
-              <div className="divide-y divide-gray-50">
-                {brandShows.map(t => {
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {[...brandShows].sort((a, b) => {
+                  const rank = (s: string) => s === "live" ? 0 : s === "upcoming" ? 1 : 2;
+                  const ra = rank(showStatus(a)), rb = rank(showStatus(b));
+                  return ra !== rb ? ra - rb : (ra === 2 ? b.date_start.localeCompare(a.date_start) : a.date_start.localeCompare(b.date_start));
+                }).map(t => {
                   const st = showStatus(t);
+                  const d = new Date(t.date_start + "T00:00:00");
                   return (
-                    <div key={t.id} className="flex items-center justify-between py-2.5 text-sm">
-                      <div>
-                        <p className="font-semibold text-slate-700">{t.name}</p>
-                        <p className="text-[11px] text-gray-400">{fmtD(t.date_start)} – {fmtD(t.date_end)} · {t.location}{t.state ? `, ${t.state}` : ""}</p>
+                    <div key={t.id} className={`flex gap-3 rounded-xl border p-3 ${st === "live" ? "border-emerald-200 bg-emerald-50/40" : "border-gray-100"}`}>
+                      <div className={`shrink-0 w-11 h-11 rounded-lg flex flex-col items-center justify-center leading-none ${st === "upcoming" ? "" : "bg-slate-50"}`} style={st === "upcoming" ? { background: `${brand?.color ?? "#132741"}18` } : undefined}>
+                        <span className="text-[15px] font-extrabold text-slate-800">{d.getDate()}</span>
+                        <span className="text-[8px] font-bold text-gray-400 tracking-wide">{d.toLocaleDateString("en-AU", { month: "short" }).toUpperCase()}</span>
                       </div>
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${st === "live" ? "bg-emerald-100 text-emerald-700" : st === "upcoming" ? "bg-sky-100 text-sky-700" : "bg-slate-100 text-slate-500"}`}>{st}</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="font-semibold text-slate-800 text-[13px] truncate">{t.name}</p>
+                          <span className={`text-[9.5px] font-semibold px-2 py-0.5 rounded-full capitalize shrink-0 ${st === "live" ? "bg-emerald-100 text-emerald-700" : st === "upcoming" ? "bg-sky-100 text-sky-700" : "bg-slate-100 text-slate-400"}`}>{st}</span>
+                        </div>
+                        <p className="text-[11px] text-gray-400 mt-0.5">{fmtD(t.date_start)} – {fmtD(t.date_end)}</p>
+                        <p className="text-[11px] text-gray-400">📍 {t.location}{t.state ? `, ${t.state}` : ""}</p>
+                      </div>
                     </div>
                   );
                 })}
@@ -219,16 +231,29 @@ export function Activations({ brands, tradeshows, tradeshowBrands, admin = false
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <h3 className="text-sm font-semibold text-slate-700 mb-3">Activation plan — next 6 months</h3>
             {brandCampaigns.length === 0 ? <p className="text-xs text-gray-400">Nothing planned for {brand?.name} in the next 6 months yet — add it in Campaigns.</p> : (
-              <div className="divide-y divide-gray-50">
-                {brandCampaigns.map(c => (
-                  <div key={c.id} className="flex items-center justify-between py-2.5 text-sm gap-3">
-                    <div className="min-w-0">
-                      <p className="font-semibold text-slate-700 truncate">{c.campaign}</p>
-                      <p className="text-[11px] text-gray-400">{c.channel || "—"} · {c.status}</p>
+              <div>
+                {brandCampaigns.map((c, i) => {
+                  const d = new Date(c.key_date + "T00:00:00");
+                  return (
+                    <div key={c.id} className="grid gap-0" style={{ gridTemplateColumns: "44px 20px 1fr" }}>
+                      <div className="text-right pr-2.5 pt-2.5">
+                        <p className="text-[13px] font-extrabold text-slate-800 leading-none">{d.getDate()}</p>
+                        <p className="text-[8.5px] font-bold text-gray-400 tracking-wide">{d.toLocaleDateString("en-AU", { month: "short" }).toUpperCase()}</p>
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <span className="w-2.5 h-2.5 rounded-full mt-3.5 shrink-0" style={{ background: brand?.color ?? "#132741" }} />
+                        {i < brandCampaigns.length - 1 && <span className="w-px flex-1 bg-gray-100" />}
+                      </div>
+                      <div className="pb-4 pl-3.5 pt-2">
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-slate-800 text-[13px]">{c.campaign}</p>
+                          <span className="text-[9.5px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 capitalize">{c.status}</span>
+                        </div>
+                        <p className="text-[11px] text-gray-400 mt-0.5">{c.channel || "—"}{c.end_date ? ` · through ${fmtD(c.end_date)}` : ""}</p>
+                      </div>
                     </div>
-                    <span className="text-xs text-slate-500 shrink-0">{fmtD(c.key_date)}{c.end_date ? ` – ${fmtD(c.end_date)}` : ""}</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
