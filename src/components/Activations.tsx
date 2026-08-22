@@ -102,6 +102,10 @@ export function Activations({ brands, tradeshows, tradeshowBrands, admin = false
     return { start: today, end: sixMonthsOut };
   }, [phases, today, sixMonthsOut]);
 
+  // Only shows that actually fall within this report's window — otherwise
+  // every tradeshow the brand has ever done piles onto the spine's edges.
+  const windowShows = useMemo(() => brandShows.filter(t => t.date_start <= windowRange.end && t.date_end >= windowRange.start), [brandShows, windowRange]);
+
   const brandCampaigns = useMemo(() => {
     if (!brand) return [];
     return campaigns
@@ -115,7 +119,7 @@ export function Activations({ brands, tradeshows, tradeshowBrands, admin = false
       brand_name: brand.name, brand_color: brand.color, brand_init: brand.init, generated_at: new Date().toISOString(),
       window: windowRange,
       competitors: competitors.map(c => ({ name: c.name, notes: c.notes })),
-      tradeshows: brandShows.map(t => ({ name: t.name, date_start: t.date_start, date_end: t.date_end, state: t.state, location: t.location, status: showStatus(t) })),
+      tradeshows: windowShows.map(t => ({ name: t.name, date_start: t.date_start, date_end: t.date_end, state: t.state, location: t.location, status: showStatus(t) })),
       phases: phases.map(p => ({ key: p.key, label: p.label, sub: p.sub, start_date: p.start_date, end_date: p.end_date, color: p.color })),
       pillars: pillars.map(p => ({ key: p.key, label: p.label, color: p.color, share_pct: p.share_pct, note: p.note })),
       tradeDates: tradeDates.map(t => ({ date: t.date, end_date: t.end_date, label: t.label, kind: t.kind, confirmed: t.confirmed })),
@@ -125,7 +129,7 @@ export function Activations({ brands, tradeshows, tradeshowBrands, admin = false
       asks: asks.map(a => ({ audience: a.audience, ask: a.ask, why: a.why })),
       adCreatives: creatives.map(c => ({ ad_group: c.ad_group, campaign_name: c.campaign_name, headlines: c.headlines, descriptions: c.descriptions, clicks: c.clicks })),
     });
-  }, [brand, windowRange, competitors, brandShows, phases, pillars, tradeDates, brandCampaigns, budget, decisions, asks, creatives]);
+  }, [brand, windowRange, competitors, windowShows, phases, pillars, tradeDates, brandCampaigns, budget, decisions, asks, creatives]);
 
   // Live preview iframe, auto-sized to its content (same pattern as Brand Snapshot).
   const frameRef = useRef<HTMLIFrameElement>(null);

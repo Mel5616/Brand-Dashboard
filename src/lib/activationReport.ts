@@ -105,7 +105,7 @@ export function buildActivationReport(a: ActivationReportInput): string {
     if (!row) { row = []; tracks.push(row); }
     row.push(b);
   }
-  const pillarColor = (key: string | null) => a.pillars.find(p => p.key === key)?.color ?? "#6B7280";
+  const pillarColor = (key: string | null) => a.pillars.find(p => p.key === key)?.color ?? "#64748b";
   const tracksHtml = tracks.map(row => `<div class="track">${row.map(b => `
     <div class="bar${b.confirmed ? "" : " unconfirmed"}" style="left:${b.s}%;width:${Math.max(b.e - b.s, 6)}%;background:${pillarColor(b.pillar)}" title="${esc(b.campaign)}">
       ${esc(b.campaign)}<span class="wk">${fmtDateShort(b.key_date)}</span>
@@ -115,13 +115,19 @@ export function buildActivationReport(a: ActivationReportInput): string {
     + (showItems.length ? `<span><i style="background:${accent};border-radius:2px"></i>Baby expo</span>` : "")
     + `<span><i style="background:repeating-linear-gradient(45deg,#94a3b8 0 4px,#fff 4px 8px)"></i>Not yet confirmed</span>`;
 
+  // Percent-based positioning needs real pixel width to avoid label overlap —
+  // scale the minimum width with how many months are in view (more months,
+  // more room), scrolling horizontally rather than compressing.
+  const spineMinWidth = Math.max(760, rulerMonths.length * 190);
   const spineHtml = (a.phases.length || a.campaigns.length) ? `
     <div class="spine">
-      ${markersHtml ? `<div class="markers">${markersHtml}</div>` : ""}
-      ${axisHtml}
-      ${rulerHtml}
-      <div class="tracks">${tracksHtml}</div>
-      <div class="legend">${legendHtml}</div>
+      <div class="spine-inner" style="min-width:${spineMinWidth}px">
+        ${markersHtml ? `<div class="markers">${markersHtml}</div>` : ""}
+        ${axisHtml}
+        ${rulerHtml}
+        <div class="tracks">${tracksHtml}</div>
+        <div class="legend">${legendHtml}</div>
+      </div>
     </div>` : `<p class="muted">Add phases and campaigns to build the spine.</p>`;
 
   // ---- Budget burn ----
@@ -216,7 +222,8 @@ export function buildActivationReport(a: ActivationReportInput): string {
   .muted { color: #94a3b8; font-size: 12.5px; }
 
   .panel { background: #fff; border: 1px solid #e2e6ea; border-radius: 12px; padding: 18px 20px; }
-  .spine { overflow-x: auto; }
+  .spine { overflow-x: auto; padding-bottom: 2px; }
+  .spine-inner { width: 100%; }
   .markers { display: flex; flex-direction: column; gap: 6px; padding-bottom: 6px; }
   .lane { position: relative; border-bottom: 1px dashed #e2e6ea; padding-bottom: 8px; }
   .lane-tag { position: absolute; left: 0; top: 0; font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; }
@@ -226,8 +233,8 @@ export function buildActivationReport(a: ActivationReportInput): string {
   .marker .stem { width: 1px; background: #94a3b8; opacity: .4; }
   .marker .pip { width: 8px; height: 8px; border-radius: 50%; background: ${accent}; }
   .marker[data-kind="show"] .pip { border-radius: 2px; background: ${accent}; }
-  .marker[data-kind="peak"] .pip { background: #A32D5C; }
-  .marker[data-kind="peak"] .lbl { color: #A32D5C; }
+  .marker[data-kind="peak"] .pip { background: #e11d48; }
+  .marker[data-kind="peak"] .lbl { color: #e11d48; }
   .tbc { display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; padding: 1px 5px; border-radius: 3px; background: #FFF3D6; color: #8A5B00; border: 1px solid #F0DCA8; }
   .axis { position: relative; display: flex; height: 32px; border-radius: 6px; overflow: hidden; border: 1px solid #e2e6ea; margin-top: 6px; }
   .phase { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; font-weight: 800; color: #fff; }
