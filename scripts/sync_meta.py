@@ -142,7 +142,7 @@ def parse_row(row):
         "cpc":         round(spend / clicks, 2) if clicks > 0 else 0,
     }
 
-def fetch_meta_ad_creatives(account_id, access_token, top_n=8):
+def fetch_meta_ad_creatives(account_id, access_token, top_n=5):
     """Top-performing live ad copy + creative image (last 90 days), for the
     Marketing Snapshot report — mirrors fetch_google_ads_creatives."""
     params = {
@@ -168,9 +168,12 @@ def fetch_meta_ad_creatives(account_id, access_token, top_n=8):
         title = (cr.get("title") or "").strip()
         if not body and not title:
             continue
+        campaign_name = (ad.get("campaign") or {}).get("name", "")
+        if "[test]" in campaign_name.lower() or campaign_name.lower().startswith("test"):
+            continue
         insights = (ad.get("insights", {}).get("data") or [{}])[0]
         ranked.append({
-            "campaign_name": (ad.get("campaign") or {}).get("name", ""),
+            "campaign_name": campaign_name,
             "ad_name": ad.get("name", ""),
             "title": title, "body": body,
             "image_url": cr.get("image_url") or cr.get("thumbnail_url") or "",

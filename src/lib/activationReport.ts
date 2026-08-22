@@ -235,14 +235,15 @@ export function buildActivationReport(a: ActivationReportInput): string {
       <span class="what"><b>${esc(x.ask)}</b>${x.why ? `<span>${esc(x.why)}</span>` : ""}</span>
     </div>`).join("") : `<p class="muted">Nothing outstanding.</p>`;
 
-  const adBlocks = a.adCreatives.length ? a.adCreatives.map(c => `
+  const cleanGoogleCreatives = a.adCreatives.filter(c => !/\[test\]/i.test(c.campaign_name || "")).slice(0, 5);
+  const adBlocks = cleanGoogleCreatives.length ? cleanGoogleCreatives.map(c => `
     <div class="card">
       <div class="card-body">
         <h3>${esc(c.campaign_name || "—")}${c.ad_group ? ` <span class="muted">· ${esc(c.ad_group)}</span>` : ""}</h3>
         <p class="label">Headlines</p>
-        <ul>${c.headlines.map(h => `<li>${esc(h)}</li>`).join("")}</ul>
+        <ul>${c.headlines.slice(0, 5).map(h => `<li>${esc(h)}</li>`).join("")}</ul>
         <p class="label">Descriptions</p>
-        <ul>${c.descriptions.map(d => `<li>${esc(d)}</li>`).join("")}</ul>
+        <ul>${c.descriptions.slice(0, 4).map(d => `<li>${esc(d)}</li>`).join("")}</ul>
       </div>
     </div>`).join("") : `<p class="muted">No live ad copy synced yet.</p>`;
 
@@ -252,7 +253,8 @@ export function buildActivationReport(a: ActivationReportInput): string {
       <figcaption>${esc(img.campaign_name || "—")}${img.asset_group ? ` <span class="muted">· ${esc(img.asset_group)}</span>` : ""}</figcaption>
     </figure>`).join("")}</div>` : `<p class="muted">No live creative images synced yet (Performance Max campaigns only).</p>`;
 
-  const metaBlocks = a.metaCreatives.length ? a.metaCreatives.map(c => `
+  const cleanMetaCreatives = a.metaCreatives.filter(c => !/\[test\]/i.test(c.campaign_name || "")).slice(0, 5);
+  const metaBlocks = cleanMetaCreatives.length ? cleanMetaCreatives.map(c => `
     <div class="card">
       <div class="card-body">
         <h3>${esc(c.campaign_name || "—")}${c.ad_name ? ` <span class="muted">· ${esc(c.ad_name)}</span>` : ""}</h3>

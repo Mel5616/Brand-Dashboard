@@ -1023,7 +1023,7 @@ def fetch_google_ads_campaigns(customer_id, creds):
         })
     return rows
 
-def fetch_google_ads_creatives(customer_id, creds, top_n=8):
+def fetch_google_ads_creatives(customer_id, creds, top_n=5):
     """Top-performing responsive search ad copy (last 90 days), for the
     Activations report's ad-copy panel. Aggregated over the window, not
     broken out by day/month — this is "what's live and working now"."""
@@ -1063,10 +1063,14 @@ def fetch_google_ads_creatives(customer_id, creds, top_n=8):
         descriptions = [d.get('text', '') for d in rsa.get('descriptions', []) if d.get('text')]
         if not headlines:
             continue
-        key = (row.get('campaign', {}).get('name', ''), row.get('adGroup', {}).get('name', ''))
+        campaign_name = row.get('campaign', {}).get('name', '')
+        if '[test]' in campaign_name.lower() or campaign_name.lower().startswith('test'):
+            continue
+        key = (campaign_name, row.get('adGroup', {}).get('name', ''))
         met = row.get('metrics', {})
         a = agg.setdefault(key, {
-            'headlines': headlines, 'descriptions': descriptions,
+            # Cap what actually gets stored/shown — a report card, not the full asset list.
+            'headlines': headlines[:5], 'descriptions': descriptions[:4],
             'final_url': (row.get('adGroupAd', {}).get('ad', {}).get('finalUrls') or [None])[0],
             'clicks': 0, 'impressions': 0,
         })
