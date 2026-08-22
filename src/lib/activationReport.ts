@@ -408,7 +408,7 @@ export function buildActivationReport(a: ActivationReportInput): string {
     <div class="panel">${allocHtml}</div>
   </div>
 
-  <h2>Campaigns</h2>
+  <h2>Campaign Planning</h2>
   ${cardsHtml}
 
   <h2>Open decisions</h2>
