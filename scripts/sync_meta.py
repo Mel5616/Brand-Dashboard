@@ -146,8 +146,15 @@ def fetch_meta_ad_creatives(account_id, access_token, top_n=5):
     """Top-performing live ad copy + creative image (last 90 days), for the
     Marketing Snapshot report — mirrors fetch_google_ads_creatives."""
     params = {
+        # image_url/thumbnail_url alone are often a small (64x64) admin-UI
+        # thumbnail for carousel/video creatives — object_story_spec carries
+        # the actual full-size picture for those, so prefer it when present.
+        # thumbnail_width/height ask Meta to render thumbnail_url larger when
+        # that's genuinely the only option (e.g. some video ads).
         "fields": "name,campaign{name},insights.date_preset(last_90d){clicks,impressions},"
-                  "creative{title,body,image_url,thumbnail_url}",
+                  "creative{title,body,image_url,thumbnail_url,"
+                  "object_story_spec{link_data{picture,child_attachments{picture}},video_data{image_url}}}",
+        "thumbnail_width": 600, "thumbnail_height": 600,
         "effective_status": json.dumps(["ACTIVE"]),
         "access_token": access_token,
         "limit": 100,
@@ -172,11 +179,20 @@ def fetch_meta_ad_creatives(account_id, access_token, top_n=5):
         if "[test]" in campaign_name.lower() or campaign_name.lower().startswith("test"):
             continue
         insights = (ad.get("insights", {}).get("data") or [{}])[0]
+        story = cr.get("object_story_spec") or {}
+        link_data = story.get("link_data") or {}
+        video_data = story.get("video_data") or {}
+        child = (link_data.get("child_attachments") or [{}])[0]
+        # Prefer a real full-size picture over the small admin thumbnail —
+        # single-image ads have image_url; carousels/video need to reach
+        # into object_story_spec for one that isn't a 64x64 crop.
+        image_url = (cr.get("image_url") or link_data.get("picture") or child.get("picture")
+                     or video_data.get("image_url") or cr.get("thumbnail_url") or "")
         ranked.append({
             "campaign_name": campaign_name,
             "ad_name": ad.get("name", ""),
             "title": title, "body": body,
-            "image_url": cr.get("image_url") or cr.get("thumbnail_url") or "",
+            "image_url": image_url,
             "clicks": int(float(insights.get("clicks", 0))),
             "impressions": int(float(insights.get("impressions", 0))),
         })

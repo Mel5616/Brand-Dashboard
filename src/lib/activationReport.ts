@@ -249,7 +249,7 @@ export function buildActivationReport(a: ActivationReportInput): string {
 
   const imageGallery = a.adImages.length ? `<div class="img-grid">${a.adImages.map(img => `
     <figure class="ad-img">
-      <img src="${esc(img.image_url)}" alt="${esc(img.campaign_name || "Ad creative")}" loading="lazy">
+      <img src="${esc(img.image_url)}" alt="${esc(img.campaign_name || "Ad creative")}" loading="lazy" onerror="this.closest('figure').style.display='none'">
       <figcaption>${esc(img.campaign_name || "—")}${img.asset_group ? ` <span class="muted">· ${esc(img.asset_group)}</span>` : ""}</figcaption>
     </figure>`).join("")}</div>` : `<p class="muted">No live creative images synced yet (Performance Max campaigns only).</p>`;
 
@@ -265,7 +265,7 @@ export function buildActivationReport(a: ActivationReportInput): string {
 
   const metaGallery = a.metaImages.length ? `<div class="img-grid">${a.metaImages.map(img => `
     <figure class="ad-img">
-      <img src="${esc(img.image_url)}" alt="${esc(img.campaign_name || "Ad creative")}" loading="lazy">
+      <img src="${esc(img.image_url)}" alt="${esc(img.campaign_name || "Ad creative")}" loading="lazy" onerror="this.closest('figure').style.display='none'">
       <figcaption>${esc(img.campaign_name || "—")}${img.ad_name ? ` <span class="muted">· ${esc(img.ad_name)}</span>` : ""}</figcaption>
     </figure>`).join("")}</div>` : `<p class="muted">No live creative images synced yet.</p>`;
 
