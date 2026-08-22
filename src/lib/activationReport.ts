@@ -54,6 +54,15 @@ const BRAND_LOGO: Record<string, string> = {
   coolkidz: "/logos/Coolkidz Logo.png",
 };
 
+// Per-brand accent palette — Frida's own sub-brand colours (NoseFrida,
+// Windi, DermaFrida, Bath, FeverFrida, SmileFrida, MediFrida), so the report
+// reads as genuinely Frida-branded rather than a generic muted system. Falls
+// back to the muted editorial set for brands without one supplied yet.
+const BRAND_PALETTE: Record<string, { accent: string; swatches: string[] }> = {
+  frida: { accent: "#EA4C7C", swatches: ["#3FB8DD", "#EA4C7C", "#F5A868", "#BFDCCF", "#E9846E", "#F7D400", "#E39FB2"] },
+};
+const DEFAULT_PALETTE = { accent: "#4C6278", swatches: ["#4C6278", "#93767A", "#9C4F4C", "#3E453E", "#B7A99C"] };
+
 const esc = (s: string) => (s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const fmtDate = (s: string | null | undefined) => s ? new Date(s + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "—";
 const fmtDateShort = (s: string) => new Date(s + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" });
@@ -63,13 +72,15 @@ const monthLabel = (mk: string) => new Date(mk + "-01T00:00:00").toLocaleDateStr
 const DAY = 86400000;
 
 export function buildActivationReport(a: ActivationReportInput): string {
-  // A fixed report accent (the muted editorial palette) rather than the
-  // brand's own dashboard color — this report has its own designed look,
-  // consistent across brands, independent of whatever accent each brand
-  // uses in the rest of the dashboard.
-  const accent = "#4C6278";
+  // A fixed report palette per brand (not the brand's generic dashboard
+  // accent) — this report has its own designed look. Frida gets its real
+  // sub-brand colours; everything else falls back to a muted editorial set.
+  const brandKey = a.brand_name.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const palette = BRAND_PALETTE[brandKey] ?? DEFAULT_PALETTE;
+  const accent = palette.accent;
+  const swatch = (i: number) => palette.swatches[i % palette.swatches.length];
   const monogram = (a.brand_init || a.brand_name.slice(0, 2)).toUpperCase();
-  const logoPath = BRAND_LOGO[a.brand_name.toLowerCase().replace(/[^a-z0-9]/g, "")];
+  const logoPath = BRAND_LOGO[brandKey];
   const W0 = new Date(a.window.start + "T00:00:00").getTime();
   const W1 = new Date(a.window.end + "T00:00:00").getTime();
   const span = Math.max(1, (W1 - W0) / DAY);
@@ -77,9 +88,9 @@ export function buildActivationReport(a: ActivationReportInput): string {
 
   // ---- Competitors ----
   const domainOf = (u: string) => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return u; } };
-  const competitorCards = a.competitors.length ? a.competitors.map(c => `
+  const competitorCards = a.competitors.length ? a.competitors.map((c, i) => `
     <div class="card comp-card">
-      <div class="comp-bar"></div>
+      <div class="comp-bar" style="background:${swatch(i)}"></div>
       ${c.image_url ? `<img class="comp-img" src="${esc(c.image_url)}" alt="${esc(c.name)}">` : ""}
       <div class="comp-body">
         <h3>${esc(c.name)}</h3>
@@ -239,14 +250,15 @@ export function buildActivationReport(a: ActivationReportInput): string {
 <title>Activations · ${esc(a.brand_name)}</title>
 <style>
   * { box-sizing: border-box; }
-  body { font-family: -apple-system, "Segoe UI", sans-serif; color: #12161d; max-width: 980px; margin: 0 auto; padding: 0 32px 48px; background: #f2f4f6; }
+  body { font-family: -apple-system, "Segoe UI", sans-serif; color: #12161d; max-width: 980px; margin: 0 auto; padding: 0 32px 48px; background: #FBF7F2; }
   .head { display: flex; align-items: center; gap: 16px; padding: 36px 0 20px; }
   .mono { width: 52px; height: 52px; border-radius: 14px; background: ${accent}; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; flex-shrink: 0; }
   .brand-logo { max-height: 52px; max-width: 180px; width: auto; height: auto; object-fit: contain; flex-shrink: 0; }
   .head h1 { font-size: 25px; margin: 0 0 3px; color: #0f172a; }
   .head .sub { font-size: 12.5px; color: #64748b; }
   .head .gen { margin-left: auto; text-align: right; font-size: 11.5px; color: #94a3b8; }
-  .accent-bar { height: 4px; border-radius: 3px; background: linear-gradient(90deg, ${accent}, ${accent}55); margin-bottom: 24px; }
+  .accent-bar { display: flex; gap: 3px; height: 5px; margin-bottom: 24px; }
+  .accent-bar span { flex: 1; border-radius: 3px; }
   h2 { font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.1em; color: #0f172a; font-weight: 800; margin: 34px 0 14px; display: flex; align-items: center; gap: 8px; }
   h2::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: ${accent}; display: inline-block; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
@@ -286,8 +298,8 @@ export function buildActivationReport(a: ActivationReportInput): string {
   .marker .stem { width: 1px; background: #94a3b8; opacity: .4; }
   .marker .pip { width: 8px; height: 8px; border-radius: 50%; background: ${accent}; }
   .marker[data-kind="show"] .pip { border-radius: 2px; background: ${accent}; }
-  .marker[data-kind="peak"] .pip { background: #9C4F4C; }
-  .marker[data-kind="peak"] .lbl { color: #9C4F4C; }
+  .marker[data-kind="peak"] .pip { background: ${swatch(1)}; }
+  .marker[data-kind="peak"] .lbl { color: ${swatch(1)}; }
   .tbc { display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; padding: 1px 5px; border-radius: 3px; background: #F3E3D8; color: #8A5040; border: 1px solid #E8CDBB; }
   .axis { position: relative; display: flex; height: 34px; border-radius: 6px; overflow: hidden; border: 1px solid #e2e6ea; margin-top: 10px; }
   .phase { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; font-weight: 800; color: #fff; }
@@ -337,7 +349,7 @@ export function buildActivationReport(a: ActivationReportInput): string {
   .list-row .when { font-size: 11px; font-weight: 600; width: 100px; flex: none; }
   .list-row .what b { font-size: 13px; font-weight: 600; display: block; }
   .list-row .what span { font-size: 11.5px; color: #64748b; display: block; margin-top: 2px; }
-  .rec { font-size: 11.5px; color: #12161d; background: #f2f4f6; border-left: 2px solid ${accent}; padding: 6px 10px; border-radius: 0 5px 5px 0; margin-top: 6px; display: block; }
+  .rec { font-size: 11.5px; color: #12161d; background: #FBF7F2; border-left: 2px solid ${accent}; padding: 6px 10px; border-radius: 0 5px 5px 0; margin-top: 6px; display: block; }
   .rec b { font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; color: ${accent}; display: block; margin-bottom: 2px; }
 
   .foot { margin-top: 44px; font-size: 11px; color: #94a3b8; text-align: center; }
@@ -350,12 +362,12 @@ export function buildActivationReport(a: ActivationReportInput): string {
   <div class="head">
     ${logoPath ? `<img class="brand-logo" src="${esc(logoPath)}" alt="${esc(a.brand_name)}">` : `<div class="mono">${esc(monogram)}</div>`}
     <div>
-      <h1>Activations · ${esc(a.brand_name)}</h1>
+      <h1>Marketing Snapshot · ${esc(a.brand_name)}</h1>
       <div class="sub">${fmtDate(a.window.start)} to ${fmtDate(a.window.end)} — competitor landscape, tradeshows and the activation plan</div>
     </div>
     <div class="gen">Generated<br>${fmtDate(a.generated_at.slice(0, 10))}</div>
   </div>
-  <div class="accent-bar"></div>
+  <div class="accent-bar">${palette.swatches.map(c => `<span style="background:${c}"></span>`).join("")}</div>
 
   <h2>Competitor landscape</h2>
   <div class="grid">${competitorCards}</div>
