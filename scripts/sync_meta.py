@@ -146,15 +146,14 @@ def fetch_meta_ad_creatives(account_id, access_token, top_n=5):
     """Top-performing live ad copy + creative image (last 90 days), for the
     Marketing Snapshot report — mirrors fetch_google_ads_creatives."""
     params = {
-        # image_url/thumbnail_url alone are often a small (64x64) admin-UI
-        # thumbnail for carousel/video creatives — object_story_spec carries
-        # the actual full-size picture for those, so prefer it when present.
-        # thumbnail_width/height ask Meta to render thumbnail_url larger when
-        # that's genuinely the only option (e.g. some video ads).
+        # image_url/thumbnail_url and the object_story_spec "picture" fields
+        # are ALL small social-share-sized crops (Meta serves them at a fixed
+        # small size regardless of what's requested) — the only reliable way
+        # to get the real full-resolution creative is to resolve image_hash
+        # through the /adimages endpoint below.
         "fields": "name,campaign{name},insights.date_preset(last_90d){clicks,impressions},"
-                  "creative{title,body,image_url,thumbnail_url,"
-                  "object_story_spec{link_data{picture,child_attachments{picture}},video_data{image_url}}}",
-        "thumbnail_width": 600, "thumbnail_height": 600,
+                  "creative{title,body,image_hash,thumbnail_url,"
+                  "object_story_spec{link_data{image_hash,child_attachments{image_hash}},video_data{image_url}}}",
         "effective_status": json.dumps(["ACTIVE"]),
         "access_token": access_token,
         "limit": 100,
@@ -168,7 +167,8 @@ def fetch_meta_ad_creatives(account_id, access_token, top_n=5):
         ads.extend(resp.get("data", []))
         url = resp.get("paging", {}).get("next")
 
-    ranked = []
+    prelim = []
+    hashes = set()
     for ad in ads:
         cr = ad.get("creative") or {}
         body = (cr.get("body") or "").strip()
@@ -178,24 +178,40 @@ def fetch_meta_ad_creatives(account_id, access_token, top_n=5):
         campaign_name = (ad.get("campaign") or {}).get("name", "")
         if "[test]" in campaign_name.lower() or campaign_name.lower().startswith("test"):
             continue
-        insights = (ad.get("insights", {}).get("data") or [{}])[0]
         story = cr.get("object_story_spec") or {}
         link_data = story.get("link_data") or {}
         video_data = story.get("video_data") or {}
         child = (link_data.get("child_attachments") or [{}])[0]
-        # Prefer a real full-size picture over the small admin thumbnail —
-        # single-image ads have image_url; carousels/video need to reach
-        # into object_story_spec for one that isn't a 64x64 crop.
-        image_url = (cr.get("image_url") or link_data.get("picture") or child.get("picture")
-                     or video_data.get("image_url") or cr.get("thumbnail_url") or "")
-        ranked.append({
-            "campaign_name": campaign_name,
-            "ad_name": ad.get("name", ""),
-            "title": title, "body": body,
-            "image_url": image_url,
+        image_hash = cr.get("image_hash") or link_data.get("image_hash") or child.get("image_hash")
+        if image_hash:
+            hashes.add(image_hash)
+        insights = (ad.get("insights", {}).get("data") or [{}])[0]
+        prelim.append({
+            "campaign_name": campaign_name, "ad_name": ad.get("name", ""),
+            "title": title, "body": body, "image_hash": image_hash,
+            "fallback_image_url": video_data.get("image_url") or cr.get("thumbnail_url") or "",
             "clicks": int(float(insights.get("clicks", 0))),
             "impressions": int(float(insights.get("impressions", 0))),
         })
+
+    # Resolve hashes -> real full-resolution URLs in one batch call.
+    hash_url = {}
+    if hashes:
+        hp = {"hashes": json.dumps(list(hashes)), "fields": "hash,url", "access_token": access_token}
+        hurl = f"https://graph.facebook.com/{API_VERSION}/{account_id}/adimages?{urllib.parse.urlencode(hp)}"
+        try:
+            resp = meta_get(hurl)
+            for row in resp.get("data", []):
+                if row.get("hash") and row.get("url"):
+                    hash_url[row["hash"]] = row["url"]
+        except Exception:
+            pass
+
+    ranked = []
+    for r in prelim:
+        image_url = hash_url.get(r.pop("image_hash")) or r.pop("fallback_image_url")
+        r["image_url"] = image_url
+        ranked.append(r)
     ranked.sort(key=lambda r: r["clicks"], reverse=True)
     return ranked[:top_n]
 
