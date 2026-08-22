@@ -17,6 +17,7 @@ type BudgetMonth = { month_key: string; planned: number; actual: number };
 type Decision = { due_label: string | null; question: string; recommendation: string | null };
 type Ask = { audience: string; ask: string; why: string | null };
 type Creative = { ad_group: string | null; campaign_name: string | null; headlines: string[]; descriptions: string[]; clicks: number };
+type AdImage = { campaign_name: string | null; asset_group: string | null; image_url: string };
 
 export type ActivationReportInput = {
   brand_name: string;
@@ -34,6 +35,7 @@ export type ActivationReportInput = {
   decisions: Decision[];
   asks: Ask[];
   adCreatives: Creative[];
+  adImages: AdImage[];
 };
 
 const esc = (s: string) => (s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -191,6 +193,12 @@ export function buildActivationReport(a: ActivationReportInput): string {
       </div>
     </div>`).join("") : `<p class="muted">No live ad copy synced yet.</p>`;
 
+  const imageGallery = a.adImages.length ? `<div class="img-grid">${a.adImages.map(img => `
+    <figure class="ad-img">
+      <img src="${esc(img.image_url)}" alt="${esc(img.campaign_name || "Ad creative")}" loading="lazy">
+      <figcaption>${esc(img.campaign_name || "—")}${img.asset_group ? ` <span class="muted">· ${esc(img.asset_group)}</span>` : ""}</figcaption>
+    </figure>`).join("")}</div>` : `<p class="muted">No live creative images synced yet (Performance Max campaigns only).</p>`;
+
   return `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Activations · ${esc(a.brand_name)}</title>
@@ -207,6 +215,10 @@ export function buildActivationReport(a: ActivationReportInput): string {
   h2::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: ${accent}; display: inline-block; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   .grid.cards3 { grid-template-columns: repeat(3, 1fr); }
+  .img-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .ad-img { margin: 0; background: #fff; border: 1px solid #e2e6ea; border-radius: 10px; overflow: hidden; }
+  .ad-img img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #f1f5f9; }
+  .ad-img figcaption { font-size: 10.5px; color: #64748b; padding: 6px 8px; }
   .card { position: relative; background: #fff; border: 1px solid #e2e6ea; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 2px rgba(15,23,42,0.03); }
   .comp-card { padding: 16px 18px 16px 20px; }
   .comp-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: ${accent}; }
@@ -290,7 +302,7 @@ export function buildActivationReport(a: ActivationReportInput): string {
   .foot { margin-top: 44px; font-size: 11px; color: #94a3b8; text-align: center; }
   .dl { display: block; margin: 20px auto 0; font-size: 13px; font-weight: 700; color: #fff; background: ${accent}; border: 0; border-radius: 8px; padding: 10px 20px; cursor: pointer; }
   @media print { body { padding: 0 24px; background: #fff; } .no-print { display: none; } @page { size: A4 landscape; margin: 10mm; } }
-  @media (max-width: 720px) { .grid, .grid.cards3, .show-grid, .two-col { grid-template-columns: 1fr; } }
+  @media (max-width: 720px) { .grid, .grid.cards3, .show-grid, .two-col, .img-grid { grid-template-columns: repeat(2, 1fr); } }
 </style>
 </head>
 <body>
@@ -325,8 +337,9 @@ export function buildActivationReport(a: ActivationReportInput): string {
   <h2>Asks of Global</h2>
   <div class="panel">${asksHtml}</div>
 
-  <h2>Google Ads — top copy live now</h2>
-  <div class="grid">${adBlocks}</div>
+  <h2>Google Ads — live creative</h2>
+  ${imageGallery}
+  <div class="grid" style="margin-top:14px">${adBlocks}</div>
 
   <button class="dl no-print" onclick="window.print()">⬇ Download PDF</button>
   <p class="foot">${esc(ENTITY.legalName)} · ${esc(ENTITY.address)} · prepared for internal/partner sharing.</p>

@@ -1077,6 +1077,45 @@ def fetch_google_ads_creatives(customer_id, creds, top_n=8):
                      key=lambda r: r['clicks'], reverse=True)
     return ranked[:top_n]
 
+def fetch_google_ads_images(customer_id, creds, top_n=12):
+    """Live creative images from Performance Max asset groups — the marketing
+    images actually running now, for the Activations report's visual gallery.
+    Standard Display (responsive_display_ad) isn't covered here; PMax is the
+    dominant modern campaign type and this keeps the query low-risk."""
+    access_token = _google_access_token(creds)
+    cid = customer_id.replace('-', '')
+    query = '''
+    SELECT campaign.name, asset_group.name, asset.image_asset.full_size.url
+    FROM asset_group_asset
+    WHERE asset_group_asset.field_type = 'MARKETING_IMAGE'
+      AND asset_group_asset.status = 'ENABLED'
+      AND asset.type = 'IMAGE'
+    LIMIT 100
+    '''
+    url = f'https://googleads.googleapis.com/v24/customers/{cid}/googleAds:search'
+    ctx = ssl.create_default_context()
+    req = urllib.request.Request(url, data=json.dumps({'query': query}).encode(), method='POST')
+    req.add_header('Authorization', f'Bearer {access_token}')
+    req.add_header('developer-token', creds['developerToken'])
+    req.add_header('Content-Type', 'application/json')
+    req.add_header('login-customer-id', '8923727576')
+    with urllib.request.urlopen(req, context=ctx, timeout=30) as r:
+        data = json.loads(r.read().decode())
+
+    seen = set()
+    images = []
+    for row in data.get('results', []):
+        img_url = row.get('asset', {}).get('imageAsset', {}).get('fullSize', {}).get('url')
+        if not img_url or img_url in seen:
+            continue
+        seen.add(img_url)
+        images.append({
+            'campaign_name': row.get('campaign', {}).get('name', ''),
+            'asset_group': row.get('assetGroup', {}).get('name', ''),
+            'image_url': img_url,
+        })
+    return images[:top_n]
+
 def sync_google_ads(config):
     if not os.path.exists(GOOGLE_ADS_CREDS_PATH):
         return
@@ -1128,6 +1167,17 @@ def sync_google_ads(config):
                     print(f'       {len(creative_db)} ad copy sets synced')
             except Exception as ce:
                 print(f'       ⚠ ad copy sync skipped: {ce}')
+
+            # Live creative images (Performance Max), same wholesale-replace pattern.
+            try:
+                images = fetch_google_ads_images(cid, creds)
+                if images:
+                    sb_delete_where('google_ads_images', 'brand_id', bid)
+                    image_db = [{'brand_id': bid, **r} for r in images]
+                    sb_upsert('google_ads_images', image_db)
+                    print(f'       {len(image_db)} ad images synced')
+            except Exception as ie:
+                print(f'       ⚠ ad image sync skipped: {ie}')
 
             may = next((r for r in rows if r['month_key'] == '2026-05'), {})
             print(f'       May spend: ${may.get("spend",0):,.2f} | ROAS: {may.get("roas",0):.2f} | Clicks: {may.get("clicks",0):,}')
