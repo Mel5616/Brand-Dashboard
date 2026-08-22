@@ -15,7 +15,7 @@ const missing = (status: number, body: string) => status === 404 || /PGRST205|do
 
 const TABLES: Record<string, string> = {
   trade_date: "activation_trade_dates", phase: "activation_phases", pillar: "activation_pillars",
-  decision: "activation_decisions", ask: "activation_asks",
+  decision: "activation_decisions", ask: "activation_asks", note: "activation_notes",
 };
 
 function monthKeysBetween(from: string, to: string): string[] {
@@ -69,17 +69,21 @@ export async function GET(req: Request) {
   const to = url.searchParams.get("to");
   if (!brandId || !/^\d+$/.test(brandId)) return NextResponse.json({ ok: false }, { status: 400 });
 
-  const [tdRes, phRes, plRes, dcRes, akRes] = await Promise.all([
+  const [tdRes, phRes, plRes, dcRes, akRes, noRes] = await Promise.all([
     fetch(`${sbUrl}/rest/v1/activation_trade_dates?brand_id=eq.${brandId}&select=*&order=date.asc`, { headers: hdr(), cache: "no-store" }),
     fetch(`${sbUrl}/rest/v1/activation_phases?brand_id=eq.${brandId}&select=*&order=sort_order.asc`, { headers: hdr(), cache: "no-store" }),
     fetch(`${sbUrl}/rest/v1/activation_pillars?brand_id=eq.${brandId}&select=*&order=sort_order.asc`, { headers: hdr(), cache: "no-store" }),
     fetch(`${sbUrl}/rest/v1/activation_decisions?brand_id=eq.${brandId}&select=*&order=sort_order.asc`, { headers: hdr(), cache: "no-store" }),
     fetch(`${sbUrl}/rest/v1/activation_asks?brand_id=eq.${brandId}&select=*&order=sort_order.asc`, { headers: hdr(), cache: "no-store" }),
+    fetch(`${sbUrl}/rest/v1/activation_notes?brand_id=eq.${brandId}&select=section,body`, { headers: hdr(), cache: "no-store" }),
   ]);
   const tdText = await tdRes.text();
   if (!tdRes.ok && missing(tdRes.status, tdText)) return NextResponse.json({ ok: false, needsSetup: true });
 
   const budget = (acc.role === "admin" && from && to) ? await fetchLiveBudget(Number(brandId), from, to).catch(() => null) : null;
+  const noteRows = noRes.ok ? JSON.parse((await noRes.text()) || "[]") : [];
+  const notes: Record<string, string> = {};
+  for (const r of noteRows) notes[r.section] = r.body;
 
   return NextResponse.json({
     ok: true,
@@ -88,6 +92,7 @@ export async function GET(req: Request) {
     pillars: plRes.ok ? JSON.parse(await plRes.text() || "[]") : [],
     decisions: dcRes.ok ? JSON.parse(await dcRes.text() || "[]") : [],
     asks: akRes.ok ? JSON.parse(await akRes.text() || "[]") : [],
+    notes,
     budget,
   });
 }
@@ -98,6 +103,16 @@ export async function POST(req: Request) {
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   const table = TABLES[b.kind];
   if (!table || !b.brand_id) return NextResponse.json({ ok: false, error: "bad kind/brand_id" }, { status: 400 });
+
+  // Notes key on (brand_id, section) — upsert rather than always-insert.
+  if (b.kind === "note") {
+    if (!b.section) return NextResponse.json({ ok: false, error: "section required" }, { status: 400 });
+    const row = { brand_id: b.brand_id, section: b.section, body: b.body ?? "", updated_at: new Date().toISOString() };
+    const res = await fetch(`${sbUrl}/rest/v1/activation_notes?on_conflict=brand_id,section`, { method: "POST", headers: hdr({ Prefer: "resolution=merge-duplicates,return=minimal" }), body: JSON.stringify(row) });
+    if (!res.ok) { const text = await res.text(); return NextResponse.json({ ok: false, needsSetup: missing(res.status, text), error: text.slice(0, 200) }, { status: 500 }); }
+    return NextResponse.json({ ok: true });
+  }
+
   const { kind, ...row } = b;
   const res = await fetch(`${sbUrl}/rest/v1/${table}`, { method: "POST", headers: hdr({ Prefer: "return=representation" }), body: JSON.stringify(row) });
   const text = await res.text();

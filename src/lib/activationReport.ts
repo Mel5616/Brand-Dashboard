@@ -36,6 +36,7 @@ export type ActivationReportInput = {
   asks: Ask[];
   adCreatives: Creative[];
   adImages: AdImage[];
+  sectionNotes?: Record<string, string>;
 };
 
 // Brand logo by normalized name (files live in /public/logos — same map used
@@ -135,7 +136,9 @@ export function buildActivationReport(a: ActivationReportInput): string {
   }
   const showItems = a.tradeshows.map(s => ({ x: pos(s.date_start), label: s.name, date: s.date_start, end: s.date_end, confirmed: true, kind: "show" }));
   const tradeItems = a.tradeDates.map(t => ({ x: pos(t.date), label: t.label, date: t.date, end: t.end_date, confirmed: t.confirmed, kind: t.kind }));
-  const markersHtml = (showItems.length ? renderLane(showItems, "Baby expos") : "") + (tradeItems.length ? renderLane(tradeItems, "Retail moments") : "");
+  const babyExposNote = a.sectionNotes?.baby_expos
+    ? `<div class="lane-note">${a.sectionNotes.baby_expos.split("\n\n").map(p => `<p>${esc(p)}</p>`).join("")}</div>` : "";
+  const markersHtml = (showItems.length ? renderLane(showItems, "Baby expos") + babyExposNote : "") + (tradeItems.length ? renderLane(tradeItems, "Retail moments") : "");
 
   // ---- Campaign bars, packed into non-overlapping tracks ----
   // Compute the RENDERED width (with its min-width floor) up front, and pack
@@ -291,6 +294,9 @@ export function buildActivationReport(a: ActivationReportInput): string {
   .spine-inner { width: 100%; }
   .markers { display: flex; flex-direction: column; gap: 28px; padding-bottom: 16px; }
   .lane { position: relative; border-bottom: 1px dashed #e2e6ea; padding-bottom: 16px; }
+  .lane-note { background: ${accent}0d; border-left: 3px solid ${accent}; border-radius: 0 8px 8px 0; padding: 12px 16px; margin: -4px 0 18px; }
+  .lane-note p { font-size: 12.5px; line-height: 1.6; color: #334155; margin: 0 0 8px; }
+  .lane-note p:last-child { margin-bottom: 0; }
   .lane-tag { position: absolute; left: 0; top: 0; font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; }
   .marker { position: absolute; bottom: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; width: 132px; }
   .marker .lbl { font-size: 10.5px; font-weight: 600; line-height: 1.3; text-align: center; color: #0f172a; padding-bottom: 5px; }

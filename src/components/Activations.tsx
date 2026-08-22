@@ -61,6 +61,7 @@ export function Activations({ brands, tradeshows, tradeshowBrands, admin = false
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [asks, setAsks] = useState<Ask[]>([]);
   const [budget, setBudget] = useState<BudgetData | null>(null);
+  const [sectionNotes, setSectionNotes] = useState<Record<string, string>>({});
   const [planNeedsSetup, setPlanNeedsSetup] = useState(false);
 
   const [loading, setLoading] = useState(true);
@@ -82,7 +83,7 @@ export function Activations({ brands, tradeshows, tradeshowBrands, admin = false
       setShares(sh.items ?? []);
       if (plan.needsSetup) { setPlanNeedsSetup(true); setLoading(false); return; }
       setPhases(plan.phases ?? []); setPillars(plan.pillars ?? []); setTradeDates(plan.tradeDates ?? []);
-      setDecisions(plan.decisions ?? []); setAsks(plan.asks ?? []);
+      setDecisions(plan.decisions ?? []); setAsks(plan.asks ?? []); setSectionNotes(plan.notes ?? {});
       const ph = plan.phases ?? [];
       const winStart = ph.length ? ph.reduce((m: string, p: Phase) => p.start_date < m ? p.start_date : m, ph[0].start_date) : today;
       const winEnd = ph.length ? ph.reduce((m: string, p: Phase) => p.end_date > m ? p.end_date : m, ph[0].end_date) : sixMonthsOut;
@@ -131,8 +132,9 @@ export function Activations({ brands, tradeshows, tradeshowBrands, admin = false
       asks: asks.map(a => ({ audience: a.audience, ask: a.ask, why: a.why })),
       adCreatives: creatives.map(c => ({ ad_group: c.ad_group, campaign_name: c.campaign_name, headlines: c.headlines, descriptions: c.descriptions, clicks: c.clicks })),
       adImages: adImages.map(i => ({ campaign_name: i.campaign_name, asset_group: i.asset_group, image_url: i.image_url })),
+      sectionNotes,
     });
-  }, [brand, windowRange, competitors, windowShows, phases, pillars, tradeDates, brandCampaigns, budget, decisions, asks, creatives, adImages]);
+  }, [brand, windowRange, competitors, windowShows, phases, pillars, tradeDates, brandCampaigns, budget, decisions, asks, creatives, adImages, sectionNotes]);
 
   // Live preview iframe, auto-sized to its content (same pattern as Brand Snapshot).
   const frameRef = useRef<HTMLIFrameElement>(null);
@@ -373,6 +375,9 @@ export function Activations({ brands, tradeshows, tradeshowBrands, admin = false
                 </div>
               </details>
 
+              {/* Baby expos idea — free text shown under that lane on the spine */}
+              <SectionNoteEditor brandId={brandId} sectionKey="baby_expos" label="Baby expos — the idea" value={sectionNotes.baby_expos ?? ""} onSaved={v => setSectionNotes(prev => ({ ...prev, baby_expos: v }))} />
+
               {/* Campaign pillar/confirmed */}
               <details className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
                 <summary className="text-sm font-semibold text-slate-700 cursor-pointer">Campaigns in window ({brandCampaigns.length}) — assign pillar</summary>
@@ -496,5 +501,30 @@ function PillarAdd({ brandId, onAdd }: { brandId: number | undefined; onAdd: (it
       <input type="color" value={f.color} onChange={e => setF(p => ({ ...p, color: e.target.value }))} className="w-9 h-9 rounded border border-gray-200" />
       <button onClick={add} className="text-xs font-semibold text-emerald-600 hover:underline">+ Add pillar</button>
     </div>
+  );
+}
+
+// Free-text note tied to one spine section (e.g. "baby_expos"), rendered as
+// a callout in the report under that section's header. Paragraphs separated
+// by a blank line.
+function SectionNoteEditor({ brandId, sectionKey, label, value, onSaved }: { brandId: number | undefined; sectionKey: string; label: string; value: string; onSaved: (v: string) => void }) {
+  const [draft, setDraft] = useState(value);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => setDraft(value), [value]);
+  async function save() {
+    if (!brandId) return;
+    setSaving(true);
+    const d = await fetch("/api/activation-plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "note", brand_id: brandId, section: sectionKey, body: draft }) }).then(r => r.json());
+    setSaving(false);
+    if (d.ok) onSaved(draft);
+  }
+  return (
+    <details className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+      <summary className="text-sm font-semibold text-slate-700 cursor-pointer">{label}</summary>
+      <div className="mt-3 space-y-2">
+        <textarea value={draft} onChange={e => setDraft(e.target.value)} rows={6} placeholder="One blank line between paragraphs" className={inp + " w-full"} />
+        <button onClick={save} disabled={saving || draft === value} className="text-xs font-semibold text-emerald-600 disabled:opacity-40 hover:underline">{saving ? "Saving…" : "Save"}</button>
+      </div>
+    </details>
   );
 }
