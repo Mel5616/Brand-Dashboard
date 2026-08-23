@@ -8,6 +8,7 @@ import { PinterestAdsChart } from "./PinterestAdsChart";
 import { PinterestOrganicPanel } from "./PinterestOrganicPanel";
 import { AmazonAdsCard } from "./AmazonAdsCard";
 import { AdsDailyRange } from "./AdsDailyRange";
+import { AdCreativePanel } from "./AdCreativePanel";
 import { CommandPalette } from "./CommandPalette";
 import { SyncStatusPanel } from "./SyncStatusPanel";
 import { ForecastPanel } from "./ForecastPanel";
@@ -1711,6 +1712,8 @@ export function DashboardTabs({
               <GoogleAdsChart key={fy} brands={filteredBrands} data={filteredAds} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} wholeYear={wholeYear} />
 
               <AdsDailyRange platform="google" brandFilter={brandFilter} accent="#4285F4" />
+
+              {brandFilter !== "all" && <AdCreativePanel brandId={brandFilter} platform="google" />}
 
               {/* Per-campaign breakdown for the selected brand */}
               {brandFilter !== "all" && (() => {
