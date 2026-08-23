@@ -16,7 +16,7 @@ type SpineCampaign = { id: string; campaign: string; channel: string | null; sta
 type BudgetMonth = { month_key: string; planned: number; actual: number };
 type Decision = { due_label: string | null; question: string; recommendation: string | null };
 type Ask = { audience: string; ask: string; why: string | null };
-type Creative = { ad_group: string | null; campaign_name: string | null; headlines: string[]; descriptions: string[]; clicks: number };
+type Creative = { ad_group: string | null; campaign_name: string | null; headlines: string[]; descriptions: string[]; clicks: number; final_url?: string | null };
 type AdImage = { campaign_name: string | null; asset_group: string | null; image_url: string };
 type MetaCreative = { campaign_name: string | null; ad_name: string | null; title: string | null; body: string | null; clicks: number };
 type MetaAdImage = { campaign_name: string | null; ad_name: string | null; image_url: string };
@@ -235,17 +235,28 @@ export function buildActivationReport(a: ActivationReportInput): string {
       <span class="what"><b>${esc(x.ask)}</b>${x.why ? `<span>${esc(x.why)}</span>` : ""}</span>
     </div>`).join("") : `<p class="muted">Nothing outstanding.</p>`;
 
+  const domainOfUrl = (u?: string | null) => { if (!u) return "example.com"; try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return u; } };
   const cleanGoogleCreatives = a.adCreatives.filter(c => !/\[test\]/i.test(c.campaign_name || "")).slice(0, 5);
-  const adBlocks = cleanGoogleCreatives.length ? cleanGoogleCreatives.map(c => `
+  const adBlocks = cleanGoogleCreatives.length ? cleanGoogleCreatives.map(c => {
+    const domain = domainOfUrl(c.final_url);
+    const previewHeadline = c.headlines.slice(0, 3).join(" | ");
+    const previewDesc = c.descriptions.slice(0, 2).join(" ");
+    return `
     <div class="card">
       <div class="card-body">
         <h3>${esc(c.campaign_name || "—")}${c.ad_group ? ` <span class="muted">· ${esc(c.ad_group)}</span>` : ""}</h3>
-        <p class="label">Headlines</p>
+        <div class="serp-preview">
+          <p class="serp-url"><span class="serp-ad-badge">Ad</span> ${esc(domain)}</p>
+          <p class="serp-headline">${esc(previewHeadline)}</p>
+          <p class="serp-desc">${esc(previewDesc)}</p>
+        </div>
+        <p class="label">All headlines</p>
         <ul>${c.headlines.slice(0, 5).map(h => `<li>${esc(h)}</li>`).join("")}</ul>
-        <p class="label">Descriptions</p>
+        <p class="label">All descriptions</p>
         <ul>${c.descriptions.slice(0, 4).map(d => `<li>${esc(d)}</li>`).join("")}</ul>
       </div>
-    </div>`).join("") : `<p class="muted">No live ad copy synced yet.</p>`;
+    </div>`;
+  }).join("") : `<p class="muted">No live ad copy synced yet.</p>`;
 
   const imageGallery = a.adImages.length ? `<div class="img-grid">${a.adImages.map(img => `
     <figure class="ad-img">
@@ -302,6 +313,11 @@ export function buildActivationReport(a: ActivationReportInput): string {
   .card h3 { font-size: 14px; margin: 0 0 8px; color: #0f172a; }
   .card ul { margin: 0; padding-left: 18px; font-size: 12.5px; line-height: 1.65; color: #475569; }
   .card .label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin: 10px 0 4px; }
+  .serp-preview { font-family: Arial, sans-serif; background: #fff; border: 1px solid #e2e6ea; border-radius: 8px; padding: 10px 12px; margin-top: 4px; }
+  .serp-url { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #202124; margin: 0 0 2px; }
+  .serp-ad-badge { font-size: 10px; font-weight: 700; color: #fff; background: #4C6278; border-radius: 3px; padding: 0 4px; line-height: 15px; }
+  .serp-headline { font-size: 16px; color: #1a0dab; margin: 2px 0 3px; line-height: 1.3; }
+  .serp-desc { font-size: 12.5px; color: #4d5156; line-height: 1.4; margin: 0; }
   .card-body { padding: 14px 16px; }
   .card-strip { height: 4px; }
   .card-img { width: 100%; height: 130px; object-fit: cover; display: block; background: #f1f5f9; }
