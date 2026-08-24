@@ -145,6 +145,25 @@ function KitEditor({ kit, brand, onPatch, onDelete, attempts }: { kit: Kit; bran
     if (d.ok) onOk();
   }
 
+  const [draftVersion, setDraftVersion] = useState(0);
+  const [drafting, setDrafting] = useState(false);
+  async function draftWithAI() {
+    setDrafting(true); setMsg("");
+    const d = await fetch("/api/retailer-kits/draft", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kit_id: kit.id }) }).then(r => r.json()).catch(() => null);
+    setDrafting(false);
+    if (!d || d.error) { setMsg(d?.error || "Couldn't draft — try again."); return; }
+    onPatch({ tagline: d.draft.tagline, overview: d.draft.overview });
+    setDraftVersion(v => v + 1);
+    const base = products.length;
+    const draftProducts = d.draft.products as { name: string; description: string }[];
+    for (let i = 0; i < draftProducts.length; i++) {
+      const p = draftProducts[i];
+      await itemAdd("product", { name: p.name, description: p.description, sort_order: base + i }, item => setProducts(prev => [...prev, item]));
+    }
+    const used = [d.sources?.profile && "brand profile", d.sources?.siteFeed && "live site feed", d.sources?.factSheet && "fact sheet"].filter(Boolean).join(", ");
+    setMsg(`Drafted from ${used || "available brand material"} — review everything below before publishing.`);
+  }
+
   if (loading) return <div className="px-5 pb-5 text-sm text-gray-400">Loading…</div>;
 
   return (
@@ -153,11 +172,15 @@ function KitEditor({ kit, brand, onPatch, onDelete, attempts }: { kit: Kit; bran
 
       {/* overview + publish */}
       <Section title="Overview & sharing">
-        <div className="grid sm:grid-cols-2 gap-2.5">
-          <input defaultValue={kit.title} onBlur={e => onPatch({ title: e.target.value })} placeholder="Kit title" className={inp} />
-          <input defaultValue={kit.tagline ?? ""} onBlur={e => onPatch({ tagline: e.target.value })} placeholder="Tagline (optional)" className={inp} />
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs text-gray-400 max-w-md">Pulls from this brand's Briefing Engine profile, live site feed and Product Information fact sheet — nothing is invented. Review before publishing.</p>
+          <button onClick={draftWithAI} disabled={drafting} className="text-xs font-semibold text-white bg-violet-500 hover:bg-violet-600 disabled:opacity-50 rounded-lg px-3.5 py-2 shrink-0">{drafting ? "Drafting…" : "✨ Draft with AI"}</button>
         </div>
-        <textarea defaultValue={kit.overview ?? ""} onBlur={e => onPatch({ overview: e.target.value })} rows={5} placeholder="Brand overview — story, positioning, what makes it worth stocking…" className={inp + " w-full"} />
+        <div className="grid sm:grid-cols-2 gap-2.5">
+          <input key={`title-${draftVersion}`} defaultValue={kit.title} onBlur={e => onPatch({ title: e.target.value })} placeholder="Kit title" className={inp} />
+          <input key={`tagline-${draftVersion}`} defaultValue={kit.tagline ?? ""} onBlur={e => onPatch({ tagline: e.target.value })} placeholder="Tagline (optional)" className={inp} />
+        </div>
+        <textarea key={`overview-${draftVersion}`} defaultValue={kit.overview ?? ""} onBlur={e => onPatch({ overview: e.target.value })} rows={5} placeholder="Brand overview — story, positioning, what makes it worth stocking…" className={inp + " w-full"} />
         <div className="flex items-center gap-3">
           <label className="text-xs font-semibold text-amber-600 hover:underline cursor-pointer">
             {kit.hero_image_url ? "Change hero image" : "+ Add hero image"}
