@@ -17,6 +17,11 @@ function clean(b: any) {
   return row;
 }
 
+// Sentinel brand id for portfolio-wide entries (tradeshows) that shouldn't be
+// duplicated across every participating brand's own row. Kept out of the
+// range of real brand ids in `brands` so it can never collide.
+export const COOLKIDZ_TIMELINE_BRAND = -1;
+
 const isoDate = /^\d{4}-\d{2}-\d{2}$/;
 async function sb(path: string) {
   try {
@@ -39,16 +44,23 @@ async function pulledEvents() {
 
   const out: any[] = [];
 
-  const showsById: Record<string, any> = {};
-  for (const s of shows) showsById[s.id] = s;
-  for (const link of showBrands) {
-    const show = showsById[link.tradeshow_id];
-    if (!show || !show.date_start) continue;
+  const brandNameById: Record<number, string> = {};
+  for (const b of brands) brandNameById[b.id] = b.name;
+
+  // Shows are a Coolkidz-wide activity, not a per-brand one — list each show
+  // once (under the COOLKIDZ_TIMELINE_BRAND row) instead of duplicating it
+  // across every participating brand's own row.
+  const brandsByShow: Record<string, string[]> = {};
+  for (const link of showBrands) (brandsByShow[link.tradeshow_id] = brandsByShow[link.tradeshow_id] || []).push(brandNameById[link.brand_id] || String(link.brand_id));
+  for (const show of shows) {
+    if (!show.date_start) continue;
+    const participants = (brandsByShow[show.id] || []).sort();
     out.push({
-      id: `ts-${link.tradeshow_id}-${link.brand_id}`, source: "tradeshows", brand_id: link.brand_id,
+      id: `ts-${show.id}`, source: "tradeshows", brand_id: COOLKIDZ_TIMELINE_BRAND,
       event_type: "trade", title: show.name, date: show.date_start, end_date: show.date_end || null,
       product_name: null, quantity: null, status: "locked",
-      note: [show.location, show.state].filter(Boolean).join(", ") || null, image_url: null,
+      note: [[show.location, show.state].filter(Boolean).join(", "), participants.length ? `Brands: ${participants.join(", ")}` : null].filter(Boolean).join(" — ") || null,
+      image_url: null,
     });
   }
 

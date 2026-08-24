@@ -32,6 +32,11 @@ const TYPE_META: Record<EventType, { label: string; short: string; color: string
 const TYPES = Object.keys(TYPE_META) as EventType[];
 const SOURCE_META: Record<Source, string> = { tradeshows: "Synced from Tradeshows", campaigns: "Synced from Campaign Calendar", new_products: "Synced from New Products" };
 
+// Tradeshows are pulled in once per show (not once per participating brand)
+// under this pseudo "brand" row — matches COOLKIDZ_TIMELINE_BRAND in
+// src/app/api/timeline-events/route.ts.
+const COOLKIDZ_BRAND: Brand = { id: -1, name: "Coolkidz (tradeshows)", color: "#0f172a" };
+
 const DAY = 86400000;
 const inp = "text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400";
 const toMs = (s: string) => new Date(s + "T00:00:00Z").getTime();
@@ -54,7 +59,7 @@ function Pill({ active, color, onClick, children }: { active: boolean; color: st
 }
 
 export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: boolean }) {
-  const live = brands.filter(b => b.live !== false);
+  const live = [...brands.filter(b => b.live !== false), COOLKIDZ_BRAND];
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [needsSetupBase, setNeedsSetupBase] = useState(false);
@@ -76,7 +81,7 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
   useEffect(reload, []);
 
   const today = useMemo(() => { const n = new Date(); return Date.UTC(n.getFullYear(), n.getMonth(), n.getDate()); }, []);
-  const brandOf = (id: number) => brands.find(b => b.id === id);
+  const brandOf = (id: number) => id === COOLKIDZ_BRAND.id ? COOLKIDZ_BRAND : brands.find(b => b.id === id);
   const statusOf = (e: TimelineEvent): Status => (e.status === "working" ? "working" : "locked");
 
   const matches = (e: TimelineEvent) =>
