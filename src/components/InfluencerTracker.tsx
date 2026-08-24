@@ -80,15 +80,16 @@ export function InfluencerTracker({ canEdit = false }: { canEdit?: boolean }) {
     return clean.slice(1).map(r => Object.fromEntries(headers.map((h, i) => [h, (r[i] ?? "").trim()])));
   }
 
-  async function uploadProducts(file: File) {
+  async function uploadProducts(file: File, replace: boolean) {
     setProdBusy(true); setProdMsg("");
     try {
       const parsed = parseCSV(await file.text());
       const rows = parsed.map(r => ({ style_code: r.style_code || r.sku, product_name: r.product_name || r.product || r.name, brand: r.brand, cost_price: r.cost_price || r.cost, rrp: r.rrp }));
       const valid = rows.filter(r => r.style_code);
       if (valid.length === 0) { setProdMsg("No rows with a style_code — check the headers."); setProdBusy(false); return; }
-      const res = await fetch("/api/influencer/products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows: valid, replace: true }) }).then(r => r.json()).catch(() => ({ ok: false }));
-      setProdMsg(res.ok ? `✓ Loaded ${res.count} products${res.skipped ? ` (skipped ${res.skipped} blank/zz)` : ""} — catalogue replaced.` : (res.error || "Upload failed."));
+      const res = await fetch("/api/influencer/products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows: valid, replace }) }).then(r => r.json()).catch(() => ({ ok: false }));
+      setProdMsg(res.ok ? `✓ Loaded ${res.count} products${res.skipped ? ` (skipped ${res.skipped} blank/zz)` : ""}${replace ? " — catalogue replaced." : " — added/updated, rest of the catalogue untouched."}` : (res.error || "Upload failed."));
+      if (res.ok) load();
     } catch { setProdMsg("Couldn't read the file."); }
     setProdBusy(false);
   }
@@ -275,10 +276,14 @@ export function InfluencerTracker({ canEdit = false }: { canEdit?: boolean }) {
         </div>
         {canEdit && <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <h3 className="text-sm font-semibold text-slate-700">Product catalogue</h3>
-          <p className="text-[11px] text-gray-400 mt-0.5 mb-3">Upload a CSV to replace the gifting product list (used for cost &amp; ROI). Same template each time.</p>
+          <p className="text-[11px] text-gray-400 mt-0.5 mb-3">Add a few products for a brand, or replace the whole gifting list (used for cost &amp; ROI). Same template either way.</p>
           <label className={`block text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2 text-center cursor-pointer ${prodBusy ? "opacity-50" : ""}`}>
-            {prodBusy ? "Uploading…" : "Upload CSV (replace all)"}
-            <input type="file" accept=".csv,text/csv" disabled={prodBusy} className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadProducts(f); e.currentTarget.value = ""; }} />
+            {prodBusy ? "Uploading…" : "Add / update products"}
+            <input type="file" accept=".csv,text/csv" disabled={prodBusy} className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) uploadProducts(f, false); e.currentTarget.value = ""; }} />
+          </label>
+          <label className={`block mt-2 text-xs font-medium text-slate-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3 py-2 text-center cursor-pointer ${prodBusy ? "opacity-50" : ""}`}>
+            {prodBusy ? "Uploading…" : "Replace whole catalogue"}
+            <input type="file" accept=".csv,text/csv" disabled={prodBusy} className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f && confirm("This deletes every existing product and replaces it with just what's in this file. Continue?")) uploadProducts(f, true); e.currentTarget.value = ""; }} />
           </label>
           <button onClick={downloadTemplate} className="mt-2 w-full text-xs font-medium text-slate-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3 py-2">Download template</button>
           {prodMsg && <p className={`text-[11px] mt-2 ${prodMsg.startsWith("✓") ? "text-emerald-600" : "text-rose-500"}`}>{prodMsg}</p>}
