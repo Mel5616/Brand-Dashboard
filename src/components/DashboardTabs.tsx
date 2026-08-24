@@ -53,6 +53,7 @@ import { BriefingEngine } from "./BriefingEngine";
 import { ShopifyBrandSales } from "./ShopifyBrandSales";
 import { NewProducts } from "./NewProducts";
 import { ProductInfo } from "./ProductInfo";
+import { RetailerKits } from "./RetailerKits";
 import { InfluencerTracker } from "./InfluencerTracker";
 import { TeamGiftingPanel } from "./TeamGiftingPanel";
 import { TeamPanel } from "./TeamPanel";
@@ -90,7 +91,7 @@ import { StockReport } from "./StockReport";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "summary" | "brands" | "strategy" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "month-review" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "nanit" | "affiliates" | "pa-budget" | "pa-tracker" | "documents" | "team";
+type TabId = "summary" | "brands" | "strategy" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "month-review" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "retailer-kits" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "nanit" | "affiliates" | "pa-budget" | "pa-tracker" | "documents" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -254,6 +255,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
   },
   {
+    id: "retailer-kits", label: "Retailer Kits",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
+  },
+  {
     id: "budget", label: "Budget",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   },
@@ -326,7 +331,7 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows"] },
   { label: "Plan", ids: ["campaign-calendar", "promotions", "discount-codes", "calendar", "content", "events", "show-deals", "activations", "timeline"] },
   { label: "Creative", ids: ["tasks", "design-requests", "creative", "event-concepts", "decks"] },
-  { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info", "brand-assets", "stock-report", "cost-sheet"] },
+  { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info", "retailer-kits", "brand-assets", "stock-report", "cost-sheet"] },
   { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads", "amazon-ads"] },
   { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting", "influencer-agreements", "nanit", "releases", "affiliates", "pa-budget", "pa-tracker", "documents"] },
   { label: "Sales Hub", ids: ["sales-hub"] },
@@ -2283,6 +2288,13 @@ export function DashboardTabs({
             <>
               <SectionBar title="Product Information" />
               <ProductInfo brandNames={brands.map((b: any) => b.name)} admin={role === "admin"} />
+            </>
+          )}
+
+          {active === "retailer-kits" && (
+            <>
+              <SectionBar title="Retailer Kits" />
+              <RetailerKits brands={brands.map((b: any) => ({ id: b.id, name: b.name, live: b.live, color: b.color }))} />
             </>
           )}
 
