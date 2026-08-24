@@ -35,7 +35,7 @@ const SOURCE_META: Record<Source, string> = { tradeshows: "Synced from Tradeshow
 // Tradeshows are pulled in once per show (not once per participating brand)
 // under this pseudo "brand" row — matches COOLKIDZ_TIMELINE_BRAND in
 // src/app/api/timeline-events/route.ts.
-const COOLKIDZ_BRAND: Brand = { id: -1, name: "Coolkidz (tradeshows)", color: "#0f172a" };
+const COOLKIDZ_BRAND: Brand = { id: -1, name: "Tradeshows", color: "#0f172a" };
 
 const DAY = 86400000;
 const inp = "text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400";
@@ -43,6 +43,15 @@ const toMs = (s: string) => new Date(s + "T00:00:00Z").getTime();
 const fmtD = (ms: number) => new Date(ms).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "2-digit" });
 const fmtLong = (ms: number) => new Date(ms).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "long", year: "numeric" });
 const monthOf = (ms: number) => new Date(ms).toLocaleDateString("en-AU", { month: "long", year: "numeric" });
+function dueLabel(ms: number, today: number) {
+  const d = Math.round((ms - today) / DAY);
+  if (d < 0) return "Past";
+  if (d === 0) return "Today";
+  if (d === 1) return "Tomorrow";
+  if (d <= 7) return `In ${d} days`;
+  if (d <= 30) return `In ${Math.round(d / 7)} weeks`;
+  return `In ${Math.round(d / 30)} months`;
+}
 
 // soft pill: pastel fill + coloured text when active, quiet outline when not
 function Pill({ active, color, onClick, children }: { active: boolean; color: string; onClick: () => void; children: React.ReactNode }) {
@@ -118,7 +127,7 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
   const gantt = useMemo(() => {
     if (!filtered.length) return null;
     const px = 6;
-    const nameW = 156;
+    const nameW = 190;
     const minMs = Math.min(today, ...filtered.map(e => toMs(e.date!)));
     const maxMs = Math.max(today, ...filtered.map(e => toMs(e.end_date || e.date!)));
     const a = new Date(minMs), b = new Date(maxMs);
@@ -142,7 +151,7 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
       const placed = items.map(e => {
         const isBar = (e.end_date && e.end_date !== e.date);
         const barW = isBar ? Math.max(24, x(toMs(e.end_date!)) - x(toMs(e.date!)) + px) : 0;
-        const lblW = Math.min(e.title.length, 34) * 5.6 + 24;
+        const lblW = e.title.length * 6.4 + 26;
         const w = isBar ? Math.max(barW, lblW) : lblW;
         const left = Math.max(0, x(toMs(e.date!)) - (isBar ? 0 : 5));
         let lane = 0;
@@ -274,6 +283,44 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
       </div>
       {msg && <p className="text-xs text-rose-500">{msg}</p>}
 
+      {/* ---------- coming up ---------- */}
+      {filtered.length > 0 && (
+        <div>
+          <h2 className="text-base font-bold text-slate-800 mb-3">Coming up</h2>
+          <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+            {filtered.slice(0, 12).map(e => {
+              const meta = TYPE_META[e.event_type];
+              const brand = brandOf(e.brand_id);
+              const working = statusOf(e) === "working";
+              return (
+                <button key={e.id} onClick={() => setDrawerId(e.id)}
+                  className="text-left bg-white rounded-2xl border shadow-sm shrink-0 w-[220px] overflow-hidden flex flex-col hover:shadow-md hover:-translate-y-0.5 transition"
+                  style={{ borderColor: `color-mix(in srgb, ${meta.color} 22%, #fff)` }}>
+                  {e.image_url ? (
+                    <img src={e.image_url} alt={e.title} className="w-full h-28 object-cover" />
+                  ) : (
+                    <div className="w-full h-14 flex items-center justify-center" style={{ background: meta.bg }}>
+                      <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: meta.color }}>{meta.short}</span>
+                    </div>
+                  )}
+                  <div className="p-3 flex flex-col gap-1.5 flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {e.image_url && <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full" style={{ background: meta.bg, color: meta.color }}>{meta.short}</span>}
+                      {brand && <span className="text-[10px] font-semibold" style={{ color: brand.color ?? "#64748b" }}>{brand.name}</span>}
+                    </div>
+                    <p className="text-[13.5px] font-bold text-slate-800 leading-snug">{e.title}</p>
+                    <div className="mt-auto pt-1.5 flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-slate-500">{fmtD(toMs(e.date!))}</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full" style={{ background: working ? "#fffbeb" : "#f0fdf4", color: working ? "#b45309" : "#15803d" }}>{dueLabel(toMs(e.date!), today)}</span>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {showAdd && admin && (
         <div className="bg-white rounded-2xl border border-emerald-200 shadow-sm p-5 space-y-2.5">
           <div className="grid sm:grid-cols-2 gap-2.5">
@@ -344,17 +391,17 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
                         const past = toMs(e.end_date || e.date!) < today;
                         return (
                           <button key={e.id} onClick={() => setDrawerId(e.id)} title={e.title}
-                            className="absolute h-[21px] rounded-full flex items-center gap-1.5 text-[11px] font-medium whitespace-nowrap overflow-hidden hover:shadow-md hover:-translate-y-px transition z-[1]"
+                            className="absolute h-[22px] rounded-full flex items-center gap-1.5 text-[11.5px] font-semibold whitespace-nowrap hover:shadow-md hover:-translate-y-px transition z-[1]"
                             style={{
                               left, top: 6 + lane * 27, width: bar ? w : undefined,
-                              padding: bar ? "0 9px 0 10px" : "0 9px 0 7px",
-                              border: `1px solid ${meta.color}`, borderStyle: working ? "dashed" : "solid",
+                              padding: bar ? "0 10px 0 11px" : "0 10px 0 7px",
+                              border: `1.5px solid ${meta.color}`, borderStyle: working ? "dashed" : "solid",
                               background: bar ? `color-mix(in srgb, ${meta.color} 9%, #fff)` : "#fff",
                               color: meta.color, opacity: past ? 0.45 : 1,
                             }}>
                             {!bar && <span className="w-[7px] h-[7px] rounded-full shrink-0" style={{ background: working ? "#fff" : meta.color, border: working ? `1.5px solid ${meta.color}` : undefined }} />}
-                            {bar && <span className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ background: meta.color }} />}
-                            <span className={bar ? "pl-1 truncate text-slate-700" : "truncate text-slate-700"}>{e.title}</span>
+                            {bar && <span className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-full" style={{ background: meta.color }} />}
+                            <span className={bar ? "pl-1 text-slate-800" : "text-slate-800"}>{e.title}</span>
                           </button>
                         );
                       })}
