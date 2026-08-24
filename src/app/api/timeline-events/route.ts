@@ -13,7 +13,7 @@ const missing = (status: number, body: string) => status === 404 || /PGRST205|do
 const FIELDS = ["brand_id", "event_type", "title", "date", "end_date", "product_name", "quantity", "status", "note", "image_url"];
 function clean(b: any) {
   const row: Record<string, any> = {};
-  for (const f of FIELDS) if (b[f] !== undefined) row[f] = (f === "end_date" && b[f] === "") ? null : b[f];
+  for (const f of FIELDS) if (b[f] !== undefined) row[f] = ((f === "end_date" || f === "date") && b[f] === "") ? null : b[f];
   return row;
 }
 
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   const title = String(b.title ?? "").trim();
-  if (!b.brand_id || !title || !b.date) return NextResponse.json({ ok: false, error: "brand_id, title and date required" }, { status: 400 });
+  if (!b.brand_id || !title) return NextResponse.json({ ok: false, error: "brand_id and title required" }, { status: 400 });
   const row = { ...clean(b), title, created_by: acc.user!.email };
   const res = await fetch(`${sbUrl}/rest/v1/timeline_events`, { method: "POST", headers: hdr({ Prefer: "return=representation" }), body: JSON.stringify(row) });
   const text = await res.text();
