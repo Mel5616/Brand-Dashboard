@@ -59,6 +59,7 @@ import { TeamPanel } from "./TeamPanel";
 import { BoothFunnel } from "./BoothFunnel";
 import { BrandSnapshot } from "./BrandSnapshot";
 import { Activations } from "./Activations";
+import { Timeline } from "./Timeline";
 import { UppababyReport } from "./UppababyReport";
 import { EventsPanel } from "./EventsPanel";
 import { TasksPanel } from "./TasksPanel";
@@ -89,7 +90,7 @@ import { StockReport } from "./StockReport";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "summary" | "brands" | "strategy" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "month-review" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "nanit" | "affiliates" | "pa-budget" | "pa-tracker" | "documents" | "team";
+type TabId = "summary" | "brands" | "strategy" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "month-review" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "nanit" | "affiliates" | "pa-budget" | "pa-tracker" | "documents" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -237,6 +238,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" /></svg>,
   },
   {
+    id: "timeline", label: "Timeline",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  },
+  {
     id: "releases", label: "Media Releases",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>,
   },
@@ -319,7 +324,7 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Overview", ids: ["brands", "strategy", "summary", "insights", "team-hub", "weekly-brief"] },
   { label: "Reports", ids: ["report", "snapshot", "social-report", "d2c-weekly", "month-review", "uppababy"] },
   { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows"] },
-  { label: "Plan", ids: ["campaign-calendar", "promotions", "discount-codes", "calendar", "content", "events", "show-deals", "activations"] },
+  { label: "Plan", ids: ["campaign-calendar", "promotions", "discount-codes", "calendar", "content", "events", "show-deals", "activations", "timeline"] },
   { label: "Creative", ids: ["tasks", "design-requests", "creative", "event-concepts", "decks"] },
   { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info", "brand-assets", "stock-report", "cost-sheet"] },
   { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads", "amazon-ads"] },
@@ -1480,6 +1485,14 @@ export function DashboardTabs({
             <>
               <SectionBar title="Marketing Snapshot" />
               <Activations brands={brands} tradeshows={tradeshows} tradeshowBrands={tradeshowBrands} admin={role === "admin"} />
+            </>
+          )}
+
+          {/* ── Timeline (stock arrivals, product launches, coming soon) ── */}
+          {active === "timeline" && (
+            <>
+              <SectionBar title="Timeline" />
+              <Timeline brands={brands} admin={role === "admin"} />
             </>
           )}
 
