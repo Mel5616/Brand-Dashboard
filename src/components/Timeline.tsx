@@ -6,25 +6,31 @@ import { useEffect, useMemo, useState } from "react";
 // stock arrivals, product launches, coming-soon teasers, plus events, trade
 // moments and campaign windows. Two views — a Gantt-style swimlane per
 // brand, and a flat month-grouped list — with locked-vs-working date
-// status, and a tray for real work that has no date yet.
+// status, and a tray for real work that has no date yet. Tradeshow dates,
+// confirmed campaigns and new-product launches are pulled in automatically
+// (read-only, edited from their own tabs); anything typed here directly is
+// a native timeline entry that admins can edit or remove.
 
 type Brand = { id: number; name: string; live?: boolean; color?: string };
 type EventType = "stock" | "launch" | "coming" | "event" | "trade" | "campaign";
 type Status = "locked" | "working";
+type Source = "tradeshows" | "campaigns" | "new_products";
 type TimelineEvent = {
-  id: number; brand_id: number; event_type: EventType; title: string; date: string | null; end_date: string | null;
+  id: number | string; brand_id: number; event_type: EventType; title: string; date: string | null; end_date: string | null;
   product_name: string | null; quantity: number | null; status: string | null; note: string | null; image_url: string | null;
+  source?: Source;
 };
 
 const TYPE_META: Record<EventType, { label: string; short: string; color: string; bg: string }> = {
-  stock:    { label: "Stock & freight",     short: "Stock",    color: "#0f766e", bg: "#ecfdf5" },
-  launch:   { label: "Launch & on sale",    short: "Launch",   color: "#b8342a", bg: "#fef2f0" },
+  stock:    { label: "Stock & freight",     short: "Stock",       color: "#0f766e", bg: "#ecfdf5" },
+  launch:   { label: "Launch & on sale",    short: "Launch",      color: "#b8342a", bg: "#fef2f0" },
   coming:   { label: "Coming soon",         short: "Coming soon", color: "#a9680a", bg: "#fff8ec" },
-  event:    { label: "Events",              short: "Event",    color: "#6d28d9", bg: "#f5f0ff" },
-  trade:    { label: "Trade & retail",      short: "Trade",    color: "#1a5893", bg: "#eff6fc" },
-  campaign: { label: "Campaign & content",  short: "Campaign", color: "#9e2f72", bg: "#fdf1f8" },
+  event:    { label: "Events",              short: "Event",       color: "#6d28d9", bg: "#f5f0ff" },
+  trade:    { label: "Trade & retail",      short: "Trade",       color: "#1a5893", bg: "#eff6fc" },
+  campaign: { label: "Campaign & content",  short: "Campaign",    color: "#9e2f72", bg: "#fdf1f8" },
 };
 const TYPES = Object.keys(TYPE_META) as EventType[];
+const SOURCE_META: Record<Source, string> = { tradeshows: "Synced from Tradeshows", campaigns: "Synced from Campaign Calendar", new_products: "Synced from New Products" };
 
 const DAY = 86400000;
 const inp = "text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400";
@@ -33,12 +39,25 @@ const fmtD = (ms: number) => new Date(ms).toLocaleDateString("en-AU", { day: "nu
 const fmtLong = (ms: number) => new Date(ms).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "long", year: "numeric" });
 const monthOf = (ms: number) => new Date(ms).toLocaleDateString("en-AU", { month: "long", year: "numeric" });
 
+// soft pill: pastel fill + coloured text when active, quiet outline when not
+function Pill({ active, color, onClick, children }: { active: boolean; color: string; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button onClick={onClick}
+      className="text-xs font-semibold rounded-full px-3 py-1.5 border transition flex items-center gap-1.5 whitespace-nowrap"
+      style={active
+        ? { background: `color-mix(in srgb, ${color} 14%, #fff)`, borderColor: `color-mix(in srgb, ${color} 35%, #fff)`, color }
+        : { background: "#fff", borderColor: "#e8eaed", color: "#9aa1ab" }}>
+      <span className="w-[7px] h-[7px] rounded-full shrink-0" style={{ background: active ? color : "#d1d5db" }} />
+      {children}
+    </button>
+  );
+}
+
 export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: boolean }) {
   const live = brands.filter(b => b.live !== false);
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [needsSetupBase, setNeedsSetupBase] = useState(false);
-  const [needsV2, setNeedsV2] = useState(false);
   const [msg, setMsg] = useState("");
   const [view, setView] = useState<"gantt" | "list">("gantt");
   const [brandFilter, setBrandFilter] = useState<Set<number>>(new Set(live.map(b => b.id)));
@@ -51,9 +70,7 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
     setLoading(true);
     fetch("/api/timeline-events").then(r => r.json()).then(d => {
       if (d.needsSetup) { setNeedsSetupBase(true); return; }
-      const rows: TimelineEvent[] = d.events ?? [];
-      // v2 (nullable date) not yet migrated if any row somehow has date "" — harmless either way.
-      setEvents(rows);
+      setEvents(d.events ?? []);
     }).catch(() => {}).finally(() => setLoading(false));
   }
   useEffect(reload, []);
@@ -132,19 +149,19 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
       return { brand: br, items: placed, h: laneCount * 27 + 13 };
     });
 
-    const rowsH = rows.reduce((s, r) => s + r.h, 0);
     const todayX = (today >= start && today <= end) ? x(today) : null;
-    return { px, nameW, total, months, rows, rowsH, todayX };
+    return { px, nameW, total, months, rows, todayX };
   }, [filtered, live, brandFilter, today]);
 
-  // ---------- add / edit ----------
+  // ---------- add / edit (native rows only) ----------
   const emptyForm = { brand_id: "", event_type: "stock" as EventType, title: "", date: "", end_date: "", product_name: "", quantity: "", status: "locked" as Status, note: "" };
   const [form, setForm] = useState(emptyForm);
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [drawerId, setDrawerId] = useState<number | null>(null);
+  const [drawerId, setDrawerId] = useState<number | string | null>(null);
 
   function startEdit(e: TimelineEvent) {
+    if (typeof e.id !== "number") return;
     setEditingId(e.id);
     setForm({
       brand_id: String(e.brand_id), event_type: e.event_type, title: e.title, date: e.date || "", end_date: e.end_date || "",
@@ -153,7 +170,6 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
     setShowAdd(true);
     setDrawerId(null);
   }
-  function startFromTray(e: TimelineEvent) { startEdit(e); }
 
   async function submit() {
     if (!form.brand_id || !form.title) return;
@@ -169,13 +185,15 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
     }
   }
   function resetForm() { setForm(emptyForm); setEditingId(null); setShowAdd(false); }
-  async function removeEvent(id: number) {
+  async function removeEvent(id: number | string) {
+    if (typeof id !== "number") return;
     if (!confirm("Remove this event?")) return;
     const d = await fetch(`/api/timeline-events?id=${id}`, { method: "DELETE" }).then(r => r.json());
     if (d.ok) { setEvents(prev => prev.filter(e => e.id !== id)); setDrawerId(null); }
   }
-  const [uploadingId, setUploadingId] = useState<number | null>(null);
-  async function uploadImage(id: number, file: File) {
+  const [uploadingId, setUploadingId] = useState<number | string | null>(null);
+  async function uploadImage(id: number | string, file: File) {
+    if (typeof id !== "number") return;
     setUploadingId(id);
     const fd = new FormData(); fd.append("file", file); fd.append("id", String(id));
     const d = await fetch("/api/timeline-events/image", { method: "POST", body: fd }).then(r => r.json()).catch(() => null);
@@ -195,72 +213,58 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
     return g;
   }, [filtered]);
 
-  const drawerEv = drawerId ? events.find(e => e.id === drawerId) : null;
+  const drawerEv = drawerId != null ? events.find(e => e.id === drawerId) : null;
 
   if (loading) return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">Loading…</div>;
   if (needsSetupBase) return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-center text-sm text-gray-500">Run <code className="bg-gray-100 px-1 rounded">supabase/add_timeline_events.sql</code> to enable the Timeline.</div>;
 
   return (
-    <div className="space-y-5">
-      {/* counts */}
-      <div className="flex flex-wrap gap-6 bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-4">
-        {[["On calendar", counts.all], ["Locked", counts.locked], ["Working", counts.working], ["Next 30 days", counts.next30]].map(([label, n]) => (
-          <div key={label as string}>
-            <p className="text-2xl font-extrabold text-slate-800 leading-none">{n}</p>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mt-1">{label}</p>
-          </div>
-        ))}
-        <div className="ml-auto flex items-center gap-1 bg-gray-50 rounded-full p-1">
-          {(["gantt", "list"] as const).map(v => (
-            <button key={v} onClick={() => setView(v)} className={`text-xs font-semibold rounded-full px-3.5 py-1.5 transition ${view === v ? "bg-slate-800 text-white" : "text-gray-500 hover:text-slate-700"}`}>
-              {v === "gantt" ? "Timeline" : "List"}
-            </button>
+    <div className="space-y-4">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        {/* counts + view toggle */}
+        <div className="flex flex-wrap items-center gap-6 px-6 py-4">
+          {[["On calendar", counts.all], ["Locked", counts.locked], ["Working", counts.working], ["Next 30 days", counts.next30]].map(([label, n]) => (
+            <div key={label as string}>
+              <p className="text-2xl font-extrabold text-slate-800 leading-none tabular-nums">{n}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mt-1">{label}</p>
+            </div>
           ))}
-        </div>
-      </div>
-
-      {/* filters */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-2.5">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mr-1">Activity</span>
-          {TYPES.map(t => {
-            const meta = TYPE_META[t];
-            const on = typeFilter.has(t);
-            return (
-              <button key={t} onClick={() => setTypeFilter(s => toggleSet(s, t, TYPES))}
-                className="text-xs font-semibold rounded-full px-3 py-1.5 border transition flex items-center gap-1.5"
-                style={on ? { background: meta.color, borderColor: meta.color, color: "#fff" } : { borderColor: "#e5e7eb", color: "#6b7280" }}>
-                <span className="w-2 h-2 rounded-full" style={{ background: on ? "#fff" : meta.color }} />
-                {meta.short}
-              </button>
-            );
-          })}
-          <span className="ml-2 flex items-center gap-1 bg-gray-50 rounded-full p-1">
-            {(["all", "locked", "working"] as const).map(s => (
-              <button key={s} onClick={() => setStatusFilter(s)} className={`text-xs font-semibold rounded-full px-3 py-1 transition ${statusFilter === s ? "bg-slate-800 text-white" : "text-gray-500"}`}>
-                {s === "all" ? "All dates" : s === "locked" ? "Locked" : "Working"}
+          <div className="ml-auto flex items-center gap-1 bg-gray-50 rounded-full p-1">
+            {(["gantt", "list"] as const).map(v => (
+              <button key={v} onClick={() => setView(v)} className={`text-xs font-semibold rounded-full px-3.5 py-1.5 transition ${view === v ? "bg-slate-800 text-white" : "text-gray-500 hover:text-slate-700"}`}>
+                {v === "gantt" ? "Timeline" : "List"}
               </button>
             ))}
-          </span>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mr-1">Brand</span>
-          {live.map(b => {
-            const on = brandFilter.has(b.id);
-            return (
-              <button key={b.id} onClick={() => setBrandFilter(s => toggleSet(s, b.id, live.map(x => x.id)))}
-                className="text-xs font-semibold rounded-full px-3 py-1.5 border transition"
-                style={on ? { background: b.color || "#132741", borderColor: b.color || "#132741", color: "#fff" } : { borderColor: "#e5e7eb", color: "#6b7280" }}>
-                {b.name}
-              </button>
-            );
-          })}
-          <button onClick={() => { setBrandFilter(new Set(live.map(b => b.id))); setTypeFilter(new Set(TYPES)); setStatusFilter("all"); setQ(""); }} className="text-xs text-gray-400 underline underline-offset-2 hover:text-gray-600 ml-1">Reset filters</button>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 pt-1">
-          <input value={q} onChange={e => setQ(e.target.value.toLowerCase())} placeholder="Search titles and notes…" className={inp + " min-w-[220px]"} />
-          <label className="text-xs text-gray-400 flex items-center gap-1.5 ml-1"><input type="checkbox" checked={showPast} onChange={e => setShowPast(e.target.checked)} />Show past</label>
-          {admin && <button onClick={() => { resetForm(); setShowAdd(v => !v); }} className="ml-auto text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2">{showAdd ? "Close" : "+ Add event"}</button>}
+
+        {/* filters */}
+        <div className="border-t border-gray-50 px-6 py-4 space-y-3 bg-gray-50/40">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mr-1.5 shrink-0">Activity</span>
+            {TYPES.map(t => (
+              <Pill key={t} active={typeFilter.has(t)} color={TYPE_META[t].color} onClick={() => setTypeFilter(s => toggleSet(s, t, TYPES))}>{TYPE_META[t].short}</Pill>
+            ))}
+            <span className="ml-2 flex items-center gap-0.5 bg-white border border-gray-200 rounded-full p-0.5">
+              {(["all", "locked", "working"] as const).map(s => (
+                <button key={s} onClick={() => setStatusFilter(s)} className={`text-[11px] font-semibold rounded-full px-2.5 py-1 transition ${statusFilter === s ? "bg-slate-800 text-white" : "text-gray-400 hover:text-slate-600"}`}>
+                  {s === "all" ? "All dates" : s === "locked" ? "Locked" : "Working"}
+                </button>
+              ))}
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mr-1.5 shrink-0">Brand</span>
+            {live.map(b => (
+              <Pill key={b.id} active={brandFilter.has(b.id)} color={b.color || "#334155"} onClick={() => setBrandFilter(s => toggleSet(s, b.id, live.map(x => x.id)))}>{b.name}</Pill>
+            ))}
+            <button onClick={() => { setBrandFilter(new Set(live.map(b => b.id))); setTypeFilter(new Set(TYPES)); setStatusFilter("all"); setQ(""); }} className="text-[11px] text-gray-400 underline underline-offset-2 hover:text-gray-600 ml-1">Reset</button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
+            <input value={q} onChange={e => setQ(e.target.value.toLowerCase())} placeholder="Search titles and notes…" className={inp + " min-w-[220px] bg-white"} />
+            <label className="text-xs text-gray-400 flex items-center gap-1.5"><input type="checkbox" checked={showPast} onChange={e => setShowPast(e.target.checked)} />Show past</label>
+            {admin && <button onClick={() => { resetForm(); setShowAdd(v => !v); }} className="ml-auto text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2 shrink-0">{showAdd ? "Close" : "+ Add event"}</button>}
+          </div>
         </div>
       </div>
       {msg && <p className="text-xs text-rose-500">{msg}</p>}
@@ -301,7 +305,7 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
         gantt ? (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-auto max-h-[70vh]">
             <div style={{ width: gantt.nameW + gantt.total, minWidth: "100%" }}>
-              <div className="flex sticky top-0 z-20 bg-white border-b border-gray-100" style={{ height: 44 }}>
+              <div className="flex sticky top-0 z-20 bg-white border-b border-gray-100" style={{ height: 40 }}>
                 <div className="sticky left-0 z-30 bg-white border-r border-gray-100 flex items-end px-3 pb-2" style={{ width: gantt.nameW, flex: "0 0 auto" }}>
                   <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Brand</span>
                 </div>
@@ -317,24 +321,25 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
               <div style={{ position: "relative" }}>
                 {gantt.todayX != null && (
                   <div className="absolute z-10 pointer-events-none" style={{ left: gantt.nameW + gantt.todayX, top: 0, bottom: 0, width: 1, background: "#b8342a" }}>
-                    <div className="absolute -translate-x-1/2 text-white text-[9px] font-bold uppercase tracking-wide rounded-full px-2 py-0.5 whitespace-nowrap" style={{ top: 4, background: "#b8342a" }}>Today</div>
+                    <div className="absolute -translate-x-1/2 text-white text-[9px] font-bold uppercase tracking-wide rounded-full px-2 py-0.5 whitespace-nowrap shadow-sm" style={{ top: -1, background: "#b8342a" }}>Today</div>
                   </div>
                 )}
                 {gantt.rows.map(row => (
                   <div key={row.brand.id} className="flex border-b border-gray-50" style={{ height: row.h }}>
-                    <div className="sticky left-0 z-10 bg-white border-r border-gray-100 flex flex-col justify-center px-3" style={{ width: gantt.nameW, flex: "0 0 auto" }}>
-                      <b className="text-[13px] font-semibold text-slate-800 leading-tight">{row.brand.name}</b>
+                    <div className="sticky left-0 z-10 bg-white border-r border-gray-100 flex items-center gap-2 px-3" style={{ width: gantt.nameW, flex: "0 0 auto" }}>
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: row.brand.color || "#94a3b8" }} />
+                      <b className="text-[13px] font-semibold text-slate-800 leading-tight truncate">{row.brand.name}</b>
                     </div>
                     <div style={{ position: "relative", width: gantt.total, flex: "0 0 auto" }}>
                       {gantt.months.map((m, i) => <div key={i} className="absolute top-0 bottom-0 border-l border-gray-50" style={{ left: m.left }} />)}
-                      {row.items.length === 0 && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] italic text-gray-300">Nothing matching the filters</span>}
+                      {row.items.length === 0 && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] italic text-gray-300 z-0">—</span>}
                       {row.items.map(({ e, left, w, bar, lane }) => {
                         const meta = TYPE_META[e.event_type];
                         const working = statusOf(e) === "working";
                         const past = toMs(e.end_date || e.date!) < today;
                         return (
                           <button key={e.id} onClick={() => setDrawerId(e.id)} title={e.title}
-                            className="absolute h-[21px] rounded-full flex items-center gap-1.5 text-[11px] font-medium whitespace-nowrap overflow-hidden hover:shadow-md hover:-translate-y-px transition"
+                            className="absolute h-[21px] rounded-full flex items-center gap-1.5 text-[11px] font-medium whitespace-nowrap overflow-hidden hover:shadow-md hover:-translate-y-px transition z-[1]"
                             style={{
                               left, top: 6 + lane * 27, width: bar ? w : undefined,
                               padding: bar ? "0 9px 0 10px" : "0 9px 0 7px",
@@ -387,6 +392,7 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
                                   <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full" style={{ background: meta.bg, color: meta.color }}>{meta.short}</span>
                                   {brand && <span className="text-[11px] font-semibold" style={{ color: brand.color ?? "#64748b" }}>{brand.name}</span>}
                                   <span className={`text-[10px] font-semibold rounded-full px-2 py-0.5 ${working ? "text-amber-600 bg-amber-50" : "text-gray-500 bg-gray-100"}`}>{working ? "Working" : "Locked"}</span>
+                                  {e.source && <span className="text-[10px] font-semibold text-gray-400">· {SOURCE_META[e.source]}</span>}
                                 </div>
                                 <p className="font-semibold text-slate-800 mt-1.5">{e.title}</p>
                                 {e.product_name && <p className="text-xs text-gray-500 mt-0.5">{e.product_name}{e.quantity != null ? ` · ${e.quantity.toLocaleString()} units` : ""}</p>}
@@ -426,7 +432,8 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
                   </div>
                   <p className="text-sm font-semibold text-slate-800">{e.title}</p>
                   {e.note && <p className="text-xs text-gray-400 line-clamp-2">{e.note}</p>}
-                  {admin && <button onClick={() => startFromTray(e)} className="text-[11px] font-semibold text-emerald-600 hover:underline self-start mt-1">Set a date →</button>}
+                  {admin && typeof e.id === "number" && <button onClick={() => startEdit(e)} className="text-[11px] font-semibold text-emerald-600 hover:underline self-start mt-1">Set a date →</button>}
+                  {e.source && <span className="text-[10px] text-gray-400">{SOURCE_META[e.source]}</span>}
                 </div>
               );
             })}
@@ -462,7 +469,9 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
             <p className="text-sm font-semibold text-slate-700 mt-4">{drawerEv.date ? fmtLong(toMs(drawerEv.date)) : "No date set"}{drawerEv.end_date && drawerEv.end_date !== drawerEv.date ? ` – ${fmtD(toMs(drawerEv.end_date))}` : ""}</p>
             {drawerEv.product_name && <p className="text-xs text-gray-500 mt-1">{drawerEv.product_name}{drawerEv.quantity != null ? ` · ${drawerEv.quantity.toLocaleString()} units` : ""}</p>}
             {drawerEv.note && <p className="text-sm text-gray-600 mt-4 pt-4 border-t border-gray-100 whitespace-pre-line">{drawerEv.note}</p>}
-            {admin && (
+            {drawerEv.source ? (
+              <p className="text-xs text-gray-400 mt-5 pt-4 border-t border-gray-100">{SOURCE_META[drawerEv.source]} — edit it from that tab.</p>
+            ) : admin && (
               <div className="flex items-center gap-4 mt-5 pt-4 border-t border-gray-100">
                 <button onClick={() => startEdit(drawerEv)} className="text-xs font-semibold text-emerald-600 hover:underline">Edit</button>
                 <label className="text-xs font-semibold text-amber-600 hover:underline cursor-pointer">
