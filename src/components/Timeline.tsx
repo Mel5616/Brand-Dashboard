@@ -21,15 +21,17 @@ type TimelineEvent = {
   source?: Source;
 };
 
-const TYPE_META: Record<EventType, { label: string; short: string; color: string; bg: string }> = {
-  stock:    { label: "Stock & freight",     short: "Stock",       color: "#0f766e", bg: "#ecfdf5" },
-  launch:   { label: "Launch & on sale",    short: "Launch",      color: "#b8342a", bg: "#fef2f0" },
-  coming:   { label: "Coming soon",         short: "Coming soon", color: "#a9680a", bg: "#fff8ec" },
-  event:    { label: "Events",              short: "Event",       color: "#6d28d9", bg: "#f5f0ff" },
-  trade:    { label: "Trade & retail",      short: "Trade",       color: "#1a5893", bg: "#eff6fc" },
-  campaign: { label: "Campaign & content",  short: "Campaign",    color: "#9e2f72", bg: "#fdf1f8" },
+const TYPE_META: Record<EventType, { label: string; short: string; color: string; bg: string; key: boolean }> = {
+  stock:    { label: "Stock & freight",     short: "Stock",       color: "#0f766e", bg: "#ecfdf5", key: true },
+  launch:   { label: "Launch & on sale",    short: "Launch",      color: "#b8342a", bg: "#fef2f0", key: true },
+  coming:   { label: "Coming soon",         short: "Coming soon", color: "#a9680a", bg: "#fff8ec", key: true },
+  event:    { label: "Events",              short: "Event",       color: "#6d28d9", bg: "#f5f0ff", key: false },
+  trade:    { label: "Trade & retail",      short: "Trade",       color: "#1a5893", bg: "#eff6fc", key: false },
+  campaign: { label: "Campaign & content",  short: "Campaign",    color: "#9e2f72", bg: "#fdf1f8", key: false },
 };
 const TYPES = Object.keys(TYPE_META) as EventType[];
+const KEY_TYPES = TYPES.filter(t => TYPE_META[t].key);
+const OTHER_TYPES = TYPES.filter(t => !TYPE_META[t].key);
 const SOURCE_META: Record<Source, string> = { tradeshows: "Synced from Tradeshows", campaigns: "Synced from Campaign Calendar", new_products: "Synced from New Products" };
 
 // Tradeshows are pulled in once per show (not once per participating brand)
@@ -151,7 +153,7 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
       const placed = items.map(e => {
         const isBar = (e.end_date && e.end_date !== e.date);
         const barW = isBar ? Math.max(24, x(toMs(e.end_date!)) - x(toMs(e.date!)) + px) : 0;
-        const lblW = e.title.length * 6.4 + 26;
+        const lblW = e.title.length * (TYPE_META[e.event_type].key ? 7.1 : 6) + 28;
         const w = isBar ? Math.max(barW, lblW) : lblW;
         const left = Math.max(0, x(toMs(e.date!)) - (isBar ? 0 : 5));
         let lane = 0;
@@ -255,9 +257,14 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
         {/* filters */}
         <div className="border-t border-gray-50 px-6 py-4 space-y-3 bg-gray-50/40">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mr-1.5 shrink-0">Activity</span>
-            {TYPES.map(t => (
-              <Pill key={t} active={typeFilter.has(t)} color={TYPE_META[t].color} onClick={() => setTypeFilter(s => toggleSet(s, t, TYPES))}>{TYPE_META[t].short}</Pill>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mr-1.5 shrink-0">Key dates</span>
+            {KEY_TYPES.map(t => (
+              <button key={t} onClick={() => setTypeFilter(s => toggleSet(s, t, TYPES))}
+                className="text-[13px] font-bold rounded-full pl-2.5 pr-3.5 py-2 border-2 transition flex items-center gap-2 whitespace-nowrap"
+                style={typeFilter.has(t) ? { background: TYPE_META[t].color, borderColor: TYPE_META[t].color, color: "#fff" } : { background: "#fff", borderColor: "#e2e5ea", color: "#9aa1ab" }}>
+                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: typeFilter.has(t) ? "#fff" : TYPE_META[t].color }} />
+                {TYPE_META[t].short}
+              </button>
             ))}
             <span className="ml-2 flex items-center gap-0.5 bg-white border border-gray-200 rounded-full p-0.5">
               {(["all", "locked", "working"] as const).map(s => (
@@ -266,6 +273,12 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
                 </button>
               ))}
             </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mr-1.5 shrink-0">Other activity</span>
+            {OTHER_TYPES.map(t => (
+              <Pill key={t} active={typeFilter.has(t)} color={TYPE_META[t].color} onClick={() => setTypeFilter(s => toggleSet(s, t, TYPES))}>{TYPE_META[t].short}</Pill>
+            ))}
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mr-1.5 shrink-0">Brand</span>
@@ -292,23 +305,24 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
               const meta = TYPE_META[e.event_type];
               const brand = brandOf(e.brand_id);
               const working = statusOf(e) === "working";
+              const key = meta.key;
               return (
                 <button key={e.id} onClick={() => setDrawerId(e.id)}
-                  className="text-left bg-white rounded-2xl border shadow-sm shrink-0 w-[220px] overflow-hidden flex flex-col hover:shadow-md hover:-translate-y-0.5 transition"
-                  style={{ borderColor: `color-mix(in srgb, ${meta.color} 22%, #fff)` }}>
+                  className={`text-left bg-white rounded-2xl shrink-0 overflow-hidden flex flex-col hover:-translate-y-0.5 transition ${key ? "w-[228px] shadow-md" : "w-[190px] shadow-sm opacity-80 hover:opacity-100"}`}
+                  style={key ? { border: `2px solid ${meta.color}` } : { border: "1px solid #edeef0" }}>
                   {e.image_url ? (
-                    <img src={e.image_url} alt={e.title} className="w-full h-28 object-cover" />
+                    <img src={e.image_url} alt={e.title} className={key ? "w-full h-32 object-cover" : "w-full h-16 object-cover"} />
                   ) : (
-                    <div className="w-full h-14 flex items-center justify-center" style={{ background: meta.bg }}>
-                      <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: meta.color }}>{meta.short}</span>
+                    <div className={key ? "w-full h-16 flex items-center justify-center" : "w-full h-10 flex items-center justify-center"} style={{ background: meta.bg }}>
+                      <span className={key ? "text-[12px] font-extrabold uppercase tracking-widest" : "text-[9px] font-bold uppercase tracking-wide"} style={{ color: meta.color }}>{meta.short}</span>
                     </div>
                   )}
-                  <div className="p-3 flex flex-col gap-1.5 flex-1">
+                  <div className={key ? "p-3.5 flex flex-col gap-2 flex-1" : "p-2.5 flex flex-col gap-1 flex-1"}>
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      {e.image_url && <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full" style={{ background: meta.bg, color: meta.color }}>{meta.short}</span>}
-                      {brand && <span className="text-[10px] font-semibold" style={{ color: brand.color ?? "#64748b" }}>{brand.name}</span>}
+                      {e.image_url && <span className={`font-bold uppercase tracking-wide rounded-full ${key ? "text-[10px] px-2 py-0.5" : "text-[8px] px-1.5 py-0.5"}`} style={{ background: meta.bg, color: meta.color }}>{meta.short}</span>}
+                      {brand && <span className={`font-semibold ${key ? "text-[11px]" : "text-[9px]"}`} style={{ color: brand.color ?? "#64748b" }}>{brand.name}</span>}
                     </div>
-                    <p className="text-[13.5px] font-bold text-slate-800 leading-snug">{e.title}</p>
+                    <p className={key ? "text-[15px] font-extrabold text-slate-800 leading-snug" : "text-[12px] font-semibold text-slate-600 leading-snug"}>{e.title}</p>
                     <div className="mt-auto pt-1.5 flex items-center justify-between">
                       <span className="text-[11px] font-semibold text-slate-500">{fmtD(toMs(e.date!))}</span>
                       <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full" style={{ background: working ? "#fffbeb" : "#f0fdf4", color: working ? "#b45309" : "#15803d" }}>{dueLabel(toMs(e.date!), today)}</span>
@@ -389,19 +403,25 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
                         const meta = TYPE_META[e.event_type];
                         const working = statusOf(e) === "working";
                         const past = toMs(e.end_date || e.date!) < today;
+                        const key = meta.key;
+                        // Key dates (stock/launch/coming soon) get a bold solid pill;
+                        // other activity (events/trade/campaigns) stays quiet and outlined.
                         return (
                           <button key={e.id} onClick={() => setDrawerId(e.id)} title={e.title}
-                            className="absolute h-[22px] rounded-full flex items-center gap-1.5 text-[11.5px] font-semibold whitespace-nowrap hover:shadow-md hover:-translate-y-px transition z-[1]"
+                            className={`absolute rounded-full flex items-center gap-1.5 whitespace-nowrap hover:shadow-md hover:-translate-y-px transition z-[1] ${key ? "h-[24px] text-[12px] font-bold" : "h-[19px] text-[10.5px] font-medium"}`}
                             style={{
-                              left, top: 6 + lane * 27, width: bar ? w : undefined,
-                              padding: bar ? "0 10px 0 11px" : "0 10px 0 7px",
-                              border: `1.5px solid ${meta.color}`, borderStyle: working ? "dashed" : "solid",
-                              background: bar ? `color-mix(in srgb, ${meta.color} 9%, #fff)` : "#fff",
-                              color: meta.color, opacity: past ? 0.45 : 1,
+                              left, top: (key ? 5 : 8) + lane * 27, width: bar ? w : undefined,
+                              padding: bar ? (key ? "0 11px 0 12px" : "0 8px 0 9px") : (key ? "0 11px 0 8px" : "0 8px 0 6px"),
+                              border: key ? `1.5px solid ${meta.color}` : `1px solid color-mix(in srgb, ${meta.color} 40%, #fff)`,
+                              borderStyle: working ? "dashed" : "solid",
+                              background: key ? (working ? "#fff" : meta.color) : (bar ? `color-mix(in srgb, ${meta.color} 6%, #fff)` : "#fff"),
+                              color: key ? (working ? meta.color : "#fff") : `color-mix(in srgb, ${meta.color} 75%, #6b7280)`,
+                              opacity: past ? 0.4 : 1,
+                              boxShadow: key && !working ? `0 1px 3px color-mix(in srgb, ${meta.color} 35%, transparent)` : undefined,
                             }}>
-                            {!bar && <span className="w-[7px] h-[7px] rounded-full shrink-0" style={{ background: working ? "#fff" : meta.color, border: working ? `1.5px solid ${meta.color}` : undefined }} />}
-                            {bar && <span className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-full" style={{ background: meta.color }} />}
-                            <span className={bar ? "pl-1 text-slate-800" : "text-slate-800"}>{e.title}</span>
+                            {!bar && <span className="w-[7px] h-[7px] rounded-full shrink-0" style={{ background: key ? (working ? meta.color : "#fff") : meta.color, border: key && working ? `1.5px solid ${meta.color}` : undefined }} />}
+                            {bar && <span className="absolute left-0 top-0 bottom-0 rounded-l-full" style={{ width: key ? 4 : 3, background: meta.color }} />}
+                            <span className={bar ? "pl-1" : ""}>{e.title}</span>
                           </button>
                         );
                       })}
