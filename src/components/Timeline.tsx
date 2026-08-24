@@ -12,7 +12,7 @@ import { useEffect, useMemo, useState } from "react";
 // a native timeline entry that admins can edit or remove.
 
 type Brand = { id: number; name: string; live?: boolean; color?: string };
-type EventType = "stock" | "launch" | "coming" | "event" | "trade" | "campaign";
+type EventType = "stock" | "launch" | "coming" | "retail" | "event" | "trade" | "campaign";
 type Status = "locked" | "working";
 type Source = "tradeshows" | "campaigns" | "new_products";
 type TimelineEvent = {
@@ -25,8 +25,9 @@ const TYPE_META: Record<EventType, { label: string; short: string; color: string
   stock:    { label: "Stock & freight",     short: "Stock",       color: "#0f766e", bg: "#ecfdf5", key: true },
   launch:   { label: "Launch & on sale",    short: "Launch",      color: "#b8342a", bg: "#fef2f0", key: true },
   coming:   { label: "Coming soon",         short: "Coming soon", color: "#a9680a", bg: "#fff8ec", key: true },
+  retail:   { label: "Key shopping period", short: "Retail",      color: "#a21caf", bg: "#fdf2fb", key: true },
   event:    { label: "Events",              short: "Event",       color: "#6d28d9", bg: "#f5f0ff", key: false },
-  trade:    { label: "Trade & retail",      short: "Trade",       color: "#1a5893", bg: "#eff6fc", key: false },
+  trade:    { label: "Trade shows",         short: "Trade",       color: "#1a5893", bg: "#eff6fc", key: false },
   campaign: { label: "Campaign & content",  short: "Campaign",    color: "#9e2f72", bg: "#fdf1f8", key: false },
 };
 const TYPES = Object.keys(TYPE_META) as EventType[];
@@ -34,10 +35,11 @@ const KEY_TYPES = TYPES.filter(t => TYPE_META[t].key);
 const OTHER_TYPES = TYPES.filter(t => !TYPE_META[t].key);
 const SOURCE_META: Record<Source, string> = { tradeshows: "Synced from Tradeshows", campaigns: "Synced from Campaign Calendar", new_products: "Synced from New Products" };
 
-// Tradeshows are pulled in once per show (not once per participating brand)
-// under this pseudo "brand" row — matches COOLKIDZ_TIMELINE_BRAND in
+// Tradeshows and the Australian retail calendar are portfolio-wide, not
+// brand-specific — pulled/added once under this pseudo "brand" row instead
+// of duplicating across every brand. Matches COOLKIDZ_TIMELINE_BRAND in
 // src/app/api/timeline-events/route.ts.
-const COOLKIDZ_BRAND: Brand = { id: -1, name: "Tradeshows", color: "#0f172a" };
+const COOLKIDZ_BRAND: Brand = { id: -1, name: "Coolkidz calendar", color: "#0f172a" };
 
 const DAY = 86400000;
 const inp = "text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400";
