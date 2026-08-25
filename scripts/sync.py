@@ -1081,21 +1081,8 @@ def fetch_google_ads_creatives(customer_id, creds, top_n=5):
                      key=lambda r: r['clicks'], reverse=True)
     return ranked[:top_n]
 
-def fetch_google_ads_images(customer_id, creds, top_n=12):
-    """Live creative images from Performance Max asset groups — the marketing
-    images actually running now, for the Activations report's visual gallery.
-    Standard Display (responsive_display_ad) isn't covered here; PMax is the
-    dominant modern campaign type and this keeps the query low-risk."""
+def _google_ads_search(cid, creds, query):
     access_token = _google_access_token(creds)
-    cid = customer_id.replace('-', '')
-    query = '''
-    SELECT campaign.name, asset_group.name, asset.image_asset.full_size.url
-    FROM asset_group_asset
-    WHERE asset_group_asset.field_type = 'MARKETING_IMAGE'
-      AND asset_group_asset.status = 'ENABLED'
-      AND asset.type = 'IMAGE'
-    LIMIT 100
-    '''
     url = f'https://googleads.googleapis.com/v24/customers/{cid}/googleAds:search'
     ctx = ssl.create_default_context()
     req = urllib.request.Request(url, data=json.dumps({'query': query}).encode(), method='POST')
@@ -1104,20 +1091,73 @@ def fetch_google_ads_images(customer_id, creds, top_n=12):
     req.add_header('Content-Type', 'application/json')
     req.add_header('login-customer-id', '8923727576')
     with urllib.request.urlopen(req, context=ctx, timeout=30) as r:
-        data = json.loads(r.read().decode())
+        return json.loads(r.read().decode())
 
-    seen = set()
-    images = []
+def fetch_google_ads_images(customer_id, creds, top_n=10):
+    """Live creative images from Performance Max asset groups — the marketing
+    images actually running now, for the Activations report's visual gallery
+    and the Google Ads tab. Standard Display (responsive_display_ad) isn't
+    covered here; PMax is the dominant modern campaign type and this keeps
+    the query low-risk.
+
+    Tries an asset-level performance query first (impressions/clicks over the
+    last 30 days, ranked top-N by impressions) — Google's own asset-level
+    reporting for PMax is inconsistent about whether this is queryable, so on
+    any rejection this falls straight back to the plain enabled-assets list
+    with no ranking, rather than breaking the sync."""
+    cid = customer_id.replace('-', '')
+    ranked_query = '''
+    SELECT campaign.name, asset_group.name, asset.image_asset.full_size.url,
+           metrics.impressions, metrics.clicks
+    FROM asset_group_asset
+    WHERE asset_group_asset.field_type = 'MARKETING_IMAGE'
+      AND asset_group_asset.status = 'ENABLED'
+      AND asset.type = 'IMAGE'
+      AND segments.date DURING LAST_30_DAYS
+    ORDER BY metrics.impressions DESC
+    LIMIT 200
+    '''
+    try:
+        data = _google_ads_search(cid, creds, ranked_query)
+        ranked = True
+    except Exception:
+        # Asset-level metrics not queryable on this account/resource — fall
+        # back to the plain (unranked) list of what's currently enabled.
+        query = '''
+        SELECT campaign.name, asset_group.name, asset.image_asset.full_size.url
+        FROM asset_group_asset
+        WHERE asset_group_asset.field_type = 'MARKETING_IMAGE'
+          AND asset_group_asset.status = 'ENABLED'
+          AND asset.type = 'IMAGE'
+        LIMIT 100
+        '''
+        data = _google_ads_search(cid, creds, query)
+        ranked = False
+
+    seen = {}
     for row in data.get('results', []):
         img_url = row.get('asset', {}).get('imageAsset', {}).get('fullSize', {}).get('url')
-        if not img_url or img_url in seen:
+        if not img_url:
             continue
-        seen.add(img_url)
-        images.append({
+        impressions = int(row.get('metrics', {}).get('impressions', 0) or 0)
+        clicks = int(row.get('metrics', {}).get('clicks', 0) or 0)
+        existing = seen.get(img_url)
+        if existing:
+            # Same asset can repeat per date segment — sum instead of overwrite.
+            existing['impressions'] = (existing['impressions'] or 0) + impressions
+            existing['clicks'] = (existing['clicks'] or 0) + clicks
+            continue
+        seen[img_url] = {
             'campaign_name': row.get('campaign', {}).get('name', ''),
             'asset_group': row.get('assetGroup', {}).get('name', ''),
             'image_url': img_url,
-        })
+            'impressions': impressions if ranked else None,
+            'clicks': clicks if ranked else None,
+        }
+
+    images = list(seen.values())
+    if ranked:
+        images.sort(key=lambda x: x['impressions'] or 0, reverse=True)
     return images[:top_n]
 
 def sync_google_ads(config):

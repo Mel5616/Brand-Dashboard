@@ -15,7 +15,7 @@ type Brand = { id: number; name: string; live?: boolean; color?: string; init?: 
 type Competitor = { id: number; brand_id: number; name: string; notes: string | null; source_links: string[]; image_url: string | null; updated_at: string; updated_by: string | null };
 type Campaign = { id: string; campaign: string; brand: string; channel: string; status: string; key_date: string; end_date?: string | null; note: string; pillar?: string | null; confirmed?: boolean; image_url?: string | null };
 type Creative = { id: number; brand_id: number; campaign_name: string | null; ad_group: string | null; headlines: string[]; descriptions: string[]; clicks: number; impressions: number; final_url: string | null };
-type AdImage = { id: number; brand_id: number; campaign_name: string | null; asset_group: string | null; image_url: string };
+type AdImage = { id: number; brand_id: number; campaign_name: string | null; asset_group: string | null; image_url: string; impressions?: number | null };
 type MetaCreative = { id: number; brand_id: number; campaign_name: string | null; ad_name: string | null; title: string | null; body: string | null; clicks: number; impressions: number };
 type MetaAdImage = { id: number; brand_id: number; campaign_name: string | null; ad_name: string | null; image_url: string };
 type ShareLink = { id: number; token: string; label: string | null; created_at: string; open_count: number; expires_at: string | null };
@@ -137,7 +137,7 @@ export function Activations({ brands, tradeshows, tradeshowBrands, admin = false
       decisions: decisions.map(d => ({ due_label: d.due_label, question: d.question, recommendation: d.recommendation })),
       asks: asks.map(a => ({ audience: a.audience, ask: a.ask, why: a.why })),
       adCreatives: creatives.map(c => ({ ad_group: c.ad_group, campaign_name: c.campaign_name, headlines: c.headlines, descriptions: c.descriptions, clicks: c.clicks, final_url: c.final_url })),
-      adImages: adImages.map(i => ({ campaign_name: i.campaign_name, asset_group: i.asset_group, image_url: i.image_url })),
+      adImages: adImages.map(i => ({ campaign_name: i.campaign_name, asset_group: i.asset_group, image_url: i.image_url, impressions: i.impressions ?? null })),
       metaCreatives: metaCreatives.map(c => ({ campaign_name: c.campaign_name, ad_name: c.ad_name, title: c.title, body: c.body, clicks: c.clicks })),
       metaImages: metaImages.map(i => ({ campaign_name: i.campaign_name, ad_name: i.ad_name, image_url: i.image_url })),
       sectionNotes,

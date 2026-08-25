@@ -17,7 +17,7 @@ type BudgetMonth = { month_key: string; planned: number; actual: number };
 type Decision = { due_label: string | null; question: string; recommendation: string | null };
 type Ask = { audience: string; ask: string; why: string | null };
 type Creative = { ad_group: string | null; campaign_name: string | null; headlines: string[]; descriptions: string[]; clicks: number; final_url?: string | null };
-type AdImage = { campaign_name: string | null; asset_group: string | null; image_url: string };
+type AdImage = { campaign_name: string | null; asset_group: string | null; image_url: string; impressions?: number | null };
 type MetaCreative = { campaign_name: string | null; ad_name: string | null; title: string | null; body: string | null; clicks: number };
 type MetaAdImage = { campaign_name: string | null; ad_name: string | null; image_url: string };
 
@@ -258,8 +258,9 @@ export function buildActivationReport(a: ActivationReportInput): string {
     </div>`;
   }).join("") : `<p class="muted">No live ad copy synced yet.</p>`;
 
-  const imageGallery = a.adImages.length ? `<div class="img-grid">${a.adImages.map(img => `
+  const imageGallery = a.adImages.length ? `<div class="img-grid">${a.adImages.map((img, i) => `
     <figure class="ad-img">
+      ${img.impressions != null ? `<span class="ad-img-badge">#${i + 1} · ${img.impressions.toLocaleString()} impr.</span>` : ""}
       <img src="${esc(img.image_url)}" alt="${esc(img.campaign_name || "Ad creative")}" loading="lazy" onerror="this.closest('figure').style.display='none'">
       <figcaption>${esc(img.campaign_name || "—")}${img.asset_group ? ` <span class="muted">· ${esc(img.asset_group)}</span>` : ""}</figcaption>
     </figure>`).join("")}</div>` : `<p class="muted">No live creative images synced yet (Performance Max campaigns only).</p>`;
@@ -299,9 +300,10 @@ export function buildActivationReport(a: ActivationReportInput): string {
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   .grid.cards3 { grid-template-columns: repeat(3, 1fr); }
   .img-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  .ad-img { margin: 0; background: #fff; border: 1px solid #e2e6ea; border-radius: 10px; overflow: hidden; }
+  .ad-img { margin: 0; background: #fff; border: 1px solid #e2e6ea; border-radius: 10px; overflow: hidden; position: relative; }
   .ad-img img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #f1f5f9; }
   .ad-img figcaption { font-size: 10.5px; color: #64748b; padding: 6px 8px; }
+  .ad-img-badge { position: absolute; top: 6px; left: 6px; z-index: 1; font-size: 9.5px; font-weight: 700; color: #fff; background: rgba(15,23,42,.8); border-radius: 999px; padding: 2px 7px; }
   .card { position: relative; background: #fff; border: 1px solid #e2e6ea; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 2px rgba(15,23,42,0.03); }
   .comp-card { padding: 0; }
   .comp-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: ${accent}; z-index: 1; }

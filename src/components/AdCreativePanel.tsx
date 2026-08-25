@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 // to go into a brand's Marketing Snapshot to see what's actually running.
 
 type GoogleCreative = { id: number; campaign_name: string | null; ad_group: string | null; headlines: string[]; descriptions: string[]; clicks: number; final_url: string | null };
-type GoogleImage = { id: number; campaign_name: string | null; asset_group: string | null; image_url: string };
+type GoogleImage = { id: number; campaign_name: string | null; asset_group: string | null; image_url: string; impressions?: number | null; clicks?: number | null };
 type MetaCreative = { id: number; campaign_name: string | null; ad_name: string | null; title: string | null; body: string | null; clicks: number };
 type MetaImage = { id: number; campaign_name: string | null; ad_name: string | null; image_url: string };
 
@@ -37,12 +37,18 @@ export function AdCreativePanel({ brandId, platform }: { brandId: number; platfo
       <SectionLabel platform={platform} />
       {images.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2.5">
-          {images.map(img => (
-            <figure key={img.id} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-              <img src={img.image_url} alt={img.campaign_name || "Ad creative"} className="w-full aspect-square object-cover" onError={e => { (e.currentTarget.closest("figure") as HTMLElement)?.remove(); }} />
-              <figcaption className="px-2 py-1.5 text-[10px] text-gray-400 truncate">{img.campaign_name || "—"}</figcaption>
-            </figure>
-          ))}
+          {images.map((img, i) => {
+            const impressions = platform === "google" ? (img as GoogleImage).impressions : null;
+            return (
+              <figure key={img.id} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden relative">
+                {platform === "google" && impressions != null && (
+                  <span className="absolute top-1.5 left-1.5 text-[9px] font-bold text-white bg-slate-800/80 rounded-full px-1.5 py-0.5">#{i + 1} · {impressions.toLocaleString()} impr.</span>
+                )}
+                <img src={img.image_url} alt={img.campaign_name || "Ad creative"} className="w-full aspect-square object-cover" onError={e => { (e.currentTarget.closest("figure") as HTMLElement)?.remove(); }} />
+                <figcaption className="px-2 py-1.5 text-[10px] text-gray-400 truncate">{img.campaign_name || "—"}</figcaption>
+              </figure>
+            );
+          })}
         </div>
       )}
       {creatives.length > 0 && (

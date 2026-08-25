@@ -17,7 +17,7 @@ export async function GET(req: Request) {
   const headers = { apikey: sbKey, Authorization: `Bearer ${sbKey}` };
   const [cRes, iRes] = await Promise.all([
     fetch(`${sbUrl}/rest/v1/google_ads_creatives?brand_id=eq.${brandId}&select=*&order=clicks.desc&limit=20`, { headers, cache: "no-store" }),
-    fetch(`${sbUrl}/rest/v1/google_ads_images?brand_id=eq.${brandId}&select=*&order=id.desc&limit=12`, { headers, cache: "no-store" }),
+    fetch(`${sbUrl}/rest/v1/google_ads_images?brand_id=eq.${brandId}&select=*&order=impressions.desc.nullslast,id.asc&limit=10`, { headers, cache: "no-store" }),
   ]);
   const cText = await cRes.text();
   if (!cRes.ok) return NextResponse.json({ ok: false, needsSetup: missing(cRes.status, cText), creatives: [], images: [] });
