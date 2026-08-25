@@ -6,13 +6,13 @@ import { NextResponse, type NextRequest } from "next/server";
 // Public paths (login, auth callback, the team gift form, and API routes) pass
 // through — per-route financial gating is enforced in the routes themselves.
 
-const PUBLIC = ["/login", "/auth", "/log-gift", "/request", "/p", "/c", "/s", "/deals", "/w", "/brief", "/nanit", "/sign", "/deck", "/doc", "/g", "/agreement", "/activation", "/kit", "/api/signout"];
+const PUBLIC = ["/login", "/auth", "/log-gift", "/request", "/p", "/c", "/s", "/deals", "/w", "/brief", "/nanit", "/sign", "/deck", "/doc", "/g", "/agreement", "/activation", "/hub", "/apply", "/api/signout"];
 // The only /api endpoints reachable without a session: the public team gift
 // form and the public Sales Hub request form (both gated by their own shared
 // key inside the route, see src/lib/giftKey.ts / src/lib/salesRequestKey.ts).
 // Everything else under /api now requires auth at the edge (defence in depth on top
 // of each route's own getAccess check).
-const PUBLIC_API = ["/api/influencer/products", "/api/influencer/roster", "/api/influencer/entries", "/api/influencer/invoice", "/api/influencer/avatar", "/api/nanit/public", "/api/releases/sign", "/api/decks/track", "/api/decks/og", "/api/documents/track", "/api/public-sales-request", "/api/sales-requests/upload", "/api/influencer-agreements/sign", "/api/kit-quiz"];
+const PUBLIC_API = ["/api/influencer/products", "/api/influencer/roster", "/api/influencer/entries", "/api/influencer/invoice", "/api/influencer/avatar", "/api/nanit/public", "/api/releases/sign", "/api/decks/track", "/api/decks/og", "/api/documents/track", "/api/public-sales-request", "/api/sales-requests/upload", "/api/influencer-agreements/sign", "/api/hub-apply"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });

@@ -54,7 +54,10 @@ import { BriefingEngine } from "./BriefingEngine";
 import { ShopifyBrandSales } from "./ShopifyBrandSales";
 import { NewProducts } from "./NewProducts";
 import { ProductInfo } from "./ProductInfo";
-import { RetailerKits } from "./RetailerKits";
+import { SalesCustomers } from "./SalesCustomers";
+import { SalesDocsPanel } from "./SalesDocsPanel";
+import { HubFactSheets } from "./HubFactSheets";
+import { CustomerFormsPanel } from "./CustomerFormsPanel";
 import { InfluencerTracker } from "./InfluencerTracker";
 import { TeamGiftingPanel } from "./TeamGiftingPanel";
 import { TeamPanel } from "./TeamPanel";
@@ -90,7 +93,7 @@ import { StockReport } from "./StockReport";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "seo" | "social" | "youtube" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "retailer-kits" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "nanit" | "affiliates" | "pa-budget" | "pa-tracker" | "documents" | "team";
+type TabId = "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "seo" | "social" | "youtube" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "nanit" | "affiliates" | "pa-budget" | "pa-tracker" | "documents" | "team" | "price-lists" | "hub-fact-sheets" | "brand-overview" | "customers" | "customer-forms" | "terms";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -250,10 +253,6 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
   },
   {
-    id: "retailer-kits", label: "Retailer Kits",
-    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
-  },
-  {
     id: "budget", label: "Budget",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   },
@@ -317,6 +316,30 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     id: "sales-hub", label: "Sales Hub",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-1 8l-2 2-1-1" /></svg>,
   },
+  {
+    id: "price-lists", label: "Price Lists",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m-6 4h6m-6 4h4M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" /></svg>,
+  },
+  {
+    id: "hub-fact-sheets", label: "Fact Sheets",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+  },
+  {
+    id: "brand-overview", label: "Brand Overview",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2z" /></svg>,
+  },
+  {
+    id: "customers", label: "Customers",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 00-3-3.87" /></svg>,
+  },
+  {
+    id: "customer-forms", label: "New Customer Forms",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-3-3v6m-7 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+  },
+  {
+    id: "terms", label: "Terms",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2zM9 8h2" /></svg>,
+  },
 ];
 
 // Sidebar grouping — how you market (top) vs where you sell (bottom).
@@ -327,7 +350,7 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Plan", ids: ["campaign-calendar", "promotions", "discount-codes", "calendar", "content", "events", "show-deals", "activations", "timeline"] },
   { label: "Creative", ids: ["tasks", "design-requests", "creative", "event-concepts", "decks"] },
   { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info", "brand-assets", "stock-report", "cost-sheet"] },
-  { label: "Retailer Kits", ids: ["retailer-kits"] },
+  { label: "Retailer Hub", ids: ["price-lists", "hub-fact-sheets", "brand-overview", "customers", "customer-forms", "terms"] },
   { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads", "amazon-ads"] },
   { label: "Owned & Earned", ids: ["email", "seo", "social", "youtube", "influencer", "gifting", "influencer-agreements", "nanit", "releases", "affiliates", "pa-budget", "pa-tracker", "documents"] },
   { label: "Sales Hub", ids: ["sales-hub"] },
@@ -2293,6 +2316,37 @@ export function DashboardTabs({
               calendarEvents={calendarEvents.map((e: any) => ({ title: e.title, start_date: e.start_date }))} />
           )}
 
+          {/* ── Retailer Hub — new-account chasing ── */}
+          {active === "price-lists" && (<>
+            <SectionBar title="Price Lists" />
+            <SalesDocsPanel category="price_list" brandNames={brands.map((b: any) => b.name)} canEdit={role === "admin" || !!allowedTabs?.includes("price-lists")} admin={role === "admin"} />
+          </>)}
+
+          {active === "hub-fact-sheets" && (<>
+            <SectionBar title="Fact Sheets" />
+            <HubFactSheets admin={role === "admin"} />
+          </>)}
+
+          {active === "brand-overview" && (<>
+            <SectionBar title="Brand Overview" />
+            <SalesDocsPanel category="brand_overview" brandNames={brands.map((b: any) => b.name)} canEdit={role === "admin" || !!allowedTabs?.includes("brand-overview")} admin={role === "admin"} />
+          </>)}
+
+          {active === "customers" && (<>
+            <SectionBar title="Customers" />
+            <SalesCustomers brandNames={brands.map((b: any) => b.name)} canEdit={role === "admin" || !!allowedTabs?.includes("customers")} admin={role === "admin"} />
+          </>)}
+
+          {active === "customer-forms" && (<>
+            <SectionBar title="New Customer Forms" />
+            <CustomerFormsPanel canEdit={role === "admin" || !!allowedTabs?.includes("customer-forms")} admin={role === "admin"} />
+          </>)}
+
+          {active === "terms" && (<>
+            <SectionBar title="Trading Terms" />
+            <SalesDocsPanel category="terms" brandNames={brands.map((b: any) => b.name)} canEdit={role === "admin" || !!allowedTabs?.includes("terms")} admin={role === "admin"} />
+          </>)}
+
           {active === "decks" && (
             <>
               <SectionBar title="Launch Decks" />
@@ -2327,13 +2381,6 @@ export function DashboardTabs({
             <>
               <SectionBar title="Product Information" />
               <ProductInfo brandNames={brands.map((b: any) => b.name)} admin={role === "admin"} />
-            </>
-          )}
-
-          {active === "retailer-kits" && (
-            <>
-              <SectionBar title="Retailer Kits" />
-              <RetailerKits brands={brands.map((b: any) => ({ id: b.id, name: b.name, live: b.live, color: b.color }))} />
             </>
           )}
 
