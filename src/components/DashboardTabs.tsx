@@ -30,6 +30,7 @@ import { Documents } from "./Documents";
 import { SeoPanel } from "./SeoPanel";
 import { InsightsPanel } from "./InsightsPanel";
 import { SocialPanel } from "./SocialPanel";
+import { Youtube } from "./Youtube";
 import { SalesPanel } from "./SalesPanel";
 import { SalesBudget } from "./SalesBudget";
 import { BabyBunting } from "./BabyBunting";
@@ -89,7 +90,7 @@ import { StockReport } from "./StockReport";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "retailer-kits" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "nanit" | "affiliates" | "pa-budget" | "pa-tracker" | "documents" | "team";
+type TabId = "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "seo" | "social" | "youtube" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "retailer-kits" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "nanit" | "affiliates" | "pa-budget" | "pa-tracker" | "documents" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -183,6 +184,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
     id: "social", label: "Social",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5" strokeWidth={2} /><circle cx="12" cy="12" r="3.5" strokeWidth={2} /><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" /></svg>,
+  },
+  {
+    id: "youtube", label: "YouTube",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2 12c0-3.3.4-5 .9-5.8.6-.9 1.5-1.3 2.8-1.5C8.2 4.3 12 4.3 12 4.3s3.8 0 6.3.4c1.3.2 2.2.6 2.8 1.5.5.8.9 2.5.9 5.8s-.4 5-.9 5.8c-.6.9-1.5 1.3-2.8 1.5-2.5.4-6.3.4-6.3.4s-3.8 0-6.3-.4c-1.3-.2-2.2-.6-2.8-1.5C2.4 17 2 15.3 2 12z" /><path fill="currentColor" stroke="none" d="M10 9v6l5-3z" /></svg>,
   },
   {
     id: "tradeshows", label: "Tradeshows",
@@ -324,7 +329,7 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info", "brand-assets", "stock-report", "cost-sheet"] },
   { label: "Retailer Kits", ids: ["retailer-kits"] },
   { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads", "amazon-ads"] },
-  { label: "Owned & Earned", ids: ["email", "seo", "social", "influencer", "gifting", "influencer-agreements", "nanit", "releases", "affiliates", "pa-budget", "pa-tracker", "documents"] },
+  { label: "Owned & Earned", ids: ["email", "seo", "social", "youtube", "influencer", "gifting", "influencer-agreements", "nanit", "releases", "affiliates", "pa-budget", "pa-tracker", "documents"] },
   { label: "Sales Hub", ids: ["sales-hub"] },
 ];
 
@@ -2167,6 +2172,23 @@ export function DashboardTabs({
                 </select>
               </div>
               <SocialPanel scope={brandFilter} brands={brands} instagramOrganic={instagramOrganicAll} instagramMedia={instagramMedia} monthKeys={monthKeys} onSelectBrand={setBrandFilter} />
+            </>
+          )}
+
+          {active === "youtube" && (
+            <>
+              <SectionBar title="YouTube" />
+              <div className="flex items-center gap-2 mb-3">
+                <select
+                  value={brandFilter === "all" ? "all" : String(brandFilter)}
+                  onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
+                  className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                >
+                  <option value="all">All Brands (Portfolio)</option>
+                  {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
+                </select>
+              </div>
+              <Youtube scope={brandFilter} brands={brands} />
             </>
           )}
 

@@ -64,6 +64,7 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "email", label: "Email" },
     { id: "seo", label: "SEO" },
     { id: "social", label: "Social" },
+    { id: "youtube", label: "YouTube" },
     { id: "influencer", label: "Influencer Budget" },
     { id: "gifting", label: "Influencer Tracker" },
     { id: "influencer-agreements", label: "Influencer Agreements" },
