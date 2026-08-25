@@ -3,7 +3,8 @@ import { randomUUID } from "crypto";
 import { getAccess } from "@/lib/access";
 import { createClient } from "@/lib/supabase/server";
 import { sendMail } from "@/lib/releaseMail";
-import { buildHubEmail } from "@/lib/hubMail";
+import { buildHubEmail, buildOosEmail } from "@/lib/hubMail";
+import { loadStockFeed } from "@/lib/stockFeed";
 
 // Retailer Hub send engine. Every send (email or copied link) creates a
 // sales_sends row with a token; the recipient opens /hub/<token> and every
@@ -13,8 +14,8 @@ import { buildHubEmail } from "@/lib/hubMail";
 //          subject?, message?, via: "email"|"link" } → creates tokens; emails if via=email.
 export const revalidate = 0;
 const BASE = "https://marketing.coolkidz.com.au";
-const KINDS = ["price_list", "brand_overview", "terms", "fact_sheet", "form"] as const;
-const KIND_LABEL: Record<string, string> = { price_list: "Price List", brand_overview: "Brand Overview", terms: "Trading Terms", fact_sheet: "Fact Sheet", form: "Credit Application Form" };
+const KINDS = ["price_list", "brand_overview", "terms", "fact_sheet", "form", "stock_report", "order"] as const;
+const KIND_LABEL: Record<string, string> = { price_list: "Price List", brand_overview: "Brand Overview", terms: "Trading Terms", fact_sheet: "Fact Sheet", form: "Credit Application Form", stock_report: "Stock Availability", order: "Opening Order Form" };
 const missing = (m: string) => /PGRST205|does not exist|schema cache|relation .* does not exist/i.test(m || "");
 const isEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 
@@ -67,9 +68,19 @@ export async function POST(req: Request) {
     });
   }
 
+  // Stock report sends use the weekly OOS email format (per-brand sentence
+  // summary built live from the Asana feed, button to the tracked report).
+  const isOos = rows.length > 0 && rows.every(r => r.doc_kind === "stock_report");
+  const dateLabel = new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+  async function oosHtml(reportUrl: string) {
+    const { groups } = await loadStockFeed(sb);
+    return buildOosEmail({ groups, brandFilter: rows[0].brand_name, dateLabel, reportUrl, message: b.message });
+  }
+
   // Preview mode: render the exact email that would go out (placeholder links,
   // nothing written to the database, nothing sent).
   if (b.preview) {
+    if (isOos) return NextResponse.json({ ok: true, html: await oosHtml("#") });
     const previewLinks = rows.map(r => ({ url: "#", title: r.doc_title, kind: r.doc_kind, brand: r.brand_name }));
     return NextResponse.json({ ok: true, html: buildHubEmail({ recipientName: b.recipient_name, message: b.message, links: previewLinks }) });
   }
@@ -82,8 +93,10 @@ export async function POST(req: Request) {
 
   // Email via Resend — one designed email listing every included link
   // (buildHubEmail is also what the modal's preview renders).
-  const subject = String(b.subject || "").trim() || `Coolkidz Australia — ${links.map(l => l.title).join(", ")}`;
-  const html = buildHubEmail({ recipientName: b.recipient_name, message: b.message, links: links.map(l => ({ url: l.url, title: l.title, kind: l.kind, brand: l.brand })) });
+  const subject = String(b.subject || "").trim() || (isOos ? `Coolkidz Australia — OOS Report, ${dateLabel}` : `Coolkidz Australia — ${links.map(l => l.title).join(", ")}`);
+  const html = isOos
+    ? await oosHtml(links[0].url)
+    : buildHubEmail({ recipientName: b.recipient_name, message: b.message, links: links.map(l => ({ url: l.url, title: l.title, kind: l.kind, brand: l.brand })) });
 
   const sent = await sendMail({ to: [recipientEmail], subject, html });
   await sb.from("sales_sends").update({ email_status: sent.ok ? "sent" : "failed" }).in("id", (inserted || []).map((r: any) => r.id));

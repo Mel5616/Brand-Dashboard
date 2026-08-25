@@ -34,6 +34,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ token: string }
   } catch { /* ignore */ }
 
   if (send.doc_kind === "form") return NextResponse.redirect(new URL(`/apply/${token}`, req.url), 302);
+  if (send.doc_kind === "order") return NextResponse.redirect(new URL(`/order/${token}`, req.url), 302);
 
   const table = send.doc_kind === "fact_sheet" ? "product_fact_sheets" : "sales_documents";
   const docs = send.doc_id

@@ -12,9 +12,9 @@ import { createClient } from "@/lib/supabase/server";
 export const revalidate = 0;
 const BUCKET = "sales-hub";
 const UPLOAD_BUCKET = "sales-hub-uploads";
-const CATEGORIES = ["price_list", "brand_overview", "terms", "credit_form"] as const;
+const CATEGORIES = ["price_list", "brand_overview", "terms", "credit_form", "stock_report"] as const;
 type Category = (typeof CATEGORIES)[number];
-const CAT_TAB: Record<Category, string> = { price_list: "price-lists", brand_overview: "brand-overview", terms: "terms", credit_form: "customer-forms" };
+const CAT_TAB: Record<Category, string> = { price_list: "price-lists", brand_overview: "brand-overview", terms: "terms", credit_form: "customer-forms", stock_report: "stock-availability" };
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "doc";
 const missing = (m: string) => /PGRST205|does not exist|schema cache|relation .* does not exist/i.test(m || "");
 

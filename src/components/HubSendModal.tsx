@@ -5,7 +5,7 @@
 // tracked link. Every send creates a /hub/<token> row whose opens are logged.
 import { useEffect, useMemo, useRef, useState } from "react";
 
-export type SendItem = { kind: "price_list" | "brand_overview" | "terms" | "fact_sheet" | "form"; id?: string; title: string; brand?: string | null };
+export type SendItem = { kind: "price_list" | "brand_overview" | "terms" | "fact_sheet" | "form" | "stock_report" | "order"; id?: string; title: string; brand?: string | null };
 type Customer = { id: string; store_name: string; contact_name: string | null; email: string | null };
 
 export function HubSendModal({ items, onClose, onSent, presetCustomerId }: { items: SendItem[]; onClose: () => void; onSent?: () => void; presetCustomerId?: string }) {
