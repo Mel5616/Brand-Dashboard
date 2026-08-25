@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAccess } from "@/lib/access";
+import { getAccess, canManage } from "@/lib/access";
 import { createClient } from "@/lib/supabase/server";
 
 // Launch decks admin API. GET lists decks + share links + view stats.
@@ -97,7 +97,10 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "Admins only" }, { status: 403 });
+  // Managing links (create/PDF toggle/revoke) is open to anyone granted the
+  // Launch Decks tab, same as other member-manageable trackers — uploading a
+  // whole new deck or deleting one stays admin-only (see POST/DELETE below).
+  if (!(await canManage("decks"))) return NextResponse.json({ ok: false, error: "Not permitted" }, { status: 403 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   const sb = await createClient();
   if (b.action === "share.create") {

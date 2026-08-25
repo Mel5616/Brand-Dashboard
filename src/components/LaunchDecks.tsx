@@ -51,7 +51,7 @@ function DeckThumb({ token }: { token: string }) {
   );
 }
 
-export function LaunchDecks({ brands, admin = false }: { brands: { name: string }[]; admin?: boolean }) {
+export function LaunchDecks({ brands, admin = false, canManageLinks = admin }: { brands: { name: string }[]; admin?: boolean; canManageLinks?: boolean }) {
   const [decks, setDecks] = useState<Deck[]>([]);
   const [shares, setShares] = useState<Share[]>([]);
   const [views, setViews] = useState<View[]>([]);
@@ -254,7 +254,7 @@ export function LaunchDecks({ brands, admin = false }: { brands: { name: string 
                           <td className="py-2 text-right text-gray-400 text-[12px]">{st?.last ? ago(st.last) : "never"}</td>
                           <td className="py-2 text-right text-[11.5px] text-gray-400 max-w-[180px] truncate" title={st?.viewers.join(", ")}>{st?.viewers.length ? st.viewers.map(v => v.split("@")[0]).join(", ") : (st?.opens ? "external" : "—")}</td>
                           <td className="py-2 text-right whitespace-nowrap">
-                            {admin && (
+                            {canManageLinks && (
                               <label className="inline-flex items-center gap-1 mr-3 cursor-pointer select-none" title="Allow viewers on this link to download the PDF">
                                 <input type="checkbox" checked={s.allow_pdf !== false} onChange={() => togglePdf(s)} className="accent-[#e2593c] h-3.5 w-3.5" />
                                 <span className="text-[11.5px] font-semibold text-gray-500">PDF</span>
@@ -262,20 +262,24 @@ export function LaunchDecks({ brands, admin = false }: { brands: { name: string 
                             )}
                             <a href={`/deck/${s.token}`} target="_blank" rel="noreferrer" className="text-[12px] font-semibold text-violet-600 hover:underline mr-2">View</a>
                             <button onClick={() => copy(s.token)} className="text-[12px] font-semibold text-emerald-600 hover:underline mr-2">⧉ Copy</button>
-                            {admin && <button onClick={() => delShare(s.id)} className="text-[12px] text-gray-300 hover:text-rose-500">Revoke</button>}
+                            {canManageLinks && <button onClick={() => delShare(s.id)} className="text-[12px] text-gray-300 hover:text-rose-500">Revoke</button>}
                           </td>
                         </tr>
                       );
                     })}
                   </tbody>
                 </table>
-                {admin && (
+                {(canManageLinks || admin) && (
                   <div className="mt-2.5 flex items-center gap-2">
-                    <input value={newLabel[d.id] ?? ""} onChange={e => setNewLabel(p => ({ ...p, [d.id]: e.target.value }))}
-                      onKeyDown={e => e.key === "Enter" && addShare(d.id)}
-                      placeholder="New tracked link — who's it for? e.g. Baby Bunting · Sarah" className={`${inp} flex-1 max-w-md`} />
-                    <button onClick={() => addShare(d.id)} className="text-[12.5px] font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2">+ Link</button>
-                    <button onClick={() => delDeck(d)} className="ml-auto text-[12px] text-gray-300 hover:text-rose-500">Delete deck</button>
+                    {canManageLinks && (
+                      <>
+                        <input value={newLabel[d.id] ?? ""} onChange={e => setNewLabel(p => ({ ...p, [d.id]: e.target.value }))}
+                          onKeyDown={e => e.key === "Enter" && addShare(d.id)}
+                          placeholder="New tracked link — who's it for? e.g. Baby Bunting · Sarah" className={`${inp} flex-1 max-w-md`} />
+                        <button onClick={() => addShare(d.id)} className="text-[12.5px] font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2">+ Link</button>
+                      </>
+                    )}
+                    {admin && <button onClick={() => delDeck(d)} className="ml-auto text-[12px] text-gray-300 hover:text-rose-500">Delete deck</button>}
                   </div>
                 )}
                 <p className="text-[11px] text-gray-400 mt-2">Give each person or company their own link — that&apos;s how you know who opened it. Time counts only while the deck is actually on screen.</p>
