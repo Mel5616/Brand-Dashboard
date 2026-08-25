@@ -68,7 +68,7 @@ export function HubFactSheets({ admin }: { admin: boolean }) {
               <div key={s.id} className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${isOpen ? "sm:col-span-2 xl:col-span-3" : ""}`}>
                 {viewUrl && (
                   <a href={viewUrl} target="_blank" rel="noopener noreferrer" className="block relative group">
-                    <DocThumb src={s.html_url ? `/api/fact-sheets/view?id=${s.id}` : null} pdfOnly={!s.html_url} />
+                    <DocThumb src={s.html_url ? `/api/fact-sheets/view?id=${s.id}` : null} pdfOnly={!s.html_url} variant="a4" />
                     <span className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/25 transition-colors flex items-center justify-center">
                       <span className="opacity-0 group-hover:opacity-100 text-white text-[13px] font-bold bg-slate-900/70 rounded-full px-4 py-2">Open →</span>
                     </span>

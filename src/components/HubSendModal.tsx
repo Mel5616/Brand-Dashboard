@@ -116,10 +116,10 @@ export function HubSendModal({ items, onClose, onSent, presetCustomerId }: { ite
   );
 }
 
-// Live document preview in a laptop mockup — same visual as Launch Decks'
-// DeckThumb, but pointed at a document URL (Supabase public HTML). PDF-only
-// docs get a flat placeholder screen instead of an iframe.
-export function DocThumb({ src, pdfOnly }: { src?: string | null; pdfOnly?: boolean }) {
+// Live document preview — "laptop" wraps the page in a laptop mockup (decks /
+// widescreen overviews), "a4" shows it as a portrait A4 sheet (price lists,
+// terms, fact sheets). PDF-only docs get a flat placeholder instead of an iframe.
+export function DocThumb({ src, pdfOnly, variant = "laptop" }: { src?: string | null; pdfOnly?: boolean; variant?: "laptop" | "a4" }) {
   const ref = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(384);
   useEffect(() => {
@@ -129,6 +129,27 @@ export function DocThumb({ src, pdfOnly }: { src?: string | null; pdfOnly?: bool
     const ro = new ResizeObserver(upd); ro.observe(el);
     return () => ro.disconnect();
   }, []);
+  if (variant === "a4") {
+    const pageW = Math.min(300, Math.max(180, w - 110));
+    const pageH = pageW * 1.4142; // A4 portrait
+    const a4scale = pageW / 794;  // 794px = A4 width at 96dpi
+    return (
+      <div ref={ref} className="bg-gradient-to-b from-slate-100 to-slate-200 py-6 flex justify-center">
+        <div className="relative overflow-hidden bg-white rounded-[3px] shadow-xl ring-1 ring-slate-900/5" style={{ width: pageW, height: pageH }}>
+          {src && !pdfOnly ? (
+            <iframe src={src} loading="lazy" tabIndex={-1} aria-hidden scrolling="no"
+              style={{ width: 794, height: 1123, transform: `scale(${a4scale})`, transformOrigin: "top left" }}
+              className="absolute top-0 left-0 pointer-events-none border-0" />
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-slate-50">
+              <span style={{ fontSize: pageW * 0.18 }}>📄</span>
+              <span className="text-slate-400 font-bold" style={{ fontSize: Math.max(10, pageW * 0.055) }}>PDF document</span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
   const screenW = Math.max(200, w - 96);
   const scale = screenW / 1280;
   return (

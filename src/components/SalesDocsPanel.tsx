@@ -11,7 +11,7 @@ type Doc = { id: string; category: string; brand_name: string | null; title: str
 type Category = "price_list" | "brand_overview" | "terms";
 
 const COPY: Record<Category, { noun: string; empty: string; hint: string }> = {
-  price_list: { noun: "price list", empty: "No price lists uploaded yet.", hint: "Upload each brand's wholesale price list (self-contained HTML and/or PDF). Uploading again for the same brand archives the previous version." },
+  price_list: { noun: "price list", empty: "No price lists uploaded yet.", hint: "Include \"Trade\" or \"Retail\" in the title — that's how lists are grouped. Re-uploading with the same title archives the previous version, so a brand can keep a Trade and a Retail list current at once." },
   brand_overview: { noun: "brand overview", empty: "No brand overviews uploaded yet.", hint: "Upload each brand's overview / sell-in document. Uploading again for the same brand archives the previous version." },
   terms: { noun: "terms document", empty: "No trading terms uploaded yet.", hint: "Upload your standard trading terms. Leave brand blank for the company-wide document; uploading again archives the previous version." },
 };
@@ -103,7 +103,19 @@ export function SalesDocsPanel({ category, brandNames, canEdit, admin }: { categ
   if (state === "error") return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">Couldn’t load.</div>;
 
   const shown = showArchived ? docs : docs.filter(d => d.status === "current");
-  const groups = category === "terms" ? [null] : Array.from(new Set(shown.map(d => d.brand_name))).sort((a, b) => String(a).localeCompare(String(b)));
+  const byBrand = (a: Doc, b: Doc) => String(a.brand_name).localeCompare(String(b.brand_name)) || a.title.localeCompare(b.title);
+  // Price lists split into Trade / Retail sections (classified by title);
+  // brand overviews group by brand; terms are one flat list.
+  const sections: { label: string | null; docs: Doc[] }[] =
+    category === "terms" ? [{ label: null, docs: shown }]
+    : category === "price_list" ? [
+        { label: "Trade Price Lists", docs: shown.filter(d => /trade/i.test(d.title)).sort(byBrand) },
+        { label: "Retail Price Lists", docs: shown.filter(d => !/trade/i.test(d.title) && /retail|rrp/i.test(d.title)).sort(byBrand) },
+        { label: "Other Price Lists", docs: shown.filter(d => !/trade/i.test(d.title) && !/retail|rrp/i.test(d.title)).sort(byBrand) },
+      ].filter(s => s.docs.length > 0)
+    : Array.from(new Set(shown.map(d => d.brand_name))).sort((a, b) => String(a).localeCompare(String(b)))
+        .map(g => ({ label: g, docs: shown.filter(d => d.brand_name === g) }));
+  const thumbVariant: "laptop" | "a4" = category === "brand_overview" ? "laptop" : "a4";
 
   return (
     <div className="space-y-4">
@@ -151,16 +163,16 @@ export function SalesDocsPanel({ category, brandNames, canEdit, admin }: { categ
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center text-slate-300">{c.empty}</div>
       ) : (
         <div className="space-y-6">
-          {groups.map(g => (
-            <div key={g ?? "company"}>
-              {category !== "terms" && (
+          {sections.map(sec => (
+            <div key={sec.label ?? "all"}>
+              {sec.label && (
                 <div className="flex items-center gap-3 mb-2.5">
-                  <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">{g}</span>
+                  <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">{sec.label}</span>
                   <span className="flex-1 h-px bg-slate-100" />
                 </div>
               )}
               <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
-                {shown.filter(d => (category === "terms" ? true : d.brand_name === g)).map(d => {
+                {sec.docs.map(d => {
                   const docSends = sends.filter(s => s.doc_id === d.id);
                   const opens = docSends.reduce((t, s) => t + (s.open_count || 0), 0);
                   const isOpen = openTracking === d.id;
@@ -172,7 +184,7 @@ export function SalesDocsPanel({ category, brandNames, canEdit, admin }: { categ
                       {/* Live scaled preview in a laptop mockup (same visual as Launch Decks) */}
                       {viewUrl && (
                         <a href={viewUrl} target="_blank" rel="noopener noreferrer" className="block relative group">
-                          <DocThumb src={htmlView} pdfOnly={!d.html_url} />
+                          <DocThumb src={htmlView} pdfOnly={!d.html_url} variant={thumbVariant} />
                           <span className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/25 transition-colors flex items-center justify-center">
                             <span className="opacity-0 group-hover:opacity-100 text-white text-[13px] font-bold bg-slate-900/70 rounded-full px-4 py-2">Open →</span>
                           </span>
