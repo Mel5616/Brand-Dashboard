@@ -55,6 +55,7 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "cost-sheet", label: "Cost Sheet" },
   ] },
   { label: "Retailer Hub", tabs: [
+    { id: "brand-packs", label: "Brands" },
     { id: "price-lists", label: "Price Lists" },
     { id: "hub-fact-sheets", label: "Fact Sheets" },
     { id: "brand-overview", label: "Brand Overview" },

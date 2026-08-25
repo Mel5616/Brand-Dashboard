@@ -43,6 +43,12 @@ export async function GET(req: Request, ctx: { params: Promise<{ token: string }
   if (!doc) return notFound();
 
   if (doc.html_url) {
+    // Serve small HTML inline (clean URL); big documents (image-heavy brand
+    // overviews) get redirected to the stored file instead — Vercel caps
+    // function response bodies well below their size. Open is already logged.
+    const head = await fetch(doc.html_url, { method: "HEAD", cache: "no-store" }).catch(() => null);
+    const size = Number(head?.headers.get("content-length") || 0);
+    if (head?.ok && size > 3_500_000) return NextResponse.redirect(doc.html_url, 302);
     const html = await fetch(doc.html_url, { cache: "no-store" }).then(r => r.ok ? r.text() : null).catch(() => null);
     if (html) return new NextResponse(html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
   }

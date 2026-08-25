@@ -49,7 +49,7 @@ export function SalesDocsPanel({ category, brandNames, canEdit, admin }: { categ
 
   async function upload() {
     if (!title.trim() || (!htmlFile && !pdfFile)) { setErr("Give it a title and attach the HTML and/or PDF."); return; }
-    for (const f of [htmlFile, pdfFile]) if (f && f.size > 20 * 1024 * 1024) { setErr(`${f.name} is over 20MB.`); return; }
+    for (const f of [htmlFile, pdfFile]) if (f && f.size > 30 * 1024 * 1024) { setErr(`${f.name} is over 30MB.`); return; }
     setBusy(true); setErr("");
     const CHUNK = 3 * 1024 * 1024;
     const DIRECT_MAX = 1.5 * 1024 * 1024;
@@ -142,7 +142,7 @@ export function SalesDocsPanel({ category, brandNames, canEdit, admin }: { categ
             <button onClick={() => setAdding(false)} className="text-sm text-slate-500 px-3 py-1.5">Cancel</button>
             <button onClick={upload} disabled={busy} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 rounded-lg px-4 py-1.5">{busy ? "Uploading…" : "Save"}</button>
           </div>
-          <p className="text-[11px] text-gray-400">{c.hint} Files up to 20MB each.</p>
+          <p className="text-[11px] text-gray-400">{c.hint} Files up to 30MB each.</p>
         </div>
       )}
 

@@ -46,8 +46,10 @@ async function saveFinal(sb: any, email: string | null, category: Category, bran
     if (error) return { error: `PDF: ${error.message}` };
     pdf_url = sb.storage.from(BUCKET).getPublicUrl(`${base}.pdf`).data.publicUrl;
   }
-  // One current doc per category+brand (terms: one current overall per title-less brand=null slot).
-  let prev = sb.from("sales_documents").update({ status: "archived" }).eq("category", category).eq("status", "current");
+  // One current doc per category+brand+title — matching on title lets a brand
+  // keep e.g. a Trade AND a Retail price list current at once; re-uploading
+  // under the same title archives the previous version.
+  let prev = sb.from("sales_documents").update({ status: "archived" }).eq("category", category).eq("status", "current").eq("title", title);
   prev = brand ? prev.eq("brand_name", brand) : prev.is("brand_name", null);
   await prev;
   const { error } = await sb.from("sales_documents").insert({ category, brand_name: brand, title, version, html_url, pdf_url, status: "current", created_by: email });
@@ -86,7 +88,7 @@ export async function POST(req: Request) {
 
   let htmlBlob: Blob | null = form.get("html") as File | null;
   let pdfBlob: Blob | null = form.get("pdf") as File | null;
-  for (const f of [htmlBlob, pdfBlob] as (File | null)[]) if (f && f.size > 20 * 1024 * 1024) return NextResponse.json({ ok: false, error: `${f.name} is over 20MB` }, { status: 400 });
+  for (const f of [htmlBlob, pdfBlob] as (File | null)[]) if (f && f.size > 30 * 1024 * 1024) return NextResponse.json({ ok: false, error: `${f.name} is over 30MB` }, { status: 400 });
 
   if (action === "finish") {
     const uploadId = String(form.get("upload_id") || "").replace(/[^a-z0-9-]/gi, "").slice(0, 64);
