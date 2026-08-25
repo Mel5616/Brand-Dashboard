@@ -264,7 +264,7 @@ function CustomerDrawer({ customer: c, canEdit, admin, onClose, onEdit, onStage,
 
         {sending && (
           <HubSendModal
-            items={[{ kind: "form", title: "New Customer Application Form" }]}
+            items={[{ kind: "form", title: "Credit Application Form" }]}
             presetCustomerId={c.id}
             onClose={() => setSending(false)}
             onSent={loadActivity}

@@ -12,7 +12,7 @@ const PUBLIC = ["/login", "/auth", "/log-gift", "/request", "/p", "/c", "/s", "/
 // key inside the route, see src/lib/giftKey.ts / src/lib/salesRequestKey.ts).
 // Everything else under /api now requires auth at the edge (defence in depth on top
 // of each route's own getAccess check).
-const PUBLIC_API = ["/api/influencer/products", "/api/influencer/roster", "/api/influencer/entries", "/api/influencer/invoice", "/api/influencer/avatar", "/api/nanit/public", "/api/releases/sign", "/api/decks/track", "/api/decks/og", "/api/documents/track", "/api/public-sales-request", "/api/sales-requests/upload", "/api/influencer-agreements/sign", "/api/hub-apply"];
+const PUBLIC_API = ["/api/influencer/products", "/api/influencer/roster", "/api/influencer/entries", "/api/influencer/invoice", "/api/influencer/avatar", "/api/nanit/public", "/api/releases/sign", "/api/decks/track", "/api/decks/og", "/api/documents/track", "/api/public-sales-request", "/api/sales-requests/upload", "/api/influencer-agreements/sign", "/api/credit-application"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });

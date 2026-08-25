@@ -40,7 +40,14 @@ export function CustomerFormsPanel({ canEdit, admin }: { canEdit: boolean; admin
   if (state === "needsSetup") return <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-xl p-4">Run <code>add_retailer_hub.sql</code> in Supabase, then reload.</div>;
   if (state === "error") return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">Couldn’t load.</div>;
 
-  const FIELD_LABELS: [string, string][] = [["legal_name", "Legal entity"], ["abn", "ABN"], ["website", "Website / IG"], ["store_count", "Stores"], ["role", "Role"], ["phone", "Phone"], ["address", "Address"], ["state", "State"], ["postcode", "Postcode"], ["hear_about", "Heard about us"], ["message", "Message"]];
+  // Render the credit application's nested payload as readable label/value
+  // pairs (objects flatten to one line; arrays become one line per entry).
+  const label = (k: string) => k.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()).replace(/\bAbn\b/, "ABN").replace(/\bAcn\b/, "ACN").replace(/\bAud\b/, "AUD");
+  const flat = (v: any): string => v == null ? "" : Array.isArray(v) ? v.map(flat).filter(Boolean).join("\n") : typeof v === "object" ? Object.entries(v).filter(([k, x]) => x !== "" && x != null && k !== "same_as_street").map(([k, x]) => typeof x === "boolean" ? (x ? label(k) : `${label(k)}: no`) : String(x)).join(", ") : String(v);
+  const entries = (data: any): [string, string][] => Object.entries(data || {})
+    .filter(([k]) => !["submitted_at"].includes(k))
+    .map(([k, v]) => [label(k), flat(v)] as [string, string])
+    .filter(([, v]) => v.trim() !== "" && v !== "0");
 
   return (
     <div className="space-y-5">
@@ -75,9 +82,9 @@ export function CustomerFormsPanel({ canEdit, admin }: { canEdit: boolean; admin
                 {open === f.id && (
                   <div className="mt-3 pt-3 border-t border-slate-50">
                     <div className="grid sm:grid-cols-3 gap-x-4 gap-y-2 text-[12.5px]">
-                      {FIELD_LABELS.map(([k, label]) => f.data?.[k] ? (
-                        <div key={k}><span className="block text-[10px] font-semibold text-slate-400 uppercase">{label}</span><span className="text-slate-700 whitespace-pre-line">{String(f.data[k])}</span></div>
-                      ) : null)}
+                      {entries(f.data).map(([k, v]) => (
+                        <div key={k}><span className="block text-[10px] font-semibold text-slate-400 uppercase">{k}</span><span className="text-slate-700 whitespace-pre-line">{v}</span></div>
+                      ))}
                     </div>
                     {canEdit && (
                       <div className="flex gap-2 mt-3">
@@ -96,7 +103,7 @@ export function CustomerFormsPanel({ canEdit, admin }: { canEdit: boolean; admin
 
       {sending && (
         <HubSendModal
-          items={[{ kind: "form", title: "New Customer Application Form" }]}
+          items={[{ kind: "form", title: "Credit Application Form" }]}
           onClose={() => setSending(false)}
           onSent={load}
         />

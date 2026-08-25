@@ -30,7 +30,7 @@ export function BrandPacks({ brands }: { brands: { name: string; color?: string 
     ]).then(([d, f, s]) => {
       if (d.needsSetup) { setState("needsSetup"); return; }
       if (!d.ok) { setState("error"); return; }
-      setDocs((d.docs || []).filter((x: Doc) => x.category !== "terms"));
+      setDocs((d.docs || []).filter((x: Doc) => x.category === "price_list" || x.category === "brand_overview"));
       if (f.ok) setSheets(f.sheets || []);
       if (s.ok) setSends(s.sends || []);
       setState("ready");
@@ -45,7 +45,7 @@ export function BrandPacks({ brands }: { brands: { name: string; color?: string 
     }
     const sheet = sheets.find(s => s.brand_name === b.name);
     if (sheet) items.push({ kind: "fact_sheet", id: sheet.id, title: `${b.name} Fact Sheet`, brand: b.name, key: `fact_sheet:${sheet.id}`, meta: `Fact Sheet · v${sheet.version}` });
-    items.push({ kind: "form", title: "New Customer Application Form", brand: b.name, key: "form", meta: "Application form" });
+    items.push({ kind: "form", title: "Credit Application Form", brand: b.name, key: "form", meta: "Application form" });
     return { brand: b, items, docCount: items.length - 1 };
   }), [brands, docs, sheets]);
 

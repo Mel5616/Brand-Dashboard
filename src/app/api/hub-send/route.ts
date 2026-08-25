@@ -13,7 +13,7 @@ import { sendMail, shell } from "@/lib/releaseMail";
 export const revalidate = 0;
 const BASE = "https://marketing.coolkidz.com.au";
 const KINDS = ["price_list", "brand_overview", "terms", "fact_sheet", "form"] as const;
-const KIND_LABEL: Record<string, string> = { price_list: "Price List", brand_overview: "Brand Overview", terms: "Trading Terms", fact_sheet: "Fact Sheet", form: "New Customer Form" };
+const KIND_LABEL: Record<string, string> = { price_list: "Price List", brand_overview: "Brand Overview", terms: "Trading Terms", fact_sheet: "Fact Sheet", form: "Credit Application Form" };
 const missing = (m: string) => /PGRST205|does not exist|schema cache|relation .* does not exist/i.test(m || "");
 const isEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 
