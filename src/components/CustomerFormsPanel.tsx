@@ -3,18 +3,26 @@
 // Retailer Hub → New Customer Forms: send tracked application-form links
 // (/apply/<token>) and review what comes back. Each form link is a sales_sends
 // row (kind "form"), so opens are tracked like every other Retailer Hub send.
-import { useEffect, useState } from "react";
-import { HubSendModal, SendRow } from "./HubSendModal";
+import { useEffect, useRef, useState } from "react";
+import { HubSendModal, SendRow, DocThumb } from "./HubSendModal";
 
 const dShort = (s?: string | null) => s ? new Date(s).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "—";
 const STATUS_CLS: Record<string, string> = { new: "bg-sky-100 text-sky-700", reviewed: "bg-amber-100 text-amber-700", approved: "bg-emerald-100 text-emerald-700" };
+type FormDoc = { id: string; title: string; version: string; html_url: string | null; status: string; created_at: string };
 
 export function CustomerFormsPanel({ canEdit, admin }: { canEdit: boolean; admin: boolean }) {
   const [subs, setSubs] = useState<any[]>([]);
   const [sends, setSends] = useState<any[]>([]);
+  const [forms, setForms] = useState<FormDoc[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "needsSetup" | "error">("loading");
   const [sending, setSending] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [title, setTitle] = useState("");
+  const [version, setVersion] = useState("1");
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
 
   function load() {
     fetch("/api/customer-forms", { cache: "no-store" }).then(r => r.json()).then(d => {
@@ -23,8 +31,28 @@ export function CustomerFormsPanel({ canEdit, admin }: { canEdit: boolean; admin
       setSubs(d.submissions || []); setState("ready");
     }).catch(() => setState("error"));
     fetch("/api/hub-send?kind=form", { cache: "no-store" }).then(r => r.json()).then(d => { if (d.ok) setSends(d.sends || []); }).catch(() => {});
+    fetch("/api/sales-docs?category=credit_form", { cache: "no-store" }).then(r => r.json()).then(d => { if (d.ok) setForms(d.docs || []); }).catch(() => {});
   }
   useEffect(() => { load(); }, []);
+
+  async function uploadForm() {
+    const file = fileRef.current?.files?.[0];
+    if (!title.trim() || !file) { setErr("Give the form a title and attach its HTML file."); return; }
+    if (file.size > 4 * 1024 * 1024) { setErr("Form HTML over 4MB — send it to Mel to slim down first."); return; }
+    setBusy(true); setErr("");
+    const fd = new FormData();
+    fd.set("category", "credit_form"); fd.set("title", title.trim()); fd.set("version", version.trim() || "1"); fd.set("html", file);
+    const r = await fetch("/api/sales-docs", { method: "POST", body: fd }).then(x => x.json()).catch(() => ({ ok: false, error: "Upload failed" }));
+    setBusy(false);
+    if (!r.ok) { setErr(r.error || "Upload failed"); return; }
+    setAdding(false); setTitle(""); setVersion("1"); if (fileRef.current) fileRef.current.value = "";
+    load();
+  }
+  async function removeForm(f: FormDoc) {
+    if (!window.confirm(`Remove "${f.title}"? Links already sent will stop working if no other form remains.`)) return;
+    await fetch(`/api/sales-docs?id=${f.id}`, { method: "DELETE" }).catch(() => {});
+    load();
+  }
 
   async function setStatus(id: string, status: string) {
     setSubs(prev => prev.map(s => s.id === id ? { ...s, status } : s));
@@ -52,8 +80,59 @@ export function CustomerFormsPanel({ canEdit, admin }: { canEdit: boolean; admin
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-2">
-        <p className="text-[13px] text-slate-500">Send a prospect the new-customer application form; their submission lands here (and on their customer record).</p>
-        {canEdit && <button onClick={() => setSending(true)} className="ml-auto text-xs font-semibold text-white bg-sky-500 hover:bg-sky-600 rounded-lg px-3 py-2">+ Send form link</button>}
+        <p className="text-[13px] text-slate-500">Send a prospect the credit application form; their submission lands here (and on their customer record) and is emailed to marketing@ automatically.</p>
+        {canEdit && <button onClick={() => { setErr(""); setAdding(a => !a); }} className="ml-auto text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2">{adding ? "Close" : "+ Upload form"}</button>}
+        {canEdit && <button onClick={() => setSending(true)} className="text-xs font-semibold text-white bg-sky-500 hover:bg-sky-600 rounded-lg px-3 py-2">+ Send form link</button>}
+      </div>
+
+      {adding && canEdit && (
+        <div className="bg-white rounded-2xl border border-emerald-200 shadow-sm p-4 space-y-3">
+          <h3 className="text-sm font-bold text-slate-700">Upload a form</h3>
+          <div className="grid md:grid-cols-3 gap-3 items-end">
+            <div><label className="text-[10px] font-semibold text-slate-400 uppercase">Title</label>
+              <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Coolkidz Credit Application" className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2" /></div>
+            <div><label className="text-[10px] font-semibold text-slate-400 uppercase">Version</label>
+              <input value={version} onChange={e => setVersion(e.target.value)} className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2" /></div>
+            <div><label className="text-[10px] font-semibold text-slate-400 uppercase">Form HTML file</label>
+              <input ref={fileRef} type="file" accept=".html,text/html" className="w-full text-xs" /></div>
+          </div>
+          {err && <p className="text-[13px] text-rose-600">{err}</p>}
+          <div className="flex justify-end gap-2">
+            <button onClick={() => setAdding(false)} className="text-sm text-slate-500 px-3 py-1.5">Cancel</button>
+            <button onClick={uploadForm} disabled={busy} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 rounded-lg px-4 py-1.5">{busy ? "Uploading…" : "Save form"}</button>
+          </div>
+          <p className="text-[11px] text-gray-400">Re-uploading with the same title archives the previous version. The most recently uploaded form is the one every form link opens.</p>
+        </div>
+      )}
+
+      {/* The form(s) being sent — A4 previews */}
+      <div>
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400 mb-2">The form you&apos;re sending</h3>
+        {forms.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center text-slate-300">No form uploaded yet — upload the credit application HTML to activate form links.</div>
+        ) : (
+          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
+            {forms.map((f, i) => (
+              <div key={f.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <a href={`/api/sales-docs/view?id=${f.id}`} target="_blank" rel="noopener noreferrer" className="block relative group">
+                  <DocThumb src={f.html_url ? `/api/sales-docs/view?id=${f.id}` : null} pdfOnly={!f.html_url} variant="a4" />
+                  <span className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/25 transition-colors flex items-center justify-center">
+                    <span className="opacity-0 group-hover:opacity-100 text-white text-[13px] font-bold bg-slate-900/70 rounded-full px-4 py-2">Preview →</span>
+                  </span>
+                  {i === 0 && <span className="absolute top-3 left-3 text-[10px] font-bold uppercase tracking-wide text-white bg-emerald-500 rounded-full px-2.5 py-1">Live — this is what links open</span>}
+                </a>
+                <div className="flex items-center gap-3 px-5 py-3.5 border-t border-gray-50">
+                  <div className="min-w-0 flex-1">
+                    <span className="block text-[14.5px] font-bold text-slate-800 truncate">{f.title}</span>
+                    <span className="block text-[11.5px] text-gray-400">v{f.version} · {dShort(f.created_at)}</span>
+                  </div>
+                  {canEdit && <button onClick={() => removeForm(f)} className="shrink-0 text-[12px] text-gray-300 hover:text-rose-500">Delete</button>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <p className="text-[11px] text-gray-400 mt-2">Previews open the real form, but submissions only send from a proper tracked link.</p>
       </div>
 
       {/* Outstanding form links */}
