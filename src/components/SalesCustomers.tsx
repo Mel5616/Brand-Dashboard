@@ -50,7 +50,7 @@ export function SalesCustomers({ brandNames, canEdit, admin }: { brandNames: str
 
   const filtered = useMemo(() => customers.filter(c =>
     (stageFilter === "all" || c.stage === stageFilter) &&
-    (!q.trim() || `${c.store_name} ${c.contact_name ?? ""} ${c.email ?? ""} ${c.state ?? ""} ${(c.brands || []).join(" ")}`.toLowerCase().includes(q.toLowerCase()))
+    (!q.trim() || `${c.store_name} ${c.contact_name ?? ""} ${c.email ?? ""} ${c.state ?? ""} ${(c.brands || []).join(" ")} ${(c as any).notes ?? ""} ${(c as any).source ?? ""}`.toLowerCase().includes(q.toLowerCase()))
   ), [customers, q, stageFilter]);
 
   const counts = useMemo(() => {
@@ -100,7 +100,8 @@ export function SalesCustomers({ brandNames, canEdit, admin }: { brandNames: str
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search stores, contacts, brands…" className="text-sm border border-slate-200 rounded-lg px-3 py-2 w-64" />
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search stores, contacts, notes — try “Grade A” or “Toy Store”…" className="text-sm border border-slate-200 rounded-lg px-3 py-2 w-80" />
+        <span className="text-[11.5px] text-slate-400">{filtered.length} shown</span>
         {canEdit && <button onClick={() => { setErr(""); setEditing({ ...EMPTY }); }} className="ml-auto text-xs font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-2">+ Add customer</button>}
       </div>
 
