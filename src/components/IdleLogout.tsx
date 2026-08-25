@@ -10,8 +10,8 @@ const IDLE_MS = 10 * 60 * 1000;
 const WARN_MS = 60 * 1000;
 const LS_KEY = "dashLastActive";
 
-// Emails never auto-logged-out (the owner's always-on dashboard screens)
-const EXEMPT = ["mel@coolkidz.com.au"];
+// Emails never auto-logged-out (always-on dashboard screens)
+const EXEMPT = ["mel@coolkidz.com.au", "anna@coolkidz.com.au", "jane@coolkidz.com.au", "alison@coolkidz.com.au"];
 
 export function IdleLogout({ email }: { email?: string | null }) {
   useEffect(() => {
