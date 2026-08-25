@@ -10,7 +10,6 @@ export type TabSection = { label: string; tabs: TabDef[] };
 export const TAB_SECTIONS: TabSection[] = [
   { label: "Overview", tabs: [
     { id: "brands", label: "Business Overview" },
-    { id: "strategy", label: "Strategy" },
     { id: "summary", label: "Digital Portfolio Summary" },
     { id: "insights", label: "Insights" },
     { id: "team-hub", label: "Team" },
