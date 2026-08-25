@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #F3F2F0; /* brand off-white */
   --foreground: #171717;
 }
 
@@ -10,6 +10,154 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+
+/* Brand palette (PMS 5405C slate blue hero + pastel extended palette).
+   Remapping Tailwind's accent scales recolours the whole dashboard without
+   touching components: sky = hero slate blue, emerald = sage greens,
+   rose = brick red/blush, violet = mauve/lilac, amber = warm taupe-bronze,
+   teal follows the hero family. Neutral slate/gray scales stay stock. */
+@theme {
+  /* Hero — slate blue (PMS 5405C #54697C) */
+  --color-sky-50: #EEF3F8;
+  --color-sky-100: #DCE6F2;
+  --color-sky-200: #C6D5E3;
+  --color-sky-300: #A3BACD;
+  --color-sky-400: #7E97AC;
+  --color-sky-500: #54697C;
+  --color-sky-600: #47596A;
+  --color-sky-700: #3A4A58;
+  --color-sky-800: #2E3B47;
+  --color-sky-900: #243039;
+
+  --color-teal-50: #EEF3F8;
+  --color-teal-100: #DCE6F2;
+  --color-teal-200: #C6D5E3;
+  --color-teal-300: #A3BACD;
+  --color-teal-400: #7E97AC;
+  --color-teal-500: #54697C;
+  --color-teal-600: #47596A;
+  --color-teal-700: #3A4A58;
+  --color-teal-800: #2E3B47;
+  --color-teal-900: #243039;
+
+  /* Sage greens */
+  --color-emerald-50: #F0F5F0;
+  --color-emerald-100: #DEEBDE;
+  --color-emerald-200: #C8D3C8;
+  --color-emerald-300: #A9C9A8;
+  --color-emerald-400: #8AB089;
+  --color-emerald-500: #6B9070;
+  --color-emerald-600: #597A5E;
+  --color-emerald-700: #48644D;
+  --color-emerald-800: #3E463E;
+  --color-emerald-900: #333B33;
+
+  --color-green-50: #F0F5F0;
+  --color-green-100: #DEEBDE;
+  --color-green-200: #C8D3C8;
+  --color-green-300: #A9C9A8;
+  --color-green-400: #8AB089;
+  --color-green-500: #6B9070;
+  --color-green-600: #597A5E;
+  --color-green-700: #48644D;
+  --color-green-800: #3E463E;
+  --color-green-900: #333B33;
+
+  /* Brick red + blush */
+  --color-rose-50: #FAF1F1;
+  --color-rose-100: #F2DCDC;
+  --color-rose-200: #E9C6C6;
+  --color-rose-300: #DBA6A8;
+  --color-rose-400: #C17B7E;
+  --color-rose-500: #A45659;
+  --color-rose-600: #8F4A4D;
+  --color-rose-700: #773D40;
+  --color-rose-800: #613235;
+  --color-rose-900: #4F292B;
+
+  /* Mauve + lilac */
+  --color-violet-50: #F7F2F6;
+  --color-violet-100: #F0E6EF;
+  --color-violet-200: #E3D2E1;
+  --color-violet-300: #C9AFC4;
+  --color-violet-400: #B091A2;
+  --color-violet-500: #9C7D89;
+  --color-violet-600: #866975;
+  --color-violet-700: #6F5661;
+  --color-violet-800: #5B4650;
+  --color-violet-900: #4A3941;
+
+  /* Errors follow the brick red family */
+  --color-red-50: #FAF1F1;
+  --color-red-100: #F2DCDC;
+  --color-red-200: #E9C6C6;
+  --color-red-300: #DBA6A8;
+  --color-red-400: #C17B7E;
+  --color-red-500: #A45659;
+  --color-red-600: #8F4A4D;
+  --color-red-700: #773D40;
+  --color-red-800: #613235;
+  --color-red-900: #4F292B;
+
+  /* Blue-ish accents fold into the hero family */
+  --color-indigo-50: #EEF3F8;
+  --color-indigo-100: #DCE6F2;
+  --color-indigo-200: #C6D5E3;
+  --color-indigo-300: #A3BACD;
+  --color-indigo-400: #7E97AC;
+  --color-indigo-500: #54697C;
+  --color-indigo-600: #47596A;
+  --color-indigo-700: #3A4A58;
+  --color-indigo-800: #2E3B47;
+  --color-indigo-900: #243039;
+
+  --color-cyan-50: #EEF3F8;
+  --color-cyan-100: #DCE6F2;
+  --color-cyan-200: #C6D5E3;
+  --color-cyan-300: #A3BACD;
+  --color-cyan-400: #7E97AC;
+  --color-cyan-500: #54697C;
+  --color-cyan-600: #47596A;
+  --color-cyan-700: #3A4A58;
+  --color-cyan-800: #2E3B47;
+  --color-cyan-900: #243039;
+
+  /* Pastel pink */
+  --color-pink-50: #FBF3F5;
+  --color-pink-100: #F6E1E7;
+  --color-pink-200: #F2B8C6;
+  --color-pink-300: #E39DAF;
+  --color-pink-400: #CE7D93;
+  --color-pink-500: #B4627A;
+  --color-pink-600: #985168;
+  --color-pink-700: #7C4155;
+  --color-pink-800: #653545;
+  --color-pink-900: #522B38;
+
+  /* Purple family follows mauve */
+  --color-purple-50: #F7F2F6;
+  --color-purple-100: #F0E6EF;
+  --color-purple-200: #E3D2E1;
+  --color-purple-300: #C9AFC4;
+  --color-purple-400: #B091A2;
+  --color-purple-500: #9C7D89;
+  --color-purple-600: #866975;
+  --color-purple-700: #6F5661;
+  --color-purple-800: #5B4650;
+  --color-purple-900: #4A3941;
+
+  /* Warm taupe-bronze (warnings stay warm, but muted to match) */
+  --color-amber-50: #FBF7EF;
+  --color-amber-100: #F4EAD8;
+  --color-amber-200: #E9D8B8;
+  --color-amber-300: #D9BF92;
+  --color-amber-400: #C8A76F;
+  --color-amber-500: #B08D57;
+  --color-amber-600: #97764A;
+  --color-amber-700: #7C603C;
+  --color-amber-800: #654E32;
+  --color-amber-900: #533F29;
 }
 
 @media (prefers-color-scheme: dark) {
