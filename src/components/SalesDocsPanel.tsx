@@ -5,7 +5,7 @@
 // and/or PDF per brand (new version archives the old), then send to a customer
 // with open tracking via HubSendModal. Mirrors ProductInfo's chunked upload.
 import { useEffect, useState } from "react";
-import { HubSendModal, SendRow, type SendItem } from "./HubSendModal";
+import { HubSendModal, SendRow, DocThumb, type SendItem } from "./HubSendModal";
 
 type Doc = { id: string; category: string; brand_name: string | null; title: string; version: string; html_url: string | null; pdf_url: string | null; status: string; created_at: string };
 type Category = "price_list" | "brand_overview" | "terms";
@@ -26,6 +26,7 @@ export function SalesDocsPanel({ category, brandNames, canEdit, admin }: { categ
   const [showSends, setShowSends] = useState(false);
   const [adding, setAdding] = useState(false);
   const [sendDoc, setSendDoc] = useState<Doc | null>(null);
+  const [openTracking, setOpenTracking] = useState<string | null>(null);
   // upload form
   const [brand, setBrand] = useState(category === "terms" ? "" : brandNames[0] ?? "");
   const [title, setTitle] = useState("");
@@ -153,27 +154,50 @@ export function SalesDocsPanel({ category, brandNames, canEdit, admin }: { categ
           {groups.map(g => (
             <div key={g ?? "company"}>
               {category !== "terms" && (
-                <div className="flex items-center gap-3 mb-2">
+                <div className="flex items-center gap-3 mb-2.5">
                   <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">{g}</span>
                   <span className="flex-1 h-px bg-slate-100" />
                 </div>
               )}
-              <div className="space-y-2">
+              <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
                 {shown.filter(d => (category === "terms" ? true : d.brand_name === g)).map(d => {
                   const docSends = sends.filter(s => s.doc_id === d.id);
                   const opens = docSends.reduce((t, s) => t + (s.open_count || 0), 0);
+                  const isOpen = openTracking === d.id;
+                  const viewUrl = d.html_url || d.pdf_url;
                   return (
-                    <div key={d.id} className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3 flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-slate-800 truncate">{d.title}</p>
-                        <p className="text-[11.5px] text-slate-400">v{d.version} · {fmtDate(d.created_at)}{d.status === "archived" ? " · archived" : ""}{docSends.length > 0 ? ` · sent ${docSends.length}× · ${opens} open${opens === 1 ? "" : "s"}` : ""}</p>
+                    <div key={d.id} className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${isOpen ? "sm:col-span-2 xl:col-span-3" : ""}`}>
+                      {/* Live scaled preview in a laptop mockup (same visual as Launch Decks) */}
+                      {viewUrl && (
+                        <a href={viewUrl} target="_blank" rel="noopener noreferrer" className="block relative group">
+                          <DocThumb src={d.html_url} pdfOnly={!d.html_url} />
+                          <span className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/25 transition-colors flex items-center justify-center">
+                            <span className="opacity-0 group-hover:opacity-100 text-white text-[13px] font-bold bg-slate-900/70 rounded-full px-4 py-2">Open →</span>
+                          </span>
+                        </a>
+                      )}
+                      <div className="flex items-center gap-3 px-5 py-3.5 border-t border-gray-50">
+                        <button onClick={() => setOpenTracking(isOpen ? null : d.id)} className="min-w-0 flex-1 text-left hover:opacity-80">
+                          <span className="block text-[14.5px] font-bold text-slate-800 truncate">{d.title}</span>
+                          <span className="block text-[11.5px] text-gray-400">{[`v${d.version}`, fmtDate(d.created_at), d.status === "archived" ? "archived" : null, `${docSends.length} send${docSends.length === 1 ? "" : "s"}`, `${opens} open${opens === 1 ? "" : "s"}`].filter(Boolean).join(" · ")}</span>
+                        </button>
+                        {d.pdf_url && (
+                          <a href={d.pdf_url} target="_blank" rel="noopener noreferrer"
+                            className="shrink-0 text-[11.5px] font-bold text-white bg-[#e2593c] hover:bg-[#c94c31] rounded-full px-3 py-1.5">⬇ PDF</a>
+                        )}
+                        {d.status === "current" && <button onClick={() => setSendDoc(d)} className="shrink-0 text-[12.5px] font-bold text-white bg-sky-500 hover:bg-sky-600 rounded-lg px-3.5 py-1.5">Send →</button>}
+                        <button onClick={() => setOpenTracking(isOpen ? null : d.id)} className="shrink-0 text-[11px] font-semibold text-gray-400 hover:text-gray-600">{isOpen ? "Hide ▾" : "Tracking ▸"}</button>
                       </div>
-                      <div className="ml-auto flex items-center gap-3 text-[12.5px] font-semibold">
-                        {d.html_url && <a href={d.html_url} target="_blank" rel="noopener noreferrer" className="text-teal-700 hover:underline">Preview</a>}
-                        {d.pdf_url && <a href={d.pdf_url} target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:underline">PDF</a>}
-                        {d.status === "current" && <button onClick={() => setSendDoc(d)} className="text-white bg-sky-500 hover:bg-sky-600 rounded-lg px-3 py-1.5">Send →</button>}
-                        {canEdit && <button onClick={() => remove(d)} className="text-rose-400 hover:underline font-normal">Delete</button>}
-                      </div>
+                      {isOpen && (
+                        <div className="px-5 pb-4 border-t border-gray-50">
+                          <div className="mt-2">
+                            {docSends.length === 0 ? <p className="text-sm text-slate-300 py-2">Not sent to anyone yet.</p>
+                              : docSends.map(s => <SendRow key={s.id} s={s} admin={admin} onRevoke={revoke} />)}
+                          </div>
+                          {canEdit && <button onClick={() => remove(d)} className="mt-2 text-[12px] text-gray-300 hover:text-rose-500">Delete {c.noun}</button>}
+                          <p className="text-[11px] text-gray-400 mt-2">Every send creates its own tracked link — that&apos;s how you know who opened it.</p>
+                        </div>
+                      )}
                     </div>
                   );
                 })}

@@ -3,7 +3,7 @@
 // Shared "send & track" modal for the Retailer Hub. Pick a customer (or type an
 // email), add a note, then either email the document(s) via Resend or copy a
 // tracked link. Every send creates a /hub/<token> row whose opens are logged.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export type SendItem = { kind: "price_list" | "brand_overview" | "terms" | "fact_sheet" | "form"; id?: string; title: string; brand?: string | null };
 type Customer = { id: string; store_name: string; contact_name: string | null; email: string | null };
@@ -112,6 +112,48 @@ export function HubSendModal({ items, onClose, onSent, presetCustomerId }: { ite
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// Live document preview in a laptop mockup — same visual as Launch Decks'
+// DeckThumb, but pointed at a document URL (Supabase public HTML). PDF-only
+// docs get a flat placeholder screen instead of an iframe.
+export function DocThumb({ src, pdfOnly }: { src?: string | null; pdfOnly?: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [w, setW] = useState(384);
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    const upd = () => setW(el.clientWidth || 384);
+    upd();
+    const ro = new ResizeObserver(upd); ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const screenW = Math.max(200, w - 96);
+  const scale = screenW / 1280;
+  return (
+    <div ref={ref} className="bg-gradient-to-b from-slate-100 to-slate-200 pt-5 px-4 flex flex-col items-center">
+      {/* lid + bezel */}
+      <div className="rounded-t-xl rounded-b-[3px] bg-slate-900 p-[7px] pb-[9px] shadow-xl" style={{ width: screenW + 14 }}>
+        <div className="mx-auto mb-1 w-1.5 h-1.5 rounded-full bg-slate-700" />
+        <div className="relative overflow-hidden bg-white rounded-[3px]" style={{ width: screenW, height: screenW * 0.625 }}>
+          {src && !pdfOnly ? (
+            <iframe src={src} loading="lazy" tabIndex={-1} aria-hidden scrolling="no"
+              style={{ width: 1280, height: 800, transform: `scale(${scale})`, transformOrigin: "top left" }}
+              className="absolute top-0 left-0 pointer-events-none border-0" />
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-slate-50">
+              <span style={{ fontSize: screenW * 0.14 }}>📄</span>
+              <span className="text-slate-400 font-bold" style={{ fontSize: Math.max(10, screenW * 0.045) }}>PDF document</span>
+            </div>
+          )}
+        </div>
+      </div>
+      {/* base */}
+      <div className="rounded-b-lg bg-gradient-to-b from-slate-300 to-slate-400 h-[7px]" style={{ width: screenW + 58 }}>
+        <div className="mx-auto w-16 h-[3px] rounded-b bg-slate-400/80" />
+      </div>
+      <div className="h-4" />
     </div>
   );
 }

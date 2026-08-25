@@ -5,7 +5,7 @@
 // send list — pick a brand's current sheet and send it with open tracking.
 // Uploading/updating sheets still happens in Product Information.
 import { useEffect, useState } from "react";
-import { HubSendModal, SendRow } from "./HubSendModal";
+import { HubSendModal, SendRow, DocThumb } from "./HubSendModal";
 
 type Sheet = { id: string; brand_name: string; html_url: string | null; pdf_url: string | null; last_updated: string; version: string };
 const fmtDate = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
@@ -16,6 +16,7 @@ export function HubFactSheets({ admin }: { admin: boolean }) {
   const [state, setState] = useState<"loading" | "ready" | "needsSetup" | "error">("loading");
   const [showSends, setShowSends] = useState(false);
   const [sendSheet, setSendSheet] = useState<Sheet | null>(null);
+  const [openTracking, setOpenTracking] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/fact-sheets", { cache: "no-store" }).then(r => r.json()).then(d => {
@@ -57,19 +58,43 @@ export function HubFactSheets({ admin }: { admin: boolean }) {
       {sheets.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center text-slate-300">No fact sheets yet — upload them under Operations → Product Information.</div>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
           {sheets.map(s => {
             const docSends = sends.filter(x => x.doc_id === s.id);
             const opens = docSends.reduce((t, x) => t + (x.open_count || 0), 0);
+            const isOpen = openTracking === s.id;
+            const viewUrl = s.html_url ? `/api/fact-sheets/view?id=${s.id}` : s.pdf_url;
             return (
-              <div key={s.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex flex-col gap-2">
-                <p className="text-sm font-bold text-slate-800">{s.brand_name}</p>
-                <p className="text-[11.5px] text-slate-400">v{s.version} · {fmtDate(s.last_updated)}{docSends.length > 0 ? ` · sent ${docSends.length}× · ${opens} open${opens === 1 ? "" : "s"}` : ""}</p>
-                <div className="flex items-center gap-3 text-[12.5px] font-semibold mt-auto pt-1">
-                  {s.html_url && <a href={`/api/fact-sheets/view?id=${s.id}`} target="_blank" rel="noopener noreferrer" className="text-teal-700 hover:underline">Preview</a>}
-                  {s.pdf_url && <a href={s.pdf_url} target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:underline">PDF</a>}
-                  <button onClick={() => setSendSheet(s)} className="ml-auto text-white bg-sky-500 hover:bg-sky-600 rounded-lg px-3 py-1.5">Send →</button>
+              <div key={s.id} className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${isOpen ? "sm:col-span-2 xl:col-span-3" : ""}`}>
+                {viewUrl && (
+                  <a href={viewUrl} target="_blank" rel="noopener noreferrer" className="block relative group">
+                    <DocThumb src={s.html_url ? `/api/fact-sheets/view?id=${s.id}` : null} pdfOnly={!s.html_url} />
+                    <span className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/25 transition-colors flex items-center justify-center">
+                      <span className="opacity-0 group-hover:opacity-100 text-white text-[13px] font-bold bg-slate-900/70 rounded-full px-4 py-2">Open →</span>
+                    </span>
+                  </a>
+                )}
+                <div className="flex items-center gap-3 px-5 py-3.5 border-t border-gray-50">
+                  <button onClick={() => setOpenTracking(isOpen ? null : s.id)} className="min-w-0 flex-1 text-left hover:opacity-80">
+                    <span className="block text-[14.5px] font-bold text-slate-800 truncate">{s.brand_name} Fact Sheet</span>
+                    <span className="block text-[11.5px] text-gray-400">{[`v${s.version}`, fmtDate(s.last_updated), `${docSends.length} send${docSends.length === 1 ? "" : "s"}`, `${opens} open${opens === 1 ? "" : "s"}`].join(" · ")}</span>
+                  </button>
+                  {s.pdf_url && (
+                    <a href={s.pdf_url} target="_blank" rel="noopener noreferrer"
+                      className="shrink-0 text-[11.5px] font-bold text-white bg-[#e2593c] hover:bg-[#c94c31] rounded-full px-3 py-1.5">⬇ PDF</a>
+                  )}
+                  <button onClick={() => setSendSheet(s)} className="shrink-0 text-[12.5px] font-bold text-white bg-sky-500 hover:bg-sky-600 rounded-lg px-3.5 py-1.5">Send →</button>
+                  <button onClick={() => setOpenTracking(isOpen ? null : s.id)} className="shrink-0 text-[11px] font-semibold text-gray-400 hover:text-gray-600">{isOpen ? "Hide ▾" : "Tracking ▸"}</button>
                 </div>
+                {isOpen && (
+                  <div className="px-5 pb-4 border-t border-gray-50">
+                    <div className="mt-2">
+                      {docSends.length === 0 ? <p className="text-sm text-slate-300 py-2">Not sent to anyone yet.</p>
+                        : docSends.map(x => <SendRow key={x.id} s={x} admin={admin} onRevoke={revoke} />)}
+                    </div>
+                    <p className="text-[11px] text-gray-400 mt-2">Every send creates its own tracked link — that&apos;s how you know who opened it.</p>
+                  </div>
+                )}
               </div>
             );
           })}
