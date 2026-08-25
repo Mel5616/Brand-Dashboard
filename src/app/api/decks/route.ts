@@ -9,7 +9,9 @@ export const revalidate = 0;
 const missing = (m: string) => /PGRST205|does not exist|schema cache|relation .* does not exist/i.test(m || "");
 
 export async function GET() {
-  if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "Admins only" }, { status: 403 });
+  // Viewing is any signed-in user granted the Launch Decks tab (enforced by the
+  // nav, not here); uploading/managing links stays admin-only below.
+  if (!(await getAccess()).role) return NextResponse.json({ ok: false, error: "Unauthorised" }, { status: 401 });
   const sb = await createClient();
   const [d, s, v] = await Promise.all([
     sb.from("decks").select("id,title,brand,category,created_by,created_at").order("created_at", { ascending: false }),

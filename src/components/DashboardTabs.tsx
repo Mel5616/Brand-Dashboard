@@ -2258,7 +2258,7 @@ export function DashboardTabs({
           {active === "decks" && (
             <>
               <SectionBar title="Launch Decks" />
-              <LaunchDecks brands={brands.map((b: any) => ({ name: b.name }))} />
+              <LaunchDecks brands={brands.map((b: any) => ({ name: b.name }))} admin={role === "admin"} />
             </>
           )}
 
