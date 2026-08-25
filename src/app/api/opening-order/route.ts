@@ -20,8 +20,23 @@ async function resolveSend(sb: any, token: string) {
 }
 
 export async function GET(req: Request) {
-  const token = new URL(req.url).searchParams.get("token") || "";
+  const sp = new URL(req.url).searchParams;
+  const token = sp.get("token") || "";
   const sb = createAdminClient();
+
+  // Dashboard-only preview: signed-in users can view a brand's form without a
+  // send token. "preview" never resolves as a real send, so POST rejects it.
+  if (token === "preview") {
+    const { getAccess } = await import("@/lib/access");
+    if (!(await getAccess()).role) return NextResponse.json({ ok: false }, { status: 401 });
+    const brand = String(sp.get("brand") || "").trim() || null;
+    let q = sb.from("order_form_products").select("id,category,sku,name,short_desc,wholesale,rrp,pack_qty").eq("active", true).order("sort");
+    if (brand) q = q.eq("brand_name", brand);
+    const { data: products, error } = await q;
+    if (error) return NextResponse.json({ ok: false, error: "Order form isn't set up yet." }, { status: 503 });
+    return NextResponse.json({ ok: true, brand, products: products || [], prefill: {}, preview: true });
+  }
+
   const send = await resolveSend(sb, token);
   if (!send) return NextResponse.json({ ok: false }, { status: 404 });
 

@@ -13,6 +13,7 @@ const lbl = "block text-[10.5px] font-bold text-slate-400 uppercase tracking-wid
 
 export default function OrderPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
+  const isPreview = token === "preview";
   const [state, setState] = useState<"loading" | "ready" | "invalid" | "done">("loading");
   const [brand, setBrand] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -23,7 +24,8 @@ export default function OrderPage({ params }: { params: Promise<{ token: string 
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/opening-order?token=${token}`).then(r => r.json()).then(d => {
+    const qs = isPreview ? `token=preview&brand=${encodeURIComponent(new URLSearchParams(window.location.search).get("brand") || "")}` : `token=${token}`;
+    fetch(`/api/opening-order?${qs}`).then(r => r.json()).then(d => {
       if (!d.ok) { setState("invalid"); return; }
       setBrand(d.brand); setProducts(d.products || []);
       if (d.prefill) setF((prev: any) => ({ ...prev, ...Object.fromEntries(Object.entries(d.prefill).filter(([, v]) => v)) }));
@@ -51,6 +53,7 @@ export default function OrderPage({ params }: { params: Promise<{ token: string 
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (isPreview) { setErr("This is a preview — submissions only work from a real order link."); return; }
     if (totals.units === 0) { setErr("Add at least one item to the order."); return; }
     setErr(""); setBusy(true);
     const lines = Object.entries(qty).filter(([, q]) => q > 0).map(([id, q]) => ({ id, qty: q }));
@@ -68,6 +71,7 @@ export default function OrderPage({ params }: { params: Promise<{ token: string 
 
   return (
     <Frame wide>
+      {isPreview && <p className="mb-4 text-[12.5px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">Preview — this is exactly what a buyer sees, but submissions are disabled. Send a real link from Retailer Hub → Order Forms.</p>}
       <div className="mb-6">
         <h1 className="text-xl font-extrabold text-slate-900">{brand ? `${brand} Opening Order` : "Opening Order"}</h1>
         <p className="text-sm text-slate-500 mt-1">Wholesale prices ex GST. Enter quantities below — your running total updates as you go.</p>

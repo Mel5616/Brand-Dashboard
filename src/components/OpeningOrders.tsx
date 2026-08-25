@@ -55,6 +55,7 @@ export function OpeningOrders({ canEdit, admin }: { canEdit: boolean; admin: boo
               <p className="text-[15px] font-extrabold text-slate-900">{b.brand}</p>
               <p className="text-[11.5px] text-slate-400">{b.products} products loaded</p>
             </div>
+            <a href={`/order/preview?brand=${encodeURIComponent(b.brand)}`} target="_blank" rel="noopener noreferrer" className="text-[12.5px] font-semibold text-slate-500 border border-slate-200 hover:border-sky-300 rounded-lg px-3.5 py-2">Preview</a>
             {canEdit && <button onClick={() => setSendBrand(b.brand)} className="text-[12.5px] font-bold text-white bg-sky-500 hover:bg-sky-600 rounded-lg px-3.5 py-2">Send order form →</button>}
           </div>
         ))}
