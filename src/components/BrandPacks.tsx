@@ -45,7 +45,9 @@ export function BrandPacks({ brands }: { brands: { name: string; color?: string 
     }
     const sheet = sheets.find(s => s.brand_name === b.name);
     if (sheet) items.push({ kind: "fact_sheet", id: sheet.id, title: `${b.name} Fact Sheet`, brand: b.name, key: `fact_sheet:${sheet.id}`, meta: `Fact Sheet · v${sheet.version}` });
-    items.push({ kind: "form", title: "Credit Application Form", brand: b.name, key: "form", meta: "Application form" });
+    // One company-wide form (covers all brands) — offered in every pack so a
+    // new account can open trade alongside the brand documents.
+    items.push({ kind: "form", title: "Credit Application Form", brand: null, key: "form", meta: "Coolkidz Australia · covers all brands" });
     return { brand: b, items, docCount: items.length - 1 };
   }), [brands, docs, sheets]);
 
