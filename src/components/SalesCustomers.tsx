@@ -35,6 +35,7 @@ export function SalesCustomers({ brandNames, canEdit, admin }: { brandNames: str
   const [state, setState] = useState<"loading" | "ready" | "needsSetup" | "error">("loading");
   const [q, setQ] = useState("");
   const [stageFilter, setStageFilter] = useState("all");
+  const [sort, setSort] = useState<{ key: string; dir: 1 | -1 }>({ key: "created", dir: -1 });
   const [editing, setEditing] = useState<any | null>(null); // EMPTY-shaped + optional id
   const [detail, setDetail] = useState<Customer | null>(null);
   const [busy, setBusy] = useState(false);
@@ -58,6 +59,35 @@ export function SalesCustomers({ brandNames, canEdit, admin }: { brandNames: str
     for (const c of customers) m[c.stage] = (m[c.stage] || 0) + 1;
     return m;
   }, [customers]);
+
+  const stageRank = (s: string) => STAGES.findIndex(x => x.key === s);
+  const sorted = useMemo(() => {
+    const val = (c: Customer): any => {
+      switch (sort.key) {
+        case "store": return c.store_name.toLowerCase();
+        case "contact": return (c.contact_name || c.email || "￿").toLowerCase();
+        case "state": return c.state || "￿";
+        case "brands": return (c.brands || []).length ? (c.brands || []).join(", ").toLowerCase() : "￿";
+        case "stage": return stageRank(c.stage);
+        case "engagement": return -(c.activity.opens * 1000 + c.activity.sends);
+        case "next": return c.next_action_date || "￿";
+        default: return c.created_at;
+      }
+    };
+    return [...filtered].sort((a, b) => {
+      const av = val(a), bv = val(b);
+      return (av < bv ? -1 : av > bv ? 1 : 0) * sort.dir;
+    });
+  }, [filtered, sort]);
+
+  const th = (key: string, label: string, first = false) => (
+    <th className={`${first ? "px-4" : "px-2"} py-3`}>
+      <button onClick={() => setSort(s => ({ key, dir: s.key === key ? (s.dir === 1 ? -1 : 1) : 1 }))}
+        className={`uppercase tracking-wide flex items-center gap-1 hover:text-slate-600 ${sort.key === key ? "text-slate-600" : ""}`}>
+        {label}{sort.key === key && <span>{sort.dir === 1 ? "▲" : "▼"}</span>}
+      </button>
+    </th>
+  );
 
   async function save() {
     if (!editing.store_name.trim()) { setErr("Store name is required."); return; }
@@ -112,13 +142,13 @@ export function SalesCustomers({ brandNames, canEdit, admin }: { brandNames: str
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">
           <table className="w-full text-sm min-w-[760px]">
             <thead>
-              <tr className="text-left text-[10.5px] uppercase tracking-wide text-slate-400 border-b border-slate-100">
-                <th className="px-4 py-3">Store</th><th className="px-2 py-3">Contact</th><th className="px-2 py-3">State</th>
-                <th className="px-2 py-3">Brands</th><th className="px-2 py-3">Stage</th><th className="px-2 py-3">Engagement</th><th className="px-2 py-3">Next action</th>
+              <tr className="text-left text-[10.5px] text-slate-400 border-b border-slate-100">
+                {th("store", "Store", true)}{th("contact", "Contact")}{th("state", "State")}
+                {th("brands", "Brands")}{th("stage", "Stage")}{th("engagement", "Engagement")}{th("next", "Next action")}
               </tr>
             </thead>
             <tbody>
-              {filtered.map(c => {
+              {sorted.map(c => {
                 const st = STAGES.find(s => s.key === c.stage) || STAGES[0];
                 return (
                   <tr key={c.id} onClick={() => setDetail(c)} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/60 cursor-pointer">
