@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { getAccess } from "@/lib/access";
 import { createClient } from "@/lib/supabase/server";
-import { sendMail, shell } from "@/lib/releaseMail";
+import { sendMail } from "@/lib/releaseMail";
+import { buildHubEmail } from "@/lib/hubMail";
 
 // Retailer Hub send engine. Every send (email or copied link) creates a
 // sales_sends row with a token; the recipient opens /hub/<token> and every
@@ -66,26 +67,23 @@ export async function POST(req: Request) {
     });
   }
 
+  // Preview mode: render the exact email that would go out (placeholder links,
+  // nothing written to the database, nothing sent).
+  if (b.preview) {
+    const previewLinks = rows.map(r => ({ url: "#", title: r.doc_title, kind: r.doc_kind, brand: r.brand_name }));
+    return NextResponse.json({ ok: true, html: buildHubEmail({ recipientName: b.recipient_name, message: b.message, links: previewLinks }) });
+  }
+
   const { data: inserted, error } = await sb.from("sales_sends").insert(rows).select();
   if (error) return NextResponse.json({ ok: false, needsSetup: missing(error.message), error: error.message }, { status: 500 });
   const links = (inserted || []).map((r: any) => ({ id: r.id, kind: r.doc_kind, title: r.doc_title, brand: r.brand_name, url: `${BASE}/hub/${r.token}` }));
 
   if (via === "link") return NextResponse.json({ ok: true, links });
 
-  // Email via Resend — one email listing every included link.
-  const firstName = (String(b.recipient_name || "").trim().split(/\s+/)[0]) || "there";
+  // Email via Resend — one designed email listing every included link
+  // (buildHubEmail is also what the modal's preview renders).
   const subject = String(b.subject || "").trim() || `Coolkidz Australia — ${links.map(l => l.title).join(", ")}`;
-  const message = String(b.message || "").trim();
-  const linkRows = links.map(l => `
-    <a href="${l.url}" style="display:block;text-decoration:none;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;margin:0 0 10px">
-      <span style="font-size:14px;font-weight:700;color:#0f172a">${l.title.replace(/</g, "&lt;")}</span>
-      <span style="display:block;font-size:12px;color:#1E9DC2;font-weight:600;margin-top:2px">View ${KIND_LABEL[l.kind]?.toLowerCase() || "document"} →</span>
-    </a>`).join("");
-  const html = shell(`
-    <p style="font-size:15px;color:#0f172a;margin:0 0 12px">Hi ${firstName.replace(/</g, "&lt;")},</p>
-    ${message ? `<p style="font-size:14px;color:#334155;line-height:1.6;white-space:pre-line;margin:0 0 16px">${message.replace(/</g, "&lt;")}</p>` : `<p style="font-size:14px;color:#334155;line-height:1.6;margin:0 0 16px">Please find the following from the Coolkidz Australia team:</p>`}
-    ${linkRows}
-    <p style="font-size:12.5px;color:#94a3b8;line-height:1.6;margin:16px 0 0">Any questions, just reply to this email.</p>`);
+  const html = buildHubEmail({ recipientName: b.recipient_name, message: b.message, links: links.map(l => ({ url: l.url, title: l.title, kind: l.kind, brand: l.brand })) });
 
   const sent = await sendMail({ to: [recipientEmail], subject, html });
   await sb.from("sales_sends").update({ email_status: sent.ok ? "sent" : "failed" }).in("id", (inserted || []).map((r: any) => r.id));
