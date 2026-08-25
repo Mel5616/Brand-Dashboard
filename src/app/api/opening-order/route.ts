@@ -19,38 +19,54 @@ async function resolveSend(sb: any, token: string) {
   return data?.doc_kind === "order" ? data : null;
 }
 
+const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+// A send's brand_name may hold several brands ("Frida, Zazu") — one order
+// form can cover multiple brands, grouped by brand on the page.
+async function catalogue(sb: any, brandCsv: string | null) {
+  const brandList = String(brandCsv || "").split(",").map(s => s.trim()).filter(Boolean);
+  let q = sb.from("order_form_products").select("id,brand_name,category,sku,name,short_desc,wholesale,rrp,pack_qty").eq("active", true).order("sort");
+  if (brandList.length) q = q.in("brand_name", brandList);
+  const { data: products, error } = await q;
+  if (error) return { error };
+  const { data: brands } = await sb.from("brands").select("name,color");
+  const colorOf = (n: string) => (brands || []).find((b: any) => b.name.toLowerCase() === (n || "").toLowerCase())?.color || "#54697C";
+  // Product photos live at a conventional bucket path; the page hides any that 404.
+  const withImages = (products || []).map((p: any) => ({
+    ...p,
+    image_url: sb.storage.from("sales-hub").getPublicUrl(`order-products/${slug(p.brand_name)}/${slug(p.sku || p.name)}.jpg`).data.publicUrl,
+    brand_color: colorOf(p.brand_name),
+  }));
+  return { products: withImages, brandList };
+}
+
 export async function GET(req: Request) {
   const sp = new URL(req.url).searchParams;
   const token = sp.get("token") || "";
   const sb = createAdminClient();
 
-  // Dashboard-only preview: signed-in users can view a brand's form without a
-  // send token. "preview" never resolves as a real send, so POST rejects it.
+  // Dashboard-only preview: signed-in users can view the form without a send
+  // token. "preview" never resolves as a real send, so POST rejects it.
   if (token === "preview") {
     const { getAccess } = await import("@/lib/access");
     if (!(await getAccess()).role) return NextResponse.json({ ok: false }, { status: 401 });
-    const brand = String(sp.get("brand") || "").trim() || null;
-    let q = sb.from("order_form_products").select("id,category,sku,name,short_desc,wholesale,rrp,pack_qty").eq("active", true).order("sort");
-    if (brand) q = q.eq("brand_name", brand);
-    const { data: products, error } = await q;
-    if (error) return NextResponse.json({ ok: false, error: "Order form isn't set up yet." }, { status: 503 });
-    return NextResponse.json({ ok: true, brand, products: products || [], prefill: {}, preview: true });
+    const cat = await catalogue(sb, sp.get("brand"));
+    if (cat.error) return NextResponse.json({ ok: false, error: "Order form isn't set up yet." }, { status: 503 });
+    return NextResponse.json({ ok: true, brand: sp.get("brand") || null, products: cat.products, prefill: {}, preview: true });
   }
 
   const send = await resolveSend(sb, token);
   if (!send) return NextResponse.json({ ok: false }, { status: 404 });
 
-  let q = sb.from("order_form_products").select("id,category,sku,name,short_desc,wholesale,rrp,pack_qty").eq("active", true).order("sort");
-  if (send.brand_name) q = q.eq("brand_name", send.brand_name);
-  const { data: products, error } = await q;
-  if (error) return NextResponse.json({ ok: false, error: "Order form isn't set up yet." }, { status: 503 });
+  const cat = await catalogue(sb, send.brand_name);
+  if (cat.error) return NextResponse.json({ ok: false, error: "Order form isn't set up yet." }, { status: 503 });
 
   let prefill: any = { contact_name: send.recipient_name, email: send.recipient_email };
   if (send.customer_id) {
     const { data: c } = await sb.from("sales_customers").select("store_name,contact_name,email,phone").eq("id", send.customer_id).maybeSingle();
     if (c) prefill = { ...c, contact_name: c.contact_name || send.recipient_name, email: c.email || send.recipient_email };
   }
-  return NextResponse.json({ ok: true, brand: send.brand_name, products: products || [], prefill });
+  return NextResponse.json({ ok: true, brand: send.brand_name, products: cat.products, prefill });
 }
 
 export async function POST(req: Request) {

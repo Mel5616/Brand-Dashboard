@@ -14,7 +14,8 @@ export function OpeningOrders({ canEdit, admin }: { canEdit: boolean; admin: boo
   const [orders, setOrders] = useState<any[]>([]);
   const [sends, setSends] = useState<any[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "needsSetup" | "error">("loading");
-  const [sendBrand, setSendBrand] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [sending, setSending] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
 
   function load() {
@@ -45,20 +46,42 @@ export function OpeningOrders({ canEdit, admin }: { canEdit: boolean; admin: boo
     <div className="space-y-5">
       <p className="text-[13px] text-slate-500">Send a buyer a tokenised opening-order link — they set quantities against live wholesale pricing, and the submitted order lands here (and emails marketing@). Catalogues are seeded from each brand&apos;s trade price list.</p>
 
-      {/* Brand catalogues */}
-      <div className="flex flex-wrap gap-3">
+      {/* Build an order form — tick the brands to include */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400 mb-3">Build an order form — tick the brands to include</h3>
         {brands.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-slate-300 w-full">No catalogues loaded yet — ask Mel to seed a brand from its trade price list.</div>
-        ) : brands.map(b => (
-          <div key={b.brand} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4 flex items-center gap-4">
-            <div>
-              <p className="text-[15px] font-extrabold text-slate-900">{b.brand}</p>
-              <p className="text-[11.5px] text-slate-400">{b.products} products loaded</p>
+          <p className="text-slate-300 text-sm">No catalogues loaded yet — ask Mel to seed a brand from its trade price list.</p>
+        ) : (
+          <>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {brands.map(b => {
+                const on = selected.has(b.brand);
+                return (
+                  <label key={b.brand} className={`flex items-center gap-2 cursor-pointer rounded-xl border px-3.5 py-2.5 transition-colors ${on ? "border-sky-400 bg-sky-50" : "border-slate-200 bg-white hover:border-sky-200"}`}>
+                    <input type="checkbox" checked={on} onChange={() => setSelected(prev => { const n = new Set(prev); if (n.has(b.brand)) n.delete(b.brand); else n.add(b.brand); return n; })} className="accent-sky-500" />
+                    <span>
+                      <span className="block text-[13.5px] font-bold text-slate-800">{b.brand}</span>
+                      <span className="block text-[10.5px] text-slate-400">{b.products} products</span>
+                    </span>
+                  </label>
+                );
+              })}
             </div>
-            <a href={`/order/preview?brand=${encodeURIComponent(b.brand)}`} target="_blank" rel="noopener noreferrer" className="text-[12.5px] font-semibold text-slate-500 border border-slate-200 hover:border-sky-300 rounded-lg px-3.5 py-2">Preview</a>
-            {canEdit && <button onClick={() => setSendBrand(b.brand)} className="text-[12.5px] font-bold text-white bg-sky-500 hover:bg-sky-600 rounded-lg px-3.5 py-2">Send order form →</button>}
-          </div>
-        ))}
+            <div className="flex flex-wrap items-center gap-2">
+              <a href={`/order/preview?brand=${encodeURIComponent([...selected].join(","))}`} target="_blank" rel="noopener noreferrer"
+                className={`text-[12.5px] font-semibold border rounded-lg px-4 py-2 ${selected.size ? "text-slate-600 border-slate-200 hover:border-sky-300" : "text-slate-300 border-slate-100 pointer-events-none"}`}>
+                Preview {selected.size > 1 ? `combined form (${selected.size})` : "form"}
+              </a>
+              {canEdit && (
+                <button onClick={() => setSending(true)} disabled={selected.size === 0}
+                  className="text-[12.5px] font-bold text-white bg-sky-500 hover:bg-sky-600 disabled:opacity-30 rounded-lg px-4 py-2">
+                  Send {selected.size > 1 ? `${selected.size}-brand order form` : "order form"} →
+                </button>
+              )}
+              <p className="text-[11px] text-slate-400 ml-auto">Ticking several brands builds one combined form, grouped by brand.</p>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Links sent */}
@@ -118,10 +141,14 @@ export function OpeningOrders({ canEdit, admin }: { canEdit: boolean; admin: boo
         )}
       </div>
 
-      {sendBrand && (
+      {sending && selected.size > 0 && (
         <HubSendModal
-          items={[{ kind: "order", title: `${sendBrand} Opening Order Form`, brand: sendBrand }]}
-          onClose={() => setSendBrand(null)}
+          items={[{
+            kind: "order",
+            title: `${[...selected].join(" + ")} Opening Order Form`,
+            brand: [...selected].join(", "),
+          }]}
+          onClose={() => setSending(false)}
           onSent={load}
         />
       )}
