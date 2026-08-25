@@ -1,0 +1,25 @@
+# One-off, manually-triggered export of an Asana project's raw tasks into
+# Supabase storage (sales-hub/imports/) for downstream imports — e.g. pulling
+# the prospect list into the Retailer Hub Customers CRM.
+name: Export Asana project
+on:
+  workflow_dispatch:
+    inputs:
+      project_gid:
+        description: "Asana project gid to export"
+        required: true
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Export project
+        env:
+          ASANA_TOKEN: ${{ secrets.ASANA_TOKEN }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/export_asana_project.py "${{ github.event.inputs.project_gid }}"
