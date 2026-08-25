@@ -164,13 +164,15 @@ export function SalesDocsPanel({ category, brandNames, canEdit, admin }: { categ
                   const docSends = sends.filter(s => s.doc_id === d.id);
                   const opens = docSends.reduce((t, s) => t + (s.open_count || 0), 0);
                   const isOpen = openTracking === d.id;
-                  const viewUrl = d.html_url || d.pdf_url;
+                  // Storage serves user HTML as text/plain, so previews go via the view route.
+                  const htmlView = d.html_url ? `/api/sales-docs/view?id=${d.id}` : null;
+                  const viewUrl = htmlView || d.pdf_url;
                   return (
                     <div key={d.id} className={`bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden ${isOpen ? "sm:col-span-2 xl:col-span-3" : ""}`}>
                       {/* Live scaled preview in a laptop mockup (same visual as Launch Decks) */}
                       {viewUrl && (
                         <a href={viewUrl} target="_blank" rel="noopener noreferrer" className="block relative group">
-                          <DocThumb src={d.html_url} pdfOnly={!d.html_url} />
+                          <DocThumb src={htmlView} pdfOnly={!d.html_url} />
                           <span className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/25 transition-colors flex items-center justify-center">
                             <span className="opacity-0 group-hover:opacity-100 text-white text-[13px] font-bold bg-slate-900/70 rounded-full px-4 py-2">Open →</span>
                           </span>
