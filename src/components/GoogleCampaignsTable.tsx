@@ -1,6 +1,22 @@
 import { fmtFull } from "@/lib/format";
 import type { GoogleAdsCampaignRow } from "@/lib/db";
 
+const CHANNEL_LABEL: Record<string, { label: string; color: string; bg: string }> = {
+  VIDEO: { label: "YouTube", color: "#b91c1c", bg: "#fef2f2" },
+  PERFORMANCE_MAX: { label: "PMax", color: "#7c3aed", bg: "#f5f3ff" },
+  SEARCH: { label: "Search", color: "#1d4ed8", bg: "#eff6ff" },
+  DISPLAY: { label: "Display", color: "#0f766e", bg: "#ecfdf5" },
+  SHOPPING: { label: "Shopping", color: "#b45309", bg: "#fffbeb" },
+  DEMAND_GEN: { label: "Demand Gen", color: "#be185d", bg: "#fdf2f8" },
+  DISCOVERY: { label: "Discovery", color: "#be185d", bg: "#fdf2f8" },
+};
+function ChannelBadge({ type }: { type?: string | null }) {
+  if (!type) return null;
+  const meta = CHANNEL_LABEL[type];
+  if (!meta) return null;
+  return <span className="text-[9px] font-bold uppercase tracking-wide rounded-full px-1.5 py-0.5 shrink-0" style={{ color: meta.color, background: meta.bg }}>{meta.label}</span>;
+}
+
 // Per-campaign Google Ads breakdown for one brand + month. Shared by the brand
 // drill-down and the Google Ads tab so they never drift.
 export function GoogleCampaignsTable({ campaigns, latest, prev }: {
@@ -28,7 +44,12 @@ export function GoogleCampaignsTable({ campaigns, latest, prev }: {
             const roas     = c.spend > 0 ? c.conv_value / c.spend : 0;
             return (
               <tr key={c.campaign_name} className="hover:bg-gray-50/50 transition-colors">
-                <td className="px-5 py-2.5 text-slate-700 font-medium max-w-xs truncate">{c.campaign_name}</td>
+                <td className="px-5 py-2.5 text-slate-700 font-medium max-w-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="truncate">{c.campaign_name}</span>
+                    <ChannelBadge type={c.channel_type} />
+                  </div>
+                </td>
                 <td className="px-5 py-2.5 text-right text-slate-600 whitespace-nowrap">{fmtFull(c.spend)}</td>
                 <td className="px-5 py-2.5 text-right whitespace-nowrap">
                   {spendChg !== null ? (

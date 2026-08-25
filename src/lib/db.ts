@@ -196,6 +196,7 @@ export type GoogleAdsCampaignRow = {
   brand_id: number;
   month_key: string;
   campaign_name: string;
+  channel_type?: string | null;
   spend: number;
   impressions: number;
   clicks: number;

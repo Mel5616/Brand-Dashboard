@@ -958,7 +958,7 @@ def fetch_google_ads_campaigns(customer_id, creds):
     cid = customer_id.replace('-', '')
 
     query_full = f'''
-    SELECT campaign.name, segments.month,
+    SELECT campaign.name, campaign.advertising_channel_type, segments.month,
            metrics.cost_micros, metrics.impressions, metrics.clicks,
            metrics.conversions, metrics.conversions_value
     FROM campaign
@@ -966,7 +966,7 @@ def fetch_google_ads_campaigns(customer_id, creds):
       AND campaign.status != 'REMOVED'
     '''
     query_no_conv = f'''
-    SELECT campaign.name, segments.month,
+    SELECT campaign.name, campaign.advertising_channel_type, segments.month,
            metrics.cost_micros, metrics.impressions, metrics.clicks
     FROM campaign
     WHERE segments.date >= '{FY_PREV_START}' AND segments.date <= '{RANGE_END}'
@@ -994,7 +994,7 @@ def fetch_google_ads_campaigns(customer_id, creds):
             raise
 
     # Aggregate by campaign + month
-    campaign_month = defaultdict(lambda: {'spend': 0.0, 'impressions': 0, 'clicks': 0, 'conversions': 0.0, 'conv_value': 0.0})
+    campaign_month = defaultdict(lambda: {'spend': 0.0, 'impressions': 0, 'clicks': 0, 'conversions': 0.0, 'conv_value': 0.0, 'channel_type': None})
     for row in data.get('results', []):
         ym   = (row.get('segments', {}).get('month') or '')[:7]
         name = row.get('campaign', {}).get('name', 'Unknown')
@@ -1007,6 +1007,7 @@ def fetch_google_ads_campaigns(customer_id, creds):
         campaign_month[key]['clicks']      += int(met.get('clicks', 0))
         campaign_month[key]['conversions'] += float(met.get('conversions', 0))
         campaign_month[key]['conv_value']  += float(met.get('conversionsValue', 0))
+        campaign_month[key]['channel_type'] = row.get('campaign', {}).get('advertisingChannelType')
 
     rows = []
     for (camp_name, mk), m in campaign_month.items():
@@ -1015,6 +1016,7 @@ def fetch_google_ads_campaigns(customer_id, creds):
         rows.append({
             'month_key':     mk,
             'campaign_name': camp_name,
+            'channel_type':  m['channel_type'],
             'spend':         round(m['spend'], 2),
             'impressions':   m['impressions'],
             'clicks':        m['clicks'],

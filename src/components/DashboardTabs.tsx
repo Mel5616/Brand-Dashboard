@@ -1723,6 +1723,38 @@ export function DashboardTabs({
 
               {brandFilter !== "all" && <AdCreativePanel brandId={brandFilter} platform="google" />}
 
+              {/* YouTube (true VIDEO campaign type) spend, broken out of the blended
+                  Google Ads total. Performance Max also serves on YouTube, but Google
+                  doesn't expose that split at the campaign level, so PMax stays out of
+                  this card rather than being guessed at. */}
+              {brandFilter !== "all" && (() => {
+                const ytRows = googleAdsCampaigns.filter((c: any) => c.brand_id === brandFilter && c.channel_type === "VIDEO");
+                if (!ytRows.length) return null;
+                const spend = ytRows.reduce((s: number, r: any) => s + (r.spend || 0), 0);
+                const impressions = ytRows.reduce((s: number, r: any) => s + (r.impressions || 0), 0);
+                const clicks = ytRows.reduce((s: number, r: any) => s + (r.clicks || 0), 0);
+                const convValue = ytRows.reduce((s: number, r: any) => s + (r.conv_value || 0), 0);
+                const roas = spend > 0 ? convValue / spend : 0;
+                const names = [...new Set(ytRows.map((r: any) => r.campaign_name))];
+                return (
+                  <div className="mt-4 bg-white rounded-2xl border border-red-100 shadow-sm overflow-hidden">
+                    <div className="flex items-center gap-2 px-5 py-3 border-b border-red-50 bg-red-50/40">
+                      <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 24 24"><path d="M2 12c0-3.3.4-5 .9-5.8.6-.9 1.5-1.3 2.8-1.5C8.2 4.3 12 4.3 12 4.3s3.8 0 6.3.4c1.3.2 2.2.6 2.8 1.5.5.8.9 2.5.9 5.8s-.4 5-.9 5.8c-.6.9-1.5 1.3-2.8 1.5-2.5.4-6.3.4-6.3.4s-3.8 0-6.3-.4c-1.3-.2-2.2-.6-2.8-1.5C2.4 17 2 15.3 2 12z" /><path fill="#fff" d="M10 9v6l5-3z" /></svg>
+                      <span className="text-sm font-bold text-slate-700">YouTube Ads (FY, {names.length} campaign{names.length === 1 ? "" : "s"})</span>
+                      <span className="text-[10px] text-gray-400 ml-auto">Video campaigns only — Performance Max also reaches YouTube but isn't split out by Google</span>
+                    </div>
+                    <div className="grid grid-cols-4 divide-x divide-gray-50">
+                      {[["Spend", fmt(spend)], ["Impressions", impressions.toLocaleString()], ["Clicks", clicks.toLocaleString()], ["ROAS", roas > 0 ? `${roas.toFixed(2)}×` : "—"]].map(([label, value]) => (
+                        <div key={label} className="px-5 py-3">
+                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">{label}</p>
+                          <p className="text-lg font-semibold text-slate-800 leading-none">{value}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Per-campaign breakdown for the selected brand */}
               {brandFilter !== "all" && (() => {
                 const brandCamps = googleAdsCampaigns.filter((c: any) => c.brand_id === brandFilter);

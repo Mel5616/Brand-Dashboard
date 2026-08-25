@@ -5,7 +5,7 @@ import { fmt } from "@/lib/format";
 
 const sum = (a: number[]) => a.reduce((s, v) => s + (v || 0), 0);
 
-type GoogleCampaign = { brand_id: number; month_key: string; campaign_name: string; spend: number; impressions: number; clicks: number; conversions: number; conv_value: number };
+type GoogleCampaign = { brand_id: number; month_key: string; campaign_name: string; channel_type?: string | null; spend: number; impressions: number; clicks: number; conversions: number; conv_value: number };
 type MetaPlatform   = { brand_id: number; month_key: string; platform: string; spend: number; impressions: number; clicks: number; purchases: number; revenue: number };
 
 function roasBadge(roas: number) {
