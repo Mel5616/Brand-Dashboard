@@ -79,7 +79,6 @@ import { BackInStockToast } from "./BackInStockToast";
 import { IdleLogout } from "./IdleLogout";
 import { MerCard } from "./MerCard";
 import { AnnotationsCard, type Annotation } from "./AnnotationsCard";
-import { MonthInReview } from "./MonthInReview";
 import { LtvPanel } from "./LtvPanel";
 import { CostSheet } from "./CostSheet";
 import { SalesHub } from "./SalesHub";
@@ -90,7 +89,7 @@ import { StockReport } from "./StockReport";
 import { fmt } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "month-review" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "retailer-kits" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "nanit" | "affiliates" | "pa-budget" | "pa-tracker" | "documents" | "team";
+type TabId = "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "seo" | "social" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "retailer-kits" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "nanit" | "affiliates" | "pa-budget" | "pa-tracker" | "documents" | "team";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -132,10 +131,6 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
     id: "social-report", label: "Social Report",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h6m-6 4h8M5 3h14a2 2 0 012 2v11a2 2 0 01-2 2h-6l-4 3v-3H5a2 2 0 01-2-2V5a2 2 0 012-2z" /></svg>,
-  },
-  {
-    id: "month-review", label: "Month in Review",
-    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3M3 11h18M5 5h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" /></svg>,
   },
   {
     id: "d2c-weekly", label: "D2C Weekly",
@@ -322,7 +317,7 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
 // Sidebar grouping — how you market (top) vs where you sell (bottom).
 const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Overview", ids: ["brands", "summary", "insights", "team-hub", "weekly-brief"] },
-  { label: "Reports", ids: ["report", "snapshot", "social-report", "d2c-weekly", "month-review", "uppababy"] },
+  { label: "Reports", ids: ["report", "snapshot", "social-report", "d2c-weekly", "uppababy"] },
   { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows"] },
   { label: "Plan", ids: ["campaign-calendar", "promotions", "discount-codes", "calendar", "content", "events", "show-deals", "activations", "timeline"] },
   { label: "Creative", ids: ["tasks", "design-requests", "creative", "event-concepts", "decks"] },
@@ -1506,9 +1501,6 @@ export function DashboardTabs({
           )}
 
           {active === "d2c-weekly" && <D2CWeekly brands={brands.map((b: any) => ({ name: b.name, color: b.color }))} />}
-          {active === "month-review" && <MonthInReview brands={brands} monthly={monthly} targets={targets}
-            googleAds={googleAds} metaAds={metaAds} pinterestAds={pinterestAds} klaviyo={klaviyo}
-            annotations={annotations} monthKeys={monthKeys} monthLabels={monthLabels} latest={LATEST} />}
 
           {/* ── UPPAbaby monthly sales report (uploaded sell-through + dashboard marketing) ── */}
           {active === "uppababy" && (
