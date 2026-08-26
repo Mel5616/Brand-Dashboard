@@ -163,6 +163,7 @@ def sync_codes(bid, domain, token):
         # also a bulk pattern, just a less common one than one-rule-per-code).
         codes_in_rule = len(codes)
         title = r.get('title') or ''
+        min_spend = (r.get('prerequisite_subtotal_range') or {}).get('greater_than_or_equal_to')
         for c in codes:
             rows.append({'brand_id': bid, 'code': (c.get('code') or '')[:80],
                          'usage_count': int(c.get('usage_count') or 0),
@@ -170,7 +171,8 @@ def sync_codes(bid, domain, token):
                          'value': abs(float(r.get('value') or 0)),
                          'starts_at': r.get('starts_at'), 'ends_at': r.get('ends_at'),
                          'usage_limit': r.get('usage_limit'), 'codes_in_rule': codes_in_rule,
-                         'rule_title': title[:200], 'title_shared_count': title_counts[title]})
+                         'rule_title': title[:200], 'title_shared_count': title_counts[title],
+                         'min_spend': float(min_spend) if min_spend is not None else None})
     upsert('shop_discount_codes', [r for r in rows if r['code']], 'brand_id,code')
     return len(rows)
 

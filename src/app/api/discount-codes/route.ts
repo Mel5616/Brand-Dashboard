@@ -14,7 +14,7 @@ const missing = (s: number, b: string) => s === 404 || /PGRST205|does not exist|
 type Row = {
   brand_id: number; code: string; usage_count: number; value_type: string | null; value: number | null;
   starts_at: string | null; ends_at: string | null; usage_limit: number | null; codes_in_rule: number | null;
-  rule_title: string | null; title_shared_count: number | null;
+  rule_title: string | null; title_shared_count: number | null; min_spend: number | null;
 };
 
 // "Main" excludes: single-use codes (usage_limit=1), codes sharing a rule

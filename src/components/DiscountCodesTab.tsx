@@ -6,6 +6,7 @@ import { fmtFull } from "@/lib/format";
 type Code = {
   brand_id: number; code: string; usage_count: number; value_type: string | null; value: number | null;
   starts_at: string | null; ends_at: string | null; status: "active" | "expired" | "scheduled";
+  min_spend: number | null; usage_limit: number | null;
 };
 type Brand = { id: number; name: string };
 
@@ -83,7 +84,10 @@ export function DiscountCodesTab({ brands }: { brands: Brand[] }) {
                         <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full shrink-0 ${STATUS_CLS[c.status]}`}>{c.status}</span>
                       </div>
                       <p className="text-[10.5px] text-gray-400">
-                        {c.value ? (c.value_type === "percentage" ? `${Math.round(c.value)}% off` : `${fmtFull(c.value)} off`) : "—"} · ends {dMY(c.ends_at)}
+                        {c.value ? (c.value_type === "percentage" ? `${Math.round(c.value)}% off` : `${fmtFull(c.value)} off`) : "—"}
+                        {c.min_spend ? ` · min ${fmtFull(c.min_spend)}` : ""}
+                        {c.status === "scheduled" ? ` · starts ${dMY(c.starts_at)}` : ` · ends ${dMY(c.ends_at)}`}
+                        {c.usage_limit ? ` · limit ${c.usage_limit.toLocaleString()}` : ""}
                       </p>
                     </div>
                     <span className="text-[12px] font-bold text-slate-700 shrink-0 text-right" title="Uses">{c.usage_count.toLocaleString()}</span>
