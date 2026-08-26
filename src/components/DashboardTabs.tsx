@@ -977,7 +977,7 @@ export function DashboardTabs({
     return (
       <>
         {commandPalette}
-        <Sidebar />
+        {Sidebar()}
         <div className="lg:ml-[288px]">
           <div className="flex justify-end mb-3">
             {role === "admin" && (
@@ -1026,7 +1026,7 @@ export function DashboardTabs({
   return (
     <>
       {commandPalette}
-      <Sidebar />
+      {Sidebar()}
       <div className="lg:ml-[288px]">
         <main className="max-w-screen-2xl mx-auto px-6 py-8 pb-24 lg:pb-8 space-y-8">
 
