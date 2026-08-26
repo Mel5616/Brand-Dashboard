@@ -87,6 +87,48 @@ export function AbandonedCheckoutsPanel({ brands }: { brands: BrandRef[] }) {
   );
 }
 
+// A self-contained, table-based HTML block (inline styles, no external CSS)
+// so it survives being pasted into Klaviyo's HTML editor unchanged.
+function buildOosHtml(byBrand: { b: BrandRef; list: Extras["stock"] }[]) {
+  const today = new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+  const rowsHtml = byBrand.map(({ b, list }) => {
+    const oosList = list.filter(r => r.total_qty <= 0);
+    if (!oosList.length) return "";
+    return `
+    <tr><td colspan="2" style="padding:18px 0 6px;border-bottom:2px solid ${b.color};font:bold 13px Arial,Helvetica,sans-serif;color:#1e293b;text-transform:uppercase;letter-spacing:0.06em;">${b.name} — ${oosList.length} out of stock</td></tr>
+    ${oosList.map(r => `
+    <tr>
+      <td style="padding:8px 0;border-bottom:1px solid #eee;font:14px Arial,Helvetica,sans-serif;color:#334155;">${r.title}</td>
+      <td style="padding:8px 0;border-bottom:1px solid #eee;font:bold 12px Arial,Helvetica,sans-serif;color:#e11d48;text-align:right;white-space:nowrap;">${r.variants_out}/${r.variants_total} variants out</td>
+    </tr>`).join("")}`;
+  }).join("");
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;">
+  <tr><td style="padding:0 0 4px;font:bold 18px Arial,Helvetica,sans-serif;color:#0f172a;">Out of Stock Report</td></tr>
+  <tr><td style="padding:0 0 16px;font:12px Arial,Helvetica,sans-serif;color:#94a3b8;">Live from Shopify · ${today}</td></tr>
+  ${rowsHtml || `<tr><td style="padding:12px 0;font:14px Arial,Helvetica,sans-serif;color:#059669;">✓ Nothing out of stock right now.</td></tr>`}
+</table>`;
+}
+
+function CopyHtmlButton({ byBrand }: { byBrand: { b: BrandRef; list: Extras["stock"] }[] }) {
+  const [copied, setCopied] = React.useState(false);
+  const copy = async () => {
+    const html = buildOosHtml(byBrand);
+    try {
+      await navigator.clipboard.writeText(html);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = html; document.body.appendChild(ta); ta.select();
+      document.execCommand("copy"); document.body.removeChild(ta);
+    }
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <button onClick={copy} className="text-[11.5px] font-semibold text-slate-600 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg px-3 py-1.5 shrink-0 transition-colors">
+      {copied ? "✓ Copied" : "Copy HTML for Klaviyo"}
+    </button>
+  );
+}
+
 export function LiveStockPanel({ brands }: { brands: BrandRef[] }) {
   const d = useExtras();
   const [open, setOpen] = React.useState<number | null>(null);
@@ -99,9 +141,12 @@ export function LiveStockPanel({ brands }: { brands: BrandRef[] }) {
     .sort((a, b) => b.list.length - a.list.length);
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-4">
-      <div className="mb-3">
-        <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Live Shopify stock</h2>
-        <p className="text-xs text-gray-400 mt-0.5">Active (published) products that are out of stock or low — straight from Shopify, refreshed with the sync. If it's here and being advertised, that spend is at risk.</p>
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div>
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Live Shopify stock</h2>
+          <p className="text-xs text-gray-400 mt-0.5">Active (published) products that are out of stock or low — straight from Shopify, refreshed with the sync. If it's here and being advertised, that spend is at risk.</p>
+        </div>
+        <CopyHtmlButton byBrand={byBrand} />
       </div>
       {byBrand.length === 0 ? (
         <p className="text-sm text-emerald-600 font-medium">✓ No active products low or out of stock anywhere — all clear.</p>
