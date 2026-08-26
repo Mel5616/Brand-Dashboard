@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { fmt, fmtFull, fmtPct } from "@/lib/format";
 import { BRAND_LOGOS } from "./BrandCard";
-import type { Brand, BrandSummary, BrandMonthly, GoogleAdsRow, MetaAdsRow, InstagramOrganicRow } from "@/lib/db";
+import type { Brand, BrandSummary, BrandMonthly, GoogleAdsRow, MetaAdsRow, InstagramOrganicRow, PinterestAdsRow, AmazonAdsRow } from "@/lib/db";
 
-type SortKey = "fy_revenue" | "last_month_rev" | "mom_growth" | "google_roas" | "meta_roas" | "ig_followers";
+type SortKey = "fy_revenue" | "last_month_rev" | "mom_growth" | "google_roas" | "meta_roas" | "ig_followers" | "cpa";
 
 const DEFAULT_MONTH_KEYS = ["2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06"];
 
@@ -36,12 +36,14 @@ interface Props {
   googleAds: GoogleAdsRow[];
   metaAds: MetaAdsRow[];
   instagramOrganic: InstagramOrganicRow[];
+  pinterestAds?: PinterestAdsRow[];
+  amazonAds?: AmazonAdsRow[];
   onBrandClick: (id: number) => void;
   monthKeys?: string[];
   latest?: string;
 }
 
-export function Leaderboard({ brands, summaries, monthly, googleAds, metaAds, instagramOrganic, onBrandClick, monthKeys = DEFAULT_MONTH_KEYS, latest }: Props) {
+export function Leaderboard({ brands, summaries, monthly, googleAds, metaAds, instagramOrganic, pinterestAds = [], amazonAds = [], onBrandClick, monthKeys = DEFAULT_MONTH_KEYS, latest }: Props) {
   const LATEST = latest ?? monthKeys[monthKeys.length - 1];
   const MONTH_KEYS = monthKeys;
   const [sortKey, setSortKey] = useState<SortKey>("fy_revenue");
@@ -68,6 +70,14 @@ export function Leaderboard({ brands, summaries, monthly, googleAds, metaAds, in
       const gRoas = gLatest?.roas ?? 0;
       const roasAlert = (gRoas > 0 && gRoas < 1.5) || (metaRoas > 0 && metaRoas < 1.5);
       const momAlert = mom < -20;
+      // Blended CPA: all paid spend for the month ÷ that month's Shopify
+      // orders — not true new-customer acquisition (no first-time/returning
+      // split in the data), but the closest available, always-on proxy.
+      const pLatest = pinterestAds.find(d => d.brand_id === b.id && d.month_key === LATEST);
+      const aLatest = amazonAds.find(d => d.brand_id === b.id && d.month_key === LATEST);
+      const paidSpend = (gLatest?.spend ?? 0) + (mLatest?.spend ?? 0) + (pLatest?.spend ?? 0) + (aLatest?.spend ?? 0);
+      const latestOrders = monthly.find(m => m.brand_id === b.id && m.month_key === LATEST)?.orders ?? 0;
+      const cpa = latestOrders > 0 ? paidSpend / latestOrders : 0;
       return {
         brand: b,
         fy_revenue:     s?.fy_revenue ?? 0,
@@ -76,6 +86,9 @@ export function Leaderboard({ brands, summaries, monthly, googleAds, metaAds, in
         google_roas:    gRoas,
         meta_roas:      metaRoas,
         ig_followers:   igLatest?.followers ?? 0,
+        cpa,
+        paidSpend,
+        latestOrders,
         revSpark,
         alert: roasAlert || momAlert,
       };
@@ -124,6 +137,7 @@ export function Leaderboard({ brands, summaries, monthly, googleAds, metaAds, in
               <Th label="MoM" k="mom_growth" />
               <Th label="Google ROAS" k="google_roas" />
               <Th label="Meta ROAS" k="meta_roas" />
+              <Th label="CPA" k="cpa" />
               <Th label="IG Followers" k="ig_followers" />
             </tr>
           </thead>
@@ -173,6 +187,11 @@ export function Leaderboard({ brands, summaries, monthly, googleAds, metaAds, in
                   <td className="px-4 py-3 text-right text-slate-600">
                     {row.meta_roas > 0
                       ? <span className={row.meta_roas < 1.5 ? "text-amber-500 font-semibold" : ""}>{row.meta_roas.toFixed(1)}×</span>
+                      : <span className="text-gray-300">—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-right text-slate-600">
+                    {row.cpa > 0
+                      ? <span title={`${fmtFull(row.paidSpend)} paid spend ÷ ${row.latestOrders.toLocaleString()} orders`}>{fmtFull(row.cpa)}</span>
                       : <span className="text-gray-300">—</span>}
                   </td>
                   <td className="px-4 py-3 text-right text-slate-600">

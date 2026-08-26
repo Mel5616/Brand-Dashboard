@@ -1376,6 +1376,8 @@ export function DashboardTabs({
                 googleAds={googleAds}
                 metaAds={metaAds}
                 instagramOrganic={instagramOrganic}
+                pinterestAds={pinterestAds}
+                amazonAds={amazonAds}
                 onBrandClick={openBrand}
                 monthKeys={monthKeys}
                 latest={LATEST}
