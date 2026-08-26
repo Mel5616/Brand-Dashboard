@@ -115,14 +115,19 @@ export async function GET(req: Request) {
     m.set(code, resolved);
     costByBrand.set(brand, m);
   }
+  // Cross-brand accessories (seat protectors, etc.) live on their own
+  // "Coolkidz" Cost Sheet tab regardless of which brand's booth sold them —
+  // fall back to that pool when the selling brand's own sheet has no match.
   function findCost(brand: string, sku: string): number | null {
-    const m = costByBrand.get(brand);
-    if (!m) return null;
-    let best: { code: string; cost: number | null } | null = null;
-    for (const [code, cost] of m) {
-      if (sku.startsWith(code) && (!best || code.length > best.code.length)) best = { code, cost };
+    for (const pool of [costByBrand.get(brand), costByBrand.get("Coolkidz")]) {
+      if (!pool) continue;
+      let best: { code: string; cost: number | null } | null = null;
+      for (const [code, cost] of pool) {
+        if (sku.startsWith(code) && (!best || code.length > best.code.length)) best = { code, cost };
+      }
+      if (best) return best.cost;
     }
-    return best ? best.cost : null;
+    return null;
   }
   const bucketBrand = (bucket: string) => (bucket === "QR" ? "UPPAbaby" : bucket);
   let knownRevenue = 0, knownCost = 0, allRevenue = 0;

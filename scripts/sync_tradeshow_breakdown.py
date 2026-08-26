@@ -39,6 +39,11 @@ MESA_CAPSULE_SKUS = {
     "UPMESA-GY",
 }
 MESA_CAPSULE_LABEL = "Mesa Capsule"
+# The 4 real SKUs sell at the same landed cost regardless of colour/bundle
+# form, so every Mesa Capsule line is recorded under this one canonical SKU
+# (matching the Cost Sheet's "UPMESA" style code) — storing the raw per-
+# colour SKU here would make the group ambiguous and drop the cost match.
+MESA_CAPSULE_CANONICAL_SKU = "UPMESA"
 
 def load_env():
     p = os.path.join(BASE_DIR, ".env.local")
@@ -207,7 +212,8 @@ def main():
                 add_hour(o["createdAt"], ex)
                 for title, qty, amt, sku in scaled_lines(o):
                     p = prod[bucket][title]; p[0] += amt; p[1] += qty
-                    if sku: p[2].add(sku)
+                    rec_sku = MESA_CAPSULE_CANONICAL_SKU if sku.upper() in MESA_CAPSULE_SKUS else sku
+                    if rec_sku: p[2].add(rec_sku)
 
         # Coolkidz booth till: line items split per brand.
         if ck and ck.get("domain") and ck.get("token"):
@@ -233,7 +239,8 @@ def main():
                         title = MESA_CAPSULE_LABEL if is_mesa else n["title"][:200]
                         p = prod[bn][title]; p[0] += amt; p[1] += int(n.get("quantity") or 0)
                         sku = (n.get("sku") or "").strip()
-                        if sku: p[2].add(sku)
+                        rec_sku = MESA_CAPSULE_CANONICAL_SKU if is_mesa else sku
+                        if rec_sku: p[2].add(rec_sku)
                         order_amt += amt
                     if order_amt > 0:
                         add_hour(o["createdAt"], round(order_amt, 2))
