@@ -2314,8 +2314,8 @@ export function DashboardTabs({
 
           {/* ── Product Information — brand fact sheets (Operations) ── */}
           {active === "stock-report" && (<>
-            <LiveStockPanel brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} />
             <StockReport admin={role === "admin"} brands={brands.map((b: any) => ({ name: b.name, color: b.color }))} />
+            <LiveStockPanel brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} />
           </>)}
 
           {active === "cost-sheet" && (<>
