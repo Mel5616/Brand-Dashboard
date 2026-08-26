@@ -10,7 +10,10 @@ type Code = {
 };
 type Brand = { id: number; name: string };
 
-const dMY = (s: string | null) => s ? new Date(s + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "—";
+// Shopify's starts_at/ends_at are full ISO datetimes (e.g.
+// "2027-11-24T13:59:59+00:00") — only append a bare-date fallback suffix
+// when the string doesn't already carry its own time component.
+const dMY = (s: string | null) => s ? new Date(s.includes("T") ? s : s + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "—";
 const STATUS_CLS: Record<Code["status"], string> = {
   active: "bg-emerald-100 text-emerald-700", expired: "bg-gray-100 text-gray-500", scheduled: "bg-amber-100 text-amber-700",
 };
