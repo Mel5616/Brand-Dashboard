@@ -85,20 +85,29 @@ export async function GET(req: Request) {
   const mesaCapsules = products.filter((p: any) => p.product === "Mesa Capsule").reduce((s: number, p: any) => s + Number(p.units || 0), 0);
 
   // "True revenue" — gross margin after cost of goods, only for lines with a
-  // confident (brand, style_code) → landed cost match. Never guessed: a
+  // confident cost match. Cost Sheet codes are per MODEL ("UPV3"), not per
+  // colourway — Shopify SKUs are per-colourway ("UPV3JM") — so this matches
+  // by longest style_code PREFIX of the SKU, not an exact string. A
   // style_code reused for two different costs within a brand is excluded
   // rather than picked arbitrarily, and a product with no matched SKU just
   // doesn't count toward "known" — it's reported as a coverage gap, not $0 cost.
-  const costByKey = new Map<string, number | null>(); // "brand|style_code" -> cost, or null if ambiguous
+  const costByBrand = new Map<string, Map<string, number | null>>(); // brand -> style_code -> cost, or null if ambiguous
   for (const r of costRows) {
-    const key = `${r.brand}|${String(r.style_code).trim().toUpperCase()}`;
+    const code = String(r.style_code).trim().toUpperCase();
     const cost = Number(r.landed_cost_aud);
-    if (!Number.isFinite(cost) || cost <= 0) continue;
-    if (costByKey.has(key)) {
-      if (costByKey.get(key) !== cost) costByKey.set(key, null); // conflicting costs under one code — unknown
-    } else {
-      costByKey.set(key, cost);
+    if (!Number.isFinite(cost) || cost <= 0 || code.length < 3) continue;
+    const m = costByBrand.get(r.brand) ?? new Map<string, number | null>();
+    if (m.has(code)) { if (m.get(code) !== cost) m.set(code, null); } else m.set(code, cost);
+    costByBrand.set(r.brand, m);
+  }
+  function findCost(brand: string, sku: string): number | null {
+    const m = costByBrand.get(brand);
+    if (!m) return null;
+    let best: { code: string; cost: number | null } | null = null;
+    for (const [code, cost] of m) {
+      if (sku.startsWith(code) && (!best || code.length > best.code.length)) best = { code, cost };
     }
+    return best ? best.cost : null;
   }
   const bucketBrand = (bucket: string) => (bucket === "QR" ? "UPPAbaby" : bucket);
   let knownRevenue = 0, knownCost = 0, allRevenue = 0;
@@ -106,7 +115,7 @@ export async function GET(req: Request) {
     const rev = Number(p.revenue) || 0;
     allRevenue += rev;
     if (!p.sku) continue;
-    const cost = costByKey.get(`${bucketBrand(p.bucket)}|${String(p.sku).trim().toUpperCase()}`);
+    const cost = findCost(bucketBrand(p.bucket), String(p.sku).trim().toUpperCase());
     if (cost == null) continue; // no match, or an ambiguous style_code — excluded, not assumed zero
     knownRevenue += rev;
     knownCost += cost * (Number(p.units) || 0);
