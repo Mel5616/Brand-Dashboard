@@ -22,7 +22,7 @@ type ExpItem = { id: string; tradeshow_id: string; category: string; label: stri
 // Per-show overview: sales, expenses, profit and (once the breakdown loads)
 // true profit after cost of goods — the "laid up nice" summary at the top of
 // every expanded card, so this doesn't require drilling into Sales breakdown.
-function ShowOverview({ ts, totalRev, expItems, bd }: { ts: Tradeshow; totalRev: number; expItems: ExpItem[]; bd: any }) {
+function ShowOverview({ ts, totalRev, expItems, bd, visitors }: { ts: Tradeshow; totalRev: number; expItems: ExpItem[]; bd: any; visitors?: number }) {
   const expenses = expItems.filter(x => x.tradeshow_id === ts.id).reduce((s, x) => s + x.amount, 0);
   const profit = totalRev - expenses;
   const margin = bd?.ok ? bd.margin : undefined; // undefined = still loading, null = no product data yet
@@ -62,6 +62,12 @@ function ShowOverview({ ts, totalRev, expItems, bd }: { ts: Tradeshow; totalRev:
           )}
           <p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">True profit (after COGS)</p>
         </div>
+        {visitors != null && (
+          <div>
+            <p className="text-lg font-bold text-sky-700 tabular-nums">{visitors > 0 ? visitors.toLocaleString() : "—"}</p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">Visitors{visitors > 0 && totalRev > 0 ? ` · $${Math.round(totalRev / visitors)}/visitor` : ""}</p>
+          </div>
+        )}
       </div>
       <div className="space-y-1.5">
         {bars.map(b => (
@@ -242,6 +248,16 @@ export function TradeshowAccordion({
 
   const upcoming = sorted.filter(t => showStatus(t) !== "past");          // live + upcoming, soonest first
   const past     = sorted.filter(t => showStatus(t) === "past").reverse(); // most recent first
+  // Upcoming/Past/Results is its own toggle now (was two stacked lists under a
+  // wall of season-level charts) — defaults to whichever actually has shows.
+  const [showTab, setShowTab] = useState<"upcoming" | "past" | "results">(upcoming.length > 0 ? "upcoming" : "past");
+  const pastIds  = past.map(t => t.id).join(",");
+  // "Expo Results" needs every past show's margin data at once — preload on
+  // first visit rather than one request per card as each gets expanded.
+  useEffect(() => {
+    if (showTab === "results") past.forEach(ts => loadBreakdown(ts.id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showTab, pastIds]);
 
   // Auto-expand live + next upcoming
   const liveIds = new Set(upcoming.filter(t => showStatus(t) === "live").map(t => t.id));
@@ -292,9 +308,6 @@ export function TradeshowAccordion({
   const liveShows    = sorted.filter(t => showStatus(t) === "live");
   const nextUpcoming = upcoming.find(t => showStatus(t) === "upcoming");
   const [view, setView] = useState<"live" | "all">(liveShows.length > 0 ? "live" : "all");
-  // Upcoming/Past is its own toggle now (was two stacked lists under a wall
-  // of season-level charts) — defaults to whichever actually has shows.
-  const [showTab, setShowTab] = useState<"upcoming" | "past">(upcoming.length > 0 ? "upcoming" : "past");
 
   function toggle(id: string) {
     if (!open.has(id)) {
@@ -420,7 +433,7 @@ export function TradeshowAccordion({
 
         {isOpen && (
           <div className="border-t border-gray-100 px-4 py-3 bg-gray-50/60 space-y-3">
-            {status !== "upcoming" && <ShowOverview ts={ts} totalRev={totalRev} expItems={expItems} bd={breakdown[ts.id]} />}
+            {status !== "upcoming" && <ShowOverview ts={ts} totalRev={totalRev} expItems={expItems} bd={breakdown[ts.id]} visitors={showDays(ts).reduce((s, d) => s + (attendance[`${ts.id}|${d}`] || 0), 0)} />}
             {status === "live" && <LiveShowPanel showId={ts.id} brands={brands} live />}
             {status === "past" && <LiveShowPanel showId={ts.id} brands={brands} live={false} />}
             {status === "live" && (
@@ -782,6 +795,9 @@ export function TradeshowAccordion({
           <button onClick={() => setShowTab("past")} className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${showTab === "past" ? "bg-white shadow-sm text-slate-700" : "text-gray-400 hover:text-gray-600"}`}>
             Past{past.length > 0 ? ` (${past.length})` : ""}
           </button>
+          <button onClick={() => setShowTab("results")} className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${showTab === "results" ? "bg-white shadow-sm text-slate-700" : "text-gray-400 hover:text-gray-600"}`}>
+            Expo Results
+          </button>
         </div>
         {/* Called as plain functions (not <ShowCard/>): a locally-defined component
             type changes identity every parent render, so React would unmount and
@@ -795,6 +811,56 @@ export function TradeshowAccordion({
           past.length > 0
             ? <div className="space-y-2">{past.map(ts => <div key={ts.id}>{ShowCard({ ts })}</div>)}</div>
             : <p className="text-sm text-gray-400 text-center py-6">No past shows yet.</p>
+        )}
+        {showTab === "results" && (
+          past.length > 0 ? (
+            <div className="space-y-4">
+              {(() => {
+                const totals = past.reduce((a, ts) => {
+                  const rev = tradeshowSales.filter(s => s.tradeshow_id === ts.id).reduce((s, r) => s + (r.revenue ?? 0), 0) + qrRevOf(ts.id);
+                  const exp = expItems.filter(x => x.tradeshow_id === ts.id).reduce((s, x) => s + x.amount, 0);
+                  const bd = breakdown[ts.id];
+                  const vis = showDays(ts).reduce((s, d) => s + (attendance[`${ts.id}|${d}`] || 0), 0);
+                  a.rev += rev; a.exp += exp; a.vis += vis;
+                  if (bd?.ok && bd.margin) { a.knownRev += bd.margin.knownRevenue; a.cogs += bd.margin.knownCost; a.hasMargin = true; }
+                  return a;
+                }, { rev: 0, exp: 0, vis: 0, cogs: 0, knownRev: 0, hasMargin: false });
+                const profit = totals.rev - totals.exp;
+                const trueProfit = totals.hasMargin ? (totals.knownRev - totals.cogs) - totals.exp : null;
+                const coveragePct = totals.rev > 0 ? Math.round((totals.knownRev / totals.rev) * 100) : 0;
+                return (
+                  <div className="rounded-xl border border-emerald-200/70 bg-gradient-to-br from-emerald-50 to-white px-4 py-3.5">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 mb-3">Season results · {past.length} show{past.length === 1 ? "" : "s"}</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                      <div><p className="text-lg font-bold text-slate-800 tabular-nums">{fmtFull(totals.rev)}</p><p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">Sales</p></div>
+                      <div><p className="text-lg font-bold text-slate-600 tabular-nums">{fmtFull(totals.exp)}</p><p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">Expenses</p></div>
+                      <div><p className="text-lg font-bold text-amber-600 tabular-nums">{totals.hasMargin ? fmtFull(totals.cogs) : "…"}</p><p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">Cost of goods{totals.hasMargin ? ` (${coveragePct}% matched)` : ""}</p></div>
+                      <div><p className={`text-lg font-bold tabular-nums ${profit >= 0 ? "text-emerald-600" : "text-rose-500"}`}>{profit < 0 ? "-" : ""}{fmtFull(Math.abs(profit))}</p><p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">Profit (ex COGS)</p></div>
+                      <div>
+                        <p className={`text-lg font-bold tabular-nums ${trueProfit == null ? "text-gray-300" : trueProfit >= 0 ? "text-violet-700" : "text-rose-500"}`}>{trueProfit == null ? "…" : `${trueProfit < 0 ? "-" : ""}${fmtFull(Math.abs(trueProfit))}`}</p>
+                        <p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">True profit</p>
+                      </div>
+                      <div><p className="text-lg font-bold text-sky-700 tabular-nums">{totals.vis.toLocaleString()}</p><p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">Visitors{totals.vis > 0 ? ` · $${Math.round(totals.rev / totals.vis)}/visitor` : ""}</p></div>
+                    </div>
+                  </div>
+                );
+              })()}
+              {past.map(ts => {
+                const rev = tradeshowSales.filter(s => s.tradeshow_id === ts.id).reduce((s, r) => s + (r.revenue ?? 0), 0) + qrRevOf(ts.id);
+                const visitors = showDays(ts).reduce((s, d) => s + (attendance[`${ts.id}|${d}`] || 0), 0);
+                return (
+                  <div key={ts.id}>
+                    <div className="flex items-center gap-2 mb-1.5 px-0.5">
+                      <span className="text-sm font-bold text-slate-800">{ts.name}</span>
+                      <span className="text-xs text-gray-400">{dateRange(ts)}{ts.location ? ` · ${ts.location}` : ""}</span>
+                      {mesaByShow[ts.id] > 0 && <span className="text-[10px] font-semibold rounded-full bg-violet-50 text-violet-700 px-2 py-0.5 ml-auto">{mesaByShow[ts.id]} Mesa</span>}
+                    </div>
+                    <ShowOverview ts={ts} totalRev={rev} expItems={expItems} bd={breakdown[ts.id]} visitors={visitors} />
+                  </div>
+                );
+              })}
+            </div>
+          ) : <p className="text-sm text-gray-400 text-center py-6">No past shows yet.</p>
         )}
       </div>
 
