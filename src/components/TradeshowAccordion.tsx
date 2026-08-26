@@ -28,9 +28,12 @@ function ShowOverview({ ts, totalRev, expItems, bd }: { ts: Tradeshow; totalRev:
   const margin = bd?.ok ? bd.margin : undefined; // undefined = still loading, null = no product data yet
   const trueProfit = margin ? margin.knownMargin - expenses : null;
 
+  const cogs = margin ? margin.knownCost : null;
+
   const bars = [
     { label: "Sales", value: totalRev, color: "#10b981" },
     { label: "Expenses", value: expenses, color: "#94a3b8" },
+    ...(cogs != null ? [{ label: "COGS", value: cogs, color: "#f59e0b" }] : []),
     { label: "Profit", value: profit, color: profit >= 0 ? "#10b981" : "#f43f5e" },
     ...(trueProfit != null ? [{ label: "True profit", value: trueProfit, color: trueProfit >= 0 ? "#7c3aed" : "#f43f5e" }] : []),
   ];
@@ -41,10 +44,14 @@ function ShowOverview({ ts, totalRev, expItems, bd }: { ts: Tradeshow; totalRev:
   return (
     <div className="rounded-xl border border-gray-100 bg-white px-4 py-3.5">
       <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-3">Show overview</p>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
         <div><p className="text-lg font-bold text-slate-800 tabular-nums">{fmtFull(totalRev)}</p><p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">Sales</p></div>
         <div><p className="text-lg font-bold text-slate-600 tabular-nums">{expenses > 0 ? fmtFull(expenses) : "—"}</p><p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">Expenses</p></div>
-        <div><p className={`text-lg font-bold tabular-nums ${profit >= 0 ? "text-emerald-600" : "text-rose-500"}`}>{expenses > 0 ? `${profit < 0 ? "-" : ""}${fmtFull(Math.abs(profit))}` : "—"}</p><p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">Profit</p></div>
+        <div>
+          {cogs != null ? <p className="text-lg font-bold text-amber-600 tabular-nums">{fmtFull(cogs)}</p> : margin === undefined ? <p className="text-lg font-bold text-gray-300">…</p> : <p className="text-lg font-bold text-gray-300">—</p>}
+          <p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">Cost of goods{margin ? ` (${margin.coveragePct}% matched)` : ""}</p>
+        </div>
+        <div><p className={`text-lg font-bold tabular-nums ${profit >= 0 ? "text-emerald-600" : "text-rose-500"}`}>{expenses > 0 ? `${profit < 0 ? "-" : ""}${fmtFull(Math.abs(profit))}` : "—"}</p><p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">Profit (ex COGS)</p></div>
         <div>
           {trueProfit != null ? (
             <p className={`text-lg font-bold tabular-nums ${trueProfit >= 0 ? "text-violet-700" : "text-rose-500"}`}>{trueProfit < 0 ? "-" : ""}{fmtFull(Math.abs(trueProfit))}</p>
@@ -53,7 +60,7 @@ function ShowOverview({ ts, totalRev, expItems, bd }: { ts: Tradeshow; totalRev:
           ) : (
             <p className="text-lg font-bold text-gray-300">—</p>
           )}
-          <p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">True profit{margin ? ` (${margin.coveragePct}% cost match)` : ""}</p>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">True profit (after COGS)</p>
         </div>
       </div>
       <div className="space-y-1.5">
@@ -68,7 +75,7 @@ function ShowOverview({ ts, totalRev, expItems, bd }: { ts: Tradeshow; totalRev:
         ))}
       </div>
       {margin && margin.coveragePct < 100 && (
-        <p className="text-[10px] text-gray-400 mt-2.5">True profit only reflects the {margin.coveragePct}% of sales with a confident Cost Sheet match — the rest is excluded, not assumed zero-cost.</p>
+        <p className="text-[10px] text-gray-400 mt-2.5">COGS and True profit only reflect the {margin.coveragePct}% of sales with a confident Cost Sheet match — the rest is excluded, not assumed zero-cost.</p>
       )}
     </div>
   );
