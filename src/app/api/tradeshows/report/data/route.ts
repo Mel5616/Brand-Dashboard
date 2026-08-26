@@ -27,7 +27,7 @@ export async function GET(req: Request) {
     rest(`tradeshow_products?tradeshow_id=eq.${encodeURIComponent(id)}&select=bucket,product,revenue,units,sku&order=revenue.desc`),
     rest(`tradeshow_hourly?tradeshow_id=eq.${encodeURIComponent(id)}&select=day,hour,slot,revenue,orders&order=day.asc,hour.asc`),
     rest(`tradeshow_qr?tradeshow_id=eq.${encodeURIComponent(id)}&select=revenue,orders`),
-    rest(`cost_sheet_items?select=brand,style_code,landed_cost_aud&style_code=not.is.null`),
+    rest(`cost_sheet_items?select=brand,product_name,style_code,landed_cost_aud&style_code=not.is.null`),
   ]);
   const show = showRows[0] ?? null;
   if (!show) return NextResponse.json({ ok: false, error: "Unknown tradeshow_id" }, { status: 404 });
@@ -91,14 +91,29 @@ export async function GET(req: Request) {
   // style_code reused for two different costs within a brand is excluded
   // rather than picked arbitrarily, and a product with no matched SKU just
   // doesn't count toward "known" — it's reported as a coverage gap, not $0 cost.
-  const costByBrand = new Map<string, Map<string, number | null>>(); // brand -> style_code -> cost, or null if ambiguous
+  const costGroups = new Map<string, { name: string; cost: number }[]>(); // "brand|code" -> rows
   for (const r of costRows) {
     const code = String(r.style_code).trim().toUpperCase();
     const cost = Number(r.landed_cost_aud);
     if (!Number.isFinite(cost) || cost <= 0 || code.length < 3) continue;
-    const m = costByBrand.get(r.brand) ?? new Map<string, number | null>();
-    if (m.has(code)) { if (m.get(code) !== cost) m.set(code, null); } else m.set(code, cost);
-    costByBrand.set(r.brand, m);
+    const key = `${r.brand}|${code}`;
+    const list = costGroups.get(key) ?? [];
+    list.push({ name: String(r.product_name || ""), cost });
+    costGroups.set(key, list);
+  }
+  const costByBrand = new Map<string, Map<string, number | null>>(); // brand -> style_code -> cost, or null if ambiguous
+  for (const [key, rows] of costGroups) {
+    const [brand, code] = key.split("|");
+    // A "reprice"/discount-event row isn't a genuinely different product — drop
+    // those before checking for a real conflict (e.g. UPV3's bunting reprice
+    // rows vs. its actual base cost).
+    const base = rows.filter(r => !/reprice/i.test(r.name));
+    const pool = base.length ? base : rows;
+    const distinct = [...new Set(pool.map(r => r.cost))];
+    const resolved = distinct.length === 1 ? distinct[0] : null;
+    const m = costByBrand.get(brand) ?? new Map<string, number | null>();
+    m.set(code, resolved);
+    costByBrand.set(brand, m);
   }
   function findCost(brand: string, sku: string): number | null {
     const m = costByBrand.get(brand);
