@@ -16,7 +16,7 @@ function showStatus(ts: Tradeshow): "live" | "upcoming" | "past" {
 }
 
 const MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
-const EXPENSE_CATEGORIES = ["Printing", "Staff", "Floor Space", "Travel", "Accommodation", "Stand", "Setup/Packdown", "Advertising"];
+const EXPENSE_CATEGORIES = ["Printing", "Staff", "Floor Space", "Travel", "Accommodation", "Stand", "Setup/Packdown", "Advertising", "Consumables", "Entertainment"];
 
 // Every calendar day a show runs (date_start … date_end), for per-day door
 // attendance. Capped so a bad date range can't produce a huge list.
