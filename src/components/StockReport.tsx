@@ -29,6 +29,74 @@ const statusCls = (s: string) => {
   if (/back|order/.test(v)) return "bg-sky-100 text-sky-700";
   return "bg-slate-100 text-slate-600";
 };
+const statusColors = (s: string) => {
+  const v = s.toLowerCase();
+  if (/out/.test(v)) return { bg: "#fee2e2", fg: "#be123c" };
+  if (/low/.test(v)) return { bg: "#fef3c7", fg: "#b45309" };
+  if (/back|order/.test(v)) return { bg: "#e0f2fe", fg: "#0369a1" };
+  return { bg: "#f1f5f9", fg: "#475569" };
+};
+
+// A self-contained, table-based HTML email block (inline styles only) so it
+// survives being pasted into Klaviyo's HTML editor unchanged.
+function buildStockReportHtml(
+  sections: [string, Task[]][],
+  colorOf: (name: string) => string,
+) {
+  const today = new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" });
+  const sectionsHtml = sections.map(([section, list]) => {
+    const col = colorOf(section);
+    const oos = list.filter(t => /out/i.test(field(t, [/stock.*status/i, /^status$/i]) || "")).length;
+    const low = list.filter(t => /low/i.test(field(t, [/stock.*status/i, /^status$/i]) || "")).length;
+    const rowsHtml = list.map((t, i) => {
+      const code = field(t, [/code/i, /sku/i]);
+      const status = field(t, [/stock.*status/i, /^status$/i]);
+      const ordering = field(t, [/order/i, /eta/i, /arriv/i, /due/i]) ?? (t.due_on ? new Date(t.due_on + "T00:00:00").toLocaleDateString("en-AU", { month: "long", year: "numeric" }) : null);
+      const notes = field(t, [/^notes$/i]) || t.notes?.trim() || null;
+      const sc = status ? statusColors(status) : null;
+      const bg = i % 2 === 1 ? "#f8fafc" : "#ffffff";
+      return `
+      <tr>
+        <td style="padding:10px 12px;background:${bg};border-bottom:1px solid #eef2f7;font:600 13.5px Arial,Helvetica,sans-serif;color:#334155;">${t.name}</td>
+        <td style="padding:10px 12px;background:${bg};border-bottom:1px solid #eef2f7;font:12px 'Courier New',monospace;color:#64748b;white-space:nowrap;">${code ?? "—"}</td>
+        <td style="padding:10px 12px;background:${bg};border-bottom:1px solid #eef2f7;white-space:nowrap;">${status ? `<span style="display:inline-block;padding:2px 9px;border-radius:10px;font:bold 11px Arial,Helvetica,sans-serif;background:${sc!.bg};color:${sc!.fg};">${status}</span>` : "—"}</td>
+        <td style="padding:10px 12px;background:${bg};border-bottom:1px solid #eef2f7;font:13px Arial,Helvetica,sans-serif;color:#475569;white-space:nowrap;">${ordering ?? "—"}</td>
+        <td style="padding:10px 12px;background:${bg};border-bottom:1px solid #eef2f7;font:13px Arial,Helvetica,sans-serif;color:#64748b;">${notes ?? "—"}</td>
+      </tr>`;
+    }).join("");
+    return `
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:680px;margin:0 auto 22px;border:1px solid #e5e9f0;border-radius:8px;overflow:hidden;">
+    <tr>
+      <td style="padding:12px 16px;background:${col}14;border-top:3px solid ${col};">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+          <td style="font:bold 15px Arial,Helvetica,sans-serif;color:#0f172a;">${section}<span style="font:11px Arial,Helvetica,sans-serif;color:#94a3b8;font-weight:normal;"> · ${list.length} item${list.length === 1 ? "" : "s"}</span></td>
+          <td style="text-align:right;white-space:nowrap;">
+            ${oos > 0 ? `<span style="display:inline-block;margin-left:6px;padding:2px 9px;border-radius:10px;font:bold 11px Arial,Helvetica,sans-serif;background:#fee2e2;color:#be123c;">${oos} Out of Stock</span>` : ""}
+            ${low > 0 ? `<span style="display:inline-block;margin-left:6px;padding:2px 9px;border-radius:10px;font:bold 11px Arial,Helvetica,sans-serif;background:#fef3c7;color:#b45309;">${low} Low in Stock</span>` : ""}
+          </td>
+        </tr></table>
+      </td>
+    </tr>
+    <tr><td>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr style="background:#0f172a;">
+          <td style="padding:8px 12px;font:bold 10px Arial,Helvetica,sans-serif;color:#ffffff;text-transform:uppercase;letter-spacing:0.06em;">Product</td>
+          <td style="padding:8px 12px;font:bold 10px Arial,Helvetica,sans-serif;color:#ffffff;text-transform:uppercase;letter-spacing:0.06em;">Code</td>
+          <td style="padding:8px 12px;font:bold 10px Arial,Helvetica,sans-serif;color:#ffffff;text-transform:uppercase;letter-spacing:0.06em;">Stock status</td>
+          <td style="padding:8px 12px;font:bold 10px Arial,Helvetica,sans-serif;color:#ffffff;text-transform:uppercase;letter-spacing:0.06em;">Ordering for</td>
+          <td style="padding:8px 12px;font:bold 10px Arial,Helvetica,sans-serif;color:#ffffff;text-transform:uppercase;letter-spacing:0.06em;">Notes</td>
+        </tr>
+        ${rowsHtml}
+      </table>
+    </td></tr>
+  </table>`;
+  }).join("");
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-family:Arial,Helvetica,sans-serif;">
+  <tr><td style="padding:0 0 4px;text-align:center;font:bold 20px Arial,Helvetica,sans-serif;color:#0f172a;">Coolkidz Australia — OOS Report</td></tr>
+  <tr><td style="padding:0 0 22px;text-align:center;font:12px Arial,Helvetica,sans-serif;color:#94a3b8;">${today}</td></tr>
+  <tr><td>${sectionsHtml || `<p style="text-align:center;font:14px Arial,Helvetica,sans-serif;color:#059669;">✓ Nothing on the stock report right now.</p>`}</td></tr>
+</table>`;
+}
 
 export function StockReport({ brands = [], admin }: { brands?: BrandRef[]; admin: boolean }) {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -39,6 +107,7 @@ export function StockReport({ brands = [], admin }: { brands?: BrandRef[]; admin
   const [af, setAf] = useState({ name: "", due_on: "" });
   const [busy, setBusy] = useState(false);
   const [synced, setSynced] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetch("/api/content-todo?label=Stock%20Report").then(r => r.json()).then(d => {
@@ -78,6 +147,17 @@ export function StockReport({ brands = [], admin }: { brands?: BrandRef[]; admin
     if (d.ok) { setTasks(p => [d.item, ...p]); setAf({ name: "", due_on: "" }); setShowAdd(false); }
     else setErr(d.error || "Couldn't create the task.");
   }
+  async function copyHtml() {
+    const html = buildStockReportHtml(sections, color);
+    try {
+      await navigator.clipboard.writeText(html);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = html; document.body.appendChild(ta); ta.select();
+      document.execCommand("copy"); document.body.removeChild(ta);
+    }
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
+  }
 
   if (loading) return <div className="p-8 text-center text-sm text-gray-400">Loading…</div>;
 
@@ -88,7 +168,14 @@ export function StockReport({ brands = [], admin }: { brands?: BrandRef[]; admin
           <h1 className="text-xl font-bold text-slate-800">OOS Report</h1>
           <p className="text-sm text-gray-400">Live mirror of the Asana <strong>Stock Report</strong> board{synced ? ` · last synced ${new Date(synced).toLocaleString("en-AU", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}` : ""} · ticks write back to Asana.</p>
         </div>
-        {asanaWrite && admin && <button onClick={() => setShowAdd(v => !v)} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2 shrink-0">{showAdd ? "Cancel" : "+ Add item"}</button>}
+        <div className="flex items-center gap-2 shrink-0">
+          {sections.length > 0 && (
+            <button onClick={copyHtml} className="text-sm font-semibold text-slate-600 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg px-4 py-2">
+              {copied ? "✓ Copied" : "Copy HTML for Klaviyo"}
+            </button>
+          )}
+          {asanaWrite && admin && <button onClick={() => setShowAdd(v => !v)} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2">{showAdd ? "Cancel" : "+ Add item"}</button>}
+        </div>
       </div>
       {err && <p className="text-sm text-rose-500">{err}</p>}
       {!hasFields && tasks.length > 0 && (
