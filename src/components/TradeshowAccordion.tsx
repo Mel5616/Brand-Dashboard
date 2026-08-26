@@ -17,6 +17,62 @@ function showStatus(ts: Tradeshow): "live" | "upcoming" | "past" {
 
 const MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
 const EXPENSE_CATEGORIES = ["Printing", "Staff", "Floor Space", "Travel", "Accommodation", "Stand", "Setup/Packdown", "Advertising", "Consumables", "Entertainment"];
+type ExpItem = { id: string; tradeshow_id: string; category: string; label: string; amount: number; note: string };
+
+// Per-show overview: sales, expenses, profit and (once the breakdown loads)
+// true profit after cost of goods — the "laid up nice" summary at the top of
+// every expanded card, so this doesn't require drilling into Sales breakdown.
+function ShowOverview({ ts, totalRev, expItems, bd }: { ts: Tradeshow; totalRev: number; expItems: ExpItem[]; bd: any }) {
+  const expenses = expItems.filter(x => x.tradeshow_id === ts.id).reduce((s, x) => s + x.amount, 0);
+  const profit = totalRev - expenses;
+  const margin = bd?.ok ? bd.margin : undefined; // undefined = still loading, null = no product data yet
+  const trueProfit = margin ? margin.knownMargin - expenses : null;
+
+  const bars = [
+    { label: "Sales", value: totalRev, color: "#10b981" },
+    { label: "Expenses", value: expenses, color: "#94a3b8" },
+    { label: "Profit", value: profit, color: profit >= 0 ? "#10b981" : "#f43f5e" },
+    ...(trueProfit != null ? [{ label: "True profit", value: trueProfit, color: trueProfit >= 0 ? "#7c3aed" : "#f43f5e" }] : []),
+  ];
+  const maxAbs = Math.max(1, ...bars.map(b => Math.abs(b.value)));
+
+  if (totalRev === 0 && expenses === 0) return null;
+
+  return (
+    <div className="rounded-xl border border-gray-100 bg-white px-4 py-3.5">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-3">Show overview</p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <div><p className="text-lg font-bold text-slate-800 tabular-nums">{fmtFull(totalRev)}</p><p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">Sales</p></div>
+        <div><p className="text-lg font-bold text-slate-600 tabular-nums">{expenses > 0 ? fmtFull(expenses) : "—"}</p><p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">Expenses</p></div>
+        <div><p className={`text-lg font-bold tabular-nums ${profit >= 0 ? "text-emerald-600" : "text-rose-500"}`}>{expenses > 0 ? `${profit < 0 ? "-" : ""}${fmtFull(Math.abs(profit))}` : "—"}</p><p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">Profit</p></div>
+        <div>
+          {trueProfit != null ? (
+            <p className={`text-lg font-bold tabular-nums ${trueProfit >= 0 ? "text-violet-700" : "text-rose-500"}`}>{trueProfit < 0 ? "-" : ""}{fmtFull(Math.abs(trueProfit))}</p>
+          ) : margin === undefined ? (
+            <p className="text-lg font-bold text-gray-300">…</p>
+          ) : (
+            <p className="text-lg font-bold text-gray-300">—</p>
+          )}
+          <p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">True profit{margin ? ` (${margin.coveragePct}% cost match)` : ""}</p>
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        {bars.map(b => (
+          <div key={b.label} className="flex items-center gap-2.5">
+            <span className="text-[11px] text-gray-500 w-20 shrink-0">{b.label}</span>
+            <div className="flex-1 h-3 rounded bg-gray-50 overflow-hidden">
+              <div className="h-full rounded transition-all" style={{ width: `${Math.max(2, (Math.abs(b.value) / maxAbs) * 100)}%`, background: b.color }} />
+            </div>
+            <span className="text-[12px] font-semibold text-slate-700 tabular-nums w-24 text-right shrink-0">{b.value < 0 ? "-" : ""}{fmtFull(Math.abs(b.value))}</span>
+          </div>
+        ))}
+      </div>
+      {margin && margin.coveragePct < 100 && (
+        <p className="text-[10px] text-gray-400 mt-2.5">True profit only reflects the {margin.coveragePct}% of sales with a confident Cost Sheet match — the rest is excluded, not assumed zero-cost.</p>
+      )}
+    </div>
+  );
+}
 
 // Every calendar day a show runs (date_start … date_end), for per-day door
 // attendance. Capped so a bad date range can't produce a huge list.
@@ -119,7 +175,6 @@ export function TradeshowAccordion({
 
   // Line-item show expenses: each entry is allocated to a category with a label
   // (who/what), amount and optional note — e.g. Staff · Melanie · $300 · 4 hours.
-  type ExpItem = { id: string; tradeshow_id: string; category: string; label: string; amount: number; note: string };
   const [expItems, setExpItems] = useState<ExpItem[]>([]);
   const [expNeedsSetup, setExpNeedsSetup] = useState(false);
   const [expMsg, setExpMsg] = useState<{ text: string; ok: boolean } | null>(null);
@@ -198,17 +253,33 @@ export function TradeshowAccordion({
     }).catch(() => {});
   }, []);
 
+  // QR expo-stand revenue per show — a separate table from tradeshowSales,
+  // folded in everywhere "sales revenue" is shown so the collapsed card, the
+  // season table and the True Revenue figure all agree on one number.
+  const [qrByShow, setQrByShow] = useState<Record<string, { revenue: number; orders: number }>>({});
+  useEffect(() => {
+    fetch("/api/tradeshows/qr-totals").then(r => r.json()).then(d => {
+      if (d.ok) { const m: Record<string, { revenue: number; orders: number }> = {}; for (const r of d.rows) m[r.tradeshow_id] = { revenue: Number(r.revenue) || 0, orders: Number(r.orders) || 0 }; setQrByShow(m); }
+    }).catch(() => {});
+  }, []);
+  const qrRevOf = (id: string) => qrByShow[id]?.revenue ?? 0;
+  const qrOrdersOf = (id: string) => qrByShow[id]?.orders ?? 0;
+
   // Sales breakdown (top products / hourly / QR funnel) per show, lazy-loaded
   // from /api/tradeshows/report/data on first expand. Keyed by tradeshow_id.
   const [breakdown, setBreakdown] = useState<Record<string, any>>({});
   const [bdOpen, setBdOpen] = useState<Set<string>>(new Set());
+  const loadingBd = useRef<Set<string>>(new Set());
+  function loadBreakdown(id: string) {
+    if (breakdown[id] || loadingBd.current.has(id)) return;
+    loadingBd.current.add(id);
+    fetch(`/api/tradeshows/report/data?tradeshow_id=${encodeURIComponent(id)}`)
+      .then(r => r.json()).then(d => setBreakdown(p => ({ ...p, [id]: d.ok ? d : { ok: false } })))
+      .catch(() => setBreakdown(p => ({ ...p, [id]: { ok: false } })));
+  }
   function toggleBreakdown(id: string) {
     setBdOpen(prev => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
-    if (!breakdown[id]) {
-      fetch(`/api/tradeshows/report/data?tradeshow_id=${encodeURIComponent(id)}`)
-        .then(r => r.json()).then(d => setBreakdown(p => ({ ...p, [id]: d.ok ? d : { ok: false } })))
-        .catch(() => setBreakdown(p => ({ ...p, [id]: { ok: false } })));
-    }
+    loadBreakdown(id);
   }
 
   const liveShows    = sorted.filter(t => showStatus(t) === "live");
@@ -219,6 +290,10 @@ export function TradeshowAccordion({
   const [showTab, setShowTab] = useState<"upcoming" | "past">(upcoming.length > 0 ? "upcoming" : "past");
 
   function toggle(id: string) {
+    if (!open.has(id)) {
+      const ts = sorted.find(t => t.id === id);
+      if (ts && showStatus(ts) !== "upcoming") loadBreakdown(id); // opening: preload margin data for the overview panel
+    }
     setOpen(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
@@ -229,12 +304,15 @@ export function TradeshowAccordion({
   // ── Summary (scoped to the selected FY's shows) ───────────────────────
   const fyShowIds = new Set(fyShows.map(t => t.id));
   const fySales   = tradeshowSales.filter(s => fyShowIds.has(s.tradeshow_id));
-  const totalRevAll = fySales.reduce((s, r) => s + (r.revenue ?? 0), 0);
+  const fyQr      = fyShows.reduce((s, ts) => s + qrRevOf(ts.id), 0);
+  const totalRevAll = fySales.reduce((s, r) => s + (r.revenue ?? 0), 0) + fyQr;
   const liveCount   = sorted.filter(t => showStatus(t) === "live").length;
 
-  // Revenue per show, then aggregate by state and by brand
+  // Revenue per show (POS + till + QR, so every total on this tab agrees),
+  // then aggregate by state and by brand
   const revByShow = new Map<string, number>();
   fySales.forEach(s => revByShow.set(s.tradeshow_id, (revByShow.get(s.tradeshow_id) ?? 0) + (s.revenue ?? 0)));
+  fyShows.forEach(ts => { const qr = qrRevOf(ts.id); if (qr > 0) revByShow.set(ts.id, (revByShow.get(ts.id) ?? 0) + qr); });
 
   const stateTotals: Record<string, number> = {};
   fyShows.forEach(ts => { stateTotals[ts.state] = (stateTotals[ts.state] ?? 0) + (revByShow.get(ts.id) ?? 0); });
@@ -276,8 +354,10 @@ export function TradeshowAccordion({
       .filter(Boolean) as Brand[];
 
     const sales       = tradeshowSales.filter(s => s.tradeshow_id === ts.id);
-    const totalRev    = sales.reduce((s, r) => s + (r.revenue ?? 0), 0);
-    const totalOrders = sales.reduce((s, r) => s + (r.orders ?? 0), 0);
+    const posRev      = sales.reduce((s, r) => s + (r.revenue ?? 0), 0);
+    const posOrders   = sales.reduce((s, r) => s + (r.orders ?? 0), 0);
+    const totalRev    = posRev + qrRevOf(ts.id);
+    const totalOrders = posOrders + qrOrdersOf(ts.id);
 
     const accent = status === "live" ? "#10b981" : status === "upcoming" ? "#6366f1" : "#94a3b8";
 
@@ -333,6 +413,7 @@ export function TradeshowAccordion({
 
         {isOpen && (
           <div className="border-t border-gray-100 px-4 py-3 bg-gray-50/60 space-y-3">
+            {status !== "upcoming" && <ShowOverview ts={ts} totalRev={totalRev} expItems={expItems} bd={breakdown[ts.id]} />}
             {status === "live" && <LiveShowPanel showId={ts.id} brands={brands} live />}
             {status === "past" && <LiveShowPanel showId={ts.id} brands={brands} live={false} />}
             {status === "live" && (
@@ -769,7 +850,7 @@ export function TradeshowAccordion({
           cost, profit, margin, visitors and $/visitor, plus season totals. */}
       {(() => {
         const rows = sorted.map(ts => {
-          const rev = tradeshowSales.filter(s => s.tradeshow_id === ts.id).reduce((s, r) => s + (r.revenue ?? 0), 0);
+          const rev = tradeshowSales.filter(s => s.tradeshow_id === ts.id).reduce((s, r) => s + (r.revenue ?? 0), 0) + qrRevOf(ts.id);
           const cost = expItems.filter(x => x.tradeshow_id === ts.id).reduce((s, x) => s + x.amount, 0);
           const visitors = showDays(ts).reduce((s, d) => s + (attendance[`${ts.id}|${d}`] || 0), 0);
           return { ts, rev, cost, visitors, profit: rev - cost };
