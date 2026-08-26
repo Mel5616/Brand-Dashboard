@@ -423,9 +423,10 @@ export function TradeshowAccordion({
                   {isBd && bd && !bd.ok && <p className="text-[12px] text-gray-400 pt-2">No breakdown yet — it syncs for shows ended in the last 60 days.</p>}
                   {isBd && bd?.ok && (
                     <div className="pt-3 space-y-4">
-                      {bd.leads && (bd.leads.scans > 0 || bd.leads.orders > 0) && (
+                      {(bd.mesaCapsules > 0 || (bd.leads && (bd.leads.scans > 0 || bd.leads.orders > 0))) && (
                         <div className="flex flex-wrap gap-2">
-                          {[["QR scans", bd.leads.scans], ["Checkouts started", bd.leads.checkouts], ["QR orders", bd.leads.orders]].map(([l, v]) => (
+                          {bd.mesaCapsules > 0 && <span className="text-[11.5px] rounded-full bg-violet-50 text-violet-700 px-2.5 py-1"><strong>{bd.mesaCapsules}</strong> Mesa Capsules sold</span>}
+                          {bd.leads && [["QR scans", bd.leads.scans], ["Checkouts started", bd.leads.checkouts], ["QR orders", bd.leads.orders]].map(([l, v]) => (
                             <span key={String(l)} className="text-[11.5px] rounded-full bg-sky-50 text-sky-700 px-2.5 py-1"><strong>{v as number}</strong> {l}</span>
                           ))}
                           {bd.byBrand.find((b: any) => b.brand === "QR") && <span className="text-[11.5px] rounded-full bg-sky-50 text-sky-700 px-2.5 py-1"><strong>${bd.byBrand.find((b: any) => b.brand === "QR").revenue.toLocaleString()}</strong> QR revenue (ex-GST)</span>}

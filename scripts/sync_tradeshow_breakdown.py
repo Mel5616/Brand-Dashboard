@@ -28,6 +28,18 @@ CTX = ssl.create_default_context()
 RECENT_DAYS = 60
 QR_SOURCE_PREFIX = "channel:"   # headless QR order form registers as channel:<id>
 
+# Mesa Car Capsule SKUs — sold standalone (UPMESA-B/-GY) and as a show-only
+# bundle add-on (SHOW-ADD-A-MESA-CAR-CAPSULE-*). Matched by SKU (not title,
+# which varies) and rolled into one canonical "Mesa Capsule" product line so
+# the units show up as a single, reliable count per show.
+MESA_CAPSULE_SKUS = {
+    "SHOW-ADD-A-MESA-CAR-CAPSULE-GREYSON-CHARCOAL-349",
+    "SHOW-ADD-A-MESA-CAR-CAPSULE-JAMES-BLACK-349",
+    "UPMESA-B",
+    "UPMESA-GY",
+}
+MESA_CAPSULE_LABEL = "Mesa Capsule"
+
 def load_env():
     p = os.path.join(BASE_DIR, ".env.local")
     if not os.path.exists(p):
@@ -74,7 +86,7 @@ def fetch_orders(domain, token, ds, de):
           edges {{ cursor node {{ sourceName createdAt
             totalPriceSet {{ shopMoney {{ amount }} }} totalTaxSet {{ shopMoney {{ amount }} }}
             totalShippingPriceSet {{ shopMoney {{ amount }} }}
-            lineItems(first: 50) {{ edges {{ node {{ title quantity
+            lineItems(first: 50) {{ edges {{ node {{ title quantity sku
               discountedTotalSet {{ shopMoney {{ amount }} }}
               originalTotalSet {{ shopMoney {{ amount }} }}
               product {{ vendor tags }} }} }} }}
@@ -93,6 +105,14 @@ def order_ex_gst(o):
     tax = float((o.get("totalTaxSet") or {}).get("shopMoney", {}).get("amount") or 0)
     return (gross - tax) if tax > 0 else round(gross / 1.1, 2)
 
+def canonical_title(title, sku):
+    """Mesa Capsule sells under several titles (standalone + show bundle
+    add-on) but a fixed set of SKUs — normalise by SKU so every variant
+    rolls into one countable product line instead of splintering."""
+    if (sku or "").strip().upper() in MESA_CAPSULE_SKUS:
+        return MESA_CAPSULE_LABEL
+    return title[:200]
+
 def scaled_lines(o):
     """Line items as [(title, qty, ex-GST amount)], scaled so the order's line
     amounts sum to its ex-GST product total (net of shipping). Captures
@@ -102,7 +122,7 @@ def scaled_lines(o):
     for li in o["lineItems"]["edges"]:
         n = li["node"]
         amt = float(n["discountedTotalSet"]["shopMoney"]["amount"]) / 1.1
-        lines.append([n["title"][:200], int(n.get("quantity") or 0), amt])
+        lines.append([canonical_title(n["title"], n.get("sku")), int(n.get("quantity") or 0), amt])
     ls = sum(x[2] for x in lines)
     ship = float((o.get("totalShippingPriceSet") or {}).get("shopMoney", {}).get("amount") or 0) / 1.1
     target = max(0.0, order_ex_gst(o) - ship)
@@ -201,11 +221,16 @@ def main():
                     for li in o["lineItems"]["edges"]:
                         n = li["node"]
                         pr = n.get("product") or {}
-                        bn = match(n["title"], pr.get("vendor", ""), pr.get("tags", []))
+                        is_mesa = (n.get("sku") or "").strip().upper() in MESA_CAPSULE_SKUS
+                        # Mesa Capsule show add-ons often don't carry "UPPAbaby" in
+                        # their title/vendor/tags, so title-matching alone would
+                        # silently drop them — force the brand for a known SKU.
+                        bn = "UPPAbaby" if is_mesa else match(n["title"], pr.get("vendor", ""), pr.get("tags", []))
                         if not bn:
                             continue
                         amt = round(float(n["originalTotalSet"]["shopMoney"]["amount"]) / 1.1, 2)
-                        p = prod[bn][n["title"][:200]]; p[0] += amt; p[1] += int(n.get("quantity") or 0)
+                        title = MESA_CAPSULE_LABEL if is_mesa else n["title"][:200]
+                        p = prod[bn][title]; p[0] += amt; p[1] += int(n.get("quantity") or 0)
                         order_amt += amt
                     if order_amt > 0:
                         add_hour(o["createdAt"], round(order_amt, 2))

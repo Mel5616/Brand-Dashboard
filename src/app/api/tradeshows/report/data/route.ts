@@ -78,6 +78,11 @@ export async function GET(req: Request) {
     } catch { /* booth app unreachable — leads stay null */ }
   }
 
+  // Mesa Capsule units — summed from the full (untruncated) product list, not
+  // the top-N-per-bucket slice above, so it's accurate even when it doesn't
+  // rank in a bucket's top products.
+  const mesaCapsules = products.filter((p: any) => p.product === "Mesa Capsule").reduce((s: number, p: any) => s + Number(p.units || 0), 0);
+
   const total = byBrand.reduce((s: number, b: any) => s + b.revenue, 0) + (qrRow?.revenue ?? 0);
   return NextResponse.json({
     ok: true,
@@ -85,6 +90,7 @@ export async function GET(req: Request) {
     totals: { revenue: Math.round(total), note: "ex-GST; QR = Shopify paid orders on the QR channel (standard agreed 17 Jul 2026)" },
     byBrand: qrRow ? [...byBrand, qrRow].sort((a, b) => b.revenue - a.revenue) : byBrand,
     topProductsByBrand: topProducts,
+    mesaCapsules,
     hourly: hourlyRows,
     hourlyBySlot: [...bySlot.values()].sort((a, b) => a.hour - b.hour),
     leads,
