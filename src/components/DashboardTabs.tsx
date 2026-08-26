@@ -93,7 +93,7 @@ import { AbandonedCheckoutsPanel, LiveStockPanel, DiscountCodesPanel, CrossCodeC
 import { DiscountCodesTab } from "./DiscountCodesTab";
 import { Notifier } from "./Notifier";
 import { StockReport } from "./StockReport";
-import { fmt } from "@/lib/format";
+import { fmt, fmtFull } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
 type TabId = "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "seo" | "social" | "youtube" | "tradeshows" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "nanit" | "affiliates" | "pa-budget" | "pa-tracker" | "documents" | "team" | "brand-packs" | "price-lists" | "hub-fact-sheets" | "brand-overview" | "stock-availability" | "order-forms" | "customers" | "customer-forms";
@@ -1133,6 +1133,15 @@ export function DashboardTabs({
                 const merSeries = totalSeries.map((rev, i) => rev > 0 ? (spendSeries[i] / rev) * 100 : 0);
                 const digitalSeries = monthKeys.map((_, i) => ssum(visible.filter((c: any) => DIGITAL_CHANNELS.has(c.name)).map((c: any) => c.series[i] ?? 0)));
                 const shareSeries = totalSeries.map((rev, i) => rev > 0 ? (digitalSeries[i] / rev) * 100 : 0);
+                // Blended cost per acquisition — total marketing spend ÷ D2C (Shopify)
+                // orders, the only channel with order counts. Only months holding both
+                // sides count, so a spend upload landing ahead of the order sync (or
+                // vice versa) doesn't distort the figure.
+                const ordersSeries = monthKeys.map((mk: string) => ssum(monthly.filter((m: any) => m.month_key === mk).map((m: any) => m.orders ?? 0)));
+                const cpaSeries = ordersSeries.map((o, i) => o > 0 ? spendSeries[i] / o : 0);
+                const cpaMonths = monthKeys.map((_, i) => i).filter(i => ordersSeries[i] > 0 && spendSeries[i] > 0);
+                const cpaOrders = ssum(cpaMonths.map(i => ordersSeries[i]));
+                const cpa = cpaOrders > 0 ? ssum(cpaMonths.map(i => spendSeries[i])) / cpaOrders : null;
                 const revMom = momPct(totalSeries, latestI);
                 const momSub = revMom != null ? `${revMom >= 0 ? "▲" : "▼"} ${Math.abs(revMom).toFixed(0)}% vs ${prevLabel}` : undefined;
                 // Pace vs plan — digital revenue against digital target, cumulative through the selected month.
@@ -1145,18 +1154,19 @@ export function DashboardTabs({
                 const cards = [
                   { label: "Total business revenue", value: fmt(total), accent: "#0e7490", sub: momSub, spark: totalSeries as number[] | undefined },
                   { label: "Mktg % of sales", value: mer != null ? mer.toFixed(1) + "%" : "—", accent: "#0ea5e9", sub: undefined as string | undefined, spark: merSeries as number[] | undefined },
+                  { label: "Cost per acquisition", value: cpa != null ? fmtFull(cpa) : "—", accent: "#6366f1", sub: cpa != null ? "mktg spend ÷ D2C orders" : undefined, spark: cpaSeries as number[] | undefined },
                   { label: "Digital share", value: Math.round(onlinePct) + "%", accent: "#14b8a6", sub: undefined as string | undefined, spark: shareSeries as number[] | undefined },
                   { label: "Channels", value: String(visible.length), accent: "#06b6d4", sub: undefined as string | undefined, spark: undefined as number[] | undefined },
                 ];
                 return (
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
                     <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-3">Business overview <span className="font-normal text-gray-400 normal-case tracking-normal">· {fyLabel}, all channels</span></p>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
                       {cards.map(c => (
                         <div key={c.label} className="bg-gray-50/60 rounded-xl px-4 py-3">
                           <p className="text-[11px] font-medium text-gray-400 flex items-center gap-1.5"><span className="w-2 h-2 rounded-full inline-block" style={{ background: c.accent }} />{c.label}</p>
                           <p className="text-2xl font-bold text-slate-800 mt-1 leading-none">{c.value}</p>
-                          {c.sub && <p className={`text-[11px] mt-1 font-semibold ${c.sub.startsWith("▼") ? "text-red-500" : "text-emerald-500"}`}>{c.sub}</p>}
+                          {c.sub && <p className={`text-[11px] mt-1 ${c.sub.startsWith("▼") ? "font-semibold text-red-500" : c.sub.startsWith("▲") ? "font-semibold text-emerald-500" : "text-gray-400"}`}>{c.sub}</p>}
                           {c.spark && <Sparkline data={c.spark} color={c.accent} />}
                         </div>
                       ))}
