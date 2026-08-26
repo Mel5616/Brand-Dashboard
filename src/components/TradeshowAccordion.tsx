@@ -204,6 +204,9 @@ export function TradeshowAccordion({
   const liveShows    = sorted.filter(t => showStatus(t) === "live");
   const nextUpcoming = upcoming.find(t => showStatus(t) === "upcoming");
   const [view, setView] = useState<"live" | "all">(liveShows.length > 0 ? "live" : "all");
+  // Upcoming/Past is its own toggle now (was two stacked lists under a wall
+  // of season-level charts) — defaults to whichever actually has shows.
+  const [showTab, setShowTab] = useState<"upcoming" | "past">(upcoming.length > 0 ? "upcoming" : "past");
 
   function toggle(id: string) {
     setOpen(prev => {
@@ -653,6 +656,31 @@ export function TradeshowAccordion({
       {/* ── ALL SHOWS (existing list + portfolio visuals) ─────────────── */}
       {view === "all" && (
       <div className="space-y-4">
+      {/* The actual show list, front and centre — season-level charts follow below for reference */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+        <div className="inline-flex bg-gray-100 rounded-lg p-0.5 mb-3">
+          <button onClick={() => setShowTab("upcoming")} className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${showTab === "upcoming" ? "bg-white shadow-sm text-slate-700" : "text-gray-400 hover:text-gray-600"}`}>
+            Upcoming{upcoming.length > 0 ? ` (${upcoming.length})` : ""}
+          </button>
+          <button onClick={() => setShowTab("past")} className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${showTab === "past" ? "bg-white shadow-sm text-slate-700" : "text-gray-400 hover:text-gray-600"}`}>
+            Past{past.length > 0 ? ` (${past.length})` : ""}
+          </button>
+        </div>
+        {/* Called as plain functions (not <ShowCard/>): a locally-defined component
+            type changes identity every parent render, so React would unmount and
+            remount each card on every keystroke — losing focus and scroll. */}
+        {showTab === "upcoming" && (
+          upcoming.length > 0
+            ? <div className="space-y-2">{upcoming.map(ts => <div key={ts.id}>{ShowCard({ ts })}</div>)}</div>
+            : <p className="text-sm text-gray-400 text-center py-6">No upcoming shows scheduled.</p>
+        )}
+        {showTab === "past" && (
+          past.length > 0
+            ? <div className="space-y-2">{past.map(ts => <div key={ts.id}>{ShowCard({ ts })}</div>)}</div>
+            : <p className="text-sm text-gray-400 text-center py-6">No past shows yet.</p>
+        )}
+      </div>
+
       {/* Summary strip */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {[
@@ -780,23 +808,6 @@ export function TradeshowAccordion({
           </div>
         );
       })()}
-
-      {upcoming.length > 0 && (
-        <div>
-          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 px-1">Upcoming & Live</h3>
-          {/* Called as plain functions (not <ShowCard/>): a locally-defined component
-              type changes identity every parent render, so React would unmount and
-              remount each card on every keystroke — losing focus and scroll. */}
-          <div className="space-y-2">{upcoming.map(ts => <div key={ts.id}>{ShowCard({ ts })}</div>)}</div>
-        </div>
-      )}
-
-      {past.length > 0 && (
-        <div>
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 px-1">Past Shows</h3>
-          <div className="space-y-2">{past.map(ts => <div key={ts.id}>{ShowCard({ ts })}</div>)}</div>
-        </div>
-      )}
 
       {sorted.length === 0 && (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-10 text-center text-sm text-gray-400">
