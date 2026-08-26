@@ -188,6 +188,16 @@ export function TradeshowAccordion({
   }
   const [open, setOpen] = useState<Set<string>>(liveIds);
 
+  // Mesa Capsule units per show — fetched once for every show up front (cheap
+  // aggregate query) so the count can badge the collapsed card, not just the
+  // lazy-loaded full breakdown behind "Sales breakdown ▾".
+  const [mesaByShow, setMesaByShow] = useState<Record<string, number>>({});
+  useEffect(() => {
+    fetch("/api/tradeshows/mesa-capsules").then(r => r.json()).then(d => {
+      if (d.ok) { const m: Record<string, number> = {}; for (const r of d.rows) m[r.tradeshow_id] = r.units; setMesaByShow(m); }
+    }).catch(() => {});
+  }, []);
+
   // Sales breakdown (top products / hourly / QR funnel) per show, lazy-loaded
   // from /api/tradeshows/report/data on first expand. Keyed by tradeshow_id.
   const [breakdown, setBreakdown] = useState<Record<string, any>>({});
@@ -296,6 +306,13 @@ export function TradeshowAccordion({
               </div>
             )}
           </div>
+
+          {/* Mesa Capsules — badged on the collapsed card, no need to expand */}
+          {mesaByShow[ts.id] > 0 && (
+            <span className="hidden sm:inline-flex items-center text-[11px] font-semibold rounded-full bg-violet-50 text-violet-700 px-2.5 py-1 shrink-0" title="Mesa Capsules sold">
+              {mesaByShow[ts.id]} Mesa
+            </span>
+          )}
 
           {/* Revenue */}
           <div className="text-right flex-shrink-0">
@@ -771,7 +788,8 @@ export function TradeshowAccordion({
                     <th className="text-right font-semibold py-2 pr-3">Profit</th>
                     <th className="text-right font-semibold py-2 pr-3">Margin</th>
                     <th className="text-right font-semibold py-2 pr-3">Visitors</th>
-                    <th className="text-right font-semibold py-2">$/visitor</th>
+                    <th className="text-right font-semibold py-2 pr-3">$/visitor</th>
+                    <th className="text-right font-semibold py-2">Mesa</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -789,7 +807,8 @@ export function TradeshowAccordion({
                       <td className={`py-2 pr-3 text-right font-bold tabular-nums whitespace-nowrap ${rev > 0 && cost > 0 ? (profit >= 0 ? "text-emerald-600" : "text-rose-500") : "text-gray-300"}`}>{rev > 0 && cost > 0 ? `${profit < 0 ? "-" : ""}${fmtFull(Math.abs(profit))}` : "—"}</td>
                       <td className={`py-2 pr-3 text-right font-semibold tabular-nums ${rev > 0 && cost > 0 ? (profit >= 0 ? "text-emerald-600" : "text-rose-500") : "text-gray-300"}`}>{rev > 0 && cost > 0 ? pctCell(profit, rev) : "—"}</td>
                       <td className="py-2 pr-3 text-right text-slate-600 tabular-nums">{visitors > 0 ? visitors.toLocaleString() : "—"}</td>
-                      <td className="py-2 text-right text-slate-600 tabular-nums">{visitors > 0 && rev > 0 ? `$${Math.round(rev / visitors)}` : "—"}</td>
+                      <td className="py-2 pr-3 text-right text-slate-600 tabular-nums">{visitors > 0 && rev > 0 ? `$${Math.round(rev / visitors)}` : "—"}</td>
+                      <td className="py-2 text-right text-violet-700 font-semibold tabular-nums">{mesaByShow[ts.id] > 0 ? mesaByShow[ts.id] : "—"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -801,7 +820,8 @@ export function TradeshowAccordion({
                     <td className={`pt-2 pr-3 text-right tabular-nums ${totProfit >= 0 ? "text-emerald-600" : "text-rose-500"}`}>{totProfit < 0 ? "-" : ""}{fmtFull(Math.abs(totProfit))}</td>
                     <td className={`pt-2 pr-3 text-right tabular-nums ${totProfit >= 0 ? "text-emerald-600" : "text-rose-500"}`}>{pctCell(totProfit, tot.rev)}</td>
                     <td className="pt-2 pr-3 text-right tabular-nums text-slate-600">{tot.visitors > 0 ? tot.visitors.toLocaleString() : "—"}</td>
-                    <td className="pt-2 text-right tabular-nums text-slate-600">{tot.visitors > 0 && tot.rev > 0 ? `$${Math.round(tot.rev / tot.visitors)}` : "—"}</td>
+                    <td className="pt-2 pr-3 text-right tabular-nums text-slate-600">{tot.visitors > 0 && tot.rev > 0 ? `$${Math.round(tot.rev / tot.visitors)}` : "—"}</td>
+                    <td className="pt-2 text-right tabular-nums text-violet-700">{rows.reduce((s, r) => s + (mesaByShow[r.ts.id] || 0), 0) || "—"}</td>
                   </tr>
                 </tfoot>
               </table>
