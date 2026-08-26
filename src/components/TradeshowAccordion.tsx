@@ -440,6 +440,17 @@ export function TradeshowAccordion({
                   {isBd && bd && !bd.ok && <p className="text-[12px] text-gray-400 pt-2">No breakdown yet — it syncs for shows ended in the last 60 days.</p>}
                   {isBd && bd?.ok && (
                     <div className="pt-3 space-y-4">
+                      {bd.margin && (
+                        <div className="rounded-lg border border-amber-200/70 bg-amber-50/50 px-3 py-2.5">
+                          <div className="flex items-center justify-between gap-3 flex-wrap">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700">True revenue (after cost of goods) — for management</p>
+                            <p className={`text-sm font-bold ${bd.margin.knownMargin >= 0 ? "text-emerald-700" : "text-rose-600"}`}>{fmtFull(bd.margin.knownMargin)}</p>
+                          </div>
+                          <p className="text-[11px] text-amber-800/80 mt-1">
+                            Based on {fmtFull(bd.margin.knownRevenue)} of revenue with a confident cost match ({bd.margin.coveragePct}% of this show's total) — {bd.margin.coveragePct < 100 ? "the rest has no reliable cost price in the Cost Sheet yet, so it's excluded here rather than guessed at." : "full coverage this show."}
+                          </p>
+                        </div>
+                      )}
                       {(bd.mesaCapsules > 0 || (bd.leads && (bd.leads.scans > 0 || bd.leads.orders > 0))) && (
                         <div className="flex flex-wrap gap-2">
                           {bd.mesaCapsules > 0 && <span className="text-[11.5px] rounded-full bg-violet-50 text-violet-700 px-2.5 py-1"><strong>{bd.mesaCapsules}</strong> Mesa Capsules sold</span>}

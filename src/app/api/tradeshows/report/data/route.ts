@@ -20,13 +20,14 @@ export async function GET(req: Request) {
   const top = Math.max(1, Math.min(50, Number(u.searchParams.get("top") || 5)));
   if (!id) return NextResponse.json({ ok: false, error: "Missing tradeshow_id" }, { status: 400 });
 
-  const [showRows, sales, brands, products, hourly, qr] = await Promise.all([
+  const [showRows, sales, brands, products, hourly, qr, costRows] = await Promise.all([
     rest(`tradeshows?id=eq.${encodeURIComponent(id)}&select=id,name,date_start,date_end,state,location`),
     rest(`tradeshow_sales?tradeshow_id=eq.${encodeURIComponent(id)}&select=brand_id,revenue,orders&order=revenue.desc`),
     rest("brands?select=id,name"),
-    rest(`tradeshow_products?tradeshow_id=eq.${encodeURIComponent(id)}&select=bucket,product,revenue,units&order=revenue.desc`),
+    rest(`tradeshow_products?tradeshow_id=eq.${encodeURIComponent(id)}&select=bucket,product,revenue,units,sku&order=revenue.desc`),
     rest(`tradeshow_hourly?tradeshow_id=eq.${encodeURIComponent(id)}&select=day,hour,slot,revenue,orders&order=day.asc,hour.asc`),
     rest(`tradeshow_qr?tradeshow_id=eq.${encodeURIComponent(id)}&select=revenue,orders`),
+    rest(`cost_sheet_items?select=brand,style_code,landed_cost_aud&style_code=not.is.null`),
   ]);
   const show = showRows[0] ?? null;
   if (!show) return NextResponse.json({ ok: false, error: "Unknown tradeshow_id" }, { status: 404 });
@@ -83,6 +84,39 @@ export async function GET(req: Request) {
   // rank in a bucket's top products.
   const mesaCapsules = products.filter((p: any) => p.product === "Mesa Capsule").reduce((s: number, p: any) => s + Number(p.units || 0), 0);
 
+  // "True revenue" — gross margin after cost of goods, only for lines with a
+  // confident (brand, style_code) → landed cost match. Never guessed: a
+  // style_code reused for two different costs within a brand is excluded
+  // rather than picked arbitrarily, and a product with no matched SKU just
+  // doesn't count toward "known" — it's reported as a coverage gap, not $0 cost.
+  const costByKey = new Map<string, number | null>(); // "brand|style_code" -> cost, or null if ambiguous
+  for (const r of costRows) {
+    const key = `${r.brand}|${String(r.style_code).trim().toUpperCase()}`;
+    const cost = Number(r.landed_cost_aud);
+    if (!Number.isFinite(cost) || cost <= 0) continue;
+    if (costByKey.has(key)) {
+      if (costByKey.get(key) !== cost) costByKey.set(key, null); // conflicting costs under one code — unknown
+    } else {
+      costByKey.set(key, cost);
+    }
+  }
+  const bucketBrand = (bucket: string) => (bucket === "QR" ? "UPPAbaby" : bucket);
+  let knownRevenue = 0, knownCost = 0, allRevenue = 0;
+  for (const p of products) {
+    const rev = Number(p.revenue) || 0;
+    allRevenue += rev;
+    if (!p.sku) continue;
+    const cost = costByKey.get(`${bucketBrand(p.bucket)}|${String(p.sku).trim().toUpperCase()}`);
+    if (cost == null) continue; // no match, or an ambiguous style_code — excluded, not assumed zero
+    knownRevenue += rev;
+    knownCost += cost * (Number(p.units) || 0);
+  }
+  const margin = allRevenue > 0 ? {
+    knownRevenue: Math.round(knownRevenue), knownCost: Math.round(knownCost), knownMargin: Math.round(knownRevenue - knownCost),
+    coveragePct: Math.round((knownRevenue / allRevenue) * 100),
+    note: "Gross margin after cost of goods — only for products with a confident SKU match to the Cost Sheet; everything else is excluded from this figure (not assumed zero-cost), so coverage % shows how much of revenue it actually reflects.",
+  } : null;
+
   const total = byBrand.reduce((s: number, b: any) => s + b.revenue, 0) + (qrRow?.revenue ?? 0);
   return NextResponse.json({
     ok: true,
@@ -91,6 +125,7 @@ export async function GET(req: Request) {
     byBrand: qrRow ? [...byBrand, qrRow].sort((a, b) => b.revenue - a.revenue) : byBrand,
     topProductsByBrand: topProducts,
     mesaCapsules,
+    margin,
     hourly: hourlyRows,
     hourlyBySlot: [...bySlot.values()].sort((a, b) => a.hour - b.hour),
     leads,

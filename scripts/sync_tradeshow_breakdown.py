@@ -122,7 +122,7 @@ def scaled_lines(o):
     for li in o["lineItems"]["edges"]:
         n = li["node"]
         amt = float(n["discountedTotalSet"]["shopMoney"]["amount"]) / 1.1
-        lines.append([canonical_title(n["title"], n.get("sku")), int(n.get("quantity") or 0), amt])
+        lines.append([canonical_title(n["title"], n.get("sku")), int(n.get("quantity") or 0), amt, (n.get("sku") or "").strip()])
     ls = sum(x[2] for x in lines)
     ship = float((o.get("totalShippingPriceSet") or {}).get("shopMoney", {}).get("amount") or 0) / 1.1
     target = max(0.0, order_ex_gst(o) - ship)
@@ -130,7 +130,7 @@ def scaled_lines(o):
         f = target / ls
         for x in lines:
             x[2] = round(x[2] * f, 2)
-    return [(t, q, a) for t, q, a in lines]
+    return [(t, q, a, s) for t, q, a, s in lines]
 
 def tz_offset(state):
     s = (state or "").lower()
@@ -179,7 +179,7 @@ def main():
         sid, ds, de = str(show["id"]), show["date_start"], show["date_end"] or show["date_start"]
         off = tz_offset(show.get("state"))
         print(f"⟳  {show['name']} ({ds}) breakdown", flush=True)
-        prod = defaultdict(lambda: defaultdict(lambda: [0.0, 0]))   # bucket -> product -> [rev, units]
+        prod = defaultdict(lambda: defaultdict(lambda: [0.0, 0, set()]))   # bucket -> product -> [rev, units, skus_seen]
         hourly = defaultdict(lambda: [0.0, 0, ""])                  # (day,hour) -> [rev, orders, slot]
         qr_rev, qr_orders = 0.0, 0
 
@@ -205,8 +205,9 @@ def main():
                 if is_qr:
                     qr_rev += ex; qr_orders += 1
                 add_hour(o["createdAt"], ex)
-                for title, qty, amt in scaled_lines(o):
+                for title, qty, amt, sku in scaled_lines(o):
                     p = prod[bucket][title]; p[0] += amt; p[1] += qty
+                    if sku: p[2].add(sku)
 
         # Coolkidz booth till: line items split per brand.
         if ck and ck.get("domain") and ck.get("token"):
@@ -231,6 +232,8 @@ def main():
                         amt = round(float(n["originalTotalSet"]["shopMoney"]["amount"]) / 1.1, 2)
                         title = MESA_CAPSULE_LABEL if is_mesa else n["title"][:200]
                         p = prod[bn][title]; p[0] += amt; p[1] += int(n.get("quantity") or 0)
+                        sku = (n.get("sku") or "").strip()
+                        if sku: p[2].add(sku)
                         order_amt += amt
                     if order_amt > 0:
                         add_hour(o["createdAt"], round(order_amt, 2))
@@ -241,7 +244,10 @@ def main():
         now = datetime.utcnow().isoformat() + "Z"
         for table in ("tradeshow_products", "tradeshow_hourly"):
             sb("DELETE", f"/rest/v1/{table}?tradeshow_id=eq.{sid}")
-        p_rows = [{"tradeshow_id": sid, "bucket": bkt, "product": t, "revenue": round(v[0], 2), "units": v[1], "synced_at": now}
+        # sku is only set when every line under this product title shared the
+        # exact same SKU — ambiguous groups stay null so a cost join never guesses.
+        p_rows = [{"tradeshow_id": sid, "bucket": bkt, "product": t, "revenue": round(v[0], 2), "units": v[1],
+                   "sku": next(iter(v[2])) if len(v[2]) == 1 else None, "synced_at": now}
                   for bkt, items in prod.items() for t, v in items.items() if v[0] > 0 or v[1] > 0]
         h_rows = [{"tradeshow_id": sid, "day": d, "hour": h, "slot": v[2], "revenue": round(v[0], 2), "orders": v[1], "synced_at": now}
                   for (d, h), v in hourly.items()]
