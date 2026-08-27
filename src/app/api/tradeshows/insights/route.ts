@@ -138,5 +138,25 @@ export async function GET() {
   }
   yoy.sort((a, b) => b.date_start.localeCompare(a.date_start));
 
-  return NextResponse.json({ ok: true, shows: results, yoy, topProductsSeason });
+  // Sales by month, split by brand — every FY month gets a slot (even $0
+  // ones) so the chart reads as a continuous season, not just the months
+  // that happened to have a show.
+  const monthKeys = fyMonthKeys(currentFY());
+  const salesByMonth = monthKeys.map(mk => {
+    const showsInMonth = results.filter((r: any) => r.date_start.slice(0, 7) === mk);
+    const byBrandMap = new Map<number, { name: string; color: string; revenue: number }>();
+    for (const r of showsInMonth) {
+      for (const b of r.byBrand) {
+        const cur = byBrandMap.get(b.brand_id) ?? { name: b.name, color: b.color, revenue: 0 };
+        cur.revenue += b.revenue;
+        byBrandMap.set(b.brand_id, cur);
+      }
+    }
+    const byBrand = [...byBrandMap.entries()].map(([brand_id, v]) => ({ brand_id, ...v, revenue: Math.round(v.revenue) })).sort((a, b) => b.revenue - a.revenue);
+    const [yy, mm] = mk.split("-");
+    const label = new Date(Number(yy), Number(mm) - 1, 1).toLocaleDateString("en-AU", { month: "short" });
+    return { monthKey: mk, label, total: Math.round(byBrand.reduce((s, b) => s + b.revenue, 0)), byBrand };
+  });
+
+  return NextResponse.json({ ok: true, shows: results, yoy, topProductsSeason, salesByMonth });
 }

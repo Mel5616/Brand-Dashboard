@@ -15,6 +15,7 @@ type Show = {
   daily: { day: string; revenue: number }[];
   byBrand: BrandRev[]; topProducts: Product[];
 };
+type MonthEntry = { monthKey: string; label: string; total: number; byBrand: BrandRev[] };
 type Yoy = {
   id: string; prevId: string; name: string; date_start: string; prevDateStart: string;
   revenue: number; prevRevenue: number; revenueDeltaPct: number | null;
@@ -31,6 +32,7 @@ function inCurrentFY(dateStart: string): boolean {
 }
 
 const dateFmt = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+const fmtK = (n: number) => (n >= 1000 ? `$${Math.round(n / 1000)}K` : `$${Math.round(n)}`);
 
 function DeltaPill({ pct }: { pct: number | null }) {
   if (pct == null) return <span className="text-[11px] text-gray-300">—</span>;
@@ -138,6 +140,46 @@ function BrandSplit({ byBrand }: { byBrand: BrandRev[] }) {
   );
 }
 
+// Sales by month, stacked by brand — a continuous 12-month FY view (every
+// month gets a slot even at $0) so a quiet month reads as quiet, not missing.
+function MonthlyBrandChart({ months }: { months: MonthEntry[] }) {
+  const max = Math.max(1, ...months.map(m => m.total));
+  const legend = new Map<number, { name: string; color: string; total: number }>();
+  for (const m of months) for (const b of m.byBrand) {
+    const cur = legend.get(b.brand_id) ?? { name: b.name, color: b.color, total: 0 };
+    cur.total += b.revenue;
+    legend.set(b.brand_id, cur);
+  }
+  const brands = [...legend.values()].sort((a, b) => b.total - a.total);
+  if (brands.length === 0) return <p className="text-sm text-gray-400 text-center py-6">No tradeshow sales yet this FY.</p>;
+
+  return (
+    <div>
+      <div className="flex flex-wrap gap-x-3 gap-y-1.5 mb-5">
+        {brands.map(b => (
+          <span key={b.name} className="inline-flex items-center gap-1.5 text-[11px] text-gray-500">
+            <span className="w-2 h-2 rounded-sm inline-block" style={{ background: b.color }} />{b.name} <span className="font-semibold text-slate-600">{fmtK(b.total)}</span>
+          </span>
+        ))}
+      </div>
+      <div className="flex items-end gap-2 sm:gap-3 h-48">
+        {months.map(m => (
+          <div key={m.monthKey} className="flex-1 flex flex-col items-center justify-end h-full group relative">
+            {m.total > 0 && <span className="text-[10px] font-semibold text-slate-500 mb-1 tabular-nums">{fmtK(m.total)}</span>}
+            <div className="w-full flex flex-col-reverse rounded-t overflow-hidden bg-gray-50" style={{ height: `${Math.max(2, (m.total / max) * 168)}px` }}>
+              {m.byBrand.map(b => (
+                <div key={b.brand_id} style={{ height: `${(b.revenue / (m.total || 1)) * 100}%`, background: b.color }}
+                  title={`${b.name} · ${m.label} · ${fmtFull(b.revenue)}`} />
+              ))}
+            </div>
+            <span className="text-[10px] text-gray-400 uppercase mt-1.5">{m.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function StatTile({ label, value, color = "text-slate-800" }: { label: string; value: string; color?: string }) {
   return (
     <div>
@@ -189,13 +231,14 @@ function ShowResultCard({ s }: { s: Show }) {
 }
 
 export function ShowInsights() {
-  const [data, setData] = useState<{ shows: Show[]; yoy: Yoy[]; topProductsSeason: Product[] } | null>(null);
+  const [data, setData] = useState<{ shows: Show[]; yoy: Yoy[]; topProductsSeason: Product[]; salesByMonth: MonthEntry[] } | null>(null);
   useEffect(() => { fetch("/api/tradeshows/insights").then(r => r.json()).then(d => { if (d.ok) setData(d); }).catch(() => {}); }, []);
 
   if (!data) return <div className="p-8 text-center text-sm text-gray-400">Loading…</div>;
   const allShows = data.shows;
   const yoy = data.yoy;
   const topProductsSeason = data.topProductsSeason ?? [];
+  const salesByMonth = data.salesByMonth ?? [];
   // Everything on this tab is scoped to the current FY — last year's shows
   // stay on the record via Year on Year's "vs previous instance" comparison,
   // but the headline numbers here are always what's happening right now.
@@ -245,6 +288,15 @@ export function ShowInsights() {
           </div>
         );
       })()}
+
+      {/* ── Sales by month, by brand ── */}
+      {salesByMonth.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-1">Sales by month · {fyLabel}</h2>
+          <p className="text-xs text-gray-400 mb-1">Tradeshow revenue every month, split by brand</p>
+          <MonthlyBrandChart months={salesByMonth} />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[...shows].sort((a, b) => b.date_start.localeCompare(a.date_start)).map(s => <ShowResultCard key={s.id} s={s} />)}
