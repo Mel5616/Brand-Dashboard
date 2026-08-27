@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { fmtFull } from "@/lib/format";
-import { currentFY, fyMonthKeys } from "@/lib/fy";
+import { currentFY, fyMonthKeys, FY_LABEL } from "@/lib/fy";
 
 type Margin = { knownRevenue: number; knownCost: number; knownMargin: number; coveragePct: number } | null;
 type Show = {
@@ -124,26 +124,26 @@ function StatTile({ label, value, color = "text-slate-800" }: { label: string; v
 function ShowResultCard({ s }: { s: Show }) {
   const cogs = s.margin?.knownCost ?? null;
   return (
-    <div className="border border-gray-100 rounded-xl p-4">
-      <div className="flex items-center gap-2 mb-3 flex-wrap">
-        <span className="text-sm font-bold text-slate-800">{s.name}</span>
-        <span className="text-xs text-gray-400">{dateFmt(s.date_start)}{s.location ? ` · ${s.location}` : ""}</span>
-        {s.marginPct != null && (
-          <span className={`text-[10px] font-bold rounded-full px-2 py-0.5 ml-auto ${s.marginPct >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"}`}>{s.marginPct}% true margin</span>
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex flex-col">
+      <div className="mb-3">
+        <p className="text-sm font-bold text-slate-800">{s.name}</p>
+        <p className="text-[11px] text-gray-400">{dateFmt(s.date_start)}{s.location ? ` · ${s.location}` : ""}</p>
+      </div>
+      {s.marginPct != null && (
+        <span className={`self-start text-[10px] font-bold rounded-full px-2 py-0.5 mb-3 ${s.marginPct >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"}`}>{s.marginPct}% true margin</span>
+      )}
+      <div className="grid grid-cols-2 gap-y-2.5 gap-x-2 mb-3">
+        <StatTile label="Sales" value={fmtFull(s.revenue)} />
+        <StatTile label="Expenses" value={fmtFull(s.expenses)} color="text-slate-600" />
+        <StatTile label="True profit" value={s.trueProfit != null ? `${s.trueProfit < 0 ? "-" : ""}${fmtFull(Math.abs(s.trueProfit))}` : "n/a"} color={s.trueProfit == null ? "text-gray-300" : s.trueProfit >= 0 ? "text-violet-700" : "text-rose-500"} />
+        <StatTile label="Visitors" value={s.visitors > 0 ? s.visitors.toLocaleString() : "n/a"} color="text-sky-700" />
+      </div>
+      <div className="mt-auto">
+        <RevenueSplitBar revenue={s.revenue} cogs={cogs} expenses={s.expenses} trueProfit={s.trueProfit} />
+        {s.margin && s.margin.coveragePct < 100 && (
+          <p className="text-[10px] text-gray-400 mt-2">COGS matched on {s.margin.coveragePct}% of sales.</p>
         )}
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-3">
-        <StatTile label="Sales (ex GST)" value={fmtFull(s.revenue)} />
-        <StatTile label="Expenses (ex GST)" value={fmtFull(s.expenses)} color="text-slate-600" />
-        <StatTile label={`COGS${s.margin ? ` (${s.margin.coveragePct}% matched)` : ""}`} value={cogs != null ? fmtFull(cogs) : "n/a"} color="text-amber-600" />
-        <StatTile label="Profit (ex COGS)" value={`${s.profit < 0 ? "-" : ""}${fmtFull(Math.abs(s.profit))}`} color={s.profit >= 0 ? "text-emerald-600" : "text-rose-500"} />
-        <StatTile label="True profit" value={s.trueProfit != null ? `${s.trueProfit < 0 ? "-" : ""}${fmtFull(Math.abs(s.trueProfit))}` : "n/a"} color={s.trueProfit == null ? "text-gray-300" : s.trueProfit >= 0 ? "text-violet-700" : "text-rose-500"} />
-        <StatTile label="Visitors" value={s.visitors > 0 ? `${s.visitors.toLocaleString()}${s.revenue > 0 ? ` · $${Math.round(s.revenue / s.visitors)}/visitor` : ""}` : "n/a"} color="text-sky-700" />
-      </div>
-      <RevenueSplitBar revenue={s.revenue} cogs={cogs} expenses={s.expenses} trueProfit={s.trueProfit} />
-      {s.margin && s.margin.coveragePct < 100 && (
-        <p className="text-[10px] text-gray-400 mt-2.5">COGS and True profit only reflect the {s.margin.coveragePct}% of sales with a confident Cost Sheet match — the rest is excluded, not assumed zero-cost.</p>
-      )}
     </div>
   );
 }
@@ -153,8 +153,15 @@ export function ShowInsights() {
   useEffect(() => { fetch("/api/tradeshows/insights").then(r => r.json()).then(d => { if (d.ok) setData(d); }).catch(() => {}); }, []);
 
   if (!data) return <div className="p-8 text-center text-sm text-gray-400">Loading…</div>;
-  const { shows, yoy } = data;
-  if (shows.length === 0) return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">No past shows with sales or expenses yet.</div>;
+  const allShows = data.shows;
+  const yoy = data.yoy;
+  // Everything on this tab is scoped to the current FY — last year's shows
+  // stay on the record via Year on Year's "vs previous instance" comparison,
+  // but the headline numbers here are always what's happening right now.
+  const shows = allShows.filter(s => inCurrentFY(s.date_start));
+  const fyLabel = FY_LABEL[currentFY()];
+  if (allShows.length === 0) return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">No past shows with sales or expenses yet.</div>;
+  if (shows.length === 0) return <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-400">No shows in {fyLabel} yet.</div>;
 
   const ranked = [...shows].filter(s => s.marginPct != null).sort((a, b) => (b.marginPct! - a.marginPct!));
   const best = ranked.slice(0, 5);
@@ -166,7 +173,7 @@ export function ShowInsights() {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-bold text-slate-800">Show Insights</h1>
-        <p className="text-sm text-gray-400">Cross-show analytics built on the Tradeshows figures — every dollar ex GST.</p>
+        <p className="text-sm text-gray-400">Cross-show analytics built on the Tradeshows figures — {fyLabel}, every dollar ex GST.</p>
       </div>
 
       {/* ── Season results: totals + every past show, laid out clearly ── */}
@@ -182,7 +189,7 @@ export function ShowInsights() {
         return (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <div className="flex items-baseline justify-between gap-2 mb-3">
-              <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Season results · {shows.length} show{shows.length === 1 ? "" : "s"}</h2>
+              <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Season results · {shows.length} show{shows.length === 1 ? "" : "s"} · {fyLabel}</h2>
               <p className="text-[10px] text-gray-300">All figures ex GST</p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-3">
@@ -198,7 +205,7 @@ export function ShowInsights() {
         );
       })()}
 
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[...shows].sort((a, b) => b.date_start.localeCompare(a.date_start)).map(s => <ShowResultCard key={s.id} s={s} />)}
       </div>
 
