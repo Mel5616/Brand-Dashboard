@@ -17,6 +17,15 @@
     </td>
   </tr>
 
+  <!-- launch badge — sits above the hero rather than overlaid on it, since
+       true image overlays aren't reliable across email clients (no z-index/
+       absolute positioning in Outlook desktop) -->
+  <tr>
+    <td style="background-color:#41414e;padding:9px 0;text-align:center;">
+      <p style="margin:0;font:700 11px/1 'Stabil Grotesk', Poppins, -apple-system, 'Segoe UI', Arial, sans-serif;letter-spacing:0.18em;text-transform:uppercase;color:#ffffff;">Just launched</p>
+    </td>
+  </tr>
+
   <!-- hero -->
   <tr>
     <td>
@@ -41,6 +50,22 @@
     </td>
   </tr>
 
+  <!-- icon_strip — typographic, not pictogram icons. Real feature glyphs need
+       brand iconography that doesn't exist yet (same gap as the headline
+       artwork) — a hand-drawn approximation would look worse than clean type. -->
+  <tr>
+    <td style="background-color:#ffffff;padding:22px 24px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td width="25%" style="text-align:center;font:600 11px/1.4 'Stabil Grotesk', Poppins, -apple-system, 'Segoe UI', Arial, sans-serif;color:#41414e;border-right:1px solid #e5e1e6;">140&deg;<br><span style="font-weight:400;color:#9a9aa2;">Recline</span></td>
+          <td width="25%" style="text-align:center;font:600 11px/1.4 'Stabil Grotesk', Poppins, -apple-system, 'Segoe UI', Arial, sans-serif;color:#41414e;border-right:1px solid #e5e1e6;">360&deg;<br><span style="font-weight:400;color:#9a9aa2;">Easy steer</span></td>
+          <td width="25%" style="text-align:center;font:600 11px/1.4 'Stabil Grotesk', Poppins, -apple-system, 'Segoe UI', Arial, sans-serif;color:#41414e;border-right:1px solid #e5e1e6;">Compact<br><span style="font-weight:400;color:#9a9aa2;">Fold</span></td>
+          <td width="25%" style="text-align:center;font:600 11px/1.4 'Stabil Grotesk', Poppins, -apple-system, 'Segoe UI', Arial, sans-serif;color:#41414e;">2 Year<br><span style="font-weight:400;color:#9a9aa2;">Warranty</span></td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
   <!-- comparison (Wonder vs Wonder max — Wonder+ dropped, no launch imagery) -->
   <tr>
     <td style="background-color:#e5e1e6;padding:36px 20px 8px;text-align:center;">
@@ -58,7 +83,8 @@
           <td width="50%" valign="top" class="cmp-td" style="padding:0 6px 0 0;">
             <img src="https://zaurkrynhnbnquxogiad.supabase.co/storage/v1/object/public/email-assets/12/wonder-lifestyle-smartrike30397400.jpg" width="294" alt="smarTrike® Wonder™ on the go" style="display:block;width:100%;max-width:294px;height:auto;border-radius:6px 6px 0 0;border:0;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:0 0 6px 6px;">
-              <tr><td style="padding:18px 16px 20px;text-align:center;">
+              <tr><td height="24" style="line-height:24px;font-size:0;">&nbsp;</td></tr>
+              <tr><td style="padding:0 16px 20px;text-align:center;">
                 <p style="margin:0 0 2px;font:600 16px/1.3 'Stabil Grotesk', Poppins, -apple-system, 'Segoe UI', Arial, sans-serif;letter-spacing:-0.02em;color:#41414e;">smarTrike® Wonder&trade;</p>
                 <p style="margin:0 0 14px;font:400 14px/1.4 'Stabil Grotesk', Poppins, -apple-system, 'Segoe UI', Arial, sans-serif;color:#41414e;">$389.00 RRP</p>
                 <a href="https://smartrike.com.au/products/wonder-trike" style="display:inline-block;padding:10px 20px;border:1px solid #41414e;border-radius:4px;font:600 11px/1 'Stabil Grotesk', Poppins, -apple-system, 'Segoe UI', Arial, sans-serif;letter-spacing:0.04em;text-transform:uppercase;color:#41414e;text-decoration:none;">Shop Wonder</a>
@@ -68,7 +94,10 @@
           <td width="50%" valign="top" class="cmp-td" style="padding:0 0 0 6px;">
             <img src="https://zaurkrynhnbnquxogiad.supabase.co/storage/v1/object/public/email-assets/12/wonder-max-lifestyle-smartrike303769-edit.jpg" width="294" alt="smarTrike® Wonder max™ on the go" style="display:block;width:100%;max-width:294px;height:auto;border-radius:6px 6px 0 0;border:0;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:0 0 6px 6px;">
-              <tr><td style="padding:18px 16px 20px;text-align:center;">
+              <tr><td height="24" style="padding:8px 0 0;text-align:center;line-height:1;">
+                <span style="display:inline-block;padding:4px 10px;background-color:#c4bc9b;border-radius:3px;font:700 9px/1 'Stabil Grotesk', Poppins, -apple-system, 'Segoe UI', Arial, sans-serif;letter-spacing:0.08em;text-transform:uppercase;color:#41414e;">New</span>
+              </td></tr>
+              <tr><td style="padding:8px 16px 20px;text-align:center;">
                 <p style="margin:0 0 2px;font:600 16px/1.3 'Stabil Grotesk', Poppins, -apple-system, 'Segoe UI', Arial, sans-serif;letter-spacing:-0.02em;color:#41414e;">smarTrike® Wonder max&trade;</p>
                 <p style="margin:0 0 14px;font:400 14px/1.4 'Stabil Grotesk', Poppins, -apple-system, 'Segoe UI', Arial, sans-serif;color:#41414e;">$579.00 RRP</p>
                 <a href="https://smartrike.com.au/products/smartrike-wonder-max-stone-beige" style="display:inline-block;padding:10px 20px;border:1px solid #41414e;border-radius:4px;font:600 11px/1 'Stabil Grotesk', Poppins, -apple-system, 'Segoe UI', Arial, sans-serif;letter-spacing:0.04em;text-transform:uppercase;color:#41414e;text-decoration:none;">Shop Wonder max</a>
@@ -117,6 +146,17 @@
       </table>
       <p style="margin:20px 0 0;text-align:center;">
         <a href="https://smartrike.com.au/collections/wonder" style="display:inline-block;padding:14px 32px;background-color:#41414e;border-radius:4px;font:600 13px/1 'Stabil Grotesk', Poppins, -apple-system, 'Segoe UI', Arial, sans-serif;letter-spacing:0.04em;text-transform:uppercase;color:#ffffff;text-decoration:none;">Shop the range</a>
+      </p>
+    </td>
+  </tr>
+
+  <!-- awards_band — real, verified awards (build brief §10), text-only since
+       no official badge artwork exists in Filecamp yet -->
+  <tr>
+    <td style="background-color:#ffffff;padding:26px 24px;text-align:center;border-top:1px solid #e5e1e6;">
+      <p style="margin:0 0 10px;font:600 10px/1.3 'Stabil Grotesk', Poppins, -apple-system, 'Segoe UI', Arial, sans-serif;letter-spacing:0.14em;text-transform:uppercase;color:#9a9aa2;">Award-winning design</p>
+      <p style="margin:0;font:600 12.5px/1.7 'Stabil Grotesk', Poppins, -apple-system, 'Segoe UI', Arial, sans-serif;color:#41414e;">
+        Red Dot Award: Product Design 2026 &nbsp;&middot;&nbsp; German Design Award 2026 (Winner) &nbsp;&middot;&nbsp; 2025 Baby Innovation Award
       </p>
     </td>
   </tr>
