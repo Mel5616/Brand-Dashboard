@@ -93,11 +93,12 @@ export async function GET() {
       const cur = sorted[i], prev = sorted[i - 1];
       const pct = (a: number, b: number) => (b > 0 ? Math.round(((a - b) / b) * 100) : null);
       yoy.push({
-        id: cur.id, name: cur.name, date_start: cur.date_start, prevDateStart: prev.date_start,
+        id: cur.id, prevId: prev.id, name: cur.name, date_start: cur.date_start, prevDateStart: prev.date_start,
         revenue: cur.revenue, prevRevenue: prev.revenue, revenueDeltaPct: pct(cur.revenue, prev.revenue),
         visitors: cur.visitors, prevVisitors: prev.visitors, visitorsDeltaPct: pct(cur.visitors, prev.visitors),
         trueProfit: cur.trueProfit, prevTrueProfit: prev.trueProfit,
         trueProfitDeltaPct: cur.trueProfit != null && prev.trueProfit != null ? pct(cur.trueProfit, prev.trueProfit) : null,
+        daily: cur.daily, prevDaily: prev.daily,
       });
     }
   }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { fmtFull } from "@/lib/format";
+import { currentFY, fyMonthKeys } from "@/lib/fy";
 
 type Margin = { knownRevenue: number; knownCost: number; knownMargin: number; coveragePct: number } | null;
 type Show = {
@@ -12,11 +13,19 @@ type Show = {
   daily: { day: string; revenue: number }[];
 };
 type Yoy = {
-  id: string; name: string; date_start: string; prevDateStart: string;
+  id: string; prevId: string; name: string; date_start: string; prevDateStart: string;
   revenue: number; prevRevenue: number; revenueDeltaPct: number | null;
   visitors: number; prevVisitors: number; visitorsDeltaPct: number | null;
   trueProfit: number | null; prevTrueProfit: number | null; trueProfitDeltaPct: number | null;
+  daily: { day: string; revenue: number }[]; prevDaily: { day: string; revenue: number }[];
 };
+
+// This FY's month keys as "YYYY-MM" — a show's date_start falls in the
+// current FY when its "YYYY-MM" prefix is one of these.
+function inCurrentFY(dateStart: string): boolean {
+  const monthKey = dateStart.slice(0, 7);
+  return fyMonthKeys(currentFY()).includes(monthKey);
+}
 
 const dateFmt = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
 
@@ -40,6 +49,37 @@ function Sparkline({ daily }: { daily: { day: string; revenue: number }[] }) {
           <span className="text-[9px] text-gray-300 uppercase">{new Date(d.day + "T00:00:00").toLocaleDateString("en-AU", { weekday: "narrow" })}</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+// This year's daily sales (emerald) against the previous instance's (grey),
+// aligned by day-of-show (Day 1, Day 2…) rather than calendar date, since the
+// same show recurs on different weekdays year to year.
+function DualSparkline({ daily, prevDaily }: { daily: { day: string; revenue: number }[]; prevDaily: { day: string; revenue: number }[] }) {
+  const len = Math.max(daily.length, prevDaily.length);
+  const max = Math.max(1, ...daily.map(d => d.revenue), ...prevDaily.map(d => d.revenue));
+  const days = Array.from({ length: len }, (_, i) => i);
+  return (
+    <div>
+      <div className="flex items-end gap-2 h-12">
+        {days.map(i => {
+          const cur = daily[i]; const prev = prevDaily[i];
+          return (
+            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+              <div className="w-full flex items-end justify-center gap-0.5 h-10">
+                <div className="flex-1 max-w-[10px] rounded-t bg-gray-200" style={{ height: `${prev ? Math.max(3, (prev.revenue / max) * 40) : 2}px` }} title={prev ? `Last time · ${dateFmt(prev.day)} · ${fmtFull(prev.revenue)}` : undefined} />
+                <div className="flex-1 max-w-[10px] rounded-t bg-emerald-400" style={{ height: `${cur ? Math.max(3, (cur.revenue / max) * 40) : 2}px` }} title={cur ? `This time · ${dateFmt(cur.day)} · ${fmtFull(cur.revenue)}` : undefined} />
+              </div>
+              <span className="text-[9px] text-gray-300 uppercase">Day {i + 1}</span>
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex gap-3 mt-1 text-[10px] text-gray-400">
+        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-gray-200 inline-block" />Last time</span>
+        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-emerald-400 inline-block" />This time</span>
+      </div>
     </div>
   );
 }
@@ -163,52 +203,44 @@ export function ShowInsights() {
       </div>
 
       {/* ── Year on year ── */}
-      {yoy.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-1">Year on year</h2>
-          <p className="text-xs text-gray-400 mb-3">Each show vs. its previous instance</p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-[13px]">
-              <thead>
-                <tr className="text-[10px] uppercase tracking-wider text-gray-400 border-b border-gray-100">
-                  <th className="text-left font-semibold py-2 pr-3">Show</th>
-                  <th className="text-right font-semibold py-2 pr-3">Sales</th>
-                  <th className="text-right font-semibold py-2 pr-3">Visitors</th>
-                  <th className="text-right font-semibold py-2">True profit</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {yoy.map(y => (
-                  <tr key={y.id}>
-                    <td className="py-2 pr-3">
-                      <p className="font-semibold text-slate-700 whitespace-nowrap">{y.name}</p>
-                      <p className="text-[11px] text-gray-400 whitespace-nowrap">{dateFmt(y.date_start)} vs {dateFmt(y.prevDateStart)}</p>
-                    </td>
-                    <td className="py-2 pr-3 text-right">
-                      <div className="flex flex-col items-end gap-0.5">
-                        <span className="font-semibold text-slate-800 tabular-nums">{fmtFull(y.revenue)}</span>
-                        <DeltaPill pct={y.revenueDeltaPct} />
-                      </div>
-                    </td>
-                    <td className="py-2 pr-3 text-right">
-                      <div className="flex flex-col items-end gap-0.5">
-                        <span className="font-semibold text-slate-700 tabular-nums">{y.visitors > 0 ? y.visitors.toLocaleString() : "—"}</span>
-                        <DeltaPill pct={y.visitorsDeltaPct} />
-                      </div>
-                    </td>
-                    <td className="py-2 text-right">
-                      <div className="flex flex-col items-end gap-0.5">
-                        <span className="font-semibold text-slate-700 tabular-nums">{y.trueProfit != null ? fmtFull(y.trueProfit) : "—"}</span>
-                        <DeltaPill pct={y.trueProfitDeltaPct} />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {(() => {
+        const yoyFY = yoy.filter(y => inCurrentFY(y.date_start));
+        if (yoyFY.length === 0) return null;
+        return (
+          <div>
+            <div className="flex items-baseline justify-between gap-2 mb-1">
+              <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Year on year</h2>
+              <p className="text-[10px] text-gray-300">This FY only · each show vs. its previous instance</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
+              {yoyFY.map(y => (
+                <div key={y.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+                  <p className="text-sm font-bold text-slate-800">{y.name}</p>
+                  <p className="text-[11px] text-gray-400 mb-3">{dateFmt(y.date_start)} <span className="text-gray-300">vs</span> {dateFmt(y.prevDateStart)}</p>
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide">Sales</p>
+                      <p className="text-sm font-bold text-slate-800 tabular-nums">{fmtFull(y.revenue)}</p>
+                      <DeltaPill pct={y.revenueDeltaPct} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide">Visitors</p>
+                      <p className="text-sm font-bold text-slate-700 tabular-nums">{y.visitors > 0 ? y.visitors.toLocaleString() : "—"}</p>
+                      <DeltaPill pct={y.visitorsDeltaPct} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wide">True profit</p>
+                      <p className="text-sm font-bold text-slate-700 tabular-nums">{y.trueProfit != null ? fmtFull(y.trueProfit) : "—"}</p>
+                      <DeltaPill pct={y.trueProfitDeltaPct} />
+                    </div>
+                  </div>
+                  <DualSparkline daily={y.daily} prevDaily={y.prevDaily} />
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── Best / worst leaderboard ── */}
       {ranked.length > 0 && (
