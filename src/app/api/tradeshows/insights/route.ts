@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
 import { buildCostByBrand, computeMargin } from "@/lib/tradeshowMargin";
+import { currentFY, fyMonthKeys } from "@/lib/fy";
 
 // Show Insights: cross-show analytics built on top of the per-show breakdown
 // figures — year-on-year comparison (vs the previous instance of the same
@@ -25,16 +26,18 @@ export async function GET() {
   if (!(await getAccess()).role) return NextResponse.json({ ok: false }, { status: 401 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
 
-  const [shows, sales, qr, expItems, attendance, hourly, products, costRows] = await Promise.all([
+  const [shows, sales, qr, expItems, attendance, hourly, products, costRows, brands] = await Promise.all([
     rest("tradeshows?select=id,name,date_start,date_end,state,location&order=date_start.asc"),
-    rest("tradeshow_sales?select=tradeshow_id,revenue"),
+    rest("tradeshow_sales?select=tradeshow_id,brand_id,revenue"),
     rest("tradeshow_qr?select=tradeshow_id,revenue,orders"),
     rest("tradeshow_expense_items?select=tradeshow_id,category,amount"),
     rest("tradeshow_attendance?select=tradeshow_id,day,attendance"),
     rest("tradeshow_hourly?select=tradeshow_id,day,revenue"),
     rest("tradeshow_products?select=tradeshow_id,bucket,product,revenue,units,sku"),
     rest("cost_sheet_items?select=brand,product_name,style_code,landed_cost_aud&style_code=not.is.null"),
+    rest("brands?select=id,name,color"),
   ]);
+  const uppababyId = brands.find((b: any) => b.name === "UPPAbaby")?.id ?? null;
 
   const costByBrand = buildCostByBrand(costRows);
   const now = new Date();
@@ -72,14 +75,45 @@ export async function GET() {
     }
     const daily = showDays(ts.date_start, ts.date_end).map(d => ({ day: d, revenue: Math.round(dayTotals.get(d) || 0) }));
 
+    // Which brands actually showed up in this show's numbers — QR revenue is
+    // Shopify's UPPAbaby headless channel, so it folds into UPPAbaby here too.
+    const brandRevMap = new Map<number, number>();
+    for (const r of sales.filter((x: any) => x.tradeshow_id === ts.id)) {
+      brandRevMap.set(r.brand_id, (brandRevMap.get(r.brand_id) || 0) + (Number(r.revenue) || 0));
+    }
+    const qrRow = qr.find((r: any) => r.tradeshow_id === ts.id);
+    if (qrRow?.revenue && uppababyId != null) brandRevMap.set(uppababyId, (brandRevMap.get(uppababyId) || 0) + Number(qrRow.revenue));
+    const byBrand = [...brandRevMap.entries()]
+      .map(([brand_id, rev]) => ({ brand_id, name: brands.find((b: any) => b.id === brand_id)?.name ?? `Brand ${brand_id}`, color: brands.find((b: any) => b.id === brand_id)?.color ?? "#94a3b8", revenue: Math.round(rev) }))
+      .filter(b => b.revenue > 0).sort((a, b) => b.revenue - a.revenue);
+
+    const prodsForShow = products.filter((p: any) => p.tradeshow_id === ts.id);
+    const topProducts = [...prodsForShow].sort((a: any, b: any) => (Number(b.revenue) || 0) - (Number(a.revenue) || 0))
+      .slice(0, 8).map((p: any) => ({ product: p.product, bucket: p.bucket, revenue: Math.round(Number(p.revenue) || 0), units: Number(p.units) || 0 }));
+
     return {
       id: ts.id, name: ts.name, date_start: ts.date_start, date_end: ts.date_end, state: ts.state, location: ts.location,
       revenue, expenses, staffExpense, staffPctOfSales, visitors, orders,
       margin, profit, trueProfit, marginPct, roiPct, costPerVisitor,
       costPerOrder: orders > 0 && expenses > 0 ? Math.round(expenses / orders) : null,
-      daily,
+      daily, byBrand, topProducts,
     };
   }).filter((r: any) => r.revenue > 0 || r.expenses > 0);
+
+  // Season-level product leaderboard, scoped to the current FY, aggregated
+  // from the FULL product list (not each show's top-8) so nothing is
+  // undercounted by a product that ranks lower in any single show.
+  const fyShowIds = new Set(results.filter((r: any) => fyMonthKeys(currentFY()).includes(r.date_start.slice(0, 7))).map((r: any) => r.id));
+  const seasonProdMap = new Map<string, { product: string; revenue: number; units: number }>();
+  for (const p of products) {
+    if (!fyShowIds.has(p.tradeshow_id)) continue;
+    const key = p.product;
+    const cur = seasonProdMap.get(key) ?? { product: p.product, revenue: 0, units: 0 };
+    cur.revenue += Number(p.revenue) || 0; cur.units += Number(p.units) || 0;
+    seasonProdMap.set(key, cur);
+  }
+  const topProductsSeason = [...seasonProdMap.values()].sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 12).map(p => ({ ...p, revenue: Math.round(p.revenue) }));
 
   // Year-on-year: group by exact show name, sorted by date; each show (after
   // the first occurrence) is compared to its immediately preceding instance —
@@ -104,5 +138,5 @@ export async function GET() {
   }
   yoy.sort((a, b) => b.date_start.localeCompare(a.date_start));
 
-  return NextResponse.json({ ok: true, shows: results, yoy });
+  return NextResponse.json({ ok: true, shows: results, yoy, topProductsSeason });
 }

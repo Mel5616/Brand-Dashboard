@@ -5,12 +5,15 @@ import { fmtFull } from "@/lib/format";
 import { currentFY, fyMonthKeys, FY_LABEL } from "@/lib/fy";
 
 type Margin = { knownRevenue: number; knownCost: number; knownMargin: number; coveragePct: number } | null;
+type BrandRev = { brand_id: number; name: string; color: string; revenue: number };
+type Product = { product: string; bucket: string; revenue: number; units: number };
 type Show = {
   id: string; name: string; date_start: string; date_end: string; state: string | null; location: string | null;
   revenue: number; expenses: number; staffExpense: number; staffPctOfSales: number | null; visitors: number; orders: number;
   margin: Margin; profit: number; trueProfit: number | null; marginPct: number | null; roiPct: number | null;
   costPerVisitor: number | null; costPerOrder: number | null;
   daily: { day: string; revenue: number }[];
+  byBrand: BrandRev[]; topProducts: Product[];
 };
 type Yoy = {
   id: string; prevId: string; name: string; date_start: string; prevDateStart: string;
@@ -112,6 +115,29 @@ function RevenueSplitBar({ revenue, cogs, expenses, trueProfit }: { revenue: num
   );
 }
 
+// Quick "who was at this show" overview — a segmented bar by brand's share of
+// the show's revenue, plus a coloured-dot legend so it reads at a glance.
+function BrandSplit({ byBrand }: { byBrand: BrandRev[] }) {
+  const total = byBrand.reduce((s, b) => s + b.revenue, 0);
+  if (total <= 0) return null;
+  return (
+    <div>
+      <div className="flex w-full h-2.5 rounded-full overflow-hidden bg-gray-50">
+        {byBrand.map(b => (
+          <div key={b.brand_id} style={{ width: `${Math.max(1, (b.revenue / total) * 100)}%`, background: b.color }} title={`${b.name} · ${fmtFull(b.revenue)}`} />
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-x-2.5 gap-y-1 mt-1.5">
+        {byBrand.slice(0, 5).map(b => (
+          <span key={b.brand_id} className="inline-flex items-center gap-1 text-[10.5px] text-gray-500">
+            <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: b.color }} />{b.name} <span className="text-gray-400">{Math.round((b.revenue / total) * 100)}%</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function StatTile({ label, value, color = "text-slate-800" }: { label: string; value: string; color?: string }) {
   return (
     <div>
@@ -132,6 +158,7 @@ function ShowResultCard({ s }: { s: Show }) {
       {s.marginPct != null && (
         <span className={`self-start text-[10px] font-bold rounded-full px-2 py-0.5 mb-3 ${s.marginPct >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"}`}>{s.marginPct}% true margin</span>
       )}
+      {s.byBrand.length > 0 && <div className="mb-3"><BrandSplit byBrand={s.byBrand} /></div>}
       <div className="grid grid-cols-2 gap-y-2.5 gap-x-2 mb-3">
         <StatTile label="Sales" value={fmtFull(s.revenue)} />
         <StatTile label="Expenses" value={fmtFull(s.expenses)} color="text-slate-600" />
@@ -143,18 +170,32 @@ function ShowResultCard({ s }: { s: Show }) {
         {s.margin && s.margin.coveragePct < 100 && (
           <p className="text-[10px] text-gray-400 mt-2">COGS matched on {s.margin.coveragePct}% of sales.</p>
         )}
+        {s.topProducts.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-gray-50">
+            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Top products</p>
+            <div className="space-y-1">
+              {s.topProducts.slice(0, 3).map(p => (
+                <div key={`${p.bucket}-${p.product}`} className="flex items-center justify-between gap-2 text-[12px]">
+                  <span className="text-slate-600 truncate">{p.product}</span>
+                  <span className="font-semibold text-slate-700 tabular-nums shrink-0">{fmtFull(p.revenue)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
 export function ShowInsights() {
-  const [data, setData] = useState<{ shows: Show[]; yoy: Yoy[] } | null>(null);
+  const [data, setData] = useState<{ shows: Show[]; yoy: Yoy[]; topProductsSeason: Product[] } | null>(null);
   useEffect(() => { fetch("/api/tradeshows/insights").then(r => r.json()).then(d => { if (d.ok) setData(d); }).catch(() => {}); }, []);
 
   if (!data) return <div className="p-8 text-center text-sm text-gray-400">Loading…</div>;
   const allShows = data.shows;
   const yoy = data.yoy;
+  const topProductsSeason = data.topProductsSeason ?? [];
   // Everything on this tab is scoped to the current FY — last year's shows
   // stay on the record via Year on Year's "vs previous instance" comparison,
   // but the headline numbers here are always what's happening right now.
@@ -208,6 +249,30 @@ export function ShowInsights() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[...shows].sort((a, b) => b.date_start.localeCompare(a.date_start)).map(s => <ShowResultCard key={s.id} s={s} />)}
       </div>
+
+      {/* ── Top products this season ── */}
+      {topProductsSeason.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-1">Top products · {fyLabel}</h2>
+          <p className="text-xs text-gray-400 mb-4">Revenue by product across every {fyLabel} show</p>
+          <div className="space-y-2.5">
+            {(() => {
+              const max = Math.max(1, ...topProductsSeason.map(p => p.revenue));
+              return topProductsSeason.map((p, i) => (
+                <div key={p.product} className="flex items-center gap-3">
+                  <span className="text-[11px] font-bold text-gray-300 w-4 shrink-0">{i + 1}</span>
+                  <span className="text-sm text-slate-700 w-48 shrink-0 truncate">{p.product}</span>
+                  <div className="flex-1 h-3 rounded bg-gray-50 overflow-hidden">
+                    <div className="h-full rounded bg-violet-400" style={{ width: `${Math.max(2, (p.revenue / max) * 100)}%` }} />
+                  </div>
+                  <span className="text-[12px] font-semibold text-slate-700 tabular-nums w-24 text-right shrink-0">{fmtFull(p.revenue)}</span>
+                  <span className="text-[11px] text-gray-400 w-20 text-right shrink-0">{p.units.toLocaleString()} units</span>
+                </div>
+              ));
+            })()}
+          </div>
+        </div>
+      )}
 
       {/* ── Year on year ── */}
       {(() => {
