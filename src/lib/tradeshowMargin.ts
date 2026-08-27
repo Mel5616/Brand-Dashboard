@@ -67,6 +67,10 @@ const TITLE_SKU_OVERRIDES: { brand: string; match: RegExp | null; code: string }
   { brand: "Magic", match: /heka l\b/i, code: "MG-HNBXL-B" },     // not "Heka M" / "Heka - Bathroom Lid"
   { brand: "Magic", match: /majestic/i, code: "MG-MNB-B" },
   { brand: "UPPAbaby", match: /rumbleseat/i, code: "UPR3NO" },
+  // Ex-demo floor stock sold off at a show ("Vista liam demo taken") never
+  // carried a normal colour SKU — cost at the base model rate.
+  { brand: "UPPAbaby", match: /vista.*demo/i, code: "UPV3" },
+  { brand: "UPPAbaby", match: /cruz.*demo/i, code: "UPC3" },
 ];
 
 function effectiveSku(brand: string, title: string, sku: string | null): string | null {
