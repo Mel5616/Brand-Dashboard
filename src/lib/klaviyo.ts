@@ -35,10 +35,12 @@ export async function listLists(): Promise<{ id: string; name: string }[]> {
 }
 
 // Create a Draft campaign + email message with our HTML content, scoped to
-// one list. Does NOT send or schedule anything — that's a separate,
-// explicit step (sendJob) so a create can never accidentally fire an email.
+// an audience of included/excluded list and/or segment ids (Klaviyo doesn't
+// distinguish the two in this field — same flat id array either way). Does
+// NOT send or schedule anything — that's a separate, explicit step
+// (sendJob) so a create can never accidentally fire an email.
 export async function createDraftCampaign(opts: {
-  name: string; listId: string; subject: string; fromEmail: string; fromLabel: string; html: string;
+  name: string; included: string[]; excluded?: string[]; subject: string; fromEmail: string; fromLabel: string; html: string;
 }): Promise<{ campaignId: string; messageId: string }> {
   const camp = await call("/campaigns/", {
     method: "POST",
@@ -47,7 +49,7 @@ export async function createDraftCampaign(opts: {
         type: "campaign",
         attributes: {
           name: opts.name,
-          audiences: { included: [opts.listId] },
+          audiences: { included: opts.included, excluded: opts.excluded ?? [] },
           send_strategy: { method: "immediate" },
           "campaign-messages": {
             data: [{
@@ -97,6 +99,30 @@ export async function scheduleSend(campaignId: string, datetimeIso?: string): Pr
 
 export async function cancelCampaign(campaignId: string): Promise<void> {
   await call(`/campaigns/${campaignId}/`, { method: "DELETE" });
+}
+
+async function ensureProfile(email: string): Promise<string> {
+  const found = await call(`/profiles/?filter=${encodeURIComponent(`equals(email,"${email}")`)}`);
+  if (found.data?.length) return found.data[0].id;
+  const created = await call("/profiles/", { method: "POST", body: JSON.stringify({ data: { type: "profile", attributes: { email } } }) });
+  return created.data.id;
+}
+
+// Klaviyo's public API has no dedicated "send test email" endpoint (confirmed
+// with Klaviyo — not supported as of this writing), so a test send is a real,
+// tiny campaign: a one-person list containing only the requester's own
+// profile, sent immediately. It shows up in Klaviyo as a real send (by
+// design — that's the only way to trigger actual delivery + real rendering),
+// just to nobody but the person who asked for it.
+export async function sendTestToSelf(opts: { subject: string; fromEmail: string; fromLabel: string; html: string; testEmail: string }): Promise<{ campaignId: string }> {
+  const profileId = await ensureProfile(opts.testEmail);
+  const listName = `🧪 Dashboard test — ${opts.testEmail}`;
+  const list = await call("/lists/", { method: "POST", body: JSON.stringify({ data: { type: "list", attributes: { name: listName, opt_in_process: "single_opt_in" } } }) });
+  const listId = list.data.id;
+  await call(`/lists/${listId}/relationships/profiles/`, { method: "POST", body: JSON.stringify({ data: [{ type: "profile", id: profileId }] }) });
+  const { campaignId } = await createDraftCampaign({ name: `[TEST] ${opts.subject}`, included: [listId], subject: `[TEST] ${opts.subject}`, fromEmail: opts.fromEmail, fromLabel: opts.fromLabel, html: opts.html });
+  await scheduleSend(campaignId);
+  return { campaignId };
 }
 
 // Opens/clicks for a set of tracked campaign ids, via the values-report API.

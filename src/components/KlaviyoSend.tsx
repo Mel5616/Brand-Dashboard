@@ -5,12 +5,15 @@ import { useEffect, useState } from "react";
 type List = { id: string; name: string };
 type Stats = { recipients: number; opens: number; opensUnique: number; openRate: number; clicksUnique: number; clickRate: number };
 type Send = { id: string; campaign_id: string; subject: string; list_name: string | null; scheduled_at: string | null; status: string; created_by: string | null; created_at: string; stats: Stats | null };
+type FixedAudience = { name: string; included: { id: string; name: string }[]; excluded?: { id: string; name: string }[] };
 
 // Reusable "push this report to Klaviyo" panel — creates a real Draft
 // campaign via /api/klaviyo/sends (safe, no send), then a separate explicit
 // step actually schedules/sends it, with a confirm dialog either way since
-// that step queues a real email to a real list.
-export function KlaviyoSendPanel({ getHtml, defaultSubject }: { getHtml: () => string; defaultSubject: string }) {
+// that step queues a real email to a real list. Pass `fixedAudience` when the
+// report always goes to the same saved audience (skips the list picker);
+// omit it to let the user pick any single Klaviyo list.
+export function KlaviyoSendPanel({ getHtml, defaultSubject, fixedAudience }: { getHtml: () => string; defaultSubject: string; fixedAudience?: FixedAudience }) {
   const [open, setOpen] = useState(false);
   const [lists, setLists] = useState<List[] | null>(null);
   const [sends, setSends] = useState<Send[]>([]);
@@ -21,6 +24,8 @@ export function KlaviyoSendPanel({ getHtml, defaultSubject }: { getHtml: () => s
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [draft, setDraft] = useState<Send | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [testStatus, setTestStatus] = useState<"idle" | "sending" | "sent">("idle");
 
   const load = () => {
     fetch("/api/klaviyo/sends").then(r => r.json()).then(d => { if (d.ok) { setSends(d.sends ?? []); setNeedsSetup(!!d.needsSetup); } });
@@ -28,15 +33,25 @@ export function KlaviyoSendPanel({ getHtml, defaultSubject }: { getHtml: () => s
   useEffect(() => {
     if (!open) return;
     load();
-    if (!lists) fetch("/api/klaviyo/lists").then(r => r.json()).then(d => { if (d.ok) setLists(d.lists); else setErr(d.error || "Couldn't load Klaviyo lists"); });
+    if (!fixedAudience && !lists) fetch("/api/klaviyo/lists").then(r => r.json()).then(d => { if (d.ok) setLists(d.lists); else setErr(d.error || "Couldn't load Klaviyo lists"); });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  async function sendTest() {
+    setTestStatus("sending"); setErr("");
+    const d = await fetch("/api/klaviyo/sends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "test", subject, html: getHtml() }) }).then(r => r.json());
+    if (d.ok) { setTestStatus("sent"); setTimeout(() => setTestStatus("idle"), 4000); }
+    else { setTestStatus("idle"); setErr(d.error || "Couldn't send test."); }
+  }
+
   async function createDraft() {
-    if (!listId || !subject.trim()) { setErr("Pick a list and subject."); return; }
+    if (!subject.trim()) { setErr("Enter a subject."); return; }
+    if (!fixedAudience && !listId) { setErr("Pick a list."); return; }
     setBusy(true); setErr("");
-    const list = lists?.find(l => l.id === listId);
-    const d = await fetch("/api/klaviyo/sends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "create", subject, listId, listName: list?.name, html: getHtml() }) }).then(r => r.json());
+    const body = fixedAudience
+      ? { action: "create", subject, included: fixedAudience.included.map(l => l.id), excluded: (fixedAudience.excluded ?? []).map(l => l.id), audienceName: fixedAudience.name, html: getHtml() }
+      : { action: "create", subject, listId, listName: lists?.find(l => l.id === listId)?.name, html: getHtml() };
+    const d = await fetch("/api/klaviyo/sends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
     setBusy(false);
     if (d.ok) { setDraft(d.item); load(); } else setErr(d.error || "Couldn't create draft.");
   }
@@ -44,7 +59,7 @@ export function KlaviyoSendPanel({ getHtml, defaultSubject }: { getHtml: () => s
     if (!draft) return;
     const confirmText = scheduleAt
       ? `Schedule "${draft.subject}" to send ${new Date(scheduleAt).toLocaleString("en-AU")} to ${draft.list_name}?`
-      : `Send "${draft.subject}" right now to ${draft.list_name}? This emails the whole list immediately.`;
+      : `Send "${draft.subject}" right now to ${draft.list_name}? This emails the whole audience immediately.`;
     if (!confirm(confirmText)) return;
     setBusy(true); setErr("");
     const datetimeIso = scheduleAt ? new Date(scheduleAt).toISOString() : undefined;
@@ -75,20 +90,36 @@ export function KlaviyoSendPanel({ getHtml, defaultSubject }: { getHtml: () => s
         <div className="mt-4 space-y-4">
           {err && <p className="text-sm text-rose-500">{err}</p>}
 
+          {fixedAudience && (
+            <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">Audience · {fixedAudience.name} <span className="font-normal normal-case text-gray-400">(fixed)</span></p>
+              <div className="flex flex-wrap gap-1.5">
+                {fixedAudience.included.map(l => <span key={l.id} className="text-[11px] font-medium rounded-full px-2.5 py-0.5 bg-emerald-50 text-emerald-700">{l.name}</span>)}
+                {(fixedAudience.excluded ?? []).map(l => <span key={l.id} className="text-[11px] font-medium rounded-full px-2.5 py-0.5 bg-rose-50 text-rose-500">− {l.name}</span>)}
+              </div>
+            </div>
+          )}
+
           {!draft ? (
             <div className="flex flex-wrap items-end gap-2">
               <div>
                 <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Subject</label>
                 <input value={subject} onChange={e => setSubject(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-2 w-72 focus:outline-none focus:ring-2 focus:ring-emerald-300" />
               </div>
-              <div>
-                <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">List</label>
-                <select value={listId} onChange={e => setListId(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-2 w-56 focus:outline-none focus:ring-2 focus:ring-emerald-300">
-                  <option value="">{lists ? "Select a list…" : "Loading lists…"}</option>
-                  {lists?.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-                </select>
-              </div>
-              <button onClick={createDraft} disabled={busy || !listId} className="text-sm font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-4 py-2 disabled:opacity-40">
+              {!fixedAudience && (
+                <div>
+                  <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">List</label>
+                  <select value={listId} onChange={e => setListId(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-2 w-56 focus:outline-none focus:ring-2 focus:ring-emerald-300">
+                    <option value="">{lists ? "Select a list…" : "Loading lists…"}</option>
+                    {lists?.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                  </select>
+                </div>
+              )}
+              <button onClick={() => setPreviewOpen(true)} className="text-sm font-semibold text-slate-600 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg px-4 py-2">Preview</button>
+              <button onClick={sendTest} disabled={testStatus === "sending"} className="text-sm font-semibold text-slate-600 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg px-4 py-2 disabled:opacity-40">
+                {testStatus === "sending" ? "Sending test…" : testStatus === "sent" ? "✓ Test sent" : "Send test to my email"}
+              </button>
+              <button onClick={createDraft} disabled={busy || (!fixedAudience && !listId)} className="text-sm font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-4 py-2 disabled:opacity-40">
                 {busy ? "Creating draft…" : "Create draft in Klaviyo"}
               </button>
             </div>
@@ -116,7 +147,7 @@ export function KlaviyoSendPanel({ getHtml, defaultSubject }: { getHtml: () => s
                   <thead>
                     <tr className="text-[10px] uppercase tracking-wider text-gray-400 border-b border-gray-100">
                       <th className="text-left font-semibold py-1.5 pr-3">Subject</th>
-                      <th className="text-left font-semibold py-1.5 pr-3">List</th>
+                      <th className="text-left font-semibold py-1.5 pr-3">Audience</th>
                       <th className="text-left font-semibold py-1.5 pr-3">Status</th>
                       <th className="text-right font-semibold py-1.5 pr-3">Opens</th>
                       <th className="text-right font-semibold py-1.5">Clicks</th>
@@ -141,6 +172,18 @@ export function KlaviyoSendPanel({ getHtml, defaultSubject }: { getHtml: () => s
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {previewOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-6" onClick={() => setPreviewOpen(false)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl h-[85vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+              <p className="text-sm font-semibold text-slate-700">Preview — {subject}</p>
+              <button onClick={() => setPreviewOpen(false)} className="text-gray-400 hover:text-gray-700 text-sm font-semibold">Close ✕</button>
+            </div>
+            <iframe title="Email preview" srcDoc={getHtml()} className="flex-1 w-full" />
+          </div>
         </div>
       )}
     </div>
