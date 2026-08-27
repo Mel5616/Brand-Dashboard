@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { KlaviyoSendPanel } from "./KlaviyoSend";
 
 // Operations > Stock Report — OOS-style live mirror of the Asana Stock Report
 // board: per-brand table sections (brand-coloured bands) with Product / Code /
@@ -249,6 +250,13 @@ export function StockReport({ brands = [], admin }: { brands?: BrandRef[]; admin
           </div>
         );
       })}
+
+      {admin && sections.length > 0 && (
+        <KlaviyoSendPanel
+          getHtml={() => `<!doctype html><html><head><meta charset="utf-8"></head><body>${buildStockReportHtml(sections, color)}</body></html>`}
+          defaultSubject={`Coolkidz Australia — OOS Report, ${new Date().toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}`}
+        />
+      )}
     </div>
   );
 }
