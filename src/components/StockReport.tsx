@@ -39,8 +39,14 @@ const statusColors = (s: string) => {
   return { bg: "#f1f5f9", fg: "#475569" };
 };
 
-// A self-contained, table-based HTML email block (inline styles only) so it
-// survives being pasted into Klaviyo's HTML editor unchanged.
+// Coolkidz Australia's wordmark, already hosted on Klaviyo's own CDN from a
+// prior campaign — reusing that URL avoids re-uploading the brand asset.
+const COOLKIDZ_LOGO_URL = "https://d3k81ch9hvuctc.cloudfront.net/company/VWb5Lq/images/b46f7ab2-330a-426a-8acb-b4b307fd0b07.jpeg";
+
+// A self-contained, table-based HTML email (inline styles only, one fixed
+// branded header + compliant footer every time) so it survives being pasted
+// into Klaviyo's HTML editor unchanged, and looks identical whether it's
+// copy-pasted or sent as a real campaign via the API.
 function buildStockReportHtml(
   sections: [string, Task[]][],
   colorOf: (name: string) => string,
@@ -93,10 +99,34 @@ function buildStockReportHtml(
     </td></tr>
   </table>`;
   }).join("");
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-family:Arial,Helvetica,sans-serif;">
-  <tr><td style="padding:0 0 4px;text-align:center;font:bold 20px Arial,Helvetica,sans-serif;color:#0f172a;">Coolkidz Australia — OOS Report</td></tr>
-  <tr><td style="padding:0 0 22px;text-align:center;font:12px Arial,Helvetica,sans-serif;color:#94a3b8;">${today}</td></tr>
-  <tr><td>${sectionsHtml || `<p style="text-align:center;font:14px Arial,Helvetica,sans-serif;color:#059669;">✓ Nothing on the stock report right now.</p>`}</td></tr>
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef1f5;padding:32px 16px;">
+  <tr><td align="center">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:720px;background:#ffffff;border-radius:14px;border:1px solid #e5e9f0;overflow:hidden;font-family:Arial,Helvetica,sans-serif;">
+
+      <!-- Header -->
+      <tr><td style="padding:36px 32px 28px;text-align:center;border-bottom:1px solid #eef1f5;">
+        <img src="${COOLKIDZ_LOGO_URL}" width="168" alt="Coolkidz Australia" style="display:block;margin:0 auto 22px;border:0;outline:none;height:auto;">
+        <p style="margin:0 0 6px;font:bold 11px Arial,Helvetica,sans-serif;color:#94a3b8;text-transform:uppercase;letter-spacing:0.22em;">Wholesale Partner Update</p>
+        <p style="margin:0 0 4px;font:bold 26px Arial,Helvetica,sans-serif;color:#0f172a;letter-spacing:-0.01em;">Stock Availability Report</p>
+        <p style="margin:0;font:13px Arial,Helvetica,sans-serif;color:#94a3b8;">${today}</p>
+      </td></tr>
+
+      <!-- Body -->
+      <tr><td style="padding:32px 28px;">
+        ${sectionsHtml || `<p style="text-align:center;font:14px Arial,Helvetica,sans-serif;color:#059669;padding:20px 0;">✓ Nothing on the stock report right now.</p>`}
+      </td></tr>
+
+      <!-- Footer -->
+      <tr><td style="padding:24px 32px 32px;border-top:1px solid #eef1f5;text-align:center;">
+        <img src="${COOLKIDZ_LOGO_URL}" width="96" alt="Coolkidz Australia" style="display:block;margin:0 auto 14px;border:0;outline:none;height:auto;opacity:0.85;">
+        <p style="margin:0 0 4px;font:bold 12.5px Arial,Helvetica,sans-serif;color:#475569;">Coolkidz Australia</p>
+        <p style="margin:0 0 2px;font:11.5px Arial,Helvetica,sans-serif;color:#94a3b8;">1 Beyer Road, Braeside VIC 3195, Australia</p>
+        <p style="margin:0 0 14px;font:11.5px Arial,Helvetica,sans-serif;color:#94a3b8;"><a href="mailto:hello@coolkidz.com.au" style="color:#94a3b8;text-decoration:underline;">hello@coolkidz.com.au</a> &nbsp;·&nbsp; <a href="https://coolkidz.com.au" style="color:#94a3b8;text-decoration:underline;">coolkidz.com.au</a></p>
+        <p style="margin:0;font:11px Arial,Helvetica,sans-serif;color:#c2c9d3;">You're receiving this as a Coolkidz Australia wholesale partner. <a href="{% unsubscribe_link %}" style="color:#c2c9d3;text-decoration:underline;">Unsubscribe</a></p>
+      </td></tr>
+
+    </table>
+  </td></tr>
 </table>`;
 }
 
