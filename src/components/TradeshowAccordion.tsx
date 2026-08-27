@@ -29,6 +29,8 @@ function ShowOverview({ ts, totalRev, expItems, bd, visitors }: { ts: Tradeshow;
   const trueProfit = margin ? margin.knownMargin - expenses : null;
 
   const cogs = margin ? margin.knownCost : null;
+  const marginPct = totalRev > 0 && trueProfit != null ? Math.round((trueProfit / totalRev) * 100) : null;
+  const roiPct = expenses > 0 ? Math.round((profit / expenses) * 100) : null;
 
   const bars = [
     { label: "Sales", value: totalRev, color: "#10b981" },
@@ -43,15 +45,18 @@ function ShowOverview({ ts, totalRev, expItems, bd, visitors }: { ts: Tradeshow;
 
   return (
     <div className="rounded-xl border border-gray-100 bg-white px-4 py-3.5">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-3">Show overview</p>
+      <div className="flex items-baseline justify-between gap-2 mb-3">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Show overview</p>
+        <p className="text-[10px] text-gray-300">All figures ex GST</p>
+      </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
-        <div><p className="text-lg font-bold text-slate-800 tabular-nums">{fmtFull(totalRev)}</p><p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">Sales</p></div>
-        <div><p className="text-lg font-bold text-slate-600 tabular-nums">{expenses > 0 ? fmtFull(expenses) : "—"}</p><p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">Expenses</p></div>
+        <div><p className="text-lg font-bold text-slate-800 tabular-nums">{fmtFull(totalRev)}</p><p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">Sales <span className="normal-case font-normal">(ex GST)</span></p></div>
+        <div><p className="text-lg font-bold text-slate-600 tabular-nums">{expenses > 0 ? fmtFull(expenses) : "—"}</p><p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">Expenses <span className="normal-case font-normal">(ex GST)</span></p></div>
         <div>
           {cogs != null ? <p className="text-lg font-bold text-amber-600 tabular-nums">{fmtFull(cogs)}</p> : margin === undefined ? <p className="text-lg font-bold text-gray-300">…</p> : <p className="text-lg font-bold text-gray-300">—</p>}
-          <p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">Cost of goods{margin ? ` (${margin.coveragePct}% matched)` : ""}</p>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">Cost of goods <span className="normal-case font-normal">(ex GST{margin ? `, ${margin.coveragePct}% matched` : ""})</span></p>
         </div>
-        <div><p className={`text-lg font-bold tabular-nums ${profit >= 0 ? "text-emerald-600" : "text-rose-500"}`}>{expenses > 0 ? `${profit < 0 ? "-" : ""}${fmtFull(Math.abs(profit))}` : "—"}</p><p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">Profit (ex COGS)</p></div>
+        <div><p className={`text-lg font-bold tabular-nums ${profit >= 0 ? "text-emerald-600" : "text-rose-500"}`}>{expenses > 0 ? `${profit < 0 ? "-" : ""}${fmtFull(Math.abs(profit))}` : "—"}</p><p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">Profit (ex COGS) <span className="normal-case font-normal">(ex GST)</span></p></div>
         <div>
           {trueProfit != null ? (
             <p className={`text-lg font-bold tabular-nums ${trueProfit >= 0 ? "text-violet-700" : "text-rose-500"}`}>{trueProfit < 0 ? "-" : ""}{fmtFull(Math.abs(trueProfit))}</p>
@@ -60,12 +65,24 @@ function ShowOverview({ ts, totalRev, expItems, bd, visitors }: { ts: Tradeshow;
           ) : (
             <p className="text-lg font-bold text-gray-300">—</p>
           )}
-          <p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">True profit (after COGS)</p>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">True profit (after COGS) <span className="normal-case font-normal">(ex GST)</span></p>
         </div>
         {visitors != null && (
           <div>
             <p className="text-lg font-bold text-sky-700 tabular-nums">{visitors > 0 ? visitors.toLocaleString() : "—"}</p>
             <p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">Visitors{visitors > 0 && totalRev > 0 ? ` · $${Math.round(totalRev / visitors)}/visitor` : ""}</p>
+          </div>
+        )}
+        {marginPct != null && (
+          <div>
+            <p className={`text-lg font-bold tabular-nums ${marginPct >= 0 ? "text-violet-700" : "text-rose-500"}`}>{marginPct}%</p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">True margin <span className="normal-case font-normal">(true profit ÷ sales)</span></p>
+          </div>
+        )}
+        {roiPct != null && (
+          <div>
+            <p className={`text-lg font-bold tabular-nums ${roiPct >= 0 ? "text-emerald-600" : "text-rose-500"}`}>{roiPct}%</p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">ROI <span className="normal-case font-normal">(profit ÷ expenses)</span></p>
           </div>
         )}
       </div>
