@@ -1,0 +1,23 @@
+name: Sync Filecamp assets
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install --quiet requests pillow
+      - name: Sync approved Filecamp assets into Supabase Storage
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          FILECAMP_WEBDAV_HOST: ${{ secrets.FILECAMP_WEBDAV_HOST }}
+          FILECAMP_WEBDAV_PORT: ${{ secrets.FILECAMP_WEBDAV_PORT }}
+          FILECAMP_WEBDAV_USER: ${{ secrets.FILECAMP_WEBDAV_USER }}
+          FILECAMP_WEBDAV_PASS: ${{ secrets.FILECAMP_WEBDAV_PASS }}
+        run: python scripts/sync_filecamp_assets.py
