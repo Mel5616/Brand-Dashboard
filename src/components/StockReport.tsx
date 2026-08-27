@@ -41,7 +41,7 @@ const statusColors = (s: string) => {
 
 // Coolkidz Australia's wordmark, already hosted on Klaviyo's own CDN from a
 // prior campaign — reusing that URL avoids re-uploading the brand asset.
-const COOLKIDZ_LOGO_URL = "https://d3k81ch9hvuctc.cloudfront.net/company/VWb5Lq/images/b46f7ab2-330a-426a-8acb-b4b307fd0b07.jpeg";
+const COOLKIDZ_LOGO_URL = "https://marketing.coolkidz.com.au/logos/coolkidz-australia-wordmark.png";
 
 // A self-contained, table-based HTML email (inline styles only, one fixed
 // branded header + compliant footer every time) so it survives being pasted
