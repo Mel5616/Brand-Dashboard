@@ -180,7 +180,17 @@ def main():
                     raw = webdav_get(href)
                     im = Image.open(io.BytesIO(raw))
                     has_alpha = im.mode in ("RGBA", "LA") or (im.mode == "P" and "transparency" in im.info)
-                    im = im.convert("RGBA") if (keep_alpha and has_alpha) else im.convert("RGB")
+                    if keep_alpha and has_alpha:
+                        im = im.convert("RGBA")
+                    elif has_alpha:
+                        # Flattening straight to RGB fills transparent areas BLACK —
+                        # product/lifestyle shots need a white backing to match the
+                        # white card background they sit on in the email.
+                        bg = Image.new("RGB", im.size, (255, 255, 255))
+                        bg.paste(im.convert("RGBA"), mask=im.convert("RGBA").split()[3])
+                        im = bg
+                    else:
+                        im = im.convert("RGB")
                     cap = 600 if category == "logo" else MAX_WIDTH
                     if im.width > cap:
                         h = int(im.height * (cap / im.width))
