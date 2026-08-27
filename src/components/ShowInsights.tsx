@@ -130,7 +130,7 @@ function BrandSplit({ byBrand }: { byBrand: BrandRev[] }) {
       <div className="flex flex-wrap gap-x-2.5 gap-y-1 mt-1.5">
         {byBrand.slice(0, 5).map(b => (
           <span key={b.brand_id} className="inline-flex items-center gap-1 text-[10.5px] text-gray-500">
-            <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: b.color }} />{b.name} <span className="text-gray-400">{Math.round((b.revenue / total) * 100)}%</span>
+            <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: b.color }} />{b.name} <span className="font-semibold text-slate-600">{fmtFull(b.revenue)}</span> <span className="text-gray-400">({Math.round((b.revenue / total) * 100)}%)</span>
           </span>
         ))}
       </div>
