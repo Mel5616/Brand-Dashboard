@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
 import { createClient } from "@supabase/supabase-js";
-import { buildCostByBrand, computeMargin } from "@/lib/tradeshowMargin";
+import { buildCostByBrand, computeMargin, findUnmatched } from "@/lib/tradeshowMargin";
 
 // Tradeshow report data as JSON: by-brand totals (unchanged tradeshow_sales),
 // QR summary (Shopify ex-GST standard), top products per bucket, the hourly
@@ -94,6 +94,7 @@ export async function GET(req: Request) {
   // doesn't count toward "known" — it's reported as a coverage gap, not $0 cost.
   const costByBrand = buildCostByBrand(costRows);
   const margin = computeMargin(products, costByBrand);
+  const unmatched = findUnmatched(products, costByBrand);
 
   const total = byBrand.reduce((s: number, b: any) => s + b.revenue, 0) + (qrRow?.revenue ?? 0);
   return NextResponse.json({
@@ -104,6 +105,7 @@ export async function GET(req: Request) {
     topProductsByBrand: topProducts,
     mesaCapsules,
     margin,
+    unmatched,
     hourly: hourlyRows,
     hourlyBySlot: [...bySlot.values()].sort((a, b) => a.hour - b.hour),
     leads,

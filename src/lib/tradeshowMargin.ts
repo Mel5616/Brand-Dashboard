@@ -55,6 +55,7 @@ export function findCost(costByBrand: Map<string, Map<string, number | null>>, b
 export const bucketBrand = (bucket: string) => (bucket === "QR" ? "UPPAbaby" : bucket);
 
 export type Margin = { knownRevenue: number; knownCost: number; knownMargin: number; coveragePct: number; note: string };
+export type UnmatchedProduct = { product: string; bucket: string; sku: string | null; revenue: number; units: number; reason: string };
 
 export function computeMargin(products: ProductRow[], costByBrand: Map<string, Map<string, number | null>>): Margin | null {
   let knownRevenue = 0, knownCost = 0, allRevenue = 0;
@@ -73,4 +74,33 @@ export function computeMargin(products: ProductRow[], costByBrand: Map<string, M
     coveragePct: Math.round((knownRevenue / allRevenue) * 100),
     note: "Gross margin after cost of goods — only for products with a confident SKU match to the Cost Sheet; everything else is excluded from this figure (not assumed zero-cost), so coverage % shows how much of revenue it actually reflects.",
   };
+}
+
+// Every product line that did NOT count toward "known" COGS, with why —
+// so a real person can go fix the Cost Sheet instead of just seeing a
+// coverage percentage. Ranked by revenue (highest-impact gaps first).
+export function findUnmatched(products: ProductRow[], costByBrand: Map<string, Map<string, number | null>>): UnmatchedProduct[] {
+  const out: UnmatchedProduct[] = [];
+  for (const p of products) {
+    const rev = Number(p.revenue) || 0;
+    if (rev <= 0) continue;
+    const brand = bucketBrand(p.bucket);
+    let reason: string | null = null;
+    if (!p.sku) {
+      reason = "No single SKU recorded for this product line (sold under more than one SKU)";
+    } else {
+      const sku = String(p.sku).trim().toUpperCase();
+      const cost = findCost(costByBrand, brand, sku);
+      if (cost == null) {
+        const hasAnyPrefixMatch = [costByBrand.get(brand), costByBrand.get("Coolkidz")]
+          .filter((m): m is Map<string, number | null> => !!m)
+          .some(pool => [...pool.keys()].some(code => sku.startsWith(code)));
+        reason = hasAnyPrefixMatch
+          ? "Style code matched, but has conflicting costs in the Cost Sheet"
+          : `No Cost Sheet style code matches SKU "${sku}"`;
+      }
+    }
+    if (reason) out.push({ product: p.product, bucket: p.bucket, sku: p.sku, revenue: Math.round(rev), units: Number(p.units) || 0, reason });
+  }
+  return out.sort((a, b) => b.revenue - a.revenue);
 }

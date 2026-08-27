@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
-import { buildCostByBrand, computeMargin } from "@/lib/tradeshowMargin";
+import { buildCostByBrand, computeMargin, findUnmatched } from "@/lib/tradeshowMargin";
 import { currentFY, fyMonthKeys } from "@/lib/fy";
 
 // Show Insights: cross-show analytics built on top of the per-show breakdown
@@ -61,6 +61,7 @@ export async function GET() {
     const visitors = visitorsOf(ts.id, ts);
     const prods = products.filter((p: any) => p.tradeshow_id === ts.id);
     const margin = computeMargin(prods, costByBrand);
+    const unmatched = findUnmatched(prods, costByBrand);
     const profit = revenue - expenses;
     const trueProfit = margin ? margin.knownMargin - expenses : null;
     const marginPct = revenue > 0 && trueProfit != null ? Math.round((trueProfit / revenue) * 100) : null;
@@ -96,7 +97,7 @@ export async function GET() {
       revenue, expenses, staffExpense, staffPctOfSales, visitors, orders,
       margin, profit, trueProfit, marginPct, roiPct, costPerVisitor,
       costPerOrder: orders > 0 && expenses > 0 ? Math.round(expenses / orders) : null,
-      daily, byBrand, topProducts,
+      daily, byBrand, topProducts, unmatched,
     };
   }).filter((r: any) => r.revenue > 0 || r.expenses > 0);
 
@@ -114,6 +115,21 @@ export async function GET() {
   }
   const topProductsSeason = [...seasonProdMap.values()].sort((a, b) => b.revenue - a.revenue)
     .slice(0, 12).map(p => ({ ...p, revenue: Math.round(p.revenue) }));
+
+  // Season-level unmatched products, scoped to the current FY, deduped by
+  // product+SKU (same product line at multiple shows rolls up into one row
+  // with combined revenue) — this is the actual worklist for Cost Sheet fixes.
+  const unmatchedMap = new Map<string, { product: string; bucket: string; sku: string | null; revenue: number; units: number; reason: string }>();
+  for (const r of results) {
+    if (!fyShowIds.has(r.id)) continue;
+    for (const u of r.unmatched as { product: string; bucket: string; sku: string | null; revenue: number; units: number; reason: string }[]) {
+      const key = `${u.bucket}|${u.product}|${u.sku ?? ""}`;
+      const cur = unmatchedMap.get(key) ?? { ...u, revenue: 0, units: 0 };
+      cur.revenue += u.revenue; cur.units += u.units;
+      unmatchedMap.set(key, cur);
+    }
+  }
+  const unmatchedSeason = [...unmatchedMap.values()].sort((a, b) => b.revenue - a.revenue);
 
   // Year-on-year: group by exact show name, sorted by date; each show (after
   // the first occurrence) is compared to its immediately preceding instance —
@@ -158,5 +174,5 @@ export async function GET() {
     return { monthKey: mk, label, total: Math.round(byBrand.reduce((s, b) => s + b.revenue, 0)), byBrand };
   });
 
-  return NextResponse.json({ ok: true, shows: results, yoy, topProductsSeason, salesByMonth });
+  return NextResponse.json({ ok: true, shows: results, yoy, topProductsSeason, unmatchedSeason, salesByMonth });
 }
