@@ -54,6 +54,28 @@ export function findCost(costByBrand: Map<string, Map<string, number | null>>, b
 
 export const bucketBrand = (bucket: string) => (bucket === "QR" ? "UPPAbaby" : bucket);
 
+// Some product families cost the same regardless of colourway, but Shopify's
+// SKU (and therefore the sync's recorded product sku) is per-colour — so no
+// prefix match against a single Cost Sheet style_code can bridge them (the
+// colour codes don't share a usable common prefix). These overrides, given
+// directly by Mel, force every colour of a family onto one agreed style_code
+// for cost-matching purposes only — the real per-colour SKU is untouched
+// everywhere else (sales figures, product lists, etc.).
+const TITLE_SKU_OVERRIDES: { brand: string; match: RegExp | null; code: string }[] = [
+  { brand: "Hannie", match: null, code: "HANPHSG" },              // whole brand is one costed line
+  { brand: "Magic", match: /thoth xl/i, code: "MG-TNBXL-B" },
+  { brand: "Magic", match: /heka l\b/i, code: "MG-HNBXL-B" },     // not "Heka M" / "Heka - Bathroom Lid"
+  { brand: "Magic", match: /majestic/i, code: "MG-MNB-B" },
+  { brand: "UPPAbaby", match: /rumbleseat/i, code: "UPR3NO" },
+];
+
+function effectiveSku(brand: string, title: string, sku: string | null): string | null {
+  for (const o of TITLE_SKU_OVERRIDES) {
+    if (o.brand === brand && (o.match == null || o.match.test(title))) return o.code;
+  }
+  return sku ? String(sku).trim().toUpperCase() : null;
+}
+
 export type Margin = { knownRevenue: number; knownCost: number; knownMargin: number; coveragePct: number; note: string };
 export type UnmatchedProduct = { product: string; bucket: string; sku: string | null; revenue: number; units: number; reason: string };
 
@@ -62,8 +84,10 @@ export function computeMargin(products: ProductRow[], costByBrand: Map<string, M
   for (const p of products) {
     const rev = Number(p.revenue) || 0;
     allRevenue += rev;
-    if (!p.sku) continue;
-    const cost = findCost(costByBrand, bucketBrand(p.bucket), String(p.sku).trim().toUpperCase());
+    const brand = bucketBrand(p.bucket);
+    const sku = effectiveSku(brand, p.product, p.sku);
+    if (!sku) continue;
+    const cost = findCost(costByBrand, brand, sku);
     if (cost == null) continue;
     knownRevenue += rev;
     knownCost += cost * (Number(p.units) || 0);
@@ -86,10 +110,10 @@ export function findUnmatched(products: ProductRow[], costByBrand: Map<string, M
     if (rev <= 0) continue;
     const brand = bucketBrand(p.bucket);
     let reason: string | null = null;
-    if (!p.sku) {
+    const sku = effectiveSku(brand, p.product, p.sku);
+    if (!sku) {
       reason = "No single SKU recorded for this product line (sold under more than one SKU)";
     } else {
-      const sku = String(p.sku).trim().toUpperCase();
       const cost = findCost(costByBrand, brand, sku);
       if (cost == null) {
         const hasAnyPrefixMatch = [costByBrand.get(brand), costByBrand.get("Coolkidz")]
