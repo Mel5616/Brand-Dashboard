@@ -44,6 +44,70 @@ function Sparkline({ daily }: { daily: { day: string; revenue: number }[] }) {
   );
 }
 
+// Where every dollar of sales actually went: a 100%-stacked composition bar
+// (COGS / Expenses / True profit, as a share of Sales) — the "super clear"
+// single glance a season/show summary needs, instead of reading five separate
+// numbers and doing the subtraction in your head.
+function RevenueSplitBar({ revenue, cogs, expenses, trueProfit }: { revenue: number; cogs: number | null; expenses: number; trueProfit: number | null }) {
+  if (revenue <= 0) return null;
+  const pct = (v: number) => Math.max(0, Math.min(100, (v / revenue) * 100));
+  const cogsPct = cogs != null ? pct(cogs) : 0;
+  const expPct = pct(expenses);
+  const profitPct = trueProfit != null ? Math.max(0, pct(trueProfit)) : Math.max(0, 100 - cogsPct - expPct);
+  const lossPct = trueProfit != null && trueProfit < 0 ? pct(Math.abs(trueProfit)) : 0;
+  return (
+    <div>
+      <div className="flex w-full h-5 rounded-md overflow-hidden bg-gray-50">
+        {cogsPct > 0 && <div style={{ width: `${cogsPct}%` }} className="bg-amber-400" title={`COGS · ${Math.round(cogsPct)}%`} />}
+        {expPct > 0 && <div style={{ width: `${expPct}%` }} className="bg-slate-300" title={`Expenses · ${Math.round(expPct)}%`} />}
+        {profitPct > 0 && <div style={{ width: `${profitPct}%` }} className="bg-violet-500" title={`True profit · ${Math.round(profitPct)}%`} />}
+        {lossPct > 0 && <div style={{ width: `${lossPct}%` }} className="bg-rose-500" title={`Loss · ${Math.round(lossPct)}%`} />}
+      </div>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-[10.5px] text-gray-500">
+        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-amber-400 inline-block" />COGS {cogs != null ? `${Math.round(cogsPct)}%` : "n/a"}</span>
+        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-slate-300 inline-block" />Expenses {Math.round(expPct)}%</span>
+        <span className="inline-flex items-center gap-1"><span className={`w-2 h-2 rounded-sm inline-block ${trueProfit != null && trueProfit < 0 ? "bg-rose-500" : "bg-violet-500"}`} />{trueProfit != null && trueProfit < 0 ? "Loss" : "True profit"} {Math.round(trueProfit != null && trueProfit < 0 ? lossPct : profitPct)}%</span>
+      </div>
+    </div>
+  );
+}
+
+function StatTile({ label, value, color = "text-slate-800" }: { label: string; value: string; color?: string }) {
+  return (
+    <div>
+      <p className={`text-lg font-bold tabular-nums ${color}`}>{value}</p>
+      <p className="text-[10px] text-gray-400 uppercase tracking-wide mt-0.5">{label}</p>
+    </div>
+  );
+}
+
+function ShowResultCard({ s }: { s: Show }) {
+  const cogs = s.margin?.knownCost ?? null;
+  return (
+    <div className="border border-gray-100 rounded-xl p-4">
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <span className="text-sm font-bold text-slate-800">{s.name}</span>
+        <span className="text-xs text-gray-400">{dateFmt(s.date_start)}{s.location ? ` · ${s.location}` : ""}</span>
+        {s.marginPct != null && (
+          <span className={`text-[10px] font-bold rounded-full px-2 py-0.5 ml-auto ${s.marginPct >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"}`}>{s.marginPct}% true margin</span>
+        )}
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-3">
+        <StatTile label="Sales (ex GST)" value={fmtFull(s.revenue)} />
+        <StatTile label="Expenses (ex GST)" value={fmtFull(s.expenses)} color="text-slate-600" />
+        <StatTile label={`COGS${s.margin ? ` (${s.margin.coveragePct}% matched)` : ""}`} value={cogs != null ? fmtFull(cogs) : "n/a"} color="text-amber-600" />
+        <StatTile label="Profit (ex COGS)" value={`${s.profit < 0 ? "-" : ""}${fmtFull(Math.abs(s.profit))}`} color={s.profit >= 0 ? "text-emerald-600" : "text-rose-500"} />
+        <StatTile label="True profit" value={s.trueProfit != null ? `${s.trueProfit < 0 ? "-" : ""}${fmtFull(Math.abs(s.trueProfit))}` : "n/a"} color={s.trueProfit == null ? "text-gray-300" : s.trueProfit >= 0 ? "text-violet-700" : "text-rose-500"} />
+        <StatTile label="Visitors" value={s.visitors > 0 ? `${s.visitors.toLocaleString()}${s.revenue > 0 ? ` · $${Math.round(s.revenue / s.visitors)}/visitor` : ""}` : "n/a"} color="text-sky-700" />
+      </div>
+      <RevenueSplitBar revenue={s.revenue} cogs={cogs} expenses={s.expenses} trueProfit={s.trueProfit} />
+      {s.margin && s.margin.coveragePct < 100 && (
+        <p className="text-[10px] text-gray-400 mt-2.5">COGS and True profit only reflect the {s.margin.coveragePct}% of sales with a confident Cost Sheet match — the rest is excluded, not assumed zero-cost.</p>
+      )}
+    </div>
+  );
+}
+
 export function ShowInsights() {
   const [data, setData] = useState<{ shows: Show[]; yoy: Yoy[] } | null>(null);
   useEffect(() => { fetch("/api/tradeshows/insights").then(r => r.json()).then(d => { if (d.ok) setData(d); }).catch(() => {}); }, []);
@@ -63,6 +127,39 @@ export function ShowInsights() {
       <div>
         <h1 className="text-xl font-bold text-slate-800">Show Insights</h1>
         <p className="text-sm text-gray-400">Cross-show analytics built on the Tradeshows figures — every dollar ex GST.</p>
+      </div>
+
+      {/* ── Season results: totals + every past show, laid out clearly ── */}
+      {(() => {
+        const totals = shows.reduce((a, s) => {
+          a.rev += s.revenue; a.exp += s.expenses; a.vis += s.visitors;
+          if (s.margin) { a.knownRev += s.margin.knownRevenue; a.cogs += s.margin.knownCost; a.hasMargin = true; }
+          return a;
+        }, { rev: 0, exp: 0, vis: 0, cogs: 0, knownRev: 0, hasMargin: false });
+        const profit = totals.rev - totals.exp;
+        const trueProfit = totals.hasMargin ? (totals.knownRev - totals.cogs) - totals.exp : null;
+        const coveragePct = totals.rev > 0 ? Math.round((totals.knownRev / totals.rev) * 100) : 0;
+        return (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <div className="flex items-baseline justify-between gap-2 mb-3">
+              <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Season results · {shows.length} show{shows.length === 1 ? "" : "s"}</h2>
+              <p className="text-[10px] text-gray-300">All figures ex GST</p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-3">
+              <StatTile label="Sales" value={fmtFull(totals.rev)} />
+              <StatTile label="Expenses" value={fmtFull(totals.exp)} color="text-slate-600" />
+              <StatTile label={`Cost of goods${totals.hasMargin ? ` (${coveragePct}% matched)` : ""}`} value={totals.hasMargin ? fmtFull(totals.cogs) : "n/a"} color="text-amber-600" />
+              <StatTile label="Profit (ex COGS)" value={`${profit < 0 ? "-" : ""}${fmtFull(Math.abs(profit))}`} color={profit >= 0 ? "text-emerald-600" : "text-rose-500"} />
+              <StatTile label="True profit" value={trueProfit != null ? `${trueProfit < 0 ? "-" : ""}${fmtFull(Math.abs(trueProfit))}` : "n/a"} color={trueProfit == null ? "text-gray-300" : trueProfit >= 0 ? "text-violet-700" : "text-rose-500"} />
+              <StatTile label="Visitors" value={totals.vis > 0 ? `${totals.vis.toLocaleString()}${totals.rev > 0 ? ` · $${Math.round(totals.rev / totals.vis)}/visitor` : ""}` : "n/a"} color="text-sky-700" />
+            </div>
+            <RevenueSplitBar revenue={totals.rev} cogs={totals.hasMargin ? totals.cogs : null} expenses={totals.exp} trueProfit={trueProfit} />
+          </div>
+        );
+      })()}
+
+      <div className="space-y-3">
+        {[...shows].sort((a, b) => b.date_start.localeCompare(a.date_start)).map(s => <ShowResultCard key={s.id} s={s} />)}
       </div>
 
       {/* ── Year on year ── */}
