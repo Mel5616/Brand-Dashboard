@@ -1,0 +1,22 @@
+name: Asana un-complete task
+on:
+  workflow_dispatch:
+    inputs:
+      task_gid:
+        description: "Asana task gid to mark not-completed (restore)"
+        required: true
+
+jobs:
+  uncomplete:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore task
+        env:
+          ASANA_TOKEN: ${{ secrets.ASANA_TOKEN }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/asana_uncomplete.py "${{ github.event.inputs.task_gid }}"
