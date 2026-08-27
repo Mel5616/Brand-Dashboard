@@ -74,6 +74,11 @@ export function KlaviyoSendPanel({ getHtml, defaultSubject, fixedAudience }: { g
     await fetch("/api/klaviyo/sends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "cancel", id: draft.id, campaignId: draft.campaign_id }) });
     setBusy(false); setDraft(null); load();
   }
+  async function deleteSend(s: Send) {
+    if (!confirm(`Remove "${s.subject}" from history? This can't be undone.`)) return;
+    await fetch("/api/klaviyo/sends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "delete", id: s.id, campaignId: s.campaign_id }) });
+    load();
+  }
 
   if (needsSetup) return null;
 
@@ -150,12 +155,13 @@ export function KlaviyoSendPanel({ getHtml, defaultSubject, fixedAudience }: { g
                       <th className="text-left font-semibold py-1.5 pr-3">Audience</th>
                       <th className="text-left font-semibold py-1.5 pr-3">Status</th>
                       <th className="text-right font-semibold py-1.5 pr-3">Opens</th>
-                      <th className="text-right font-semibold py-1.5">Clicks</th>
+                      <th className="text-right font-semibold py-1.5 pr-3">Clicks</th>
+                      <th className="py-1.5" />
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {sends.map(s => (
-                      <tr key={s.id}>
+                      <tr key={s.id} className="group">
                         <td className="py-1.5 pr-3 font-medium text-slate-700 whitespace-nowrap">{s.subject}</td>
                         <td className="py-1.5 pr-3 text-slate-500 whitespace-nowrap">{s.list_name ?? "—"}</td>
                         <td className="py-1.5 pr-3 whitespace-nowrap">
@@ -164,7 +170,10 @@ export function KlaviyoSendPanel({ getHtml, defaultSubject, fixedAudience }: { g
                           </span>
                         </td>
                         <td className="py-1.5 pr-3 text-right text-slate-600 tabular-nums">{s.stats ? `${s.stats.opensUnique.toLocaleString()} (${Math.round(s.stats.openRate * 100)}%)` : "—"}</td>
-                        <td className="py-1.5 text-right text-slate-600 tabular-nums">{s.stats ? `${s.stats.clicksUnique.toLocaleString()} (${Math.round(s.stats.clickRate * 100)}%)` : "—"}</td>
+                        <td className="py-1.5 pr-3 text-right text-slate-600 tabular-nums">{s.stats ? `${s.stats.clicksUnique.toLocaleString()} (${Math.round(s.stats.clickRate * 100)}%)` : "—"}</td>
+                        <td className="py-1.5 text-right">
+                          <button onClick={() => deleteSend(s)} title="Remove from history" className="text-gray-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity px-1">✕</button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>

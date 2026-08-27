@@ -87,5 +87,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
+  if (b.action === "delete") {
+    // Removes the row from history entirely (unlike "cancel", which keeps a
+    // record). Best-effort delete in Klaviyo too, in case it's still there.
+    const { id, campaignId } = b;
+    if (!id) return NextResponse.json({ ok: false, error: "Missing id" }, { status: 400 });
+    if (campaignId) { try { await cancelCampaign(campaignId); } catch { /* may already be gone */ } }
+    await rest(`klaviyo_sends?id=eq.${encodeURIComponent(id)}`, { method: "DELETE", headers: h({ Prefer: "return=minimal" }) });
+    return NextResponse.json({ ok: true });
+  }
+
   return NextResponse.json({ ok: false, error: "Unknown action" }, { status: 400 });
 }
