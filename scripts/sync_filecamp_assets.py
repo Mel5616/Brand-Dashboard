@@ -66,6 +66,7 @@ FOLDERS = {
         ("SmarTrike/4. Product Images/Wonder Max", "product", "wonder-max"),
         ("SmarTrike/5. Lifestyle Images/Wonder", "lifestyle", "wonder"),
         ("SmarTrike/5. Lifestyle Images/Wonder Max", "lifestyle", "wonder-max"),
+        ("SmarTrike/3. Logo", "logo", None),
     ],
 }
 
@@ -172,21 +173,32 @@ def main():
                 base = f"{base}-{tag}"
                 seen[base] = seen.get(base, 0) + 1
                 image_ref = base if seen[base] == 1 else f"{base}-{seen[base]}"
+                # Logos (and anything else with real transparency) must stay PNG —
+                # flattening to JPEG bakes in a white/black box behind the mark.
+                keep_alpha = category == "logo"
                 try:
                     raw = webdav_get(href)
-                    im = Image.open(io.BytesIO(raw)).convert("RGB")
-                    if im.width > MAX_WIDTH:
-                        h = int(im.height * (MAX_WIDTH / im.width))
-                        im = im.resize((MAX_WIDTH, h), Image.LANCZOS)
+                    im = Image.open(io.BytesIO(raw))
+                    has_alpha = im.mode in ("RGBA", "LA") or (im.mode == "P" and "transparency" in im.info)
+                    im = im.convert("RGBA") if (keep_alpha and has_alpha) else im.convert("RGB")
+                    cap = 600 if category == "logo" else MAX_WIDTH
+                    if im.width > cap:
+                        h = int(im.height * (cap / im.width))
+                        im = im.resize((cap, h), Image.LANCZOS)
                     out = io.BytesIO()
-                    im.save(out, format="JPEG", quality=JPEG_QUALITY, optimize=True)
-                    jpg = out.getvalue()
+                    if im.mode == "RGBA":
+                        im.save(out, format="PNG", optimize=True)
+                        ext, ctype = "png", "image/png"
+                    else:
+                        im.save(out, format="JPEG", quality=JPEG_QUALITY, optimize=True)
+                        ext, ctype = "jpg", "image/jpeg"
+                    payload = out.getvalue()
                 except Exception as e:
                     print(f"   ✗ {fname}: {e}")
                     continue
 
-                storage_path = f"{brand_id}/{image_ref}.jpg"
-                st, _ = sb("POST", f"/storage/v1/object/{BUCKET}/{storage_path}", jpg, ctype="image/jpeg", extra={"x-upsert": "true"})
+                storage_path = f"{brand_id}/{image_ref}.{ext}"
+                st, _ = sb("POST", f"/storage/v1/object/{BUCKET}/{storage_path}", payload, ctype=ctype, extra={"x-upsert": "true"})
                 if st not in (200, 201):
                     print(f"   ✗ upload failed ({st}): {fname}")
                     continue
@@ -199,7 +211,7 @@ def main():
                 }
                 sb("POST", "/rest/v1/email_asset_map?on_conflict=brand_id,image_ref", json.dumps(row).encode(),
                    extra={"Prefer": "resolution=merge-duplicates,return=minimal"})
-                print(f"   ✓ {image_ref}  ({len(jpg)//1024}KB, {im.width}x{im.height})")
+                print(f"   ✓ {image_ref}  ({len(payload)//1024}KB, {im.width}x{im.height}, {ext})")
 
 
 if __name__ == "__main__":
