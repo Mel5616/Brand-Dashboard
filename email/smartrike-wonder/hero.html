@@ -1,0 +1,47 @@
+<!--
+  MODULE: hero
+  BRAND: smarTrike Wonder (v1 build brief, section 12)
+  Table-based, inline CSS only. No flexbox/grid/CSS vars — Outlook (Windows
+  desktop) does not support them and will break the layout silently.
+
+  Placeholders in this file marked [[ ]] are what the feed/AI layer will
+  supply at send time. Image srcs marked PLACEHOLDER must be swapped for
+  real Filecamp-cleared assets before any real send — per the build brief,
+  there is no fallback to an arbitrary URL if the asset key is missing.
+-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;font-family:'Stabil Grotesk', Poppins, -apple-system, 'Segoe UI', Arial, sans-serif;">
+
+  <!-- Hero photo: 600x750 -->
+  <tr>
+    <td>
+      <img src="https://placehold.co/600x750/41414e/e5e1e6?text=HERO+PHOTO+%28Filecamp+asset%29" width="600" height="750" alt="[[hero.headline]] — [[hero.subhead]]" style="display:block;width:100%;max-width:600px;height:auto;border:0;outline:none;text-decoration:none;">
+    </td>
+  </tr>
+
+  <!-- Headline (image, to preserve Stabil Grotesk) + subhead (live text) + CTA -->
+  <tr>
+    <td style="background-color:#e5e1e6;padding:40px 32px 44px;text-align:center;">
+
+      <!-- Headline as image. width set for 2x source (supply @2x, e.g. 900x160 for a 450x80 display size).
+           alt MUST carry the headline text verbatim per section 10. -->
+      <img src="https://placehold.co/450x80/transparent/41414e?text=%5B%5Bhero.headline%5D%5D" width="450" alt="[[hero.headline]]" style="display:block;margin:0 auto 18px;max-width:100%;height:auto;border:0;outline:none;">
+
+      <p style="margin:0 0 28px;font:400 16px/1.5 'Stabil Grotesk', Poppins, -apple-system, 'Segoe UI', Arial, sans-serif;color:#41414e;max-width:420px;margin-left:auto;margin-right:auto;">
+        [[hero.subhead]]
+      </p>
+
+      <!-- CTA: bulletproof button — table+anchor, no background-image dependency -->
+      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
+        <tr>
+          <td style="background-color:#41414e;border-radius:4px;">
+            <a href="[[hero.cta_url]]" style="display:inline-block;padding:14px 32px;font:600 13px/1 'Stabil Grotesk', Poppins, -apple-system, 'Segoe UI', Arial, sans-serif;letter-spacing:0.04em;text-transform:uppercase;color:#ffffff;text-decoration:none;">
+              [[hero.cta_label]]
+            </a>
+          </td>
+        </tr>
+      </table>
+
+    </td>
+  </tr>
+
+</table>
