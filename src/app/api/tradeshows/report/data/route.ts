@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
 import { createClient } from "@supabase/supabase-js";
+import { buildCostByBrand, computeMargin } from "@/lib/tradeshowMargin";
 
 // Tradeshow report data as JSON: by-brand totals (unchanged tradeshow_sales),
 // QR summary (Shopify ex-GST standard), top products per bucket, the hourly
@@ -91,60 +92,8 @@ export async function GET(req: Request) {
   // style_code reused for two different costs within a brand is excluded
   // rather than picked arbitrarily, and a product with no matched SKU just
   // doesn't count toward "known" — it's reported as a coverage gap, not $0 cost.
-  const costGroups = new Map<string, { name: string; cost: number }[]>(); // "brand|code" -> rows
-  for (const r of costRows) {
-    const code = String(r.style_code).trim().toUpperCase();
-    const cost = Number(r.landed_cost_aud);
-    if (!Number.isFinite(cost) || cost <= 0 || code.length < 3) continue;
-    const key = `${r.brand}|${code}`;
-    const list = costGroups.get(key) ?? [];
-    list.push({ name: String(r.product_name || ""), cost });
-    costGroups.set(key, list);
-  }
-  const costByBrand = new Map<string, Map<string, number | null>>(); // brand -> style_code -> cost, or null if ambiguous
-  for (const [key, rows] of costGroups) {
-    const [brand, code] = key.split("|");
-    // A "reprice"/discount-event row isn't a genuinely different product — drop
-    // those before checking for a real conflict (e.g. UPV3's bunting reprice
-    // rows vs. its actual base cost).
-    const base = rows.filter(r => !/reprice/i.test(r.name));
-    const pool = base.length ? base : rows;
-    const distinct = [...new Set(pool.map(r => r.cost))];
-    const resolved = distinct.length === 1 ? distinct[0] : null;
-    const m = costByBrand.get(brand) ?? new Map<string, number | null>();
-    m.set(code, resolved);
-    costByBrand.set(brand, m);
-  }
-  // Cross-brand accessories (seat protectors, etc.) live on their own
-  // "Coolkidz" Cost Sheet tab regardless of which brand's booth sold them —
-  // fall back to that pool when the selling brand's own sheet has no match.
-  function findCost(brand: string, sku: string): number | null {
-    for (const pool of [costByBrand.get(brand), costByBrand.get("Coolkidz")]) {
-      if (!pool) continue;
-      let best: { code: string; cost: number | null } | null = null;
-      for (const [code, cost] of pool) {
-        if (sku.startsWith(code) && (!best || code.length > best.code.length)) best = { code, cost };
-      }
-      if (best) return best.cost;
-    }
-    return null;
-  }
-  const bucketBrand = (bucket: string) => (bucket === "QR" ? "UPPAbaby" : bucket);
-  let knownRevenue = 0, knownCost = 0, allRevenue = 0;
-  for (const p of products) {
-    const rev = Number(p.revenue) || 0;
-    allRevenue += rev;
-    if (!p.sku) continue;
-    const cost = findCost(bucketBrand(p.bucket), String(p.sku).trim().toUpperCase());
-    if (cost == null) continue; // no match, or an ambiguous style_code — excluded, not assumed zero
-    knownRevenue += rev;
-    knownCost += cost * (Number(p.units) || 0);
-  }
-  const margin = allRevenue > 0 ? {
-    knownRevenue: Math.round(knownRevenue), knownCost: Math.round(knownCost), knownMargin: Math.round(knownRevenue - knownCost),
-    coveragePct: Math.round((knownRevenue / allRevenue) * 100),
-    note: "Gross margin after cost of goods — only for products with a confident SKU match to the Cost Sheet; everything else is excluded from this figure (not assumed zero-cost), so coverage % shows how much of revenue it actually reflects.",
-  } : null;
+  const costByBrand = buildCostByBrand(costRows);
+  const margin = computeMargin(products, costByBrand);
 
   const total = byBrand.reduce((s: number, b: any) => s + b.revenue, 0) + (qrRow?.revenue ?? 0);
   return NextResponse.json({
