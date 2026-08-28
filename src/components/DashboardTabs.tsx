@@ -646,6 +646,13 @@ export function DashboardTabs({
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const loadAnnotations = () => fetch("/api/annotations").then(r => r.json()).then(d => setAnnotations(d.items ?? [])).catch(() => {});
   useEffect(() => { loadAnnotations(); }, []);
+  // Tradeshow revenue by month, straight from the SAME endpoint the Tradeshows
+  // tab itself uses (tradeshow_sales + tradeshow_qr) — channels.ts's own
+  // "Tradeshows" channel is missing QR-channel revenue, so it under-reports
+  // vs. what's actually shown on the Tradeshows tab. Fetched here rather than
+  // re-derived so the two can never drift apart again.
+  const [tradeshowMonthly, setTradeshowMonthly] = useState<{ monthKey: string; total: number }[]>([]);
+  useEffect(() => { fetch("/api/tradeshows/insights").then(r => r.json()).then(d => { if (d.ok) setTradeshowMonthly(d.salesByMonth ?? []); }).catch(() => {}); }, []);
   const [brandPeriod, setBrandPeriod] = useState<BrandPeriod>("monthly");
   const [fy, setFy] = useState<FY>(currentFY());
 
@@ -1253,7 +1260,8 @@ export function DashboardTabs({
                 const biz = buildChannels("all", { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest: LATEST });
                 if (!biz.length) return null;
                 const d2cSeries = monthKeys.map((_, i) => biz.find((c: any) => c.name === "Website Sales")?.series[i] ?? 0);
-                const tradeshowSeries = monthKeys.map((_, i) => biz.find((c: any) => c.name === "Tradeshows")?.series[i] ?? 0);
+                const tradeshowByMonth = new Map(tradeshowMonthly.map(m => [m.monthKey, m.total]));
+                const tradeshowSeries = monthKeys.map(mk => tradeshowByMonth.get(mk) ?? 0);
                 return (
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                     <h2 className="font-semibold text-gray-800 mb-0.5">Monthly sales — D2C vs Tradeshows</h2>
