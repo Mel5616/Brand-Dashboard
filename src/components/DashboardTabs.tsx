@@ -36,6 +36,7 @@ import { SalesBudget } from "./SalesBudget";
 import { BabyBunting } from "./BabyBunting";
 import { buildChannels, groupDirect, channelColor, momPct, DIGITAL_CHANNELS, brandMatch } from "@/lib/channels";
 import { PortfolioCharts, ChannelMixCard, Sparkline } from "./PortfolioCharts";
+import { SalesForecastSpendChart } from "./SalesForecastSpendChart";
 import { SectionBar } from "./ui";
 import { ProductsTable } from "./ProductsTable";
 import { TradeshowAccordion } from "./TradeshowAccordion";
@@ -94,7 +95,7 @@ import { AbandonedCheckoutsPanel, LiveStockPanel, DiscountCodesPanel, CrossCodeC
 import { DiscountCodesTab } from "./DiscountCodesTab";
 import { Notifier } from "./Notifier";
 import { StockReport } from "./StockReport";
-import { fmt } from "@/lib/format";
+import { fmt, fmtFull } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
 type TabId = "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "seo" | "social" | "youtube" | "tradeshows" | "show-insights" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "nanit" | "affiliates" | "pa-budget" | "pa-tracker" | "documents" | "team" | "brand-packs" | "price-lists" | "hub-fact-sheets" | "brand-overview" | "stock-availability" | "order-forms" | "customers" | "customer-forms";
@@ -1236,6 +1237,53 @@ export function DashboardTabs({
               <ChannelMixCard brands={brands.filter((b: any) => b.live)} monthly={monthly} monthKeys={monthKeys} monthLabels={monthLabels}
                 channelSales={channelSales} tradeshows={tradeshows} tradeshowSales={tradeshowSales} shopifySources={shopifySources} latest={LATEST}
                 annotations={annotations} />
+
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                <SalesForecastSpendChart
+                  monthly={monthly} targets={targets} marketingBudgets={marketingBudgets} marketingActuals={marketingActuals}
+                  googleAds={googleAds} metaAds={metaAds} pinterestAds={pinterestAds}
+                  monthKeys={monthKeys} monthLabels={monthLabels}
+                  title="D2C Sales vs Marketing Spend"
+                  subtitle="D2C Sales & forecast (left axis) · spend & budget (right axis) — own-store Shopify revenue only, not whole-business (see Channel mix above for that)"
+                />
+              </div>
+
+              {/* ── Monthly sales: D2C vs Online quick split ── */}
+              {(() => {
+                const biz = buildChannels("all", { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest: LATEST });
+                if (!biz.length) return null;
+                const ssum = (a: number[]) => a.reduce((s, v) => s + (v || 0), 0);
+                const d2cSeries = monthKeys.map((_, i) => biz.find((c: any) => c.name === "Website Sales")?.series[i] ?? 0);
+                const onlineSeries = monthKeys.map((_, i) => ssum(biz.filter((c: any) => DIGITAL_CHANNELS.has(c.name)).map((c: any) => c.series[i] ?? 0)));
+                return (
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                    <h2 className="font-semibold text-gray-800 mb-0.5">Monthly sales — D2C vs Online</h2>
+                    <p className="text-xs text-gray-400 mb-4">Quick split: D2C = own-store Shopify only · Online = D2C + Marketplace + Affiliates + Online Only Stores</p>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-[13px]">
+                        <thead>
+                          <tr className="text-[10px] uppercase tracking-wider text-gray-400 border-b border-gray-100">
+                            <th className="text-left font-semibold py-2 pr-3">Month</th>
+                            <th className="text-right font-semibold py-2 pr-3">D2C Sales</th>
+                            <th className="text-right font-semibold py-2 pr-3">Online Sales</th>
+                            <th className="text-right font-semibold py-2">D2C % of Online</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                          {monthKeys.map((mk, i) => (
+                            <tr key={mk}>
+                              <td className="py-2 pr-3 font-medium text-slate-700 whitespace-nowrap">{monthLabels[i]}</td>
+                              <td className="py-2 pr-3 text-right text-slate-600 tabular-nums">{fmtFull(d2cSeries[i])}</td>
+                              <td className="py-2 pr-3 text-right text-slate-600 tabular-nums">{fmtFull(onlineSeries[i])}</td>
+                              <td className="py-2 text-right text-gray-400 tabular-nums">{onlineSeries[i] > 0 ? `${Math.round((d2cSeries[i] / onlineSeries[i]) * 100)}%` : "—"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })()}
 
               <SectionBar title="Digital (D2C) performance" />
               {/* Portfolio trend, brand contribution, top movers */}

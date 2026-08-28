@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { BrandBudgetOverview } from "./BrandBudgetOverview";
 import { BudgetDataTools } from "./BudgetDataTools";
+import { SalesForecastSpendChart } from "./SalesForecastSpendChart";
 import {
   Chart as ChartJS, ArcElement, BarElement, CategoryScale, LinearScale,
   LineElement, PointElement, Filler, Tooltip, Legend,
@@ -146,17 +147,6 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
     return gSpend + mSpend + pSpend + oSpend;
   });
 
-  // Monthly revenue (all brands)
-  const monthlyRevenue = MONTH_KEYS.map(mk =>
-    monthly.filter(m => m.month_key === mk).reduce((s, m) => s + m.revenue, 0)
-  );
-
-  // Monthly forecasted sales (all brands) — the revenue_target set per brand
-  // per month, summed to a single portfolio-wide forecast line so it's
-  // directly comparable to actual Sales above.
-  const monthlyForecast = MONTH_KEYS.map(mk =>
-    targets.filter(t => t.month_key === mk).reduce((s, t) => s + (Number(t.revenue_target) || 0), 0)
-  );
 
   // ── Portfolio visual series ─────────────────────────────────────────────────
   const chanColor = (ch: string, i: number) => CHANNEL_COLORS[ch] ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length];
@@ -200,88 +190,6 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
     }],
   };
 
-  // Line chart — monthly sales vs spend
-  const lineData = {
-    labels: MONTH_LABELS,
-    datasets: [
-      {
-        label: "Sales",
-        data: monthlyRevenue,
-        borderColor: "#2dc8a5",
-        backgroundColor: "#2dc8a520",
-        fill: true,
-        tension: 0.4,
-        pointRadius: 3,
-        pointBackgroundColor: "#2dc8a5",
-        borderWidth: 2,
-        yAxisID: "yRev",
-      },
-      {
-        label: "Forecast",
-        data: monthlyForecast,
-        borderColor: "#94a3b8",
-        backgroundColor: "transparent",
-        borderDash: [3, 3],
-        tension: 0.4,
-        pointRadius: 2,
-        pointBackgroundColor: "#94a3b8",
-        borderWidth: 1.5,
-        yAxisID: "yRev",
-      },
-      {
-        label: "Marketing spend",
-        data: monthlySpend,
-        borderColor: "#2e4057",
-        backgroundColor: "transparent",
-        borderDash: [5, 4],
-        tension: 0.4,
-        pointRadius: 3,
-        pointBackgroundColor: "#2e4057",
-        borderWidth: 2,
-        yAxisID: "ySpend",
-      },
-      {
-        label: "Marketing budget",
-        data: monthlyBudgetTotals,
-        borderColor: "#f59e0b",
-        backgroundColor: "transparent",
-        borderDash: [2, 2],
-        tension: 0.4,
-        pointRadius: 2,
-        pointBackgroundColor: "#f59e0b",
-        borderWidth: 1.5,
-        yAxisID: "ySpend",
-      },
-    ],
-  };
-
-  const lineOpts: any = {
-    responsive: true,
-    maintainAspectRatio: false,
-    animation: false,
-    interaction: { mode: "index", intersect: false },
-    plugins: {
-      legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 }, usePointStyle: true } },
-      tooltip: {
-        callbacks: {
-          label: (ctx: any) => ` ${ctx.dataset.label}: ${fmtFull(ctx.parsed.y)}`,
-        },
-      },
-    },
-    scales: {
-      x: { grid: { display: false }, ticks: { font: { size: 11 }, color: "#9ca3af" } },
-      yRev: {
-        position: "left",
-        ticks: { callback: (v: number) => fmt(v), font: { size: 10 }, color: "#9ca3af" },
-        grid: { color: "#f3f4f6" },
-      },
-      ySpend: {
-        position: "right",
-        ticks: { callback: (v: number) => fmt(v), font: { size: 10 }, color: "#9ca3af" },
-        grid: { display: false },
-      },
-    },
-  };
 
   if (marketingBudgets.length === 0) {
     return (
@@ -410,11 +318,12 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
       {/* Sales vs Spend line + Utilisation donut */}
       <div className="grid grid-cols-5 gap-6 print-stack">
         <div className="col-span-3 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <h2 className="font-semibold text-gray-800 mb-0.5">Monthly sales vs marketing spend</h2>
-          <p className="text-xs text-gray-400 mb-4">Sales & forecast (left axis) · spend & budget (right axis) — forecast and budget are summed across every brand, month by month</p>
-          <div className="h-56">
-            <Line data={lineData} options={lineOpts} />
-          </div>
+          <SalesForecastSpendChart
+            monthly={monthly} targets={targets} marketingBudgets={marketingBudgets} marketingActuals={marketingActuals}
+            googleAds={googleAds} metaAds={metaAds} pinterestAds={pinterestAds}
+            monthKeys={MONTH_KEYS} monthLabels={MONTH_LABELS}
+            subtitle="Sales & forecast (left axis) · spend & budget (right axis) — forecast and budget are summed across every brand, month by month"
+          />
         </div>
 
         <div className="col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
