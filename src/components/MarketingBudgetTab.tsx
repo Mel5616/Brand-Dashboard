@@ -240,6 +240,18 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
         borderWidth: 2,
         yAxisID: "ySpend",
       },
+      {
+        label: "Marketing budget",
+        data: monthlyBudgetTotals,
+        borderColor: "#f59e0b",
+        backgroundColor: "transparent",
+        borderDash: [2, 2],
+        tension: 0.4,
+        pointRadius: 2,
+        pointBackgroundColor: "#f59e0b",
+        borderWidth: 1.5,
+        yAxisID: "ySpend",
+      },
     ],
   };
 
@@ -399,7 +411,7 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
       <div className="grid grid-cols-5 gap-6 print-stack">
         <div className="col-span-3 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <h2 className="font-semibold text-gray-800 mb-0.5">Monthly sales vs marketing spend</h2>
-          <p className="text-xs text-gray-400 mb-4">Sales & forecast (solid/dotted, left axis) · spend (dashed, right axis) — forecast is revenue_target summed across every brand</p>
+          <p className="text-xs text-gray-400 mb-4">Sales & forecast (left axis) · spend & budget (right axis) — forecast and budget are summed across every brand, month by month</p>
           <div className="h-56">
             <Line data={lineData} options={lineOpts} />
           </div>
