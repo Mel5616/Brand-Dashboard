@@ -239,7 +239,6 @@ export function ShowInsights() {
   const allShows = data.shows;
   const yoy = data.yoy;
   const topProductsSeason = data.topProductsSeason ?? [];
-  const unmatchedSeason = data.unmatchedSeason ?? [];
   const salesByMonth = data.salesByMonth ?? [];
   // Everything on this tab is scoped to the current FY — last year's shows
   // stay on the record via Year on Year's "vs previous instance" comparison,
@@ -324,38 +323,6 @@ export function ShowInsights() {
                 </div>
               ));
             })()}
-          </div>
-        </div>
-      )}
-
-      {/* ── Products not mapping to the Cost Sheet ── */}
-      {unmatchedSeason.length > 0 && (
-        <div className="bg-white rounded-2xl border border-amber-100 shadow-sm p-5">
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-700 mb-1">Not mapping to Cost Sheet · {fyLabel}</h2>
-          <p className="text-xs text-gray-400 mb-4">Every product line that couldn't be matched to a Cost Sheet cost — fix these to lift COGS coverage. Ranked by revenue, biggest gaps first.</p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-[13px]">
-              <thead>
-                <tr className="text-[10px] uppercase tracking-wider text-gray-400 border-b border-gray-100">
-                  <th className="text-left font-semibold py-2 pr-3">Product</th>
-                  <th className="text-left font-semibold py-2 pr-3">Brand</th>
-                  <th className="text-left font-semibold py-2 pr-3">SKU</th>
-                  <th className="text-left font-semibold py-2 pr-3">Why it's not matching</th>
-                  <th className="text-right font-semibold py-2">Revenue</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {unmatchedSeason.map(u => (
-                  <tr key={`${u.bucket}-${u.product}-${u.sku ?? ""}`}>
-                    <td className="py-2 pr-3 font-medium text-slate-700 whitespace-nowrap">{u.product}</td>
-                    <td className="py-2 pr-3 text-slate-500 whitespace-nowrap">{u.bucket}</td>
-                    <td className="py-2 pr-3 font-mono text-[12px] text-slate-500 whitespace-nowrap">{u.sku ?? "—"}</td>
-                    <td className="py-2 pr-3 text-amber-700 text-[12px]">{u.reason}</td>
-                    <td className="py-2 text-right font-semibold text-slate-700 tabular-nums whitespace-nowrap">{fmtFull(u.revenue)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         </div>
       )}
