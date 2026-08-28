@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
-import { buildCostByBrand, computeMargin, findUnmatched } from "@/lib/tradeshowMargin";
+import { buildShowCostMaps, computeMargin, findUnmatched } from "@/lib/tradeshowMargin";
 import { currentFY, fyMonthKeys } from "@/lib/fy";
 
 // Show Insights: cross-show analytics built on top of the per-show breakdown
@@ -26,20 +26,21 @@ export async function GET() {
   if (!(await getAccess()).role) return NextResponse.json({ ok: false }, { status: 401 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
 
-  const [shows, sales, qr, expItems, attendance, hourly, products, costRows, brands] = await Promise.all([
-    rest("tradeshows?select=id,name,date_start,date_end,state,location&order=date_start.asc"),
+  const [shows, sales, qr, expItems, attendance, hourly, products, costRows, brands, repeat] = await Promise.all([
+    rest("tradeshows?select=id,name,date_start,date_end,state,location,revenue_target&order=date_start.asc"),
     rest("tradeshow_sales?select=tradeshow_id,brand_id,revenue"),
     rest("tradeshow_qr?select=tradeshow_id,revenue,orders"),
     rest("tradeshow_expense_items?select=tradeshow_id,category,amount"),
     rest("tradeshow_attendance?select=tradeshow_id,day,attendance"),
-    rest("tradeshow_hourly?select=tradeshow_id,day,revenue"),
+    rest("tradeshow_hourly?select=tradeshow_id,day,hour,revenue,orders"),
     rest("tradeshow_products?select=tradeshow_id,bucket,product,revenue,units,sku"),
-    rest("cost_sheet_items?select=brand,product_name,style_code,landed_cost_aud&style_code=not.is.null"),
+    rest("cin7_show_costs?select=tradeshow_id,sku,unit_cost,qty"),
     rest("brands?select=id,name,color"),
+    rest("tradeshow_repeat?select=tradeshow_id,brand_id,show_customers,show_customers_no_id,repeat_customers,repeat_orders_90d,repeat_revenue_90d,window_complete,window_ends_at"),
   ]);
   const uppababyId = brands.find((b: any) => b.name === "UPPAbaby")?.id ?? null;
 
-  const costByBrand = buildCostByBrand(costRows);
+  const costByShow = buildShowCostMaps(costRows);
   const now = new Date();
   const todayStr = now.toISOString().slice(0, 10);
   const past = shows.filter((s: any) => (s.date_end || s.date_start) < todayStr);
@@ -60,8 +61,9 @@ export async function GET() {
     const staffExpense = Math.round(exp.filter((x: any) => x.category === "Staff").reduce((s: number, x: any) => s + (Number(x.amount) || 0), 0));
     const visitors = visitorsOf(ts.id, ts);
     const prods = products.filter((p: any) => p.tradeshow_id === ts.id);
-    const margin = computeMargin(prods, costByBrand);
-    const unmatched = findUnmatched(prods, costByBrand);
+    const showCosts = costByShow.get(String(ts.id));
+    const margin = computeMargin(prods, showCosts);
+    const unmatched = findUnmatched(prods, showCosts);
     const profit = revenue - expenses;
     const trueProfit = margin ? margin.knownMargin - expenses : null;
     const marginPct = revenue > 0 && trueProfit != null ? Math.round((trueProfit / revenue) * 100) : null;
@@ -92,11 +94,34 @@ export async function GET() {
     const topProducts = [...prodsForShow].sort((a: any, b: any) => (Number(b.revenue) || 0) - (Number(a.revenue) || 0))
       .slice(0, 8).map((p: any) => ({ product: p.product, bucket: p.bucket, revenue: Math.round(Number(p.revenue) || 0), units: Number(p.units) || 0 }));
 
+    const revenueTarget = ts.revenue_target != null ? Number(ts.revenue_target) : null;
+    const targetPct = revenueTarget && revenueTarget > 0 ? Math.round((revenue / revenueTarget) * 100) : null;
+
+    const repeatByBrand = repeat.filter((r: any) => r.tradeshow_id === ts.id).map((r: any) => {
+      const showCustomers = Number(r.show_customers) || 0;
+      const showCustomersNoId = Number(r.show_customers_no_id) || 0;
+      const windowComplete = !!r.window_complete;
+      return {
+        brand_id: r.brand_id,
+        name: brands.find((b: any) => b.id === r.brand_id)?.name ?? `Brand ${r.brand_id}`,
+        showCustomers, showCustomersNoId,
+        repeatCustomers: Number(r.repeat_customers) || 0,
+        repeatOrders90d: Number(r.repeat_orders_90d) || 0,
+        repeatRevenue90d: Math.round(Number(r.repeat_revenue_90d) || 0),
+        // null (not 0) while the 90-day window is still accumulating — a
+        // show mid-window has NOT "failed" to produce repeat buyers yet.
+        repeatRatePct: windowComplete && showCustomers > 0 ? Math.round((r.repeat_customers / showCustomers) * 100) : null,
+        windowComplete, windowEndsAt: r.window_ends_at,
+        coveragePct: (showCustomers + showCustomersNoId) > 0 ? Math.round((showCustomers / (showCustomers + showCustomersNoId)) * 100) : null,
+      };
+    });
+
     return {
       id: ts.id, name: ts.name, date_start: ts.date_start, date_end: ts.date_end, state: ts.state, location: ts.location,
       revenue, expenses, staffExpense, staffPctOfSales, visitors, orders,
       margin, profit, trueProfit, marginPct, roiPct, costPerVisitor,
       costPerOrder: orders > 0 && expenses > 0 ? Math.round(expenses / orders) : null,
+      revenueTarget, targetPct, repeatByBrand,
       daily, byBrand, topProducts, unmatched,
     };
   }).filter((r: any) => r.revenue > 0 || r.expenses > 0);
@@ -130,6 +155,31 @@ export async function GET() {
     }
   }
   const unmatchedSeason = [...unmatchedMap.values()].sort((a, b) => b.revenue - a.revenue);
+
+  // Season-wide day/hour pattern — every show's date_start anchors "day 0",
+  // so day 1 = Saturday, day 2 = Sunday (all shows run Sat–Sun) regardless of
+  // the calendar date, letting hourly patterns aggregate across shows.
+  // tradeshow_hourly only has rows for shows the breakdown sync has recently
+  // touched (RECENT_DAYS=60 there), so this is necessarily built from
+  // whichever FY shows happen to have hourly data, not every FY show —
+  // hourlyShowCount below lets the UI disclose that.
+  const hourlyShowIds = new Set<string>();
+  const patternMap = new Map<string, { dayOffset: number; hour: number; revenue: number; orders: number }>();
+  for (const row of hourly) {
+    if (!fyShowIds.has(row.tradeshow_id)) continue;
+    const show = results.find((r: any) => r.id === row.tradeshow_id);
+    if (!show) continue;
+    const dayOffset = Math.round((new Date(row.day + "T00:00:00").getTime() - new Date(show.date_start + "T00:00:00").getTime()) / 86400000);
+    hourlyShowIds.add(row.tradeshow_id);
+    const key = `${dayOffset}|${row.hour}`;
+    const cur = patternMap.get(key) ?? { dayOffset, hour: Number(row.hour), revenue: 0, orders: 0 };
+    cur.revenue += Number(row.revenue) || 0;
+    cur.orders += Number(row.orders) || 0;
+    patternMap.set(key, cur);
+  }
+  const hourlyPattern = [...patternMap.values()].map(p => ({ ...p, revenue: Math.round(p.revenue) }))
+    .sort((a, b) => a.dayOffset - b.dayOffset || a.hour - b.hour);
+  const hourlyShowCount = hourlyShowIds.size;
 
   // Year-on-year: group by exact show name, sorted by date; each show (after
   // the first occurrence) is compared to its immediately preceding instance —
@@ -174,5 +224,5 @@ export async function GET() {
     return { monthKey: mk, label, total: Math.round(byBrand.reduce((s, b) => s + b.revenue, 0)), byBrand };
   });
 
-  return NextResponse.json({ ok: true, shows: results, yoy, topProductsSeason, unmatchedSeason, salesByMonth });
+  return NextResponse.json({ ok: true, shows: results, yoy, topProductsSeason, unmatchedSeason, salesByMonth, hourlyPattern, hourlyShowCount });
 }

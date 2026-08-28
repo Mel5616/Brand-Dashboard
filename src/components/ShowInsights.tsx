@@ -8,15 +8,22 @@ type Margin = { knownRevenue: number; knownCost: number; knownMargin: number; co
 type BrandRev = { brand_id: number; name: string; color: string; revenue: number };
 type Product = { product: string; bucket: string; revenue: number; units: number };
 type Unmatched = { product: string; bucket: string; sku: string | null; revenue: number; units: number; reason: string };
+type RepeatByBrand = {
+  brand_id: number; name: string; showCustomers: number; showCustomersNoId: number;
+  repeatCustomers: number; repeatOrders90d: number; repeatRevenue90d: number;
+  repeatRatePct: number | null; windowComplete: boolean; windowEndsAt: string | null; coveragePct: number | null;
+};
 type Show = {
   id: string; name: string; date_start: string; date_end: string; state: string | null; location: string | null;
   revenue: number; expenses: number; staffExpense: number; staffPctOfSales: number | null; visitors: number; orders: number;
   margin: Margin; profit: number; trueProfit: number | null; marginPct: number | null; roiPct: number | null;
   costPerVisitor: number | null; costPerOrder: number | null;
+  revenueTarget: number | null; targetPct: number | null; repeatByBrand: RepeatByBrand[];
   daily: { day: string; revenue: number }[];
   byBrand: BrandRev[]; topProducts: Product[]; unmatched: Unmatched[];
 };
 type MonthEntry = { monthKey: string; label: string; total: number; byBrand: BrandRev[] };
+type HourlyPoint = { dayOffset: number; hour: number; revenue: number; orders: number };
 type Yoy = {
   id: string; prevId: string; name: string; date_start: string; prevDateStart: string;
   revenue: number; prevRevenue: number; revenueDeltaPct: number | null;
@@ -181,6 +188,96 @@ function MonthlyBrandChart({ months }: { months: MonthEntry[] }) {
   );
 }
 
+// Actual sales against the target set for this show — a slim progress bar so
+// "did we hit the number" reads at a glance instead of needing the raw $ vs $.
+function TargetBar({ revenue, target, pct }: { revenue: number; target: number; pct: number }) {
+  const hit = pct >= 100;
+  return (
+    <div className="mb-3">
+      <div className="flex items-center justify-between text-[11px] mb-1">
+        <span className="text-gray-400">{fmtFull(revenue)} of {fmtFull(target)} target</span>
+        <span className={`font-bold ${hit ? "text-emerald-600" : "text-amber-600"}`}>{pct}%</span>
+      </div>
+      <div className="w-full h-1.5 rounded-full bg-gray-50 overflow-hidden">
+        <div className={`h-full rounded-full ${hit ? "bg-emerald-400" : "bg-amber-400"}`} style={{ width: `${Math.min(100, pct)}%` }} />
+      </div>
+    </div>
+  );
+}
+
+// One brand's repeat-online line for a show card — "still accumulating" while
+// the 90-day window hasn't closed, since a mid-window show hasn't "failed" to
+// produce repeat buyers yet, it just hasn't had time to.
+function RepeatLine({ r }: { r: RepeatByBrand }) {
+  if (r.showCustomers === 0) return null;
+  return (
+    <div className="flex items-center justify-between gap-2 text-[11px]">
+      <span className="text-gray-400">{r.name} repeat online (90d){r.coveragePct != null && r.coveragePct < 100 ? ` · ${r.coveragePct}% ID'd` : ""}</span>
+      {r.windowComplete ? (
+        <span className="font-semibold text-slate-600 tabular-nums">{r.repeatRatePct}% <span className="text-gray-400 font-normal">({r.repeatCustomers}/{r.showCustomers})</span></span>
+      ) : (
+        <span className="text-gray-300 italic">accumulating{r.windowEndsAt ? ` · final ${dateFmt(r.windowEndsAt)}` : ""}</span>
+      )}
+    </div>
+  );
+}
+
+// $/visitor and $/order across shows in date order — is show cost-efficiency
+// getting better or worse over the season, not just what it was on any one day.
+function CostEfficiencyTrend({ shows }: { shows: Show[] }) {
+  const pts = [...shows].filter(s => s.costPerVisitor != null || s.costPerOrder != null).sort((a, b) => a.date_start.localeCompare(b.date_start));
+  if (pts.length === 0) return null;
+  const max = Math.max(1, ...pts.map(s => Math.max(s.costPerVisitor ?? 0, s.costPerOrder ?? 0)));
+  return (
+    <div className="mt-4 pt-4 border-t border-gray-50">
+      <div className="flex gap-3 mb-2 text-[10.5px] text-gray-500">
+        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-sky-400 inline-block" />$/visitor</span>
+        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-violet-400 inline-block" />$/order</span>
+      </div>
+      <div className="flex items-end gap-3 h-20">
+        {pts.map(s => (
+          <div key={s.id} className="flex-1 flex flex-col items-center justify-end h-full gap-1" title={s.name}>
+            <div className="w-full flex items-end justify-center gap-1 h-16">
+              <div className="flex-1 max-w-[10px] rounded-t bg-sky-400" style={{ height: `${s.costPerVisitor != null ? Math.max(2, (s.costPerVisitor / max) * 64) : 2}px` }} title={s.costPerVisitor != null ? `$${s.costPerVisitor}/visitor` : undefined} />
+              <div className="flex-1 max-w-[10px] rounded-t bg-violet-400" style={{ height: `${s.costPerOrder != null ? Math.max(2, (s.costPerOrder / max) * 64) : 2}px` }} title={s.costPerOrder != null ? `$${s.costPerOrder}/order` : undefined} />
+            </div>
+            <span className="text-[9px] text-gray-300 uppercase truncate max-w-full">{new Date(s.date_start + "T00:00:00").toLocaleDateString("en-AU", { month: "short" })}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Season-wide "when do people actually buy" — hour-of-day revenue for each
+// day of a show (Day 1 = Sat, Day 2 = Sun; every show runs Sat–Sun), summed
+// across every FY show that has hourly data.
+function DayTimePattern({ pattern }: { pattern: HourlyPoint[] }) {
+  const dayLabel = (d: number) => (d === 0 ? "Saturday" : d === 1 ? "Sunday" : `Day ${d + 1}`);
+  const days = [...new Set(pattern.map(p => p.dayOffset))].sort((a, b) => a - b);
+  const max = Math.max(1, ...pattern.map(p => p.revenue));
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      {days.map(d => {
+        const hours = pattern.filter(p => p.dayOffset === d).sort((a, b) => a.hour - b.hour);
+        return (
+          <div key={d}>
+            <p className="text-[11px] font-semibold text-slate-600 mb-2">{dayLabel(d)}</p>
+            <div className="flex items-end gap-1 h-16">
+              {hours.map(h => (
+                <div key={h.hour} className="flex-1 flex flex-col items-center gap-1" title={`${h.hour}:00 · ${fmtFull(h.revenue)} · ${h.orders} orders`}>
+                  <div className="w-full rounded-t bg-emerald-400/80" style={{ height: `${Math.max(2, (h.revenue / max) * 56)}px` }} />
+                  <span className="text-[8px] text-gray-300">{h.hour}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function StatTile({ label, value, color = "text-slate-800" }: { label: string; value: string; color?: string }) {
   return (
     <div>
@@ -201,6 +298,7 @@ function ShowResultCard({ s }: { s: Show }) {
       {s.marginPct != null && (
         <span className={`self-start text-[10px] font-bold rounded-full px-2 py-0.5 mb-3 ${s.marginPct >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"}`}>{s.marginPct}% true margin</span>
       )}
+      {s.revenueTarget != null && s.targetPct != null && <TargetBar revenue={s.revenue} target={s.revenueTarget} pct={s.targetPct} />}
       {s.byBrand.length > 0 && <div className="mb-3"><BrandSplit byBrand={s.byBrand} /></div>}
       <div className="grid grid-cols-2 gap-y-2.5 gap-x-2 mb-3">
         <StatTile label="Sales" value={fmtFull(s.revenue)} />
@@ -212,6 +310,11 @@ function ShowResultCard({ s }: { s: Show }) {
         <RevenueSplitBar revenue={s.revenue} cogs={cogs} expenses={s.expenses} trueProfit={s.trueProfit} />
         {s.margin && s.margin.coveragePct < 100 && (
           <p className="text-[10px] text-gray-400 mt-2">COGS matched on {s.margin.coveragePct}% of sales.</p>
+        )}
+        {s.repeatByBrand.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-gray-50 space-y-1">
+            {s.repeatByBrand.map(r => <RepeatLine key={r.brand_id} r={r} />)}
+          </div>
         )}
         {s.topProducts.length > 0 && (
           <div className="mt-3 pt-3 border-t border-gray-50">
@@ -232,7 +335,7 @@ function ShowResultCard({ s }: { s: Show }) {
 }
 
 export function ShowInsights() {
-  const [data, setData] = useState<{ shows: Show[]; yoy: Yoy[]; topProductsSeason: Product[]; unmatchedSeason: Unmatched[]; salesByMonth: MonthEntry[] } | null>(null);
+  const [data, setData] = useState<{ shows: Show[]; yoy: Yoy[]; topProductsSeason: Product[]; unmatchedSeason: Unmatched[]; salesByMonth: MonthEntry[]; hourlyPattern: HourlyPoint[]; hourlyShowCount: number } | null>(null);
   useEffect(() => { fetch("/api/tradeshows/insights").then(r => r.json()).then(d => { if (d.ok) setData(d); }).catch(() => {}); }, []);
 
   if (!data) return <div className="p-8 text-center text-sm text-gray-400">Loading…</div>;
@@ -240,6 +343,8 @@ export function ShowInsights() {
   const yoy = data.yoy;
   const topProductsSeason = data.topProductsSeason ?? [];
   const salesByMonth = data.salesByMonth ?? [];
+  const hourlyPattern = data.hourlyPattern ?? [];
+  const hourlyShowCount = data.hourlyShowCount ?? 0;
   // Everything on this tab is scoped to the current FY — last year's shows
   // stay on the record via Year on Year's "vs previous instance" comparison,
   // but the headline numbers here are always what's happening right now.
@@ -266,17 +371,25 @@ export function ShowInsights() {
         const totals = shows.reduce((a, s) => {
           a.rev += s.revenue; a.exp += s.expenses; a.vis += s.visitors;
           if (s.margin) { a.knownRev += s.margin.knownRevenue; a.cogs += s.margin.knownCost; a.hasMargin = true; }
+          if (s.revenueTarget != null) { a.targetRev += s.revenue; a.target += s.revenueTarget; }
           return a;
-        }, { rev: 0, exp: 0, vis: 0, cogs: 0, knownRev: 0, hasMargin: false });
+        }, { rev: 0, exp: 0, vis: 0, cogs: 0, knownRev: 0, hasMargin: false, target: 0, targetRev: 0 });
         const profit = totals.rev - totals.exp;
         const trueProfit = totals.hasMargin ? (totals.knownRev - totals.cogs) - totals.exp : null;
         const coveragePct = totals.rev > 0 ? Math.round((totals.knownRev / totals.rev) * 100) : 0;
+        const targetPct = totals.target > 0 ? Math.round((totals.targetRev / totals.target) * 100) : null;
         return (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <div className="flex items-baseline justify-between gap-2 mb-3">
               <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Season results · {shows.length} show{shows.length === 1 ? "" : "s"} · {fyLabel}</h2>
               <p className="text-[10px] text-gray-300">All figures ex GST</p>
             </div>
+            {targetPct != null && (
+              <div className="mb-3">
+                <TargetBar revenue={totals.targetRev} target={totals.target} pct={targetPct} />
+                <p className="text-[10px] text-gray-300 -mt-2">Against the {shows.filter(s => s.revenueTarget != null).length} show{shows.filter(s => s.revenueTarget != null).length === 1 ? "" : "s"} with a target set</p>
+              </div>
+            )}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-3">
               <StatTile label="Sales" value={fmtFull(totals.rev)} />
               <StatTile label="Expenses" value={fmtFull(totals.exp)} color="text-slate-600" />
@@ -286,6 +399,36 @@ export function ShowInsights() {
               <StatTile label="Visitors" value={totals.vis > 0 ? `${totals.vis.toLocaleString()}${totals.rev > 0 ? ` · $${Math.round(totals.rev / totals.vis)}/visitor` : ""}` : "n/a"} color="text-sky-700" />
             </div>
             <RevenueSplitBar revenue={totals.rev} cogs={totals.hasMargin ? totals.cogs : null} expenses={totals.exp} trueProfit={trueProfit} />
+          </div>
+        );
+      })()}
+
+      {/* ── Repeat online within 90 days ── */}
+      {(() => {
+        const rows = shows.flatMap(s => s.repeatByBrand.map(r => ({ show: s.name, ...r })));
+        const complete = rows.filter(r => r.windowComplete && r.showCustomers > 0);
+        const pending = rows.filter(r => !r.windowComplete && r.showCustomers > 0);
+        if (rows.length === 0) return null;
+        const totalShowCustomers = complete.reduce((s, r) => s + r.showCustomers, 0);
+        const totalRepeat = complete.reduce((s, r) => s + r.repeatCustomers, 0);
+        const totalRepeatRevenue = complete.reduce((s, r) => s + r.repeatRevenue90d, 0);
+        const seasonRate = totalShowCustomers > 0 ? Math.round((totalRepeat / totalShowCustomers) * 100) : null;
+        return (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-1">Repeat online within 90 days</h2>
+            <p className="text-xs text-gray-400 mb-4">Of the customers identified at a show (own-store + QR — not the walk-up booth till), how many bought again online</p>
+            {complete.length > 0 ? (
+              <div className="grid grid-cols-3 gap-3 mb-1">
+                <StatTile label="Repeat rate" value={seasonRate != null ? `${seasonRate}%` : "n/a"} color="text-violet-700" />
+                <StatTile label="Repeat customers" value={`${totalRepeat.toLocaleString()} of ${totalShowCustomers.toLocaleString()}`} />
+                <StatTile label="Repeat revenue" value={fmtFull(totalRepeatRevenue)} color="text-emerald-600" />
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">No show&apos;s 90-day window has closed yet this FY.</p>
+            )}
+            {pending.length > 0 && (
+              <p className="text-[11px] text-gray-400 mt-3">Still accumulating: {pending.map(r => `${r.show} (${r.name})`).join(", ")}</p>
+            )}
           </div>
         );
       })()}
@@ -440,7 +583,20 @@ export function ShowInsights() {
             Staff cost is over 15% of sales for {staffFlags.map(s => s.name).join(", ")} — worth checking rostering against foot traffic for these shows.
           </p>
         )}
+        <CostEfficiencyTrend shows={shows} />
       </div>
+
+      {/* ── Day & time pattern ── */}
+      {hourlyPattern.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-1">Best day & time to staff the booth</h2>
+          <p className="text-xs text-gray-400 mb-4">
+            Hour-by-hour sales, summed across every {fyLabel} show with hourly data{hourlyShowCount > 0 ? ` (${hourlyShowCount} show${hourlyShowCount === 1 ? "" : "s"})` : ""}
+            {hourlyShowCount > 0 && hourlyShowCount < shows.length ? ` — not all ${shows.length} shows this FY have hourly data yet` : ""}
+          </p>
+          <DayTimePattern pattern={hourlyPattern} />
+        </div>
+      )}
 
       {/* ── Sales trajectory ── */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">

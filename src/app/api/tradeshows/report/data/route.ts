@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
 import { createClient } from "@supabase/supabase-js";
-import { buildCostByBrand, computeMargin, findUnmatched } from "@/lib/tradeshowMargin";
+import { buildShowCostMaps, computeMargin, findUnmatched } from "@/lib/tradeshowMargin";
 
 // Tradeshow report data as JSON: by-brand totals (unchanged tradeshow_sales),
 // QR summary (Shopify ex-GST standard), top products per bucket, the hourly
@@ -28,7 +28,7 @@ export async function GET(req: Request) {
     rest(`tradeshow_products?tradeshow_id=eq.${encodeURIComponent(id)}&select=bucket,product,revenue,units,sku&order=revenue.desc`),
     rest(`tradeshow_hourly?tradeshow_id=eq.${encodeURIComponent(id)}&select=day,hour,slot,revenue,orders&order=day.asc,hour.asc`),
     rest(`tradeshow_qr?tradeshow_id=eq.${encodeURIComponent(id)}&select=revenue,orders`),
-    rest(`cost_sheet_items?select=brand,product_name,style_code,landed_cost_aud&style_code=not.is.null`),
+    rest(`cin7_show_costs?tradeshow_id=eq.${encodeURIComponent(id)}&select=tradeshow_id,sku,unit_cost,qty`),
   ]);
   const show = showRows[0] ?? null;
   if (!show) return NextResponse.json({ ok: false, error: "Unknown tradeshow_id" }, { status: 404 });
@@ -86,15 +86,13 @@ export async function GET(req: Request) {
   const mesaCapsules = products.filter((p: any) => p.product === "Mesa Capsule").reduce((s: number, p: any) => s + Number(p.units || 0), 0);
 
   // "True revenue" — gross margin after cost of goods, only for lines with a
-  // confident cost match. Cost Sheet codes are per MODEL ("UPV3"), not per
-  // colourway — Shopify SKUs are per-colourway ("UPV3JM") — so this matches
-  // by longest style_code PREFIX of the SKU, not an exact string. A
-  // style_code reused for two different costs within a brand is excluded
-  // rather than picked arbitrarily, and a product with no matched SKU just
-  // doesn't count toward "known" — it's reported as a coverage gap, not $0 cost.
-  const costByBrand = buildCostByBrand(costRows);
-  const margin = computeMargin(products, costByBrand);
-  const unmatched = findUnmatched(products, costByBrand);
+  // confident cost match. Cost comes from Cin7's actual dispatched orders for
+  // this show (exact SKU match — Cin7's SKU already matches Shopify's, no
+  // colourway bridging needed); a product with no matched dispatched order
+  // just doesn't count toward "known" — it's reported as a coverage gap, not $0 cost.
+  const showCosts = buildShowCostMaps(costRows).get(String(id));
+  const margin = computeMargin(products, showCosts);
+  const unmatched = findUnmatched(products, showCosts);
 
   const total = byBrand.reduce((s: number, b: any) => s + b.revenue, 0) + (qrRow?.revenue ?? 0);
   return NextResponse.json({
