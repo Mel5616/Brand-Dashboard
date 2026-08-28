@@ -110,9 +110,9 @@ function RevenueSplitBar({ revenue, cogs, expenses, trueProfit }: { revenue: num
         {lossPct > 0 && <div style={{ width: `${lossPct}%` }} className="bg-rose-500" title={`Loss · ${Math.round(lossPct)}%`} />}
       </div>
       <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 text-[10.5px] text-gray-500">
-        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-amber-400 inline-block" />COGS {cogs != null ? `${Math.round(cogsPct)}%` : "n/a"}</span>
-        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-slate-300 inline-block" />Expenses {Math.round(expPct)}%</span>
-        <span className="inline-flex items-center gap-1"><span className={`w-2 h-2 rounded-sm inline-block ${trueProfit != null && trueProfit < 0 ? "bg-rose-500" : "bg-violet-500"}`} />{trueProfit != null && trueProfit < 0 ? "Loss" : "True profit"} {Math.round(trueProfit != null && trueProfit < 0 ? lossPct : profitPct)}%</span>
+        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-amber-400 inline-block" />COGS {cogs != null ? <><span className="font-semibold text-slate-600">{fmtFull(cogs)}</span> ({Math.round(cogsPct)}%)</> : "n/a"}</span>
+        <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-slate-300 inline-block" />Expenses <span className="font-semibold text-slate-600">{fmtFull(expenses)}</span> ({Math.round(expPct)}%)</span>
+        <span className="inline-flex items-center gap-1"><span className={`w-2 h-2 rounded-sm inline-block ${trueProfit != null && trueProfit < 0 ? "bg-rose-500" : "bg-violet-500"}`} />{trueProfit != null && trueProfit < 0 ? "Loss" : "True profit"} {trueProfit != null && <span className="font-semibold text-slate-600">{fmtFull(Math.abs(trueProfit))}</span>} ({Math.round(trueProfit != null && trueProfit < 0 ? lossPct : profitPct)}%)</span>
       </div>
     </div>
   );
