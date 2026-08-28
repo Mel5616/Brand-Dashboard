@@ -1248,25 +1248,24 @@ export function DashboardTabs({
                 />
               </div>
 
-              {/* ── Monthly sales: D2C vs Online quick split ── */}
+              {/* ── Monthly sales: D2C (Shopify) vs Tradeshows quick split ── */}
               {(() => {
                 const biz = buildChannels("all", { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest: LATEST });
                 if (!biz.length) return null;
-                const ssum = (a: number[]) => a.reduce((s, v) => s + (v || 0), 0);
                 const d2cSeries = monthKeys.map((_, i) => biz.find((c: any) => c.name === "Website Sales")?.series[i] ?? 0);
-                const onlineSeries = monthKeys.map((_, i) => ssum(biz.filter((c: any) => DIGITAL_CHANNELS.has(c.name)).map((c: any) => c.series[i] ?? 0)));
+                const tradeshowSeries = monthKeys.map((_, i) => biz.find((c: any) => c.name === "Tradeshows")?.series[i] ?? 0);
                 return (
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                    <h2 className="font-semibold text-gray-800 mb-0.5">Monthly sales — D2C vs Online</h2>
-                    <p className="text-xs text-gray-400 mb-4">Quick split: D2C = own-store Shopify only · Online = D2C + Marketplace + Affiliates + Online Only Stores</p>
+                    <h2 className="font-semibold text-gray-800 mb-0.5">Monthly sales — D2C vs Tradeshows</h2>
+                    <p className="text-xs text-gray-400 mb-4">Quick split: D2C = own-store Shopify only · Tradeshows = expo/booth sales</p>
                     <div className="overflow-x-auto">
                       <table className="w-full text-[13px]">
                         <thead>
                           <tr className="text-[10px] uppercase tracking-wider text-gray-400 border-b border-gray-100">
                             <th className="text-left font-semibold py-2 pr-3">Month</th>
                             <th className="text-right font-semibold py-2 pr-3">D2C Sales</th>
-                            <th className="text-right font-semibold py-2 pr-3">Online Sales</th>
-                            <th className="text-right font-semibold py-2">D2C % of Online</th>
+                            <th className="text-right font-semibold py-2 pr-3">Tradeshows</th>
+                            <th className="text-right font-semibold py-2">Combined</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
@@ -1274,8 +1273,8 @@ export function DashboardTabs({
                             <tr key={mk}>
                               <td className="py-2 pr-3 font-medium text-slate-700 whitespace-nowrap">{monthLabels[i]}</td>
                               <td className="py-2 pr-3 text-right text-slate-600 tabular-nums">{fmtFull(d2cSeries[i])}</td>
-                              <td className="py-2 pr-3 text-right text-slate-600 tabular-nums">{fmtFull(onlineSeries[i])}</td>
-                              <td className="py-2 text-right text-gray-400 tabular-nums">{onlineSeries[i] > 0 ? `${Math.round((d2cSeries[i] / onlineSeries[i]) * 100)}%` : "—"}</td>
+                              <td className="py-2 pr-3 text-right text-slate-600 tabular-nums">{fmtFull(tradeshowSeries[i])}</td>
+                              <td className="py-2 text-right text-gray-400 tabular-nums">{fmtFull(d2cSeries[i] + tradeshowSeries[i])}</td>
                             </tr>
                           ))}
                         </tbody>
