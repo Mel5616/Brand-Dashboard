@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
 import { createClient } from "@supabase/supabase-js";
-import { buildShowCostMaps, computeMargin, findUnmatched } from "@/lib/tradeshowMargin";
+import { buildShowCostMaps, computeMargin, findUnmatched, marginFromShowTotal } from "@/lib/tradeshowMargin";
 
 // Tradeshow report data as JSON: by-brand totals (unchanged tradeshow_sales),
 // QR summary (Shopify ex-GST standard), top products per bucket, the hourly
@@ -21,7 +21,7 @@ export async function GET(req: Request) {
   const top = Math.max(1, Math.min(50, Number(u.searchParams.get("top") || 5)));
   if (!id) return NextResponse.json({ ok: false, error: "Missing tradeshow_id" }, { status: 400 });
 
-  const [showRows, sales, brands, products, hourly, qr, costRows] = await Promise.all([
+  const [showRows, sales, brands, products, hourly, qr, costRows, showTotalRows] = await Promise.all([
     rest(`tradeshows?id=eq.${encodeURIComponent(id)}&select=id,name,date_start,date_end,state,location`),
     rest(`tradeshow_sales?tradeshow_id=eq.${encodeURIComponent(id)}&select=brand_id,revenue,orders&order=revenue.desc`),
     rest("brands?select=id,name"),
@@ -29,6 +29,7 @@ export async function GET(req: Request) {
     rest(`tradeshow_hourly?tradeshow_id=eq.${encodeURIComponent(id)}&select=day,hour,slot,revenue,orders&order=day.asc,hour.asc`),
     rest(`tradeshow_qr?tradeshow_id=eq.${encodeURIComponent(id)}&select=revenue,orders`),
     rest(`cin7_show_costs?tradeshow_id=eq.${encodeURIComponent(id)}&select=tradeshow_id,sku,unit_cost,qty`),
+    rest(`cin7_show_totals?tradeshow_id=eq.${encodeURIComponent(id)}&select=tradeshow_id,total_cogs,matched_orders,total_orders`),
   ]);
   const show = showRows[0] ?? null;
   if (!show) return NextResponse.json({ ok: false, error: "Unknown tradeshow_id" }, { status: 404 });
@@ -85,16 +86,17 @@ export async function GET(req: Request) {
   // rank in a bucket's top products.
   const mesaCapsules = products.filter((p: any) => p.product === "Mesa Capsule").reduce((s: number, p: any) => s + Number(p.units || 0), 0);
 
-  // "True revenue" — gross margin after cost of goods, only for lines with a
-  // confident cost match. Cost comes from Cin7's actual dispatched orders for
-  // this show (exact SKU match — Cin7's SKU already matches Shopify's, no
-  // colourway bridging needed); a product with no matched dispatched order
-  // just doesn't count toward "known" — it's reported as a coverage gap, not $0 cost.
-  const showCosts = buildShowCostMaps(costRows).get(String(id));
-  const margin = computeMargin(products, showCosts);
-  const unmatched = findUnmatched(products, showCosts);
-
   const total = byBrand.reduce((s: number, b: any) => s + b.revenue, 0) + (qrRow?.revenue ?? 0);
+
+  // "True revenue" — gross margin after cost of goods. When Cin7 order-
+  // matching has run for this show, use its direct per-show COGS total
+  // (summed straight from every matched dispatched order — see
+  // marginFromShowTotal's comment for why that beats a SKU-join). Otherwise
+  // fall back to the per-SKU join against tradeshow_products.
+  const showCosts = buildShowCostMaps(costRows).get(String(id));
+  const showTotal = showTotalRows[0];
+  const margin = showTotal ? marginFromShowTotal(total, showTotal) : computeMargin(products, showCosts);
+  const unmatched = findUnmatched(products, showCosts);
   return NextResponse.json({
     ok: true,
     show,

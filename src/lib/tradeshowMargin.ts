@@ -29,6 +29,31 @@ export function buildShowCostMaps(rows: Cin7CostRow[]): Map<string, Map<string, 
 
 export type Margin = { knownRevenue: number; knownCost: number; knownMargin: number; coveragePct: number; note: string };
 export type UnmatchedProduct = { product: string; bucket: string; sku: string | null; revenue: number; units: number; reason: string };
+export type Cin7ShowTotal = { tradeshow_id: string; total_cogs: number | string; matched_orders: number | string; total_orders: number | string };
+
+// The AUTHORITATIVE margin source when Cin7 order-matching has run for this
+// show: total_cogs is summed directly from every matched dispatched Cin7
+// order's line items (scripts/sync_cin7_costs.py), not re-derived by joining
+// SKUs against tradeshow_products — that join silently loses ~11% of
+// coverage on bundled/demo/no-SKU product lines (Mesa Capsule, ex-demo floor
+// stock, "Custom sale") that Cin7 still has a real per-unit cost for at the
+// order-line level. Verified against a real Cin7-native COGS export
+// (28 Aug 2026): this landed within ~1% of Cin7's own report, vs. ~15% low
+// via the SKU-join path (computeMargin below, kept as a fallback for shows
+// Cin7 order-matching hasn't run for yet).
+export function marginFromShowTotal(revenue: number, total: Cin7ShowTotal): Margin | null {
+  if (revenue <= 0) return null;
+  const matchedOrders = Number(total.matched_orders) || 0;
+  const totalOrders = Number(total.total_orders) || 0;
+  const orderCoverage = totalOrders > 0 ? matchedOrders / totalOrders : 0;
+  const knownRevenue = Math.round(revenue * orderCoverage);
+  const knownCost = Math.round(Number(total.total_cogs) || 0);
+  return {
+    knownRevenue, knownCost, knownMargin: knownRevenue - knownCost,
+    coveragePct: Math.round(orderCoverage * 100),
+    note: `Gross margin after cost of goods — real landed cost summed directly from Cin7's dispatched orders for this show (${matchedOrders} of ${totalOrders} identified orders matched a Cin7 sales order).`,
+  };
+}
 
 export function computeMargin(products: ProductRow[], showCosts: Map<string, number> | undefined): Margin | null {
   let knownRevenue = 0, knownCost = 0, allRevenue = 0;

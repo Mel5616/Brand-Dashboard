@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
-import { buildShowCostMaps, computeMargin, findUnmatched } from "@/lib/tradeshowMargin";
+import { buildShowCostMaps, computeMargin, findUnmatched, marginFromShowTotal } from "@/lib/tradeshowMargin";
 import { currentFY, fyMonthKeys } from "@/lib/fy";
 
 // Show Insights: cross-show analytics built on top of the per-show breakdown
@@ -26,7 +26,7 @@ export async function GET() {
   if (!(await getAccess()).role) return NextResponse.json({ ok: false }, { status: 401 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
 
-  const [shows, sales, qr, expItems, attendance, hourly, products, costRows, brands, repeat] = await Promise.all([
+  const [shows, sales, qr, expItems, attendance, hourly, products, costRows, showTotals, brands, repeat] = await Promise.all([
     rest("tradeshows?select=id,name,date_start,date_end,state,location,revenue_target&order=date_start.asc"),
     rest("tradeshow_sales?select=tradeshow_id,brand_id,revenue"),
     rest("tradeshow_qr?select=tradeshow_id,revenue,orders"),
@@ -35,10 +35,12 @@ export async function GET() {
     rest("tradeshow_hourly?select=tradeshow_id,day,hour,revenue,orders"),
     rest("tradeshow_products?select=tradeshow_id,bucket,product,revenue,units,sku"),
     rest("cin7_show_costs?select=tradeshow_id,sku,unit_cost,qty"),
+    rest("cin7_show_totals?select=tradeshow_id,total_cogs,matched_orders,total_orders"),
     rest("brands?select=id,name,color"),
     rest("tradeshow_repeat?select=tradeshow_id,brand_id,show_customers,show_customers_no_id,repeat_customers,repeat_orders_90d,repeat_revenue_90d,window_complete,window_ends_at"),
   ]);
   const uppababyId = brands.find((b: any) => b.name === "UPPAbaby")?.id ?? null;
+  const showTotalById = new Map<string, any>(showTotals.map((t: any) => [String(t.tradeshow_id), t]));
 
   const costByShow = buildShowCostMaps(costRows);
   const now = new Date();
@@ -62,7 +64,8 @@ export async function GET() {
     const visitors = visitorsOf(ts.id, ts);
     const prods = products.filter((p: any) => p.tradeshow_id === ts.id);
     const showCosts = costByShow.get(String(ts.id));
-    const margin = computeMargin(prods, showCosts);
+    const showTotal = showTotalById.get(String(ts.id));
+    const margin = showTotal ? marginFromShowTotal(revenue, showTotal) : computeMargin(prods, showCosts);
     const unmatched = findUnmatched(prods, showCosts);
     const profit = revenue - expenses;
     const trueProfit = margin ? margin.knownMargin - expenses : null;
