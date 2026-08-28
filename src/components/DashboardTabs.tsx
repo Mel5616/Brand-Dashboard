@@ -454,6 +454,10 @@ function BrandShareCard({ brands, monthly, monthKeys, channelSales, role, fyLabe
 }
 // Partnerships pages collapse under a "Partnerships & Affiliates" dropdown.
 const PARTNERSHIP_IDS: TabId[] = ["pa-budget", "pa-tracker", "affiliates", "documents"];
+// Show Insights nests under Tradeshows itself (not a standalone header like
+// Influencers/Partnerships above) — Tradeshows stays directly clickable, with
+// a chevron that reveals Show Insights indented beneath it.
+const TRADESHOW_CHILD_IDS: TabId[] = ["show-insights"];
 
 // Inline SVG donut for the Business overview channel split.
 function ChannelDonut({ slices, total, size = 150 }: { slices: { value: number; color: string }[]; total: number; size?: number }) {
@@ -579,6 +583,7 @@ export function DashboardTabs({
   }, []);
   const [influencersOpen, setInfluencersOpen] = useState<boolean>(() => INFLUENCER_IDS.includes(firstTab));
   const [partnershipsOpen, setPartnershipsOpen] = useState<boolean>(() => PARTNERSHIP_IDS.includes(firstTab));
+  const [tradeshowsOpen, setTradeshowsOpen] = useState<boolean>(() => TRADESHOW_CHILD_IDS.includes(firstTab));
   const [mobileNavOpen, setMobileNavOpen] = useState(false); // slide-in nav drawer on small screens
   // Sidebar section groups the user has collapsed. Default: all open ("auto open").
   // Persisted to localStorage so a collapsed group stays collapsed across reloads.
@@ -910,8 +915,9 @@ export function DashboardTabs({
           ) : null;
           const inflActive = INFLUENCER_IDS.includes(active);
           const paActive = PARTNERSHIP_IDS.includes(active);
+          const tradeshowChildTabs = TABS.filter(t => TRADESHOW_CHILD_IDS.includes(t.id) && visIds.has(t.id));
           return (<>{searchTrigger}{pinnedBlock}{groups.map(g => {
-            const flatTabs = g.tabs.filter(t => !INFLUENCER_IDS.includes(t.id as TabId) && !PARTNERSHIP_IDS.includes(t.id as TabId));
+            const flatTabs = g.tabs.filter(t => !INFLUENCER_IDS.includes(t.id as TabId) && !PARTNERSHIP_IDS.includes(t.id as TabId) && !TRADESHOW_CHILD_IDS.includes(t.id as TabId));
             const inflTabs = g.tabs.filter(t => INFLUENCER_IDS.includes(t.id as TabId));
             const paTabs = g.tabs.filter(t => PARTNERSHIP_IDS.includes(t.id as TabId));
             const collapsed = collapsedGroups.has(g.label);
@@ -924,7 +930,26 @@ export function DashboardTabs({
                 </button>
                 {!collapsed && (
                 <div className="space-y-0.5">
-                  {flatTabs.map(Btn)}
+                  {flatTabs.map(tab => tab.id === "tradeshows" && tradeshowChildTabs.length > 0 ? (
+                    <div key={tab.id}>
+                      <div className="group/row relative flex items-center">
+                        <button onClick={() => go(tab.id)}
+                          className={`flex-1 min-w-0 flex items-center gap-2.5 pl-3 pr-14 py-2 rounded-lg text-sm transition-all ${
+                            active === tab.id ? "bg-emerald-50 text-emerald-600 font-semibold shadow-sm ring-1 ring-emerald-100" : "text-gray-500 hover:bg-gray-100/70 hover:text-gray-700"}`}>
+                          {tab.icon}<span className="truncate">{tab.label}</span>
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); setTradeshowsOpen(o => !o); }} title={tradeshowsOpen ? "Collapse" : "Expand"}
+                          className="absolute right-7 p-1 rounded text-gray-400 hover:text-gray-600">
+                          <svg className={`w-3.5 h-3.5 transition-transform ${tradeshowsOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); togglePin(tab.id); }} title={pinned.includes(tab.id) ? "Unpin" : "Pin to top"}
+                          className={`absolute right-1.5 p-1 rounded transition-opacity ${pinned.includes(tab.id) ? "text-amber-400" : "text-gray-300 opacity-0 group-hover/row:opacity-100 hover:text-amber-400"}`}>
+                          <svg className="w-3.5 h-3.5" fill={pinned.includes(tab.id) ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.048 2.927c.3-.921 1.603-.921 1.902 0l1.716 5.28a1 1 0 00.95.69h5.552c.969 0 1.371 1.24.588 1.81l-4.49 3.263a1 1 0 00-.364 1.118l1.716 5.28c.3.922-.755 1.688-1.539 1.118l-4.49-3.263a1 1 0 00-1.175 0l-4.49 3.263c-.783.57-1.838-.196-1.539-1.118l1.717-5.28a1 1 0 00-.365-1.118L2.02 10.707c-.783-.57-.38-1.81.588-1.81h5.553a1 1 0 00.95-.69l1.716-5.28z" /></svg>
+                        </button>
+                      </div>
+                      {tradeshowsOpen && <div className="ml-3 pl-1.5 border-l border-gray-200 space-y-0.5">{tradeshowChildTabs.map(Btn)}</div>}
+                    </div>
+                  ) : Btn(tab))}
                   {inflTabs.length > 0 && (
                     <>
                       <button onClick={() => setInfluencersOpen(o => !o)}
