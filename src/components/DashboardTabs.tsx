@@ -939,6 +939,28 @@ export function DashboardTabs({
                 </button>
                 {!collapsed && (
                 <div className="space-y-0.5">
+                  {inflTabs.length > 0 && (
+                    <>
+                      <button onClick={() => setInfluencersOpen(o => !o)}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${inflActive ? "text-emerald-600 font-semibold" : "text-gray-500 hover:bg-gray-100/70 hover:text-gray-700"}`}>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /></svg>
+                        Influencers
+                        <svg className={`ml-auto w-3.5 h-3.5 transition-transform ${influencersOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                      </button>
+                      {influencersOpen && <div className="ml-3 pl-1.5 border-l border-gray-200 space-y-0.5">{inflTabs.map(Btn)}</div>}
+                    </>
+                  )}
+                  {paTabs.length > 0 && (
+                    <>
+                      <button onClick={() => setPartnershipsOpen(o => !o)}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${paActive ? "text-emerald-600 font-semibold" : "text-gray-500 hover:bg-gray-100/70 hover:text-gray-700"}`}>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 00-3-3.87" /></svg>
+                        Partnerships &amp; Affiliates
+                        <svg className={`ml-auto w-3.5 h-3.5 transition-transform ${partnershipsOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                      </button>
+                      {partnershipsOpen && <div className="ml-3 pl-1.5 border-l border-gray-200 space-y-0.5">{paTabs.map(Btn)}</div>}
+                    </>
+                  )}
                   {flatTabs.map(tab => {
                     const childTabs = nestedChildTabsByParent[tab.id];
                     if (!childTabs || childTabs.length === 0) return Btn(tab);
@@ -964,28 +986,6 @@ export function DashboardTabs({
                       </div>
                     );
                   })}
-                  {inflTabs.length > 0 && (
-                    <>
-                      <button onClick={() => setInfluencersOpen(o => !o)}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${inflActive ? "text-emerald-600 font-semibold" : "text-gray-500 hover:bg-gray-100/70 hover:text-gray-700"}`}>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /></svg>
-                        Influencers
-                        <svg className={`ml-auto w-3.5 h-3.5 transition-transform ${influencersOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                      </button>
-                      {influencersOpen && <div className="ml-3 pl-1.5 border-l border-gray-200 space-y-0.5">{inflTabs.map(Btn)}</div>}
-                    </>
-                  )}
-                  {paTabs.length > 0 && (
-                    <>
-                      <button onClick={() => setPartnershipsOpen(o => !o)}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${paActive ? "text-emerald-600 font-semibold" : "text-gray-500 hover:bg-gray-100/70 hover:text-gray-700"}`}>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 00-3-3.87" /></svg>
-                        Partnerships &amp; Affiliates
-                        <svg className={`ml-auto w-3.5 h-3.5 transition-transform ${partnershipsOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                      </button>
-                      {partnershipsOpen && <div className="ml-3 pl-1.5 border-l border-gray-200 space-y-0.5">{paTabs.map(Btn)}</div>}
-                    </>
-                  )}
                 </div>
                 )}
               </div>
