@@ -154,7 +154,7 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3v18h18M7 14l4-4 3 3 5-6" /></svg>,
   },
   {
-    id: "sales-budget", label: "Sales Budget",
+    id: "sales-budget", label: "Sales Team Budget",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V9m4 8V5m4 12v-6M4 21h16a1 1 0 001-1V4a1 1 0 00-1-1H4a1 1 0 00-1 1v16a1 1 0 001 1z" /></svg>,
   },
   {
@@ -457,7 +457,7 @@ const PARTNERSHIP_IDS: TabId[] = ["pa-budget", "pa-tracker", "affiliates", "docu
 // Show Insights nests under Tradeshows itself (not a standalone header like
 // Influencers/Partnerships above) — Tradeshows stays directly clickable, with
 // a chevron that reveals Show Insights indented beneath it.
-const TRADESHOW_CHILD_IDS: TabId[] = ["show-insights"];
+const TRADESHOW_CHILD_IDS: TabId[] = ["show-insights", "show-deals"];
 
 // Inline SVG donut for the Business overview channel split.
 function ChannelDonut({ slices, total, size = 150 }: { slices: { value: number; color: string }[]; total: number; size?: number }) {
@@ -1675,7 +1675,7 @@ export function DashboardTabs({
           {/* ── Sales by channel (wider business, monthly upload + live online) ── */}
           {active === "sales-budget" && (
             <>
-              <SectionBar title="Sales Budget" />
+              <SectionBar title="Sales Team Budget" />
               <SalesBudget
                 brands={brands}
                 salesBudget={salesBudget}
