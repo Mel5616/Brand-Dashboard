@@ -205,23 +205,6 @@ function TargetBar({ revenue, target, pct }: { revenue: number; target: number; 
   );
 }
 
-// One brand's repeat-online line for a show card — "still accumulating" while
-// the 90-day window hasn't closed, since a mid-window show hasn't "failed" to
-// produce repeat buyers yet, it just hasn't had time to.
-function RepeatLine({ r }: { r: RepeatByBrand }) {
-  if (r.showCustomers === 0) return null;
-  return (
-    <div className="flex items-center justify-between gap-2 text-[11px]">
-      <span className="text-gray-400">{r.name} repeat online (90d){r.coveragePct != null && r.coveragePct < 100 ? ` · ${r.coveragePct}% ID'd` : ""}</span>
-      {r.windowComplete ? (
-        <span className="font-semibold text-slate-600 tabular-nums">{r.repeatRatePct}% <span className="text-gray-400 font-normal">({r.repeatCustomers}/{r.showCustomers})</span></span>
-      ) : (
-        <span className="text-gray-300 italic">accumulating{r.windowEndsAt ? ` · final ${dateFmt(r.windowEndsAt)}` : ""}</span>
-      )}
-    </div>
-  );
-}
-
 // $/visitor and $/order across shows in date order — is show cost-efficiency
 // getting better or worse over the season, not just what it was on any one day.
 function CostEfficiencyTrend({ shows }: { shows: Show[] }) {
@@ -310,11 +293,6 @@ function ShowResultCard({ s }: { s: Show }) {
         <RevenueSplitBar revenue={s.revenue} cogs={cogs} expenses={s.expenses} trueProfit={s.trueProfit} />
         {s.margin && s.margin.coveragePct < 100 && (
           <p className="text-[10px] text-gray-400 mt-2">COGS matched on {s.margin.coveragePct}% of sales.</p>
-        )}
-        {s.repeatByBrand.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-gray-50 space-y-1">
-            {s.repeatByBrand.map(r => <RepeatLine key={r.brand_id} r={r} />)}
-          </div>
         )}
         {s.topProducts.length > 0 && (
           <div className="mt-3 pt-3 border-t border-gray-50">

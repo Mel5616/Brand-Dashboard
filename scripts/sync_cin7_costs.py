@@ -150,9 +150,11 @@ def main():
         st, body = sb("POST", "cin7_show_costs?on_conflict=tradeshow_id,sku", json.dumps(all_rows).encode(),
                        extra={"Prefer": "resolution=merge-duplicates"})
         if st not in (200, 201, 204):
-            print(f"✗ upsert failed {st}: {body.decode(errors='replace')[:200]}")
-        else:
-            print(f"{len(all_rows)} rows synced")
+            # Raise rather than just print — a failed write here (e.g. the
+            # table not existing yet) must show up as a failed sync, not a
+            # silent no-op that looks identical to "nothing to sync".
+            raise RuntimeError(f"cin7_show_costs upsert failed {st}: {body.decode(errors='replace')[:300]}")
+        print(f"{len(all_rows)} rows synced")
 
 
 if __name__ == "__main__":
