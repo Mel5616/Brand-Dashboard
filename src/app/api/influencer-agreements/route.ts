@@ -86,8 +86,11 @@ export async function POST(req: Request) {
   if (!canUse(acc)) return NextResponse.json({ ok: false, error: "No access" }, { status: 403 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
 
+  // Nanit's brands.id is 0 — `!brandId` treats that as falsy and wrongly
+  // rejects a valid selection, so check for absence explicitly instead.
   const brandId = Number(b.brand_id);
-  if (!brandId) return NextResponse.json({ ok: false, error: "Brand required" }, { status: 400 });
+  if (b.brand_id === undefined || b.brand_id === null || b.brand_id === "" || Number.isNaN(brandId))
+    return NextResponse.json({ ok: false, error: "Brand required" }, { status: 400 });
   const infl = b.influencer || {};
   if (!String(infl.full_name || "").trim() || !String(infl.email || "").trim())
     return NextResponse.json({ ok: false, error: "Influencer name and email required" }, { status: 400 });
@@ -229,7 +232,10 @@ export async function PATCH(req: Request) {
 
   if (b.action === "update") {
     if (a.status !== "draft") return NextResponse.json({ ok: false, error: "Only a draft can be edited — void it and start again if it's already sent" }, { status: 400 });
-    const brandId = Number(b.brand_id) || a.brand_id;
+    // Same falsy-zero trap as POST above — `|| a.brand_id` would silently
+    // discard a change to Nanit (id 0) and keep the old brand instead.
+    const brandId = (b.brand_id === undefined || b.brand_id === null || b.brand_id === "" || Number.isNaN(Number(b.brand_id)))
+      ? a.brand_id : Number(b.brand_id);
     const infl = b.influencer || {};
     if (!String(infl.full_name || "").trim() || !String(infl.email || "").trim())
       return NextResponse.json({ ok: false, error: "Influencer name and email required" }, { status: 400 });
