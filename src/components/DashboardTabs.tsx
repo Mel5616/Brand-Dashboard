@@ -1245,17 +1245,9 @@ export function DashboardTabs({
                 channelSales={channelSales} tradeshows={tradeshows} tradeshowSales={tradeshowSales} shopifySources={shopifySources} latest={LATEST}
                 annotations={annotations} />
 
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                <SalesForecastSpendChart
-                  monthly={monthly} targets={targets} marketingBudgets={marketingBudgets} marketingActuals={marketingActuals}
-                  googleAds={googleAds} metaAds={metaAds} pinterestAds={pinterestAds}
-                  monthKeys={monthKeys} monthLabels={monthLabels}
-                  title="D2C Sales vs Marketing Spend"
-                  subtitle="D2C Sales & forecast (left axis) · spend & budget (right axis) — own-store Shopify revenue only, not whole-business (see Channel mix above for that)"
-                />
-              </div>
-
-              {/* ── Monthly sales: D2C (Shopify) vs Tradeshows quick split ── */}
+              {/* ── D2C sales/spend chart + Monthly D2C vs Tradeshows split — share
+                   one d2cSeries so the two cards can never show two different
+                   "D2C Sales" numbers for the same month. ── */}
               {(() => {
                 const biz = buildChannels("all", { brands, channelSales, monthly, tradeshows, tradeshowSales, shopifySources, monthKeys, latest: LATEST });
                 if (!biz.length) return null;
@@ -1263,32 +1255,45 @@ export function DashboardTabs({
                 const tradeshowByMonth = new Map(tradeshowMonthly.map(m => [m.monthKey, m.total]));
                 const tradeshowSeries = monthKeys.map(mk => tradeshowByMonth.get(mk) ?? 0);
                 return (
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-                    <h2 className="font-semibold text-gray-800 mb-0.5">Monthly sales — D2C vs Tradeshows</h2>
-                    <p className="text-xs text-gray-400 mb-4">Quick split: D2C = own-store Shopify only · Tradeshows = expo/booth sales</p>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-[13px]">
-                        <thead>
-                          <tr className="text-[10px] uppercase tracking-wider text-gray-400 border-b border-gray-100">
-                            <th className="text-left font-semibold py-2 pr-3">Month</th>
-                            <th className="text-right font-semibold py-2 pr-3">D2C Sales</th>
-                            <th className="text-right font-semibold py-2 pr-3">Tradeshows</th>
-                            <th className="text-right font-semibold py-2">Combined</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
-                          {monthKeys.map((mk, i) => (
-                            <tr key={mk}>
-                              <td className="py-2 pr-3 font-medium text-slate-700 whitespace-nowrap">{monthLabels[i]}</td>
-                              <td className="py-2 pr-3 text-right text-slate-600 tabular-nums">{fmtFull(d2cSeries[i])}</td>
-                              <td className="py-2 pr-3 text-right text-slate-600 tabular-nums">{fmtFull(tradeshowSeries[i])}</td>
-                              <td className="py-2 text-right text-gray-400 tabular-nums">{fmtFull(d2cSeries[i] + tradeshowSeries[i])}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                  <>
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                      <SalesForecastSpendChart
+                        monthly={monthly} targets={targets} marketingBudgets={marketingBudgets} marketingActuals={marketingActuals}
+                        googleAds={googleAds} metaAds={metaAds} pinterestAds={pinterestAds}
+                        monthKeys={monthKeys} monthLabels={monthLabels}
+                        salesOverride={d2cSeries}
+                        title="D2C Sales vs Marketing Spend"
+                        subtitle="D2C Sales & forecast (left axis) · spend & budget (right axis) — own-store Shopify revenue only, not whole-business (see Channel mix above for that)"
+                      />
                     </div>
-                  </div>
+
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                      <h2 className="font-semibold text-gray-800 mb-0.5">Monthly sales — D2C vs Tradeshows</h2>
+                      <p className="text-xs text-gray-400 mb-4">Quick split: D2C = own-store Shopify only · Tradeshows = expo/booth sales</p>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-[13px]">
+                          <thead>
+                            <tr className="text-[10px] uppercase tracking-wider text-gray-400 border-b border-gray-100">
+                              <th className="text-left font-semibold py-2 pr-3">Month</th>
+                              <th className="text-right font-semibold py-2 pr-3">D2C Sales</th>
+                              <th className="text-right font-semibold py-2 pr-3">Tradeshows</th>
+                              <th className="text-right font-semibold py-2">Combined</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-50">
+                            {monthKeys.map((mk, i) => (
+                              <tr key={mk}>
+                                <td className="py-2 pr-3 font-medium text-slate-700 whitespace-nowrap">{monthLabels[i]}</td>
+                                <td className="py-2 pr-3 text-right text-slate-600 tabular-nums">{fmtFull(d2cSeries[i])}</td>
+                                <td className="py-2 pr-3 text-right text-slate-600 tabular-nums">{fmtFull(tradeshowSeries[i])}</td>
+                                <td className="py-2 text-right text-gray-400 tabular-nums">{fmtFull(d2cSeries[i] + tradeshowSeries[i])}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </>
                 );
               })()}
 

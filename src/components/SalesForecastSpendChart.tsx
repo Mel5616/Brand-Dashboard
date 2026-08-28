@@ -26,6 +26,13 @@ interface Props {
   pinterestAds?: { month_key: string; spend: number }[];
   monthKeys: string[];
   monthLabels: string[];
+  // Optional pre-computed Sales series (e.g. the same netted "Website Sales"
+  // channel figure a sibling card is already showing) — when provided, used
+  // in place of the raw sum of `monthly.revenue`, so two cards on the same
+  // page can't show two different "D2C Sales" numbers. Raw monthly.revenue
+  // still includes tradeshow-booth orders rung through the brand's own
+  // Shopify store, which the netted channel figure subtracts out.
+  salesOverride?: number[];
   title?: string;
   subtitle?: string;
   height?: string;
@@ -33,7 +40,7 @@ interface Props {
 
 export function SalesForecastSpendChart({
   monthly, targets = [], marketingBudgets, marketingActuals, googleAds, metaAds, pinterestAds = [],
-  monthKeys, monthLabels, title = "Monthly sales vs marketing spend", subtitle, height = "h-56",
+  monthKeys, monthLabels, salesOverride, title = "Monthly sales vs marketing spend", subtitle, height = "h-56",
 }: Props) {
   const [topups, setTopups] = useState<any[]>([]);
   useEffect(() => { fetch("/api/budget-topups").then(r => r.json()).then(j => setTopups(j.topups ?? [])).catch(() => {}); }, []);
@@ -46,7 +53,7 @@ export function SalesForecastSpendChart({
     return o != null ? o : annual / 12;
   };
 
-  const sales = monthKeys.map(mk => monthly.filter(m => m.month_key === mk).reduce((s, m) => s + m.revenue, 0));
+  const sales = salesOverride ?? monthKeys.map(mk => monthly.filter(m => m.month_key === mk).reduce((s, m) => s + m.revenue, 0));
   const forecast = monthKeys.map(mk => targets.filter(t => t.month_key === mk).reduce((s, t) => s + (Number(t.revenue_target) || 0), 0));
   const spend = monthKeys.map(mk => {
     const g = googleAds.filter(r => r.month_key === mk).reduce((s, r) => s + r.spend, 0);
