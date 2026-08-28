@@ -1254,6 +1254,11 @@ export function DashboardTabs({
                 const d2cSeries = monthKeys.map((_, i) => biz.find((c: any) => c.name === "Website Sales")?.series[i] ?? 0);
                 const tradeshowByMonth = new Map(tradeshowMonthly.map(m => [m.monthKey, m.total]));
                 const tradeshowSeries = monthKeys.map(mk => tradeshowByMonth.get(mk) ?? 0);
+                // Mel's D2C budget/forecast bakes tradeshow sales in as part of
+                // D2C (matches channels.ts's "Direct Sales" grouping: Website
+                // Sales + Tradeshows) — so the Sales line here must too, or it
+                // permanently undershoots the Forecast line it's compared against.
+                const d2cPlusTradeshow = monthKeys.map((_, i) => d2cSeries[i] + tradeshowSeries[i]);
                 return (
                   <>
                     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
@@ -1261,9 +1266,9 @@ export function DashboardTabs({
                         monthly={monthly} targets={targets} marketingBudgets={marketingBudgets} marketingActuals={marketingActuals}
                         googleAds={googleAds} metaAds={metaAds} pinterestAds={pinterestAds}
                         monthKeys={monthKeys} monthLabels={monthLabels}
-                        salesOverride={d2cSeries}
+                        salesOverride={d2cPlusTradeshow}
                         title="D2C Sales vs Marketing Spend"
-                        subtitle="D2C Sales & forecast (left axis) · spend & budget (right axis) — own-store Shopify revenue only, not whole-business (see Channel mix above for that)"
+                        subtitle="D2C Sales (own-store + tradeshows) & forecast (left axis) · spend & budget (right axis) — not whole-business (see Channel mix above for that)"
                       />
                     </div>
 
