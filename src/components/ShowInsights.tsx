@@ -381,36 +381,6 @@ export function ShowInsights() {
         );
       })()}
 
-      {/* ── Repeat online within 90 days ── */}
-      {(() => {
-        const rows = shows.flatMap(s => s.repeatByBrand.map(r => ({ show: s.name, ...r })));
-        const complete = rows.filter(r => r.windowComplete && r.showCustomers > 0);
-        const pending = rows.filter(r => !r.windowComplete && r.showCustomers > 0);
-        if (rows.length === 0) return null;
-        const totalShowCustomers = complete.reduce((s, r) => s + r.showCustomers, 0);
-        const totalRepeat = complete.reduce((s, r) => s + r.repeatCustomers, 0);
-        const totalRepeatRevenue = complete.reduce((s, r) => s + r.repeatRevenue90d, 0);
-        const seasonRate = totalShowCustomers > 0 ? Math.round((totalRepeat / totalShowCustomers) * 100) : null;
-        return (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-            <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-1">Repeat online within 90 days</h2>
-            <p className="text-xs text-gray-400 mb-4">Of the customers identified at a show (own-store + QR — not the walk-up booth till), how many bought again online</p>
-            {complete.length > 0 ? (
-              <div className="grid grid-cols-3 gap-3 mb-1">
-                <StatTile label="Repeat rate" value={seasonRate != null ? `${seasonRate}%` : "n/a"} color="text-violet-700" />
-                <StatTile label="Repeat customers" value={`${totalRepeat.toLocaleString()} of ${totalShowCustomers.toLocaleString()}`} />
-                <StatTile label="Repeat revenue" value={fmtFull(totalRepeatRevenue)} color="text-emerald-600" />
-              </div>
-            ) : (
-              <p className="text-sm text-gray-400">No show&apos;s 90-day window has closed yet this FY.</p>
-            )}
-            {pending.length > 0 && (
-              <p className="text-[11px] text-gray-400 mt-3">Still accumulating: {pending.map(r => `${r.show} (${r.name})`).join(", ")}</p>
-            )}
-          </div>
-        );
-      })()}
-
       {/* ── Sales by month, by brand ── */}
       {salesByMonth.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">

@@ -70,14 +70,6 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: python3 -u scripts/sync_tradeshow_breakdown.py
 
-      - name: Run tradeshow repeat-purchase tracking
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python3 -u scripts/sync_tradeshow_repeat.py
-
       - name: Run Cin7 show costs (real dispatched-order COGS)
         if: ${{ always() }}
         env:
