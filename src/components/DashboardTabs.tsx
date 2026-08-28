@@ -1286,7 +1286,7 @@ export function DashboardTabs({
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-gray-50">
-                            {monthKeys.map((mk, i) => (
+                            {monthKeys.map((mk, i) => (d2cSeries[i] > 0 || tradeshowSeries[i] > 0) && (
                               <tr key={mk}>
                                 <td className="py-2 pr-3 font-medium text-slate-700 whitespace-nowrap">{monthLabels[i]}</td>
                                 <td className="py-2 pr-3 text-right text-slate-600 tabular-nums">{fmtFull(d2cSeries[i])}</td>
