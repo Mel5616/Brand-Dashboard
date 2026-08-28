@@ -151,6 +151,13 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
     monthly.filter(m => m.month_key === mk).reduce((s, m) => s + m.revenue, 0)
   );
 
+  // Monthly forecasted sales (all brands) — the revenue_target set per brand
+  // per month, summed to a single portfolio-wide forecast line so it's
+  // directly comparable to actual Sales above.
+  const monthlyForecast = MONTH_KEYS.map(mk =>
+    targets.filter(t => t.month_key === mk).reduce((s, t) => s + (Number(t.revenue_target) || 0), 0)
+  );
+
   // ── Portfolio visual series ─────────────────────────────────────────────────
   const chanColor = (ch: string, i: number) => CHANNEL_COLORS[ch] ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length];
   const monthlyBudgetTotals = MONTH_KEYS.map(mk => marketingBudgets.reduce((s, b) => s + monthBudgetVal(b.brand_id, b.channel, mk, b.annual_budget), 0));
@@ -207,6 +214,18 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
         pointRadius: 3,
         pointBackgroundColor: "#2dc8a5",
         borderWidth: 2,
+        yAxisID: "yRev",
+      },
+      {
+        label: "Forecast",
+        data: monthlyForecast,
+        borderColor: "#94a3b8",
+        backgroundColor: "transparent",
+        borderDash: [3, 3],
+        tension: 0.4,
+        pointRadius: 2,
+        pointBackgroundColor: "#94a3b8",
+        borderWidth: 1.5,
         yAxisID: "yRev",
       },
       {
@@ -380,7 +399,7 @@ export function MarketingBudgetTab({ brands, marketingBudgets: allBudgets, marke
       <div className="grid grid-cols-5 gap-6 print-stack">
         <div className="col-span-3 bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
           <h2 className="font-semibold text-gray-800 mb-0.5">Monthly sales vs marketing spend</h2>
-          <p className="text-xs text-gray-400 mb-4">Sales (solid, left axis) · spend (dashed, right axis)</p>
+          <p className="text-xs text-gray-400 mb-4">Sales & forecast (solid/dotted, left axis) · spend (dashed, right axis) — forecast is revenue_target summed across every brand</p>
           <div className="h-56">
             <Line data={lineData} options={lineOpts} />
           </div>
