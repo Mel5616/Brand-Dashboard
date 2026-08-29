@@ -192,7 +192,7 @@ async function computeShow(
   const results = await Promise.all(brandIds.filter(id => id !== 9).map(async (id) => {
     const st = storeById.get(id);
     const name = st?.name ?? `Brand ${id}`;
-    let posRev = 0, posOrders = 0, webRev = 0, webOrders = 0;
+    let posRev = 0, posOrders = 0, webRev = 0, webOrders = 0, qrRev = 0, qrOrders = 0;
     if (st) {
       const liPart = detail ? "lineItems(first: 50) { edges { node { title sku quantity originalTotalSet { shopMoney { amount } } } } }" : "";
       const brandEdges = await shopifyOrders(st.domain, st.token,
@@ -201,10 +201,31 @@ async function computeShow(
       for (const e of brandEdges) {
         const n = e.node;
         const rev = exGst(Number(n.totalPriceSet?.shopMoney?.amount ?? 0), Number(n.totalTaxSet?.shopMoney?.amount ?? 0));
-        if ((n.sourceName || "").toLowerCase() === "pos") {
+        const src = (n.sourceName || "").toLowerCase();
+        if (src === "pos") {
           if (past(n.createdAt) || offShow(n.createdAt)) continue;
           posRev += rev; posOrders += 1;
           recent.push({ at: n.createdAt, label: name, brand_id: id, amount: round(rev), kind: "stand" });
+          addBrandHour(id, n.createdAt, rev);
+          if (detail) {
+            bucket(n.createdAt, rev);
+            addDayBooth(n.createdAt, rev, 1);
+            for (const li of n.lineItems?.edges ?? []) {
+              const it = li.node;
+              const amt = Math.round((Number(it.originalTotalSet?.shopMoney?.amount ?? 0) / 1.1) * 100) / 100;
+              addProduct(it.sku, it.title || "Unknown", id, amt, Number(it.quantity ?? 1), n.createdAt);
+            }
+          }
+        }
+        // QR order-form channel — a real, paid Shopify order (not the separate
+        // booth_events scan log, which tracks cart/checkout-attempt values
+        // that aren't guaranteed to match what was actually paid, and would
+        // double-count revenue already counted here). Same QR_SOURCE_PREFIX
+        // convention as scripts/sync_tradeshow_breakdown.py.
+        else if (src.startsWith("channel:")) {
+          if (past(n.createdAt) || offShow(n.createdAt)) continue;
+          qrRev += rev; qrOrders += 1;
+          recent.push({ at: n.createdAt, label: name + " · QR", brand_id: id, amount: round(rev), kind: "qr" });
           addBrandHour(id, n.createdAt, rev);
           if (detail) {
             bucket(n.createdAt, rev);
@@ -231,30 +252,27 @@ async function computeShow(
     const booth = ckByBrand.get(id) ?? { rev: 0, orders: 0 };
     return {
       brand_id: id, name,
-      boothRevenue: round(posRev + booth.rev), boothOrders: posOrders + booth.orders,
+      // Expo stand = POS + Coolkidz till + QR (real Shopify channel: orders,
+      // not the booth_events scan log — see the QR branch above for why).
+      boothRevenue: round(posRev + booth.rev + qrRev), boothOrders: posOrders + booth.orders + qrOrders,
       onlineRevenue: round(webRev), onlineOrders: webOrders,
     };
   }));
 
   const rows = [...results];
 
-  // QR-scanned booth orders + scan count (separate booth_events Supabase) within the window
+  // Scan count only (funnel telemetry, e.g. "43 scans · 47% → sale") — QR
+  // REVENUE now comes from real Shopify orders above, not booth_events,
+  // which logs cart/checkout-attempt values that aren't guaranteed to match
+  // what was actually paid and would double-count revenue already counted
+  // via the channel: order branch above.
   let scans = 0;
   if (boothCreds.url && boothCreds.key) {
     try {
-      const [qr, scanRows] = await Promise.all([
-        fetch(`${boothCreds.url}/rest/v1/booth_events?event_type=eq.order&created_at=gte.${since}T00:00:00Z&created_at=lte.${until}T23:59:59Z&select=value,created_at`,
-          { headers: { apikey: boothCreds.key, Authorization: `Bearer ${boothCreds.key}` }, cache: "no-store" }).then(r => r.json()),
-        fetch(`${boothCreds.url}/rest/v1/booth_events?event_type=eq.scan&created_at=gte.${since}T00:00:00Z&created_at=lte.${until}T23:59:59Z&select=created_at`,
-          { headers: { apikey: boothCreds.key, Authorization: `Bearer ${boothCreds.key}` }, cache: "no-store" }).then(r => r.json()),
-      ]);
-      const qrRows = (qr || []).filter((e: any) => !past(e.created_at) && !offShow(e.created_at));
+      const scanRows = await fetch(`${boothCreds.url}/rest/v1/booth_events?event_type=eq.scan&created_at=gte.${since}T00:00:00Z&created_at=lte.${until}T23:59:59Z&select=created_at`,
+        { headers: { apikey: boothCreds.key, Authorization: `Bearer ${boothCreds.key}` }, cache: "no-store" }).then(r => r.json());
       scans = ((scanRows || []) as any[]).filter((e: any) => !past(e.created_at) && !offShow(e.created_at)).length;
-      const qrRev = qrRows.reduce((s: number, e: any) => s + Number(e.value ?? 0), 0);
-      for (const e of qrRows) { recent.push({ at: e.created_at, label: "QR expo stand", brand_id: -1, amount: round(Number(e.value ?? 0)), kind: "qr" }); addBrandHour(-1, e.created_at, Number(e.value ?? 0)); }
-      if (detail) for (const e of qrRows) { bucket(e.created_at, Number(e.value ?? 0)); addDayBooth(e.created_at, Number(e.value ?? 0), 1); }
-      if (qrRev > 0) rows.push({ brand_id: -1, name: "QR Expo Stand (scanned)", boothRevenue: round(qrRev), boothOrders: qrRows.length, onlineRevenue: 0, onlineOrders: 0 });
-    } catch { /* booth project unavailable — skip QR */ }
+    } catch { /* booth project unavailable — skip scan count */ }
   }
 
   rows.sort((a, b) => (b.boothRevenue + b.onlineRevenue) - (a.boothRevenue + a.onlineRevenue));
