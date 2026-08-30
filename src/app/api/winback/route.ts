@@ -84,7 +84,17 @@ async function findCandidates(cred: { domain: string; clientId: string; clientSe
 export async function GET(req: Request) {
   const acc = await getAccess();
   if (acc.role !== "admin") return NextResponse.json({ ok: false, error: "Admins only" }, { status: 403 });
-  const brandId = Number(new URL(req.url).searchParams.get("brand_id") || 5);
+  const url = new URL(req.url);
+  const brandId = Number(url.searchParams.get("brand_id") || 5);
+
+  if (url.searchParams.get("history") === "1") {
+    if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
+    const res = await rest(`winback_sends?brand_id=eq.${brandId}&select=id,email,name,cart_value,discount_code,status,redeemed,redeemed_at,order_value,created_at,sent_at,expires_at&order=created_at.desc&limit=200`);
+    const text = await res.text();
+    if (!res.ok) return NextResponse.json({ ok: true, needsSetup: /PGRST205|does not exist/i.test(text), history: [] });
+    return NextResponse.json({ ok: true, history: JSON.parse(text || "[]") });
+  }
+
   const cred = storeCreds().find(s => s.id === brandId);
   if (!cred) return NextResponse.json({ ok: false, error: "Store not configured" }, { status: 400 });
   try {
@@ -184,6 +194,30 @@ export async function POST(req: Request) {
     } catch (e: any) {
       return NextResponse.json({ ok: false, error: e.message || "Couldn't build Klaviyo audience" }, { status: 502 });
     }
+  }
+
+  if (b.action === "check-redemptions") {
+    const res = await rest(`winback_sends?brand_id=eq.${brandId}&redeemed=eq.false&discount_code=not.is.null&status=in.(code_created,sent)&select=id,discount_code`);
+    const rows: { id: string; discount_code: string }[] = await res.json().catch(() => []);
+    if (!rows.length) return NextResponse.json({ ok: true, checked: 0, redeemed: 0 });
+    const token = await mintToken(cred);
+    if (!token) return NextResponse.json({ ok: false, error: "Couldn't authenticate with Shopify" }, { status: 502 });
+    let redeemedCount = 0;
+    for (const row of rows) {
+      const query = `query { orders(first: 1, query: "discount_code:${row.discount_code}") { edges { node { id name createdAt currentTotalPriceSet { shopMoney { amount } } } } } }`;
+      const res2 = await fetch(`https://${cred.domain}/admin/api/${API}/graphql.json`, {
+        method: "POST", headers: { "Content-Type": "application/json", "X-Shopify-Access-Token": token },
+        body: JSON.stringify({ query }), cache: "no-store",
+      }).then(r => r.json()).catch(() => null);
+      const order = res2?.data?.orders?.edges?.[0]?.node;
+      if (!order) continue;
+      await rest(`winback_sends?id=eq.${encodeURIComponent(row.id)}`, {
+        method: "PATCH", headers: h({ Prefer: "return=minimal" }),
+        body: JSON.stringify({ redeemed: true, redeemed_at: order.createdAt, order_id: order.id, order_value: Number(order.currentTotalPriceSet?.shopMoney?.amount || 0) }),
+      });
+      redeemedCount++;
+    }
+    return NextResponse.json({ ok: true, checked: rows.length, redeemed: redeemedCount });
   }
 
   if (b.action === "mark-sent") {

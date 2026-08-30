@@ -7,6 +7,7 @@ import { KlaviyoSendPanel } from "./KlaviyoSend";
 type Candidate = { email: string; name: string; phone: string; value: number; items: number; created_at: string; checkout_url: string | null };
 type Offer = { discountAmount: number; minSpend: number; expiryDays: number };
 type CodeResult = Candidate & { ok: boolean; code?: string; error?: string; expiresAt?: string };
+type HistoryRow = { id: string; email: string; name: string | null; cart_value: number; discount_code: string | null; status: string; redeemed: boolean; redeemed_at: string | null; order_value: number | null; created_at: string; sent_at: string | null; expires_at: string | null };
 
 // Self-contained, table-based HTML email (inline styles only) so it survives
 // Klaviyo's editor and renders identically everywhere. {{ person.winback_code }}
@@ -76,6 +77,10 @@ export function WinbackPanel({ brandId = 5 }: { brandId?: number }) {
   const [listId, setListId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [history, setHistory] = useState<HistoryRow[] | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [checking, setChecking] = useState(false);
 
   async function find() {
     setLoading(true); setErr(""); setCandidates(null); setCodeResults(null); setListId(null);
@@ -83,6 +88,24 @@ export function WinbackPanel({ brandId = 5 }: { brandId?: number }) {
     setLoading(false);
     if (d?.ok) { setCandidates(d.candidates); setOffer(d.offer); setSelected(new Set(d.candidates.map((c: Candidate) => c.email))); }
     else setErr(d?.error || "Couldn't load abandoned checkouts.");
+  }
+
+  async function loadHistory() {
+    setHistoryLoading(true);
+    const d = await fetch(`/api/winback?brand_id=${brandId}&history=1`).then(r => r.json()).catch(() => null);
+    setHistoryLoading(false);
+    if (d?.ok) setHistory(d.history);
+  }
+
+  async function checkRedemptions() {
+    setChecking(true); setErr("");
+    const d = await fetch("/api/winback", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "check-redemptions", brand_id: brandId }),
+    }).then(r => r.json()).catch(() => null);
+    setChecking(false);
+    if (d?.ok) loadHistory();
+    else setErr(d?.error || "Couldn't check redemptions.");
   }
 
   function toggle(email: string) {
@@ -208,6 +231,71 @@ export function WinbackPanel({ brandId = 5 }: { brandId?: number }) {
               )}
             </>
           )}
+
+          <div className="border-t border-gray-100 pt-4">
+            <button onClick={() => { setHistoryOpen(o => !o); if (!historyOpen && !history) loadHistory(); }} className="w-full flex items-center justify-between text-left">
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">History &amp; redemptions</h3>
+              <span className="text-gray-300 text-xs">{historyOpen ? "▴" : "▾"}</span>
+            </button>
+
+            {historyOpen && (
+              <div className="mt-3 space-y-3">
+                {historyLoading && <p className="text-sm text-gray-400">Loading history…</p>}
+                {!historyLoading && history && history.length === 0 && <p className="text-sm text-gray-400">No codes generated yet.</p>}
+
+                {history && history.length > 0 && (() => {
+                  const eligible = history.filter(r => r.status !== "draft");
+                  const redeemed = eligible.filter(r => r.redeemed);
+                  const recovered = redeemed.reduce((s, r) => s + (r.order_value || 0), 0);
+                  return (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-gray-400 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
+                          <strong className="text-slate-600">{redeemed.length} of {eligible.length}</strong> redeemed
+                          {redeemed.length > 0 && <> — <strong className="text-emerald-600">{fmtFull(recovered)}</strong> recovered</>}
+                        </p>
+                        <button onClick={checkRedemptions} disabled={checking} className="text-sm font-semibold text-slate-600 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg px-4 py-2 disabled:opacity-40">
+                          {checking ? "Checking…" : "Check redemptions"}
+                        </button>
+                      </div>
+                      <div className="overflow-x-auto max-h-80 overflow-y-auto border border-gray-100 rounded-lg">
+                        <table className="w-full text-[13px]">
+                          <thead className="sticky top-0 bg-white">
+                            <tr className="text-[10px] uppercase tracking-wider text-gray-400 border-b border-gray-100">
+                              <th className="text-left font-semibold py-2 pl-3 pr-3">Name</th>
+                              <th className="text-left font-semibold py-2 pr-3">Email</th>
+                              <th className="text-left font-semibold py-2 pr-3">Code</th>
+                              <th className="text-right font-semibold py-2 pr-3">Cart value</th>
+                              <th className="text-left font-semibold py-2 pr-3">Status</th>
+                              <th className="text-right font-semibold py-2 pr-3">Redeemed</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-50">
+                            {history.map(r => (
+                              <tr key={r.id}>
+                                <td className="py-2 pl-3 pr-3 font-medium text-slate-700 whitespace-nowrap">{r.name || "—"}</td>
+                                <td className="py-2 pr-3 text-slate-500 whitespace-nowrap">{r.email}</td>
+                                <td className="py-2 pr-3 font-mono text-[12px] text-slate-700">{r.discount_code || "—"}</td>
+                                <td className="py-2 pr-3 text-right text-slate-600 tabular-nums">{fmtFull(r.cart_value)}</td>
+                                <td className="py-2 pr-3 whitespace-nowrap">
+                                  <span className={`text-[10.5px] font-bold rounded-full px-2 py-0.5 ${r.status === "sent" ? "bg-sky-50 text-sky-600" : r.status === "code_created" ? "bg-amber-50 text-amber-600" : "bg-gray-100 text-gray-400"}`}>{r.status}</span>
+                                </td>
+                                <td className="py-2 pr-3 text-right whitespace-nowrap">
+                                  {r.redeemed
+                                    ? <span className="text-[10.5px] font-bold text-emerald-600 bg-emerald-50 rounded-full px-2 py-0.5">✓ {fmtFull(r.order_value || 0)}</span>
+                                    : <span className="text-[10.5px] font-medium text-gray-300">—</span>}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
