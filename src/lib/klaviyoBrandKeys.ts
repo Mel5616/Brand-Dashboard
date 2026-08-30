@@ -17,3 +17,15 @@ export function klaviyoKeyForBrand(brandId?: number | null): string | undefined 
   }
   return process.env.KLAVIYO_API_KEY;
 }
+
+// Sends from a brand's own dedicated Klaviyo account need a matching "from"
+// identity — sending "Coolkidz Australia" out of UPPAbaby's account reads as
+// wrong to the recipient even though it'd technically deliver.
+const SENDERS: Record<number, { fromEmail: string; fromLabel: string }> = {
+  5: { fromEmail: "support@uppababy.com.au", fromLabel: "UPPAbaby Australia" },
+};
+
+export function klaviyoSenderForBrand(brandId?: number | null): { fromEmail: string; fromLabel: string } {
+  if (brandId != null && SENDERS[brandId]) return SENDERS[brandId];
+  return { fromEmail: "hello@coolkidz.com.au", fromLabel: "Coolkidz Australia" };
+}

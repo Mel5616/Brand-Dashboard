@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
 import { createDraftCampaign, scheduleSend, cancelCampaign, campaignStats, sendTestToSelf } from "@/lib/klaviyo";
-import { klaviyoKeyForBrand } from "@/lib/klaviyoBrandKeys";
+import { klaviyoKeyForBrand, klaviyoSenderForBrand } from "@/lib/klaviyoBrandKeys";
 
 // Tracks + drives Klaviyo sends pushed from the dashboard (currently the OOS
 // Report). POST action="create" only ever creates a Draft in Klaviyo — never
@@ -44,13 +44,14 @@ export async function POST(req: Request) {
   const brandId: number | undefined = b.brandId != null ? Number(b.brandId) : undefined;
   const apiKey = klaviyoKeyForBrand(brandId);
   if (!apiKey) return NextResponse.json({ ok: false, error: "KLAVIYO_API_KEY not configured" }, { status: 500 });
+  const { fromEmail, fromLabel } = klaviyoSenderForBrand(brandId);
 
   if (b.action === "test") {
     const { subject, html } = b;
     if (!subject || !html) return NextResponse.json({ ok: false, error: "Missing subject or html" }, { status: 400 });
     if (!access.user?.email) return NextResponse.json({ ok: false, error: "No email on your account" }, { status: 400 });
     try {
-      await sendTestToSelf({ subject, fromEmail: "hello@coolkidz.com.au", fromLabel: "Coolkidz Australia", html, testEmail: access.user.email }, apiKey);
+      await sendTestToSelf({ subject, fromEmail, fromLabel, html, testEmail: access.user.email }, apiKey);
       return NextResponse.json({ ok: true, sentTo: access.user.email });
     } catch (e: any) {
       return NextResponse.json({ ok: false, error: e.message || "Klaviyo request failed" }, { status: 502 });
@@ -64,7 +65,7 @@ export async function POST(req: Request) {
     try {
       const { campaignId } = await createDraftCampaign({
         name: `${subject} — ${new Date().toLocaleDateString("en-AU")}`,
-        included: includedIds, excluded, subject, fromEmail: "hello@coolkidz.com.au", fromLabel: "Coolkidz Australia", html,
+        included: includedIds, excluded, subject, fromEmail, fromLabel, html,
       }, apiKey);
       const row = { campaign_id: campaignId, subject, list_id: includedIds[0], list_name: audienceName ?? listName ?? null, html, status: "draft", created_by: access.user?.email ?? null, brand_id: brandId ?? null };
       const ins = await rest("klaviyo_sends", { method: "POST", headers: h({ Prefer: "return=representation" }), body: JSON.stringify(row) });
