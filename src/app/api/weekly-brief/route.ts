@@ -101,7 +101,11 @@ async function buildSnapshot() {
   const showSales = await sb("tradeshow_sales?select=tradeshow_id,brand_id,revenue");
   const kvCampaigns = await sb(`klaviyo_campaigns?select=brand_id,name,sent_at,recipients,open_rate,click_rate,revenue&sent_at=gte.${wkAgo}&order=sent_at.desc`);
   const nameById = new Map<number, string>(brands.map((b: any) => [b.id, b.name]));
-  const today = new Date(); const todayStr = iso(today);
+  // Melbourne local date, not server UTC — a show whose date_end falls on
+  // "today" in UTC but is already yesterday in Melbourne (or vice versa) was
+  // falling through both the "upcoming" and "wrapped" tradeshow filters below
+  // and silently disappearing from the brief for a day.
+  const today = new Date(); const todayStr = melDate(today.toISOString());
 
   // ── D2C results: the most recently COMPLETED week, compared to the week before.
   // Coolkidz weeks run Sunday → Saturday, so this is last week's finished numbers
