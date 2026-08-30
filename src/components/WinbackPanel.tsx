@@ -64,7 +64,7 @@ function buildWinbackHtml(offer: Offer) {
       </td></tr>
 
       <tr><td style="padding:24px 32px 32px;border-top:1px solid #eef1f5;text-align:center;">
-        <p style="margin:0 0 14px;font:11.5px Arial,Helvetica,sans-serif;color:#475569;"><a href="{% unsubscribe_link %}" style="color:#475569;text-decoration:underline;font-weight:bold;">Unsubscribe</a> or <a href="{% manage_preferences_url %}" style="color:#475569;text-decoration:underline;font-weight:bold;">Manage Preferences here</a></p>
+        <p style="margin:0 0 14px;font:11.5px Arial,Helvetica,sans-serif;color:#475569;"><a href="{% unsubscribe_link %}" style="color:#475569;text-decoration:underline;font-weight:bold;">Unsubscribe</a></p>
         <p style="margin:0;font:11px Arial,Helvetica,sans-serif;color:#94a3b8;line-height:1.6;">Copyright © Coolkidz Australia Pty Ltd,<br/>1 Beyer Road, Braeside, Victoria 3195, Australia.</p>
       </td></tr>
 
