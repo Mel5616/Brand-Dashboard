@@ -22,7 +22,10 @@ export function klaviyoKeyForBrand(brandId?: number | null): string | undefined 
 // identity — sending "Coolkidz Australia" out of UPPAbaby's account reads as
 // wrong to the recipient even though it'd technically deliver.
 const SENDERS: Record<number, { fromEmail: string; fromLabel: string }> = {
-  5: { fromEmail: "support@uppababy.com.au", fromLabel: "UPPAbaby Australia" },
+  // email.uppababy.com.au is the verified marketing-sending domain on
+  // UPPAbaby's Klaviyo account — the bare uppababy.com.au isn't authenticated
+  // there, so sending from it would silently fail deliverability.
+  5: { fromEmail: "support@email.uppababy.com.au", fromLabel: "UPPAbaby Australia" },
 };
 
 export function klaviyoSenderForBrand(brandId?: number | null): { fromEmail: string; fromLabel: string } {
