@@ -129,6 +129,18 @@ export function SalesTargetTracker({ brands, monthly, targets, monthKeys, monthL
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <h3 className="text-sm font-semibold text-slate-700">By Brand · % to Target</h3>
           <p className="text-xs text-gray-400 mb-4">Actual sales against {fyLabel} target</p>
+          <div className="mb-3 pb-3 border-b border-gray-100">
+            <div className="flex items-center justify-between text-xs mb-1">
+              <span className="font-semibold text-slate-800">Total D2C</span>
+              <span className="text-gray-400">
+                <span className="font-bold text-slate-800">{fmt(totalActual)}</span> / {fmt(totalTarget)}
+                <span className={`ml-1.5 font-bold ${pct >= 100 ? "text-emerald-500" : pct >= 60 ? "text-amber-500" : "text-slate-400"}`}>{pct.toFixed(0)}%</span>
+              </span>
+            </div>
+            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full rounded-full transition-all" style={{ width: `${Math.min(pct, 100)}%`, background: pct >= 100 ? "#10b981" : "#334155" }} />
+            </div>
+          </div>
           <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
             {rows.map(r => (
               <div key={r.brand.id}>
