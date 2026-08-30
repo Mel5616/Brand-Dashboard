@@ -146,6 +146,16 @@ export async function buildAdhocList(name: string, recipients: { email: string; 
 // them to the list in the same call — the step buildAdhocList's plain
 // list-relationship add was missing, which is why sends to freshly-created
 // profiles were getting silently skipped by Klaviyo (no consent on file).
+//
+// The subscription job is async (202, no body/job-id to poll) and Klaviyo's
+// list-membership index lags behind the write by a variable, sometimes
+// large amount (seen anywhere from ~10s to ~60s+ in testing) — a campaign
+// created/sent too soon can snapshot an empty audience and get cancelled
+// even though the subscription succeeded. That variance makes polling here
+// unreliable within a serverless route's timeout, so this call returns as
+// soon as the job is accepted; callers that build a campaign from this
+// list right after should hold off sending for ~60s to give it real time
+// to propagate (see WinbackPanel's audience-build cooldown).
 export async function subscribeToList(listId: string, profiles: { id: string; email: string }[], apiKey?: string): Promise<void> {
   await call("/profile-subscription-bulk-create-jobs/", {
     method: "POST",

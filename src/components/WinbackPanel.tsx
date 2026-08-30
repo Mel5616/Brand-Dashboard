@@ -76,6 +76,7 @@ export function WinbackPanel({ brandId = 5 }: { brandId?: number }) {
   const [codeResults, setCodeResults] = useState<CodeResult[] | null>(null);
   const [consentExcluded, setConsentExcluded] = useState(0);
   const [listId, setListId] = useState<string | null>(null);
+  const [audienceReadyAt, setAudienceReadyAt] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -131,7 +132,7 @@ export function WinbackPanel({ brandId = 5 }: { brandId?: number }) {
       body: JSON.stringify({ action: "build-audience", brand_id: brandId, customers: ok.map((r: CodeResult) => ({ email: r.email, name: r.name, code: r.code })) }),
     }).then(r => r.json()).catch(() => null);
     setBusy(false);
-    if (aud?.ok) setListId(aud.listId);
+    if (aud?.ok) { setListId(aud.listId); setAudienceReadyAt(Date.now() + 60000); }
     else setErr(aud?.error || "Codes created, but couldn't build the Klaviyo audience.");
   }
 
@@ -229,6 +230,7 @@ export function WinbackPanel({ brandId = 5 }: { brandId?: number }) {
                   defaultSubject="You left something in your cart 👀"
                   fixedAudience={{ name: "Win-back batch", included: [{ id: listId, name: `Win-back — ${new Date().toLocaleDateString("en-AU")}` }] }}
                   brandId={brandId}
+                  notBefore={audienceReadyAt ?? undefined}
                 />
               )}
             </>

@@ -12,8 +12,12 @@ type FixedAudience = { name: string; included: { id: string; name: string }[]; e
 // step actually schedules/sends it, with a confirm dialog either way since
 // that step queues a real email to a real list. Pass `fixedAudience` when the
 // report always goes to the same saved audience (skips the list picker);
-// omit it to let the user pick any single Klaviyo list.
-export function KlaviyoSendPanel({ getHtml, defaultSubject, fixedAudience, brandId }: { getHtml: () => string; defaultSubject: string; fixedAudience?: FixedAudience; brandId?: number }) {
+// omit it to let the user pick any single Klaviyo list. Pass `notBefore`
+// (epoch ms) when the audience was just built from scratch (e.g. a fresh
+// ad-hoc list of newly-subscribed profiles) — Klaviyo's list-membership
+// index can lag the subscription write by up to ~60s, and a send fired
+// before it catches up gets silently cancelled with no recipients.
+export function KlaviyoSendPanel({ getHtml, defaultSubject, fixedAudience, brandId, notBefore }: { getHtml: () => string; defaultSubject: string; fixedAudience?: FixedAudience; brandId?: number; notBefore?: number }) {
   const [open, setOpen] = useState(false);
   const [lists, setLists] = useState<List[] | null>(null);
   const [sends, setSends] = useState<Send[]>([]);
@@ -26,6 +30,15 @@ export function KlaviyoSendPanel({ getHtml, defaultSubject, fixedAudience, brand
   const [draft, setDraft] = useState<Send | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [testStatus, setTestStatus] = useState<"idle" | "sending" | "sent">("idle");
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!notBefore || now >= notBefore) return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [notBefore, now]);
+  const cooling = !!notBefore && now < notBefore;
+  const coolingSecs = cooling ? Math.ceil((notBefore! - now) / 1000) : 0;
 
   const load = () => {
     fetch("/api/klaviyo/sends").then(r => r.json()).then(d => { if (d.ok) { setSends(d.sends ?? []); setNeedsSetup(!!d.needsSetup); } });
@@ -94,6 +107,11 @@ export function KlaviyoSendPanel({ getHtml, defaultSubject, fixedAudience, brand
       {open && (
         <div className="mt-4 space-y-4">
           {err && <p className="text-sm text-rose-500">{err}</p>}
+          {cooling && (
+            <p className="text-sm text-amber-600 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+              Finalizing this audience in Klaviyo — sending is disabled for {coolingSecs}s so everyone&apos;s subscription registers first.
+            </p>
+          )}
 
           {fixedAudience && (
             <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
@@ -121,7 +139,7 @@ export function KlaviyoSendPanel({ getHtml, defaultSubject, fixedAudience, brand
                 </div>
               )}
               <button onClick={() => setPreviewOpen(true)} className="text-sm font-semibold text-slate-600 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg px-4 py-2">Preview</button>
-              <button onClick={sendTest} disabled={testStatus === "sending"} className="text-sm font-semibold text-slate-600 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg px-4 py-2 disabled:opacity-40">
+              <button onClick={sendTest} disabled={testStatus === "sending" || cooling} className="text-sm font-semibold text-slate-600 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg px-4 py-2 disabled:opacity-40">
                 {testStatus === "sending" ? "Sending test…" : testStatus === "sent" ? "✓ Test sent" : "Send test to my email"}
               </button>
               <button onClick={createDraft} disabled={busy || (!fixedAudience && !listId)} className="text-sm font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-4 py-2 disabled:opacity-40">
@@ -136,7 +154,7 @@ export function KlaviyoSendPanel({ getHtml, defaultSubject, fixedAudience, brand
                   <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Schedule for (optional)</label>
                   <input type="datetime-local" value={scheduleAt} onChange={e => setScheduleAt(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-300" />
                 </div>
-                <button onClick={send} disabled={busy} className="text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg px-4 py-2 disabled:opacity-40">
+                <button onClick={send} disabled={busy || cooling} className="text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg px-4 py-2 disabled:opacity-40">
                   {busy ? "Working…" : scheduleAt ? "Schedule send" : "Send now"}
                 </button>
                 <button onClick={cancelDraft} disabled={busy} className="text-sm font-semibold text-gray-500 hover:text-rose-600 rounded-lg px-3 py-2">Discard draft</button>
