@@ -247,16 +247,6 @@ export function WinbackPanel({ brandId = 5 }: { brandId?: number }) {
             </>
           )}
 
-          {listId && (
-            <KlaviyoSendPanel
-              getHtml={() => buildWinbackHtml(offer ?? DEFAULT_OFFER)}
-              defaultSubject="You left something in your cart 👀"
-              fixedAudience={{ name: "Win-back batch", included: [{ id: listId, name: `Win-back — ${new Date().toLocaleDateString("en-AU")}` }] }}
-              brandId={brandId}
-              notBefore={audienceReadyAt ?? undefined}
-            />
-          )}
-
           <div className="border-t border-gray-100 pt-4">
             <button onClick={() => { setHistoryOpen(o => !o); if (!historyOpen && !history) loadHistory(); }} className="w-full flex items-center justify-between text-left">
               <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">History &amp; redemptions</h3>
@@ -332,6 +322,16 @@ export function WinbackPanel({ brandId = 5 }: { brandId?: number }) {
               </div>
             )}
           </div>
+
+          {listId && (
+            <KlaviyoSendPanel
+              getHtml={() => buildWinbackHtml(offer ?? DEFAULT_OFFER)}
+              defaultSubject="You left something in your cart 👀"
+              fixedAudience={{ name: "Win-back batch", included: [{ id: listId, name: `Win-back — ${new Date().toLocaleDateString("en-AU")}` }] }}
+              brandId={brandId}
+              notBefore={audienceReadyAt ?? undefined}
+            />
+          )}
         </div>
       )}
     </div>
