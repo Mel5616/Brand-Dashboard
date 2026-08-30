@@ -9,6 +9,12 @@ type Offer = { discountAmount: number; minSpend: number; expiryDays: number };
 type CodeResult = Candidate & { ok: boolean; code?: string; error?: string; expiresAt?: string };
 type HistoryRow = { id: string; email: string; name: string | null; cart_value: number; discount_code: string | null; status: string; redeemed: boolean; redeemed_at: string | null; order_value: number | null; created_at: string; sent_at: string | null; expires_at: string | null };
 
+// Mirrors the constants in /api/winback/route.ts — used only as a display
+// fallback when the send panel is built from History (codes generated
+// earlier) rather than a fresh find(), which is the only path that returns
+// a live `offer` object from the API.
+const DEFAULT_OFFER: Offer = { discountAmount: 100, minSpend: 899, expiryDays: 7 };
+
 // Self-contained, table-based HTML email (inline styles only) so it survives
 // Klaviyo's editor and renders identically everywhere. {{ person.winback_code }}
 // / {{ person.winback_expires }} are real Klaviyo Liquid tags — each
@@ -97,6 +103,20 @@ export function WinbackPanel({ brandId = 5 }: { brandId?: number }) {
     const d = await fetch(`/api/winback?brand_id=${brandId}&history=1`).then(r => r.json()).catch(() => null);
     setHistoryLoading(false);
     if (d?.ok) setHistory(d.history);
+  }
+
+  async function sendPending() {
+    if (!history) return;
+    const pending = history.filter(r => r.status === "code_created" && r.discount_code);
+    if (!pending.length) { setErr("No pending codes to send."); return; }
+    setBusy(true); setErr("");
+    const aud = await fetch("/api/winback", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "build-audience", brand_id: brandId, customers: pending.map(r => ({ email: r.email, name: r.name, code: r.discount_code })) }),
+    }).then(r => r.json()).catch(() => null);
+    setBusy(false);
+    if (aud?.ok) { setListId(aud.listId); setAudienceReadyAt(Date.now() + 60000); }
+    else setErr(aud?.error || "Couldn't build the Klaviyo audience for pending codes.");
   }
 
   async function checkRedemptions() {
@@ -224,16 +244,17 @@ export function WinbackPanel({ brandId = 5 }: { brandId?: number }) {
                 </table>
               </div>
 
-              {listId && offer && (
-                <KlaviyoSendPanel
-                  getHtml={() => buildWinbackHtml(offer)}
-                  defaultSubject="You left something in your cart 👀"
-                  fixedAudience={{ name: "Win-back batch", included: [{ id: listId, name: `Win-back — ${new Date().toLocaleDateString("en-AU")}` }] }}
-                  brandId={brandId}
-                  notBefore={audienceReadyAt ?? undefined}
-                />
-              )}
             </>
+          )}
+
+          {listId && (
+            <KlaviyoSendPanel
+              getHtml={() => buildWinbackHtml(offer ?? DEFAULT_OFFER)}
+              defaultSubject="You left something in your cart 👀"
+              fixedAudience={{ name: "Win-back batch", included: [{ id: listId, name: `Win-back — ${new Date().toLocaleDateString("en-AU")}` }] }}
+              brandId={brandId}
+              notBefore={audienceReadyAt ?? undefined}
+            />
           )}
 
           <div className="border-t border-gray-100 pt-4">
@@ -251,8 +272,19 @@ export function WinbackPanel({ brandId = 5 }: { brandId?: number }) {
                   const eligible = history.filter(r => r.status !== "draft");
                   const redeemed = eligible.filter(r => r.redeemed);
                   const recovered = redeemed.reduce((s, r) => s + (r.order_value || 0), 0);
+                  const pending = history.filter(r => r.status === "code_created" && r.discount_code);
                   return (
                     <>
+                      {pending.length > 0 && (
+                        <div className="flex items-center justify-between bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                          <p className="text-xs text-amber-700">
+                            <strong>{pending.length}</strong> code{pending.length === 1 ? "" : "s"} generated but never emailed — still valid in Shopify.
+                          </p>
+                          <button onClick={sendPending} disabled={busy} className="text-sm font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-4 py-2 disabled:opacity-40">
+                            {busy ? "Building…" : `Send to these ${pending.length}`}
+                          </button>
+                        </div>
+                      )}
                       <div className="flex items-center justify-between">
                         <p className="text-xs text-gray-400 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
                           <strong className="text-slate-600">{redeemed.length} of {eligible.length}</strong> redeemed
