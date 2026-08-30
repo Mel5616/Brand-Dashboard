@@ -101,11 +101,43 @@ export async function cancelCampaign(campaignId: string): Promise<void> {
   await call(`/campaigns/${campaignId}/`, { method: "DELETE" });
 }
 
-async function ensureProfile(email: string): Promise<string> {
+export async function ensureProfile(email: string, firstName?: string): Promise<string> {
   const found = await call(`/profiles/?filter=${encodeURIComponent(`equals(email,"${email}")`)}`);
   if (found.data?.length) return found.data[0].id;
-  const created = await call("/profiles/", { method: "POST", body: JSON.stringify({ data: { type: "profile", attributes: { email } } }) });
+  const created = await call("/profiles/", { method: "POST", body: JSON.stringify({ data: { type: "profile", attributes: { email, ...(firstName ? { first_name: firstName } : {}) } } }) });
   return created.data.id;
+}
+
+// Set custom profile properties (e.g. a per-recipient discount code) so a
+// campaign's HTML can reference them via Klaviyo Liquid ({{ person.foo }})
+// and have each recipient see their own value in the same send.
+export async function setProfileProperties(profileId: string, properties: Record<string, string>): Promise<void> {
+  await call(`/profiles/${profileId}/`, {
+    method: "PATCH",
+    body: JSON.stringify({ data: { type: "profile", id: profileId, attributes: { properties } } }),
+  });
+}
+
+// Build a one-off Klaviyo list containing exactly this set of recipients —
+// generalizes the single-person list sendTestToSelf() builds below to N
+// people, for a batch send to a specific ad-hoc customer list rather than an
+// existing saved list/segment (e.g. the abandoned-cart win-back tool).
+export async function buildAdhocList(name: string, recipients: { email: string; name?: string; properties?: Record<string, string> }[]): Promise<string> {
+  const list = await call("/lists/", { method: "POST", body: JSON.stringify({ data: { type: "list", attributes: { name, opt_in_process: "single_opt_in" } } }) });
+  const listId = list.data.id;
+  const profileIds: string[] = [];
+  for (const r of recipients) {
+    const profileId = await ensureProfile(r.email, r.name);
+    if (r.properties) await setProfileProperties(profileId, r.properties);
+    profileIds.push(profileId);
+  }
+  if (profileIds.length > 0) {
+    await call(`/lists/${listId}/relationships/profiles/`, {
+      method: "POST",
+      body: JSON.stringify({ data: profileIds.map(id => ({ type: "profile", id })) }),
+    });
+  }
+  return listId;
 }
 
 // Klaviyo's public API has no dedicated "send test email" endpoint (confirmed

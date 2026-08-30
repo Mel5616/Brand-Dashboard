@@ -17,6 +17,7 @@ import { GoogleCampaignsTable } from "./GoogleCampaignsTable";
 import { AffiliatesPanel, CF_BRAND_IDS } from "./AffiliatesPanel";
 import { EmailChart } from "./EmailChart";
 import { EmailBrandDetail } from "./EmailBrandDetail";
+import { WinbackPanel } from "./WinbackPanel";
 import { BrandReport } from "./BrandReport";
 import { buildReport } from "@/lib/report";
 import { SocialReport } from "./SocialReport";
@@ -2168,6 +2169,7 @@ export function DashboardTabs({
           {active === "email" && (
             <>
               <SectionBar title="Email Marketing · Klaviyo" />
+              {role === "admin" && <WinbackPanel />}
               <div className="flex items-center justify-between gap-2 mb-2 no-print">
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}
