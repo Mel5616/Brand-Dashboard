@@ -132,11 +132,20 @@ export async function setProfileProperties(profileId: string, properties: Record
 export async function buildAdhocList(name: string, recipients: { email: string; name?: string; properties?: Record<string, string> }[], apiKey?: string): Promise<string> {
   const list = await call("/lists/", { method: "POST", body: JSON.stringify({ data: { type: "list", attributes: { name, opt_in_process: "single_opt_in" } } }) }, apiKey);
   const listId = list.data.id;
+  // Fully sequential per-recipient calls were the slow part of this route —
+  // 60-70+ recipients at ~2 round trips each could run past a minute and
+  // risk the route's own timeout. Bounded concurrency keeps it well within
+  // Klaviyo's rate limits (75 req/s) while cutting wall time substantially.
+  const CONCURRENCY = 8;
   const profiles: { id: string; email: string }[] = [];
-  for (const r of recipients) {
-    const profileId = await ensureProfile(r.email, r.name, apiKey);
-    if (r.properties) await setProfileProperties(profileId, r.properties, apiKey);
-    profiles.push({ id: profileId, email: r.email });
+  for (let i = 0; i < recipients.length; i += CONCURRENCY) {
+    const batch = recipients.slice(i, i + CONCURRENCY);
+    const results = await Promise.all(batch.map(async r => {
+      const profileId = await ensureProfile(r.email, r.name, apiKey);
+      if (r.properties) await setProfileProperties(profileId, r.properties, apiKey);
+      return { id: profileId, email: r.email };
+    }));
+    profiles.push(...results);
   }
   if (profiles.length > 0) await subscribeToList(listId, profiles, apiKey);
   return listId;

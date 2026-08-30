@@ -255,6 +255,7 @@ export function WinbackPanel({ brandId = 5 }: { brandId?: number }) {
 
             {historyOpen && (
               <div className="mt-3 space-y-3">
+                {err && <p className="text-sm text-rose-500">{err}</p>}
                 {historyLoading && <p className="text-sm text-gray-400">Loading history…</p>}
                 {!historyLoading && history && history.length === 0 && <p className="text-sm text-gray-400">No codes generated yet.</p>}
 
