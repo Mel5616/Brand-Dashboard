@@ -25,7 +25,7 @@ const SENDERS: Record<number, { fromEmail: string; fromLabel: string }> = {
   // email.uppababy.com.au is the verified marketing-sending domain on
   // UPPAbaby's Klaviyo account — the bare uppababy.com.au isn't authenticated
   // there, so sending from it would silently fail deliverability.
-  5: { fromEmail: "support@email.uppababy.com.au", fromLabel: "UPPAbaby Australia" },
+  5: { fromEmail: "hello@email.uppababy.com.au", fromLabel: "UPPAbaby Australia" },
 };
 
 export function klaviyoSenderForBrand(brandId?: number | null): { fromEmail: string; fromLabel: string } {
