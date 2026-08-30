@@ -74,6 +74,7 @@ export function WinbackPanel({ brandId = 5 }: { brandId?: number }) {
   const [offer, setOffer] = useState<Offer | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [codeResults, setCodeResults] = useState<CodeResult[] | null>(null);
+  const [consentExcluded, setConsentExcluded] = useState(0);
   const [listId, setListId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -86,7 +87,7 @@ export function WinbackPanel({ brandId = 5 }: { brandId?: number }) {
     setLoading(true); setErr(""); setCandidates(null); setCodeResults(null); setListId(null);
     const d = await fetch(`/api/winback?brand_id=${brandId}`).then(r => r.json()).catch(() => null);
     setLoading(false);
-    if (d?.ok) { setCandidates(d.candidates); setOffer(d.offer); setSelected(new Set(d.candidates.map((c: Candidate) => c.email))); }
+    if (d?.ok) { setCandidates(d.candidates); setOffer(d.offer); setConsentExcluded(d.consentExcluded || 0); setSelected(new Set(d.candidates.map((c: Candidate) => c.email))); }
     else setErr(d?.error || "Couldn't load abandoned checkouts.");
   }
 
@@ -152,6 +153,7 @@ export function WinbackPanel({ brandId = 5 }: { brandId?: number }) {
           {offer && (
             <p className="text-xs text-gray-400 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2">
               Offer: <strong className="text-slate-600">{fmtFull(offer.discountAmount)} off</strong>, orders over <strong className="text-slate-600">{fmtFull(offer.minSpend)}</strong>, expires <strong className="text-slate-600">{offer.expiryDays} days</strong> after generation, one-time use per customer.
+              {consentExcluded > 0 && <> <strong className="text-slate-600">{consentExcluded}</strong> more qualified on cart value but aren&apos;t opted into marketing, so they&apos;re excluded.</>}
             </p>
           )}
 

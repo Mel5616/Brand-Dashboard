@@ -61,6 +61,7 @@ async function findCandidates(cred: { domain: string; clientId: string; clientSe
   const excludeEmails = new Set((already || []).map((r: any) => (r.email || "").toLowerCase()));
 
   const byEmail = new Map<string, any>();
+  let consentExcluded = 0;
   for await (const ck of pagedCheckouts(cred.domain, token, since)) {
     const gross = Number(ck.total_price || 0);
     const tax = Number(ck.total_tax || 0);
@@ -71,6 +72,11 @@ async function findCandidates(cred: { domain: string; clientId: string; clientSe
     const email = (ck.email || ck.customer?.email || "").trim().toLowerCase();
     if (!email || email.endsWith("@coolkidz.com.au") || excludeEmails.has(email)) continue;
     const cust = ck.customer || {};
+    // Klaviyo enforces marketing consent at send time regardless — but we
+    // check Shopify's own consent record up front so the candidate list
+    // never shows someone we can't legally (or actually) email.
+    const subscribed = cust.email_marketing_consent?.state === "subscribed" || ck.buyer_accepts_marketing === true;
+    if (!subscribed) { consentExcluded++; continue; }
     const name = `${cust.first_name || ""} ${cust.last_name || ""}`.trim() || "Guest";
     const items = (ck.line_items || []).reduce((s: number, li: any) => s + (li.quantity || 1), 0);
     const cur = byEmail.get(email);
@@ -78,7 +84,7 @@ async function findCandidates(cred: { domain: string; clientId: string; clientSe
       byEmail.set(email, { email, name, phone: ck.phone || cust.phone || "", value: Math.round(value * 100) / 100, items, created_at: ck.created_at, checkout_url: ck.abandoned_checkout_url });
     }
   }
-  return [...byEmail.values()].sort((a, b) => b.value - a.value);
+  return { candidates: [...byEmail.values()].sort((a, b) => b.value - a.value), consentExcluded };
 }
 
 export async function GET(req: Request) {
@@ -98,8 +104,8 @@ export async function GET(req: Request) {
   const cred = storeCreds().find(s => s.id === brandId);
   if (!cred) return NextResponse.json({ ok: false, error: "Store not configured" }, { status: 400 });
   try {
-    const candidates = await findCandidates(cred, brandId);
-    return NextResponse.json({ ok: true, candidates, offer: { discountAmount: DISCOUNT_AMOUNT, minSpend: MIN_SPEND, expiryDays: EXPIRY_DAYS } });
+    const { candidates, consentExcluded } = await findCandidates(cred, brandId);
+    return NextResponse.json({ ok: true, candidates, consentExcluded, offer: { discountAmount: DISCOUNT_AMOUNT, minSpend: MIN_SPEND, expiryDays: EXPIRY_DAYS } });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: e.message || "Couldn't fetch abandoned checkouts" }, { status: 502 });
   }

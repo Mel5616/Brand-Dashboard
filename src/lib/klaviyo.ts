@@ -122,22 +122,49 @@ export async function setProfileProperties(profileId: string, properties: Record
 // generalizes the single-person list sendTestToSelf() builds below to N
 // people, for a batch send to a specific ad-hoc customer list rather than an
 // existing saved list/segment (e.g. the abandoned-cart win-back tool).
+//
+// Being added to a list is NOT the same as marketing consent — Klaviyo
+// silently skips sending to anyone without recorded consent, so callers
+// MUST have already confirmed real opt-in (e.g. from Shopify's
+// email_marketing_consent) for every recipient passed here. subscribe()
+// records that consent via the proper subscription job, which is what
+// actually makes the send go through.
 export async function buildAdhocList(name: string, recipients: { email: string; name?: string; properties?: Record<string, string> }[], apiKey?: string): Promise<string> {
   const list = await call("/lists/", { method: "POST", body: JSON.stringify({ data: { type: "list", attributes: { name, opt_in_process: "single_opt_in" } } }) }, apiKey);
   const listId = list.data.id;
-  const profileIds: string[] = [];
+  const profiles: { id: string; email: string }[] = [];
   for (const r of recipients) {
     const profileId = await ensureProfile(r.email, r.name, apiKey);
     if (r.properties) await setProfileProperties(profileId, r.properties, apiKey);
-    profileIds.push(profileId);
+    profiles.push({ id: profileId, email: r.email });
   }
-  if (profileIds.length > 0) {
-    await call(`/lists/${listId}/relationships/profiles/`, {
-      method: "POST",
-      body: JSON.stringify({ data: profileIds.map(id => ({ type: "profile", id })) }),
-    }, apiKey);
-  }
+  if (profiles.length > 0) await subscribeToList(listId, profiles, apiKey);
   return listId;
+}
+
+// Records real marketing consent for already-opted-in customers and adds
+// them to the list in the same call — the step buildAdhocList's plain
+// list-relationship add was missing, which is why sends to freshly-created
+// profiles were getting silently skipped by Klaviyo (no consent on file).
+export async function subscribeToList(listId: string, profiles: { id: string; email: string }[], apiKey?: string): Promise<void> {
+  await call("/profile-subscription-bulk-create-jobs/", {
+    method: "POST",
+    body: JSON.stringify({
+      data: {
+        type: "profile-subscription-bulk-create-job",
+        attributes: {
+          profiles: {
+            data: profiles.map(p => ({
+              type: "profile",
+              id: p.id,
+              attributes: { email: p.email, subscriptions: { email: { marketing: { consent: "SUBSCRIBED" } } } },
+            })),
+          },
+        },
+        relationships: { list: { data: { type: "list", id: listId } } },
+      },
+    }),
+  }, apiKey);
 }
 
 // Klaviyo's public API has no dedicated "send test email" endpoint (confirmed
