@@ -67,6 +67,7 @@ import { CustomerFormsPanel } from "./CustomerFormsPanel";
 import { InfluencerTracker } from "./InfluencerTracker";
 import { TeamGiftingPanel } from "./TeamGiftingPanel";
 import { TeamPanel } from "./TeamPanel";
+import { CatalogueReviewPanel } from "./CatalogueReviewPanel";
 import { BoothFunnel } from "./BoothFunnel";
 import { BrandSnapshot } from "./BrandSnapshot";
 import { Activations } from "./Activations";
@@ -2625,6 +2626,7 @@ export function DashboardTabs({
           )}
 
           {/* ── Team & access (admin only) ── */}
+          {active === "team" && role === "admin" && <CatalogueReviewPanel />}
           {active === "team" && role === "admin" && <TeamPanel />}
 
           {/* ── Calendar ── */}
