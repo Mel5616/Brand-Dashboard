@@ -17,8 +17,8 @@ type FixedAudience = { name: string; included: { id: string; name: string }[]; e
 // ad-hoc list of newly-subscribed profiles) — Klaviyo's list-membership
 // index can lag the subscription write by up to ~60s, and a send fired
 // before it catches up gets silently cancelled with no recipients.
-export function KlaviyoSendPanel({ getHtml, defaultSubject, fixedAudience, brandId, notBefore }: { getHtml: () => string; defaultSubject: string; fixedAudience?: FixedAudience; brandId?: number; notBefore?: number }) {
-  const [open, setOpen] = useState(false);
+export function KlaviyoSendPanel({ getHtml, defaultSubject, fixedAudience, brandId, notBefore, openByDefault }: { getHtml: () => string; defaultSubject: string; fixedAudience?: FixedAudience; brandId?: number; notBefore?: number; openByDefault?: boolean }) {
+  const [open, setOpen] = useState(!!openByDefault);
   const [lists, setLists] = useState<List[] | null>(null);
   const [sends, setSends] = useState<Send[]>([]);
   const [needsSetup, setNeedsSetup] = useState(false);

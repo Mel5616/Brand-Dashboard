@@ -330,6 +330,7 @@ export function WinbackPanel({ brandId = 5 }: { brandId?: number }) {
               fixedAudience={{ name: "Win-back batch", included: [{ id: listId, name: `Win-back — ${new Date().toLocaleDateString("en-AU")}` }] }}
               brandId={brandId}
               notBefore={audienceReadyAt ?? undefined}
+              openByDefault
             />
           )}
         </div>
