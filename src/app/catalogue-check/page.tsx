@@ -48,25 +48,12 @@ export default function CatalogueCheck() {
   const label = "text-[12px] font-semibold text-gray-500";
 
   if (result) {
-    const findings = result.findings || [];
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-lg w-full">
-          <div className="text-4xl mb-2 text-center">{result.error ? "⚠️" : findings.length > 0 ? "🔎" : "✅"}</div>
-          <p className="text-lg font-semibold text-gray-800 text-center">
-            {result.error ? "Checked, but the AI pass hit an issue" : findings.length > 0 ? `${findings.length} possible issue${findings.length === 1 ? "" : "s"} found` : "No issues found"}
-          </p>
-          <p className="text-sm text-gray-400 mt-1 text-center">Mel&apos;s been emailed the results — she&apos;ll do the final review.</p>
-          {findings.length > 0 && (
-            <ul className="mt-5 space-y-2.5 text-sm">
-              {findings.map((f, i) => (
-                <li key={i} className="border border-amber-100 bg-amber-50/60 rounded-lg px-3 py-2.5">
-                  <p className="font-medium text-slate-700">&ldquo;{f.quote}&rdquo;{f.page ? <span className="text-gray-400 font-normal"> · page {f.page}</span> : null}</p>
-                  <p className="text-slate-500 mt-0.5">{f.issue} — suggested: <span className="font-medium text-emerald-700">{f.suggestion}</span></p>
-                </li>
-              ))}
-            </ul>
-          )}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-md w-full text-center">
+          <div className="text-4xl mb-2">✅</div>
+          <p className="text-lg font-semibold text-gray-800">Submitted for review</p>
+          <p className="text-sm text-gray-400 mt-1">Mel will check it over — including design — before it goes any further. No need to wait here.</p>
           <button onClick={reset} className="mt-6 w-full text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg py-3">Check another file</button>
         </div>
       </div>
