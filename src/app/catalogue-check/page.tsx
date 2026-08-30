@@ -52,8 +52,8 @@ export default function CatalogueCheck() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-md w-full text-center">
           <div className="text-4xl mb-2">✅</div>
-          <p className="text-lg font-semibold text-gray-800">Submitted for review</p>
-          <p className="text-sm text-gray-400 mt-1">Mel will check it over — including design — before it goes any further. No need to wait here.</p>
+          <p className="text-lg font-semibold text-gray-800">Sent to Mel</p>
+          <p className="text-sm text-gray-400 mt-1">Mel will review and let you know once approved.</p>
           <button onClick={reset} className="mt-6 w-full text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg py-3">Check another file</button>
         </div>
       </div>
@@ -63,8 +63,8 @@ export default function CatalogueCheck() {
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4">
       <div className="max-w-md mx-auto">
-        <h1 className="text-xl font-bold text-gray-800">Catalogue spelling check</h1>
-        <p className="text-sm text-gray-400 mt-0.5 mb-5">Upload a catalogue or spec-sheet PDF for a quick AI spelling &amp; brand-name pass before Mel&apos;s review.</p>
+        <h1 className="text-xl font-bold text-gray-800">Catalogue / Artwork Upload</h1>
+        <p className="text-sm text-gray-400 mt-0.5 mb-5">Need something approved? Upload here — the file is sent directly to Mel for approval.</p>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-4">
           <div>
@@ -102,9 +102,9 @@ export default function CatalogueCheck() {
 
           {err && <p className="text-[12px] text-rose-500">{err}</p>}
           <button onClick={submit} disabled={!file || busy} className="w-full text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 rounded-lg py-3">
-            {busy ? "Checking…" : "Check for spelling issues"}
+            {busy ? "Uploading…" : "Upload Now"}
           </button>
-          <p className="text-[11px] text-gray-300 text-center">This runs an AI first pass — Mel still reviews everything before it&apos;s approved.</p>
+          <p className="text-[11px] text-gray-300 text-center">Mel will review and let you know once approved.</p>
         </div>
       </div>
     </div>
