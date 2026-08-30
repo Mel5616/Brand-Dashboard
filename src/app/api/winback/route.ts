@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
 import { mintToken, storeCreds } from "@/lib/shopifyMint";
 import { buildAdhocList } from "@/lib/klaviyo";
+import { klaviyoKeyForBrand } from "@/lib/klaviyoBrandKeys";
 
 // Abandoned-cart win-back tool (Email tab): finds this month's high-value
 // UPPAbaby abandoned checkouts live from Shopify (nothing is pre-computed —
@@ -175,7 +176,7 @@ export async function POST(req: Request) {
       const listId = await buildAdhocList(`Win-back — ${new Date().toLocaleDateString("en-AU")}`, customers.map(c => ({
         email: c.email, name: c.name,
         properties: { winback_code: c.code, winback_expires: expiryLabel },
-      })));
+      })), klaviyoKeyForBrand(brandId));
       await rest(`winback_sends?email=in.(${customers.map(c => `"${c.email}"`).join(",")})&brand_id=eq.${brandId}&status=eq.code_created`, {
         method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify({ klaviyo_list_id: listId }),
       });

@@ -13,7 +13,7 @@ type FixedAudience = { name: string; included: { id: string; name: string }[]; e
 // that step queues a real email to a real list. Pass `fixedAudience` when the
 // report always goes to the same saved audience (skips the list picker);
 // omit it to let the user pick any single Klaviyo list.
-export function KlaviyoSendPanel({ getHtml, defaultSubject, fixedAudience }: { getHtml: () => string; defaultSubject: string; fixedAudience?: FixedAudience }) {
+export function KlaviyoSendPanel({ getHtml, defaultSubject, fixedAudience, brandId }: { getHtml: () => string; defaultSubject: string; fixedAudience?: FixedAudience; brandId?: number }) {
   const [open, setOpen] = useState(false);
   const [lists, setLists] = useState<List[] | null>(null);
   const [sends, setSends] = useState<Send[]>([]);
@@ -39,7 +39,7 @@ export function KlaviyoSendPanel({ getHtml, defaultSubject, fixedAudience }: { g
 
   async function sendTest() {
     setTestStatus("sending"); setErr("");
-    const d = await fetch("/api/klaviyo/sends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "test", subject, html: getHtml() }) }).then(r => r.json());
+    const d = await fetch("/api/klaviyo/sends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "test", subject, html: getHtml(), brandId }) }).then(r => r.json());
     if (d.ok) { setTestStatus("sent"); setTimeout(() => setTestStatus("idle"), 4000); }
     else { setTestStatus("idle"); setErr(d.error || "Couldn't send test."); }
   }
@@ -49,8 +49,8 @@ export function KlaviyoSendPanel({ getHtml, defaultSubject, fixedAudience }: { g
     if (!fixedAudience && !listId) { setErr("Pick a list."); return; }
     setBusy(true); setErr("");
     const body = fixedAudience
-      ? { action: "create", subject, included: fixedAudience.included.map(l => l.id), excluded: (fixedAudience.excluded ?? []).map(l => l.id), audienceName: fixedAudience.name, html: getHtml() }
-      : { action: "create", subject, listId, listName: lists?.find(l => l.id === listId)?.name, html: getHtml() };
+      ? { action: "create", subject, included: fixedAudience.included.map(l => l.id), excluded: (fixedAudience.excluded ?? []).map(l => l.id), audienceName: fixedAudience.name, html: getHtml(), brandId }
+      : { action: "create", subject, listId, listName: lists?.find(l => l.id === listId)?.name, html: getHtml(), brandId };
     const d = await fetch("/api/klaviyo/sends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
     setBusy(false);
     if (d.ok) { setDraft(d.item); load(); } else setErr(d.error || "Couldn't create draft.");
@@ -63,7 +63,7 @@ export function KlaviyoSendPanel({ getHtml, defaultSubject, fixedAudience }: { g
     if (!confirm(confirmText)) return;
     setBusy(true); setErr("");
     const datetimeIso = scheduleAt ? new Date(scheduleAt).toISOString() : undefined;
-    const d = await fetch("/api/klaviyo/sends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "schedule", id: draft.id, campaignId: draft.campaign_id, datetimeIso }) }).then(r => r.json());
+    const d = await fetch("/api/klaviyo/sends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "schedule", id: draft.id, campaignId: draft.campaign_id, datetimeIso, brandId }) }).then(r => r.json());
     setBusy(false);
     if (d.ok) { setDraft(null); setListId(""); setScheduleAt(""); load(); } else setErr(d.error || "Couldn't schedule send.");
   }
@@ -71,12 +71,12 @@ export function KlaviyoSendPanel({ getHtml, defaultSubject, fixedAudience }: { g
     if (!draft) return;
     if (!confirm("Discard this draft? It won't be sent.")) return;
     setBusy(true);
-    await fetch("/api/klaviyo/sends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "cancel", id: draft.id, campaignId: draft.campaign_id }) });
+    await fetch("/api/klaviyo/sends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "cancel", id: draft.id, campaignId: draft.campaign_id, brandId }) });
     setBusy(false); setDraft(null); load();
   }
   async function deleteSend(s: Send) {
     if (!confirm(`Remove "${s.subject}" from history? This can't be undone.`)) return;
-    await fetch("/api/klaviyo/sends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "delete", id: s.id, campaignId: s.campaign_id }) });
+    await fetch("/api/klaviyo/sends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "delete", id: s.id, campaignId: s.campaign_id, brandId }) });
     load();
   }
 

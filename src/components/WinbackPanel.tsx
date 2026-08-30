@@ -18,8 +18,15 @@ function buildWinbackHtml(offer: Offer) {
   <tr><td align="center">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:14px;border:1px solid #e5e9f0;overflow:hidden;font-family:Arial,Helvetica,sans-serif;">
 
-      <tr><td style="padding:40px 32px 8px;text-align:center;">
-        <p style="margin:0 0 6px;font:bold 11px Arial,Helvetica,sans-serif;color:#0891b2;text-transform:uppercase;letter-spacing:0.22em;">UPPAbaby</p>
+      <tr><td style="padding:32px 32px 0;text-align:center;">
+        <img src="https://marketing.coolkidz.com.au/logos/UPPAbaby%20Logo.jpg" alt="UPPAbaby" width="120" style="display:inline-block;height:auto;max-width:120px;" />
+      </td></tr>
+
+      <tr><td style="padding:20px 0 0;">
+        <img src="https://marketing.coolkidz.com.au/uppababy-winback-hero.jpg" alt="" width="600" style="display:block;width:100%;height:auto;" />
+      </td></tr>
+
+      <tr><td style="padding:28px 32px 8px;text-align:center;">
         <p style="margin:0 0 10px;font:bold 26px Arial,Helvetica,sans-serif;color:#0f172a;letter-spacing:-0.01em;">You left something behind</p>
         <p style="margin:0 auto;max-width:420px;font:14px/1.6 Arial,Helvetica,sans-serif;color:#64748b;">Come back and finish up — here's ${fmtFull(offer.discountAmount)} off to make it easy.</p>
       </td></tr>
@@ -191,6 +198,7 @@ export function WinbackPanel({ brandId = 5 }: { brandId?: number }) {
                   getHtml={() => buildWinbackHtml(offer)}
                   defaultSubject="You left something in your cart 👀"
                   fixedAudience={{ name: "Win-back batch", included: [{ id: listId, name: `Win-back — ${new Date().toLocaleDateString("en-AU")}` }] }}
+                  brandId={brandId}
                 />
               )}
             </>
