@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tune-Up Day Booking</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, "Segoe UI", Arial, Helvetica, sans-serif; background: #f8fafc; color: #0f172a; }
+  .wrap { max-width: 480px; margin: 0 auto; padding: 40px 20px 60px; }
+  h1 { font-size: 24px; font-weight: 800; margin: 0 0 6px; letter-spacing: -0.01em; }
+  p.lede { color: #64748b; font-size: 14px; line-height: 1.6; margin: 0 0 28px; }
+  .card { background: #fff; border: 1px solid #e5e9f0; border-radius: 16px; padding: 22px; }
+  .label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 8px; display: block; }
+  .days { display: flex; flex-direction: column; gap: 8px; margin-bottom: 22px; }
+  .day { border: 2px solid #e5e9f0; border-radius: 10px; padding: 12px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: border-color .15s; }
+  .day.selected { border-color: #0891b2; background: #ecfeff; }
+  .day-date { font-weight: 700; font-size: 14px; }
+  .day-loc { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+  input { width: 100%; font-size: 14px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 11px 13px; margin-bottom: 14px; font-family: inherit; }
+  input:focus { outline: none; border-color: #0891b2; box-shadow: 0 0 0 3px rgba(8,145,178,0.12); }
+  button { width: 100%; font-size: 15px; font-weight: 700; color: #fff; background: #0891b2; border: none; border-radius: 10px; padding: 14px; cursor: pointer; }
+  button:disabled { opacity: 0.45; cursor: default; }
+  button:not(:disabled):hover { background: #0e7490; }
+  .fee-note { font-size: 12px; color: #94a3b8; text-align: center; margin-top: 12px; line-height: 1.5; }
+  .err { font-size: 13px; color: #e11d48; margin-bottom: 12px; }
+  .empty { font-size: 14px; color: #94a3b8; text-align: center; padding: 24px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Book a Tune-Up Day</h1>
+  <p class="lede">A free 15-minute one-on-one with a stroller expert. A $20 booking fee holds your spot — fully refunded when you check in on the day.</p>
+
+  <div class="card">
+    <div id="days-wrap">
+      <span class="label">Choose a day</span>
+      <div id="days" class="days"><div class="empty">Loading upcoming days…</div></div>
+    </div>
+
+    <div id="form-wrap" style="display:none;">
+      <span class="label">Your details</span>
+      <input id="name" type="text" placeholder="Full name" autocomplete="name">
+      <input id="email" type="email" placeholder="Email" autocomplete="email">
+      <input id="phone" type="tel" placeholder="Phone (optional)" autocomplete="tel">
+      <div id="err" class="err" style="display:none;"></div>
+      <button id="submit">Book &amp; pay $20</button>
+      <p class="fee-note">You'll complete payment securely through our Shopify checkout. Your $20 is refunded in full once you check in at the event.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Points at the dashboard's public Tune-Up API — CORS-open on those two
+  // endpoints specifically for this page. Update if the dashboard domain
+  // ever changes.
+  const API_BASE = "https://marketing.coolkidz.com.au";
+  let selectedDayId = null;
+
+  function fmtDate(iso) {
+    const d = new Date(iso + "T00:00:00");
+    return d.toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" });
+  }
+
+  fetch(API_BASE + "/api/tuneup/days")
+    .then(r => r.json())
+    .then(data => {
+      const wrap = document.getElementById("days");
+      const days = (data && data.days) || [];
+      if (!days.length) { wrap.innerHTML = '<div class="empty">No upcoming Tune-Up Days right now — check back soon.</div>'; return; }
+      wrap.innerHTML = "";
+      days.forEach(day => {
+        const el = document.createElement("div");
+        el.className = "day";
+        el.dataset.id = day.id;
+        el.innerHTML = '<div><div class="day-date">' + day.state + '</div><div class="day-loc">' + fmtDate(day.event_date) + (day.location ? " · " + day.location : "") + '</div></div>';
+        el.addEventListener("click", () => {
+          document.querySelectorAll(".day").forEach(d => d.classList.remove("selected"));
+          el.classList.add("selected");
+          selectedDayId = day.id;
+          document.getElementById("form-wrap").style.display = "block";
+        });
+        wrap.appendChild(el);
+      });
+    })
+    .catch(() => { document.getElementById("days").innerHTML = '<div class="empty">Couldn\'t load days — try refreshing.</div>'; });
+
+  document.getElementById("submit").addEventListener("click", () => {
+    const name = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+    const errEl = document.getElementById("err");
+    errEl.style.display = "none";
+
+    if (!selectedDayId) { errEl.textContent = "Choose a day first."; errEl.style.display = "block"; return; }
+    if (!name || !email) { errEl.textContent = "Name and email are required."; errEl.style.display = "block"; return; }
+
+    const btn = document.getElementById("submit");
+    btn.disabled = true; btn.textContent = "Booking…";
+
+    fetch(API_BASE + "/api/tuneup/book", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tuneup_day_id: selectedDayId, name, email, phone }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data && data.ok && data.checkoutUrl) { window.location.href = data.checkoutUrl; return; }
+        errEl.textContent = (data && data.error) || "Couldn't start your booking — try again.";
+        errEl.style.display = "block";
+        btn.disabled = false; btn.textContent = "Book & pay $20";
+      })
+      .catch(() => {
+        errEl.textContent = "Couldn't start your booking — try again.";
+        errEl.style.display = "block";
+        btn.disabled = false; btn.textContent = "Book & pay $20";
+      });
+  });
+</script>
+</body>
+</html>

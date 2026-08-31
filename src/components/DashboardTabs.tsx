@@ -68,6 +68,7 @@ import { InfluencerTracker } from "./InfluencerTracker";
 import { TeamGiftingPanel } from "./TeamGiftingPanel";
 import { TeamPanel } from "./TeamPanel";
 import { CatalogueReviewPanel } from "./CatalogueReviewPanel";
+import { TuneUpDaysPanel } from "./TuneUpDaysPanel";
 import { BoothFunnel } from "./BoothFunnel";
 import { BrandSnapshot } from "./BrandSnapshot";
 import { Activations } from "./Activations";
@@ -2403,6 +2404,7 @@ export function DashboardTabs({
             <>
               <SectionBar title="Tune-Up Days · Eventbrite" />
               <EventsPanel events={eventbriteEvents} brands={brands} />
+              {role === "admin" && <TuneUpDaysPanel />}
             </>
           )}
 
