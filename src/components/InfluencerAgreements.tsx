@@ -97,6 +97,9 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false, currentE
   const [editId, setEditId] = useState<string | null>(null);
   const [catalog, setCatalog] = useState<CatalogProduct[]>([]);
   const [openProductRow, setOpenProductRow] = useState<number | null>(null);
+  const [contactEditId, setContactEditId] = useState<string | null>(null);
+  const [contactForm, setContactForm] = useState(emptyInfluencer);
+  const [contactBusy, setContactBusy] = useState(false);
 
   function load() {
     fetch("/api/influencer-agreements").then(r => r.json()).then(d => {
@@ -187,6 +190,19 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false, currentE
       if (draft) setMsg("Saved as draft — nothing sent yet. Open it and hit Send when you're happy.");
       else setMsg(d.emailed ? `Signing link emailed to ${infl.email}.` : `Created, but the email failed (${d.emailError || "check RESEND_API_KEY"}) — use Resend on the row.`);
     } else setMsg(d?.error || "Couldn't create the agreement.");
+  }
+  function startContactEdit(a: Agreement) {
+    const i = a.influencers;
+    setContactForm({ full_name: i.full_name, email: i.email, phone: i.phone ?? "", instagram_handle: i.instagram_handle ?? "", tiktok_handle: i.tiktok_handle ?? "", address_line1: i.address_line1 ?? "", address_line2: i.address_line2 ?? "", suburb: i.suburb ?? "", state: i.state ?? "", postcode: i.postcode ?? "", is_po_box: i.is_po_box, abn: i.abn ?? "" });
+    setContactEditId(a.id);
+  }
+  async function saveContact() {
+    if (!contactForm.full_name.trim() || !contactForm.email.trim()) return setMsg("Name and email are required.");
+    setContactBusy(true);
+    const d = await fetch("/api/influencer-agreements", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: contactEditId, action: "update_contact", influencer: contactForm }) }).then(r => r.json()).catch(() => null);
+    setContactBusy(false);
+    if (d?.ok) { setContactEditId(null); load(); setMsg("Contact details updated."); }
+    else setMsg(d?.error || "Couldn't save changes.");
   }
   async function act(id: string, action: string) {
     setBusyId(id);
@@ -460,6 +476,7 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false, currentE
                             {a.status === "sent" && <button onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/agreement/${a.token}`); setMsg("Signing link copied."); }} className="text-[12px] font-semibold text-slate-500 hover:underline mr-2.5">⧉ Link</button>}
                             {(a.status === "draft" || a.status === "sent") && <button disabled={busyId === a.id} onClick={() => act(a.id, "void")} className="text-[12px] font-semibold text-gray-400 hover:underline mr-2.5 disabled:opacity-50">Void</button>}
                             {a.status === "signed" && admin && <button disabled={busyId === a.id} onClick={() => { if (confirm(`Terminate ${a.reference}? The signed record is kept.`)) act(a.id, "terminate"); }} className="text-[12px] font-semibold text-rose-500 hover:underline disabled:opacity-50 mr-2.5">Terminate</button>}
+                            {(a.status === "sent" || a.status === "signed") && admin && <button onClick={() => startContactEdit(a)} className="text-[12px] font-semibold text-amber-600 hover:underline mr-2.5" title="Fix name, email, phone or shipping address — doesn't touch the signed contract terms">Edit contact</button>}
                             <a href={`/api/influencer-agreements/order-sheet?id=${a.id}`} target="_blank" rel="noreferrer" className="text-[12px] font-semibold text-teal-600 hover:underline mr-2.5" title="Printable order sheet — name, delivery address, products, for invoicing or Shopify entry">🖨 Order sheet</a>
                             {a.status === "signed" && (a.order_sheet_approved_at
                               ? <span className="text-[11px] font-semibold text-emerald-600" title={`Approved by ${a.order_sheet_approved_by || "—"}`}>✓ Sent to Accounts {fmtD(a.order_sheet_sent_at)}</span>
@@ -606,6 +623,40 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false, currentE
             </tbody>
           </table>
           <p className="px-5 py-2 text-[11px] text-gray-400">Cost price is admin-only, same restriction as the existing gifting budget tracker.</p>
+        </div>
+      )}
+
+      {contactEditId && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-6" onClick={() => setContactEditId(null)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-5" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-bold text-slate-700">Edit contact details</p>
+              <button onClick={() => setContactEditId(null)} className="text-gray-400 hover:text-gray-700 text-sm font-semibold">✕</button>
+            </div>
+            <p className="text-[11.5px] text-gray-400 mb-4">Fixes name, email, phone or shipping address on this agreement. Doesn&apos;t change products, deliverables or the signed contract itself.</p>
+            <div className="space-y-2.5">
+              <div className="grid grid-cols-2 gap-2.5">
+                <input value={contactForm.full_name} onChange={e => setContactForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Full name" className={`${inp} w-full`} />
+                <input value={contactForm.email} onChange={e => setContactForm(f => ({ ...f, email: e.target.value }))} placeholder="Email" className={`${inp} w-full`} />
+              </div>
+              <input value={contactForm.phone} onChange={e => setContactForm(f => ({ ...f, phone: e.target.value }))} placeholder="Phone" className={`${inp} w-full`} />
+              <input value={contactForm.address_line1} onChange={e => setContactForm(f => ({ ...f, address_line1: e.target.value }))} placeholder="Address line 1" className={`${inp} w-full`} />
+              <input value={contactForm.address_line2} onChange={e => setContactForm(f => ({ ...f, address_line2: e.target.value }))} placeholder="Address line 2 (optional)" className={`${inp} w-full`} />
+              <div className="grid grid-cols-3 gap-2.5">
+                <input value={contactForm.suburb} onChange={e => setContactForm(f => ({ ...f, suburb: e.target.value }))} placeholder="Suburb" className={`${inp} w-full`} />
+                <input value={contactForm.state} onChange={e => setContactForm(f => ({ ...f, state: e.target.value }))} placeholder="State" className={`${inp} w-full`} />
+                <input value={contactForm.postcode} onChange={e => setContactForm(f => ({ ...f, postcode: e.target.value }))} placeholder="Postcode" className={`${inp} w-full`} />
+              </div>
+              <label className="flex items-center gap-2 text-[12.5px] text-slate-600">
+                <input type="checkbox" checked={contactForm.is_po_box} onChange={e => setContactForm(f => ({ ...f, is_po_box: e.target.checked }))} />
+                This is a PO Box
+              </label>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button onClick={() => setContactEditId(null)} className="flex-1 text-sm font-semibold text-gray-500 hover:text-gray-700 rounded-lg px-4 py-2.5">Cancel</button>
+              <button onClick={saveContact} disabled={contactBusy} className="flex-1 text-sm font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-4 py-2.5 disabled:opacity-40">{contactBusy ? "Saving…" : "Save changes"}</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

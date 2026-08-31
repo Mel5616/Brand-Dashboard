@@ -310,6 +310,33 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json({ ok: true });
   }
+  // Fixes contact/shipping details (address most commonly) on an agreement
+  // that's already been sent/signed — deliberately narrower than "update":
+  // touches only agreement_influencers, never the agreement row, products,
+  // deliverables or rendered_html/document_hash, since those represent what
+  // was actually signed and must stay immutable once a contract exists.
+  if (b.action === "update_contact") {
+    if (a.status === "terminated") return NextResponse.json({ ok: false, error: "Can't edit a terminated agreement" }, { status: 400 });
+    if (acc.role !== "admin") return NextResponse.json({ ok: false, error: "Admins only" }, { status: 403 });
+    const infl = b.influencer || {};
+    if (!String(infl.full_name || "").trim() || !String(infl.email || "").trim())
+      return NextResponse.json({ ok: false, error: "Name and email required" }, { status: 400 });
+    const influencerId = a.influencer_id;
+    if (!influencerId) return NextResponse.json({ ok: false, error: "No influencer on this agreement" }, { status: 400 });
+    const inflRow = {
+      full_name: String(infl.full_name).trim().slice(0, 160), email: String(infl.email).trim().slice(0, 200),
+      phone: infl.phone ? String(infl.phone).slice(0, 40) : null,
+      address_line1: infl.address_line1 ? String(infl.address_line1).slice(0, 200) : null,
+      address_line2: infl.address_line2 ? String(infl.address_line2).slice(0, 200) : null,
+      suburb: infl.suburb ? String(infl.suburb).slice(0, 100) : null,
+      state: infl.state ? String(infl.state).slice(0, 10) : null,
+      postcode: infl.postcode ? String(infl.postcode).slice(0, 10) : null,
+      is_po_box: !!infl.is_po_box,
+    };
+    const upd = await fetch(`${sbUrl}/rest/v1/agreement_influencers?id=eq.${influencerId}`, { method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify(inflRow) });
+    if (!upd.ok) { const t = await upd.text(); return NextResponse.json({ ok: false, error: t.slice(0, 300) }, { status: 500 }); }
+    return NextResponse.json({ ok: true });
+  }
   if (b.action === "send") {
     if (a.status !== "draft") return NextResponse.json({ ok: false, error: "Already sent" }, { status: 400 });
     const err = validateForSend({ agreement_type: a.agreement_type, exclusivity_applies: a.exclusivity_applies, exclusivity_category: a.exclusivity_category });
