@@ -4,12 +4,16 @@ import { useEffect, useMemo, useState } from "react";
 import { fmtFull } from "@/lib/format";
 
 type Entry = { id: number; company: string | null; brand: string | null; affiliate_code: string; kind: string; status: string | null; created_at: string };
-type SaleRow = { code: string; month_key: string; orders: number; revenue: number };
+type SaleRow = { brand_id: number; code: string; month_key: string; orders: number; revenue: number };
 
 // Real Shopify performance for every partner/affiliate discount code — one
-// row per code, aggregated across every month it's ever sold. Auto-tracked
-// via scripts/sync_influencer_sales.py; nothing here is manually entered.
-export function PartnershipRevenue() {
+// row per (brand, code), aggregated across every month it's ever sold.
+// Auto-tracked via scripts/sync_influencer_sales.py; nothing here is
+// manually entered. Joined by brand_id + code, not code alone — the same
+// code can span multiple brands (e.g. MM15 sells on UPPAbaby, MiaMily and
+// Matchstick Monkey at once), so a code-only join would show every brand's
+// row the same combined total.
+export function PartnershipRevenue({ brands }: { brands: { id: number; name: string }[] }) {
   const [entries, setEntries] = useState<Entry[] | null>(null);
   const [sales, setSales] = useState<SaleRow[]>([]);
   const [needsSetup, setNeedsSetup] = useState(false);
@@ -21,10 +25,12 @@ export function PartnershipRevenue() {
     });
   }, []);
 
-  const byCode = useMemo(() => {
+  const brandIdByName = useMemo(() => new Map(brands.map(b => [b.name.toLowerCase(), b.id])), [brands]);
+
+  const byBrandCode = useMemo(() => {
     const m = new Map<string, { orders: number; revenue: number }>();
     for (const s of sales) {
-      const key = (s.code || "").toUpperCase();
+      const key = `${s.brand_id}::${(s.code || "").toUpperCase()}`;
       const cur = m.get(key) ?? { orders: 0, revenue: 0 };
       cur.orders += s.orders; cur.revenue += s.revenue;
       m.set(key, cur);
@@ -36,9 +42,13 @@ export function PartnershipRevenue() {
     const q = search.trim().toLowerCase();
     return (entries ?? [])
       .filter(e => !q || e.company?.toLowerCase().includes(q) || e.brand?.toLowerCase().includes(q) || e.affiliate_code.toLowerCase().includes(q))
-      .map(e => ({ ...e, perf: byCode.get(e.affiliate_code.toUpperCase()) ?? { orders: 0, revenue: 0 } }))
+      .map(e => {
+        const bid = e.brand ? brandIdByName.get(e.brand.toLowerCase()) : undefined;
+        const key = `${bid}::${e.affiliate_code.toUpperCase()}`;
+        return { ...e, perf: (bid != null ? byBrandCode.get(key) : undefined) ?? { orders: 0, revenue: 0 } };
+      })
       .sort((a, b) => b.perf.revenue - a.perf.revenue);
-  }, [entries, byCode, search]);
+  }, [entries, byBrandCode, brandIdByName, search]);
 
   const totals = useMemo(() => rows.reduce((s, r) => ({ orders: s.orders + r.perf.orders, revenue: s.revenue + r.perf.revenue }), { orders: 0, revenue: 0 }), [rows]);
 

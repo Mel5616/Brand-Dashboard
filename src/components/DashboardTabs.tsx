@@ -2628,7 +2628,7 @@ export function DashboardTabs({
           {active === "pa-revenue" && (
             <>
               <SectionBar title="Partnerships & Affiliates · Revenue" />
-              <PartnershipRevenue />
+              <PartnershipRevenue brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} />
             </>
           )}
           {active === "documents" && (

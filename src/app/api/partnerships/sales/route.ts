@@ -16,7 +16,11 @@ export async function GET() {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   const [entriesRes, salesRes] = await Promise.all([
     fetch(`${sbUrl}/rest/v1/partnership_entries?select=id,company,brand,affiliate_code,kind,status,created_at&affiliate_code=not.is.null&order=created_at.desc`, { headers: h, cache: "no-store" }),
-    fetch(`${sbUrl}/rest/v1/influencer_sales?select=code,month_key,orders,revenue&limit=5000`, { headers: h, cache: "no-store" }),
+    // brand_id is required here (not just code) — the same code can now span
+    // multiple brands (e.g. MM15 on UPPAbaby, MiaMily and Matchstick Monkey
+    // all at once), so aggregating by code alone would show every brand's
+    // row the same combined total.
+    fetch(`${sbUrl}/rest/v1/influencer_sales?select=brand_id,code,month_key,orders,revenue&limit=5000`, { headers: h, cache: "no-store" }),
   ]);
   const text = await entriesRes.text();
   if (!entriesRes.ok) return NextResponse.json({ ok: true, needsSetup: missing(entriesRes.status, text), entries: [], sales: [] });
