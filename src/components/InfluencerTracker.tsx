@@ -124,20 +124,28 @@ export function InfluencerTracker({ canEdit = false }: { canEdit?: boolean }) {
   }, [tracked]);
   const saleOf = (e: Entry) => e.sales_value ?? (e.affiliate_code ? trackedByCode.get(e.affiliate_code.toUpperCase())?.revenue ?? null : null);
 
-  // Roster: aggregate gifts per handle, merged with the influencer master list
+  // Roster: aggregate gifts per handle, merged with the influencer master list.
+  // Matching key is normalized (trim + lowercase + "@" prefix) so a stray-case
+  // or missing-"@" handle never silently splits one person's gifts across two
+  // rows — confirmed real bug (31 Aug 2026): a handful of influencers'
+  // total_cost was landing on an unlabelled duplicate, making them look like
+  // they'd vanished from the roster. The write path is fixed too
+  // (src/app/api/influencer/entries/route.ts's normalizeHandle) — this is
+  // just a safety net for any data that predates that fix.
+  const normKey = (h: string) => { const t = h.trim().toLowerCase(); return t.startsWith("@") ? t : "@" + t; };
   const roster = useMemo(() => {
     const agg = new Map<string, { handle: string; gifts: number; value: number; reach: number; sales: number; brands: Set<string>; last: string }>();
     for (const e of entries) {
-      const h = e.handle || "—";
-      const cur = agg.get(h) ?? { handle: h, gifts: 0, value: 0, reach: 0, sales: 0, brands: new Set<string>(), last: "" };
+      const h = e.handle ? normKey(e.handle) : "—";
+      const cur = agg.get(h) ?? { handle: e.handle || "—", gifts: 0, value: 0, reach: 0, sales: 0, brands: new Set<string>(), last: "" };
       cur.gifts++; cur.value += e.total_cost ?? 0; cur.reach += e.reach ?? 0; cur.sales += saleOf(e) ?? 0;
       if (e.brand) cur.brands.add(e.brand); if (e.month_key > cur.last) cur.last = e.month_key;
       agg.set(h, cur);
     }
     // Nanit-tracker influencers only join the gifting roster once they've been gifted
-    for (const i of influencers) if (!agg.has(i.handle) && !nanitHandles.has(i.handle)) agg.set(i.handle, { handle: i.handle, gifts: 0, value: 0, reach: 0, sales: 0, brands: new Set(), last: "" });
-    const byHandle = new Map(influencers.map(i => [i.handle, i]));
-    return [...agg.values()].map(a => ({ ...a, brands: [...a.brands], m: byHandle.get(a.handle) })).sort((x, y) => y.value - x.value);
+    for (const i of influencers) { const k = normKey(i.handle); if (!agg.has(k) && !nanitHandles.has(i.handle)) agg.set(k, { handle: i.handle, gifts: 0, value: 0, reach: 0, sales: 0, brands: new Set(), last: "" }); }
+    const byHandle = new Map(influencers.map(i => [normKey(i.handle), i]));
+    return [...agg.values()].map(a => ({ ...a, brands: [...a.brands], m: byHandle.get(normKey(a.handle)) })).sort((x, y) => y.value - x.value);
   }, [entries, influencers, nanitHandles, trackedByCode]);
 
   async function saveInfluencer(i: Partial<Influencer>) {

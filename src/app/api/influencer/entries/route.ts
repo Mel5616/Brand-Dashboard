@@ -12,6 +12,17 @@ export const revalidate = 0;
 const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const round = (n: number) => Math.round(n * 100) / 100;
+// A single canonical form for a handle — used everywhere one gets written or
+// compared, so influencer_entries.handle and influencers.handle never drift
+// apart. Case-insensitive (Instagram/TikTok handles are), so "@Sharna_Lambert"
+// and "@sharna_lambert" collapse to the same roster row instead of silently
+// splitting one person's gifts across two rows (confirmed real bug, 31 Aug 2026 —
+// several influencers' gift totals were landing on an unlabelled duplicate row).
+function normalizeHandle(raw: string): string {
+  let h = raw.trim().toLowerCase();
+  if (!h.startsWith("@")) h = "@" + h.replace(/^@+/, "");
+  return h;
+}
 
 function headers(extra: Record<string, string> = {}) {
   return { apikey: sbKey!, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json", ...extra };
@@ -80,8 +91,9 @@ export async function POST(req: Request) {
   if (gifting_cost == null) gifting_cost = 0;
 
   const influencer_cost = b.influencer_cost != null ? Number(b.influencer_cost) : 0;
+  const normalizedHandle = b.handle ? normalizeHandle(String(b.handle)) : null;
   const row = {
-    month_key: b.month_key, handle: b.handle || null, platform: b.platform || null,
+    month_key: b.month_key, handle: normalizedHandle, platform: b.platform || null,
     followers: parseCount(b.followers),
     campaign: b.campaign || null, brand, style_code: b.style_code || null, product_name, rrp,
     affiliate_code: b.affiliate_code ? String(b.affiliate_code).slice(0, 120) : null,
@@ -100,9 +112,8 @@ export async function POST(req: Request) {
   }
 
   // Keep the influencer roster current — upsert the influencer by handle.
-  if (b.handle) {
-    let handle = String(b.handle).trim(); if (!handle.startsWith("@")) handle = "@" + handle.replace(/^@+/, "");
-    const inf: any = { handle, updated_at: new Date().toISOString() };
+  if (normalizedHandle) {
+    const inf: any = { handle: normalizedHandle, updated_at: new Date().toISOString() };
     if (b.name) inf.name = b.name;
     if (b.platform) inf.platform = b.platform;
     if (row.followers != null) inf.followers = row.followers;
