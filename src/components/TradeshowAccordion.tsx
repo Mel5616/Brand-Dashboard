@@ -16,7 +16,7 @@ function showStatus(ts: Tradeshow): "live" | "upcoming" | "past" {
 }
 
 const MONTHS = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
-const EXPENSE_CATEGORIES = ["Printing", "Staff", "Floor Space", "Travel", "Accommodation", "Stand", "Setup/Packdown", "Advertising", "Consumables", "Entertainment"];
+const EXPENSE_CATEGORIES = ["Printing", "Staff", "Floor Space", "Travel", "Accommodation", "Stand", "Setup/Packdown", "Advertising", "Consumables", "Entertainment", "AfterPay Fees"];
 type ExpItem = { id: string; tradeshow_id: string; category: string; label: string; amount: number; note: string };
 
 // Per-show overview: sales, expenses, profit and (once the breakdown loads)
