@@ -22,7 +22,13 @@ export async function GET() {
   const [mbRes, brRes, eRes, rRes, ibRes, saRes] = await Promise.all([
     sb(`marketing_budgets?select=brand_id,annual_budget&channel=eq.Influencer%20Marketing&fy=eq.${INFLUENCER_BUDGET_FY}`),
     sb("brands?select=id,name"),
-    sb("influencer_entries?select=*&order=month_key.desc"),
+    // created_at.desc as a tiebreaker matters — without it, Postgres' order
+    // among rows sharing the same month_key is unstable, so whichever rows
+    // fell outside the old slice(0, 120) below changed silently between
+    // requests (this is what made specific influencers' posts disappear,
+    // confirmed 1 Sep 2026 — Elisha's July gift was arbitrarily cut while
+    // another July post wasn't, purely due to unstable tie order).
+    sb("influencer_entries?select=*&order=month_key.desc,created_at.desc"),
     sb("influencers?select=handle,name,followers,avatar_url,profile_url"),
     sb("influencer_budgets?select=brand,month_key,budget"),
     sb("influencer_special_allocations?select=*&order=created_at.asc"),
@@ -89,7 +95,13 @@ export async function GET() {
     sent: entries.filter(e => e.special_allocation_id === r.id).length,
   }));
 
-  const gifts = entries.slice(0, 120).map(e => ({
+  // No cap here — this used to be entries.slice(0, 120), which silently
+  // dropped whichever rows fell past the 120th once the FY had that many
+  // gifts logged (confirmed real: some influencers' posts just vanished
+  // from the team's Posts tab with no indication anything was cut). The
+  // "Posts" UI has no pagination/"load more" to reach anything past a cap
+  // anyway, so a silent limit here can only ever look like missing data.
+  const gifts = entries.map(e => ({
     id: e.id, month_key: e.month_key, handle: e.handle, platform: e.platform, brand: e.brand, product_name: e.product_name,
     rrp: e.rrp != null ? Math.round(Number(e.rrp)) : null, special_allocation_id: e.special_allocation_id ?? null,
     status: e.status ?? null, content_url: e.content_url ?? null, content_type: e.content_type ?? null,
