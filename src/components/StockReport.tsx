@@ -116,15 +116,6 @@ function buildStockReportHtml(
         ${sectionsHtml || `<p style="text-align:center;font:14px Arial,Helvetica,sans-serif;color:#059669;padding:20px 0;">✓ Nothing on the stock report right now.</p>`}
       </td></tr>
 
-      <!-- Footer -->
-      <tr><td style="padding:24px 32px 32px;border-top:1px solid #eef1f5;text-align:center;">
-        <img src="${COOLKIDZ_LOGO_URL}" width="96" alt="Coolkidz Australia" style="display:block;margin:0 auto 14px;border:0;outline:none;height:auto;opacity:0.85;">
-        <p style="margin:0 0 4px;font:bold 12.5px Arial,Helvetica,sans-serif;color:#475569;">Coolkidz Australia</p>
-        <p style="margin:0 0 2px;font:11.5px Arial,Helvetica,sans-serif;color:#94a3b8;">1 Beyer Road, Braeside VIC 3195, Australia</p>
-        <p style="margin:0 0 14px;font:11.5px Arial,Helvetica,sans-serif;color:#94a3b8;"><a href="mailto:hello@coolkidz.com.au" style="color:#94a3b8;text-decoration:underline;">hello@coolkidz.com.au</a> &nbsp;·&nbsp; <a href="https://coolkidz.com.au" style="color:#94a3b8;text-decoration:underline;">coolkidz.com.au</a></p>
-        <p style="margin:0;font:11px Arial,Helvetica,sans-serif;color:#c2c9d3;">You're receiving this as a Coolkidz Australia wholesale partner. <a href="{% unsubscribe_link %}" style="color:#c2c9d3;text-decoration:underline;">Unsubscribe</a></p>
-      </td></tr>
-
     </table>
   </td></tr>
 </table>`;
