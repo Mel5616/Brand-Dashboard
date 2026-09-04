@@ -223,8 +223,8 @@ export function CampaignBriefs({ brands, admin = false }: { brands: { id: number
             return (
               <div key={b.id} className={`bg-white rounded-xl border border-gray-100 overflow-hidden ${b.status === "archived" ? "opacity-60" : ""}`}>
                 {b.cover_url && (
-                  <button onClick={() => setViewing(b)} className="block w-full bg-slate-100">
-                    <img src={b.cover_url} alt="" className="w-full h-40 object-cover object-top" />
+                  <button onClick={() => setViewing(b)} className="block w-full bg-slate-100" style={{ aspectRatio: "210 / 297" }}>
+                    <img src={b.cover_url} alt="" className="w-full h-full object-contain" />
                   </button>
                 )}
                 <div className="p-4 space-y-2">
