@@ -240,7 +240,7 @@ export function CampaignBriefs({ brands, admin = false }: { brands: { id: number
                   ))}
                 </div>
                 <div className="flex flex-wrap gap-2 pt-1">
-                  {b.content_html && (
+                  {(b.content_html || b.pdf_path) && (
                     <button onClick={() => setViewing(b)} className="text-xs font-medium bg-slate-800 text-white rounded-lg px-3 py-1.5 hover:bg-slate-900">View Brief</button>
                   )}
                   {b.pdf_path && (
@@ -272,7 +272,11 @@ export function CampaignBriefs({ brands, admin = false }: { brands: { id: number
               <p className="font-medium text-slate-800">{viewing.title}</p>
               <button onClick={() => setViewing(null)} className="text-sm text-slate-400 hover:text-slate-600">Close ✕</button>
             </div>
-            <iframe title={viewing.title} sandbox="allow-same-origin" srcDoc={viewing.content_html || ""} className="flex-1 w-full rounded-b-xl" />
+            {viewing.pdf_path ? (
+              <iframe title={viewing.title} src={`/api/campaign-briefs/file?id=${viewing.id}`} className="flex-1 w-full rounded-b-xl" />
+            ) : (
+              <iframe title={viewing.title} sandbox="allow-same-origin" srcDoc={viewing.content_html || ""} className="flex-1 w-full rounded-b-xl" />
+            )}
           </div>
         </div>
       )}
