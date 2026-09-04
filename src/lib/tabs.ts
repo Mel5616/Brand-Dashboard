@@ -79,6 +79,7 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "influencer", label: "Influencer Budget" },
     { id: "gifting", label: "Influencer Tracker" },
     { id: "influencer-agreements", label: "Influencer Agreements" },
+    { id: "campaign-briefs", label: "Campaign Briefs" },
     { id: "nanit", label: "Nanit Codes" },
     { id: "releases", label: "Media Releases" },
     { id: "affiliates", label: "Affiliates" },
