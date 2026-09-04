@@ -10,6 +10,22 @@ export const revalidate = 0;
 const BUCKET = "campaign-briefs";
 const missing = (m: string) => /PGRST205|does not exist|schema cache|relation .* does not exist/i.test(m || "");
 
+// Renders the PDF's first page to a PNG so brief cards can show a real cover
+// instead of a plain text card. mupdf is WASM (no native canvas/poppler
+// binary needed), so it just works in the serverless function — but a
+// failure here should never block saving the brief itself.
+async function renderCoverPng(pdfBuf: ArrayBuffer): Promise<Buffer | null> {
+  try {
+    const mupdf = await import("mupdf");
+    const doc = mupdf.Document.openDocument(Buffer.from(pdfBuf), "application/pdf");
+    const page = doc.loadPage(0);
+    const pixmap = page.toPixmap(mupdf.Matrix.scale(1.6, 1.6), mupdf.ColorSpace.DeviceRGB, false, true);
+    return Buffer.from(pixmap.asPNG());
+  } catch {
+    return null;
+  }
+}
+
 export async function GET() {
   if (!(await getAccess()).role) return NextResponse.json({ ok: false }, { status: 401 });
   const sb = await createClient();
@@ -52,10 +68,19 @@ export async function POST(req: Request) {
     const pdfFile = form.get("pdf_file");
     if (pdfFile instanceof File && pdfFile.size > 0) {
       if (pdfFile.size > 25 * 1024 * 1024) throw new Error("Brief PDF is over 25MB");
+      const pdfBuf = await pdfFile.arrayBuffer();
       const path = `${data.id}/${Date.now()}-${pdfFile.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-      const { error: upErr } = await sb.storage.from(BUCKET).upload(path, Buffer.from(await pdfFile.arrayBuffer()), { contentType: pdfFile.type || "application/pdf", upsert: true });
+      const { error: upErr } = await sb.storage.from(BUCKET).upload(path, Buffer.from(pdfBuf), { contentType: pdfFile.type || "application/pdf", upsert: true });
       if (upErr) throw new Error(upErr.message);
-      await sb.from("campaign_briefs").update({ pdf_path: path, pdf_name: pdfFile.name.slice(0, 200) }).eq("id", data.id);
+      const fields: any = { pdf_path: path, pdf_name: pdfFile.name.slice(0, 200) };
+
+      const coverPng = await renderCoverPng(pdfBuf);
+      if (coverPng) {
+        const coverPath = `${data.id}/cover-${Date.now()}.png`;
+        const { error: coverErr } = await sb.storage.from(BUCKET).upload(coverPath, coverPng, { contentType: "image/png", upsert: true });
+        if (!coverErr) fields.cover_url = sb.storage.from(BUCKET).getPublicUrl(coverPath).data.publicUrl;
+      }
+      await sb.from("campaign_briefs").update(fields).eq("id", data.id);
     }
     const handles = form.getAll("handles").map(h => String(h).trim()).filter(Boolean);
     if (handles.length) {

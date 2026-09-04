@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 // from partnerships@coolkidz.com.au. Everyone signed in can view/download.
 type Brief = {
   id: string; title: string; brand: string | null; content_html: string | null;
-  pdf_path: string | null; pdf_name: string | null; live_date: string | null;
+  pdf_path: string | null; pdf_name: string | null; cover_url: string | null; live_date: string | null;
   status: string; created_by: string | null; created_at: string;
 };
 type Assignment = { brief_id: string; handle: string; emailed_at: string | null };
@@ -221,7 +221,13 @@ export function CampaignBriefs({ brands, admin = false }: { brands: { id: number
           {visible.map(b => {
             const who = assignedTo(b.id);
             return (
-              <div key={b.id} className={`bg-white rounded-xl border border-gray-100 p-4 space-y-2 ${b.status === "archived" ? "opacity-60" : ""}`}>
+              <div key={b.id} className={`bg-white rounded-xl border border-gray-100 overflow-hidden ${b.status === "archived" ? "opacity-60" : ""}`}>
+                {b.cover_url && (
+                  <button onClick={() => setViewing(b)} className="block w-full bg-slate-100">
+                    <img src={b.cover_url} alt="" className="w-full h-40 object-cover object-top" />
+                  </button>
+                )}
+                <div className="p-4 space-y-2">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="font-medium text-slate-800">{b.title}</p>
@@ -258,6 +264,7 @@ export function CampaignBriefs({ brands, admin = false }: { brands: { id: number
                       <button onClick={() => remove(b.id)} disabled={busyId === b.id} className="text-xs border border-rose-200 text-rose-500 rounded-lg px-3 py-1.5 hover:bg-rose-50">Delete</button>
                     </>
                   )}
+                </div>
                 </div>
               </div>
             );
