@@ -85,6 +85,7 @@ import { BlogHub } from "./BlogHub";
 import { BlogPipeline } from "./BlogPipeline";
 import { MediaReleases } from "./MediaReleases";
 import { InfluencerAgreements } from "./InfluencerAgreements";
+import { CampaignBriefs } from "./CampaignBriefs";
 import { EventConcepts } from "./EventConcepts";
 import { LaunchDecks } from "./LaunchDecks";
 import { TodoPanel } from "./TodoPanel";
@@ -102,7 +103,7 @@ import { StockReport } from "./StockReport";
 import { fmt, fmtFull } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "seo" | "social" | "youtube" | "tradeshows" | "show-insights" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "nanit" | "affiliates" | "pa-budget" | "pa-tracker" | "pa-revenue" | "documents" | "team" | "brand-packs" | "price-lists" | "hub-fact-sheets" | "brand-overview" | "stock-availability" | "order-forms" | "customers" | "customer-forms";
+type TabId = "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "seo" | "social" | "youtube" | "tradeshows" | "show-insights" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "campaign-briefs" | "nanit" | "affiliates" | "pa-budget" | "pa-tracker" | "pa-revenue" | "documents" | "team" | "brand-packs" | "price-lists" | "hub-fact-sheets" | "brand-overview" | "stock-availability" | "order-forms" | "customers" | "customer-forms";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -262,6 +263,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-3-3v6m-7 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
   },
   {
+    id: "campaign-briefs", label: "Campaign Briefs",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h4m1-16H5a2 2 0 00-2 2v16a2 2 0 002 2h14a2 2 0 002-2V8z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 2v6h6" /></svg>,
+  },
+  {
     id: "product-info", label: "Product Information",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
   },
@@ -377,12 +382,12 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info", "brand-assets", "stock-report", "cost-sheet"] },
   { label: "Retailer Hub", ids: ["brand-packs", "price-lists", "hub-fact-sheets", "brand-overview", "stock-availability", "order-forms", "customers", "customer-forms"] },
   { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads", "amazon-ads"] },
-  { label: "Owned & Earned", ids: ["email", "seo", "social", "youtube", "influencer", "gifting", "influencer-agreements", "nanit", "releases", "affiliates", "pa-budget", "pa-tracker", "pa-revenue", "documents"] },
+  { label: "Owned & Earned", ids: ["email", "seo", "social", "youtube", "influencer", "gifting", "influencer-agreements", "campaign-briefs", "nanit", "releases", "affiliates", "pa-budget", "pa-tracker", "pa-revenue", "documents"] },
   { label: "Sales Hub", ids: ["sales-hub"] },
 ];
 
 // Influencer pages collapse under an "Influencers" dropdown in the sidebar.
-const INFLUENCER_IDS: TabId[] = ["influencer", "gifting", "influencer-agreements", "nanit", "releases"];
+const INFLUENCER_IDS: TabId[] = ["influencer", "gifting", "influencer-agreements", "campaign-briefs", "nanit", "releases"];
 
 // Brand share of revenue donut + bars. D2C basis for everyone (matches the
 // team-visible cards); whole-business basis (monthly channel export) admin-only.
@@ -2517,6 +2522,13 @@ export function DashboardTabs({
             <>
               <SectionBar title="Influencer Agreements" />
               <InfluencerAgreements brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} admin={role === "admin"} currentEmail={currentEmail} />
+            </>
+          )}
+
+          {active === "campaign-briefs" && (
+            <>
+              <SectionBar title="Campaign Briefs" />
+              <CampaignBriefs brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} admin={role === "admin"} />
             </>
           )}
 
