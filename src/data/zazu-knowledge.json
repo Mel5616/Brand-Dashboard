@@ -1,0 +1,1077 @@
+{
+ "policies": {
+  "shipping": "Delivery From Melbourne, fast. Every order is dispatched from Braeside, Victoria within 24 to 48 business hours and sent express. Most of Australia has it in one to three business days.\nDispatch — 24 to 48 hrs — Every order leaves Braeside VIC within 24 to 48 business hours, Monday to Friday. Longer in peak periods like Black Friday and Christmas.\nDelivery — 1 to 3 days — Express to most of Australia. No PO boxes, locked bags or parcel lockers, and tracking by email and SMS.\nFree shipping — Over $99 — Threshold is a placeholder for the launch decision.\nReturns and warranty If it isn't right.\nCan I return it? — Changed your mind? Exchange or store credit within 30 days, as long as it's unopened, in original packaging with manuals and accessories, and you have proof of purchase.\nWhat does the warranty cover? — Every Zazu sold by us carries a 12-month manufacturer's warranty through Coolkidz Australia, with local support by phone and email.\nIt arrived damaged or wrong — Contact us within 48 hours of delivery. You'll get a return authority within one to two working days, a replacement as soon as it's back, and the cost of sending it back.\nCan I track my order? — Yes. Tracking is emailed when the parcel leaves Braeside.",
+  "warranty": "Warranty and returns If it isn't right, we fix it. Every Zazu sold by us is covered by a 12-month Australian warranty through Coolkidz Australia, on top of your rights under the Australian Consumer Law. Faults are replaced or repaired; if we sent the wrong thing, that is on us.\nFaulty or wrong item — 48 hours — Contact us within 48 hours of delivery. You'll have a return authority within one to two working days.\nChange of mind — 30 days — Exchange or store credit, as long as it's unopened, in original packaging with manuals and accessories, and you have proof of purchase.\nManufacturer's warranty — 12 months — Against defects in materials and workmanship, from the date of purchase, on every Zazu sold in Australia.\nHow a claim works Three steps, no forms.\n1 — Use the contact form with your order number, a photo or short video of the fault, and a sentence on what is happening.\n2 — We reply within one to two working days with a return authority. Please don't send anything back without one.\n3 — Pack it up and send it to Coolkidz Australia Pty Ltd, 1 Beyer Road, Braeside VIC 3195. The replacement ships as soon as it lands, and we transfer your return postage.\nQuestions The fine print, in plain English.\nDo I get a refund or a replacement? — In most cases a faulty product is replaced or repaired. If you'd prefer a refund on a faulty item, ask and we'll arrange it.\nWhat isn't covered? — Normal wear, damage from misuse or accidents, and batteries. Change-of-mind returns must be unopened.\nMy clock is stuck on green — Usually a settings issue, not a fault. Set the wake-up time before bedtime, and use the sleep timer if you need it back to red tonight. If it still misbehaves, get in touch and we'll sort it.\nI bought it from a retailer — Go back to the retailer first, as the law requires. If you get stuck, get in touch and we'll help you through it."
+ },
+ "faq": [
+  {
+   "product": "Sam and Davy",
+   "q": "In short how do I operate Sam or Davy?",
+   "a": "Please check out our Quickstart video or read the manual. You can also check our how to video’s. It clearly describes the 1st steps to get Sam/Davy up and running. Once the settings are done, Sam/Davy will close their eyes every day and open them in the morning at preset time."
+  },
+  {
+   "product": "Sam and Davy",
+   "q": "If the power is turned off , does the sleeptrainer remember it’s settings?",
+   "a": "When the power shuts off, the sleeptrainer will not remember it’s settings unless batteries are inserted. We therefore advise to insert the batteries as back up in case power shuts off."
+  },
+  {
+   "product": "Sam and Davy",
+   "q": "How can I stop my child from playing with buttons and changing the settings?",
+   "a": "The clock will enter key lock mode automatically after 1 minute. To manually activate the key lock: press the key lock button for 3 seconds. After activating the sleeptimer/wake-up time the key-lock is activated straight away, so that the settings cannot be changed anymore."
+  },
+  {
+   "product": "Sam and Davy",
+   "q": "Can I separate the wake-up time from the alarm time?",
+   "a": "Yes, when setting the naptime or wake-up time, you can separately set the alarm. So you can set the sound alarm at a later time than the opening of the eyes."
+  },
+  {
+   "product": "Sam and Davy",
+   "q": "Can I switch off the orange screen, half an hour before wake-up?",
+   "a": "It is not possible to switch off or change the time it turns on. The time is fixed at 30 minutes. If your child is still sleeping, the orange light will not wake him/her up. But if he/she does wake up, she knows straight away that it is not much longer by seeing the screen is orange."
+  },
+  {
+   "product": "Sam and Davy",
+   "q": "How can I close Sam’s or Davy’s eyes?",
+   "a": "In the menu you select a time that Sam/Davy will automatically close their eyes every day. If you want to close them earlier you can press the DOWN button for 3 seconds and the eyes will close."
+  },
+  {
+   "product": "Sam and Davy",
+   "q": "How can I see if the clock is key-locked?",
+   "a": "In the top of the LCD screen the key-lock symbol will appear when it is activated."
+  },
+  {
+   "product": "Sam and Davy",
+   "q": "How do I know if my clock is activated?",
+   "a": "Sam or Davy is always activated. Once you have set the bedtime and OK to wake up time, he will automatically go to sleep every night and wake up every morning at the preset time."
+  },
+  {
+   "product": "Sam and Davy",
+   "q": "What if Sam is just not listening at all?",
+   "a": "Try resetting Sam by pushing the tiny button with a paperclip on the bottom of the clock. This will usually make him listen."
+  },
+  {
+   "product": "Check our video on how to reset Sam/Davy",
+   "q": "Sometimes the buttons do not react when I press them. What is wrong?",
+   "a": "Probably the key lock has been activated. To unlock press the keylock-button, right, for 3 sec."
+  },
+  {
+   "product": "Check our video on how to reset Sam/Davy",
+   "q": "If I do not want the alarm to sound, do I need to change the volume in the settings menu?",
+   "a": "No, that is not necessary. In the menu (alarm clock icon) you can switch the alarm ON/OFF."
+  },
+  {
+   "product": "Check our video on how to reset Sam/Davy",
+   "q": "Is there a demo function to show my child the working of Sam?",
+   "a": "Yes there is a demo function in the settings menu. This demo will go through the entire bedtime ritual in around 20 seconds with preset time, so not the actual time that you have entered. You can check out our how to video for the demo function"
+  },
+  {
+   "product": "Check our video on how to reset Sam/Davy",
+   "q": "How long can I use the sleeptrainer when using batteries?",
+   "a": "When using batteries, make sure you are using good alkaline batteries. Also we advise you to limit the nightlight to 5 minutes and select lowest brightness in the settings menu. Only then batteries will last around 4 weeks with normal use. With other settings the battery life will be decreased significantly."
+  },
+  {
+   "product": "Check our video on how to reset Sam/Davy",
+   "q": "I can’t find the off function in the naptimer menu, what can I do?",
+   "a": "You have to set the naptimer each time you want to use it, so there is not an off function in the menu because it ends automatically."
+  },
+  {
+   "product": "Check our video on how to set the naptime",
+   "q": "Is it possible to set two wake up times so we can use a different wake up time for the weekends?",
+   "a": "No, this is not possible."
+  },
+  {
+   "product": "Check our video on how to set the naptime",
+   "q": "What kind of adapter do I need for Sam/Davy?",
+   "a": "We advise you to use a 5V,1A adapter."
+  },
+  {
+   "product": "Pam the penguin",
+   "q": "How can I turn on the light?",
+   "a": "Press the big round ON/OFF button on the bottom."
+  },
+  {
+   "product": "Press the big round ON/OFF button on the bottom.",
+   "q": "How do I switch on/off the timer for the nightlight?",
+   "a": "You can set the 60-minute timer by pressing the small clock and alarm button at the same time. Pam flashes once green when the timer is switched on and red if the timer is switched off."
+  },
+  {
+   "product": "Press the big round ON/OFF button on the bottom.",
+   "q": "Can I change the settings for orange and green light?",
+   "a": "This is not possible. The preset times can not be adjusted."
+  },
+  {
+   "product": "Press the big round ON/OFF button on the bottom.",
+   "q": "How do I switch on the wireless connection?",
+   "a": "Press the clock and triangle button at the same time. The wireless speaker symbol will appear in the display if activated. In the bluetooth menu of your phone, look for ZAZU-PAM and connect."
+  },
+  {
+   "product": "Press the big round ON/OFF button on the bottom.",
+   "q": "How long does the wireless speaker stay connected?",
+   "a": "If you use Pam with the timer, the bluetooth will switch off together with the light. If you use Pam without the timer, the connection stays as long as you are playing music/songs."
+  },
+  {
+   "product": "Press the big round ON/OFF button on the bottom.",
+   "q": "Why do I need to reconnect to the wireless speaker?",
+   "a": "If Pam needs to ‘look’ for connection 24/7 it takes up too much battery."
+  },
+  {
+   "product": "Press the big round ON/OFF button on the bottom.",
+   "q": "How do I change the colour of the nightlight?",
+   "a": "Press the big round button several times to get to your preferred colour."
+  },
+  {
+   "product": "Press the big round ON/OFF button on the bottom.",
+   "q": "How do I change the brightness of the nightlight?",
+   "a": "Switch on the nightlight by pressing the big button, then keep the big button pressed. The brightness will change. Let go at the right brightness. Pam will remember this setting for next use."
+  },
+  {
+   "product": "Press the big round ON/OFF button on the bottom.",
+   "q": "How do I use Pam as a nightlight only?",
+   "a": "Press the triangle button on the bottom for 3 seconds. In the display will appear a crossed out alarm clock. This means that the sleeptraining function is switched off."
+  },
+  {
+   "product": "Press the big round ON/OFF button on the bottom.",
+   "q": "What kind of adaptor do I need to use for charging?",
+   "a": "You can use any 5Volt output adapter for charging. Most telephone adapters comply with this."
+  },
+  {
+   "product": "Robby the rocker",
+   "q": "HOW DOES THE CRY SENSOR WORK?",
+   "a": "The cry sensor operates by listening to sounds, such as crying. When it detects a certain level of sound, typically crying, it will activate the rocking. Upon detecting crying, it will rock the stroller for a duration of 10 minutes. The cry sensor will remain active for a continuous period of 3 hours to provide soothing support when needed."
+  },
+  {
+   "product": "Robby the rocker",
+   "q": "IF THE LED LIGHT IS FLASHING, HOW MUCH TIME REMAINS UNTIL THE PRODUCT IS DEPLETED?",
+   "a": "When the flashing begins, you can expect approximately 2 more hours of usage, contingent upon the chosen frequency."
+  },
+  {
+   "product": "Robby the rocker",
+   "q": "CAN YOU I USE THE ROCKER IN THE RAIN?",
+   "a": "The product has been tested with an IPX1 rating, indicating its resistance to light rain. However, we strongly recommend that when it starts raining, you remove the rocker and store it in a dry place. Please refrain from exposing it to prolonged or heavy rainfall."
+  },
+  {
+   "product": "Robby the rocker",
+   "q": "CAN I ATTACH THE ROCKER ANYWHERE?",
+   "a": "The product should always be positioned horizontally and should not be attached to the side bar. The ideal placement is on the main handlebar of the stroller. The farther away it is from the wheel base, the more effective the rocking motion will be."
+  },
+  {
+   "product": "Robby the rocker",
+   "q": "IS IT POSSIBLE TO KEEP ROBBY RUNNING CONTINUOUSLY?",
+   "a": "You cannot have Robby on continuously, as the rocker is programmed to automatically switch off after 40 minutes. However, you have the option to activate the cry sensor. When your child remains restless and cries, the cry sensor will automatically switch on the rocker again for an additional 10 minutes to provide soothing comfort."
+  },
+  {
+   "product": "Robby the rocker",
+   "q": "IN WHAT TEMPERATURE RANGE IS ROBBY SUITABLE FOR USE?",
+   "a": "Robby is suitable for use in temperatures ranging from 30°C to -10°C. However, please be aware that colder temperatures will result in reduced battery life."
+  },
+  {
+   "product": "Roxy the rocker",
+   "q": "HOW DOES THE CRY SENSOR WORK?",
+   "a": "The cry sensor operates by listening to sounds, such as crying. When it detects a certain level of sound, typically crying, it will activate the rocking. Upon detecting crying, it will rock the stroller for a duration of 10 minutes. The cry sensor will remain active for a continuous period of 3 hours to provide soothing support when needed."
+  },
+  {
+   "product": "Roxy the rocker",
+   "q": "IF THE LED LIGHT IS FLASHING, HOW MUCH TIME REMAINS UNTIL THE PRODUCT IS DEPLETED?",
+   "a": "When the flashing begins, you can expect approximately 2 more hours of usage, contingent upon the chosen frequency."
+  },
+  {
+   "product": "Roxy the rocker",
+   "q": "CAN YOU I USE THE ROCKER IN THE RAIN?",
+   "a": "The product has been tested with an IPX1 rating, indicating its resistance to light rain. However, we strongly recommend that when it starts raining, you remove the rocker and store it in a dry place. Please refrain from exposing it to prolonged or heavy rainfall."
+  },
+  {
+   "product": "Roxy the rocker",
+   "q": "CAN I ATTACH THE ROCKER ANYWHERE?",
+   "a": "The product should always be positioned horizontally and should not be attached to the side bar. The ideal placement is on the main handlebar of the stroller. The farther away it is from the wheel base, the more effective the rocking motion will be."
+  },
+  {
+   "product": "Roxy the rocker",
+   "q": "IS IT POSSIBLE TO KEEP ROXY RUNNING CONTINUOUSLY?",
+   "a": "You cannot have Roxy on continuously, as the rocker is programmed to automatically switch off after 40 minutes. However, you have the option to activate the cry sensor. When your child remains restless and cries, the cry sensor will automatically switch on the rocker again for an additional 10 minutes to provide soothing comfort."
+  },
+  {
+   "product": "Roxy the rocker",
+   "q": "IN WHAT TEMPERATURE RANGE IS ROXY SUITABLE FOR USE?",
+   "a": "Roxy is suitable for use in temperatures ranging from 30°C to -10°C. However, please be aware that colder temperatures will result in reduced battery life."
+  },
+  {
+   "product": "Bobby the bear",
+   "q": "How do I close Bobby’s eyes?",
+   "a": "Press the big button on the top for 3 seconds and Bobby’s eyes will close until it is OK to wake up."
+  },
+  {
+   "product": "Bobby the bear",
+   "q": "Do I need to close the eyes every night?",
+   "a": "Yes, every night at bedtime you close Bobby’s eyes by pressing the big button on top for 3 seconds."
+  },
+  {
+   "product": "Bobby the bear",
+   "q": "How do I switch the sound off?",
+   "a": "Behind the lid on the bottom there is a knob with which you can lower the sound volume or switch off completely."
+  },
+  {
+   "product": "Brody the bear",
+   "q": "What power supply does Brody have?",
+   "a": "Brody works on 3x AA Alkaline batteries."
+  },
+  {
+   "product": "Brody the bear",
+   "q": "Is it possible to set two wake up times so we can use a different wake up time for the weekends?",
+   "a": "No, this is not possible."
+  },
+  {
+   "product": "Brody the bear",
+   "q": "How do I use Brody as a nightlight only?",
+   "a": "If the display does not show the ‘alarm clock’ icon in the left bottom of the display, your Brody is ready for nightlight/soundmachine only. If not follow below steps:"
+  },
+  {
+   "product": "Brody the bear",
+   "q": "How do I change the brightness of the light?",
+   "a": "First unlock the key-lock before you can change any settings. Switch on the nightlight by long pressing the shell button. Then press the ‘light bulb’ button until you reach the preferred brightness (HIGH-MEDIUM-LOW-OFF). Check our how to video"
+  },
+  {
+   "product": "Lou and Billy",
+   "q": "How can I turn on the lights?",
+   "a": "On the front of the nightlight you can find a big button. When you press this button, both the light of the owl/bear and the ring will turn ON. By pressing the OWL/BEAR button, on the left side of the little owl/bear, only the light of the owl/bear will turn ON. When you press the RING button, on the right side of the little owl/bear, only the light of the RING will turn ON."
+  },
+  {
+   "product": "Lou and Billy",
+   "q": "How can I activate the timer?",
+   "a": "You can turn on the timer function of the little owl/bear by pressing the OWL/BEAR button for 2 seconds. The owl/bear will flicker when the timer is activated. The timer function of the ring can be turned on by pressing the RING button for 2 seconds. Again, the light of the ring will flicker when the timer is activated."
+  },
+  {
+   "product": "Lou and Billy",
+   "q": "How long will the lights stay on when the timer is activated?",
+   "a": "The owl/bear will turn off after 60 minutes and the ring will turn off after 30 minutes."
+  },
+  {
+   "product": "Lou and Billy",
+   "q": "How can I adjust the brightness of the lights?",
+   "a": "You can find two sliders on the back of Lou/Billy. By sliding them back and forth you can separately adjust the brightness of the owl/bear and the ring."
+  },
+  {
+   "product": "Lou and Billy",
+   "q": "How does the cry sensor work?",
+   "a": "On the back of Lou/Billy there’s a switch with a small ear. Put the switch on ON to activate the cry sensor and switch it to OFF to turn the cry sensor off."
+  },
+  {
+   "product": "Lou and Billy",
+   "q": "How long will the owl/bear stay on when the sound sensor is activated?",
+   "a": "When your child is crying the owl/bear will stay on for 5 minutes. After 5 minutes the light will automatically switch off."
+  },
+  {
+   "product": "Fin the sheep",
+   "q": "How can I turn on the lights?",
+   "a": "With the ON/OFF button. Press 1x for soft light. Press 2x for bright light. Press 3x to turn it OFF."
+  },
+  {
+   "product": "Fin the sheep",
+   "q": "After how many minutes does the light turn OFF?",
+   "a": "The lights will automatically switch off after 60 minutes."
+  },
+  {
+   "product": "Fin the sheep",
+   "q": "How do I know my Fin is charging?",
+   "a": "When Fin is charging a small red light will light up. When Fin is fully charged this light will turn green."
+  },
+  {
+   "product": "Fin the sheep",
+   "q": "How long does it take before Fin is fully charged?",
+   "a": "The battery is fully charged after 10 hours."
+  },
+  {
+   "product": "Fin the sheep",
+   "q": "What is the battery life of Fin?",
+   "a": "A full battery will have a life of around 10 hours."
+  },
+  {
+   "product": "Benny the bear",
+   "q": "How do I take off the silicone cover?",
+   "a": "If you squeeze the silicone cover and grab the light with your other hand, you can pull the cover off. If you know the trick it is easy. We have made it a little difficult so that small children are not able to take off the cover themselves"
+  },
+  {
+   "product": "Benny the bear",
+   "q": "How long is the battery life?",
+   "a": "For white light it lasts around 70 hours, for orange it is less around 45 hours. Orange light consumes more power than white."
+  },
+  {
+   "product": "Benny the bear",
+   "q": "How does the twilight sensor work?",
+   "a": "The lights will automatically switch on when it gets dark and off when it turns light."
+  },
+  {
+   "product": "Benny the bear",
+   "q": "How can I change the colour of the light?",
+   "a": "There is a small button on the plug if you take off the cover. Here you choose white or orange light."
+  },
+  {
+   "product": "Benny the bear",
+   "q": "Can I switch off the twilight sensor?",
+   "a": "Yes you can switch off the twilight sensor. The light will then be completely off. To do this take off the cover and set the slider to the OFF position"
+  },
+  {
+   "product": "Bor the bear",
+   "q": "How long is the battery life?",
+   "a": "For white light it lasts around 70 hours, for orange it is less around 45 hours. Orange light consumes more power than white."
+  },
+  {
+   "product": "Bor the bear",
+   "q": "How can I change the colour of the light?",
+   "a": "To change the colour of the light, simply tap on the silicone bear and the light will change. Choose from 8 colours."
+  },
+  {
+   "product": "Bor the bear",
+   "q": "How do I turn the timer on and off?",
+   "a": "Double click the button on the bottom. If the timer is ON you see a green light. If the timer is OFF you see a red light near the button"
+  },
+  {
+   "product": "Bor the bear",
+   "q": "How long is the battery life?",
+   "a": "You can use Suzy for more than 100 hours on 1 charge."
+  },
+  {
+   "product": "You can use Suzy for more than 100 hours on 1 charge.",
+   "q": "How can switch on the 20 minute timer?",
+   "a": "Double press the ON/OFF button. If the green light is on, the timer is active. If the light is red, the timer is inactive and the music will keep playing"
+  },
+  {
+   "product": "You can use Suzy for more than 100 hours on 1 charge.",
+   "q": "How does the cry sensor work?",
+   "a": "If Suzy detects crying it will automatically play the last song again"
+  },
+  {
+   "product": "You can use Suzy for more than 100 hours on 1 charge.",
+   "q": "Can I have Gaia switch off automatically?",
+   "a": "Yes, you can automatically switch off after 20 or 40 minutes. Set the slider on the bottom of the module in the right position. Alternatively you can play the entire night"
+  },
+  {
+   "product": "Gina the giraffe",
+   "q": "How long does the flash light stay ON?",
+   "a": "The flash light automatically switches off after 10 minutes. So your child will not sleep with the bright light."
+  },
+  {
+   "product": "Gina the giraffe",
+   "q": "How long does the nightlight stay on?",
+   "a": "The nightlight switches off after 30 minutes. When Gina is charging, the nightlight can stay on the entire night."
+  },
+  {
+   "product": "Gina the giraffe",
+   "q": "How do I change the colour of the nightlight?",
+   "a": "Keep the nightlight button pressed and the colours will change. Let go when the preferred colour is showing. Gina will remember the setting for next time use."
+  },
+  {
+   "product": "Gina the giraffe",
+   "q": "How do I switch off the nightlight manually?",
+   "a": "Press the nightlight button and wait until the light switches OFF. It might take another few colours until you reach the off setting."
+  },
+  {
+   "product": "Max, Bo and Katie",
+   "q": "Can I use the nightlight without sound?",
+   "a": "Yes, on the top side of the module you can switch off the sound and use the light only."
+  },
+  {
+   "product": "Max, Bo and Katie",
+   "q": "How long do the batteries last?",
+   "a": "Depending on how many times it is activated it should last 4-6 weeks."
+  },
+  {
+   "product": "Max, Bo and Katie",
+   "q": "How do I change the colour?",
+   "a": "Tap with your nail on the ring and the colour will change. The light will remember the setting for next use."
+  },
+  {
+   "product": "Max, Bo and Katie",
+   "q": "How do I change the brightness?",
+   "a": "Keep your hand fixated underneath the light. As long as your hand is in the beam, the light will slowly dim and get brighter. Take away your hand once the preferred brightness is reached. The light will remember the setting."
+  },
+  {
+   "product": "Max, Bo and Katie",
+   "q": "How do I switch it on or off?",
+   "a": "Swipe your hand underneath the light and it will switch ON or OFF."
+  },
+  {
+   "product": "Lex, Zack and Ellie",
+   "q": "How does the tumbling work?",
+   "a": "You can switch on/off the light by giving the tumbler a small push. In between on and off the light might stand still for a short while."
+  },
+  {
+   "product": "Lex, Zack and Ellie",
+   "q": "After how long will the light switch off?",
+   "a": "The light will automatically switch off after 30 minutes."
+  },
+  {
+   "product": "Lex, Zack and Ellie",
+   "q": "Can the plush part be washed?",
+   "a": "Yes, you can remove the plush cover and hand wash it."
+  },
+  {
+   "product": "Yes, you can remove the plush cover and hand wash it.",
+   "q": "How do I change the colour of the light?",
+   "a": "By pressing the button several times, the colour of the light will change. The light will remember the setting for next use."
+  },
+  {
+   "product": "Yes, you can remove the plush cover and hand wash it.",
+   "q": "Can I switch off the tumble sensor for travel?",
+   "a": "Yes, if you press the big button for 3 seconds the tumble sensor will be deactivated. By pressing the button again, the light will switch on and the tumble function will work again."
+  },
+  {
+   "product": "Emmy the elephant",
+   "q": "How does Emmy work?",
+   "a": "Emmy can help your little one to clear the mind by playing calm breathing sound and projecting light on the ceiling getting bigger and smaller. Your little one will automatically focus and follow the calm breathing and pulse light and fall asleep more easily."
+  },
+  {
+   "product": "Emmy the elephant",
+   "q": "How do I turn Emmy on?",
+   "a": "To switch Emmy on press the round button on the front, between the elephant paws."
+  },
+  {
+   "product": "Cody and Otto",
+   "q": "How does the 3 step sleep program work?",
+   "a": "In the first phase the light is bright and orange and blue fish are swimming around the room, together with soothing sound, this to grab the attention of the baby. In phase two the brightness is lower and the orange fish disappear, a more quiet environment. In phase three the waves and fish stop swimming and there is no more sound. The perfect setting to fall asleep."
+  },
+  {
+   "product": "Sometimes the waves stop moving.",
+   "q": "How long does the cry sensor work?",
+   "a": "Every time you start a new sleep program the cry sensor will be activated for 12 hours. Please note that you have to switch on the cry sensor on the bottom of the module."
+  },
+  {
+   "product": "Sometimes the waves stop moving.",
+   "q": "Can the plush cover be washed?",
+   "a": "Yes, you can hand wash the plush after the module has been removed."
+  },
+  {
+   "product": "Sometimes the waves stop moving.",
+   "q": "Can I use Cody or Otto without sound?",
+   "a": "Yes, on the bottom of the module there is a button with music choice, here you can set the switch to OFF."
+  },
+  {
+   "product": "Tim, Henry and Shally",
+   "q": "How does the 3 step sleep program work?",
+   "a": "In the first phase the light is bright. Orange and blue birds are flying around the room, together with soothing sound, this to grab the attention of the baby. In phase two the brightness is lower and the blue birds disappear, a more quiet environment. In phase three the sky and birds stop moving and there is no more sound. The perfect setting to fall asleep."
+  },
+  {
+   "product": "Sometimes the sky stops moving.",
+   "q": "How long does the cry sensor work?",
+   "a": "Every time you start a new sleep program the cry sensor will be activated for 12 hours. Please note that you have to switch on the cry sensor on the bottom of the module."
+  },
+  {
+   "product": "Sometimes the sky stops moving.",
+   "q": "Can the plush cover be washed?",
+   "a": "Yes, you can hand wash the plush after the module has been removed."
+  },
+  {
+   "product": "Sometimes the sky stops moving.",
+   "q": "Can I use Tim without sound?",
+   "a": "Yes, on the bottom of the module there is a button with music choice, here you can set the switch to OFF."
+  },
+  {
+   "product": "Wally the whale",
+   "q": "How do I activate the cry sensor?",
+   "a": "Set the switch on the bottom in the ON position. The cry sensor will then be active for 12 hours every time to switch Wally on. Depending on the distance to your child, the cry sensor will activate upon crying."
+  },
+  {
+   "product": "Wally the whale",
+   "q": "How do I attach Wally to the crib?",
+   "a": "Use the velcro strap that came with the product. On the bottom of Wally there are loops where you can put the strap."
+  },
+  {
+   "product": "Wally the whale",
+   "q": "Can I use Wally without sound?",
+   "a": "Yes, you can switch off the sound on the bottom with the sound switch."
+  },
+  {
+   "product": "Kiki, Harry, Ruby and Leo",
+   "q": "How do I activate the cry sensor?",
+   "a": "Press the cry sensor button for 3 seconds. The light will flash green when activated and red when deactivated. The cry sensor will then be active for 12 hours every time to activate the projector. Depending on the distance to your child, the cry sensor will activate upon crying."
+  },
+  {
+   "product": "Kiki, Harry, Ruby and Leo",
+   "q": "Can the plush cover be washed?",
+   "a": "Yes, you can hand wash the plush after the module has been removed."
+  },
+  {
+   "product": "Kiki, Harry, Ruby and Leo",
+   "q": "Can I use the projector without sound?",
+   "a": "Yes, if you only press the projection button there will be light only, no sound."
+  },
+  {
+   "product": "Pip, Paul and Howy",
+   "q": "Can I place the bag on a metal rack?",
+   "a": "It is not advised to place the bag on a metal rack, better to place on a glass plate. Make sure the surface is clean. Take the bag out of the plush animal."
+  },
+  {
+   "product": "Pip, Paul and Howy",
+   "q": "How long does the heat pack stay warm?",
+   "a": "Depending on how warm it was when started, it should stay warm for around an hour."
+  },
+  {
+   "product": "Pip, Paul and Howy",
+   "q": "Can I use the bag as a coolpack?",
+   "a": "Yes, you can place the bag in the freezer for a couple of hours and then it will gently cool the area you put it on."
+  },
+  {
+   "product": "Danny the dog",
+   "q": "How do I start the play mode?",
+   "a": "By squeezing the foot with the triangle, the play mode will start. To stop you can press the foot again."
+  },
+  {
+   "product": "Danny the dog",
+   "q": "How do I start the sing-a-long mode?",
+   "a": "By squeezing the foot with the music note, the sing-a-long mode will start. To stop you can press the foot again."
+  },
+  {
+   "product": "Danny the dog",
+   "q": "Can I switch off the product completely?",
+   "a": "Yes, on the bottom of the product there is an ON/OFF switch."
+  },
+  {
+   "product": "Timo and Chloe",
+   "q": "How do I start the play mode?",
+   "a": "By squeezing the foot with the triangle, the play mode will start. To stop you can press the foot again."
+  },
+  {
+   "product": "Timo and Chloe",
+   "q": "How do I start the sing-a-long mode?",
+   "a": "By squeezing the foot with the music note, the sing-a-long mode will start. To stop you can press the foot again."
+  },
+  {
+   "product": "Timo and Chloe",
+   "q": "Can I switch off the product completely?",
+   "a": "Yes, on the bottom of the product there is an ON/OFF switch."
+  },
+  {
+   "product": "Felix, Robin and Becky",
+   "q": "Which melodies can you play?",
+   "a": "You can play heartbeat sound, nature sounds, white noise and 3 calming melodies."
+  },
+  {
+   "product": "Felix, Robin and Becky",
+   "q": "Can you adjust the volume of the melodies?",
+   "a": "You can adjust the volume yourself by pressing the volume button up or down."
+  },
+  {
+   "product": "Felix, Robin and Becky",
+   "q": "After how many minutes will the sound turn off?",
+   "a": "The sound turns off automatically after 10 minutes."
+  },
+  {
+   "product": "Felix, Robin and Becky",
+   "q": "How does the cry sensor work?",
+   "a": "Press the cry sensor button, when activated the small LED light will light up. The sensor will be activated for 12 hours. It will activate the last played song."
+  },
+  {
+   "product": "Felix, Robin and Becky",
+   "q": "When will the cry sensor be activated?",
+   "a": "The sound sensor will be activated upon crying. This means that there should be a significant amount of sound. We advise to place the module within 60 cm of your child to be able to pick up enough sound to activate. With or without the plush will make a difference, without plush the module will activate more quickly."
+  },
+  {
+   "product": "Felix, Robin and Becky",
+   "q": "Do I have to activate the movement sensor myself?",
+   "a": "Yes. The sensor can be turned on or off as desired."
+  },
+  {
+   "product": "Felix, Robin and Becky",
+   "q": "Are the comforters washable?",
+   "a": "The plush is washable in the machine but remove the heartbeat module beforehand."
+  },
+  {
+   "product": "Dex, Liz, Don, Coco and Bibi",
+   "q": "Which melodies can you play?",
+   "a": "The plush animals can play heartbeat sound, nature sounds, white noise and 3 calming melodies."
+  },
+  {
+   "product": "Dex, Liz, Don, Coco and Bibi",
+   "q": "Can you adjust the volume of the melodies?",
+   "a": "You can adjust the volume yourself by pressing the volume button up or down."
+  },
+  {
+   "product": "Dex, Liz, Don, Coco and Bibi",
+   "q": "After how many minutes will the sound turn off?",
+   "a": "The sound turns off automatically after 10 minutes."
+  },
+  {
+   "product": "Dex, Liz, Don, Coco and Bibi",
+   "q": "How does the cry sensor work?",
+   "a": "Press the cry sensor button, when activated the small LED light will light up. The sensor will be activated for 12 hours. It will activate the last played song."
+  },
+  {
+   "product": "Dex, Liz, Don, Coco and Bibi",
+   "q": "When will the cry sensor be activated?",
+   "a": "The sound sensor will be activated upon crying. This means that there should be a significant amount of sound. We advise to place the module within 60 cm of your child to be able to pick up enough sound to activate. With or without the plush will make a difference, without plush the module will activate more quickly."
+  },
+  {
+   "product": "Dex, Liz, Don, Coco and Bibi",
+   "q": "Do I have to activate the movement sensor myself?",
+   "a": "Yes. The sensor can be turned on or off as desired."
+  },
+  {
+   "product": "Dex, Liz, Don, Coco and Bibi",
+   "q": "Is the plush toy washable?",
+   "a": "The plush is washable in the machine but remove the heartbeat module beforehand."
+  },
+  {
+   "product": "Suzy the shusher",
+   "q": "Which melodies can you play?",
+   "a": "You can play heartbeat sound, nature sounds, white noise, ocean sound, lounge music and 3 calming melodies."
+  },
+  {
+   "product": "Suzy the shusher",
+   "q": "Can you adjust the volume of the melodies?",
+   "a": "Yes you can, you can adjust the volume yourself by pressing the volume button several times."
+  },
+  {
+   "product": "Suzy the shusher",
+   "q": "After how many minutes will the sound turn off?",
+   "a": "The sound turns off automatically after 20 minutes."
+  },
+  {
+   "product": "Suzy the shusher",
+   "q": "When will the cry sensor be activated?",
+   "a": "The sound sensor will be activated upon crying. This means that there should be a significant amount of sound. We advise to place the module within 60 cm of your child to be able to pick up enough sound to activate."
+  },
+  {
+   "product": "Suzy the shusher",
+   "q": "Do I have to activate the movement sensor myself?",
+   "a": "Yes. The sensor can be turned on or off as desired."
+  },
+  {
+   "product": "Suzy the shusher",
+   "q": "How do I attach Suzy to the crib?",
+   "a": "Use the red velcro that came with the product. You can attach the velcro on the backside through the loop."
+  },
+  {
+   "product": "Phoebe and Bruno",
+   "q": "How do I select my melody?",
+   "a": "Press the shield as many times until you reach your favorite song."
+  },
+  {
+   "product": "Phoebe and Bruno",
+   "q": "How do I record my own song?",
+   "a": "Keep the shield pressed as long as you are recording. When you let go, the recording will stop."
+  },
+  {
+   "product": "Phoebe and Bruno",
+   "q": "How does the cry sensor work?",
+   "a": "On the side of the module is a small switch to activate the cry sensor. The sensor will stay active for 12 hours."
+  },
+  {
+   "product": "Phoebe and Bruno",
+   "q": "When will the cry sensor be activated?",
+   "a": "The sound sensor will be activated upon crying. This means that there should be a significant amount of sound. We advise to place the module within 60 cm of your child to be able to pick up enough sound to activate. With or without the plush will make a difference, without plush the module will activate more quickly."
+  },
+  {
+   "product": "Phoebe and Bruno",
+   "q": "Can I use Phoebe/Bruno without sound?",
+   "a": "Yes, you can. On the side of the module you find a setting switch which indicates light only."
+  },
+  {
+   "product": "Phoebe and Bruno",
+   "q": "Is the soft toy washable?",
+   "a": "Yes, it is. Please remove the module beforehand."
+  },
+  {
+   "product": "Phoebe and Bruno",
+   "q": "How long will my recording be saved?",
+   "a": "The recording will be kept until a new recording is recorded. The recording will be removed when you turn off the module with the switch on the side."
+  },
+  {
+   "product": "Phoebe and Bruno",
+   "q": "How long do the batteries last?",
+   "a": "Depending on how many times it is activated it should last about 15 hours."
+  },
+  {
+   "product": "Zoe the penguin",
+   "q": "How does the auto shut-off work?",
+   "a": "Zoe will automatically shut off after 20 minutes. Sound as well as music."
+  },
+  {
+   "product": "Zoe the penguin",
+   "q": "How do I connect my phone?",
+   "a": "Switch the small button on the right side to the phone icon. The wireless speaker is now active. Check the Bluetooth menu of our phone and look for ZAZU-ZOE. Press connect. You can now play your songs."
+  },
+  {
+   "product": "Zoe the penguin",
+   "q": "How does the cry sensor work?",
+   "a": "Press the cry sensor button, when activated the small LED light will light up. The sensor will be activated for 12 hours. It will activate the last played song."
+  },
+  {
+   "product": "Zoe the penguin",
+   "q": "When will the cry sensor be activated?",
+   "a": "The sound sensor will be activated upon crying. This means that there should be a significant amount of sound. We advise to place the module within 60 cm of your child to be able to pick up enough sound to activate."
+  },
+  {
+   "product": "Sleeptrainer Sarah",
+   "q": "Did not find your answers?",
+   "a": "Please contact us be clicking below. Then we can help you to find what you seek."
+  },
+  {
+   "product": "Sleeptrainer Sarah",
+   "q": "Difficulties sleeping?",
+   "a": "ZAZU regularly writes tips about better sleep for kids and parents."
+  }
+ ],
+ "manuals": [
+  {
+   "label": "Manual – Sam",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2024/12/V16_Manual_SAM_2024_1217.pdf"
+  },
+  {
+   "label": "Manual – Davy",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2024/12/V9_Manual_DAVY_2024_1217.pdf"
+  },
+  {
+   "label": "Manual – Pam the penguin",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2022/04/V3_Manual_PAM_WITH-LINKS_2022_0408.pdf"
+  },
+  {
+   "label": "Manual – Robby the rocker",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2025/01/V8_Manual_ROBBY-THE-ROCKER_2024_1017.pdf"
+  },
+  {
+   "label": "Manual – Roxy the rocker",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2026/02/V3_Manual_ROXY_2026_0217.pdf"
+  },
+  {
+   "label": "Manual – Ro the rabbit",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2025/02/V4_Manual_RO_2024_1216.pdf"
+  },
+  {
+   "label": "Manual – Bobby the bear",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2022/04/V2_Manual_BOBBY_WITH_LINKS_2022_0408.pdf"
+  },
+  {
+   "label": "Manual – Brody the bear",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2023/12/V7_Manual_BRODY_2023_1207.pdf"
+  },
+  {
+   "label": "Manual – Lou & Billy",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2022/03/V7_Manual_LOU-BILLY_WITH_LINKS_2022_0331.pdf"
+  },
+  {
+   "label": "Manual – Fin the sheep",
+   "url": "https://www.zazu-kids.com/manual/fin.pdf"
+  },
+  {
+   "label": "Manual – Benny the bear",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2025/03/V2_Manual_Benny_2025-0130.pdf"
+  },
+  {
+   "label": "Manual – Bor the bear",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2025/03/V2_Manual_Bor_2025-0318.pdf"
+  },
+  {
+   "label": "Manual – Suzy de luxe",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2025/03/V2_Manual_SUZY-deluxe_2025_0204.pdf"
+  },
+  {
+   "label": "Manual – Gaia",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2026/02/V2_manual_GAIA_WITH-LINKS-2026.pdf"
+  },
+  {
+   "label": "Manual – Gina the giraffe",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2024/04/V3_Manual_Gina_2024-0411.pdf"
+  },
+  {
+   "label": "Manual – Max, Bo and Katie",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2024/12/V5_Manual_MAX-BO-KATIE_2024_1216.pdf"
+  },
+  {
+   "label": "Manual – Fay, Rex and Otis",
+   "url": "https://www.zazu-kids.com/manual/fayrexotis.pdf"
+  },
+  {
+   "label": "Manual – Lex, Zack and Elli",
+   "url": "https://www.zazu-kids.com/manual/lexzackelli.pdf"
+  },
+  {
+   "label": "Manual – Emmy",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2024/04/V8_Manual_EMMY_2024_0418.pdf"
+  },
+  {
+   "label": "Manual – Cody and Otto",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2024/12/V17_Manual_CODY-OTTO_2024_1217.pdf"
+  },
+  {
+   "label": "Manual – Tim, Henry and Shally",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2024/12/V6_Manual_TIM-SHALLY-HENRY_2024_1217.pdf"
+  },
+  {
+   "label": "Manual – Wally the whale",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2024/04/V10_Manual_WALLY_2024-0411.pdf"
+  },
+  {
+   "label": "Manual – Kiki, Harry, Ruby and Leo",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2023/12/V6_Manual_KIKI-RUBY-HARRY-LEO-POLLY_2023_12.pdf"
+  },
+  {
+   "label": "Manual – Pip, Paul and Howy",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2024/12/V2_Manual_PIP-PAUL-HOWY_2024-0902.pdf"
+  },
+  {
+   "label": "Manual – Danny the Dog",
+   "url": "https://www.zazu-kids.com/manual/danny.pdf"
+  },
+  {
+   "label": "Manual – Timo the Toucan & Chloe the Cat",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2023/12/V8_Manual_CHLOE-TIMO_2023_12.pdf"
+  },
+  {
+   "label": "Manual – Felix the Fox, Robin the Racoon & Becky the Bunny",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2022/06/V8_Manual_baby-comforter_WITH-LINKS_2022_0616.pdf"
+  },
+  {
+   "label": "Manual – Dex, Liz, Don, Coco & Bibi",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2024/12/V6_Manual_baby-sleep-soother_2024_1216.pdf"
+  },
+  {
+   "label": "Manual – Suzy the Shusher",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2022/06/V8_Manual_SUZY_WITH_LINKS_2022_0603.pdf"
+  },
+  {
+   "label": "Manual – Phoebe and Bruno",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2022/09/V9_Manual_PHOEBE-BRUNO_WITH-LINKS_2022_0901.pdf"
+  },
+  {
+   "label": "Manual – Zoe the Penguin",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2022/08/V4_Manual_ZOË_WITH_LINKS_2022_0805.pdf"
+  },
+  {
+   "label": "Manual – Digital camera",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2026/02/V4_Manual_CAMERA_2025_0403.pdf"
+  },
+  {
+   "label": "Manual – Instant camera",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2026/02/V5_Manual_CAMERA_INSTANT_2025_0403.pdf"
+  },
+  {
+   "label": "Manual – Kids smartwatch",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2026/02/V2_Manual_Kids-Smartwatch_2025_1124.pdf"
+  },
+  {
+   "label": "Manual – Earmuffs",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2026/02/V2_Manual_Earmuffs_2025_0930.pdf"
+  },
+  {
+   "label": "Manual – Tablet",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2026/02/V2_Manual_DRAWING-TABLET_2025_0210.pdf"
+  },
+  {
+   "label": "Manual – Sarah the sleeptrainer",
+   "url": "https://www.zazu-kids.com/wp-content/uploads/2026/02/V3_Manual_SARAH_2025_1113.pdf"
+  }
+ ],
+ "videos": [
+  {
+   "label": "Quickstart – Sam",
+   "url": ""
+  },
+  {
+   "label": "Quickstart – Davy",
+   "url": ""
+  },
+  {
+   "label": "Unlock the keylock",
+   "url": ""
+  },
+  {
+   "label": "Set the time",
+   "url": ""
+  },
+  {
+   "label": "Set OK to wake time",
+   "url": ""
+  },
+  {
+   "label": "Change the brightness of the nightlight",
+   "url": ""
+  },
+  {
+   "label": "Change the melody",
+   "url": ""
+  },
+  {
+   "label": "Change the volume of the music/sound",
+   "url": ""
+  },
+  {
+   "label": "Switch on the nightlight and sound timer",
+   "url": ""
+  },
+  {
+   "label": "Switch sleeptraining on/off",
+   "url": ""
+  },
+  {
+   "label": "Cry sensor on/off",
+   "url": ""
+  },
+  {
+   "label": "Switch power on/off",
+   "url": ""
+  },
+  {
+   "label": "Replace/change the batteries",
+   "url": ""
+  },
+  {
+   "label": "here",
+   "url": ""
+  },
+  {
+   "label": "here",
+   "url": ""
+  },
+  {
+   "label": "Quickstart – Lou & Billy",
+   "url": ""
+  },
+  {
+   "label": "Quickstart – Max, Bo and Katie",
+   "url": ""
+  },
+  {
+   "label": "Power supply",
+   "url": ""
+  },
+  {
+   "label": "Change the volume of the music",
+   "url": ""
+  },
+  {
+   "label": "Set the timer to automatically shut off light/music",
+   "url": ""
+  },
+  {
+   "label": "Change the frequency of the pulse light",
+   "url": ""
+  },
+  {
+   "label": "Cry sensor on/off",
+   "url": ""
+  },
+  {
+   "label": "Change the melody",
+   "url": ""
+  },
+  {
+   "label": "Change the brightness of the elephant light",
+   "url": ""
+  },
+  {
+   "label": "Change the mode of the breathing technique; light and sound",
+   "url": ""
+  },
+  {
+   "label": "Quickstart – Cody and Otto",
+   "url": ""
+  },
+  {
+   "label": "Quickstart – Cody and Otto",
+   "url": ""
+  },
+  {
+   "label": "Quickstart – Wally",
+   "url": ""
+  },
+  {
+   "label": "Quickstart – Felix, Robin and Becky",
+   "url": ""
+  },
+  {
+   "label": "Quickstart – Dex, Liz and Don",
+   "url": ""
+  },
+  {
+   "label": "Quickstart – Coco and Bibi",
+   "url": ""
+  }
+ ],
+ "guides": [
+  {
+   "title": "White noise for babies: how loud, how long, how close",
+   "url": "/blogs/news/white-noise-for-babies-how-loud-how-long-how-close",
+   "summary": "The short answer: about the volume of a soft shower, a metre or more from the cot, on a timer or all night at low volume. Here's why it works and how to set it up."
+  },
+  {
+   "title": "A wind-down routine that takes ten minutes",
+   "url": "/blogs/news/a-wind-down-routine-that-takes-ten-minutes",
+   "summary": "Wind-down fails when it has no end. Here is a ten-minute routine that ends itself, so the end of the day isn't you saying no."
+  },
+  {
+   "title": "Star projectors: do they help or distract?",
+   "url": "/blogs/news/star-projectors-help-or-distract",
+   "summary": "Slow, dim and on a timer, a projector helps. Bright, fast or endless, it distracts. Here's how to tell the difference."
+  },
+  {
+   "title": "Scared of the dark: what actually helps at two",
+   "url": "/blogs/news/scared-of-the-dark-what-actually-helps",
+   "summary": "Fear of the dark arrives around two, when imagination outruns understanding. You can't argue with it. You can make the room feel known."
+  },
+  {
+   "title": "Why red light, not white, in a nursery",
+   "url": "/blogs/news/why-red-light-not-white-in-a-nursery",
+   "summary": "Blue and white light tell the brain it's daytime. Red and amber don't. That one fact explains most nightlight advice."
+  },
+  {
+   "title": "The 2am wake-up: a decision tree",
+   "url": "/blogs/news/the-2am-wake-up-a-decision-tree",
+   "summary": "Hungry, cold, dark, noisy, or just awake? Five questions to ask before you pick them up, and what to do for each answer."
+  },
+  {
+   "title": "Daylight at 5am: an Australian summer with a toddler",
+   "url": "/blogs/news/daylight-at-5am-australian-summer-toddler",
+   "summary": "Summer light arrives before six. A dark room, a wake-time clock and a bedtime that moves with the season are the three tools."
+  },
+  {
+   "title": "Davy, Sam or Sarah: which sleep trainer clock?",
+   "url": "/blogs/news/davy-sam-or-sarah-which-sleep-trainer-clock",
+   "summary": "All three teach the same rule. Sam is the classic and the best value, Davy has plush ears and a nap timer parents love, Sarah is the newest and smallest."
+  },
+  {
+   "title": "Naps on the go without losing the routine",
+   "url": "/blogs/news/naps-on-the-go-without-losing-the-routine",
+   "summary": "Cafés, cars, grandparents' houses. The routine can travel if the three cues travel: dark, sound, and the same words."
+  },
+  {
+   "title": "Sleeping at grandma's: a packing list",
+   "url": "/blogs/news/sleeping-at-grandmas-a-packing-list",
+   "summary": "Seven things that make a strange room feel like the one at home, and the two you can leave behind."
+  },
+  {
+   "title": "Daylight saving without the meltdown",
+   "url": "/blogs/news/daylight-saving-without-the-meltdown",
+   "summary": "Shift everything by fifteen minutes a day across four days, not an hour at once. Here is the schedule for both directions."
+  }
+ ],
+ "pages": {
+  "Support (manuals, videos, FAQs)": "/pages/support",
+  "Contact": "/pages/contact",
+  "Shipping": "/pages/shipping",
+  "Warranty and returns": "/pages/warranty",
+  "Compare sleep trainers": "/pages/compare",
+  "Stockists": "/pages/stockists",
+  "Up at 5am": "/pages/up-at-5am",
+  "Won't settle": "/pages/wont-settle",
+  "Scared of the dark": "/pages/scared-of-the-dark",
+  "Wind-down": "/pages/wind-down",
+  "Characters": "/pages/characters",
+  "All products": "/collections/shop-all-products",
+  "Sleep trainer clocks": "/collections/sleep-trainer-clocks",
+  "Nightlights": "/collections/nightlights",
+  "Projectors": "/collections/bedtime-projectors",
+  "White noise": "/collections/white-noise-machines",
+  "Sleep on the go": "/collections/baby-sleeping-accessories",
+  "Soft toys": "/collections/soft-toys"
+ },
+ "offers": [
+  "Buy any 2 Zazus and 20% comes off everything at checkout (automatic, no code).",
+  "10% off the first order for newsletter subscribers."
+ ],
+ "store": {
+  "name": "Zazu Australia",
+  "distributor": "Coolkidz Australia Pty Ltd, 1 Beyer Road, Braeside VIC 3195",
+  "dispatch": "Ships from Melbourne, dispatched within 24 to 48 hours",
+  "warranty": "12 months through Coolkidz Australia",
+  "contact": "Contact form at /pages/contact, replies within 1 to 2 working days"
+ }
+}
