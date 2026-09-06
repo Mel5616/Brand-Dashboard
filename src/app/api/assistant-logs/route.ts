@@ -41,3 +41,18 @@ export async function PATCH(req: Request) {
   const res = await fetch(`${sbUrl}/rest/v1/assistant_logs?id=eq.${id}`, { method: "PATCH", headers: { ...headers(), Prefer: "return=minimal" }, body: JSON.stringify(patch) });
   return NextResponse.json({ ok: res.ok });
 }
+
+// A team member replies into a visitor's conversation. The site widget polls for it while open.
+export async function POST(req: Request) {
+  const access = await getAccess();
+  if (!allowed(access)) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
+  if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
+  let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
+  const brand = String(b?.brand || "").slice(0, 20), session = String(b?.session || "").slice(0, 64), text = String(b?.text || "").trim().slice(0, 2000);
+  if (!brand || !session || !text) return NextResponse.json({ ok: false, error: "brand, session and text required" }, { status: 400 });
+  const row = { brand, session, page: null, question: "", answer: text, role: "human", handoff: false, note: `by ${access.user?.email || "team"}` };
+  const res = await fetch(`${sbUrl}/rest/v1/assistant_logs`, { method: "POST", headers: { ...headers(), Prefer: "return=representation" }, body: JSON.stringify(row) });
+  if (!res.ok) return NextResponse.json({ ok: false }, { status: 500 });
+  const [saved] = await res.json();
+  return NextResponse.json({ ok: true, row: saved });
+}

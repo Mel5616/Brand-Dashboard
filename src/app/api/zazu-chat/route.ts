@@ -1,7 +1,7 @@
 import { NextResponse, after } from "next/server";
 import { storeCreds, mintToken } from "@/lib/shopifyMint";
 import knowledge from "@/data/zazu-knowledge.json";
-import { logAssistant } from "@/lib/assistantLog";
+import { logAssistant, humanReplies } from "@/lib/assistantLog";
 
 // Public "Ask Davy" assistant for zazu-kids.com.au. Zazu-only: answers from the
 // knowledge file (FAQs, manuals, videos, guides, policies) plus a live product
@@ -12,7 +12,7 @@ export const maxDuration = 30;
 const ORIGINS = new Set(["https://zazu-kids.com.au", "https://www.zazu-kids.com.au", "https://9d6zji-bd.myshopify.com", "http://localhost:3000", "http://127.0.0.1:3000"]);
 const cors = (origin: string | null) => ({
   "Access-Control-Allow-Origin": origin && ORIGINS.has(origin) ? origin : "https://zazu-kids.com.au",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
   "Vary": "Origin",
 });
@@ -118,4 +118,15 @@ export async function POST(req: Request) {
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: "Davy is having a nap. Try again in a moment, or use the contact form." , detail: process.env.NODE_ENV === "development" ? String(e?.message || e) : undefined }, { status: 502, headers });
   }
+}
+
+// Widget polls this while open: replies a team member posted from the dashboard for this session.
+export async function GET(req: Request) {
+  const headers = cors(req.headers.get("origin"));
+  const { searchParams } = new URL(req.url);
+  const session = String(searchParams.get("session") || "").slice(0, 64);
+  const after = Number(searchParams.get("after")) || 0;
+  if (!session) return NextResponse.json({ ok: true, replies: [] }, { headers });
+  const replies = await humanReplies("zazu", session, after);
+  return NextResponse.json({ ok: true, replies }, { headers });
 }

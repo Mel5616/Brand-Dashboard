@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-type Row = { id: number; created_at: string; brand: string; session: string | null; page: string | null; question: string; answer: string; handoff: boolean; flagged: boolean; note: string | null };
+type Row = { id: number; created_at: string; brand: string; session: string | null; page: string | null; question: string; answer: string; handoff: boolean; flagged: boolean; note: string | null; role?: string };
 
 const BRANDS: { id: string; label: string; site: string; color: string }[] = [
   { id: "zazu", label: "Zazu · Ask Davy", site: "zazu-kids.com.au", color: "bg-red-100 text-red-700" },
@@ -34,6 +34,9 @@ export function AssistantFeed({ admin }: { admin: boolean }) {
   useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [brand, q, days]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const shown = useMemo(() => onlyHandoff ? rows.filter(r => r.handoff) : rows, [rows, onlyHandoff]);
+  const asked = useMemo(() => rows.filter(r => r.role !== "human"), [rows]);
+  const [reply, setReply] = useState("");
+  const [sending, setSending] = useState(false);
 
   // Group by session so a back-and-forth reads as one conversation.
   const convos = useMemo(() => {
@@ -44,20 +47,28 @@ export function AssistantFeed({ admin }: { admin: boolean }) {
 
   const stats = useMemo(() => {
     const day = Date.now() - 86400000, week = Date.now() - 7 * 86400000;
-    const per = (b: string) => rows.filter(r => r.brand === b);
+    const per = (b: string) => asked.filter(r => r.brand === b);
     return {
-      today: rows.filter(r => new Date(r.created_at).getTime() > day).length,
-      week: rows.filter(r => new Date(r.created_at).getTime() > week).length,
-      handoff: rows.filter(r => r.handoff).length,
+      today: asked.filter(r => new Date(r.created_at).getTime() > day).length,
+      week: asked.filter(r => new Date(r.created_at).getTime() > week).length,
+      handoff: asked.filter(r => r.handoff).length,
       byBrand: BRANDS.map(b => ({ ...b, n: per(b.id).length, conv: new Set(per(b.id).map(r => r.session || r.id)).size })),
     };
   }, [rows]);
 
   const topics = useMemo(() => {
     const count = new Map<string, number>();
-    rows.forEach(r => { const seen = new Set<string>(); r.question.toLowerCase().replace(/[^a-z0-9' ]/g, " ").split(/\s+/).filter(w => w.length > 3 && !STOP.has(w)).forEach(w => { if (!seen.has(w)) { seen.add(w); count.set(w, (count.get(w) || 0) + 1); } }); });
+    asked.forEach(r => { const seen = new Set<string>(); r.question.toLowerCase().replace(/[^a-z0-9' ]/g, " ").split(/\s+/).filter(w => w.length > 3 && !STOP.has(w)).forEach(w => { if (!seen.has(w)) { seen.add(w); count.set(w, (count.get(w) || 0) + 1); } }); });
     return Array.from(count.entries()).sort((a, b) => b[1] - a[1]).slice(0, 14);
   }, [rows]);
+
+  async function sendReply(first: Row) {
+    const text = reply.trim(); if (!text || !first.session) return;
+    setSending(true);
+    const r = await fetch("/api/assistant-logs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brand: first.brand, session: first.session, text }) }).then(x => x.json()).catch(() => ({ ok: false }));
+    setSending(false);
+    if (r.ok && r.row) { setRows(rs => [r.row, ...rs]); setReply(""); }
+  }
 
   async function patch(id: number, body: Partial<Row>) {
     setRows(rs => rs.map(r => r.id === id ? { ...r, ...body } : r));
@@ -76,7 +87,7 @@ export function AssistantFeed({ admin }: { admin: boolean }) {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Stat label="Questions today" value={stats.today} />
         <Stat label="Questions, 7 days" value={stats.week} />
-        <Stat label={`Questions, ${days} days`} value={rows.length} />
+        <Stat label={`Questions, ${days} days`} value={asked.length} />
         <Stat label="Handed to a human or HP" value={stats.handoff} hint="Answers that pointed to the contact page or a health professional" />
       </div>
       <div className="grid gap-3 md:grid-cols-2">
@@ -108,7 +119,7 @@ export function AssistantFeed({ admin }: { admin: boolean }) {
       {!loading && convos.length === 0 && <p className="text-sm text-slate-500">No conversations yet for this filter.</p>}
       <div className="space-y-3">
         {convos.map(list => {
-          const first = list[0], last = list[list.length - 1]; const b = BRANDS.find(x => x.id === first.brand);
+          const first = list.find(r => r.role !== "human") || list[0], last = list[list.length - 1]; const b = BRANDS.find(x => x.id === first.brand);
           const isOpen = open === first.id;
           return (
             <div key={first.id} className={`rounded-xl border bg-white ${list.some(r => r.flagged) ? "border-amber-300" : "border-slate-200"}`}>
@@ -116,7 +127,7 @@ export function AssistantFeed({ admin }: { admin: boolean }) {
                 <span className={`mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${b?.color || "bg-slate-100 text-slate-600"}`}>{first.brand}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium text-slate-900">{first.question}</span>
-                  <span className="mt-0.5 block text-xs text-slate-500">{when(last.created_at)} · {list.length} {list.length === 1 ? "question" : "questions"}{first.page ? ` · ${first.page}` : ""}{list.some(r => r.handoff) ? " · handed off" : ""}</span>
+                  <span className="mt-0.5 block text-xs text-slate-500">{when(last.created_at)} · {list.filter(r => r.role !== "human").length} {list.filter(r => r.role !== "human").length === 1 ? "question" : "questions"}{list.some(r => r.role === "human") ? " · team replied" : ""}{first.page ? ` · ${first.page}` : ""}{list.some(r => r.handoff) ? " · handed off" : ""}</span>
                 </span>
                 <span className="text-slate-400">{isOpen ? "−" : "+"}</span>
               </button>
@@ -124,9 +135,13 @@ export function AssistantFeed({ admin }: { admin: boolean }) {
                 <div className="space-y-4 border-t border-slate-100 p-4">
                   {list.map(r => (
                     <div key={r.id} className="space-y-2">
+                      {r.role === "human" ? (
+                        <p className="whitespace-pre-wrap rounded-2xl rounded-bl-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900"><span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-emerald-700">Team reply{r.note ? ` · ${r.note.replace(/^by /, "")}` : ""} · {when(r.created_at)}</span>{r.answer}</p>
+                      ) : (<>
                       <p className="rounded-2xl rounded-br-md bg-slate-900 px-3 py-2 text-sm text-white">{r.question}</p>
                       <p className="whitespace-pre-wrap rounded-2xl rounded-bl-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800">{r.answer}</p>
-                      {admin && (
+                      </>)}
+                      {admin && r.role !== "human" && (
                         <div className="flex flex-wrap items-center gap-2 text-xs">
                           <button type="button" onClick={() => patch(r.id, { flagged: !r.flagged })} className={`rounded-md border px-2 py-1 ${r.flagged ? "border-amber-300 bg-amber-50 text-amber-800" : "border-slate-200 text-slate-600"}`}>{r.flagged ? "Flagged for review" : "Flag answer"}</button>
                           <input defaultValue={r.note || ""} onBlur={e => { if (e.target.value !== (r.note || "")) patch(r.id, { note: e.target.value }); }} placeholder="Note: what to fix in the knowledge file" className="h-7 min-w-[260px] flex-1 rounded-md border border-slate-200 px-2" />
@@ -134,6 +149,13 @@ export function AssistantFeed({ admin }: { admin: boolean }) {
                       )}
                     </div>
                   ))}
+                  {first.session && (
+                    <div className="flex items-end gap-2 rounded-xl border border-emerald-200 bg-emerald-50/50 p-3">
+                      <textarea value={open === first.id ? reply : ""} onChange={e => setReply(e.target.value)} rows={2} placeholder="Jump in as the team. The visitor sees this in the chat window while it is open on the site." className="min-h-[56px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm" />
+                      <button type="button" disabled={sending || !reply.trim()} onClick={() => sendReply(first)} className="h-9 rounded-lg bg-emerald-600 px-3 text-sm font-semibold text-white disabled:opacity-50">{sending ? "Sending…" : "Reply"}</button>
+                    </div>
+                  )}
+                  <p className="text-[11px] text-slate-500">Replies reach the visitor only while their chat window is open on the site (it checks every few seconds). For anything after they leave, use the contact email.</p>
                 </div>
               )}
             </div>
