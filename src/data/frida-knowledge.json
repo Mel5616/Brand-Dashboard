@@ -1,0 +1,208 @@
+{
+ "store": {
+  "name": "Frida Australia",
+  "who": "Official Australian distributor of Frida (Frida Baby and Frida Mom), run by Coolkidz Australia Pty Ltd, 1 Beyer Road, Braeside VIC 3195. Australian owned, family business since 1998.",
+  "site": "https://fridaaustralia.com.au",
+  "contact_email": "hello@fridaaustralia.com.au",
+  "contact_page": "/pages/contact",
+  "reply_time": "one to two working days",
+  "tone": "calm, plain, education-led; written for parents and the midwives, child health nurses, GPs and pharmacists who advise them"
+ },
+ "policies": {
+  "shipping": "Everything ships from the Braeside, Victoria warehouse. Orders placed before 2pm AEST on a business day are dispatched the same day with tracking by email. Standard shipping: metro 3 to 7 business days, regional and remote 5 to 10 business days, free on orders over $60. Express: 1 to 3 business days, calculated at checkout. Click and collect at Braeside VIC, usually ready in 24 hours, free. Australia-wide only.",
+  "returns": "Unopened items can be returned within 30 days of delivery for a refund or exchange. For hygiene reasons, opened NoseFrida, filters, underwear, pads, liners and foam cannot be returned unless faulty. Faulty or damaged items are replaced or refunded, including return postage. Refunds go to the original payment method within 5 business days of receipt. Full policy: /policies/refund-policy.",
+  "gift_cards": "Frida gift cards come in $25, $50, $100, $200 and $500, are delivered by email, never expire and can be used on any product at fridaaustralia.com.au (/products/frida-gift-card)."
+ },
+ "offers": [
+  "Free Perineal Foam when you spend $150 on Frida Mom, added automatically at checkout.",
+  "Complete the kit: 10% off the Postpartum Recovery Kit when bought with the Labour & Delivery Kit, and 10% off NoseFrida filters when bought with the NoseFrida. Applied automatically in the cart.",
+  "Free standard shipping over $60."
+ ],
+ "pages": {
+  "Shop Frida Baby": "/collections/frida-baby",
+  "Shop Frida Mom": "/collections/frida-mom",
+  "Pregnancy & hospital bag (by stage)": "/collections/stage-pregnancy",
+  "Postpartum, the fourth trimester (by stage)": "/collections/stage-postpartum",
+  "Newborn 0 to 6 months (by stage)": "/collections/stage-newborn",
+  "Baby & toddler 6 months plus (by stage)": "/collections/stage-baby-toddler",
+  "Hospital bag checklist (with due-date calculator and print)": "/pages/what-to-pack-in-your-hospital-bag",
+  "For the support person": "/pages/what-nobody-tells-the-support-person",
+  "Postpartum recovery explained": "/pages/postpartum-recovery",
+  "Labour & delivery essentials": "/pages/labour-delivery-essentials",
+  "Find a stockist (Baby Bunting stores and independents by state)": "/pages/stockists",
+  "Shipping & returns": "/pages/shipping-returns",
+  "FAQ": "/pages/frequently-asked-questions",
+  "Health professionals (samples, patient handouts, education)": "/pages/health-professionals",
+  "Printable patient handouts": "/pages/patient-handouts",
+  "Partnerships, affiliates and become a stockist": "/pages/partnerships",
+  "About Frida": "/pages/about-frida",
+  "Contact": "/pages/contact",
+  "Pregnancy guides": "/blogs/pregnancy-guides",
+  "Postpartum guides": "/blogs/postpartum-guides",
+  "Baby care guides": "/blogs/baby-care-guides",
+  "Saved items": "/pages/saved-items"
+ },
+ "kits": {
+  "Labour & Delivery Kit (Hospital Birth Kit, /products/frida-mom-hospital-labor-delivery-kit)": "Labour & Delivery Gown (one size XS to XL, snap shoulders for skin-to-skin), labour socks, toiletry carry bag, Upside Down Peri Bottle, disposable underwear, Instant Ice Maxi Pads, witch hazel cooling liners, Perineal Foam, bathroom caddy. Covers labour, delivery and the first week of postpartum care.",
+  "Postpartum Recovery Kit (/products/frida-mom-postpartum-recovery-kit)": "Disposable underwear, Instant Ice Maxi Pads, witch hazel cooling liners, Perineal Foam, bathroom caddy. It does NOT include the peri bottle or the gown; the peri bottle is sold separately, or choose the Labour & Delivery Kit which includes it. Suits recovery at home after any type of birth."
+ },
+ "faq": [
+  {
+   "product": "NoseFrida",
+   "q": "Is the NoseFrida suitable for newborns?",
+   "a": "Yes, suitable from birth. The tube sits against the outside of the nostril, never inside, and the parent controls the suction. Use saline drops first and suction gently. If a newborn has persistent congestion, difficulty breathing or a fever, see a GP or child health nurse."
+  },
+  {
+   "product": "NoseFrida",
+   "q": "Will I get mucus in my mouth?",
+   "a": "No. A disposable hygiene filter sits between the collection chamber and the mouthpiece and is designed to stop mucus travelling toward the mouth. Replace the filter after every use."
+  },
+  {
+   "product": "NoseFrida",
+   "q": "How do I use it?",
+   "a": "1. Insert a fresh filter. 2. Saline drops in each nostril, wait 20 to 30 seconds. 3. Rest the blue tube against the outside of the nostril to make a seal. 4. Breathe in gently through the red mouthpiece with a small circular motion. 5. Repeat on the other side. 6. Disassemble, bin the filter, wash the parts (top rack dishwasher safe; clear tube with 70% isopropyl alcohol). Full guide: /blogs/baby-care-guides/how-to-use-the-nosefrida-the-complete-australian-guide"
+  },
+  {
+   "product": "NoseFrida",
+   "q": "How often can I use it?",
+   "a": "As often as needed, typically before feeds and before sleep during a cold. It is non-invasive and parent-controlled. Congestion lasting more than ten days, or with fever or breathing difficulty, needs a GP."
+  },
+  {
+   "product": "NoseFrida",
+   "q": "How often do I replace filters?",
+   "a": "After every use. Filters are single-use for hygiene and suction. Replacement packs of 20: /products/frida-baby-nosefrida-filters"
+  },
+  {
+   "product": "NoseFrida",
+   "q": "My baby cries when I use it. Am I doing it wrong?",
+   "a": "Almost certainly not. Crying is normal, it is an unusual sensation rather than a painful one. A second person holding baby's arms helps. It stops as soon as you finish."
+  },
+  {
+   "product": "MediFrida",
+   "q": "What is the MediFrida?",
+   "a": "A dummy-shaped medicine dispenser. Measure the dose into the syringe, attach it to the dummy, and press slowly as baby sucks so the liquid goes to the side of the cheek. Follow the dose your pharmacist or doctor gives. /products/frida-baby-medifrida"
+  },
+  {
+   "product": "Flake Fixer",
+   "q": "What is the Flake Fixer for?",
+   "a": "Cradle cap. Three steps in the bath: lather with the sponge, loosen with the silicone brush, lift flakes with the fine-tooth comb. A couple of times a week. If the scalp is red, weeping or not improving, see a GP or child health nurse."
+  },
+  {
+   "product": "SnipperClipper",
+   "q": "What is in the SnipperClipper Set?",
+   "a": "Baby nail clippers with a safety guard and built-in magnifier, plus a nail file, for very small fingers and toes."
+  },
+  {
+   "product": "ToothHugger and Fingerbrush",
+   "q": "When do I start dental care?",
+   "a": "The Fingerbrush is for gums and first teeth from birth. The ToothHugger is a triple-sided toothbrush for toddlers. Australian dental guidance is to start brushing when the first tooth appears."
+  },
+  {
+   "product": "Frida Mom",
+   "q": "Which kit should I buy?",
+   "a": "Packing a hospital bag and want everything in one order: the Labour & Delivery Kit (includes gown, socks, carry bag and peri bottle). Already have a gown and want recovery items for home: the Postpartum Recovery Kit (no peri bottle or gown). Buying both together gets 10% off the Recovery Kit in cart."
+  },
+  {
+   "product": "Frida Mom",
+   "q": "Are the kits suitable after a caesarean?",
+   "a": "Yes. Lochia (postpartum bleeding) happens after every birth, so the peri bottle, ice pads, liners and underwear are all still relevant. For an incision, add the High Waist Disposable Underwear, which sits above the scar (/products/frida-mom-disposable-high-waist-underwear). Guide: /blogs/postpartum-guides/c-section-recovery-in-australia-what-to-expect-in-the-first-six-weeks"
+  },
+  {
+   "product": "Instant Ice Maxi Pads",
+   "q": "How do the ice pads work?",
+   "a": "Bend to activate, no freezer needed. Cooling comfort for the first 72 hours, and they are a full absorbent maternity pad as well. /products/frida-mom-instant-ice-maxi-pads"
+  },
+  {
+   "product": "Perineal Foam and liners",
+   "q": "How do I use the foam and liners?",
+   "a": "Place a witch hazel cooling liner along your maternity pad, add one pump of Perineal Foam on top, replace with every pad change. Cooling comfort for perineal swelling and postpartum haemorrhoids."
+  },
+  {
+   "product": "Peri Bottle",
+   "q": "Why a peri bottle?",
+   "a": "Rinsing with warm water after every toilet visit instead of wiping in the first weeks. The upside-down angled nozzle reaches without contortion. Useful after vaginal and caesarean births. /products/frida-mom-peri-bottle"
+  },
+  {
+   "product": "Underwear",
+   "q": "Boyshort or high waist?",
+   "a": "Boyshort suits vaginal birth recovery. High waist sits above a caesarean incision. Both are soft, stretchy and disposable, and hold pads in place."
+  },
+  {
+   "product": "Stockists",
+   "q": "Where can I buy Frida in store?",
+   "a": "Baby Bunting stocks Frida Baby and Frida Mom in around 75 stores nationally, plus independents such as Bubs n Grubs, Baby Kingdom, Baby Village, Kiddie Country, Babyroad and HoneyBaby. Full list by state: /pages/stockists"
+  },
+  {
+   "product": "Health professionals",
+   "q": "Can midwives or clinics get samples?",
+   "a": "Yes. Health professionals can request a NoseFrida clinic sample and printed handouts through the form at /pages/health-professionals. Printable A5 patient handouts for every product are at /pages/patient-handouts."
+  }
+ ],
+ "guides": [
+  {
+   "title": "How to use the NoseFrida, the complete Australian guide",
+   "url": "/blogs/baby-care-guides/how-to-use-the-nosefrida-the-complete-australian-guide",
+   "summary": "Step by step, saline first, cleaning, newborn use, mistakes, bulb comparison."
+  },
+  {
+   "title": "Saline first, then suction",
+   "url": "/blogs/baby-care-guides/saline-first-then-suction",
+   "summary": "Why the two-step method works."
+  },
+  {
+   "title": "How to clear your baby's blocked nose safely",
+   "url": "/blogs/baby-care-guides/how-to-clear-your-baby-s-blocked-nose-safely",
+   "summary": "Signs a nose needs clearing, method, when to see a doctor."
+  },
+  {
+   "title": "Baby's first cold: what's normal and when to see a doctor",
+   "url": "/blogs/baby-care-guides/babys-first-cold-whats-normal-whats-not-when-to-see-a-doctor",
+   "summary": "Symptoms, duration, red flags."
+  },
+  {
+   "title": "Do snot suckers really work?",
+   "url": "/blogs/baby-care-guides/blogs-frida-baby-do-snot-suckers-really-work",
+   "summary": "What an aspirator does and does not do."
+  },
+  {
+   "title": "Why babies can't blow their own nose",
+   "url": "/blogs/baby-care-guides/why-babies-cant-blow-their-own-nose",
+   "summary": "Ages, why congestion hits babies harder, what parents can do."
+  },
+  {
+   "title": "What to pack in your hospital bag in Australia, for you not just the baby",
+   "url": "/blogs/postpartum-guides/what-to-pack-in-your-hospital-bag-in-australia-for-you-not-just-the-baby",
+   "summary": "When to pack, what hospitals provide, labour and postpartum essentials, caesarean packing, support person."
+  },
+  {
+   "title": "Perineal tears after birth",
+   "url": "/blogs/postpartum-guides/perineal-tears-after-birth-what-to-expect-and-how-to-recover",
+   "summary": "Degrees of tearing, episiotomy, timeline, five-step routine, stitches, when to see a GP."
+  },
+  {
+   "title": "What is lochia",
+   "url": "/blogs/postpartum-guides/what-is-lochia-your-guide-to-postpartum-bleeding-after-birth",
+   "summary": "Stages of postpartum bleeding, caesarean, breastfeeding, what helps."
+  },
+  {
+   "title": "C-section recovery in Australia, the first six weeks",
+   "url": "/blogs/postpartum-guides/c-section-recovery-in-australia-what-to-expect-in-the-first-six-weeks",
+   "summary": "Hospital, week by week, essentials, do and avoid, scar care, emotions, red flags."
+  },
+  {
+   "title": "Preparing for the fourth trimester during your third",
+   "url": "/blogs/pregnancy-guides/preparing-for-the-fourth-trimester-during-your-third",
+   "summary": "What to set up before birth."
+  },
+  {
+   "title": "Vaginal birth or caesarean: preparing for either recovery",
+   "url": "/blogs/pregnancy-guides/vaginal-birth-or-caesarean-preparing-for-either-recovery",
+   "summary": "Prepare for both outcomes."
+  },
+  {
+   "title": "36-week checklist",
+   "url": "/blogs/pregnancy-guides",
+   "summary": "See the Pregnancy guides blog."
+  }
+ ]
+}

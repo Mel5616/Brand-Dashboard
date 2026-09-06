@@ -1,6 +1,7 @@
 import { NextResponse, after } from "next/server";
 import { storeCreds, mintToken } from "@/lib/shopifyMint";
 import knowledge from "@/data/zazu-knowledge.json";
+import { logAssistant } from "@/lib/assistantLog";
 
 // Public "Ask Davy" assistant for zazu-kids.com.au. Zazu-only: answers from the
 // knowledge file (FAQs, manuals, videos, guides, policies) plus a live product
@@ -112,7 +113,7 @@ export async function POST(req: Request) {
   try {
     const reply = await ask(messages, await products());
     const q = messages[messages.length - 1].content;
-    after(() => log({ session: String(b?.session || "").slice(0, 64) || null, page: String(b?.page || "").slice(0, 200) || null, question: q, answer: reply }));
+    after(() => { const row = { session: String(b?.session || "").slice(0, 64) || null, page: String(b?.page || "").slice(0, 200) || null, question: q, answer: reply }; log(row); logAssistant({ brand: "zazu", ...row }); });
     return NextResponse.json({ ok: true, reply }, { headers });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: "Davy is having a nap. Try again in a moment, or use the contact form." , detail: process.env.NODE_ENV === "development" ? String(e?.message || e) : undefined }, { status: 502, headers });
