@@ -76,7 +76,8 @@ Rules:
 - Mention offers only when someone is choosing between products, asks about deals, or the offer clearly applies to what they are buying.
 - If someone shares personal details, do not repeat them back. Keep answers about the products and the store.`;
 
-async function ask(messages: { role: "user" | "assistant"; content: string }[], prods: Prod[]) {
+async function ask(messages: { role: "user" | "assistant"; content: string }[], prods: Prod[], page: string) {
+  const where = page ? `\n\nCURRENT PAGE: the visitor is on ${page}. When they say "this" or "this kit/product", they mean the product or page at that path.` : "";
   const live = `LIVE PRODUCTS (title | link | type | from price AUD | in stock | options)\n${prods.map(p => `${p.title} | /products/${p.handle} | ${p.type} | $${p.price} | ${p.available ? "yes" : "back soon"} | ${p.variants}`).join("\n")}`;
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -87,7 +88,7 @@ async function ask(messages: { role: "user" | "assistant"; content: string }[], 
       system: [
         { type: "text", text: PERSONA },
         { type: "text", text: STATIC, cache_control: { type: "ephemeral" } },
-        { type: "text", text: live },
+        { type: "text", text: live + where },
       ],
       messages,
     }),
@@ -107,7 +108,7 @@ export async function POST(req: Request) {
   if (!messages.length || messages[messages.length - 1].role !== "user") return NextResponse.json({ ok: false, error: "Say something first" }, { status: 400, headers });
   if (!process.env.ANTHROPIC_API_KEY) return NextResponse.json({ ok: false, error: "Assistant not configured" }, { status: 503, headers });
   try {
-    const reply = await ask(messages, await products());
+    const reply = await ask(messages, await products(), String(b?.page || "").slice(0, 200));
     const q = messages[messages.length - 1].content;
     after(() => logAssistant({ brand: "frida", session: String(b?.session || "").slice(0, 64) || null, page: String(b?.page || "").slice(0, 200) || null, question: q, answer: reply }));
     return NextResponse.json({ ok: true, reply }, { headers });
