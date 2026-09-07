@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { SendSchedule } from "./SendSchedule";
+import { BlackFridayPlanner } from "./BlackFridayPlanner";
 
 // Portfolio Campaign Calendar — a Now / Next / Later roadmap with team ownership.
 // Persists to Supabase via /api/campaigns and /api/campaigns/maintenance.
@@ -84,6 +86,7 @@ const isFlagged = (v: string) => /^\s*(high|check)/i.test(v || "");
 const jsonHeaders = { "Content-Type": "application/json" };
 
 export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
+  const [view, setView] = useState<"roadmap" | "sends" | "bf">("roadmap");
   const [items, setItems] = useState<Campaign[]>([]);
   const [maint, setMaint] = useState<Maint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -425,11 +428,26 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
           <p className="text-xs text-gray-400">Cross-brand Now / Next / Later · {HORIZON_RANGE} · click a card for the full brief{canEdit ? "" : " · view only"}</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={exportCSV} className="text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3 py-1.5 transition motion-reduce:transition-none">Export CSV</button>
-          <button onClick={exportJSON} className="text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3 py-1.5 transition motion-reduce:transition-none">Export JSON</button>
+          {view === "roadmap" && <>
+            <button onClick={exportCSV} className="text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3 py-1.5 transition motion-reduce:transition-none">Export CSV</button>
+            <button onClick={exportJSON} className="text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3 py-1.5 transition motion-reduce:transition-none">Export JSON</button>
+          </>}
         </div>
       </div>
 
+      <div className="flex gap-1 mb-4 no-print">
+        {([["roadmap", "Roadmap"], ["sends", "Send Schedule"], ["bf", "Black Friday"]] as const).map(([id, label]) => (
+          <button
+            key={id}
+            onClick={() => setView(id)}
+            className={`text-sm font-medium rounded-lg px-3 py-1.5 transition motion-reduce:transition-none ${view === id ? "bg-slate-800 text-white" : "text-gray-600 bg-white border border-gray-200 hover:bg-gray-50"}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {view === "roadmap" && <>
       {error && (
         <div role="alert" className="flex items-start justify-between gap-3 bg-red-50 border border-red-100 text-red-700 rounded-lg px-4 py-2.5 mb-4 text-sm no-print">
           <span>{error}</span>
@@ -570,6 +588,10 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
           </section>
         </>
       )}
+      </>}
+
+      {view === "sends" && <SendSchedule canEdit={canEdit} />}
+      {view === "bf" && <BlackFridayPlanner canEdit={canEdit} />}
 
       {/* ── Brief drawer ── */}
       {open && (
