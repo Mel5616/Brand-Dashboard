@@ -70,6 +70,7 @@ const BRIEF_FIELDS: { key: string; label: string }[] = [
   { key: "creativeDirection", label: "Creative direction" },
   { key: "do", label: "Do" },
   { key: "dont", label: "Don't" },
+  { key: "cascade", label: "Send cascade (social/Google mirrors)" },
   { key: "successMeasure", label: "Success measure" },
   { key: "dependencies", label: "Dependencies" },
   { key: "compliance", label: "Compliance" },
