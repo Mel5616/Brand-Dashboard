@@ -21,6 +21,54 @@ const BRAND_CODE: Record<string, string> = {
   "Matchstick Monkey": "MM", MiaMily: "MIA", Coolkidz: "CK", Portfolio: "CK",
 };
 
+// Fixed role -> assignee, per how the team actually splits campaign work.
+// TODO: PIER ANN'S EMAIL — EDM subtasks aren't assigned until this is filled in.
+const TEAM = {
+  edm: "",
+  paid: "anna@coolkidz.com.au",       // Anna Kilmartin — Paid Marketing
+  affiliate: "jane@coolkidz.com.au",  // Jane Edmonds — Affiliate (UPPAbaby + Nanit only)
+  design: "design@coolkidz.com.au",   // Diep — Design
+  retail: "alison@coolkidz.com.au",   // Alison Soulsby — Retail
+  website: "mel@coolkidz.com.au",     // Melanie — Website
+};
+// Socials assignee depends on who owns the brand — same split as the Social tab (src/lib/socialOwners.ts).
+const SOCIAL_OWNER_EMAIL: Record<string, string> = { Nicky: "nicky@coolkidz.com.au", Alicia: "alicia@coolkidz.com.au" };
+const SOCIAL_BRAND_OWNER: Record<string, string> = {
+  UPPAbaby: "Nicky", Mamave: "Nicky", Frida: "Nicky", Nanit: "Nicky", Hannie: "Nicky", Coolkidz: "Nicky",
+  WonderFold: "Alicia", Zazu: "Alicia", "Matchstick Monkey": "Alicia", "Gaia Baby": "Alicia", Magic: "Alicia", MiaMily: "Alicia", smarTrike: "Alicia",
+};
+const socialAssignee = (brand: string): string | undefined => SOCIAL_OWNER_EMAIL[SOCIAL_BRAND_OWNER[brand]];
+
+type Category = "paid" | "affiliate" | "design" | "retail" | "website" | "social";
+const CATEGORY_LABEL: Record<Category, string> = { paid: "Paid Marketing", affiliate: "Affiliate", design: "Design", retail: "Retail", website: "Website", social: "Socials" };
+// Order matters — most specific first, Design catches everything left over
+// (statics, reels, kits, photoshoots — the bulk of "make the assets" work).
+function categorize(line: string): Category {
+  if (/retail|\bpos\b|\bdoor(s)?\b/i.test(line)) return "retail";
+  if (/affiliate|partner/i.test(line)) return "affiliate";
+  if (/google ad|ad set|shopping feed|\bpaid\b/i.test(line)) return "paid";
+  if (/landing page|\bpdp\b|configurator|capture flow|checklist landing|website/i.test(line)) return "website";
+  if (/social|reel|\bstor(y|ies)\b|carousel|\bugc\b|hashtag|instagram|tiktok/i.test(line)) return "social";
+  return "design";
+}
+
+// A short, role-specific brief for a subtask — not the whole campaign brief,
+// just what that specialist needs (per Mel: "a short brief when we do the
+// main campaign card", one per discipline, not the full document repeated).
+function buildSubtaskNotes(lines: string[], extra?: string): string {
+  const parts: string[] = [];
+  if (extra) parts.push(`<p>${escapeHtml(extra)}</p>`);
+  if (lines.length) parts.push(`<ul>${lines.map((l) => `<li>${escapeHtml(l)}</li>`).join("")}</ul>`);
+  return parts.length ? `<body>${parts.join("\n")}</body>` : "";
+}
+
+// Pulls just the "Social mirrors: ..." line out of the cascade field (which
+// also carries "Google mirrors: ..." — not this subtask's business).
+function socialCascadeLine(cascade: unknown): string | undefined {
+  const m = String(cascade || "").match(/Social mirrors:[^\n]*/i);
+  return m?.[0];
+}
+
 const isIsoDate = (s: string) => /^\d{4}-\d{2}-\d{2}/.test(s || "");
 
 async function findSectionGid(name: string): Promise<string | null> {
@@ -42,9 +90,11 @@ async function addTaskToSection(taskGid: string, sectionGid: string) {
   await fetch(`${ASANA_BASE}/sections/${sectionGid}/addTask`, { method: "POST", headers: asanaHeaders(), body: JSON.stringify({ data: { task: taskGid } }) });
 }
 
-async function createSubtask(parentGid: string, name: string, dueOn?: string | null) {
+async function createSubtask(parentGid: string, name: string, opts?: { dueOn?: string | null; assignee?: string; htmlNotes?: string }) {
   const data: Record<string, unknown> = { name };
-  if (dueOn && isIsoDate(dueOn)) data.due_on = dueOn;
+  if (opts?.dueOn && isIsoDate(opts.dueOn)) data.due_on = opts.dueOn;
+  if (opts?.assignee) data.assignee = opts.assignee;
+  if (opts?.htmlNotes) data.html_notes = opts.htmlNotes;
   await fetch(`${ASANA_BASE}/tasks/${parentGid}/subtasks`, { method: "POST", headers: asanaHeaders(), body: JSON.stringify({ data }) });
 }
 
@@ -127,16 +177,35 @@ export async function POST(req: Request) {
       if (!sectionGid) sectionGid = await createSection(c.brand);
       if (sectionGid) await addTaskToSection(taskGid, sectionGid);
 
-      // Subtasks: one per dated EDM send tied to this campaign...
+      // Subtasks — simplified to how the team actually splits the work:
+      // one dated subtask per EDM send (always Pier Ann), plus one subtask
+      // per discipline (Paid Marketing / Socials / Design / Retail / Website
+      // / Affiliate) grouping the relevant deliverable lines, each with a
+      // short brief for that specialist rather than the whole campaign brief.
+      const edmNotes = buildSubtaskNotes([], c.brief?.keyMessage);
       const { data: sends } = await sb.from("campaign_sends").select("send_date,subject").eq("campaign_id", id).order("send_date", { ascending: true });
       for (const s of sends || []) {
-        await createSubtask(taskGid, `${code} - ${s.subject}`, s.send_date);
+        await createSubtask(taskGid, `${code} - ${s.subject}`, { dueOn: s.send_date, assignee: TEAM.edm || undefined, htmlNotes: edmNotes });
       }
-      // ...plus the other deliverables (assets, reels, statics) with no date.
+
       const deliverables = String(c.brief?.deliverables || "").split("\n").map((l: string) => l.trim()).filter(Boolean);
+      const buckets: Record<Category, string[]> = { paid: [], affiliate: [], design: [], retail: [], website: [], social: [] };
       for (const line of deliverables) {
         if (/^\d+\s*edm/i.test(line)) continue; // already covered by dated send subtasks
-        await createSubtask(taskGid, line);
+        let cat = categorize(line);
+        if (cat === "affiliate" && c.brand !== "UPPAbaby" && c.brand !== "Nanit") cat = "design";
+        buckets[cat].push(line);
+      }
+
+      const social = socialCascadeLine(c.brief?.cascade);
+      if (social) buckets.social.push(social);
+      if (c.brief?.creativeDirection) buckets.design.push(c.brief.creativeDirection);
+
+      for (const cat of Object.keys(buckets) as Category[]) {
+        if (!buckets[cat].length) continue;
+        const assignee = cat === "social" ? socialAssignee(c.brand) : TEAM[cat];
+        const extra = cat === "paid" || cat === "website" ? c.brief?.offerMechanic : undefined;
+        await createSubtask(taskGid, CATEGORY_LABEL[cat], { assignee, htmlNotes: buildSubtaskNotes(buckets[cat], extra) });
       }
     }
 
