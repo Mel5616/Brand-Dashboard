@@ -16,6 +16,7 @@ type Campaign = {
   id: string; horizon: string; campaign: string; brand: string; tier: string;
   owner: string; channel: string; status: string; key_date: string; end_date?: string; note: string;
   sort_order: number; brief?: Brief; share_token?: string; image_url?: string | null;
+  asana_task_gid?: string | null; asana_permalink_url?: string | null;
 };
 type Maint = { id: string; name: string; tier: string; sort_order: number };
 
@@ -95,6 +96,8 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [asanaBusy, setAsanaBusy] = useState(false);
+  const [asanaError, setAsanaError] = useState<string | null>(null);
   const [imgBusy, setImgBusy] = useState(false);
   const [emailCopied, setEmailCopied] = useState<number | null>(null);
   const imgRef = useRef<HTMLInputElement>(null);
@@ -417,6 +420,17 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
     catch { setError(`Couldn't copy — link: ${url}`); }
   }
 
+  async function pushToAsana(item: Campaign) {
+    setAsanaBusy(true); setAsanaError(null);
+    try {
+      const j = await (await fetch("/api/campaigns/asana-push", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ id: item.id }) })).json();
+      if (!j.ok) { setAsanaError(j.error || "Push failed"); return; }
+      setItems(prev => prev.map(it => (it.id === item.id ? { ...it, asana_task_gid: j.taskGid, asana_permalink_url: j.permalink } : it)));
+      if (j.permalink) window.open(j.permalink, "_blank");
+    } catch { setAsanaError("Couldn't reach Asana — try again."); }
+    finally { setAsanaBusy(false); }
+  }
+
   const cell = "w-full bg-transparent rounded px-1.5 py-1 text-sm text-slate-700 placeholder:text-gray-300 read-only:cursor-default focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400 motion-reduce:transition-none";
   const ro = !canEdit;
 
@@ -469,7 +483,7 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
         <>
           <div className="grid gap-4 md:grid-cols-3">
             {HORIZONS.map(h => {
-              const rows = items.filter(i => i.horizon === h.id).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+              const rows = items.filter(i => i.horizon === h.id && i.status !== "Completed").sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
               return (
                 <section
                   key={h.id}
@@ -744,6 +758,9 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
               </div>
 
               {/* Footer */}
+              {asanaError && (
+                <p role="alert" className="no-print text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mt-4">{asanaError}</p>
+              )}
               <div className="no-print flex flex-wrap gap-2 mt-5 pt-4 border-t border-gray-100">
                 {parseDate(open.key_date) && (
                   <>
@@ -755,6 +772,13 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
                   </>
                 )}
                 {canEdit && <>
+                  <button onClick={() => pushToAsana(open)} disabled={asanaBusy} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-[#F06A6A] hover:bg-[#e05555] rounded-lg px-3.5 py-1.5 transition disabled:opacity-60 motion-reduce:transition-none">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="18" cy="7" r="4" /><circle cx="6" cy="7" r="4" /><circle cx="12" cy="16" r="4" /></svg>
+                    {asanaBusy ? "Pushing…" : open.asana_task_gid ? "Update Asana task" : "Push to Asana"}
+                  </button>
+                  {open.asana_permalink_url && (
+                    <a href={open.asana_permalink_url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3.5 py-1.5 transition motion-reduce:transition-none">View in Asana ↗</a>
+                  )}
                   <button onClick={() => copyBrief(open)} className="text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3.5 py-1.5 transition motion-reduce:transition-none">{copied ? "Copied" : "Copy brief"}</button>
                   <input ref={imgRef} type="file" accept="image/*" className="hidden" onChange={e => uploadCampaignImage(open, e.target.files?.[0])} />
                   <button onClick={() => imgRef.current?.click()} disabled={imgBusy} className="text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3.5 py-1.5 transition disabled:opacity-60 motion-reduce:transition-none">{imgBusy ? "Uploading…" : open.image_url ? "Replace image" : "Add image"}</button>
