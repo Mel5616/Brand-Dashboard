@@ -108,6 +108,7 @@ export function CampaignCalendar({ canEdit = false, brands = [] }: { canEdit?: b
   const [linkCopied, setLinkCopied] = useState(false);
   const [asanaBusy, setAsanaBusy] = useState(false);
   const [asanaError, setAsanaError] = useState<string | null>(null);
+  const [showCompleted, setShowCompleted] = useState(false);
   const [imgBusy, setImgBusy] = useState(false);
   const [emailCopied, setEmailCopied] = useState<number | null>(null);
   const imgRef = useRef<HTMLInputElement>(null);
@@ -451,8 +452,12 @@ export function CampaignCalendar({ canEdit = false, brands = [] }: { canEdit?: b
           <h2 className="text-lg font-bold text-slate-800">Campaigns</h2>
           <p className="text-xs text-gray-400">Cross-brand Now / Next / Later · {HORIZON_RANGE} · click a card for the full brief{canEdit ? "" : " · view only"}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3">
           {view === "roadmap" && <>
+            <label className="flex items-center gap-1.5 text-sm text-gray-500 cursor-pointer select-none">
+              <input type="checkbox" checked={showCompleted} onChange={e => setShowCompleted(e.target.checked)} className="accent-slate-600" />
+              Show completed
+            </label>
             <button onClick={exportCSV} className="text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3 py-1.5 transition motion-reduce:transition-none">Export CSV</button>
             <button onClick={exportJSON} className="text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3 py-1.5 transition motion-reduce:transition-none">Export JSON</button>
           </>}
@@ -493,7 +498,7 @@ export function CampaignCalendar({ canEdit = false, brands = [] }: { canEdit?: b
         <>
           <div className="grid gap-4 md:grid-cols-3">
             {HORIZONS.map(h => {
-              const rows = items.filter(i => i.horizon === h.id && i.status !== "Completed").sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+              const rows = items.filter(i => i.horizon === h.id && (showCompleted || i.status !== "Completed")).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
               return (
                 <section
                   key={h.id}
