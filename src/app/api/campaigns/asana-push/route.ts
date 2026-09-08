@@ -181,7 +181,8 @@ export async function POST(req: Request) {
       // per discipline (Paid Marketing / Socials / Design / Retail / Website
       // / Affiliate) grouping the relevant deliverable lines, each with a
       // short brief for that specialist rather than the whole campaign brief.
-      const edmNotes = buildSubtaskNotes([], c.brief?.keyMessage);
+      const edmExtra = [c.brief?.keyMessage, c.brief?.edmBrief].filter(Boolean).join(" — ");
+      const edmNotes = buildSubtaskNotes([], edmExtra);
       const { data: sends } = await sb.from("campaign_sends").select("send_date,subject").eq("campaign_id", id).order("send_date", { ascending: true });
       for (const s of sends || []) {
         await createSubtask(taskGid, `${code} - ${s.subject}`, { dueOn: s.send_date, assignee: TEAM.edm || undefined, htmlNotes: edmNotes });
@@ -200,11 +201,21 @@ export async function POST(req: Request) {
       if (social) buckets.social.push(social);
       if (c.brief?.creativeDirection) buckets.design.push(c.brief.creativeDirection);
 
+      // Explicit per-discipline requirements from the brief drawer (edmBrief
+      // is handled above) — these take priority over the guessed deliverable
+      // categorisation, which stays as a fallback for older/looser briefs.
+      const CATEGORY_BRIEF_FIELD: Record<Category, string> = {
+        paid: "paidBrief", affiliate: "affiliateBrief", design: "designBrief",
+        retail: "retailBrief", website: "websiteBrief", social: "socialsBrief",
+      };
+
       for (const cat of Object.keys(buckets) as Category[]) {
-        if (!buckets[cat].length) continue;
+        if (cat === "affiliate" && c.brand !== "UPPAbaby" && c.brand !== "Nanit") continue;
+        const explicit = c.brief?.[CATEGORY_BRIEF_FIELD[cat]];
+        if (!buckets[cat].length && !explicit) continue;
         const assignee = cat === "social" ? socialAssignee(c.brand) : TEAM[cat];
-        const extra = cat === "paid" || cat === "website" ? c.brief?.offerMechanic : undefined;
-        await createSubtask(taskGid, CATEGORY_LABEL[cat], { assignee, htmlNotes: buildSubtaskNotes(buckets[cat], extra) });
+        const extraParts = [explicit, cat === "paid" || cat === "website" ? c.brief?.offerMechanic : undefined].filter(Boolean);
+        await createSubtask(taskGid, CATEGORY_LABEL[cat], { assignee, htmlNotes: buildSubtaskNotes(buckets[cat], extraParts.join(" — ")) });
       }
     }
 

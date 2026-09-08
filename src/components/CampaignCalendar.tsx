@@ -70,6 +70,15 @@ const BRIEF_FIELDS: { key: string; label: string }[] = [
   { key: "offerMechanic", label: "Offer / mechanic" },
   { key: "channels", label: "Channels" },
   { key: "deliverables", label: "Deliverables" },
+  // Per-discipline requirements — these push straight into that team's Asana
+  // subtask (Push to Asana) instead of guessing from the deliverables list.
+  { key: "edmBrief", label: "EDM requirements (Pier Ann)" },
+  { key: "paidBrief", label: "Paid Marketing requirements (Anna)" },
+  { key: "socialsBrief", label: "Socials requirements (Nicky / Alicia)" },
+  { key: "designBrief", label: "Design requirements (Diep)" },
+  { key: "retailBrief", label: "Retail requirements (Alison)" },
+  { key: "websiteBrief", label: "Website requirements (Melanie)" },
+  { key: "affiliateBrief", label: "Affiliate requirements (Jane — UPPAbaby & Nanit only)" },
   { key: "creativeDirection", label: "Creative direction" },
   { key: "do", label: "Do" },
   { key: "dont", label: "Don't" },
