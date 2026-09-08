@@ -2,17 +2,18 @@
 
 import { useEffect, useState } from "react";
 
-// Reviews, one place: what's actually been written (via Klaviyo Reviews,
-// per brand that has it enabled) alongside the incentive links/QR codes
-// used to drive new ones, and who's claimed a reward so far.
+// Reviews, one place: what's actually been written — via Judge.me (the
+// brands being migrated to it, starting with Frida) or Klaviyo Reviews
+// (UPPAbaby, until/unless it moves too) — alongside the incentive links/QR
+// codes used to drive new ones, and who's claimed a reward so far.
 type Brand = { id: number; name: string };
 type Incentive = {
-  id: string; slug: string; brand: string; brand_id: number; label: string; review_url: string;
+  id: string; slug: string; brand: string; brand_id: number; label: string; review_url: string | null; judgeme_product_id: string | null;
   discount_type: string; discount_value: number; min_spend: number | null; expiry_days: number; active: boolean;
 };
-type ReviewRequest = { id: string; brand: string; email: string; discount_code: string | null; status: string; created_at: string };
-type KlaviyoReview = { id: string; rating: number | null; content: string | null; author: string | null; product: string | null; created: string | null; verified: boolean };
-type BrandReviews = { brand: string; enabled: boolean; reviews: KlaviyoReview[] };
+type ReviewRequest = { id: string; brand: string; email: string; discount_code: string | null; status: string; created_at: string; rating: number | null };
+type SourceReview = { id: string; rating: number | null; content: string | null; author: string | null; product: string | null; created: string | null; verified: boolean };
+type BrandReviews = { brand: string; enabled: boolean; reviews: SourceReview[] };
 
 const inp = "text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white";
 const stars = (n: number | null) => n == null ? "" : "★".repeat(n) + "☆".repeat(5 - n);
@@ -20,23 +21,26 @@ const stars = (n: number | null) => n == null ? "" : "★".repeat(n) + "☆".rep
 export function ReviewsPanel({ brands = [], canEdit = false }: { brands?: Brand[]; canEdit?: boolean }) {
   const [incentives, setIncentives] = useState<Incentive[]>([]);
   const [requests, setRequests] = useState<ReviewRequest[]>([]);
+  const [judgeMeReviews, setJudgeMeReviews] = useState<BrandReviews[]>([]);
   const [klaviyoReviews, setKlaviyoReviews] = useState<BrandReviews[]>([]);
   const [loading, setLoading] = useState(true);
   const [needsSetup, setNeedsSetup] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
-  const empty = { brand: "", label: "", review_url: "", discount_type: "percentage", discount_value: "10", min_spend: "", expiry_days: "30" };
+  const empty = { brand: "", label: "", review_url: "", judgeme_product_id: "", discount_type: "percentage", discount_value: "10", min_spend: "", expiry_days: "30" };
   const [f, setF] = useState(empty);
 
   async function load() {
-    const [i, r, k] = await Promise.all([
+    const [i, r, j, k] = await Promise.all([
       fetch("/api/review-incentives").then(x => x.json()).catch(() => ({ ok: false })),
       fetch("/api/review-requests").then(x => x.json()).catch(() => ({ ok: false })),
+      fetch("/api/judgeme-reviews").then(x => x.json()).catch(() => ({ ok: false })),
       fetch("/api/klaviyo-reviews").then(x => x.json()).catch(() => ({ ok: false })),
     ]);
     if (i.ok) { setIncentives(i.items || []); setNeedsSetup(!!i.needsSetup); }
     setRequests(r.items || []);
+    setJudgeMeReviews(j.brands || []);
     setKlaviyoReviews(k.brands || []);
     setLoading(false);
   }
@@ -44,7 +48,7 @@ export function ReviewsPanel({ brands = [], canEdit = false }: { brands?: Brand[
 
   async function addIncentive() {
     const brandId = brands.find(b => b.name === f.brand)?.id;
-    if (!f.brand || !f.label.trim() || !f.review_url.trim() || brandId == null) { setMsg("Brand, label and review link required"); return; }
+    if (!f.brand || !f.label.trim() || brandId == null) { setMsg("Brand and label required"); return; }
     setMsg("");
     const res = await fetch("/api/review-incentives", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -85,7 +89,7 @@ export function ReviewsPanel({ brands = [], canEdit = false }: { brands?: Brand[
       <div>
         <h3 className="text-sm font-bold text-slate-700 mb-2">Reviews across your sites</h3>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {klaviyoReviews.map(b => (
+          {[...judgeMeReviews, ...klaviyoReviews].map(b => (
             <div key={b.brand} className="bg-white rounded-xl border border-gray-100 p-4">
               <div className="flex items-center justify-between mb-2">
                 <p className="font-medium text-slate-800">{b.brand}</p>
@@ -126,17 +130,21 @@ export function ReviewsPanel({ brands = [], canEdit = false }: { brands?: Brand[
                 {brands.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
               </select>
               <input value={f.label} onChange={e => setF({ ...f, label: e.target.value })} placeholder="Label — e.g. Packaging insert *" className={inp} />
-              <input value={f.review_url} onChange={e => setF({ ...f, review_url: e.target.value })} placeholder="Review link (PDP or write-review page) *" className={inp} />
+              <input value={f.judgeme_product_id} onChange={e => setF({ ...f, judgeme_product_id: e.target.value })} placeholder="Judge.me product ID (optional)" className={inp} />
             </div>
             <div className="grid sm:grid-cols-4 gap-2">
+              <input value={f.review_url} onChange={e => setF({ ...f, review_url: e.target.value })} placeholder="Product page link (optional, shown after)" className={inp} />
               <select value={f.discount_type} onChange={e => setF({ ...f, discount_type: e.target.value })} className={inp}>
                 <option value="percentage">% off</option>
                 <option value="fixed_amount">$ off</option>
               </select>
               <input type="number" value={f.discount_value} onChange={e => setF({ ...f, discount_value: e.target.value })} placeholder="Discount value" className={inp} />
               <input type="number" value={f.min_spend} onChange={e => setF({ ...f, min_spend: e.target.value })} placeholder="Min spend (optional)" className={inp} />
+            </div>
+            <div className="grid sm:grid-cols-4 gap-2">
               <input type="number" value={f.expiry_days} onChange={e => setF({ ...f, expiry_days: e.target.value })} placeholder="Expires after (days)" className={inp} />
             </div>
+            <p className="text-xs text-gray-400">If the brand has Judge.me set up, the reviewer writes their review right on the page and it posts for real — leave the product ID blank for a shop-level review, or set it to attach to one product. Brands without Judge.me yet fall back to a simple email-for-a-code flow.</p>
             {msg && <p className="text-sm text-amber-600">{msg}</p>}
             <button onClick={addIncentive} className="text-sm font-medium bg-emerald-600 text-white rounded-lg px-4 py-1.5 hover:bg-emerald-700">Save</button>
           </div>

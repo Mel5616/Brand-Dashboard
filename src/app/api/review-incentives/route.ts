@@ -32,12 +32,13 @@ export async function POST(req: Request) {
   const reviewUrl = String(b.review_url || "").trim().slice(0, 500);
   const brandId = Number(b.brand_id);
   const discountValue = Number(b.discount_value);
-  if (!brand || !label || !reviewUrl || !Number.isFinite(brandId) || !Number.isFinite(discountValue) || discountValue <= 0)
-    return NextResponse.json({ ok: false, error: "Brand, label, review link and a discount value are required" }, { status: 400 });
+  if (!brand || !label || !Number.isFinite(brandId) || !Number.isFinite(discountValue) || discountValue <= 0)
+    return NextResponse.json({ ok: false, error: "Brand, label and a discount value are required" }, { status: 400 });
 
   const row = {
     slug: slugify(brand, label),
-    brand, brand_id: brandId, label, review_url: reviewUrl,
+    brand, brand_id: brandId, label, review_url: reviewUrl || null,
+    judgeme_product_id: b.judgeme_product_id ? String(b.judgeme_product_id).trim().slice(0, 40) : null,
     discount_type: b.discount_type === "fixed_amount" ? "fixed_amount" : "percentage",
     discount_value: discountValue,
     min_spend: b.min_spend != null && b.min_spend !== "" ? Number(b.min_spend) : null,
