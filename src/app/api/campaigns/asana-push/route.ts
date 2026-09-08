@@ -56,7 +56,7 @@ function categorize(line: string): Category {
 // main campaign card", one per discipline, not the full document repeated).
 function buildSubtaskNotes(lines: string[], extra?: string): string {
   const parts: string[] = [];
-  if (extra) parts.push(`<p>${escapeHtml(extra)}</p>`);
+  if (extra) parts.push(escapeHtml(extra));
   if (lines.length) parts.push(`<ul>${lines.map((l) => `<li>${escapeHtml(l)}</li>`).join("")}</ul>`);
   return parts.length ? `<body>${parts.join("\n")}</body>` : "";
 }
@@ -108,7 +108,7 @@ function block(label: string, value: unknown): string {
   const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
   const body = lines.length > 1
     ? `<ul>${lines.map((l) => `<li>${escapeHtml(l)}</li>`).join("")}</ul>`
-    : `<p>${escapeHtml(lines[0] || "")}</p>`;
+    : escapeHtml(lines[0] || "");
   return `<strong>${escapeHtml(label)}</strong>\n${body}`;
 }
 
@@ -117,7 +117,7 @@ function block(label: string, value: unknown): string {
 function buildNotes(c: any): string {
   const b = c.brief || {};
   const parts = [
-    b.oneLiner ? `<p>${escapeHtml(b.oneLiner)}</p>` : "",
+    b.oneLiner ? escapeHtml(b.oneLiner) : "",
     block("Objective", b.objective),
     block("Why now", b.whyNow),
     block("Audience", b.audience),
