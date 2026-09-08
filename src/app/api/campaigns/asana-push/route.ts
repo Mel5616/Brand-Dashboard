@@ -48,17 +48,42 @@ async function createSubtask(parentGid: string, name: string, dueOn?: string | n
   await fetch(`${ASANA_BASE}/tasks/${parentGid}/subtasks`, { method: "POST", headers: asanaHeaders(), body: JSON.stringify({ data }) });
 }
 
+const escapeHtml = (s: string) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+// Multi-line brief fields (do/dont/compliance/dependencies/cascade) are stored
+// as "\n"-separated lines — render each as a bullet so it reads like the
+// dashboard's brief drawer, not a wall of text.
+function block(label: string, value: unknown): string {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+  const body = lines.length > 1
+    ? `<ul>${lines.map((l) => `<li>${escapeHtml(l)}</li>`).join("")}</ul>`
+    : `<p>${escapeHtml(lines[0] || "")}</p>`;
+  return `<strong>${escapeHtml(label)}</strong>\n${body}`;
+}
+
+// Full brief in Asana's rich-text format, so staff get real direction on the
+// task card itself and don't have to open the dashboard to know what to do.
 function buildNotes(c: any): string {
   const b = c.brief || {};
-  const lines = [
-    b.oneLiner, "",
-    b.objective ? `Objective: ${b.objective}` : null,
-    b.whyNow ? `Why now: ${b.whyNow}` : null,
-    b.audience ? `Audience: ${b.audience}` : null,
-    b.offerMechanic ? `Offer/mechanic: ${b.offerMechanic}` : null,
-    b.successMeasure ? `Success measure: ${b.successMeasure}` : null,
-  ].filter((x) => x !== null);
-  return lines.join("\n");
+  const parts = [
+    b.oneLiner ? `<p>${escapeHtml(b.oneLiner)}</p>` : "",
+    block("Objective", b.objective),
+    block("Why now", b.whyNow),
+    block("Audience", b.audience),
+    block("Key message", b.keyMessage),
+    block("Offer / mechanic", b.offerMechanic),
+    block("Channels", b.channels),
+    block("Creative direction", b.creativeDirection),
+    block("Do", b.do),
+    block("Don't", b.dont),
+    block("Send cascade", b.cascade),
+    block("Success measure", b.successMeasure),
+    block("Dependencies / ready to launch", b.dependencies),
+    block("Compliance", b.compliance),
+  ].filter(Boolean);
+  return `<body>${parts.join("\n")}</body>`;
 }
 
 export async function POST(req: Request) {
@@ -76,7 +101,7 @@ export async function POST(req: Request) {
 
   const code = BRAND_CODE[c.brand] || c.brand.slice(0, 2).toUpperCase();
   const taskName = `${code} - ${c.campaign}`;
-  const notes = buildNotes(c);
+  const htmlNotes = buildNotes(c);
   const dueOn = isIsoDate(c.key_date) ? c.key_date : null;
 
   try {
@@ -85,13 +110,13 @@ export async function POST(req: Request) {
     if (taskGid) {
       // Already pushed — just refresh the main task, don't re-create subtasks.
       const res = await fetch(`${ASANA_BASE}/tasks/${taskGid}`, {
-        method: "PUT", headers: asanaHeaders(), body: JSON.stringify({ data: { name: taskName, notes, ...(dueOn ? { due_on: dueOn } : {}) } }),
+        method: "PUT", headers: asanaHeaders(), body: JSON.stringify({ data: { name: taskName, html_notes: htmlNotes, ...(dueOn ? { due_on: dueOn } : {}) } }),
       });
       if (!res.ok) throw new Error((await res.text()).slice(0, 200));
     } else {
       const createRes = await fetch(`${ASANA_BASE}/tasks`, {
         method: "POST", headers: asanaHeaders(),
-        body: JSON.stringify({ data: { name: taskName, notes, projects: [PROJECT_GID], ...(dueOn ? { due_on: dueOn } : {}) } }),
+        body: JSON.stringify({ data: { name: taskName, html_notes: htmlNotes, projects: [PROJECT_GID], ...(dueOn ? { due_on: dueOn } : {}) } }),
       });
       if (!createRes.ok) throw new Error((await createRes.text()).slice(0, 200));
       const created = (await createRes.json()).data;
