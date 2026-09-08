@@ -1535,7 +1535,7 @@ export function DashboardTabs({
           )}
 
           {/* ── Campaign Calendar (portfolio Now/Next/Later roadmap) ── */}
-          {active === "campaign-calendar" && <CampaignCalendar canEdit={role === "admin"} />}
+          {active === "campaign-calendar" && <CampaignCalendar canEdit={role === "admin"} brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} />}
 
           {active === "weekly-brief" && (
             <>

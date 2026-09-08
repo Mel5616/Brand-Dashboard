@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { LivePromotions } from "./LivePromotions";
 
 type Promo = {
   id: number; brand_id: number | null; brand: string; period_start: string; period_end: string;
@@ -110,8 +109,6 @@ export function PromotionalCalendar({ canEdit, brands = [], fy, month }: { canEd
 
   return (
     <div className="space-y-5">
-      <LivePromotions canEdit={canEdit} brands={brands} />
-
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
         <select value={brandF} onChange={e => setBrandF(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white">

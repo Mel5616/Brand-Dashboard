@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { SendSchedule } from "./SendSchedule";
 import { BlackFridayPlanner } from "./BlackFridayPlanner";
+import { LivePromotions } from "./LivePromotions";
 
 // Portfolio Campaign Calendar — a Now / Next / Later roadmap with team ownership.
 // Persists to Supabase via /api/campaigns and /api/campaigns/maintenance.
@@ -95,8 +96,8 @@ const isFlagged = (v: string) => /^\s*(high|check)/i.test(v || "");
 
 const jsonHeaders = { "Content-Type": "application/json" };
 
-export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
-  const [view, setView] = useState<"roadmap" | "sends" | "bf">("roadmap");
+export function CampaignCalendar({ canEdit = false, brands = [] }: { canEdit?: boolean; brands?: { id: number; name: string }[] }) {
+  const [view, setView] = useState<"roadmap" | "sends" | "bf" | "promos">("roadmap");
   const [items, setItems] = useState<Campaign[]>([]);
   const [maint, setMaint] = useState<Maint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -459,7 +460,7 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
       </div>
 
       <div className="flex gap-1 mb-4 no-print">
-        {([["roadmap", "Roadmap"], ["sends", "Send Schedule"], ["bf", "Black Friday"]] as const).map(([id, label]) => (
+        {([["roadmap", "Roadmap"], ["sends", "Send Schedule"], ["bf", "Black Friday"], ["promos", "Live Promotions"]] as const).map(([id, label]) => (
           <button
             key={id}
             onClick={() => setView(id)}
@@ -615,6 +616,7 @@ export function CampaignCalendar({ canEdit = false }: { canEdit?: boolean }) {
 
       {view === "sends" && <SendSchedule canEdit={canEdit} />}
       {view === "bf" && <BlackFridayPlanner canEdit={canEdit} />}
+      {view === "promos" && <LivePromotions canEdit={canEdit} brands={brands} />}
 
       {/* ── Brief drawer ── */}
       {open && (
