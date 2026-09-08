@@ -6,7 +6,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // Public paths (login, auth callback, the team gift form, and API routes) pass
 // through — per-route financial gating is enforced in the routes themselves.
 
-const PUBLIC = ["/login", "/auth", "/log-gift", "/request", "/p", "/c", "/s", "/deals", "/w", "/brief", "/nanit", "/sign", "/deck", "/doc", "/g", "/agreement", "/activation", "/hub", "/apply", "/order", "/api/signout", "/catalogue-check", "/tuneup-checkin"];
+const PUBLIC = ["/login", "/auth", "/log-gift", "/request", "/p", "/c", "/s", "/deals", "/w", "/brief", "/nanit", "/sign", "/deck", "/doc", "/g", "/agreement", "/activation", "/hub", "/apply", "/order", "/api/signout", "/catalogue-check", "/tuneup-checkin", "/review"];
 // The only /api endpoints reachable without a session: the public team gift
 // form and the public Sales Hub request form (both gated by their own shared
 // key inside the route, see src/lib/giftKey.ts / src/lib/salesRequestKey.ts),
@@ -15,7 +15,7 @@ const PUBLIC = ["/login", "/auth", "/log-gift", "/request", "/p", "/c", "/s", "/
 // called cross-origin from the UPPAbaby storefront, not just this app.
 // Everything else under /api now requires auth at the edge (defence in depth on top
 // of each route's own getAccess check).
-const PUBLIC_API = ["/api/influencer/products", "/api/influencer/roster", "/api/influencer/entries", "/api/influencer/invoice", "/api/influencer/avatar", "/api/nanit/public", "/api/releases/sign", "/api/decks/track", "/api/decks/og", "/api/documents/track", "/api/public-sales-request", "/api/sales-requests/upload", "/api/influencer-agreements/sign", "/api/credit-application", "/api/opening-order", "/api/feed", "/api/catalogue-review", "/api/tuneup/days", "/api/tuneup/book", "/api/tuneup/checkin", "/api/zazu-chat", "/api/frida-chat"];
+const PUBLIC_API = ["/api/influencer/products", "/api/influencer/roster", "/api/influencer/entries", "/api/influencer/invoice", "/api/influencer/avatar", "/api/nanit/public", "/api/releases/sign", "/api/decks/track", "/api/decks/og", "/api/documents/track", "/api/public-sales-request", "/api/sales-requests/upload", "/api/influencer-agreements/sign", "/api/credit-application", "/api/opening-order", "/api/feed", "/api/catalogue-review", "/api/tuneup/days", "/api/tuneup/book", "/api/tuneup/checkin", "/api/zazu-chat", "/api/frida-chat", "/api/review-request", "/api/review-incentives/qr", "/api/review-incentives/public"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
