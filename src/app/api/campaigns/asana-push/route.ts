@@ -22,9 +22,8 @@ const BRAND_CODE: Record<string, string> = {
 };
 
 // Fixed role -> assignee, per how the team actually splits campaign work.
-// TODO: PIER ANN'S EMAIL — EDM subtasks aren't assigned until this is filled in.
 const TEAM = {
-  edm: "",
+  edm: "pierann@coolkidz.com.au", // Pier Ann — EDM
   paid: "anna@coolkidz.com.au",       // Anna Kilmartin — Paid Marketing
   affiliate: "jane@coolkidz.com.au",  // Jane Edmonds — Affiliate (UPPAbaby + Nanit only)
   design: "design@coolkidz.com.au",   // Diep — Design
