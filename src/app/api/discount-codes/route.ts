@@ -14,7 +14,7 @@ const missing = (s: number, b: string) => s === 404 || /PGRST205|does not exist|
 type Row = {
   brand_id: number; code: string; usage_count: number; value_type: string | null; value: number | null;
   starts_at: string | null; ends_at: string | null; usage_limit: number | null; codes_in_rule: number | null;
-  rule_title: string | null; title_shared_count: number | null; min_spend: number | null;
+  rule_title: string | null; title_shared_count: number | null; min_spend: number | null; manual_status: string | null;
 };
 
 // "Main" excludes: single-use codes (usage_limit=1), codes sharing a rule
@@ -57,7 +57,11 @@ export async function GET() {
   const today = new Date().toISOString().slice(0, 10);
   const codes = rows.map(r => ({
     ...r,
-    status: r.ends_at && r.ends_at < today ? "expired" : (r.starts_at && r.starts_at > today ? "scheduled" : "active"),
+    // A manual deactivation from the dashboard overrides the date-derived
+    // status — the code is off regardless of what its dates say, until
+    // someone turns it back on (which clears manual_status).
+    status: r.manual_status === "deactivated" ? "deactivated"
+      : r.ends_at && r.ends_at < today ? "expired" : (r.starts_at && r.starts_at > today ? "scheduled" : "active"),
   }));
   return NextResponse.json({ ok: true, codes });
 }

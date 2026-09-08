@@ -51,6 +51,7 @@ export async function PATCH(req: Request) {
   if (b.period_end) fields.period_end = b.period_end;
   for (const k of ["price", "note", "approved_by"] as const)
     if (b[k] !== undefined) fields[k] = b[k] ? String(b[k]).slice(0, k === "note" ? 300 : 60) : null;
+  if (b.paused !== undefined) fields.paused = !!b.paused;
   const res = await fetch(`${sbUrl}/rest/v1/site_deals?id=eq.${id}`, { method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify(fields) });
   return NextResponse.json({ ok: res.ok });
 }
