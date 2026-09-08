@@ -56,6 +56,7 @@ const STATIC = [
   `SLEEP GUIDES\n${K.guides.map((g: any) => `- ${g.title} (${g.url}): ${g.summary}`).join("\n")}`,
   `MANUALS (PDF)\n${K.manuals.map((m: any) => `- ${m.label}: ${m.url}`).join("\n")}`,
   `VIDEOS (YouTube)\n${K.videos.map((v: any) => `- ${v.label}: https://www.youtube.com/watch?v=${v.url}`).join("\n")}`,
+  `PRODUCT NOTES\n${Object.entries(K.product_notes || {}).map(([n, v]) => `${n}: ${v}`).join("\n")}`,
   `PRODUCT FAQS\n${K.faq.map((f: any) => `[${f.product}] Q: ${f.q}\nA: ${f.a}`).join("\n\n")}`,
 ].join("\n\n");
 

@@ -708,6 +708,11 @@
    "product": "Sleeptrainer Sarah",
    "q": "Difficulties sleeping?",
    "a": "ZAZU regularly writes tips about better sleep for kids and parents."
+  },
+  {
+   "product": "Rest Nest",
+   "q": "Will the Rest Nest fit my travel cot?",
+   "a": "Measure the outside of the cot frame. The pod footprint is 127 x 91 cm and it is 142 cm high inside. Cots up to about 124 x 88 cm fit with room; up to about 129 x 93 cm is a snug fit; anything bigger will not fit. Use the fit checker on the Rest Nest product page."
   }
  ],
  "manuals": [
@@ -1075,5 +1080,8 @@
   "warranty": "12 months through Coolkidz Australia",
   "contact": "Contact form at /pages/contact, replies within 1 to 2 working days",
   "free_shipping": "Free shipping on orders of $99 or more, Australia-wide. Under $99 the rate is calculated at checkout by postcode."
+ },
+ "product_notes": {
+  "Rest Nest Privacy Sleep Pod": "Bottomless pop-up blackout pod that drops over a cot. Assembled 127 x 91 x 142 cm (L x W x H), packed 13 x 13 x 6 cm, 1 kg. Fits most portacots, travel cots and toddler beds: comfortably up to about 124 cm long x 88 cm wide (outside frame), snug up to about 129 x 93 cm, height up to about 135 cm. If a cot is longer or wider than 129 x 93 cm it will not fit. There is a \"Will it fit my cot?\" checker on the product page (/products/zazu-rest-nest-privacy-sleep-pod#fit). Measure the outside of the frame, not the mattress. Example: a Hauck Dream N Play (127.5 x 69 x 76 cm) is a snug but workable fit."
  }
 }
