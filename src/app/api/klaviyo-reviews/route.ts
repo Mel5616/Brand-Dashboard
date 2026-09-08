@@ -12,15 +12,11 @@ export const revalidate = 300;
 const BASE = "https://a.klaviyo.com/api";
 const REVISION = "2024-07-15.pre";
 
-// The brands Mel wants reviews for right now (UPPAbaby already has Reviews;
-// the rest need it enabled in Klaviyo before this returns anything for them).
+// Only UPPAbaby actually runs Klaviyo Reviews — the other five are moving to
+// Judge.me instead (src/app/api/judgeme-reviews/route.ts), not Klaviyo, so
+// they must not appear here too or they show up twice in the Reviews tab.
 const TARGET_BRANDS: { id: number; name: string }[] = [
   { id: 5, name: "UPPAbaby" },
-  { id: 8, name: "Frida" },
-  { id: 6, name: "Zazu" },
-  { id: 2, name: "Hannie" },
-  { id: 11, name: "Mamave" },
-  { id: 10, name: "Matchstick Monkey" },
 ];
 
 export async function GET() {

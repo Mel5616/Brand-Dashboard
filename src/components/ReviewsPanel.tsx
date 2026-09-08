@@ -89,14 +89,23 @@ export function ReviewsPanel({ brands = [], canEdit = false }: { brands?: Brand[
       <div>
         <h3 className="text-sm font-bold text-slate-700 mb-2">Reviews across your sites</h3>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {[...judgeMeReviews, ...klaviyoReviews].map(b => (
+          {[
+            ...judgeMeReviews.map(b => ({ ...b, source: "judgeme" as const })),
+            ...klaviyoReviews.map(b => ({ ...b, source: "klaviyo" as const })),
+          ].map(b => (
             <div key={b.brand} className="bg-white rounded-xl border border-gray-100 p-4">
               <div className="flex items-center justify-between mb-2">
                 <p className="font-medium text-slate-800">{b.brand}</p>
                 {!b.enabled && <span className="text-[10px] font-bold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">Not enabled</span>}
               </div>
               {b.enabled && b.reviews.length === 0 && <p className="text-xs text-gray-400">No reviews yet.</p>}
-              {!b.enabled && <p className="text-xs text-gray-400">Turn on Klaviyo Reviews for this account to see them here.</p>}
+              {!b.enabled && (
+                <p className="text-xs text-gray-400">
+                  {b.source === "judgeme"
+                    ? "Install Judge.me on this store and add its API token + shop domain to JUDGEME_API_TOKENS to see reviews here."
+                    : "Turn on Klaviyo Reviews for this account to see them here."}
+                </p>
+              )}
               <div className="space-y-2 max-h-56 overflow-y-auto">
                 {b.reviews.slice(0, 5).map(r => (
                   <div key={r.id} className="text-xs border-t border-gray-50 pt-2 first:border-0 first:pt-0">
