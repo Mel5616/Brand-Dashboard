@@ -15,6 +15,7 @@ import { ForecastPanel } from "./ForecastPanel";
 import { WeeklyBrief } from "./WeeklyBrief";
 import { GoogleCampaignsTable } from "./GoogleCampaignsTable";
 import { AffiliatesPanel, CF_BRAND_IDS } from "./AffiliatesPanel";
+import { CreatorCodesPanel } from "./CreatorCodesPanel";
 import { EmailChart } from "./EmailChart";
 import { EmailBrandDetail } from "./EmailBrandDetail";
 import { WinbackPanel } from "./WinbackPanel";
@@ -321,7 +322,7 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>,
   },
   {
-    id: "affiliates", label: "Commission Factory",
+    id: "affiliates", label: "Affiliates",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5m6.5-6.5l1.5-1.5a4 4 0 115.656 5.656l-3 3a4 4 0 01-5.656 0" /></svg>,
   },
   {
@@ -2631,7 +2632,20 @@ export function DashboardTabs({
             const cfFilter: "all" | number = brandFilter !== "all" && CF_BRAND_IDS.includes(brandFilter as number) ? brandFilter : "all";
             return (
               <>
-                <SectionBar title="Partnerships & Affiliates · Commission Factory" />
+                <SectionBar title="Partnerships & Affiliates" />
+                <div className="flex items-center gap-2 mb-3">
+                  <select
+                    value={brandFilter === "all" ? "all" : String(brandFilter)}
+                    onChange={e => setBrandFilter(e.target.value === "all" ? "all" : Number(e.target.value))}
+                    className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                  >
+                    <option value="all">All brands</option>
+                    {brands.map((b: any) => <option key={b.id} value={String(b.id)}>{b.name}</option>)}
+                  </select>
+                  <span className="text-[11px] text-gray-400">Creator codes, any brand</span>
+                </div>
+                <CreatorCodesPanel brands={brands} brandFilter={brandFilter} monthKeys={monthKeys} admin={role === "admin"} />
+                <h3 className="text-base font-semibold text-gray-900 mb-1">Commission Factory</h3>
                 <div className="flex items-center gap-2 mb-3">
                   <select
                     value={cfFilter === "all" ? "all" : String(cfFilter)}
