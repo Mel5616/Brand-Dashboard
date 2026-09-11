@@ -1,0 +1,196 @@
+{
+ "store": {
+  "name": "Nanit Australia",
+  "who": "Official Australian distributor of Nanit, run by Coolkidz Australia Pty Ltd, Melbourne. Australian units ship with an AU power adapter and are supported directly by the Coolkidz Melbourne team.",
+  "site": "https://nanit.com.au",
+  "contact_page": "/pages/contact",
+  "support_portal": "https://help.coolkidz.com.au/support/tickets/new",
+  "phone": "1300 722 302",
+  "reply_time": "one to two working days",
+  "tone": "warm, plain, reassuring; written for tired parents who want clear answers, not jargon"
+ },
+ "policies": {
+  "shipping": "Ships from the Melbourne warehouse, Monday to Friday. Orders dispatch within 1 to 2 business days of payment clearing. Delivery from dispatch: Melbourne, Sydney and Adelaide 1 to 2 business days; Brisbane 2 to 3 business days; Hobart 3 to 4 business days; Perth 4 to 7 business days. Standard shipping is $12.95 for orders under $200 and free for orders of $200 or more. Express is a flat $15. New Zealand is a flat $20. Orders with more than one carton may arrive as separate deliveries. Someone needs to be home to receive a delivery unless authority to leave has been requested, and delivery is not available to PO boxes or Australia Post parcel lockers.",
+  "warranty": "Nanit Baby Monitor cameras (Pro camera, with any stand) carry a 2-year Australian warranty. Every other product type, accessories, stands bought separately, the Sound Machine, Flex Stand, Travel Case and Breathing Wear, carries a 1-year Australian warranty. Warranty covers products bought from an authorised Australian retailer and does not cover misuse, accidental damage, unauthorised repair, incorrect installation, issues caused by the customer's own Wi-Fi or internet, or normal wear on consumable parts. To claim, start a request through the support portal or call 1300 722 302 with the order number and a description of the fault; Nanit Australia will repair, replace or refund at its discretion. Australian Consumer Law guarantees apply on top of this warranty and cannot be excluded.",
+  "returns": "30 days from the date of delivery to return an item, provided it is unused and in its original packaging. Start a return through the support portal or by calling 1300 722 302."
+ },
+ "offers": [
+  "Free standard shipping on orders of $200 or more; $12.95 under that.",
+  "Every Nanit camera includes Nanit Insights (sleep analytics, extended video history, personalised guidance) free for the first 3 months. Live HD video, two-way audio, breathing motion monitoring and alerts work without any subscription, before, during or after the free period."
+ ],
+ "pages": {
+  "Find your Nanit setup (quiz)": "/pages/find-your-setup",
+  "What's in the box": "/pages/whats-in-the-box",
+  "Setup guide": "/pages/setup-guide",
+  "What does Nanit do": "/pages/what-does-nanit-do-smart-baby-monitor-explained",
+  "Breathing motion monitoring": "/pages/breathing-motion-monitoring",
+  "Nanit Insights: Sleep Coach, Sleep Score and NextNap": "/pages/nanit-insights-sleep-coach",
+  "NextNap": "/pages/nextnap-by-nanit-ai-baby-nap-schedule-predictor",
+  "Subscription plans explained": "/pages/nanit-subscription-plans-explained",
+  "Membership": "/pages/membership",
+  "Nanit vs CuboAi": "/pages/nanit-vs-cuboai",
+  "Why Nanit costs what it does": "/pages/why-nanit-costs-more",
+  "Baby sleep & health benefits": "/pages/baby-sleep-and-health-benefits",
+  "Nanit Sleep Coach": "/pages/nanit-sleep-coach",
+  "Care Logs": "/pages/care-logs",
+  "The Nanit App & Sleep Insights": "/pages/the-nanit-app-sleep-insights",
+  "About Nanit": "/pages/about-nanit",
+  "Security & Privacy": "/pages/security-privacy",
+  "Your privacy choices": "/pages/data-sharing-opt-out",
+  "Shipping & delivery": "/pages/shipping-delivery",
+  "Warranty information": "/pages/warranty-info",
+  "FAQ": "/pages/faq",
+  "Support": "/pages/support",
+  "Contact": "/pages/contact",
+  "Become a stockist": "/pages/become-a-stockist",
+  "Sleep guides (hub)": "/pages/sleep-guides",
+  "Winter sleep guide": "/pages/winter-sleep-guide"
+ },
+ "product_notes": {
+  "Nanit Smart Baby Pro Monitor with Floor Stand for Nursery Setup (/products/nanit-smart-baby-pro-monitor-with-floor-stand-for-nursery-setup)": "The most chosen Australian setup. No drilling, freestanding floor stand positions the camera at the ideal overhead angle beside the cot, and it moves with you if you rearrange the room or move house. Suits a nursery or a rental.",
+  "Nanit Smart Baby Pro Monitor with Wall Mount for Fixed Nursery Setup (/products/nanit-smart-baby-pro-monitor-with-wall-mount-for-fixed-nursery-setup)": "The most permanent, cleanest-looking setup: the camera mounts directly above the cot. Needs two wall anchors (drilling required), best for a long-term nursery rather than a rental.",
+  "Nanit Smart Baby Monitor with Flex Stand for Travel & Multi-Room Use (/products/nanit-smart-baby-monitor-with-flex-stand-for-travel-multi-room-use)": "The portable option. The flexible, bendable stand clips to a cot rail, shelf or table edge, no drilling and no separate floor stand needed, so it is easy to move between rooms or take travelling.",
+  "Nanit Smart Baby Sound Machine & Night Light for Better Sleep (/products/nanit-smart-baby-sound-machine-night-light-for-better-sleep)": "A standalone sound machine and night light, not a camera. Pairs with the Nanit app for white noise, nightlight control and routines; works alongside a Nanit camera or on its own.",
+  "Nanit Breathing Wear (Bands and Pyjamas) (/products/nanit-breathing-wear-band-small-for-baby-breathing-motion-monitoring)": "Required for breathing motion monitoring to work: a swaddle, band or pyjama with a printed pattern the camera reads from above. Nothing is worn on the body and no sensor touches the baby. Sold in Newborn, 3 Month, Small, Medium and Large sizes; buy the next size as your baby grows.",
+  "Nanit Travel Case for Baby Monitor (/products/nanit-travel-case-for-baby-monitor-green)": "A padded case sized for the Nanit camera and Flex Stand, for travel or moving the setup between rooms. Available in green or grey."
+ },
+ "guides": [
+  {
+   "title": "Nanit: More Than Just a Baby Monitor",
+   "url": "/blogs/news/nanit-more-than-a-baby-monitor",
+   "summary": "Why Nanit is more than a baby monitor, with sleep tracking, breathing motion monitoring and smart insights for Australian families."
+  },
+  {
+   "title": "Why Your Baby Won't Sleep (and What Actually Works)",
+   "url": "/blogs/news/why-baby-wont-sleep",
+   "summary": "What's really causing common baby sleep struggles, and simple, practical ways to help a baby settle and sleep better."
+  },
+  {
+   "title": "Nanit Wall Mount vs Floor Stand: Which Setup Is Right for You?",
+   "url": "/blogs/news/nanit-wall-mount-vs-floor-stand",
+   "summary": "Compares the Wall Mount and Floor Stand setups to help pick the best fit for a home, space and lifestyle."
+  },
+  {
+   "title": "Is Nanit Worth It for Australian Parents?",
+   "url": "/blogs/news/is-nanit-worth-it",
+   "summary": "What Australian parents should know about sleep tracking, breathing motion monitoring, app-connected monitoring and value for money."
+  },
+  {
+   "title": "How Nanit Breathing Motion Monitoring Works",
+   "url": "/blogs/news/how-nanit-breathing-motion-monitoring-works",
+   "summary": "How breathing motion monitoring works, what's needed to use it, and how it differs from traditional sensor-pad monitors."
+  },
+  {
+   "title": "Which Nanit Setup Is Best for Your Home?",
+   "url": "/blogs/news/which-nanit-setup-is-best-for-your-home",
+   "summary": "Comparing the Wall Mount, Floor Stand and Flex Stand to find the best setup for a given home, nursery and lifestyle."
+  },
+  {
+   "title": "How Nanit Takes the Guesswork Out of Nursery Temperature and Humidity",
+   "url": "/blogs/news/nursery-temperature-humidity-monitoring",
+   "summary": "How Nanit monitors nursery temperature and humidity in real time to help understand the sleep environment."
+  },
+  {
+   "title": "Anxious About Your Baby's Breathing? How to Check Less and Sleep More",
+   "url": "/blogs/news/anxious-about-baby-breathing-how-to-check-less-and-sleep-more",
+   "summary": "Why the urge to check on a sleeping baby happens, and small habits that make it easier to trust a setup and rest."
+  },
+  {
+   "title": "Safe Baby Sleep Positions: The Simple Rules Behind More Confident Sleep",
+   "url": "/blogs/news/safe-baby-sleep-positions-simple-rules",
+   "summary": "The small, repeatable safe-sleep habits, and a plan for when a baby starts rolling."
+  },
+  {
+   "title": "Overtired or Undertired? How to Tell the Difference in a Few Small Clues",
+   "url": "/blogs/news/overtired-or-undertired-baby-how-to-tell-the-difference",
+   "summary": "A simple 3-clue way to tell whether a bedtime meltdown means overtired or undertired, and what to change first."
+  }
+ ],
+ "faq": [
+  {
+   "product": "About Nanit",
+   "q": "Is Nanit a medical device?",
+   "a": "No. Nanit is not a medical device and is not intended to diagnose, treat, monitor or prevent any medical condition, including SIDS. Always follow recommended safe sleep practices."
+  },
+  {
+   "product": "About Nanit",
+   "q": "Is the Australian model different to the US or UK version?",
+   "a": "The camera itself is identical to the global Nanit Pro. Australian units ship with an AU power adapter, a warranty backed locally, and are supported directly by the Coolkidz Melbourne team on 1300 722 302."
+  },
+  {
+   "product": "About Nanit",
+   "q": "Does Nanit work without Wi-Fi?",
+   "a": "The camera keeps recording and working on the local network if the internet drops, so you can still see and hear your baby at home. Remote viewing, alerts and Nanit Insights resume once you reconnect."
+  },
+  {
+   "product": "Breathing motion monitoring",
+   "q": "How does Nanit track breathing without touching my baby?",
+   "a": "The camera reads the pattern on Nanit Breathing Wear, a swaddle, sleeping bag or pyjama with a printed pattern on the front. Nothing is worn on the body and no sensors touch the baby."
+  },
+  {
+   "product": "Breathing motion monitoring",
+   "q": "Do I need to buy Breathing Wear separately?",
+   "a": "Yes, breathing motion monitoring needs at least one piece of compatible Breathing Wear. Most complete Nanit systems include one to start, and more sizes can be bought as the baby grows."
+  },
+  {
+   "product": "Breathing motion monitoring",
+   "q": "What is the difference between Nanit and a wearable sock monitor?",
+   "a": "Wearable monitors clip a sensor to the baby's foot to estimate heart rate and oxygen. Nanit instead reads breathing motion from above using the camera and the Breathing Wear pattern, with nothing attached to the baby's body."
+  },
+  {
+   "product": "Nanit Insights & the app",
+   "q": "Does Nanit need a subscription to work?",
+   "a": "No. Live HD video, two-way audio, breathing motion monitoring and instant alerts all work without a plan. Nanit Insights adds sleep analytics, extended video history and personalised guidance, and is included free with every camera for the first 3 months."
+  },
+  {
+   "product": "Nanit Insights & the app",
+   "q": "What happens after my 3 months of Nanit Insights ends?",
+   "a": "The camera, live view, alerts and breathing motion monitoring keep working exactly as before. You can continue Nanit Insights on a paid plan to keep sleep analytics and extended video history, or keep using the core features at no extra cost."
+  },
+  {
+   "product": "Nanit Insights & the app",
+   "q": "What does NextNap do?",
+   "a": "NextNap predicts a baby's next nap window from their own sleep data, instead of a generic age-based schedule. It needs an active Nanit Insights plan and a compatible camera."
+  },
+  {
+   "product": "Nanit Insights & the app",
+   "q": "Can more than one person use the app?",
+   "a": "Yes. Other caregivers, such as a partner, grandparent or nanny, can be invited to the Parenting Team so everyone can view the camera and, on higher Insights plans, see sleep and care history."
+  },
+  {
+   "product": "Setup & troubleshooting",
+   "q": "Do I need to drill for the Wall Mount?",
+   "a": "Yes, the Wall Mount fixes above the cot for the cleanest, most permanent view and needs two wall anchors. The Floor Stand and Flex Stand need no drilling at all."
+  },
+  {
+   "product": "Setup & troubleshooting",
+   "q": "Which setup do most Australian parents choose?",
+   "a": "Pro + Floor Stand is the most chosen configuration: no drilling, works in a nursery or a rental, and moves with you if you rearrange the room."
+  },
+  {
+   "product": "Setup & troubleshooting",
+   "q": "My camera won't connect to Wi-Fi, what should I try first?",
+   "a": "Confirm the home network is 2.4GHz (Nanit does not connect to 5GHz-only networks), move the camera within range of the router during setup, and restart both the camera and router before trying again. If it still won't connect, use the support portal for step-by-step help."
+  },
+  {
+   "product": "Shipping & returns",
+   "q": "How much does shipping cost?",
+   "a": "Standard shipping is free on orders of $200 or more, and a flat $12.95 under that. Express shipping is a flat $15. New Zealand ships for a flat $20."
+  },
+  {
+   "product": "Shipping & returns",
+   "q": "How long does delivery take?",
+   "a": "Orders dispatch from the Melbourne warehouse within 1 to 2 business days. From there, most capital cities receive their order in 1 to 3 business days; Perth typically takes 4 to 7 business days."
+  },
+  {
+   "product": "Shipping & returns",
+   "q": "What is your returns policy?",
+   "a": "30 days from the date of delivery to return an item, provided it is unused and in its original packaging. Start a return through the support portal."
+  },
+  {
+   "product": "Shipping & returns",
+   "q": "How do I start a warranty claim?",
+   "a": "Nanit Baby Monitor cameras carry a 2-year Australian warranty; every other product carries 1 year. Start a claim through the support portal or call the Melbourne team on 1300 722 302, and they will confirm whether a repair, replacement or refund applies."
+  }
+ ]
+}
