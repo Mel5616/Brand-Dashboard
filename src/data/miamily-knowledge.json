@@ -1,0 +1,378 @@
+{
+ "store": {
+  "name": "MiaMily Australia",
+  "who": "Official Australian home of MiaMily, Swiss-designed ride-on luggage. Distributed exclusively by Coolkidz Australia Pty Ltd, Braeside, Melbourne.",
+  "site": "https://miamily.com.au",
+  "contact_page": "/pages/contact",
+  "support_portal": "https://help.coolkidz.com.au/support/tickets/new",
+  "reply_time": "Coolkidz replies on business days, usually within one to two working days.",
+  "tone": "Warm, plain, practical. Parent to parent."
+ },
+ "offers": [
+  "Fast dispatch from the Coolkidz warehouse in Melbourne, tracked, Australia-wide. Shipping costs are shown at checkout.",
+  "Carry On luggage and Expandable Backpacks also ship to New Zealand. Check In cases are Australia only.",
+  "Limited lifetime warranty on every MiaMily case bought from an authorised Australian retailer."
+ ],
+ "pages": {
+  "How the ride-on works": "/pages/ride-on",
+  "Which MiaMily? (four-question finder and comparison table)": "/pages/compare",
+  "Size guide (exact dimensions, litres, weight, airline fit)": "/pages/size-guide",
+  "FAQs": "/pages/faq",
+  "Our story": "/pages/about-us",
+  "Warranty": "/pages/warranty",
+  "Delivery and dispatch": "/pages/shipping-policy",
+  "Refund policy": "/policies/refund-policy",
+  "Authorised stockists": "/pages/authorised-stockists",
+  "Contact": "/pages/contact",
+  "All luggage": "/collections/all",
+  "Journal (guides)": "/blogs/news"
+ },
+ "policies": {
+  "shipping": "Every order is picked and dispatched fast from the Coolkidz Australia warehouse in Braeside, Melbourne, on business days, and sent with tracked carriers Australia-wide. Shipping options and costs show at checkout. Australia: the whole range, every state and territory. New Zealand: Carry On luggage and Expandable Backpacks only. PO boxes and parcel lockers: backpacks only; suitcases need a street address. A tracking link is emailed when the order leaves the warehouse. Delivery times are carrier estimates, not guarantees. There is NO same-day delivery.",
+  "warranty": "Limited Lifetime Warranty on MiaMily luggage bought in Australia from an authorised retailer, for the product's usable life from the original purchase date. Covers manufacturing defects in zippers, handles, wheels, stitching, fabrics and materials. Does not cover normal wear and tear (scuffs, scratches), misuse, cosmetic damage, unauthorised repairs, or damage caused by airline handling. Claims: proof of purchase plus photos, lodged through the Coolkidz support portal (https://help.coolkidz.com.au). Coolkidz repairs, replaces, or offers a refund or store credit at its discretion. Customer pays shipping to return for evaluation; Coolkidz covers return shipping if the defect is covered. Non-transferable; sits alongside Australian Consumer Law rights.",
+  "returns": "Returns follow the store refund policy at /policies/refund-policy. Contact Coolkidz support with the order number to start a return."
+ },
+ "families": [
+  {
+   "design": "Carry On",
+   "collection": "/collections/carry-on",
+   "rrp": "$449",
+   "capacity": "43 L",
+   "dimensions": "51 × 38 × 29 cm",
+   "weight": "4.3 kg",
+   "opening": "Clamshell, two halves, five interior compartments",
+   "lock": "Universal TSA combination lock",
+   "seat": true,
+   "child_seatbelt": true,
+   "wheel_brake": false,
+   "best_for": "Short trips, carry-on only travel, one child who tires in queues",
+   "who_rides": "Toddlers to teens on the seat, and adults at the gate",
+   "materials": "Hard shell polycarbonate · Seat polypropylene · Lining polyester",
+   "features": [
+    "Patented built-in seat, for children and adults",
+    "100 kg total capacity, luggage contents included",
+    "Seatbelt for your child, included",
+    "Bag hook on the seat back for a nappy bag or tote",
+    "Anti-scratch textured polycarbonate shell",
+    "Universal TSA lock",
+    "360° spinner wheels",
+    "Fits most airline cabin allowances, check your carrier",
+    "Five interior compartments",
+    "Limited lifetime warranty"
+   ],
+   "colours": "Slate Blue (/products/miamily-carry-on-slate-blue), Dusty Pink (/products/miamily-carry-on-dusty-pink), Forest Green (/products/miamily-carry-on-forest-green), Midnight Black (/products/miamily-carry-on-midnight-black), Charcoal Grey (/products/miamily-carry-on-charcoal-grey), Mist Grey (/products/miamily-carry-on-mist-grey), Champagne Gold (/products/miamily-carry-on-gold-champagne)"
+  },
+  {
+   "design": "Carry On Plus",
+   "collection": "/collections/carry-on-plus",
+   "rrp": "$569",
+   "capacity": "43 L",
+   "dimensions": "51 × 39 × 30 cm",
+   "weight": "4.8 kg",
+   "opening": "Top-opening, one deep packing space, plus a quick-access front pocket",
+   "lock": "TSA-approved zip lock",
+   "seat": true,
+   "child_seatbelt": true,
+   "wheel_brake": true,
+   "best_for": "Regular flyers with a toddler, solo-parent airport runs, anyone who hates clamshell packing in a small hotel room",
+   "who_rides": "Toddlers to teens on the seat, and adults at the gate",
+   "materials": "Hard shell polycarbonate · Seat polypropylene · Lining polyester",
+   "features": [
+    "Patented built-in seat, for children and adults, doubles as a high chair on the go",
+    "100 kg total capacity, luggage contents included",
+    "Wheel brake keeps the case still while your child is seated",
+    "Top-opening design, one deep uninterrupted packing space",
+    "Front pocket for snacks, toys and essentials, no need to lift your child off",
+    "Larger waterproof pocket for messes",
+    "Thermal pocket keeps bottles and snacks cool",
+    "Integrated bag hook for hands-free airports",
+    "Integrated child safety belt",
+    "Telescopic handle with four height settings",
+    "Anti-scratch textured shell",
+    "TSA-approved lock",
+    "Limited lifetime warranty"
+   ],
+   "colours": "Navy Blue (/products/miamily-carry-on-plus-navy-blue), Burgundy Red (/products/miamily-carry-on-plus-burgundy-red, sold out)"
+  },
+  {
+   "design": "Carry On Pro",
+   "collection": "/collections/carry-on-seat-pro",
+   "rrp": "$379",
+   "capacity": "48 L",
+   "dimensions": "51 × 39 × 23 cm",
+   "weight": "3.5 kg",
+   "opening": "Front-opening, top-down packing, quick-access compartment",
+   "lock": "Zipperless TSA-approved lock",
+   "seat": true,
+   "child_seatbelt": false,
+   "wheel_brake": false,
+   "best_for": "Older kids, teens and parents who want a light, organised cabin case with a seat for the gate. No child seatbelt on this model.",
+   "who_rides": "Teens and adults. Not a ride-on for toddlers",
+   "materials": "Durable hard-shell plastic · Fabric-lined interior",
+   "features": [
+    "Reinforced Sit Ready shell supports up to 100 kg, a seat for long waits",
+    "Front-opening design, pack from the top, grab essentials without opening the whole case",
+    "Quick-access compartment for snacks, toys, tablets, chargers and passports",
+    "Zipperless, secure TSA-approved lock",
+    "Lightweight hard shell",
+    "Smooth 360° spinner wheels",
+    "Adjustable telescopic handle",
+    "Fits most airline overhead bins, check your carrier",
+    "Limited lifetime warranty"
+   ],
+   "colours": "Black (/products/miamily-carry-on-pro-black), Olive (/products/miamily-carry-on-pro-olive)"
+  },
+  {
+   "design": "Check In",
+   "collection": "/collections/check-in",
+   "rrp": "$619",
+   "capacity": "77 L",
+   "dimensions": "66 × 45 × 31 cm",
+   "weight": "6.5 kg",
+   "opening": "Clamshell, two halves",
+   "lock": "Universal TSA combination lock",
+   "seat": true,
+   "child_seatbelt": true,
+   "wheel_brake": false,
+   "best_for": "Longer holidays, overseas trips, packing for more than one child",
+   "who_rides": "Toddlers to teens on the seat, and adults at the gate",
+   "materials": "Hard shell polycarbonate · Seat polypropylene · Lining polyester",
+   "features": [
+    "Patented built-in seat, for children and adults",
+    "100 kg total capacity, luggage contents included",
+    "Seatbelt for your child, included",
+    "Bag hook on the seat back",
+    "Wider base for stability",
+    "Anti-scratch textured polycarbonate shell",
+    "Universal TSA lock",
+    "360° spinner wheels",
+    "Limited lifetime warranty"
+   ],
+   "colours": "Forest Green (/products/miamily-check-in-luggage), Charcoal Grey (/products/miamily-check-in-charcoal-grey), Midnight Black (/products/miamily-check-in-black), Dusty Pink (/products/miamily-check-in-dusty-pink, sold out), Mist Grey (/products/miamily-check-in-mist-grey, sold out)"
+  },
+  {
+   "design": "Check In Plus",
+   "collection": "/collections/check-in-plus",
+   "rrp": "$649",
+   "capacity": "77 L",
+   "dimensions": "65.5 × 46 × 33 cm",
+   "weight": "5.9 kg",
+   "opening": "Top-opening, one deep packing space, plus a front pocket",
+   "lock": "TSA-approved zip lock",
+   "seat": true,
+   "child_seatbelt": true,
+   "wheel_brake": true,
+   "best_for": "Multi-stop trips, families moving between hotels and apartments, bulky packing",
+   "who_rides": "Toddlers to teens on the seat, and adults at the gate",
+   "materials": "Hard shell polycarbonate · Seat polypropylene · Lining polyester",
+   "features": [
+    "Patented built-in seat, for children and adults, or a stable spot to stack extra bags",
+    "100 kg total capacity, luggage contents included",
+    "Wheel brakes for added security while seated",
+    "Top-opening design, opens vertically, less floor space in tight hotel rooms",
+    "Fits bulky items like shoes, boots and jackets without compromise",
+    "Large waterproof pocket for liquids",
+    "Front pocket for quick access",
+    "Integrated child safety belt",
+    "Telescopic handle with four height settings",
+    "Anti-scratch textured shell",
+    "TSA-approved lock",
+    "Limited lifetime warranty"
+   ],
+   "colours": "Navy Blue (/products/miamily-check-in-plus-navy-blue), Burgundy Red (/products/miamily-check-in-plus-burgundy-red)"
+  },
+  {
+   "design": "Expandable Backpack",
+   "collection": "/collections/backpack",
+   "rrp": "$199",
+   "capacity": "30 L",
+   "dimensions": "44 × 31 × 11 cm, 22 cm expanded",
+   "weight": "See product",
+   "opening": "Expandable main pocket, 11 organisational pockets",
+   "lock": "YKK zips, anti-theft passport pocket",
+   "seat": false,
+   "child_seatbelt": false,
+   "wheel_brake": false,
+   "best_for": "The parent bag that hooks onto the suitcase, day trips, school, work",
+   "who_rides": "Parents, teens, anyone with more stuff than planned",
+   "materials": "100% recycled polyester · YKK zippers",
+   "features": [
+    "15 litres, or 30 litres expanded",
+    "External expandable pocket that doubles capacity",
+    "100% recycled polyester, water-resistant",
+    "YKK zips",
+    "Trolley sleeve, slides over any MiaMily handle",
+    "Laptop pocket and thermal water bottle pocket",
+    "Anti-theft passport pocket",
+    "Sunglasses pocket, umbrella pocket, magazine pocket",
+    "Padded adjustable shoulder straps",
+    "Limited lifetime warranty"
+   ],
+   "colours": "Slate Blue (/products/expandable-backpack-slate-blue), Forest Green (/products/expandable-backpack-forest-green), Midnight Black (/products/expandable-backpack-midnight-blck)"
+  }
+ ],
+ "safety_rules": [
+  "Child must be able to sit unassisted",
+  "Always belt the child in (Carry On, Check In, Carry On Plus, Check In Plus have the belt; the Carry On Pro has no child seatbelt and is a gate seat for teens and adults)",
+  "Adult supervision at all times",
+  "Flat surfaces only",
+  "Never on escalators, stairs, travelators or slopes",
+  "100 kg total capacity including luggage contents",
+  "Brake on before loading on the Plus range"
+ ],
+ "how_to_ride": [
+  "Stop on a flat surface and press the wheel brake (Plus range)",
+  "Lift the built-in seat until it locks upright",
+  "Sit the child facing forward and fasten the belt",
+  "Hang the bag on the seat-back hook, extend the handle",
+  "Pull smoothly and stay beside the child"
+ ],
+ "guides": [
+  {
+   "title": "Ride-on luggage, explained: how it works and who it suits",
+   "url": "/blogs/news/ride-on-luggage-explained",
+   "summary": "What ride-on luggage is, how MiaMily's built-in seat works, the 100 kg capacity, who can ride and the honest limits. A plain guide for parents."
+  },
+  {
+   "title": "Flying with a toddler: a gate-to-gate plan",
+   "url": "/blogs/news/flying-with-a-toddler",
+   "summary": "A practical airport plan for flying with a toddler: what to pack in reach, queues, security, the gate wait and boarding, and where ride-on luggage helps."
+  },
+  {
+   "title": "Carry On vs Check In: which size for which trip",
+   "url": "/blogs/news/carry-on-vs-check-in",
+   "summary": "Carry On (43 L, 4.3 kg) or Check In (77 L, 6.5 kg)? An honest guide to choosing MiaMily luggage by trip length, airline rules and how many children ride."
+  },
+  {
+   "title": "Meet the MiaMily Plus range",
+   "url": "/blogs/news/miamily-plus-range",
+   "summary": "The Carry On Plus and Check In Plus explained: top-opening packing, wheel brake, front pocket, thermal and waterproof pockets, and the patented built-in seat."
+  },
+  {
+   "title": "Setting the TSA lock, and looking after a MiaMily",
+   "url": "/blogs/news/tsa-lock-and-care",
+   "summary": "How to set the three-digit TSA lock on MiaMily luggage (preset 000, pin A to B), what TSA-approved means, and simple care for the shell, wheels and lining."
+  }
+ ],
+ "faq": [
+  {
+   "category": "Basics",
+   "q": "What is MiaMily?",
+   "a": "MiaMily is a Swiss-designed travel and family lifestyle brand founded in 2014 by parents Alessandro Cereda and Cecilia Tsai. It is best known for ride-on luggage: hard-shell suitcases with a patented built-in seat that a child rides on while a parent pulls. In Australia the range is distributed exclusively by Coolkidz Australia."
+  },
+  {
+   "category": "Basics",
+   "q": "Where are MiaMily products designed and made?",
+   "a": "All MiaMily products are designed in Switzerland and responsibly assembled in China, with materials, durability and safety standards overseen by MiaMily."
+  },
+  {
+   "category": "Basics",
+   "q": "What makes MiaMily luggage different from a normal suitcase?",
+   "a": "The built-in seat. It turns the suitcase into a ride-on for kids, a resting seat for adults, a stroller alternative in airports and a hook for your nappy bag. The seat supports up to 100 kg including luggage contents, so it stays useful from toddler to teenager to adult. You also get 360° spinner wheels, a TSA-approved lock, adjustable handle heights, a child safety belt on the Carry On, Check In and Plus models, and a durable polycarbonate hard shell."
+  },
+  {
+   "category": "Ride-on",
+   "q": "Is the ride-on seat safe for children?",
+   "a": "Yes, within its limits. The luggage has an aluminium frame rated to 100 kg and a wider base for stability, and the Carry On, Check In, Carry On Plus and Check In Plus include a built-in safety belt to secure your child. Children must be able to sit unassisted and should always be supervised by an adult. Use it on flat surfaces only, never on escalators or stairs."
+  },
+  {
+   "category": "Ride-on",
+   "q": "What age can a child ride on MiaMily luggage?",
+   "a": "MiaMily does not set a minimum age; the rule is that the child must be able to sit unassisted, be belted in, and be supervised. Most families use the ride-on from the toddler years. The 100 kg capacity means older kids and adults can sit on it too."
+  },
+  {
+   "category": "Ride-on",
+   "q": "Does the Carry On Pro have a ride-on seat?",
+   "a": "The Carry On Pro has a reinforced Sit Ready shell that supports up to 100 kg, so you can sit on it at the gate. It does not include the child seatbelt or the seat-back bag hook of the Carry On, Check In and Plus models, so it suits older kids, teens and adults rather than toddlers."
+  },
+  {
+   "category": "Ride-on",
+   "q": "Can I use the seat as a high chair?",
+   "a": "The Carry On Plus is designed so the built-in seat doubles as a high chair on the go, with the wheel brake keeping the case still while your child is seated. Always belt your child in and stay with them."
+  },
+  {
+   "category": "Ride-on",
+   "q": "What happens to the seat when I travel without a child?",
+   "a": "It becomes a bag holder. Hook or stack a nappy bag, tote or briefcase on the seat, or sit on it yourself during long waits."
+  },
+  {
+   "category": "Sizes",
+   "q": "What are the dimensions and weight of the Carry On?",
+   "a": "Carry On: 51 × 38 × 29 cm including wheels (20 × 14.9 × 11.4 inches), 4.3 kg, 43 litres. It is the same footprint MiaMily describes as fitting most airline overhead compartments."
+  },
+  {
+   "category": "Sizes",
+   "q": "What are the dimensions and weight of the Check In?",
+   "a": "Check In: 66 × 45 × 31 cm including wheels (25.9 × 17.7 × 12.2 inches), 6.5 kg, 77 litres."
+  },
+  {
+   "category": "Sizes",
+   "q": "Can I bring MiaMily luggage on a plane as cabin baggage?",
+   "a": "The Carry On size is designed to fit in most airline overhead compartments. Airline cabin policies and weight limits vary, particularly on Australian domestic carriers, so we recommend confirming your carrier's dimensions before flying. The Check In and Check In Plus are checked luggage."
+  },
+  {
+   "category": "Sizes",
+   "q": "What are the dimensions of the Plus and Pro models?",
+   "a": "Carry On Plus: 51 × 39 × 30 cm, 4.8 kg, 43 litres. Check In Plus: 65.5 × 46 × 33 cm, 5.9 kg, 77 litres. Carry On Pro: 51 × 39 × 23 cm, 3.5 kg, 48 litres, the lightest and slimmest of the range because it has no ride-on seat mechanism. Figures are as published by MiaMily."
+  },
+  {
+   "category": "Sizes",
+   "q": "How big is the Expandable Backpack?",
+   "a": "44 × 31 × 11 cm, expanding to 22 cm deep. That takes it from 15 litres to 30 litres. It is made from 100% recycled polyester with YKK zips and has 11 pockets, including a laptop pocket, a thermal bottle pocket and an anti-theft passport pocket."
+  },
+  {
+   "category": "Use & care",
+   "q": "How do I set the TSA lock?",
+   "a": "Your luggage comes preset to 000. Shift the pin inside the lock from A to B, set your new three-digit code, then move the pin back to A. The lock is TSA-approved and does not come with a key; TSA agents can open it with a universal key if inspection is required."
+  },
+  {
+   "category": "Use & care",
+   "q": "What is the luggage made of?",
+   "a": "The suitcases use a polycarbonate hard shell with an anti-scratch texture, a polypropylene built-in seat and a polyester interior lining. The Expandable Backpack is 100% recycled polyester."
+  },
+  {
+   "category": "Use & care",
+   "q": "How do I clean it?",
+   "a": "Wipe the shell with a soft damp cloth and mild soap. Avoid solvents and abrasive cleaners, which can dull the textured finish. Let the interior lining air dry fully before packing."
+  },
+  {
+   "category": "Orders",
+   "q": "Where does MiaMily Australia ship?",
+   "a": "We ship the entire range Australia-wide. Carry On luggage and Backpacks also ship to New Zealand. Every order is dispatched fast from the Coolkidz warehouse in Melbourne."
+  },
+  {
+   "category": "Orders",
+   "q": "What warranty comes with MiaMily luggage in Australia?",
+   "a": "Every MiaMily suitcase bought from an authorised Australian retailer is covered by a Limited Lifetime Warranty on manufacturing defects in materials and workmanship, covering zips, handles, wheels, stitching and materials. Wear and tear, cosmetic damage, misuse and airline handling damage are not covered. Claims go through the Coolkidz support portal with proof of purchase."
+  },
+  {
+   "category": "Orders",
+   "q": "Where can I see MiaMily luggage in person?",
+   "a": "MiaMily is stocked by authorised independent baby retailers in VIC, NSW, QLD, SA and WA, and by national retailers including Myer, Harvey Norman, Baby Bunting and Big W. See the stockists page for the full list."
+  },
+  {
+   "category": "Orders",
+   "q": "Which model should I buy?",
+   "a": "Carry On for short trips and one rider. Carry On Plus if you fly often with a toddler and want top-opening packing, a brake and a snack pocket. Check In or Check In Plus for longer holidays and more than one child. Carry On Pro for teens and adults who want a light, front-opening case with a gate seat. The Which MiaMily page walks you through it in four questions."
+  }
+ ],
+ "stockists": [
+  "Baby Goods Warehouse, Shop 107 & 110, Mornington Village Shopping Centre, 241 Main St, Mornington VIC 3931 (VIC)",
+  "Baby Little Planet, 300 Old Geelong Rd, Hoppers Crossing VIC 3029 (VIC)",
+  "Baby Train, 5 Chestnut Ct, Dingley Village VIC 3172 (VIC)",
+  "Coolkidz Australia, 1 Beyer Road, Braeside VIC 3195 (VIC)",
+  "Country Kids, 25 Bridge Mall, Ballarat Central VIC 3350 (VIC)",
+  "Baby Village Miranda, 57 Kiora Rd, Miranda NSW 2228 (NSW)",
+  "Baby Village Warehouse, Unit 2/22-28 Mandible St, Alexandria NSW 2015 (NSW)",
+  "Baby Kingdom Chullora, Chullora Business Park, Tenancy 7, 62 Hume Hwy, Chullora NSW 2190 (NSW)",
+  "Baby Kingdom Alexandria, Shop 2, Level 1 Homemaker Centre, 49-59 O'Riordan St, Alexandria NSW 2015 (NSW)",
+  "Baby Today, 127 Sydney St, Mackay QLD 4740 (QLD)",
+  "Whole Bubs Brisbane Baby Shop, HomeCo, 32/34 Goggs Rd, Jindalee QLD 4074 (QLD)",
+  "RAA Shop West Lakes, Shop 31, Westfield West Lakes SA 5021 (SA)",
+  "RAA Shop Adelaide, 41 Hindmarsh Square, Adelaide SA 5000 (SA)",
+  "Babyland, 30 Frobisher St, Osborne Park WA 6017 (WA)",
+  "Baby Road, 1/270 Leach Hwy, Booragoon WA 6154 (WA)",
+  "Baby Zone, 203 Great Eastern Hwy, Midland WA 6056 (WA)",
+  "House of Babes, 100 Hannan St, Kalgoorlie WA 6430 (WA)"
+ ]
+}

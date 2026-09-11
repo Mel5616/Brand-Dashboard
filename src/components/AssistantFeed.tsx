@@ -8,6 +8,7 @@ const BRANDS: { id: string; label: string; site: string; color: string }[] = [
   { id: "zazu", label: "Zazu · Ask Davy", site: "zazu-kids.com.au", color: "bg-red-100 text-red-700" },
   { id: "frida", label: "Frida · Ask Frida", site: "fridaaustralia.com.au", color: "bg-sky-100 text-sky-700" },
   { id: "nanit", label: "Nanit · Ask Nanit", site: "nanit.com.au", color: "bg-indigo-100 text-indigo-700" },
+  { id: "miamily", label: "MiaMily · Ask MiaMily", site: "miamily.com.au", color: "bg-emerald-100 text-emerald-800" },
 ];
 const when = (s: string) => new Date(s).toLocaleString("en-AU", { dateStyle: "medium", timeStyle: "short" });
 const STOP = new Set("the a an and or to of in on for is it my me i do does can how what when where which with your you are be will this that about there from have has not no yes at as if any".split(" "));
