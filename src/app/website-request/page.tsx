@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // Public, no-login form — share this link (optionally with
 // ?k=<WEBSITE_REQUEST_KEY>) with anyone who needs something changed on a
@@ -35,6 +35,8 @@ export default function WebsiteRequestPage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [done, setDone] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const key = requestKey();
   const headers: Record<string, string> = key ? { "x-website-key": key } : {};
 
@@ -55,9 +57,10 @@ export default function WebsiteRequestPage() {
       setErr("Brand, your name, email and a description are required."); return;
     }
     setBusy(true);
-    const res = await fetch("/api/public-website-request", {
-      method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(f),
-    }).then(r => r.json()).catch(() => null);
+    const fd = new FormData();
+    for (const [k, v] of Object.entries(f)) fd.set(k, v);
+    if (file) fd.set("attachment", file);
+    const res = await fetch("/api/public-website-request", { method: "POST", headers, body: fd }).then(r => r.json()).catch(() => null);
     setBusy(false);
     if (res?.ok) setDone(true); else setErr(res?.error || "Something went wrong — try again.");
   }
@@ -89,7 +92,7 @@ export default function WebsiteRequestPage() {
           <div className="text-center">
             <p className="text-lg font-semibold text-slate-800 mb-2">Request sent</p>
             <p className="text-sm text-slate-500 mb-6">Mel has been notified and it&apos;s in the queue.</p>
-            <button onClick={() => { setF(empty); setDone(false); }} className="text-sm font-medium bg-emerald-600 text-white rounded-lg px-4 py-2.5 hover:bg-emerald-700">
+            <button onClick={() => { setF(empty); setFile(null); setDone(false); }} className="text-sm font-medium bg-emerald-600 text-white rounded-lg px-4 py-2.5 hover:bg-emerald-700">
               Submit another
             </button>
           </div>
@@ -107,6 +110,13 @@ export default function WebsiteRequestPage() {
               </select>
               <input value={f.page_url} onChange={e => setF({ ...f, page_url: e.target.value })} placeholder="Page URL (if known)" className={inp} />
               <textarea value={f.description} onChange={e => setF({ ...f, description: e.target.value })} rows={5} placeholder="What needs to change? *" className={inp} />
+              <div>
+                <input ref={fileRef} type="file" accept="image/*,.pdf,.doc,.docx" className="hidden" onChange={e => setFile(e.target.files?.[0] || null)} />
+                <button type="button" onClick={() => fileRef.current?.click()} className="w-full text-sm text-slate-600 border border-dashed border-gray-300 rounded-lg px-3 py-2.5 hover:bg-slate-50 text-left">
+                  {file ? `📎 ${file.name}` : "＋ Attach a screenshot or file (optional)"}
+                </button>
+                {file && <button type="button" onClick={() => { setFile(null); if (fileRef.current) fileRef.current.value = ""; }} className="text-xs text-gray-400 hover:text-rose-500 mt-1">Remove attachment</button>}
+              </div>
               <select value={f.priority} onChange={e => setF({ ...f, priority: e.target.value })} className={inp}>
                 <option value="low">Low priority</option>
                 <option value="normal">Normal priority</option>

@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 type Req = {
   id: string; brand: string; page_url: string | null; change_type: string; description: string;
   requester_name: string; requester_email: string; priority: string; status: string;
-  admin_note: string | null; created_at: string;
+  admin_note: string | null; created_at: string; attachment_url: string | null; attachment_name: string | null;
 };
 
 const STATUS_META: Record<string, { label: string; cls: string }> = {
@@ -106,6 +106,11 @@ export function WebsiteRequestsPanel({ canEdit = false }: { canEdit?: boolean })
                 <span className={`text-xs font-semibold rounded-full px-2.5 py-1 ${STATUS_META[r.status]?.cls || "bg-slate-100 text-slate-500"}`}>{STATUS_META[r.status]?.label || r.status}</span>
               </div>
               <p className="text-sm text-slate-700 whitespace-pre-wrap">{r.description}</p>
+              {r.attachment_url && (
+                <a href={r.attachment_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-medium text-sky-600 hover:underline">
+                  📎 {r.attachment_name || "Attachment"}
+                </a>
+              )}
               <p className="text-xs text-gray-400">{r.requester_name} · {r.requester_email} · {fmtD(r.created_at)}</p>
 
               {noteEdit === r.id ? (
