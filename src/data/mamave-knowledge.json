@@ -1,0 +1,727 @@
+{
+ "store": {
+  "name": "Mamave",
+  "url": "https://mamave.com.au",
+  "email": "support@mamave.com.au",
+  "instagram": "@_mamave",
+  "about": "Australian made, pregnancy safe skincare for mums and bubs, formulated by Georgie, a cosmetic development chemist. Distributed by Coolkidz Australia, 1 Beyer Road, Braeside VIC 3195.",
+  "free_from": "No retinoids, parabens, synthetic fragrance, mineral oils, almond or peanut oils. SLS and SLES free. Vegan and cruelty free."
+ },
+ "offers": [
+  "10% off your first order when you join the newsletter (popup on site).",
+  "Bundle & Save: pick any 3 or more full size products and 15% comes off automatically at checkout. Travel minis do not count toward or receive the bundle discount.",
+  "Free standard shipping on orders over $75 within Australia.",
+  "Refill & Save subscriptions: choose delivery every 4, 6 or 8 weeks and save 10% on every subscription order. Skip, pause or cancel anytime from your account. Subscription savings do not stack with the bundle discount.",
+  "30 day money back guarantee on every purchase."
+ ],
+ "pages": {
+  "Best Sellers": "/collections/best-sellers",
+  "Mumma Range": "/collections/for-mum",
+  "Bubba Range": "/collections/for-bub",
+  "Travel Minis": "/collections/travel-minis",
+  "Bundles & Gifts": "/collections/bundles-1",
+  "Build Your Own Bundle": "/pages/build-a-bundle",
+  "Compare the Range": "/pages/compare",
+  "Ingredients Glossary": "/pages/ingredients-glossary",
+  "Help Centre & FAQs": "/pages/help-centre",
+  "Our Story": "/pages/our-story",
+  "Contact Us": "/pages/contact-us",
+  "Journal": "/blogs/journal",
+  "Become a Stockist": "/pages/become-a-stockist",
+  "Become an Affiliate": "/pages/become-an-affiliate",
+  "Gift Card": "/products/mamave-gift-card",
+  "Shipping Policy": "/policies/shipping-policy",
+  "Returns Policy": "/policies/refund-policy"
+ },
+ "policies": {
+  "shipping": "Orders ship from the Melbourne warehouse, tracked, Australia wide. Free standard shipping over $75; standard rates apply below that. No same day delivery; never promise a delivery date.",
+  "returns": "30 day money back guarantee. If a customer is not happy, direct them to support@mamave.com.au or the contact page with their order number."
+ },
+ "travel_minis": "Four 30mL travel minis: Mumma's Oil Mini and Bubba's Massage Oil Mini ($13.49 each), Mumma's Moisturiser Mini and Bubba's Moisturiser Mini ($5.95 each). Perfect for hospital bags, nappy bags, travel, or trying a formula before buying the full size. They do not qualify for the 3+ bundle discount.",
+ "products": [
+  {
+   "name": "Mamave Bundle",
+   "handle": "mummas-bundle",
+   "type": "product",
+   "range": "Accessories",
+   "price": "0.00",
+   "faqs": [],
+   "goldens": []
+  },
+  {
+   "name": "Mamave Collection Travel Bag",
+   "handle": "toiletry-bag",
+   "type": "Travel case",
+   "range": "Accessories",
+   "price": "19.95",
+   "faqs": [],
+   "goldens": []
+  },
+  {
+   "name": "Mumma's Soak",
+   "handle": "mummas-soak",
+   "type": "Baby Soak",
+   "range": "Mumma",
+   "price": "26.95",
+   "faqs": [
+    [
+     "Does Mumma's Soak Contain Fragrance?",
+     "Yes, but not artificial fragrance. Mumma's Soak contains natural essential oils (Frankincense and Lavender) to give it a very subtle fragrance."
+    ],
+    [
+     "Can I Use Mumma's Soak If I'm Not Pregnant?",
+     "Of course! Our Mumma's Soak is designed for pregnancy and postpartum. However, please seek your doctor's advice regarding bathing temperature and duration throughout pregnancy to ensure you are bathing safely."
+    ],
+    [
+     "Can I Continue Using Mumma's Soak Postpartum?",
+     "Yes, not only can you continue, we recommend it! Your body is recovering from carrying your beautiful bub and keeping up your \"me-time\" is essential!(Even your partner can sneak some)"
+    ]
+   ],
+   "goldens": [
+    "Magnesium Sulphate",
+    "Lavender Oil",
+    "Cranberry Extract"
+   ]
+  },
+  {
+   "name": "Mumma's Scrub",
+   "handle": "mummas-scrub",
+   "type": "Baby Scurb",
+   "range": "Mumma",
+   "price": "36.95",
+   "faqs": [
+    [
+     "Does Mumma's Scrub Contain Fragrance?",
+     "Yes, but not artificial fragrance. Mumma's Scrub contains natural essential oils (Frankincense and Lavender) to give it a very subtle fragrance."
+    ],
+    [
+     "Can I Use Mumma's Scrub If I'm Not Pregnant?",
+     "Of course! Our Mumma's Scrub is designed for pregnancy and postpartum (and everything before and after)!Mumma's Scrub can be used by anyone! But it's specifically designed for pregnancy and postpartum mummas."
+    ],
+    [
+     "Can I Continue Using Mumma's Scrub Postpartum?",
+     "Yes, not only can you continue, we recommend it! Your body is recovering from carrying your beautiful bub and keeping up your \"me-time\" is essential!(Even your partner can sneak some)"
+    ]
+   ],
+   "goldens": [
+    "Sucrose (natural sugar)",
+    "Argan Oil",
+    "Evening Primrose Oil",
+    "Lavender Oil",
+    "Cranberry Extract"
+   ]
+  },
+  {
+   "name": "Bubba's Wash (250mL)",
+   "handle": "bubbas-wash",
+   "type": "Baby Wash",
+   "range": "Bubba",
+   "price": "29.95",
+   "faqs": [
+    [
+     "Is Bubba's Wash Vegan?",
+     "Yes! Bubba's Wash is vegan and cruelty free."
+    ],
+    [
+     "Does Bubba's Wash Contain Parabens or Sulphates?",
+     "Bubba's Wash does not contain Parabens or the \"bad\" sulphates (Sodium Lauryl Ether Sulphate/Sodium Laureth Sulphate). Bubba's Wash contains Sodium Coco Sulphate which is a mild and gentle sulphate surfactant derived from coconuts."
+    ],
+    [
+     "Is Bubba's Wash pH Balanced?",
+     "Plant oils high in Gamma Linolenic Acid (GLA), including borage seed oil, help support the skin barrier and relieve dryness, while squalane locks in moisture by mimicking the skin\u2019s natural oils.Infused with soothing calendula extract, this moisturiser helps calm delicate skin, making it ideal for daily use and gentle baby massage. Lightly scented with calming lavender and ylang ylang essential oils to create a comforting care ritual.With nutrient-rich mango butter and pomegranate, this moisturiser will provide an abundance of plant-based ingredients to your baby\u2019s skin with essential nutrients to gently nourish and soften their body. Contains plant oils high in Gamma Linolenic Acid (GLA) e.g. Borage Seed Oil to help alleviate dry skinSqualane that helps to lock in moisture - mimics our skin's naturally produced squaleneContains Calendula extract known for it's anti-inflammatory propertiesFormulated to assist with baby massageCalming Lavender and Ylang Ylang Essential Oils"
+    ]
+   ],
+   "goldens": [
+    "Panthenol (Pro-Vitamin B5)",
+    "Borage Seed Oil",
+    "Aloe Vera",
+    "Calendula Flower Extract",
+    "Pomegranate Extract"
+   ]
+  },
+  {
+   "name": "Mamave Gift Card",
+   "handle": "mamave-gift-card",
+   "type": "Gift Cards",
+   "range": "Accessories",
+   "price": "30.00",
+   "faqs": [],
+   "goldens": []
+  },
+  {
+   "name": "Bubba's Moisturiser (250mL)",
+   "handle": "bubbas-moisturiser",
+   "type": "Baby Moisturiser",
+   "range": "Bubba",
+   "price": "39.95",
+   "faqs": [
+    [
+     "Does Bubba's Moisturiser Contain Fragrance?",
+     "Yes, but not artificial fragrance. Bubba's Moisturiser contains natural essential oils (Ylang Ylang and Lavender) to give it a very subtle fragrance. This fragrance helps to create a calming environment for baby massage."
+    ],
+    [
+     "When Should I Apply Bubba's Moisturiser?",
+     "Bubba's Moisturiser is best applied after a bath when your bub's skin is still slightly damp as skin absorbs creams better when slightly damp and locks in extra moisture. However, it can also be applied to dry skin. Massage gently into the skin in circular motions. Follow up with Bubba's Massage Oil for extra hydration!"
+    ],
+    [
+     "Is Bubba's Moisturiser Vegan?",
+     "Yes! Bubba's Moisturiser is vegan and cruelty free."
+    ],
+    [
+     "When Should I Start Using Bubba's Moisturiser on my Baby?",
+     "We recommend starting to use skincare products on bub once they are at least one month old. Newborn baby skin is very delicate and sensitive in the first month whilst their natural skin barrier begins to form, so we don't want to disrupt this natural process."
+    ],
+    [
+     "I have Bubba's Massage Oil and Bubba's Moisturiser, Do I Use Them Together?",
+     "If your baby's skin is looking extra dry, you can apply Bubba's Moisturiser before applying Bubba's Massage Oil."
+    ]
+   ],
+   "goldens": [
+    "Squalane",
+    "Borage Seed Oil",
+    "Mango Seed Butter",
+    "MCT Oil",
+    "Calendula Flower Extract",
+    "Pomegranate Extract"
+   ]
+  },
+  {
+   "name": "Mumma's Moisturiser (250mL)",
+   "handle": "mummas-moisturiser",
+   "type": "Baby Moisturiser",
+   "range": "Mumma",
+   "price": "44.95",
+   "faqs": [
+    [
+     "Does Mumma's Moisturiser contain fragrance?",
+     "Yes, but not artificial fragrance. Mumma's Moisturiser contains natural essential oils (Frankincense and Lavender) to give it a very subtle fragrance."
+    ],
+    [
+     "Can I use Mummas Moisturiser if I'm not pregnant?",
+     "Of course! Our Mumma's Moisturiser is formulated for adult skin, so not just for use during pregnancy."
+    ],
+    [
+     "When should I apply Mumma's Moisturiser?",
+     "Mumma's Moisturiser is best applied after a shower/bath when your skin is still slightly damp as our skin absorbs creams better when slightly damp and locks in the extra moisture. However, it can also be applied to dry skin. Massage gently into the skin in circular motions. Follow up with Mumma's Oil."
+    ],
+    [
+     "Can I continue using Mumma's Moisturiser postpartum?",
+     "Yes, not only can you continue, we recommend it! Your body is recovering from carrying your beautiful bub and keeping up your pregnancy skincare routine is a vital part of this."
+    ],
+    [
+     "Does Mumma's Moisturiser prevent stretch marks?",
+     "Unfortunately, nothing can completely prevent stretch marks and products on the market that claim to, are not usually approved for use during pregnancy (such as retinoids [Vitamin A]). So, we cannot guarantee prevention, but the daily act of moisturising (massaging and application of product) can assist in minimising the appearance of emerging stretch marks."
+    ],
+    [
+     "When should I start using Mumma's Moisturiser?",
+     "It's important to get into good habits as soon as you find out your pregnant! Start as soon as you can to achieve the best results, but there's also no harm in being a little late to the party."
+    ],
+    [
+     "I have Mumma's Oil and Mumma's Moisturiser, can I use them together?",
+     "For the best results, we recommend using both Mumma's Oil and Mumma's Moisturiser together. Apply Mumma's Moisturiser first and follow up with Mumma's Oil."
+    ]
+   ],
+   "goldens": [
+    "Mango Seed Butter",
+    "Squalane",
+    "MCT Oil",
+    "Argan Oil",
+    "Pomegranate Extract",
+    "Aloe Vera Juice",
+    "Cranberry Extract"
+   ]
+  },
+  {
+   "name": "Bubba's Barrier Cream (100mL)",
+   "handle": "bubbas-barrier-cream",
+   "type": "Baby Cream",
+   "range": "Bubba",
+   "price": "35.95",
+   "faqs": [
+    [
+     "Does Bubba's Barrier Cream Contain Fragrance?",
+     "Bubba's Barrier Cream does not contain any fragrance. As it is generally applied to delicate areas that are prone to rashes, we thought it best to leave it fragrance free!"
+    ],
+    [
+     "When and Where Should I Apply Bubba's Barrier Cream?",
+     "Yes! Bubba's Massage Oil is vegan and cruelty free.Apply Bubba's Barrier Cream at nappy change time to prevent nappy rash. If Bub already has a rash, apply a thick layer onto the skin to prevent the rash worsening. You can also apply Bubba's Barrier Cream to any small cuts and abrasions on your baby's skin, dribble rash or skin chafe."
+    ],
+    [
+     "Is Bubba's Barrier Cream Vegan?",
+     "Yes! Bubba's Barrier Cream is vegan and cruelty free."
+    ]
+   ],
+   "goldens": [
+    "Castor Seed Oil",
+    "Zinc Oxide",
+    "Rice Bran Wax",
+    "Mango Seed Butter",
+    "Aloe Vera",
+    "MCT Oil",
+    "Calendula Flower Extract",
+    "Pomegranate Extract"
+   ]
+  },
+  {
+   "name": "Mumma's Oil (100mL)",
+   "handle": "mummas-oil",
+   "type": "Body Oil",
+   "range": "Mumma",
+   "price": "42.95",
+   "faqs": [
+    [
+     "Does Mumma's Oil Contain Fragrance?",
+     "Yes, but not artificial fragrance. Mumma's Oil contains natural essential oils (Frankincense and Lavender) to give it a very subtle fragrance."
+    ],
+    [
+     "Can I Use Mumma's Oil If I'm Not Pregnant?",
+     "Of course! Our Mumma's Oil is formulated for adult skin, so not just for use during pregnancy."
+    ],
+    [
+     "When Should I Apply Mumma's Oil?",
+     "Mumma's Oil is best applied after a shower/bath when your skin is still slightly damp as our skin absorbs oils better when slightly damp and locks in the extra moisture. However, it can also be applied to dry skin. Massage gently into the skin in circular motions."
+    ],
+    [
+     "Can I Continue Using Mumma's Oil Postpartum?",
+     "Yes, not only can you continue, we recommend it! Your body is recovering from carrying your beautiful bub and keeping up your pregnancy skincare routine is a vital part of this."
+    ],
+    [
+     "Does Mumma's Oil Prevent Stretch Marks?",
+     "Unfortunately, nothing can completely prevent stretch marks and products on the market that claim to, are not usually approved for use during pregnancy (such as retinoids [Vitamin A]). So, we cannot guarantee prevention, but the daily act of moisturising (massaging and application of product) can assist in minimising the appearance of emerging stretch marks."
+    ],
+    [
+     "When Should I Start Using Mumma's Oil?",
+     "It's important to get into good habits as soon as you find out your pregnant! Start as soon as you can to achieve the best results, but theres also no harm in being a little late to the party"
+    ],
+    [
+     "I Have Mumma's Oil and Mumma's Moisturiser, Do I Use Them Together?",
+     "For the best results, we recommend using both Mumma's Oil and Mumma's Moisturiser together. Apply Mumma's Moisturiser first and follow up with Mumma's Oil."
+    ]
+   ],
+   "goldens": [
+    "Jojoba Oil",
+    "Argan Oil",
+    "Evening Primrose Oil",
+    "Lavender Oil",
+    "Frankincense Oil"
+   ]
+  },
+  {
+   "name": "Bubba's Massage Oil (100mL)",
+   "handle": "bubbas-massage-oil",
+   "type": "Baby Health & Grooming Kits",
+   "range": "Bubba",
+   "price": "34.95",
+   "faqs": [
+    [
+     "Does Bubba's Massage Oil Contain Fragrance?",
+     "Yes, but not artificial fragrance. Bubba's Massage Oil contains natural essential oils (Ylang Ylang and Lavender) to give it a very subtle fragrance. This fragrance helps to create a calming environment for baby massage."
+    ],
+    [
+     "Is Bubba's Massage Oil Vegan?",
+     "Yes! Bubba's Massage Oil is vegan and cruelty free."
+    ],
+    [
+     "I Have Bubba's Massage Oil and Bubba's Moisturiser, Do I Use Them Together?",
+     "If your baby's skin is looking extra dry, you can apply Bubba's Moisturiser before applying Bubba's Massage Oil."
+    ],
+    [
+     "When Should I Start Using Bubba's Massage Oil On My Baby?",
+     "We recommend starting to use skincare products on bub once they are at least one month old. Newborn baby skin is very delicate and sensitive in the first month whilst their natural skin barrier begins to form, so we don't want to disrupt this natural process."
+    ],
+    [
+     "When Should I Apply Bubba's Massage Oil?",
+     "Bubba's Massage Oil is best applied after a bath when your bub's skin is still slightly damp as skin absorbs oils better when slightly damp and locks in the extra moisture. However, it can also be applied to dry skin. Massage gently into the skin in circular motions. Apply after Bubba's Moisturiser for extra hydration."
+    ]
+   ],
+   "goldens": [
+    "Borage Seed Oil",
+    "Rosehip Oil",
+    "Evening Primrose Oil",
+    "Aloe Vera",
+    "Calendula Extract"
+   ]
+  }
+ ],
+ "faq": [
+  {
+   "category": "safety",
+   "q": "Is Mamave safe to use during pregnancy?",
+   "a": "Yes. every Mamave formula is designed to be pregnancy-safe. Products are developed by a cosmetic chemist who understands pregnancy skin, and avoid retinoids, parabens and synthetic fragrance. If you have specific medical concerns, we always recommend checking with your healthcare professional."
+  },
+  {
+   "category": "safety",
+   "q": "Can I use Mamave products on my newborn?",
+   "a": "The Bubba range is formulated for babies and young children: pH-balanced for baby skin, with gentle coconut-based cleansers and calming botanicals like calendula, aloe vera and chamomile. One range, head to toe."
+  },
+  {
+   "category": "safety",
+   "q": "Is \u2018natural\u2019 skincare the same as pregnancy-safe?",
+   "a": "No. and that's why Mamave exists. Natural doesn't automatically mean safe for pregnancy or for newborn skin. Mamave goes beyond traditional natural skincare: each product is developed using cosmetic science to support delicate skin at every stage, from pregnancy through to newborn care."
+  },
+  {
+   "category": "safety",
+   "q": "Which skincare ingredients should I avoid while pregnant?",
+   "a": "The ingredients most commonly avoided during pregnancy are retinoids (vitamin A derivatives), parabens and synthetic fragrance. Every Mamave formula leaves all three out, so you never have to decode a label. And if you're unsure about a product from another brand, your healthcare professional can advise."
+  },
+  {
+   "category": "safety",
+   "q": "Why does my skin change during pregnancy?",
+   "a": "Hormones. As they shift, skin can become drier, tighter, itchier and more reactive than usual. Hormonal breakouts and new sensitivities are common. That's why pregnancy skincare should be gentler and more supportive than your usual routine, not just the same products with a different label."
+  },
+  {
+   "category": "safety",
+   "q": "Can I use Mamave if I have sensitive skin?",
+   "a": "Mamave is designed for delicate, reactive skin. Pregnancy skin is sensitive skin. Formulas avoid synthetic fragrance and harsh additives, and many customers use the range on children with sensitive skin. As with any skincare, patch test first and check with your healthcare professional if you have a diagnosed skin condition."
+  },
+  {
+   "category": "baby",
+   "q": "What age can I start using the Bubba range?",
+   "a": "From newborn. The Bubba range is formulated for newborns, babies and young children: gentle, pH-balanced care for delicate new skin, from the very first bath onward."
+  },
+  {
+   "category": "baby",
+   "q": "What helps protect against nappy rash?",
+   "a": "Bubba's Barrier Cream. Apply a thick layer to your baby's bottom or other rash-affected areas. Its zinc oxide formula creates a breathable barrier between a wet nappy and delicate skin, protecting against moisture and irritation from rubbing."
+  },
+  {
+   "category": "baby",
+   "q": "What can I use for cradle cap?",
+   "a": "Bubba's Massage Oil is formulated to gently support cradle cap care. Warm a small amount in your hands and massage gently. Its plant-derived oils with calendula and aloe vera soften and soothe delicate skin."
+  },
+  {
+   "category": "baby",
+   "q": "How do I massage my baby?",
+   "a": "Warm a small amount of Bubba's Massage Oil by rubbing your hands together, then massage gently into your baby's skin, paying careful attention to their tummy, legs and arms. Daily massage is a beautiful way to turn everyday care into a calming ritual for both of you."
+  },
+  {
+   "category": "baby",
+   "q": "Do I need separate hair and body products for my baby?",
+   "a": "No. Bubba's Wash is a gentle all-in-one for hair and body. Coconut-based surfactants cleanse mildly, calming calendula soothes, and it's pH-balanced for baby skin. One product, head to toe, every bath."
+  },
+  {
+   "category": "ingredients",
+   "q": "What ingredients does Mamave avoid?",
+   "a": "Retinoids, parabens, synthetic fragrance and unnecessary fillers. Formulas are scented naturally with essential oils such as lavender, frankincense and mandarin, and built on plant oils rich in vitamin E and Gamma Linolenic Acid (GLA)."
+  },
+  {
+   "category": "ingredients",
+   "q": "Are Mamave products made in Australia?",
+   "a": "Yes. Mamave is 100% Australian made and owned, and formulated here by a cosmetic scientist."
+  },
+  {
+   "category": "ingredients",
+   "q": "What is GLA and why is it in Mamave formulas?",
+   "a": "GLA (Gamma Linolenic Acid) is a fatty acid found in plant oils like borage seed and evening primrose. It helps support the skin barrier and relieve dryness, which is why you'll find GLA-rich oils across the range, from Mumma's Oil to Bubba's Moisturiser."
+  },
+  {
+   "category": "ingredients",
+   "q": "What does Mamave use instead of synthetic fragrance?",
+   "a": "Essential oils, chosen for calm as much as scent: lavender and frankincense in the Mumma range, lavender and ylang ylang in Bubba's Moisturiser and Massage Oil, and naturally derived mandarin in Bubba's Wash."
+  },
+  {
+   "category": "ingredients",
+   "q": "What's in Mumma's Oil?",
+   "a": "A blend of plant oils rich in vitamin E and GLA: safflower, sunflower, grape seed, camellia, jojoba, argan and evening primrose, lightly scented with calming lavender and frankincense essential oils. Nothing else."
+  },
+  {
+   "category": "ingredients",
+   "q": "Why is squalane in Bubba's Moisturiser?",
+   "a": "Squalane locks in moisture by mimicking the skin's own naturally produced squalene, so it hydrates without feeling heavy: ideal for daily use and gentle baby massage, alongside GLA-rich borage seed oil and soothing calendula."
+  },
+  {
+   "category": "choosing",
+   "q": "Which product should I start with?",
+   "a": "Most mums start with Mumma's Oil, massaged into the belly, hips and thighs up to three times a day to support skin elasticity through pregnancy and postpartum. For bub, Bubba's Wash is the gentle all-in-one for bath time. Bundles are the best-value way to try the full ritual."
+  },
+  {
+   "category": "choosing",
+   "q": "What is the bump-to-bub ritual?",
+   "a": "A simple three-step routine for mum: soak with Mumma's Soak to unwind, massage Mumma's Oil into changing skin, then seal in hydration with Mumma's Moisturiser. When bub arrives, the Bubba range carries the same care through bath time and beyond."
+  },
+  {
+   "category": "choosing",
+   "q": "Mumma's Oil vs Mumma's Moisturiser: which do I need?",
+   "a": "Mumma's Oil is a concentrated massage oil for supporting skin elasticity and the appearance of stretch marks, massaged into the bump, hips and thighs up to three times a day. Mumma's Moisturiser is a daily cream with vitamin C-rich pomegranate and cranberry extracts for everyday hydration. Many mums use both: oil first, moisturiser to seal it in."
+  },
+  {
+   "category": "choosing",
+   "q": "Bubba's Moisturiser vs Bubba's Massage Oil: what's the difference?",
+   "a": "Bubba's Moisturiser is a daily cream: squalane and calendula to hydrate and calm dry skin after the bath. Bubba's Massage Oil is a light plant oil for daily baby massage and cradle cap care. Both are rich in GLA and scented with lavender and ylang ylang."
+  },
+  {
+   "category": "choosing",
+   "q": "When should I start using Mumma's Oil?",
+   "a": "It's designed for use throughout pregnancy and postpartum. Many mums build it into their routine as soon as skin starts stretching, applying up to three times a day to the belly, thighs, hips and bottom."
+  },
+  {
+   "category": "choosing",
+   "q": "What makes a good baby shower gift?",
+   "a": "A Bubba starter set: Bubba's Wash, Bubba's Moisturiser and Bubba's Massage Oil covers bath time, daily hydration and massage. Build it as a bundle, or let them choose with a Mamave digital gift card ($30\u2013$200)."
+  },
+  {
+   "category": "orders",
+   "q": "Do you offer free shipping?",
+   "a": "Yes. free standard shipping on orders over $75 within Australia."
+  },
+  {
+   "category": "orders",
+   "q": "How do Mamave gift cards work?",
+   "a": "They're digital: delivered by email, in values from $30 to $200, and redeemable across the full Mamave range. Ideal for baby showers and new-mum gifts."
+  },
+  {
+   "category": "orders",
+   "q": "Are bundles better value than buying separately?",
+   "a": "Yes. bundling is the best-value way to shop the ritual. Build your own bundle of three or more products and the bundle saving applies automatically."
+  },
+  {
+   "category": "ingredients",
+   "q": "Who formulates Mamave products?",
+   "a": "Georgie, Mamave's founder: a cosmetic development chemist with a degree in Pharmaceutical Science and over ten years' experience working closely with children. She began developing the first formulas in 2021, and every product is developed with cosmetic chemists, scientists and naturopaths, then crafted in small batches in Australia."
+  },
+  {
+   "category": "ingredients",
+   "q": "Are Mamave products vegan and cruelty-free?",
+   "a": "Yes. the range is vegan and cruelty-free, with no parabens, mineral oils, almond or peanut oils, and completely SLS and SLES free (Sodium Lauryl Sulphate and Sodium Laureth Sulphate)."
+  },
+  {
+   "category": "orders",
+   "q": "What if a product isn't right for us?",
+   "a": "Mamave offers a 30-day money-back guarantee. If you're not completely happy with your purchase, they'll make it right."
+  },
+  {
+   "category": "orders",
+   "q": "How does Refill & Save work?",
+   "a": "Choose your favourites, pick a delivery rhythm that suits you, and they arrive on repeat with a subscriber saving on every order, so the ritual never runs out mid-bump. Checkout is handled securely by Shopify, and you stay in control the whole time."
+  },
+  {
+   "category": "orders",
+   "q": "Can I pause or cancel my subscription?",
+   "a": "Yes, any time. Manage your subscription from your account: skip a delivery, pause, or cancel whenever you like. No lock-ins, no phone calls."
+  }
+ ],
+ "guides": [
+  {
+   "title": "Pregnancy skincare: what to avoid, and what to reach for instead",
+   "url": "/blogs/journal/journal-ingredients-to-avoid",
+   "summary": "Retinoids, parabens, synthetic fragrance: why they're the big three to skip while pregnant, and the gentle actives that actually earn their place."
+  },
+  {
+   "title": "The bump-to-bub ritual: a gentle daily routine for pregnancy skin",
+   "url": "/blogs/journal/journal-bump-to-bub-ritual",
+   "summary": "Soak, massage, moisturise: a three-step evening ritual that cares for stretching skin and busy minds, from the first trimester to the fourth."
+  },
+  {
+   "title": "Newborn bath time, simplified: one gentle routine, head to toe",
+   "url": "/blogs/journal/journal-newborn-bath-time",
+   "summary": "pH-balanced washing, after-bath hydration, baby massage and nappy-change protection: everything delicate new skin needs, without the ten-product shelf."
+  },
+  {
+   "title": "Refill & Save: the case for never running out",
+   "url": "/blogs/journal/journal-refill-and-save",
+   "summary": "Skincare works as a rhythm, not a rescue. How subscriptions keep the ritual going, delivered on the schedule that suits you, with a saving on every order."
+  }
+ ],
+ "ingredients": [
+  {
+   "name": "ACACIA SENEGAL GUM & XANTHAN GUM",
+   "about": "Acacia Senegal Gum is a natural thickener derived from Acacia trees in sub-Saharan Africa. It helps improve the smooth feel and viscosity of skincare formulations. Xanthan Gum is a naturally derived thickening agent produced through sugar fermentation. It helps stabilise emulsions and gives our moisturisers and cleansers their gel-like consistency. While it doesn\u2019t directly benefit the skin, it plays an important role in creating products that feel luxurious and easy to apply (because nobody wants a watery moisturiser)."
+  },
+  {
+   "name": "ALOE VERA",
+   "about": "Aloe Vera extract is derived from the succulent Aloe Vera plant. It is well known for its soothing properties and its ability to calm skin inflammation, redness and irritation."
+  },
+  {
+   "name": "APRICOT KERNEL OIL",
+   "about": "Apricot Kernel Oil is cold-pressed from apricot seeds, producing a rich golden oil. It is valued for its nourishing and softening properties and its ability to absorb deeply into the skin."
+  },
+  {
+   "name": "ARGAN OIL",
+   "about": "Pressed from the kernels of Moroccan Argan trees, Argan Oil is rich in Vitamin E and essential fatty acids. It deeply moisturises both skin and hair, helping to soften dry areas and improve overall skin texture."
+  },
+  {
+   "name": "BENTONITE",
+   "about": "Bentonite is a mineral-rich clay known for its absorbent properties. It helps draw excess oil and impurities from the skin and is believed to have a calming effect."
+  },
+  {
+   "name": "BENZYL ALCOHOL & DEHYDROACETIC ACID",
+   "about": "This preservative system is free from parabens, isothiazolinones and formaldehyde. Benzyl alcohol occurs naturally in some essential oils. Together, these ingredients help protect products from bacteria, mould and fungal growth. BIS-DIGLYCERYL POLYACYLADIPATE-2 (Vegan Lanolin)"
+  },
+  {
+   "name": "BIS-DIGLYCERYL POLYACYLADIPATE-2 (Vegan Lanolin)",
+   "about": "A plant-derived alternative to lanolin, this ingredient enhances glide and improves spreadability. It also forms a protective barrier on the skin to help lock in moisture."
+  },
+  {
+   "name": "BORAGE SEED OIL",
+   "about": "Derived from Borago officinalis, Borage Seed Oil is rich in Gamma Linolenic Acid (GLA), known for its anti-inflammatory properties. Research has shown it may help support the skin barrier in conditions such as cradle cap, which is why it features in our For Bub range."
+  },
+  {
+   "name": "CALENDULA EXTRACT",
+   "about": "Extracted from marigold flowers, Calendula is rich in antioxidants and Vitamin C. It helps soothe irritated skin and support hydration, making it ideal for sensitive skin formulas."
+  },
+  {
+   "name": "CAMELLIA SEED OIL",
+   "about": "Sourced from Camellia oleifera, this lightweight oil is rich in Vitamins A, B and E, as well as zinc and squalene. It absorbs quickly and leaves skin feeling smooth and hydrated."
+  },
+  {
+   "name": "CAPRYLYL/CAPRYL GLUCOSIDE",
+   "about": "A gentle, plant-derived surfactant that helps oils and water blend together. It enhances foaming in cleansers while remaining mild on the skin. CAPRYLIC/CAPRIC TRIGLYCERIDES (MCT Oil)"
+  },
+  {
+   "name": "CAPRYLIC/CAPRIC TRIGLYCERIDES (MCT Oil)",
+   "about": "Derived from coconut oil and glycerine, this lightweight emollient improves spreadability and helps prevent moisture loss."
+  },
+  {
+   "name": "CASTOR SEED OIL",
+   "about": "Extracted from castor beans, this thick oil is rich in ricinoleic acid. It provides moisturising, soothing and anti-inflammatory benefits, making it ideal for barrier creams."
+  },
+  {
+   "name": "CETEARYL ALCOHOL & CETEARYL GLUCOSIDE",
+   "about": "Cetearyl Alcohol is a fatty alcohol that thickens and stabilises creams while improving skin feel. Unlike drying alcohols, it helps soften skin. Cetearyl Glucoside is a naturally derived emulsifier that allows oil and water to combine smoothly. Together, they form an effective oil-in-water emulsifying system."
+  },
+  {
+   "name": "CITRIC ACID",
+   "about": "Naturally found in citrus fruits, Citric Acid helps adjust product pH to support the skin\u2019s natural barrier function."
+  },
+  {
+   "name": "COCAMIDOPROPYL BETAINE",
+   "about": "A coconut-derived surfactant used in cleansers to gently remove dirt and impurities while enhancing lather."
+  },
+  {
+   "name": "CRANBERRY EXTRACT",
+   "about": "Rich in Vitamins A, C and E and essential fatty acids, Cranberry Extract helps support skin elasticity and defend against environmental stressors."
+  },
+  {
+   "name": "CUCUMBER SEED OIL",
+   "about": "A lightweight oil rich in Vitamin E and linoleic acid. It hydrates while providing soothing, anti-inflammatory benefits."
+  },
+  {
+   "name": "EVENING PRIMROSE OIL",
+   "about": "High in omega-6 fatty acids, including GLA, Evening Primrose Oil deeply moisturises and supports inflamed or sensitive skin."
+  },
+  {
+   "name": "FRANKINCENSE ESSENTIAL OIL",
+   "about": "Known for its warm, woody aroma, Frankincense is valued for its calming and soothing properties for both skin and mind."
+  },
+  {
+   "name": "GLYCERINE",
+   "about": "A powerful plant-derived humectant that attracts and retains moisture in the skin. A little goes a long way in keeping skin hydrated and soft."
+  },
+  {
+   "name": "GLYCERYL CAPRYLATE",
+   "about": "A naturally derived preservative and emollient that helps maintain product integrity while conditioning the skin."
+  },
+  {
+   "name": "GRAPESEED OIL",
+   "about": "A lightweight oil rich in antioxidants and omega-6 fatty acids. It helps moisturise and improve skin elasticity."
+  },
+  {
+   "name": "HYDROGENATED VEGETABLE OIL",
+   "about": "Used to stabilise balms and ointments and prevent \u201cblooming\u201d (where oils separate and bead on the surface)."
+  },
+  {
+   "name": "HYDROXYACETOPHENONE",
+   "about": "A nature-identical antioxidant that enhances preservative systems and provides skin conditioning benefits."
+  },
+  {
+   "name": "ISOAMYL LAURATE",
+   "about": "A plant-derived silicone alternative that gives products a silky, lightweight finish without an oily residue."
+  },
+  {
+   "name": "JOJOBA SEED OIL",
+   "about": "A golden oil rich in Vitamins A, D and E. It closely resembles the skin\u2019s natural sebum, making it highly compatible and deeply moisturising."
+  },
+  {
+   "name": "LAVENDER ESSENTIAL OIL",
+   "about": "Known for its calming scent and soothing skin properties. Often used to support irritated or sensitive skin."
+  },
+  {
+   "name": "LECITHIN",
+   "about": "An emulsifier commonly found in foods such as eggs. It also acts as a moisturising emollient in skincare."
+  },
+  {
+   "name": "MANDARIN ESSENTIAL OIL",
+   "about": "A sweet, citrus essential oil loved for its calming aroma and suitability for children\u2019s products."
+  },
+  {
+   "name": "MANGO SEED BUTTER",
+   "about": "A creamy butter rich in Vitamin A and omega fatty acids. Helps strengthen the skin barrier and improve softness."
+  },
+  {
+   "name": "OLIVE OIL",
+   "about": "Rich in antioxidants and fatty acids, Olive Oil helps prevent moisture loss and soften dry skin."
+  },
+  {
+   "name": "PANTHENOL (Vitamin B5)",
+   "about": "A humectant that attracts moisture and helps prevent water loss, leaving skin soft and hydrated."
+  },
+  {
+   "name": "POLYGLYCERYL-3 POLYRICINOLEATE",
+   "about": "A castor oil-derived emulsifier used to stabilise water-in-oil formulas such as barrier creams."
+  },
+  {
+   "name": "POMEGRANATE EXTRACT",
+   "about": "Rich in antioxidants and Vitamin C, this extract helps support skin radiance and reduce redness."
+  },
+  {
+   "name": "POTASSIUM SORBATE",
+   "about": "A food-grade preservative that protects water-based products from microbial growth."
+  },
+  {
+   "name": "PROPANEDIOL",
+   "about": "A corn-derived humectant that draws moisture into the skin. A gentle alternative to petrochemical-based glycols."
+  },
+  {
+   "name": "RICE BRAN WAX",
+   "about": "A vegan alternative to beeswax. It improves texture, reduces stickiness and softens dry skin."
+  },
+  {
+   "name": "ROSEHIP SEED OIL",
+   "about": "High in essential fatty acids and Vitamin E. Helps moisturise, soothe inflammation and support skin repair."
+  },
+  {
+   "name": "SAFFLOWER SEED OIL",
+   "about": "Rich in linoleic acid and Vitamin E, this oil supports the skin barrier and provides deep hydration."
+  },
+  {
+   "name": "SODIUM CHLORIDE & MAGNESIUM SULPHATE",
+   "about": "Sodium Chloride (salt) helps thicken surfactant-based cleansers.Magnesium Sulphate (Epsom salt) stabilises emulsions and supports product consistency."
+  },
+  {
+   "name": "SODIUM COCO SULPHATE",
+   "about": "A coconut-derived surfactant that provides effective cleansing and a rich lather while remaining gentle."
+  },
+  {
+   "name": "SODIUM LAUROYL SARCOSINATE",
+   "about": "A mild surfactant used in cleansers and toothpaste. It creates a soft, gentle foam."
+  },
+  {
+   "name": "SORBITAN OLIVATE",
+   "about": "An olive-derived emulsifier that blends oil and water while providing moisturising benefits."
+  },
+  {
+   "name": "SORBITOL",
+   "about": "A naturally occurring sugar that acts as a humectant. It also supports the skin microbiome by functioning as a prebiotic."
+  },
+  {
+   "name": "SQUALANE",
+   "about": "A lightweight emollient similar to the skin\u2019s natural oils. It improves spreadability and boosts hydration."
+  },
+  {
+   "name": "SUNFLOWER SEED OIL",
+   "about": "Rich in linoleic acid and antioxidants. It deeply moisturises and helps strengthen the skin barrier."
+  },
+  {
+   "name": "VITAMIN E (TOCOPHEROL)",
+   "about": "A powerful antioxidant that protects both the product and the skin from oxidative stress and environmental damage."
+  },
+  {
+   "name": "YLANG YLANG ESSENTIAL OIL",
+   "about": "Derived from the Cananga flower, this essential oil has calming properties and may help soothe minor skin concerns."
+  },
+  {
+   "name": "ZINC OXIDE",
+   "about": "Forms a protective barrier on the skin, making it ideal for soothing nappy rash and minor irritations. It also supports wound healing."
+  }
+ ]
+}
