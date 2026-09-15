@@ -122,7 +122,7 @@ export function RequestFormPicker({ type, setType, brands, onCreated, onCancel, 
       {type === "product" && <ProductForm brands={brands} f={f} setF={setF} ack={ack} setAck={setAck} onSubmit={submit} />}
       {type === "filecamp" && <FileCampForm brands={brands} f={f} setF={setF} file={file} setFile={setFile} ack={ack} setAck={setAck} onSubmit={submit} />}
       {type === "comms" && <CommsForm brands={brands} f={f} setF={setF} ack={ack} setAck={setAck} onSubmit={submit} />}
-      {type === "materials" && <MaterialsForm brands={brands} f={f} setF={setF} ack={ack} setAck={setAck} onSubmit={submit} />}
+      {type === "materials" && <MaterialsForm brands={brands} f={f} setF={setF} file={file} setFile={setFile} ack={ack} setAck={setAck} onSubmit={submit} />}
 
       {err && <p className="text-sm text-rose-600 mt-3">{err}</p>}
       <div className="mt-4 flex justify-end">
@@ -445,24 +445,37 @@ const MATERIAL_RULES: Record<string, string> = {
   catalogues: "Catalogues are printed in batches and stock is limited between print runs — order ahead of when you need them in-store.",
 };
 
-export function MaterialsForm({ brands, f, setF, ack, setAck, onSubmit }: any) {
+const MATERIAL_REQUEST_TYPES = [
+  { value: "new", label: "New design" },
+  { value: "reprint", label: "Reprint of existing" },
+  { value: "update", label: "Update to existing" },
+];
+
+export function MaterialsForm({ brands, f, setF, file, setFile, ack, setAck, onSubmit }: any) {
   const [busy, setBusy] = useState(false);
   const materialType = f.materialType;
   const isScreen = materialType === "tv_screens";
+  const isReprint = f.materialRequestType === "reprint";
   const materialLabel = MATERIAL_TYPES.find(m => m.value === materialType)?.label;
   async function go() {
     setBusy(true);
     await onSubmit({
       title: `${materialLabel} · ${f.brand ?? "brand TBC"} · ${f.store ?? ""}`,
-      brand: f.brand, store: f.store, end_use: f.notes || `${materialLabel} for ${f.store ?? "store"}`,
-      needed_by: f.needed_by,
-      brief: { materialType, store: f.store, quantity: f.quantity, notes: f.notes, shipName: f.shipName, shipPhone: f.shipPhone, shipAddress: f.shipAddress },
+      brand: f.brand, store: f.store,
+      end_use: f.specs || `${materialLabel} for ${f.store ?? "store"}`,
+      needed_by: f.live_date,
+      brief: {
+        materialType, materialRequestType: f.materialRequestType, store: f.store, quantity: f.quantity,
+        specs: f.specs, copy: f.copy, hasPrice: f.hasPrice, rrp: f.rrp, promoApprovedBy: f.promoApprovedBy,
+        promoStart: f.promoStart, promoEnd: f.promoEnd, liveDate: f.live_date, inMarketUntil: f.inMarketUntil,
+        shipName: f.shipName, shipPhone: f.shipPhone, shipAddress: f.shipAddress,
+      },
     });
     setBusy(false);
   }
-  const ready = isScreen
-    ? !!(f.brand && f.store && f.notes && f.shipName && f.shipPhone && f.needed_by)
-    : !!(materialType && f.brand && f.store && f.quantity && f.shipName && f.shipPhone && f.shipAddress && f.needed_by);
+  const ready = !!(materialType && f.brand && f.store && f.materialRequestType && (isReprint || f.specs)
+    && f.hasPrice !== undefined && f.live_date && f.shipName && f.shipPhone
+    && (isScreen || (f.quantity && f.shipAddress)));
   return (
     <div className="space-y-3">
       <Field label="What do you need" required>
@@ -474,20 +487,37 @@ export function MaterialsForm({ brands, f, setF, ack, setAck, onSubmit }: any) {
           <Field label="Brand" required><select className={inp} value={f.brand ?? ""} onChange={(e: any) => setF({ ...f, brand: e.target.value })}><option value="">Select…</option>{brands.map((b: any) => <option key={b.name} value={b.name}>{b.name}</option>)}</select></Field>
           <Field label="Store / location" required><input className={inp} value={f.store ?? ""} onChange={(e: any) => setF({ ...f, store: e.target.value })} /></Field>
         </div>
+        <Field label="Request type" required>
+          <ChipGroup value={f.materialRequestType} onChange={(v: string) => setF({ ...f, materialRequestType: v })} options={MATERIAL_REQUEST_TYPES} />
+        </Field>
+        {!isReprint && <Field label={isScreen ? "What the screen should show" : "Specs / content required"} required><textarea className={inp} rows={2} placeholder={isScreen ? "Which product/campaign, format, any specific footage or asset" : "Format, size, what it needs to say or show"} value={f.specs ?? ""} onChange={(e: any) => setF({ ...f, specs: e.target.value })} /></Field>}
+        {isReprint && <Field label="Which existing item, and any changes" required><textarea className={inp} rows={2} value={f.specs ?? ""} onChange={(e: any) => setF({ ...f, specs: e.target.value })} /></Field>}
+        {!isReprint && <Field label="Copy required"><textarea className={inp} rows={2} value={f.copy ?? ""} onChange={(e: any) => setF({ ...f, copy: e.target.value })} /></Field>}
+        <Field label="Does it include a price?" required>
+          <ChipGroup value={f.hasPrice} onChange={(v: boolean) => setF({ ...f, hasPrice: v })} options={[{ value: true, label: "Yes" }, { value: false, label: "No" }]} />
+        </Field>
+        {f.hasPrice && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-amber-50 border border-amber-100 rounded-xl p-3">
+            <Field label="RRP" required><input className={inp} value={f.rrp ?? ""} onChange={(e: any) => setF({ ...f, rrp: e.target.value })} /></Field>
+            <Field label="Who approved this promotion" required><input className={inp} value={f.promoApprovedBy ?? ""} onChange={(e: any) => setF({ ...f, promoApprovedBy: e.target.value })} /></Field>
+            <Field label="Promo start / end" required><div className="flex gap-1"><input type="date" className={inp} value={f.promoStart ?? ""} onChange={(e: any) => setF({ ...f, promoStart: e.target.value })} /><input type="date" className={inp} value={f.promoEnd ?? ""} onChange={(e: any) => setF({ ...f, promoEnd: e.target.value })} /></div></Field>
+          </div>
+        )}
         {!isScreen && (
           <Field label="Quantity" required><input className={inp} value={f.quantity ?? ""} onChange={(e: any) => setF({ ...f, quantity: e.target.value })} /></Field>
         )}
-        <Field label={isScreen ? "What should the screen show" : "Notes"} required={isScreen}>
-          <textarea className={inp} rows={2} placeholder={isScreen ? "Which product/campaign, any specific footage or asset" : "Anything specific — edition, language, branch"} value={f.notes ?? ""} onChange={(e: any) => setF({ ...f, notes: e.target.value })} />
-        </Field>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Live date" required><input type="date" className={inp} value={f.live_date ?? ""} onChange={(e: any) => setF({ ...f, live_date: e.target.value })} /></Field>
+          <Field label="In-market until"><input type="date" className={inp} value={f.inMarketUntil ?? ""} onChange={(e: any) => setF({ ...f, inMarketUntil: e.target.value })} /></Field>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Contact name" required><input className={inp} value={f.shipName ?? ""} onChange={(e: any) => setF({ ...f, shipName: e.target.value })} /></Field>
           <Field label="Contact phone" required><input className={inp} value={f.shipPhone ?? ""} onChange={(e: any) => setF({ ...f, shipPhone: e.target.value })} /></Field>
-          <Field label="Needed by" required><input type="date" className={inp} value={f.needed_by ?? ""} onChange={(e: any) => setF({ ...f, needed_by: e.target.value })} /></Field>
         </div>
         {!isScreen && (
           <Field label="Delivery address" required><input className={inp} value={f.shipAddress ?? ""} onChange={(e: any) => setF({ ...f, shipAddress: e.target.value })} /></Field>
         )}
+        <Field label="Reference file (spec sheet, image, prior version)"><input type="file" onChange={(e: any) => setFile(e.target.files?.[0] ?? null)} className="text-sm" /></Field>
         <AckBox label={`I have read the ${materialLabel} request notes above.`} checked={ack} onChange={setAck} />
       </>}
       <button id="submit-materials" disabled={busy || !ready} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit request"}</button>
