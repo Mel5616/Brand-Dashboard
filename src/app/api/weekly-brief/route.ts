@@ -14,6 +14,22 @@ const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const h = (extra: Record<string, string> = {}) => ({ apikey: sbKey!, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json", ...extra });
 const missing = (s: number, b: string) => s === 404 || /PGRST205|does not exist|schema cache/i.test(b);
 const sb = (p: string) => fetch(`${sbUrl}/rest/v1/${p}`, { headers: h(), cache: "no-store" }).then(async r => (r.ok ? JSON.parse((await r.text()) || "[]") : []));
+// PostgREST caps an unpaginated request at 1000 rows (silently, oldest-first
+// by default) — brand_daily alone is already past that, so the D2C total was
+// quietly dropping the most recent weeks. Page through with Range until a
+// short page says there's nothing left.
+async function sbAll(p: string): Promise<any[]> {
+  const sep = p.includes("?") ? "&" : "?";
+  const out: any[] = [];
+  for (let from = 0; ; from += 1000) {
+    const res = await fetch(`${sbUrl}/rest/v1/${p}${sep}order=day.asc`, { headers: h({ Range: `${from}-${from + 999}` }), cache: "no-store" });
+    if (!res.ok) break;
+    const page = JSON.parse((await res.text()) || "[]");
+    out.push(...page);
+    if (page.length < 1000) break;
+  }
+  return out;
+}
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 
 // Melbourne local date for a UTC timestamp (business weeks are AEST Sun–Sat)
@@ -82,7 +98,7 @@ async function buildSnapshot() {
   const adCut = iso(new Date(Date.now() - 21 * 864e5));   // covers last week + the week before
   const [brands, daily, monthly, targets, campaigns, igMedia, klaviyo, promotions, googleDaily, metaDaily, pinterestDaily, ga4, ebEvents, shows, showReports, showAttendance] = await Promise.all([
     sb("brands?select=id,name,live,color"),
-    sb("brand_daily?select=brand_id,day,revenue"),
+    sbAll("brand_daily?select=brand_id,day,revenue"),
     sb("brand_monthly?select=brand_id,month_key,revenue&order=month_key"),
     sb("brand_targets?select=brand_id,month_key,revenue_target"),
     sb("campaigns?select=campaign,brand,horizon,status,key_date,end_date,owner,brief,share_token&order=key_date"),
