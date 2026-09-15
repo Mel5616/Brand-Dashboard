@@ -104,14 +104,14 @@ export default function RequestPage() {
             )}
             <FilecampCard />
 
-            <RequestFormPicker type={type} setType={setType} brands={brands} endpoint="/api/public-sales-request" uploadEndpoint="/api/sales-requests/upload" extraHeaders={headers} showIdentityFields onCreated={setDoneId} lockType={!!lockedType} />
-
             <details className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
               <summary className={`text-sm font-bold text-slate-700 cursor-pointer ${baloo}`}>Rules for {TYPE_META[type].label.toLowerCase()}</summary>
               <div className="mt-3 prose-sm max-w-none text-slate-700 text-sm">
                 {GUIDELINE_SECTIONS.find(g => g.id === TYPE_META[type].guide)?.body}
               </div>
             </details>
+
+            <RequestFormPicker type={type} setType={setType} brands={brands} endpoint="/api/public-sales-request" uploadEndpoint="/api/sales-requests/upload" extraHeaders={headers} showIdentityFields onCreated={setDoneId} lockType={!!lockedType} />
           </>
         )}
       </div>
