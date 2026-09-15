@@ -1,0 +1,148 @@
+{
+ "store": {
+  "name": "Gaia Baby",
+  "who": "Australian nursery furniture and babywearing brand: real solid wood convertible cots, dressers, wardrobes, changing stations, rocking chairs and organic cotton baby wraps. Distributed by Coolkidz Australia Pty Ltd, Braeside, Melbourne.",
+  "site": "https://gaia-baby.com.au",
+  "contact_page": "/pages/contact",
+  "support_email": "info@coolkidz.com.au",
+  "support_portal": "https://help.coolkidz.com.au/support/tickets/new",
+  "reply_time": "Coolkidz replies on business days, usually within one to two working days.",
+  "tone": "Warm, honest, practical. Parent to parent, proud of real timber over MDF."
+ },
+ "offers": [
+  "Buy 2 & Save 20%: mix or match any 2 Gaia Baby Wraps and 20% off is applied automatically at checkout.",
+  "Nursery bundle sets (Hera, Serena, Eos) bundle the matching cot, dresser and changing station at a bundled price versus buying each piece separately.",
+  "Extended warranty available on some ranges with product registration after purchase."
+ ],
+ "pages": {
+  "Shop": "/collections/all",
+  "Baby Wraps": "/collections/baby-wraps",
+  "Hera range": "/collections/hera-cot-beds",
+  "Serena range": "/collections/serena-cot-beds",
+  "Eos range": "/collections/eos-cot-beds",
+  "Hera 3-Piece Nursery Bundle": "/pages/hera-3-piece-set",
+  "Serena 3-Piece Nursery Bundle": "/pages/serena-3-piece-set",
+  "Eos 2-Piece Nursery Bundle": "/pages/eos-2-piece-set",
+  "Partnerships & Affiliates": "/pages/partnerships",
+  "Contact": "/pages/contact",
+  "Shipping policy": "/policies/shipping-policy",
+  "Refund policy": "/policies/refund-policy",
+  "Terms of service": "/policies/terms-of-service",
+  "Privacy policy": "/policies/privacy-policy"
+ },
+ "policies": {
+  "shipping": "Shipping costs and estimated timeframes are calculated and shown at checkout once you enter your delivery address, since furniture ships as multiple boxes and rates vary by location. We don't publish fixed delivery windows here — check the shipping policy page or ask support for a specific postcode.",
+  "warranty": "Furniture is backed by a manufacturer's warranty against defects; some ranges offer an extended warranty when you register your product after purchase (see the product page for details). Contact support with your order number and photos for any warranty claim.",
+  "returns": "If the wrong item arrived or it's defective, contact info@coolkidz.com.au within 48 hours of delivery for a return authority — replacements are sent out and Coolkidz covers the cost of returning the faulty item. For change of mind, Coolkidz offers an exchange or store credit within 30 days of purchase, provided the item is unopened (or, if opened, fully repackaged with all parts, manuals and accessories) and not yet used. Gift cards, discontinued/damaged-box/run-out items and special orders are excluded from change-of-mind returns. Shipping and payment processing fees are non-refundable. Full detail: /policies/refund-policy."
+ },
+ "families": [
+  {
+   "range": "Hera",
+   "tier": "Heirloom Upper Tier",
+   "collection": "/collections/hera-cot-beds",
+   "positioning": "Meticulously handcrafted from natural wood, built to last beyond the nursery and into the home.",
+   "cot_bed_rrp": "$899 (was $999)",
+   "convertible": "Birth to 5 years as a cot bed; to 7 years with the separate Junior Bed Extension (sold separately)",
+   "materials": "Natural ash and walnut, sustainably sourced",
+   "mattress": "Comes with an included, Australian-made GECA-certified mattress on the Hera Cot Bed",
+   "colours": "Natural Ash and Scandi White frame tones, Walnut base",
+   "coordinating_pieces": "Hera Dresser, Hera Wardrobe, Hera Changing Station (includes a Hera Changing Pad + Change Table), Hera Nursing/Rocking Chair, Hera Hanging Rail",
+   "rating": "4.9/5 from verified buyers"
+  },
+  {
+   "range": "Eos",
+   "tier": "Accessible Real Wood",
+   "collection": "/collections/eos-cot-beds",
+   "positioning": "New Zealand pine, a customisable palette, and the perfect height for lifting your baby safely.",
+   "cot_bed_rrp": "$749",
+   "convertible": "Birth to 10 years",
+   "materials": "New Zealand pine",
+   "colours": "Natural Ash and White frame tones, with a customisable base colour palette",
+   "coordinating_pieces": "Eos Dresser (available bundled with an Eos Changing Pad as a Dresser & Changing Station), Eos Cot Bed",
+   "nursery_bundle": "Eos 2-Piece Nursery Bundle (cot bed + dresser/changing station) at /pages/eos-2-piece-set"
+  },
+  {
+   "range": "Serena",
+   "tier": "Patented Convertible",
+   "collection": "/collections/serena-cot-beds",
+   "positioning": "The patented 8-in-1 cot: one frame from a newborn bedside crib to a junior bed at 7+ years.",
+   "cot_bed_rrp": "From $1,199",
+   "convertible": "8 configurations from one frame: newborn bedside crib add-on, mini cot (0-6 months), cot bed, toddler bed, first bed, junior bed, plus a junior bed extension — the bedside crib add-on and junior bed extension are sold separately",
+   "materials": "Birch wood",
+   "colours": "White and Natural/Walnut combinations",
+   "coordinating_pieces": "Serena Dresser, Serena Footstool",
+   "nursery_bundle": "Serena 3-Piece Nursery Bundle at /pages/serena-3-piece-set"
+  }
+ ],
+ "wraps": {
+  "product": "Stretchy Baby Wrap",
+  "collection": "/collections/baby-wraps",
+  "price": "$84.95",
+  "material": "100% certified organic cotton, no elastane or synthetic fibres, 1-way stretch",
+  "fit": "One size fits all, front inward-facing carry",
+  "suitable_for": "Newborn to approx. 15 kg",
+  "colours": "Ebony, Graphite, Forest Green, Nutmeg — each colour is a separate product, linked as swatches on the product page",
+  "care": "Machine washable",
+  "safety_certifications": "Tested and certified to PD CEN/TR 16512:2015, BS EN 13209-2:2005, BS EN 71-3:2013+A3:2018, BS EN ISO 14184-1:2011, BS EN 71-2:2011+A1:2014 and BS EN 1103:2005",
+  "bundle_deal": "Buy 2 & Save 20% — mix or match any 2 Gaia Baby Wraps, 20% off applied automatically at checkout"
+ },
+ "safety_rules": [
+  "Furniture: INPAA Approved, independently tested to meet and exceed Australian safety standards",
+  "Finishes tested for heavy metals and toxic compounds against Australian safety standards; formaldehyde well under the 0.5ppm AU limit on Gaia Baby finishes",
+  "Real solid timber throughout — never MDF or particleboard",
+  "Wraps: always keep your baby's face visible and clear of fabric, chin off chest, hips and knees supported in a natural 'M' position, and check on your baby frequently — see the product's Safety Standards section for the full certified standards",
+  "Follow the safe sleeping guidelines referenced in Gaia Baby's policies for any cot, mattress or bedding purchase"
+ ],
+ "faq": [
+  {
+   "category": "Materials & Safety",
+   "q": "Is Gaia Baby furniture made from MDF or particleboard?",
+   "a": "No. Every Gaia Baby piece is solid, sustainably sourced real timber (New Zealand pine on Eos, birch on Serena, ash and walnut on Hera) — never MDF or particleboard."
+  },
+  {
+   "category": "Materials & Safety",
+   "q": "Are Gaia Baby products independently tested?",
+   "a": "Yes. Furniture is INPAA Approved and independently tested to meet and exceed Australian safety standards, with finishes tested for heavy metals and toxic compounds. The Stretchy Baby Wrap is certified to PD CEN/TR 16512:2015, BS EN 13209-2:2005 and related EN safety standards — see the product's Safety Standards accordion for the full list."
+  },
+  {
+   "category": "Ranges",
+   "q": "What's the difference between Hera, Eos and Serena?",
+   "a": "Hera is the heirloom upper tier in ash and walnut, from $899. Eos is the accessible real-wood range in New Zealand pine with a customisable colour palette, from $749. Serena is the patented 8-in-1 convertible system in birch, one frame from newborn bedside crib to a junior bed at 7+ years, from $1,199."
+  },
+  {
+   "category": "Bundles",
+   "q": "What's included in a nursery bundle?",
+   "a": "Each range has a nursery bundle pairing the cot bed with its matching dresser (and changing station where relevant) at a bundled price — see the Hera, Serena and Eos bundle pages under Shop. Furniture ships in multiple labelled boxes (and a separate mattress box where included); this is normal for flat-packed solid-wood pieces."
+  },
+  {
+   "category": "Wraps",
+   "q": "Does the Stretchy Baby Wrap contain elastane?",
+   "a": "No — it's 100% certified organic cotton with no elastane or synthetic blends, designed to be breathable and supportive without excess stretch."
+  },
+  {
+   "category": "Wraps",
+   "q": "What size wrap do I need?",
+   "a": "The Stretchy Baby Wrap is one size fits all, suitable from newborn to approximately 15 kg, worn front-facing-in."
+  },
+  {
+   "category": "Orders & Returns",
+   "q": "What if my item arrives faulty or wrong?",
+   "a": "Contact info@coolkidz.com.au within 48 hours of delivery for a return authority — a replacement is sent out and Coolkidz covers the return shipping cost for the faulty item."
+  },
+  {
+   "category": "Orders & Returns",
+   "q": "Can I return something if I change my mind?",
+   "a": "Yes, within 30 days of purchase, for an exchange or store credit, as long as the item is unopened (or, if opened, fully repackaged with everything included) and unused. Gift cards, discontinued/damaged-box items and special orders aren't eligible — full detail at /policies/refund-policy."
+  },
+  {
+   "category": "Orders & Returns",
+   "q": "How much does shipping cost and how long does it take?",
+   "a": "Shipping cost and estimated timeframe are calculated at checkout once you enter your delivery address, since furniture ships in multiple boxes and rates vary by location — check the shipping policy page or contact support for a specific estimate."
+  },
+  {
+   "category": "Warranty",
+   "q": "Is there a warranty on Gaia Baby furniture?",
+   "a": "Furniture is backed by a manufacturer's warranty against defects, and some ranges offer an extended warranty when you register your product after purchase — check the individual product page. For a claim, contact support with your order number and photos."
+  }
+ ]
+}
