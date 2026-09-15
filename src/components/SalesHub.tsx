@@ -32,6 +32,10 @@ const STEPS: { key: Status; label: string }[] = [
   { key: "delivered", label: "Delivered" },
 ];
 const dShort = (s?: string | null) => s ? new Date(s + (s.length === 10 ? "T00:00:00" : "")).toLocaleDateString("en-AU", { day: "numeric", month: "short" }) : "—";
+// Full date + time for "when did this request actually land" — dShort above
+// stays date-only for due-date columns, this is specifically for submitted/
+// event timestamps, which Mel wants stamped to the minute, not just the day.
+const dTime = (s?: string | null) => s ? new Date(s).toLocaleString("en-AU", { day: "numeric", month: "short", year: "2-digit", hour: "numeric", minute: "2-digit" }) : "—";
 const baloo = "font-[family-name:var(--font-baloo)]";
 const body = "font-[family-name:var(--font-manrope)]";
 
@@ -56,6 +60,7 @@ export function SalesHub({ admin, brands, tradeshows = [], calendarEvents = [] }
   useEffect(() => { load(); }, []);
 
   const mine = useMemo(() => items.filter(i => !["delivered", "declined"].includes(i.status)), [items]);
+  const pendingCount = useMemo(() => items.filter(i => i.status === "new").length, [items]);
   const filtered = useMemo(() => items.filter(i =>
     (statusFilter === "all" || i.status === statusFilter) &&
     (!q.trim() || `${i.title} ${i.brand ?? ""} ${i.retailer ?? ""} ${i.requester_email}`.toLowerCase().includes(q.toLowerCase()))
@@ -97,7 +102,10 @@ export function SalesHub({ admin, brands, tradeshows = [], calendarEvents = [] }
       {!detail && (
         <div className="flex gap-2">
           <button onClick={() => { setView("landing"); setDetailId(null); }} className={`text-sm font-semibold rounded-full px-4 py-2 border transition ${view === "landing" ? "bg-[#1E9DC2] text-white border-[#1E9DC2]" : "bg-white text-slate-600 border-gray-200 hover:bg-gray-50"}`}>🏠 Home</button>
-          <button onClick={() => { setView("queue"); setDetailId(null); }} className={`text-sm font-semibold rounded-full px-4 py-2 border transition ${view === "queue" ? "bg-[#1E9DC2] text-white border-[#1E9DC2]" : "bg-white text-slate-600 border-gray-200 hover:bg-gray-50"}`}>{admin ? "All requests" : "My requests"} ({items.length})</button>
+          {admin && (
+            <button onClick={() => { setStatusFilter("new"); setView("queue"); setDetailId(null); }} className={`text-sm font-semibold rounded-full px-4 py-2 border transition ${view === "queue" && statusFilter === "new" ? "bg-rose-600 text-white border-rose-600" : pendingCount > 0 ? "bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100" : "bg-white text-slate-600 border-gray-200 hover:bg-gray-50"}`}>🔔 Pending ({pendingCount})</button>
+          )}
+          <button onClick={() => { setStatusFilter("all"); setView("queue"); setDetailId(null); }} className={`text-sm font-semibold rounded-full px-4 py-2 border transition ${view === "queue" && statusFilter === "all" ? "bg-[#1E9DC2] text-white border-[#1E9DC2]" : "bg-white text-slate-600 border-gray-200 hover:bg-gray-50"}`}>{admin ? "All requests" : "My requests"} ({items.length})</button>
           <button onClick={() => { setView("guidelines"); setDetailId(null); }} className={`text-sm font-semibold rounded-full px-4 py-2 border transition ${view === "guidelines" ? "bg-[#1E9DC2] text-white border-[#1E9DC2]" : "bg-white text-slate-600 border-gray-200 hover:bg-gray-50"}`}>📖 Guidelines</button>
         </div>
       )}
@@ -373,7 +381,7 @@ function QueueView({ items, admin, analytics, q, setQ, statusFilter, setStatusFi
         <table className="w-full text-sm">
           <thead><tr className="text-[10.5px] uppercase tracking-wide text-gray-400 border-b border-gray-100">
             <th className="text-left py-2 pl-4">Request</th><th className="text-left py-2">Type</th><th className="text-left py-2">Brand</th>
-            <th className="text-left py-2">Requester</th><th className="text-left py-2">Needed by</th><th className="text-left py-2">Status</th><th className="text-left py-2 pr-4">Assignee</th>
+            <th className="text-left py-2">Requester</th><th className="text-left py-2">Submitted</th><th className="text-left py-2">Needed by</th><th className="text-left py-2">Status</th><th className="text-left py-2 pr-4">Assignee</th>
           </tr></thead>
           <tbody>
             {items.map(r => {
@@ -384,6 +392,7 @@ function QueueView({ items, admin, analytics, q, setQ, statusFilter, setStatusFi
                   <td className="py-2.5 text-gray-500">{TYPE_META[r.request_type].label}</td>
                   <td className="py-2.5 text-gray-500">{r.brand ?? "—"}</td>
                   <td className="py-2.5 text-gray-500">{r.requester_email}</td>
+                  <td className="py-2.5 text-gray-500 whitespace-nowrap">{dTime(r.created_at)}</td>
                   <td className={`py-2.5 ${overdue ? "text-rose-600 font-bold" : "text-gray-500"}`}>{dShort(r.needed_by)}</td>
                   <td className="py-2.5"><span className={`text-[10.5px] font-bold px-2 py-1 rounded-full ${STATUS_META[r.status].cls}`}>{STATUS_META[r.status].label}</span></td>
                   <td className="py-2.5 pr-4 text-gray-400">{r.assignee_email ?? "—"}</td>
@@ -449,7 +458,7 @@ function RequestDetail({ item, admin, onBack, onChanged }: { item: Req; admin: b
         <div>
           <div className="text-xs text-gray-400">{TYPE_META[item.request_type].emoji} {TYPE_META[item.request_type].label}</div>
           <h3 className={`text-lg font-bold text-slate-800 ${baloo}`}>{item.title}</h3>
-          <div className="text-xs text-gray-400 mt-0.5">Requested by {item.requester_email} · {new Date(item.created_at).toLocaleDateString("en-AU")}</div>
+          <div className="text-xs text-gray-400 mt-0.5">Requested by {item.requester_email} · {dTime(item.created_at)}</div>
         </div>
         {branchedOff && <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${STATUS_META[item.status].cls}`}>{STATUS_META[item.status].label}</span>}
       </div>
@@ -482,7 +491,7 @@ function RequestDetail({ item, admin, onBack, onChanged }: { item: Req; admin: b
         <div className="mt-4">
           <div className={lbl}>History</div>
           <div className="space-y-1.5">
-            {events.map(e => <div key={e.id} className="text-xs text-gray-500">{new Date(e.created_at).toLocaleDateString("en-AU")} · {e.actor} → {e.to_status ? STATUS_META[e.to_status as Status]?.label ?? e.to_status : ""}{e.note ? `, ${e.note}` : ""}</div>)}
+            {events.map(e => <div key={e.id} className="text-xs text-gray-500">{dTime(e.created_at)} · {e.actor} → {e.to_status ? STATUS_META[e.to_status as Status]?.label ?? e.to_status : ""}{e.note ? `, ${e.note}` : ""}</div>)}
           </div>
         </div>
       )}

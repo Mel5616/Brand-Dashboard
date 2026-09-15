@@ -100,7 +100,7 @@ export default function RequestPage() {
         ) : (
           <>
             {!lockedType && (
-              <button onClick={() => setType(null)} className="text-sm font-medium text-gray-500 hover:text-gray-700">← All requests</button>
+              <button onClick={() => setType(null)} className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 bg-white rounded-full border border-gray-200 shadow-sm px-4 py-2 hover:bg-gray-50">← All requests</button>
             )}
             <RequestFormPicker type={type} setType={setType} brands={brands} endpoint="/api/public-sales-request" uploadEndpoint="/api/sales-requests/upload" extraHeaders={headers} showIdentityFields onCreated={setDoneId} lockType={!!lockedType} />
 
