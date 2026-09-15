@@ -37,7 +37,7 @@ export const TILE_ART: Record<ReqType, { grad: string; photo?: string }> = {
   product: { grad: "from-[#F6DDF2] to-[#E1A6D8]", photo: "/sales-hub/product.jpg" },
   filecamp: { grad: "from-[#D9E4F5] to-[#9EB6E0]", photo: "/sales-hub/filecamp.jpg" },
   comms: { grad: "from-[#FDE8D2] to-[#F0B26B]", photo: "/sales-hub/comms.jpg" },
-  materials: { grad: "from-[#E3E8FF] to-[#F6A9C2]" },
+  materials: { grad: "from-[#E3E8FF] to-[#F6A9C2]", photo: "/sales-hub/materials.jpg" },
 };
 // "Product/Gifting" is the one type that's genuinely a Sales-leadership
 // decision (see the rule text in ProductForm) — everything else routes to Marketing.
