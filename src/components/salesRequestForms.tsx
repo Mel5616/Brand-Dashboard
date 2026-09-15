@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 // form (src/app/request/page.tsx, shared-key gated). Only the submit
 // endpoint/headers/identity-collection differ between the two.
 
-export type ReqType = "artwork" | "swatch" | "tune_up" | "product" | "filecamp" | "comms" | "tud_booklets" | "tv_screens" | "catalogues";
+export type ReqType = "artwork" | "swatch" | "tune_up" | "product" | "filecamp" | "comms" | "materials";
 
 export const TYPE_META: Record<ReqType, { label: string; emoji: string; guide: string }> = {
   artwork: { label: "Artwork / POS", emoji: "🎨", guide: "images" },
@@ -16,10 +16,16 @@ export const TYPE_META: Record<ReqType, { label: string; emoji: string; guide: s
   product: { label: "Product / Gifting", emoji: "🎁", guide: "product-and-gifting" },
   filecamp: { label: "FileCamp", emoji: "🗂️", guide: "filecamp" },
   comms: { label: "Add to Comms List", emoji: "📧", guide: "comms" },
-  tud_booklets: { label: "TUD Booklets", emoji: "📘", guide: "materials" },
-  tv_screens: { label: "TV Screens", emoji: "📺", guide: "materials" },
-  catalogues: { label: "Catalogues", emoji: "📖", guide: "materials" },
+  materials: { label: "Marketing Materials", emoji: "📦", guide: "materials" },
 };
+// The three things "Marketing Materials" covers — TV screens skip
+// quantity/address since it's content sent to an existing screen, not
+// stock shipped anywhere.
+export const MATERIAL_TYPES = [
+  { value: "tud_booklets", label: "TUD Booklets" },
+  { value: "tv_screens", label: "TV Screens" },
+  { value: "catalogues", label: "Catalogues" },
+];
 export const STATES = ["VIC", "NSW", "QLD", "WA", "SA", "TAS", "ACT", "NT"];
 export const baloo = "font-[family-name:var(--font-baloo)]";
 export const body = "font-[family-name:var(--font-manrope)]";
@@ -116,9 +122,7 @@ export function RequestFormPicker({ type, setType, brands, onCreated, onCancel, 
       {type === "product" && <ProductForm brands={brands} f={f} setF={setF} ack={ack} setAck={setAck} onSubmit={submit} />}
       {type === "filecamp" && <FileCampForm brands={brands} f={f} setF={setF} file={file} setFile={setFile} ack={ack} setAck={setAck} onSubmit={submit} />}
       {type === "comms" && <CommsForm brands={brands} f={f} setF={setF} ack={ack} setAck={setAck} onSubmit={submit} />}
-      {type === "tud_booklets" && <MaterialsForm reqType="tud_booklets" itemLabel="TUD booklets" rule="Tune-Up Day booklets are printed in batches — order ahead of the event, not the week of." brands={brands} f={f} setF={setF} ack={ack} setAck={setAck} onSubmit={submit} />}
-      {type === "tv_screens" && <MaterialsForm reqType="tv_screens" itemLabel="TV screen content" rule="In-store TV screen loops are brand-specific video/image files, not printed stock — tell us which store's screen and what it should show." brands={brands} f={f} setF={setF} ack={ack} setAck={setAck} onSubmit={submit} />}
-      {type === "catalogues" && <MaterialsForm reqType="catalogues" itemLabel="catalogues" rule="Catalogues are printed in batches and stock is limited between print runs — order ahead of when you need them in-store." brands={brands} f={f} setF={setF} ack={ack} setAck={setAck} onSubmit={submit} />}
+      {type === "materials" && <MaterialsForm brands={brands} f={f} setF={setF} ack={ack} setAck={setAck} onSubmit={submit} />}
 
       {err && <p className="text-sm text-rose-600 mt-3">{err}</p>}
       <div className="mt-4 flex justify-end">
@@ -435,45 +439,58 @@ export function CommsForm({ brands, f, setF, ack, setAck, onSubmit }: any) {
 // quantity, store, ship-to, needed-by), minus quantity/address for TV
 // screens since that's digital content sent to an existing screen, not
 // stock shipped anywhere.
-export function MaterialsForm({ reqType, itemLabel, rule, brands, f, setF, ack, setAck, onSubmit }: any) {
+const MATERIAL_RULES: Record<string, string> = {
+  tud_booklets: "Tune-Up Day booklets are printed in batches — order ahead of the event, not the week of.",
+  tv_screens: "In-store TV screen loops are brand-specific video/image files, not printed stock — tell us which store's screen and what it should show.",
+  catalogues: "Catalogues are printed in batches and stock is limited between print runs — order ahead of when you need them in-store.",
+};
+
+export function MaterialsForm({ brands, f, setF, ack, setAck, onSubmit }: any) {
   const [busy, setBusy] = useState(false);
-  const isScreen = reqType === "tv_screens";
+  const materialType = f.materialType;
+  const isScreen = materialType === "tv_screens";
+  const materialLabel = MATERIAL_TYPES.find(m => m.value === materialType)?.label;
   async function go() {
     setBusy(true);
     await onSubmit({
-      title: `${TYPE_META[reqType as ReqType].label} · ${f.brand ?? "brand TBC"} · ${f.store ?? ""}`,
-      brand: f.brand, store: f.store, end_use: f.notes || `${itemLabel} for ${f.store ?? "store"}`,
+      title: `${materialLabel} · ${f.brand ?? "brand TBC"} · ${f.store ?? ""}`,
+      brand: f.brand, store: f.store, end_use: f.notes || `${materialLabel} for ${f.store ?? "store"}`,
       needed_by: f.needed_by,
-      brief: { store: f.store, quantity: f.quantity, notes: f.notes, shipName: f.shipName, shipPhone: f.shipPhone, shipAddress: f.shipAddress },
+      brief: { materialType, store: f.store, quantity: f.quantity, notes: f.notes, shipName: f.shipName, shipPhone: f.shipPhone, shipAddress: f.shipAddress },
     });
     setBusy(false);
   }
   const ready = isScreen
     ? !!(f.brand && f.store && f.notes && f.shipName && f.shipPhone && f.needed_by)
-    : !!(f.brand && f.store && f.quantity && f.shipName && f.shipPhone && f.shipAddress && f.needed_by);
+    : !!(materialType && f.brand && f.store && f.quantity && f.shipName && f.shipPhone && f.shipAddress && f.needed_by);
   return (
     <div className="space-y-3">
-      <RuleCard>{rule}</RuleCard>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Field label="Brand" required><select className={inp} value={f.brand ?? ""} onChange={(e: any) => setF({ ...f, brand: e.target.value })}><option value="">Select…</option>{brands.map((b: any) => <option key={b.name} value={b.name}>{b.name}</option>)}</select></Field>
-        <Field label="Store / location" required><input className={inp} value={f.store ?? ""} onChange={(e: any) => setF({ ...f, store: e.target.value })} /></Field>
-      </div>
-      {!isScreen && (
-        <Field label="Quantity" required><input className={inp} value={f.quantity ?? ""} onChange={(e: any) => setF({ ...f, quantity: e.target.value })} /></Field>
-      )}
-      <Field label={isScreen ? "What should the screen show" : "Notes"} required={isScreen}>
-        <textarea className={inp} rows={2} placeholder={isScreen ? "Which product/campaign, any specific footage or asset" : "Anything specific — edition, language, branch"} value={f.notes ?? ""} onChange={(e: any) => setF({ ...f, notes: e.target.value })} />
+      <Field label="What do you need" required>
+        <ChipGroup value={materialType} onChange={(v: string) => setF({ ...f, materialType: v })} options={MATERIAL_TYPES} />
       </Field>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Field label="Contact name" required><input className={inp} value={f.shipName ?? ""} onChange={(e: any) => setF({ ...f, shipName: e.target.value })} /></Field>
-        <Field label="Contact phone" required><input className={inp} value={f.shipPhone ?? ""} onChange={(e: any) => setF({ ...f, shipPhone: e.target.value })} /></Field>
-        <Field label="Needed by" required><input type="date" className={inp} value={f.needed_by ?? ""} onChange={(e: any) => setF({ ...f, needed_by: e.target.value })} /></Field>
-      </div>
-      {!isScreen && (
-        <Field label="Delivery address" required><input className={inp} value={f.shipAddress ?? ""} onChange={(e: any) => setF({ ...f, shipAddress: e.target.value })} /></Field>
-      )}
-      <AckBox label={`I have read the ${itemLabel} request notes above.`} checked={ack} onChange={setAck} />
-      <button id={`submit-${reqType}`} disabled={busy || !ready} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit request"}</button>
+      {materialType && <>
+        <RuleCard>{MATERIAL_RULES[materialType]}</RuleCard>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="Brand" required><select className={inp} value={f.brand ?? ""} onChange={(e: any) => setF({ ...f, brand: e.target.value })}><option value="">Select…</option>{brands.map((b: any) => <option key={b.name} value={b.name}>{b.name}</option>)}</select></Field>
+          <Field label="Store / location" required><input className={inp} value={f.store ?? ""} onChange={(e: any) => setF({ ...f, store: e.target.value })} /></Field>
+        </div>
+        {!isScreen && (
+          <Field label="Quantity" required><input className={inp} value={f.quantity ?? ""} onChange={(e: any) => setF({ ...f, quantity: e.target.value })} /></Field>
+        )}
+        <Field label={isScreen ? "What should the screen show" : "Notes"} required={isScreen}>
+          <textarea className={inp} rows={2} placeholder={isScreen ? "Which product/campaign, any specific footage or asset" : "Anything specific — edition, language, branch"} value={f.notes ?? ""} onChange={(e: any) => setF({ ...f, notes: e.target.value })} />
+        </Field>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Field label="Contact name" required><input className={inp} value={f.shipName ?? ""} onChange={(e: any) => setF({ ...f, shipName: e.target.value })} /></Field>
+          <Field label="Contact phone" required><input className={inp} value={f.shipPhone ?? ""} onChange={(e: any) => setF({ ...f, shipPhone: e.target.value })} /></Field>
+          <Field label="Needed by" required><input type="date" className={inp} value={f.needed_by ?? ""} onChange={(e: any) => setF({ ...f, needed_by: e.target.value })} /></Field>
+        </div>
+        {!isScreen && (
+          <Field label="Delivery address" required><input className={inp} value={f.shipAddress ?? ""} onChange={(e: any) => setF({ ...f, shipAddress: e.target.value })} /></Field>
+        )}
+        <AckBox label={`I have read the ${materialLabel} request notes above.`} checked={ack} onChange={setAck} />
+      </>}
+      <button id="submit-materials" disabled={busy || !ready} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit request"}</button>
     </div>
   );
 }

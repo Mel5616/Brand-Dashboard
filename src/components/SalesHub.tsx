@@ -42,9 +42,7 @@ const TILE_ART: Record<ReqType, { grad: string; photo?: string }> = {
   product: { grad: "from-[#F6DDF2] to-[#E1A6D8]", photo: "/sales-hub/product.jpg" },
   filecamp: { grad: "from-[#D9E4F5] to-[#9EB6E0]", photo: "/sales-hub/filecamp.jpg" },
   comms: { grad: "from-[#FDE8D2] to-[#F0B26B]", photo: "/sales-hub/comms.jpg" },
-  tud_booklets: { grad: "from-[#E3E8FF] to-[#A9B6F5]" },
-  tv_screens: { grad: "from-[#FFE3EC] to-[#F6A9C2]" },
-  catalogues: { grad: "from-[#E6F4E1] to-[#B4DDA4]" },
+  materials: { grad: "from-[#E3E8FF] to-[#F6A9C2]" },
 };
 // "Product/Gifting" is the one type that's genuinely a Sales-leadership
 // decision (see the rule text in ProductForm) — everything else, including

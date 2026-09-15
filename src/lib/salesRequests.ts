@@ -11,12 +11,11 @@ export const missing = (s: number, b: string) => s === 404 || /PGRST205|does not
 export const MARKETING_ROTA = ["mel@coolkidz.com.au"];
 export const BASE = "https://marketing.coolkidz.com.au";
 
-export const REQUEST_TYPES = ["artwork", "swatch", "tune_up", "product", "filecamp", "comms", "tud_booklets", "tv_screens", "catalogues"] as const;
+export const REQUEST_TYPES = ["artwork", "swatch", "tune_up", "product", "filecamp", "comms", "materials"] as const;
 export const STATUSES = ["new", "triaged", "in_progress", "review", "delivered", "on_hold", "declined"] as const;
 export const GUIDELINE_LINKS: Record<string, string> = {
   artwork: "images", swatch: "images", tune_up: "tune-up-days", product: "product-and-gifting",
-  filecamp: "filecamp", comms: "comms",
-  tud_booklets: "materials", tv_screens: "materials", catalogues: "materials",
+  filecamp: "filecamp", comms: "comms", materials: "materials",
 };
 
 // Business-day add, weekends only (no AU public holiday calendar yet).
@@ -46,8 +45,7 @@ export function slaDays(request_type: string, brief: any): number | null {
     return 5; // missing_assets, social_content — may need new photography/copy sourced
   }
   if (request_type === "comms") return 2;
-  if (request_type === "tud_booklets" || request_type === "catalogues") return 10; // print lead time
-  if (request_type === "tv_screens") return 5;
+  if (request_type === "materials") return brief?.materialType === "tv_screens" ? 5 : 10; // print lead time vs content build
   return null; // tune_up reviewed in the next schedule build; product has no marketing SLA
 }
 
