@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { GUIDELINE_SECTIONS, FilecampCard, Icon } from "./salesHubGuidelines";
-import { TYPE_META, STATES, inp, lbl, type ReqType, RequestFormPicker } from "./salesRequestForms";
+import { TYPE_META, STATES, inp, lbl, type ReqType, RequestFormPicker, TILE_ART, ROUTES_TO_SALES } from "./salesRequestForms";
 
 type Status = "new" | "triaged" | "in_progress" | "review" | "delivered" | "on_hold" | "declined";
 type Req = {
@@ -34,20 +34,6 @@ const STEPS: { key: Status; label: string }[] = [
 const dShort = (s?: string | null) => s ? new Date(s + (s.length === 10 ? "T00:00:00" : "")).toLocaleDateString("en-AU", { day: "numeric", month: "short" }) : "—";
 const baloo = "font-[family-name:var(--font-baloo)]";
 const body = "font-[family-name:var(--font-manrope)]";
-// Falls back to a big centred emoji on the gradient if a type has no photo.
-const TILE_ART: Record<ReqType, { grad: string; photo?: string }> = {
-  artwork: { grad: "from-[#FFD9CC] to-[#FF9B7A]", photo: "/sales-hub/artwork.jpg" },
-  swatch: { grad: "from-[#CDEFF7] to-[#7FD4EA]", photo: "/sales-hub/swatch.jpg" },
-  tune_up: { grad: "from-[#DCEBD1] to-[#9FCB84]", photo: "/sales-hub/tune_up.jpg" },
-  product: { grad: "from-[#F6DDF2] to-[#E1A6D8]", photo: "/sales-hub/product.jpg" },
-  filecamp: { grad: "from-[#D9E4F5] to-[#9EB6E0]", photo: "/sales-hub/filecamp.jpg" },
-  comms: { grad: "from-[#FDE8D2] to-[#F0B26B]", photo: "/sales-hub/comms.jpg" },
-  materials: { grad: "from-[#E3E8FF] to-[#F6A9C2]" },
-};
-// "Product/Gifting" is the one type that's genuinely a Sales-leadership
-// decision (see the rule text in ProductForm) — everything else, including
-// the three materials types, routes to Marketing.
-const ROUTES_TO_SALES = new Set<ReqType>(["product"]);
 
 export function SalesHub({ admin, brands, tradeshows = [], calendarEvents = [] }: { admin: boolean; brands: { name: string; color?: string }[]; tradeshows?: { id: string; name: string; date_start: string }[]; calendarEvents?: { title: string; start_date: string }[] }) {
   const [items, setItems] = useState<Req[]>([]);

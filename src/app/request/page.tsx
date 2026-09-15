@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RequestFormPicker, TYPE_META, baloo, body, type ReqType } from "@/components/salesRequestForms";
+import { RequestFormPicker, RequestTypeGrid, TYPE_META, baloo, body, type ReqType } from "@/components/salesRequestForms";
 import { GUIDELINE_SECTIONS, FilecampCard } from "@/components/salesHubGuidelines";
 
 // Public, no-login Sales Hub intake for the sales team, share this link
@@ -36,7 +36,10 @@ export default function RequestPage() {
   const [noKey, setNoKey] = useState(false);
   const [loading, setLoading] = useState(true);
   const lockedType = deepLinkedType();
-  const [type, setType] = useState<ReqType>(lockedType || "artwork");
+  // No deep link → start on the browsable card grid, same one the Sales Hub
+  // landing page shows, so reps without a specific link can still find the
+  // right form themselves.
+  const [type, setType] = useState<ReqType | null>(lockedType);
   const [done, setDoneId] = useState<string | null>(null);
   const key = requestKey();
   const headers: Record<string, string> = key ? { "x-sales-key": key } : {};
@@ -87,21 +90,30 @@ export default function RequestPage() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logos/coolkidz-logo.png" alt="Coolkidz" className="h-6 mb-4 brightness-0 invert" />
           <h1 className={`text-2xl sm:text-3xl font-extrabold text-white ${baloo}`}>Ask Marketing</h1>
-          <p className="text-white/85 text-sm mt-1 max-w-md">Artwork, swatches, a Tune-Up Day or product, no dashboard login needed.</p>
+          <p className="text-white/85 text-sm mt-1 max-w-md">Artwork, swatches, a Tune-Up Day, product or marketing materials, no dashboard login needed.</p>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 sm:px-0 -mt-5 space-y-4">
-        <RequestFormPicker type={type} setType={setType} brands={brands} endpoint="/api/public-sales-request" uploadEndpoint="/api/sales-requests/upload" extraHeaders={headers} showIdentityFields onCreated={setDoneId} lockType={!!lockedType} />
+        {type === null ? (
+          <RequestTypeGrid onPick={setType} />
+        ) : (
+          <>
+            {!lockedType && (
+              <button onClick={() => setType(null)} className="text-sm font-medium text-gray-500 hover:text-gray-700">← All requests</button>
+            )}
+            <RequestFormPicker type={type} setType={setType} brands={brands} endpoint="/api/public-sales-request" uploadEndpoint="/api/sales-requests/upload" extraHeaders={headers} showIdentityFields onCreated={setDoneId} lockType={!!lockedType} />
 
-        <FilecampCard />
+            <FilecampCard />
 
-        <details className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-          <summary className={`text-sm font-bold text-slate-700 cursor-pointer ${baloo}`}>Rules for {TYPE_META[type].label.toLowerCase()}</summary>
-          <div className="mt-3 prose-sm max-w-none text-slate-700 text-sm">
-            {GUIDELINE_SECTIONS.find(g => g.id === TYPE_META[type].guide)?.body}
-          </div>
-        </details>
+            <details className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+              <summary className={`text-sm font-bold text-slate-700 cursor-pointer ${baloo}`}>Rules for {TYPE_META[type].label.toLowerCase()}</summary>
+              <div className="mt-3 prose-sm max-w-none text-slate-700 text-sm">
+                {GUIDELINE_SECTIONS.find(g => g.id === TYPE_META[type].guide)?.body}
+              </div>
+            </details>
+          </>
+        )}
       </div>
     </div>
   );

@@ -26,6 +26,22 @@ export const MATERIAL_TYPES = [
   { value: "tv_screens", label: "TV Screens" },
   { value: "catalogues", label: "Catalogues" },
 ];
+// Card art + routing for the type-picker grid — shared by the authenticated
+// Sales Hub landing page and the public /request page, so both show the
+// exact same cards. Falls back to a big centred emoji on the gradient if a
+// type has no photo.
+export const TILE_ART: Record<ReqType, { grad: string; photo?: string }> = {
+  artwork: { grad: "from-[#FFD9CC] to-[#FF9B7A]", photo: "/sales-hub/artwork.jpg" },
+  swatch: { grad: "from-[#CDEFF7] to-[#7FD4EA]", photo: "/sales-hub/swatch.jpg" },
+  tune_up: { grad: "from-[#DCEBD1] to-[#9FCB84]", photo: "/sales-hub/tune_up.jpg" },
+  product: { grad: "from-[#F6DDF2] to-[#E1A6D8]", photo: "/sales-hub/product.jpg" },
+  filecamp: { grad: "from-[#D9E4F5] to-[#9EB6E0]", photo: "/sales-hub/filecamp.jpg" },
+  comms: { grad: "from-[#FDE8D2] to-[#F0B26B]", photo: "/sales-hub/comms.jpg" },
+  materials: { grad: "from-[#E3E8FF] to-[#F6A9C2]" },
+};
+// "Product/Gifting" is the one type that's genuinely a Sales-leadership
+// decision (see the rule text in ProductForm) — everything else routes to Marketing.
+export const ROUTES_TO_SALES = new Set<ReqType>(["product"]);
 export const STATES = ["VIC", "NSW", "QLD", "WA", "SA", "TAS", "ACT", "NT"];
 export const baloo = "font-[family-name:var(--font-baloo)]";
 export const body = "font-[family-name:var(--font-manrope)]";
@@ -523,6 +539,30 @@ export function MaterialsForm({ brands, f, setF, file, setFile, ack, setAck, onS
         <AckBox label={`I have read the ${materialLabel} request notes above.`} checked={ack} onChange={setAck} />
       </>}
       <button id="submit-materials" disabled={busy || !ready} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit request"}</button>
+    </div>
+  );
+}
+
+// Public-friendly card grid — same art/labels as the Sales Hub's own
+// landing page, minus anything internal (stats, other people's requests).
+// Used as the browse step on /request before a rep picks a form.
+export function RequestTypeGrid({ onPick }: { onPick: (t: ReqType) => void }) {
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {(Object.keys(TYPE_META) as ReqType[]).map(t => (
+        <button key={t} onClick={() => onPick(t)} className="text-left bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md active:scale-[0.98] transition">
+          <div className={`aspect-square bg-gradient-to-br ${TILE_ART[t].grad} relative overflow-hidden flex items-center justify-center`}>
+            {TILE_ART[t].photo
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img src={TILE_ART[t].photo} alt="" className="absolute inset-0 w-full h-full object-cover" />
+              : <span className="text-5xl opacity-80">{TYPE_META[t].emoji}</span>}
+          </div>
+          <div className="px-3.5 py-3">
+            <div className={`font-bold text-slate-800 text-[15px] ${baloo}`}>{TYPE_META[t].label.replace(" Request", "").replace("Swatch / Sample", "Swatches").replace(" Nomination", "").replace(" / Gifting", "")}</div>
+            <div className="text-[11px] text-gray-400 mt-0.5">{ROUTES_TO_SALES.has(t) ? "Routes to Sales leadership" : "Routes to Marketing"}</div>
+          </div>
+        </button>
+      ))}
     </div>
   );
 }
