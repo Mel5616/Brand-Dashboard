@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 // form (src/app/request/page.tsx, shared-key gated). Only the submit
 // endpoint/headers/identity-collection differ between the two.
 
-export type ReqType = "artwork" | "swatch" | "tune_up" | "product" | "filecamp" | "comms";
+export type ReqType = "artwork" | "swatch" | "tune_up" | "product" | "filecamp" | "comms" | "tud_booklets" | "tv_screens" | "catalogues";
 
 export const TYPE_META: Record<ReqType, { label: string; emoji: string; guide: string }> = {
   artwork: { label: "Artwork / POS", emoji: "🎨", guide: "images" },
@@ -16,6 +16,9 @@ export const TYPE_META: Record<ReqType, { label: string; emoji: string; guide: s
   product: { label: "Product / Gifting", emoji: "🎁", guide: "product-and-gifting" },
   filecamp: { label: "FileCamp", emoji: "🗂️", guide: "filecamp" },
   comms: { label: "Add to Comms List", emoji: "📧", guide: "comms" },
+  tud_booklets: { label: "TUD Booklets", emoji: "📘", guide: "materials" },
+  tv_screens: { label: "TV Screens", emoji: "📺", guide: "materials" },
+  catalogues: { label: "Catalogues", emoji: "📖", guide: "materials" },
 };
 export const STATES = ["VIC", "NSW", "QLD", "WA", "SA", "TAS", "ACT", "NT"];
 export const baloo = "font-[family-name:var(--font-baloo)]";
@@ -55,9 +58,9 @@ export function AckBox({ label, checked, onChange }: { label: string; checked: b
 // Picks the request type, collects identity (public form only), routes to
 // the right type-specific form, and posts to whichever endpoint the caller
 // wants (dashboard vs public).
-export function RequestFormPicker({ type, setType, brands, onCreated, onCancel, endpoint = "/api/sales-requests", uploadEndpoint = "/api/sales-requests/upload", extraHeaders = {}, showIdentityFields = false }: {
+export function RequestFormPicker({ type, setType, brands, onCreated, onCancel, endpoint = "/api/sales-requests", uploadEndpoint = "/api/sales-requests/upload", extraHeaders = {}, showIdentityFields = false, lockType = false }: {
   type: ReqType; setType: (t: ReqType) => void; brands: { name: string }[]; onCreated: (id: string) => void; onCancel?: () => void;
-  endpoint?: string; uploadEndpoint?: string; extraHeaders?: Record<string, string>; showIdentityFields?: boolean;
+  endpoint?: string; uploadEndpoint?: string; extraHeaders?: Record<string, string>; showIdentityFields?: boolean; lockType?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -88,11 +91,15 @@ export function RequestFormPicker({ type, setType, brands, onCreated, onCancel, 
   return (
     <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm p-5 max-w-3xl ${body}`}>
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <div className="flex gap-2 flex-wrap">
-          {(Object.keys(TYPE_META) as ReqType[]).map(t => (
-            <button key={t} onClick={() => setType(t)} className={`text-[12.5px] font-bold rounded-full px-4 py-2.5 transition ${type === t ? "bg-[#1E9DC2] text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>{TYPE_META[t].emoji} {TYPE_META[t].label}</button>
-          ))}
-        </div>
+        {lockType ? (
+          <div className="text-[13px] font-bold text-[#1E9DC2] flex items-center gap-1.5">{TYPE_META[type].emoji} {TYPE_META[type].label}</div>
+        ) : (
+          <div className="flex gap-2 flex-wrap">
+            {(Object.keys(TYPE_META) as ReqType[]).map(t => (
+              <button key={t} onClick={() => setType(t)} className={`text-[12.5px] font-bold rounded-full px-4 py-2.5 transition ${type === t ? "bg-[#1E9DC2] text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>{TYPE_META[t].emoji} {TYPE_META[t].label}</button>
+            ))}
+          </div>
+        )}
         {onCancel && <button onClick={onCancel} className="text-sm text-gray-400 hover:text-gray-600">Cancel</button>}
       </div>
 
@@ -109,6 +116,9 @@ export function RequestFormPicker({ type, setType, brands, onCreated, onCancel, 
       {type === "product" && <ProductForm brands={brands} f={f} setF={setF} ack={ack} setAck={setAck} onSubmit={submit} />}
       {type === "filecamp" && <FileCampForm brands={brands} f={f} setF={setF} file={file} setFile={setFile} ack={ack} setAck={setAck} onSubmit={submit} />}
       {type === "comms" && <CommsForm brands={brands} f={f} setF={setF} ack={ack} setAck={setAck} onSubmit={submit} />}
+      {type === "tud_booklets" && <MaterialsForm reqType="tud_booklets" itemLabel="TUD booklets" rule="Tune-Up Day booklets are printed in batches — order ahead of the event, not the week of." brands={brands} f={f} setF={setF} ack={ack} setAck={setAck} onSubmit={submit} />}
+      {type === "tv_screens" && <MaterialsForm reqType="tv_screens" itemLabel="TV screen content" rule="In-store TV screen loops are brand-specific video/image files, not printed stock — tell us which store's screen and what it should show." brands={brands} f={f} setF={setF} ack={ack} setAck={setAck} onSubmit={submit} />}
+      {type === "catalogues" && <MaterialsForm reqType="catalogues" itemLabel="catalogues" rule="Catalogues are printed in batches and stock is limited between print runs — order ahead of when you need them in-store." brands={brands} f={f} setF={setF} ack={ack} setAck={setAck} onSubmit={submit} />}
 
       {err && <p className="text-sm text-rose-600 mt-3">{err}</p>}
       <div className="mt-4 flex justify-end">
@@ -416,6 +426,54 @@ export function CommsForm({ brands, f, setF, ack, setAck, onSubmit }: any) {
       <Field label="Notes"><textarea className={inp} rows={2} value={f.notes ?? ""} onChange={e => setF({ ...f, notes: e.target.value })} /></Field>
       <AckBox label="I confirm this customer explicitly opted in, and I have read the comms rules." checked={ack} onChange={setAck} />
       <button id="submit-comms" disabled={busy || !f.brand || !f.channel || !f.customerName || !f.customerEmail || !f.optInMethod} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit request"}</button>
+    </div>
+  );
+}
+
+// Shared form for the three physical/in-store materials request types
+// (TUD Booklets, TV Screens, Catalogues) — same shape as swatches (brand,
+// quantity, store, ship-to, needed-by), minus quantity/address for TV
+// screens since that's digital content sent to an existing screen, not
+// stock shipped anywhere.
+export function MaterialsForm({ reqType, itemLabel, rule, brands, f, setF, ack, setAck, onSubmit }: any) {
+  const [busy, setBusy] = useState(false);
+  const isScreen = reqType === "tv_screens";
+  async function go() {
+    setBusy(true);
+    await onSubmit({
+      title: `${TYPE_META[reqType as ReqType].label} · ${f.brand ?? "brand TBC"} · ${f.store ?? ""}`,
+      brand: f.brand, store: f.store, end_use: f.notes || `${itemLabel} for ${f.store ?? "store"}`,
+      needed_by: f.needed_by,
+      brief: { store: f.store, quantity: f.quantity, notes: f.notes, shipName: f.shipName, shipPhone: f.shipPhone, shipAddress: f.shipAddress },
+    });
+    setBusy(false);
+  }
+  const ready = isScreen
+    ? !!(f.brand && f.store && f.notes && f.shipName && f.shipPhone && f.needed_by)
+    : !!(f.brand && f.store && f.quantity && f.shipName && f.shipPhone && f.shipAddress && f.needed_by);
+  return (
+    <div className="space-y-3">
+      <RuleCard>{rule}</RuleCard>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Field label="Brand" required><select className={inp} value={f.brand ?? ""} onChange={(e: any) => setF({ ...f, brand: e.target.value })}><option value="">Select…</option>{brands.map((b: any) => <option key={b.name} value={b.name}>{b.name}</option>)}</select></Field>
+        <Field label="Store / location" required><input className={inp} value={f.store ?? ""} onChange={(e: any) => setF({ ...f, store: e.target.value })} /></Field>
+      </div>
+      {!isScreen && (
+        <Field label="Quantity" required><input className={inp} value={f.quantity ?? ""} onChange={(e: any) => setF({ ...f, quantity: e.target.value })} /></Field>
+      )}
+      <Field label={isScreen ? "What should the screen show" : "Notes"} required={isScreen}>
+        <textarea className={inp} rows={2} placeholder={isScreen ? "Which product/campaign, any specific footage or asset" : "Anything specific — edition, language, branch"} value={f.notes ?? ""} onChange={(e: any) => setF({ ...f, notes: e.target.value })} />
+      </Field>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <Field label="Contact name" required><input className={inp} value={f.shipName ?? ""} onChange={(e: any) => setF({ ...f, shipName: e.target.value })} /></Field>
+        <Field label="Contact phone" required><input className={inp} value={f.shipPhone ?? ""} onChange={(e: any) => setF({ ...f, shipPhone: e.target.value })} /></Field>
+        <Field label="Needed by" required><input type="date" className={inp} value={f.needed_by ?? ""} onChange={(e: any) => setF({ ...f, needed_by: e.target.value })} /></Field>
+      </div>
+      {!isScreen && (
+        <Field label="Delivery address" required><input className={inp} value={f.shipAddress ?? ""} onChange={(e: any) => setF({ ...f, shipAddress: e.target.value })} /></Field>
+      )}
+      <AckBox label={`I have read the ${itemLabel} request notes above.`} checked={ack} onChange={setAck} />
+      <button id={`submit-${reqType}`} disabled={busy || !ready} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit request"}</button>
     </div>
   );
 }

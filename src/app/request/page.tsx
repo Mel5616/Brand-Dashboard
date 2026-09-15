@@ -21,12 +21,22 @@ function requestKey(): string {
   } catch { return ""; }
 }
 
+// A ?type=<ReqType> link (copied from the Sales Hub's per-tile share button)
+// pre-selects the form and hides the type-switcher, so reps land straight
+// on the right form instead of choosing from the full grid.
+function deepLinkedType(): ReqType | null {
+  if (typeof window === "undefined") return null;
+  const t = new URLSearchParams(window.location.search).get("type");
+  return t && Object.prototype.hasOwnProperty.call(TYPE_META, t) ? (t as ReqType) : null;
+}
+
 export default function RequestPage() {
   const [brands, setBrands] = useState<{ name: string }[]>([]);
   const [needsSetup, setNeedsSetup] = useState(false);
   const [noKey, setNoKey] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [type, setType] = useState<ReqType>("artwork");
+  const lockedType = deepLinkedType();
+  const [type, setType] = useState<ReqType>(lockedType || "artwork");
   const [done, setDoneId] = useState<string | null>(null);
   const key = requestKey();
   const headers: Record<string, string> = key ? { "x-sales-key": key } : {};
@@ -82,7 +92,7 @@ export default function RequestPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 sm:px-0 -mt-5 space-y-4">
-        <RequestFormPicker type={type} setType={setType} brands={brands} endpoint="/api/public-sales-request" uploadEndpoint="/api/sales-requests/upload" extraHeaders={headers} showIdentityFields onCreated={setDoneId} />
+        <RequestFormPicker type={type} setType={setType} brands={brands} endpoint="/api/public-sales-request" uploadEndpoint="/api/sales-requests/upload" extraHeaders={headers} showIdentityFields onCreated={setDoneId} lockType={!!lockedType} />
 
         <FilecampCard />
 

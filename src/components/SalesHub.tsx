@@ -42,7 +42,14 @@ const TILE_ART: Record<ReqType, { grad: string; photo?: string }> = {
   product: { grad: "from-[#F6DDF2] to-[#E1A6D8]", photo: "/sales-hub/product.jpg" },
   filecamp: { grad: "from-[#D9E4F5] to-[#9EB6E0]", photo: "/sales-hub/filecamp.jpg" },
   comms: { grad: "from-[#FDE8D2] to-[#F0B26B]", photo: "/sales-hub/comms.jpg" },
+  tud_booklets: { grad: "from-[#E3E8FF] to-[#A9B6F5]" },
+  tv_screens: { grad: "from-[#FFE3EC] to-[#F6A9C2]" },
+  catalogues: { grad: "from-[#E6F4E1] to-[#B4DDA4]" },
 };
+// "Product/Gifting" is the one type that's genuinely a Sales-leadership
+// decision (see the rule text in ProductForm) — everything else, including
+// the three materials types, routes to Marketing.
+const ROUTES_TO_SALES = new Set<ReqType>(["product"]);
 
 export function SalesHub({ admin, brands, tradeshows = [], calendarEvents = [] }: { admin: boolean; brands: { name: string; color?: string }[]; tradeshows?: { id: string; name: string; date_start: string }[]; calendarEvents?: { title: string; start_date: string }[] }) {
   const [items, setItems] = useState<Req[]>([]);
@@ -132,6 +139,8 @@ function Landing({ brands, items, mine, tradeshows, calendarEvents, onPick, onOp
   tradeshows: { id: string; name: string; date_start: string }[]; calendarEvents: { title: string; start_date: string }[];
   onPick: (t: ReqType) => void; onOpenRequest: (id: string) => void; onGuide: (id: string) => void;
 }) {
+  const [linkMsg, setLinkMsg] = useState("");
+  useEffect(() => { if (!linkMsg) return; const t = setTimeout(() => setLinkMsg(""), 2200); return () => clearTimeout(t); }, [linkMsg]);
   const now = Date.now();
   const lights = useMemo(() => {
     let onTrack = 0, inProgress = 0, overdue = 0;
@@ -180,20 +189,29 @@ function Landing({ brands, items, mine, tradeshows, calendarEvents, onPick, onOp
       </div>
 
       {/* Request-type tiles — big, tappable, photographic */}
+      {linkMsg && <p className="text-xs text-emerald-600 font-medium -mb-1">{linkMsg}</p>}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {(Object.keys(TYPE_META) as ReqType[]).map(t => (
-          <button key={t} onClick={() => onPick(t)} className="text-left bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md active:scale-[0.98] transition">
-            <div className={`aspect-square bg-gradient-to-br ${TILE_ART[t].grad} relative overflow-hidden flex items-center justify-center`}>
-              {TILE_ART[t].photo
-                // eslint-disable-next-line @next/next/no-img-element
-                ? <img src={TILE_ART[t].photo} alt="" className="absolute inset-0 w-full h-full object-cover" />
-                : <span className="text-5xl opacity-80">{TYPE_META[t].emoji}</span>}
-            </div>
-            <div className="px-3.5 py-3">
-              <div className={`font-bold text-slate-800 text-[15px] ${baloo}`}>{TYPE_META[t].label.replace(" Request", "").replace("Swatch / Sample", "Swatches").replace(" Nomination", "").replace(" / Gifting", "")}</div>
-              <div className="text-[11px] text-gray-400 mt-0.5">{t === "product" ? "Routes to Sales leadership" : "Routes to Marketing"}</div>
-            </div>
-          </button>
+          <div key={t} className="relative group text-left bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition">
+            <button onClick={() => onPick(t)} className="block w-full text-left active:scale-[0.98] transition">
+              <div className={`aspect-square bg-gradient-to-br ${TILE_ART[t].grad} relative overflow-hidden flex items-center justify-center`}>
+                {TILE_ART[t].photo
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={TILE_ART[t].photo} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                  : <span className="text-5xl opacity-80">{TYPE_META[t].emoji}</span>}
+              </div>
+              <div className="px-3.5 py-3">
+                <div className={`font-bold text-slate-800 text-[15px] ${baloo}`}>{TYPE_META[t].label.replace(" Request", "").replace("Swatch / Sample", "Swatches").replace(" Nomination", "").replace(" / Gifting", "")}</div>
+                <div className="text-[11px] text-gray-400 mt-0.5">{ROUTES_TO_SALES.has(t) ? "Routes to Sales leadership" : "Routes to Marketing"}</div>
+              </div>
+            </button>
+            <button
+              onClick={() => copyTypeLink(t, setLinkMsg)} title="Copy a direct link for this request type"
+              className="absolute top-2 right-2 w-8 h-8 rounded-lg bg-white/90 backdrop-blur flex items-center justify-center text-slate-500 hover:text-[#1E9DC2] shadow-sm opacity-0 group-hover:opacity-100 transition"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5" /></svg>
+            </button>
+          </div>
         ))}
       </div>
 
@@ -254,6 +272,28 @@ function Landing({ brands, items, mine, tradeshows, calendarEvents, onPick, onOp
       </div>
     </div>
   );
+}
+
+// Copies the public /request link, pre-locked to one request type — reps get
+// straight to the right form, no type-picker to navigate. Same
+// copy-with-fallback pattern as copyGuideLink below.
+async function copyTypeLink(t: ReqType, setMsg: (m: string) => void) {
+  const keyRes = await fetch("/api/sales-hub/request-key").then(r => r.json()).catch(() => ({ key: null }));
+  const key = keyRes?.key;
+  const url = `${window.location.origin}/request?type=${t}${key ? `&k=${key}` : ""}`;
+  try {
+    if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(url); setMsg(`${TYPE_META[t].label} link copied.`); return; }
+  } catch { /* fall through */ }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = url; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    const done = document.execCommand("copy");
+    document.body.removeChild(ta);
+    setMsg(done ? `${TYPE_META[t].label} link copied.` : `Couldn't copy automatically — link: ${url}`);
+  } catch {
+    setMsg(`Couldn't copy automatically — link: ${url}`);
+  }
 }
 
 // Copies a guideline section's public /g/[id] link. Robust clipboard write with

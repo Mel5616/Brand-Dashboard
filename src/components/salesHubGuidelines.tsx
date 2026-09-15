@@ -476,6 +476,30 @@ export const GUIDELINE_SECTIONS: { id: string; title: string; icon: string; owne
     </>,
   },
   {
+    id: "materials", title: "TUD booklets, TV screens & catalogues", icon: ICONS.image, owner: "Marketing", version: "0.1", lastReviewed: "draft",
+    body: <>
+      <Section icon={ICONS.info} title="What this covers">
+        <p className="text-sm text-slate-600">Physical or in-store materials, not digital assets: Tune-Up Day booklets, in-store TV screen content, and printed catalogues. Order ahead — these are printed or built in batches, not turned around same day.</p>
+      </Section>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1 mb-2">
+        <Section icon={ICONS.check} title="What we need from you">
+          <div className="space-y-3">
+            <DoCard title="Which store or location" note="Booklets and catalogues ship there, TV content is loaded to that store's screen" />
+            <DoCard title="Quantity" note="For booklets and catalogues — TV screens don't need a quantity" />
+            <DoCard title="A contact name and phone number" note="For delivery or install questions" />
+            <DoCard title="A real needed-by date" note="These are print/production lead times, not next-day" />
+          </div>
+        </Section>
+        <Section icon={ICONS.warn} title="Lead times">
+          <div className="space-y-3">
+            <DontCard title="Booklets and catalogues: ~2 working weeks" note="Print runs are batched — stock between runs is limited" />
+            <DontCard title="TV screens: ~1 working week" note="Content still needs to be built or sourced, then sent to the store" />
+          </div>
+        </Section>
+      </div>
+    </>,
+  },
+  {
     id: "who-to-ask", title: "Who to ask", icon: ICONS.help, owner: "Marketing", version: "0.1", lastReviewed: "draft",
     body: <div className="max-w-xl">
       <AskTile icon={ICONS.image} situation="Need artwork" where="Artwork Request form (this Hub)" />
