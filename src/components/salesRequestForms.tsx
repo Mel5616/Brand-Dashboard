@@ -459,13 +459,14 @@ export function MaterialsForm({ brands, f, setF, file, setFile, ack, setAck, onS
   const materialLabel = MATERIAL_TYPES.find(m => m.value === materialType)?.label;
   async function go() {
     setBusy(true);
+    const qtyPart = !isScreen && f.quantity ? ` ×${f.quantity}` : "";
     await onSubmit({
-      title: `${materialLabel} · ${f.brand ?? "brand TBC"} · ${f.store ?? ""}`,
+      title: `${materialLabel}${qtyPart} · ${f.itemName || "item TBC"} · ${f.brand ?? "brand TBC"} · ${f.store ?? ""}`,
       brand: f.brand, store: f.store,
-      end_use: f.specs || `${materialLabel} for ${f.store ?? "store"}`,
+      end_use: f.itemName || f.specs || `${materialLabel} for ${f.store ?? "store"}`,
       needed_by: f.live_date,
       brief: {
-        materialType, materialRequestType: f.materialRequestType, store: f.store, quantity: f.quantity,
+        materialType, materialRequestType: f.materialRequestType, itemName: f.itemName, store: f.store, quantity: f.quantity,
         specs: f.specs, copy: f.copy, hasPrice: f.hasPrice, rrp: f.rrp, promoApprovedBy: f.promoApprovedBy,
         promoStart: f.promoStart, promoEnd: f.promoEnd, liveDate: f.live_date, inMarketUntil: f.inMarketUntil,
         shipName: f.shipName, shipPhone: f.shipPhone, shipAddress: f.shipAddress,
@@ -473,7 +474,7 @@ export function MaterialsForm({ brands, f, setF, file, setFile, ack, setAck, onS
     });
     setBusy(false);
   }
-  const ready = !!(materialType && f.brand && f.store && f.materialRequestType && (isReprint || f.specs)
+  const ready = !!(materialType && f.brand && f.store && f.materialRequestType && f.itemName && (isReprint || f.specs)
     && f.hasPrice !== undefined && f.live_date && f.shipName && f.shipPhone
     && (isScreen || (f.quantity && f.shipAddress)));
   return (
@@ -490,8 +491,12 @@ export function MaterialsForm({ brands, f, setF, file, setFile, ack, setAck, onS
         <Field label="Request type" required>
           <ChipGroup value={f.materialRequestType} onChange={(v: string) => setF({ ...f, materialRequestType: v })} options={MATERIAL_REQUEST_TYPES} />
         </Field>
-        {!isReprint && <Field label={isScreen ? "What the screen should show" : "Specs / content required"} required><textarea className={inp} rows={2} placeholder={isScreen ? "Which product/campaign, format, any specific footage or asset" : "Format, size, what it needs to say or show"} value={f.specs ?? ""} onChange={(e: any) => setF({ ...f, specs: e.target.value })} /></Field>}
-        {isReprint && <Field label="Which existing item, and any changes" required><textarea className={inp} rows={2} value={f.specs ?? ""} onChange={(e: any) => setF({ ...f, specs: e.target.value })} /></Field>}
+        <div className={`grid grid-cols-1 ${isScreen ? "" : "sm:grid-cols-[1fr_160px]"} gap-3 bg-slate-50 rounded-xl p-3`}>
+          <Field label="What exactly is being requested" required><input className={inp} placeholder={isScreen ? "e.g. UPPAbaby Kona launch loop" : "e.g. UPPAbaby Tune-Up Booklet v3"} value={f.itemName ?? ""} onChange={(e: any) => setF({ ...f, itemName: e.target.value })} /></Field>
+          {!isScreen && <Field label="Quantity" required><input className={inp} value={f.quantity ?? ""} onChange={(e: any) => setF({ ...f, quantity: e.target.value })} /></Field>}
+        </div>
+        {!isReprint && <Field label={isScreen ? "Screen content details" : "Specs / content details"} required><textarea className={inp} rows={2} placeholder={isScreen ? "Format, any specific footage or asset" : "Format, size, what it needs to say or show"} value={f.specs ?? ""} onChange={(e: any) => setF({ ...f, specs: e.target.value })} /></Field>}
+        {isReprint && <Field label="Any changes from the existing version" required><textarea className={inp} rows={2} value={f.specs ?? ""} onChange={(e: any) => setF({ ...f, specs: e.target.value })} /></Field>}
         {!isReprint && <Field label="Copy required"><textarea className={inp} rows={2} value={f.copy ?? ""} onChange={(e: any) => setF({ ...f, copy: e.target.value })} /></Field>}
         <Field label="Does it include a price?" required>
           <ChipGroup value={f.hasPrice} onChange={(v: boolean) => setF({ ...f, hasPrice: v })} options={[{ value: true, label: "Yes" }, { value: false, label: "No" }]} />
@@ -502,9 +507,6 @@ export function MaterialsForm({ brands, f, setF, file, setFile, ack, setAck, onS
             <Field label="Who approved this promotion" required><input className={inp} value={f.promoApprovedBy ?? ""} onChange={(e: any) => setF({ ...f, promoApprovedBy: e.target.value })} /></Field>
             <Field label="Promo start / end" required><div className="flex gap-1"><input type="date" className={inp} value={f.promoStart ?? ""} onChange={(e: any) => setF({ ...f, promoStart: e.target.value })} /><input type="date" className={inp} value={f.promoEnd ?? ""} onChange={(e: any) => setF({ ...f, promoEnd: e.target.value })} /></div></Field>
           </div>
-        )}
-        {!isScreen && (
-          <Field label="Quantity" required><input className={inp} value={f.quantity ?? ""} onChange={(e: any) => setF({ ...f, quantity: e.target.value })} /></Field>
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Live date" required><input type="date" className={inp} value={f.live_date ?? ""} onChange={(e: any) => setF({ ...f, live_date: e.target.value })} /></Field>
