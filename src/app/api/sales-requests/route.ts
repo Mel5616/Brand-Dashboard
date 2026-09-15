@@ -86,9 +86,9 @@ export async function PATCH(req: Request) {
     await logEvent(id, acc.user!.email, item.status, toStatus, b.note ? String(b.note).slice(0, 500) : (b.decline_reason ? String(b.decline_reason).slice(0, 500) : null));
     if (item.requester_email) {
       const declined = toStatus === "declined";
-      // Requesters go through the public /request link, not a dashboard login,
-      // so point them back there (not the admin Sales Hub) and drop the "Open
-      // the Sales Hub" CTA entirely.
+      // Requesters go through the public /request link (or their own Sales
+      // Hub at sales.coolkidz.com.au), not this admin dashboard, so guideline
+      // and CTA links point there instead.
       const guideLink = declined && GUIDELINE_LINKS[item.request_type] ? `${BASE}/request?type=${item.request_type}` : null;
       await sendMail({
         to: [item.requester_email],
@@ -97,6 +97,7 @@ export async function PATCH(req: Request) {
           <p style="font-size:15px">Your ${item.request_type.replace(/_/g, " ")} request "<strong>${item.title}</strong>" is now <strong>${toStatus.replace(/_/g, " ")}</strong>.</p>
           ${declined && b.decline_reason ? `<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px 16px;margin:14px 0"><p style="margin:0;font-size:13px;color:#991b1b"><strong>Reason:</strong> ${String(b.decline_reason)}</p></div>` : ""}
           ${guideLink ? `<p style="font-size:13px"><a href="${guideLink}">Review the relevant guidelines</a> before resubmitting.</p>` : ""}
+          <p style="text-align:center;margin:22px 0"><a href="https://sales.coolkidz.com.au" style="background:#10b981;color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:11px 26px;border-radius:8px">Open the Sales Dashboard</a></p>
         `),
       });
     }

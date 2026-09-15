@@ -435,6 +435,8 @@ function RequestDetail({ item, admin, onBack, onChanged }: { item: Req; admin: b
   const [files, setFiles] = useState<FileRow[]>([]);
   const [events, setEvents] = useState<EventRow[]>([]);
   const [busy, setBusy] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<Status | null>(null);
+  const [justSaved, setJustSaved] = useState<string | null>(null);
   const [declineReason, setDeclineReason] = useState("");
   const [showDecline, setShowDecline] = useState(false);
   const [assignee, setAssignee] = useState(item.assignee_email ?? "");
@@ -443,10 +445,16 @@ function RequestDetail({ item, admin, onBack, onChanged }: { item: Req; admin: b
     fetch(`/api/sales-requests?id=${item.id}`).then(r => r.json()).then(d => { if (d.ok) { setFiles(d.files ?? []); setEvents(d.events ?? []); } });
   }, [item.id]);
 
-  async function patch(body: any) {
+  async function patch(body: any, savedMsg?: string) {
     setBusy(true);
-    await fetch("/api/sales-requests", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: item.id, ...body }) }).catch(() => {});
-    setBusy(false); onChanged();
+    if (body.status) setPendingStatus(body.status);
+    const res = await fetch("/api/sales-requests", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: item.id, ...body }) }).catch(() => null);
+    setBusy(false); setPendingStatus(null);
+    if (res?.ok) {
+      setJustSaved(savedMsg ?? (body.status ? `Moved to ${STATUS_META[body.status as Status].label} — ${item.requester_email} notified` : "Saved"));
+      setTimeout(() => setJustSaved(null), 3500);
+    }
+    onChanged();
   }
 
   const branchedOff = item.status === "declined" || item.status === "on_hold";
@@ -500,15 +508,27 @@ function RequestDetail({ item, admin, onBack, onChanged }: { item: Req; admin: b
         <div className="mt-5 pt-4 border-t border-gray-100 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold text-slate-500">Move to:</span>
-            {(["triaged", "in_progress", "review", "delivered", "on_hold"] as Status[]).map(s => (
-              <button key={s} disabled={busy} onClick={() => patch({ status: s })} className={`text-xs font-semibold rounded-full px-3 py-1.5 border ${item.status === s ? "bg-slate-800 text-white border-slate-800" : "bg-white text-slate-600 border-gray-200 hover:bg-gray-50"}`}>{STATUS_META[s].label}</button>
-            ))}
-            <button disabled={busy} onClick={() => setShowDecline(v => !v)} className="text-xs font-semibold rounded-full px-3 py-1.5 border border-rose-200 text-rose-600 hover:bg-rose-50">Decline</button>
+            {(["triaged", "in_progress", "review", "delivered", "on_hold"] as Status[]).map(s => {
+              const isCurrent = item.status === s;
+              const isPending = pendingStatus === s;
+              return (
+                <button key={s} disabled={busy} onClick={() => patch({ status: s })}
+                  className={`text-xs font-semibold rounded-full px-3 py-1.5 border transition-colors disabled:cursor-not-allowed ${
+                    isPending ? "bg-slate-400 text-white border-slate-400 animate-pulse"
+                    : isCurrent ? "bg-slate-800 text-white border-slate-800"
+                    : busy ? "bg-white text-slate-300 border-gray-100" : "bg-white text-slate-600 border-gray-200 hover:bg-gray-50 hover:border-slate-300"
+                  }`}>
+                  {isPending ? "Saving…" : STATUS_META[s].label}
+                </button>
+              );
+            })}
+            <button disabled={busy} onClick={() => setShowDecline(v => !v)} className="text-xs font-semibold rounded-full px-3 py-1.5 border border-rose-200 text-rose-600 hover:bg-rose-50 disabled:opacity-40 disabled:cursor-not-allowed">Decline</button>
+            {justSaved && <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1">✓ {justSaved}</span>}
           </div>
           {showDecline && (
             <div className="flex gap-2">
               <input value={declineReason} onChange={e => setDeclineReason(e.target.value)} placeholder="Reason (required)" className={inp} />
-              <button disabled={busy || !declineReason.trim()} onClick={() => patch({ status: "declined", decline_reason: declineReason })} className="text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 rounded-lg px-3 py-2 whitespace-nowrap">Confirm decline</button>
+              <button disabled={busy || !declineReason.trim()} onClick={() => patch({ status: "declined", decline_reason: declineReason })} className="text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 rounded-lg px-3 py-2 whitespace-nowrap">{busy ? "Declining…" : "Confirm decline"}</button>
             </div>
           )}
           <div className="flex gap-2 items-center">
