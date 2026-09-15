@@ -102,9 +102,9 @@ export default function RequestPage() {
             {!lockedType && (
               <button onClick={() => setType(null)} className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 bg-white rounded-full border border-gray-200 shadow-sm px-4 py-2 hover:bg-gray-50">← All requests</button>
             )}
-            <RequestFormPicker type={type} setType={setType} brands={brands} endpoint="/api/public-sales-request" uploadEndpoint="/api/sales-requests/upload" extraHeaders={headers} showIdentityFields onCreated={setDoneId} lockType={!!lockedType} />
-
             <FilecampCard />
+
+            <RequestFormPicker type={type} setType={setType} brands={brands} endpoint="/api/public-sales-request" uploadEndpoint="/api/sales-requests/upload" extraHeaders={headers} showIdentityFields onCreated={setDoneId} lockType={!!lockedType} />
 
             <details className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
               <summary className={`text-sm font-bold text-slate-700 cursor-pointer ${baloo}`}>Rules for {TYPE_META[type].label.toLowerCase()}</summary>
