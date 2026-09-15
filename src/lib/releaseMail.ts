@@ -1,5 +1,5 @@
 // Resend helper for the media release flow. Server-side only.
-const FROM = "Coolkidz Marketing <mel@coolkidz.com.au>";
+const FROM = "Coolkidz Marketing <marketing@coolkidz.com.au>";
 const REPLY_TO = "marketing@coolkidz.com.au";
 
 export async function sendMail(opts: { to: string[]; subject: string; html: string; attachments?: { filename: string; content: string }[] }) {
