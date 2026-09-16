@@ -56,6 +56,13 @@ function dueLabel(ms: number, today: number) {
   if (d <= 30) return `In ${Math.round(d / 7)} weeks`;
   return `In ${Math.round(d / 30)} months`;
 }
+// A multi-day campaign/activation is "Live" once its start date has passed
+// but its end date hasn't — dueLabel alone (start-date only) was calling
+// these "Past" the moment they began, even mid-run.
+function cardStatus(startMs: number, endMs: number | null, today: number) {
+  if (endMs != null && startMs <= today && today <= endMs) return "Live";
+  return dueLabel(startMs, today);
+}
 
 // soft pill: pastel fill + coloured text when active, quiet outline when not
 function Pill({ active, color, onClick, children }: { active: boolean; color: string; onClick: () => void; children: React.ReactNode }) {
@@ -327,7 +334,7 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
                     <p className={key ? "text-[15px] font-extrabold text-slate-800 leading-snug" : "text-[12px] font-semibold text-slate-600 leading-snug"}>{e.title}</p>
                     <div className="mt-auto pt-1.5 flex items-center justify-between">
                       <span className="text-[11px] font-semibold text-slate-500">{fmtD(toMs(e.date!))}</span>
-                      <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full" style={{ background: working ? "#fffbeb" : "#f0fdf4", color: working ? "#b45309" : "#15803d" }}>{dueLabel(toMs(e.date!), today)}</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full" style={{ background: working ? "#fffbeb" : "#f0fdf4", color: working ? "#b45309" : "#15803d" }}>{cardStatus(toMs(e.date!), e.end_date ? toMs(e.end_date) : null, today)}</span>
                     </div>
                   </div>
                 </button>
