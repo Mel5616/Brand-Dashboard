@@ -6,7 +6,7 @@ import { TYPE_META, STATES, inp, lbl, type ReqType, RequestFormPicker, TILE_ART,
 
 type Status = "new" | "triaged" | "in_progress" | "review" | "delivered" | "on_hold" | "declined";
 type Req = {
-  id: string; request_type: ReqType; status: Status; requester_email: string; requester_name: string | null;
+  id: string; ticket_no: number | null; request_type: ReqType; status: Status; requester_email: string; requester_name: string | null;
   assignee_email: string | null; brand: string | null; retailer: string | null; store: string | null; state: string | null;
   title: string; end_use: string; needed_by: string | null; brief: any; sla_due_at: string | null;
   decline_reason: string | null; created_at: string; updated_at: string;
@@ -19,7 +19,7 @@ const STATUS_META: Record<Status, { label: string; cls: string }> = {
   triaged: { label: "Triaged", cls: "bg-sky-100 text-sky-700" },
   in_progress: { label: "In progress", cls: "bg-amber-100 text-amber-700" },
   review: { label: "Review", cls: "bg-violet-100 text-violet-700" },
-  delivered: { label: "Delivered", cls: "bg-emerald-100 text-emerald-700" },
+  delivered: { label: "Completed", cls: "bg-emerald-100 text-emerald-700" },
   on_hold: { label: "On hold", cls: "bg-gray-100 text-gray-500" },
   declined: { label: "Declined", cls: "bg-rose-100 text-rose-700" },
 };
@@ -29,8 +29,9 @@ const STEPS: { key: Status; label: string }[] = [
   { key: "triaged", label: "Triaged" },
   { key: "in_progress", label: "In progress" },
   { key: "review", label: "Review" },
-  { key: "delivered", label: "Delivered" },
+  { key: "delivered", label: "Completed" },
 ];
+const ref = (r: { ticket_no: number | null }) => r.ticket_no ? `SH-${r.ticket_no}` : "—";
 const dShort = (s?: string | null) => s ? new Date(s + (s.length === 10 ? "T00:00:00" : "")).toLocaleDateString("en-AU", { day: "numeric", month: "short" }) : "—";
 // Full date + time for "when did this request actually land" — dShort above
 // stays date-only for due-date columns, this is specifically for submitted/
@@ -380,7 +381,7 @@ function QueueView({ items, admin, analytics, q, setQ, statusFilter, setStatusFi
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <table className="w-full text-sm">
           <thead><tr className="text-[10.5px] uppercase tracking-wide text-gray-400 border-b border-gray-100">
-            <th className="text-left py-2 pl-4">Request</th><th className="text-left py-2">Type</th><th className="text-left py-2">Brand</th>
+            <th className="text-left py-2 pl-4">Ref</th><th className="text-left py-2">Request</th><th className="text-left py-2">Type</th><th className="text-left py-2">Brand</th>
             <th className="text-left py-2">Requester</th><th className="text-left py-2">Submitted</th><th className="text-left py-2">Needed by</th><th className="text-left py-2">Status</th><th className="text-left py-2 pr-4">Assignee</th>
           </tr></thead>
           <tbody>
@@ -388,7 +389,8 @@ function QueueView({ items, admin, analytics, q, setQ, statusFilter, setStatusFi
               const overdue = r.sla_due_at && !["delivered", "declined"].includes(r.status) && new Date(r.sla_due_at).getTime() < Date.now();
               return (
                 <tr key={r.id} onClick={() => onOpen(r.id)} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 cursor-pointer">
-                  <td className="py-2.5 pl-4 font-medium text-slate-700">{TYPE_META[r.request_type].emoji} {r.title}</td>
+                  <td className="py-2.5 pl-4 text-[11.5px] font-mono text-gray-400 whitespace-nowrap">{ref(r)}</td>
+                  <td className="py-2.5 font-medium text-slate-700">{TYPE_META[r.request_type].emoji} {r.title}</td>
                   <td className="py-2.5 text-gray-500">{TYPE_META[r.request_type].label}</td>
                   <td className="py-2.5 text-gray-500">{r.brand ?? "—"}</td>
                   <td className="py-2.5 text-gray-500">{r.requester_email}</td>
@@ -464,9 +466,13 @@ function RequestDetail({ item, admin, onBack, onChanged }: { item: Req; admin: b
       <button onClick={onBack} className="text-sm text-gray-400 hover:text-gray-600 mb-3">← Back</button>
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <div className="text-xs text-gray-400">{TYPE_META[item.request_type].emoji} {TYPE_META[item.request_type].label}</div>
+          <div className="text-xs text-gray-400 flex items-center gap-1.5">
+            <span>{TYPE_META[item.request_type].emoji} {TYPE_META[item.request_type].label}</span>
+            <span className="font-mono text-gray-300">·</span>
+            <span className="font-mono font-semibold text-gray-500">{ref(item)}</span>
+          </div>
           <h3 className={`text-lg font-bold text-slate-800 ${baloo}`}>{item.title}</h3>
-          <div className="text-xs text-gray-400 mt-0.5">Requested by {item.requester_email} · {dTime(item.created_at)}</div>
+          <div className="text-xs text-gray-400 mt-0.5">Requested by {item.requester_name ? `${item.requester_name} · ` : ""}{item.requester_email} · {dTime(item.created_at)}</div>
         </div>
         {branchedOff && <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${STATUS_META[item.status].cls}`}>{STATUS_META[item.status].label}</span>}
       </div>
@@ -506,6 +512,9 @@ function RequestDetail({ item, admin, onBack, onChanged }: { item: Req; admin: b
 
       {admin && (
         <div className="mt-5 pt-4 border-t border-gray-100 space-y-3">
+          <div className="text-xs text-gray-400">
+            <span className="font-mono font-semibold text-gray-500">{ref(item)}</span> · requested by {item.requester_name ? `${item.requester_name} · ` : ""}{item.requester_email}
+          </div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold text-slate-500">Move to:</span>
             {(["triaged", "in_progress", "review", "delivered", "on_hold"] as Status[]).map(s => {
