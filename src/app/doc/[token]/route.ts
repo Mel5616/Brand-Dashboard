@@ -89,8 +89,12 @@ export async function GET(req: Request, ctx: { params: Promise<{ token: string }
   if (!share) return dead();
 
   if (raw) {
-    const doc = (await fetch(`${sbUrl}/rest/v1/documents?id=eq.${share.document_id}&select=html&limit=1`, { headers: h, cache: "no-store" }).then(r => r.json()).catch(() => []))[0];
+    const doc = (await fetch(`${sbUrl}/rest/v1/documents?id=eq.${share.document_id}&select=kind,html,file_url&limit=1`, { headers: h, cache: "no-store" }).then(r => r.json()).catch(() => []))[0];
     if (!doc) return dead();
+    if (doc.kind === "pdf") {
+      if (!doc.file_url) return dead();
+      return Response.redirect(doc.file_url, 302);
+    }
     return new Response(doc.html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
   }
 

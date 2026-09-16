@@ -13,7 +13,7 @@ export async function GET() {
   if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "Admins only" }, { status: 403 });
   const sb = await createClient();
   const [d, s, v] = await Promise.all([
-    sb.from("documents").select("id,title,brand,created_by,created_at").order("created_at", { ascending: false }),
+    sb.from("documents").select("id,title,brand,kind,created_by,created_at").order("created_at", { ascending: false }),
     sb.from("document_shares").select("*").order("created_at", { ascending: true }),
     sb.from("document_views").select("share_id,session_id,viewer,seconds,opened_at,last_seen"),
   ]);
@@ -22,10 +22,44 @@ export async function GET() {
 }
 
 const UPLOAD_BUCKET = "document-uploads";
+const PDF_BUCKET = "document-pdfs";
 
 export async function POST(req: Request) {
   const access = await getAccess();
   if (access.role !== "admin") return NextResponse.json({ ok: false, error: "Admins only" }, { status: 403 });
+
+  // PDF uploads skip Vercel entirely — the browser PUTs straight to storage
+  // on a signed URL, so there's no function body-size ceiling to chunk around.
+  const ct = req.headers.get("content-type") || "";
+  if (ct.includes("application/json")) {
+    let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false, error: "Bad request" }, { status: 400 }); }
+    if (b.action === "pdf.init") {
+      const sb = await createClient();
+      await sb.storage.createBucket(PDF_BUCKET, { public: true }).catch(() => {});
+      const bytes = Number(b.bytes) || 0;
+      if (bytes > 40 * 1024 * 1024) return NextResponse.json({ ok: false, error: "That's over 40MB — send it to Mel to slim down first." }, { status: 400 });
+      const path = `${crypto.randomUUID()}.pdf`;
+      const { data, error } = await sb.storage.from(PDF_BUCKET).createSignedUploadUrl(path);
+      if (error || !data) return NextResponse.json({ ok: false, error: "Could not start the upload" }, { status: 500 });
+      return NextResponse.json({ ok: true, path, token: data.token, signedUrl: data.signedUrl });
+    }
+    if (b.action === "pdf.finish") {
+      const title = String(b.title || "").trim().slice(0, 200);
+      const path = String(b.path || "");
+      if (!title || !path) return NextResponse.json({ ok: false, error: "Bad finish" }, { status: 400 });
+      const sb = await createClient();
+      const { data: pub } = sb.storage.from(PDF_BUCKET).getPublicUrl(path);
+      const { data, error } = await sb.from("documents").insert({
+        title, brand: String(b.brand || "").trim().slice(0, 80) || null,
+        kind: "pdf", file_url: pub.publicUrl, created_by: access.user?.email ?? null,
+      }).select("id,title").single();
+      if (error) return NextResponse.json({ ok: false, needsSetup: missing(error.message), error: error.message.slice(0, 200) }, { status: 500 });
+      await sb.from("document_shares").insert({ document_id: data.id, label: "Team" });
+      return NextResponse.json({ ok: true, item: data });
+    }
+    return NextResponse.json({ ok: false, error: "Unknown action" }, { status: 400 });
+  }
+
   let form: FormData;
   try { form = await req.formData(); } catch { return NextResponse.json({ ok: false, error: "Bad upload" }, { status: 400 }); }
   const action = String(form.get("action") || "");

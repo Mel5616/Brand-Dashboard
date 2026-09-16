@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 // Partnerships & Affiliates > Documents: HTML documents with per-recipient
 // tracked share links — who opened it, how many times, how long they
 // actually looked. Same pattern as Launch Decks. Admin-only.
-type Doc = { id: number; title: string; brand: string | null; created_by: string | null; created_at: string };
+type Doc = { id: number; title: string; brand: string | null; kind: "html" | "pdf"; created_by: string | null; created_at: string };
 type Share = { id: number; document_id: number; token: string; label: string; created_at: string };
 type View = { share_id: number; session_id: string; viewer: string | null; seconds: number; opened_at: string; last_seen: string };
 
@@ -91,10 +91,32 @@ export function Documents({ brands }: { brands: { name: string }[] }) {
     setMsg("");
     if (!title.trim()) { setMsg("Give the document a title."); return; }
     const file = fileRef.current?.files?.[0];
-    if (!file) { setMsg("Attach the document's HTML file."); return; }
+    if (!file) { setMsg("Attach the document's HTML or PDF file."); return; }
     if (file.size > 40 * 1024 * 1024) { setMsg("That's over 40MB — send it to Mel to slim down first."); return; }
     setBusy(true);
     let d: any = null;
+
+    if (file.type === "application/pdf" || /\.pdf$/i.test(file.name)) {
+      // PDFs go straight from the browser to storage on a signed URL — no
+      // Vercel body limit to chunk around, and no text-decoding a binary file.
+      const init = await fetch("/api/documents", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "pdf.init", bytes: file.size }),
+      }).then(r => r.json()).catch(() => null);
+      if (!init?.ok) { setBusy(false); setMsg(init?.error || "Couldn't start the upload."); return; }
+      setMsg("Uploading PDF…");
+      const put = await fetch(init.signedUrl, { method: "PUT", headers: { "Content-Type": "application/pdf" }, body: file }).catch(() => null);
+      if (!put?.ok) { setBusy(false); setMsg("Upload failed — try again."); return; }
+      d = await fetch("/api/documents", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "pdf.finish", title, brand, path: init.path }),
+      }).then(r => r.json()).catch(() => null);
+      setBusy(false);
+      if (d?.ok) { setShowForm(false); setTitle(""); setBrand(""); if (fileRef.current) fileRef.current.value = ""; load(); setMsg("Document loaded — a Team share link is ready."); }
+      else setMsg(d?.error || "Couldn't load the document.");
+      return;
+    }
+
     const CHUNK = 3 * 1024 * 1024;
     if (file.size <= CHUNK) {
       const fd = new FormData();
@@ -148,7 +170,7 @@ export function Documents({ brands }: { brands: { name: string }[] }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <button onClick={() => setShowForm(v => !v)} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2">{showForm ? "Close" : "+ Upload a document"}</button>
-        <span className="text-[12px] text-gray-400">Upload a standalone HTML file — each recipient gets their own tracked link so you know exactly who opened it and for how long.</span>
+        <span className="text-[12px] text-gray-400">Upload a standalone HTML file or a PDF — each recipient gets their own tracked link so you know exactly who opened it and for how long.</span>
       </div>
       {msg && <p className="text-[13px] text-slate-500 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2">{msg}</p>}
 
@@ -163,8 +185,8 @@ export function Documents({ brands }: { brands: { name: string }[] }) {
             </select>
           </div>
           <div className="mt-3">
-            <label className="text-[12px] font-semibold text-slate-600 block mb-1">Document HTML file *</label>
-            <input ref={fileRef} type="file" accept=".html,.htm" className="text-sm text-slate-600" />
+            <label className="text-[12px] font-semibold text-slate-600 block mb-1">Document file (HTML or PDF) *</label>
+            <input ref={fileRef} type="file" accept=".html,.htm,.pdf" className="text-sm text-slate-600" />
           </div>
           <button onClick={create} disabled={busy} className="mt-3 text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2.5 disabled:opacity-60">{busy ? "Loading…" : "Upload document"}</button>
         </div>
@@ -192,7 +214,10 @@ export function Documents({ brands }: { brands: { name: string }[] }) {
               )}
               <div className="flex items-center gap-3 px-5 py-3.5 border-t border-gray-50">
                 <button onClick={() => setOpen(isOpen ? null : d.id)} className="min-w-0 flex-1 text-left hover:opacity-80">
-                  <span className="block text-[14.5px] font-bold text-slate-800 truncate">{d.title}</span>
+                  <span className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-[14.5px] font-bold text-slate-800 truncate">{d.title}</span>
+                    {d.kind === "pdf" && <span className="shrink-0 text-[9.5px] font-bold text-rose-600 bg-rose-50 border border-rose-100 rounded px-1.5 py-0.5">PDF</span>}
+                  </span>
                   <span className="block text-[11.5px] text-gray-400">{[d.brand, `${dShares.length} link${dShares.length === 1 ? "" : "s"}`, `${opens} open${opens === 1 ? "" : "s"}`, secs > 0 ? `${mins(secs)} viewed` : null].filter(Boolean).join(" · ")}</span>
                 </button>
                 <button onClick={() => setOpen(isOpen ? null : d.id)} className="shrink-0 text-[11px] font-semibold text-gray-400 hover:text-gray-600">{isOpen ? "Hide links ▾" : "Links & tracking ▸"}</button>
