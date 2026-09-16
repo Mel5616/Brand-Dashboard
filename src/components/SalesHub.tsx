@@ -123,7 +123,7 @@ export function SalesHub({ admin, brands, tradeshows = [], calendarEvents = [] }
       ) : view === "new" ? (
         <RequestFormPicker type={newType} setType={setNewType} brands={brands} onCreated={id => { load(); setDetailId(id); setView("queue"); }} onCancel={() => setView("landing")} />
       ) : (
-        <QueueView items={filtered} admin={admin} analytics={analytics} q={q} setQ={setQ} statusFilter={statusFilter} setStatusFilter={setStatusFilter} onOpen={id => setDetailId(id)} onNew={() => setView("new")} />
+        <QueueView items={filtered} admin={admin} analytics={analytics} q={q} setQ={setQ} statusFilter={statusFilter} setStatusFilter={setStatusFilter} onOpen={id => setDetailId(id)} onNew={() => setView("new")} onChanged={load} />
       )}
     </div>
   );
@@ -338,10 +338,16 @@ function Guidelines({ active, onSelect }: { active: string; onSelect: (id: strin
   );
 }
 
-function QueueView({ items, admin, analytics, q, setQ, statusFilter, setStatusFilter, onOpen, onNew }: {
+function QueueView({ items, admin, analytics, q, setQ, statusFilter, setStatusFilter, onOpen, onNew, onChanged }: {
   items: Req[]; admin: boolean; analytics: { byType: Record<string, number>; overdue: number; unassigned: number; declinedThisMonth: Req[] } | null;
-  q: string; setQ: (s: string) => void; statusFilter: "all" | Status; setStatusFilter: (s: "all" | Status) => void; onOpen: (id: string) => void; onNew: () => void;
+  q: string; setQ: (s: string) => void; statusFilter: "all" | Status; setStatusFilter: (s: "all" | Status) => void; onOpen: (id: string) => void; onNew: () => void; onChanged: () => void;
 }) {
+  async function delReq(r: Req, ev: React.MouseEvent) {
+    ev.stopPropagation();
+    if (!confirm(`Delete "${r.title}" (${ref(r)})? This removes its files and history too — can't be undone.`)) return;
+    await fetch(`/api/sales-requests?id=${r.id}`, { method: "DELETE" });
+    onChanged();
+  }
   return (
     <div className="space-y-3">
       {analytics && (
@@ -384,7 +390,7 @@ function QueueView({ items, admin, analytics, q, setQ, statusFilter, setStatusFi
         <table className="w-full text-sm">
           <thead><tr className="text-[10.5px] uppercase tracking-wide text-gray-400 border-b border-gray-100">
             <th className="text-left py-2 pl-4">Ref</th><th className="text-left py-2">Request</th><th className="text-left py-2">Type</th><th className="text-left py-2">Brand</th>
-            <th className="text-left py-2">Requester</th><th className="text-left py-2">Submitted</th><th className="text-left py-2">Needed by</th><th className="text-left py-2">Status</th><th className="text-left py-2 pr-4">Assignee</th>
+            <th className="text-left py-2">Requester</th><th className="text-left py-2">Submitted</th><th className="text-left py-2">Needed by</th><th className="text-left py-2">Status</th><th className="text-left py-2">Assignee</th>{admin && <th className="text-left py-2 pr-4"></th>}
           </tr></thead>
           <tbody>
             {items.map(r => {
@@ -399,7 +405,12 @@ function QueueView({ items, admin, analytics, q, setQ, statusFilter, setStatusFi
                   <td className="py-2.5 text-gray-500 whitespace-nowrap">{dTime(r.created_at)}</td>
                   <td className={`py-2.5 ${overdue ? "text-rose-600 font-bold" : "text-gray-500"}`}>{dShort(r.needed_by)}</td>
                   <td className="py-2.5"><span className={`text-[10.5px] font-bold px-2 py-1 rounded-full ${STATUS_META[r.status].cls}`}>{STATUS_META[r.status].label}</span></td>
-                  <td className="py-2.5 pr-4 text-gray-400">{r.assignee_email ?? "—"}</td>
+                  <td className="py-2.5 text-gray-400">{r.assignee_email ?? "—"}</td>
+                  {admin && (
+                    <td className="py-2.5 pr-4 text-right">
+                      <button onClick={ev => delReq(r, ev)} title="Delete request" className="text-gray-300 hover:text-rose-600 px-1.5 py-0.5 rounded transition-colors">🗑</button>
+                    </td>
+                  )}
                 </tr>
               );
             })}
@@ -572,6 +583,14 @@ function RequestDetail({ item, admin, onBack, onChanged }: { item: Req; admin: b
             <span className="text-xs font-semibold text-slate-500 whitespace-nowrap">Assignee:</span>
             <input value={assignee} onChange={e => setAssignee(e.target.value)} placeholder="email" className={`${inp} max-w-xs`} />
             <button disabled={busy} onClick={() => patch({ assignee_email: assignee })} className="text-xs font-semibold text-slate-600 bg-gray-100 hover:bg-gray-200 rounded-lg px-3 py-2">Save</button>
+          </div>
+          <div className="pt-2 border-t border-gray-200 flex justify-end">
+            <button disabled={busy} onClick={async () => {
+              if (!confirm(`Delete "${item.title}" (${ref(item)})? This removes its files and history too — can't be undone.`)) return;
+              setBusy(true);
+              await fetch(`/api/sales-requests?id=${item.id}`, { method: "DELETE" });
+              setBusy(false); onBack(); onChanged();
+            }} className="text-xs font-semibold text-gray-400 hover:text-rose-600 disabled:opacity-40">🗑 Delete request</button>
           </div>
         </div>
       )}

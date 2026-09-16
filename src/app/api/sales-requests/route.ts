@@ -107,3 +107,14 @@ export async function PATCH(req: Request) {
   }
   return NextResponse.json({ ok: true });
 }
+
+export async function DELETE(req: Request) {
+  const acc = await getAccess();
+  if (acc.role !== "admin") return NextResponse.json({ ok: false, error: "Admins only" }, { status: 403 });
+  const id = new URL(req.url).searchParams.get("id");
+  if (!id) return NextResponse.json({ ok: false }, { status: 400 });
+  // request_files/request_events cascade-delete with the request.
+  const res = await fetch(`${sbUrl}/rest/v1/marketing_requests?id=eq.${encodeURIComponent(id)}`, { method: "DELETE", headers: h({ Prefer: "return=minimal" }) });
+  if (!res.ok) return NextResponse.json({ ok: false, error: (await res.text()).slice(0, 200) }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}
