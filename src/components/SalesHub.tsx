@@ -32,6 +32,8 @@ const STEPS: { key: Status; label: string }[] = [
   { key: "delivered", label: "Completed" },
 ];
 const ref = (r: { ticket_no: number | null }) => r.ticket_no ? `SH-${r.ticket_no}` : "—";
+// "shipAddress" → "Ship address" — raw brief keys read better humanized.
+const humanize = (k: string) => k.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, c => c.toUpperCase());
 const dShort = (s?: string | null) => s ? new Date(s + (s.length === 10 ? "T00:00:00" : "")).toLocaleDateString("en-AU", { day: "numeric", month: "short" }) : "—";
 // Full date + time for "when did this request actually land" — dShort above
 // stays date-only for due-date columns, this is specifically for submitted/
@@ -460,61 +462,87 @@ function RequestDetail({ item, admin, onBack, onChanged }: { item: Req; admin: b
   }
 
   const branchedOff = item.status === "declined" || item.status === "on_hold";
+  const briefEntries = item.brief ? Object.entries(item.brief).filter(([, v]) => v != null && v !== "") : [];
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 max-w-3xl">
-      <button onClick={onBack} className="text-sm text-gray-400 hover:text-gray-600 mb-3">← Back</button>
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <div className="text-xs text-gray-400 flex items-center gap-1.5">
-            <span>{TYPE_META[item.request_type].emoji} {TYPE_META[item.request_type].label}</span>
-            <span className="font-mono text-gray-300">·</span>
-            <span className="font-mono font-semibold text-gray-500">{ref(item)}</span>
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm max-w-3xl overflow-hidden">
+      <div className="px-5 pt-4 pb-5 border-b border-gray-100">
+        <button onClick={onBack} className="text-sm text-gray-400 hover:text-gray-600 mb-3">← Back</button>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] font-mono font-bold text-slate-400 bg-slate-50 border border-slate-200 rounded-md px-1.5 py-0.5">{ref(item)}</span>
+              <span className="text-xs text-gray-400">{TYPE_META[item.request_type].emoji} {TYPE_META[item.request_type].label}</span>
+            </div>
+            <h3 className={`text-xl font-bold text-slate-800 mt-1 ${baloo}`}>{item.title}</h3>
+            <div className="text-xs text-gray-400 mt-1 flex items-center gap-1.5">
+              <span className="w-4 h-4 rounded-full bg-slate-200 text-slate-500 text-[9px] font-bold flex items-center justify-center shrink-0">{(item.requester_name || item.requester_email)[0].toUpperCase()}</span>
+              {item.requester_name ? `${item.requester_name} · ` : ""}{item.requester_email} · {dTime(item.created_at)}
+            </div>
           </div>
-          <h3 className={`text-lg font-bold text-slate-800 ${baloo}`}>{item.title}</h3>
-          <div className="text-xs text-gray-400 mt-0.5">Requested by {item.requester_name ? `${item.requester_name} · ` : ""}{item.requester_email} · {dTime(item.created_at)}</div>
+          <span className={`text-xs font-bold px-2.5 py-1 rounded-full shrink-0 ${STATUS_META[item.status].cls}`}>{STATUS_META[item.status].label}</span>
         </div>
-        {branchedOff && <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${STATUS_META[item.status].cls}`}>{STATUS_META[item.status].label}</span>}
+
+        {!branchedOff && <Stepper status={item.status} />}
       </div>
 
-      {!branchedOff && <Stepper status={item.status} />}
-
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-sm">
-        {item.brand && <div><div className={lbl}>Brand</div>{item.brand}</div>}
-        {item.retailer && <div><div className={lbl}>Retailer</div>{item.retailer}</div>}
-        {item.store && <div><div className={lbl}>Store</div>{item.store}</div>}
-        {item.state && <div><div className={lbl}>State</div>{item.state}</div>}
-        {item.needed_by && <div><div className={lbl}>Needed by</div>{dShort(item.needed_by)}</div>}
-        {item.sla_due_at && <div><div className={lbl}>SLA due</div>{dShort(item.sla_due_at.slice(0, 10))}</div>}
-      </div>
-      <div className="mt-3 text-sm"><div className={lbl}>Where it's used</div>{item.end_use}</div>
-      {item.brief && Object.keys(item.brief).length > 0 && (
-        <div className="mt-3 bg-gray-50 rounded-lg p-3 text-xs text-slate-600 space-y-1">
-          {Object.entries(item.brief).map(([k, v]) => v != null && v !== "" ? <div key={k}><strong className="text-slate-500">{k}:</strong> {String(v)}</div> : null)}
+      <div className="px-5 py-4 space-y-4">
+        <div className="flex flex-wrap gap-2">
+          {item.brand && <div className="bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 min-w-[92px]"><div className={lbl}>Brand</div><div className="text-sm text-slate-700">{item.brand}</div></div>}
+          {item.retailer && <div className="bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 min-w-[92px]"><div className={lbl}>Retailer</div><div className="text-sm text-slate-700">{item.retailer}</div></div>}
+          {item.store && <div className="bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 min-w-[92px]"><div className={lbl}>Store</div><div className="text-sm text-slate-700">{item.store}</div></div>}
+          {item.state && <div className="bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 min-w-[92px]"><div className={lbl}>State</div><div className="text-sm text-slate-700">{item.state}</div></div>}
+          {item.needed_by && <div className="bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 min-w-[92px]"><div className={lbl}>Needed by</div><div className="text-sm text-slate-700">{dShort(item.needed_by)}</div></div>}
+          {item.sla_due_at && <div className="bg-slate-50 border border-slate-100 rounded-lg px-3 py-2 min-w-[92px]"><div className={lbl}>SLA due</div><div className="text-sm text-slate-700">{dShort(item.sla_due_at.slice(0, 10))}</div></div>}
         </div>
-      )}
-      {files.length > 0 && (
-        <div className="mt-3">
-          <div className={lbl}>Files</div>
-          <div className="flex flex-wrap gap-2">{files.map(f => <a key={f.id} href={f.storage_path} target="_blank" rel="noreferrer" className="text-xs text-indigo-600 border border-indigo-100 rounded-lg px-2.5 py-1 hover:bg-indigo-50">{f.file_name ?? "file"}</a>)}</div>
-        </div>
-      )}
-      {item.decline_reason && <div className="mt-3 bg-rose-50 border border-rose-100 rounded-lg p-3 text-sm text-rose-700"><strong>Declined:</strong> {item.decline_reason}</div>}
 
-      {events.length > 0 && (
-        <div className="mt-4">
-          <div className={lbl}>History</div>
-          <div className="space-y-1.5">
-            {events.map(e => <div key={e.id} className="text-xs text-gray-500">{dTime(e.created_at)} · {e.actor} → {e.to_status ? STATUS_META[e.to_status as Status]?.label ?? e.to_status : ""}{e.note ? `, ${e.note}` : ""}</div>)}
+        <div className="text-sm"><div className={lbl}>Where it's used</div><div className="text-slate-700">{item.end_use}</div></div>
+
+        {briefEntries.length > 0 && (
+          <div className="bg-gray-50 border border-gray-100 rounded-xl p-4">
+            <div className={`${lbl} mb-2`}>Details</div>
+            <div className="grid sm:grid-cols-2 gap-x-6 gap-y-2">
+              {briefEntries.map(([k, v]) => (
+                <div key={k} className="flex justify-between gap-3 text-[13px] border-b border-gray-100 pb-1.5 last:border-0">
+                  <span className="text-slate-400">{humanize(k)}</span>
+                  <span className="text-slate-700 font-medium text-right">{String(v)}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {files.length > 0 && (
+          <div>
+            <div className={lbl}>Files</div>
+            <div className="flex flex-wrap gap-2 mt-1">{files.map(f => <a key={f.id} href={f.storage_path} target="_blank" rel="noreferrer" className="text-xs text-indigo-600 border border-indigo-100 rounded-lg px-2.5 py-1 hover:bg-indigo-50">📎 {f.file_name ?? "file"}</a>)}</div>
+          </div>
+        )}
+
+        {item.decline_reason && <div className="bg-rose-50 border border-rose-100 rounded-lg p-3 text-sm text-rose-700"><strong>Declined:</strong> {item.decline_reason}</div>}
+
+        {events.length > 0 && (
+          <div>
+            <div className={`${lbl} mb-2`}>History</div>
+            <div>
+              {events.map((e, i) => (
+                <div key={e.id} className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mt-1.5 shrink-0" />
+                    {i < events.length - 1 && <div className="w-px flex-1 min-h-[16px] bg-gray-100" />}
+                  </div>
+                  <div className="text-xs text-gray-500 pb-2.5">
+                    <span className="text-gray-400">{dTime(e.created_at)}</span> · {e.actor} → <span className="font-medium text-slate-600">{e.to_status ? STATUS_META[e.to_status as Status]?.label ?? e.to_status : ""}</span>{e.note ? `, ${e.note}` : ""}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {admin && (
-        <div className="mt-5 pt-4 border-t border-gray-100 space-y-3">
-          <div className="text-xs text-gray-400">
-            <span className="font-mono font-semibold text-gray-500">{ref(item)}</span> · requested by {item.requester_name ? `${item.requester_name} · ` : ""}{item.requester_email}
-          </div>
+        <div className="px-5 py-4 bg-slate-50 border-t border-gray-100 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold text-slate-500">Move to:</span>
             {(["triaged", "in_progress", "review", "delivered", "on_hold"] as Status[]).map(s => {
