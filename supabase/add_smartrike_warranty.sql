@@ -1,6 +1,7 @@
 -- smarTrike Australia product registration (smartrike.com.au/pages/register-your-product),
--- sharing the Gaia Baby warranty tables in the dedicated warranty Supabase project.
--- Run add_warranty_registrations.sql first, then this.
+-- sharing the warranty tables in the COOLKIDZ WARRANTY Supabase project
+-- (https://eatjuahqvkiwrzsnoupg.supabase.co) — NOT the brand-dashboard project.
+-- Run add_warranty_registrations.sql there first, then this.
 
 alter table warranty_registrations add column if not exists brand         text not null default 'gaia';   -- gaia | smartrike
 alter table warranty_registrations add column if not exists child_dob     date;
