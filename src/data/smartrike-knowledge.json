@@ -1,0 +1,64 @@
+{
+ "store": {
+  "name": "smarTrike Australia",
+  "who": "Official Australian home of smarTrike, distributed by Coolkidz Australia Pty Ltd (ABN 98 293 897 047), 1 Beyer Road, Braeside VIC 3195. Every trike ships from the Melbourne warehouse and every warranty claim is handled by the Braeside team.",
+  "site": "https://smartrike.com.au",
+  "phone": "1300 722 302, Monday to Friday 8am to 5pm AEST",
+  "showroom": "1 Beyer Road, Braeside VIC 3195, Monday to Friday 9:30am to 2:30pm, parking on site. Call first if you want a particular model out of its box.",
+  "help_centre": "https://help.coolkidz.com.au (warranty claims and spare parts)",
+  "reply_time": "one business day",
+  "naming": "Write brand names exactly: smarTrike, Wonder, Wonder+, Wonder max (lowercase max), Wind, Wind+, Xtend."
+ },
+ "range": {
+  "wonder_shared": "The Wonder range (Wonder, Wonder+, Wonder max) is built for everyday use. Every Wonder converts from stroller mode (you push) to trike mode (they hold on, you steer) to training mode (they pedal, you guide) to free riding. Shared: lightweight aluminium frame, 5-point harness, safety bumper bar, patented 360 degree one-handed steering that turns on the spot and reverses, shock-absorbing front wheel, one-foot rear brake, 3-second single-piece fold, carry-on approved, certified to stroller safety standards (not toy standards), 2-year Australian warranty. Australian models include a tether strap and a red brake.",
+  "wonder_max": "Wonder max: $579 RRP. 6 months to 3 years. 6.95 kg. Folded 54.5 x 26.5 x 38 cm. Seat reclines to 140 degrees, the ONLY model that reclines and the only one suitable under 10 months (babies who cannot sit unaided need the recline). Extra-large premium cushioned seat, 3-stage canopy, colour Stone Beige. Best for naps on the move and starting early.",
+  "wonder_plus": "Wonder+: $489 RRP. 10 months to 3 years. 6.42 kg. Folded 52 x 25.5 x 41 cm. Extra-large breathable mesh seat, 3-stage canopy, colour Sand. Best for long days in strong sun.",
+  "wonder": "Wonder: $389 RRP. 10 months to 3 years. 5.9 kg (lightest in the Wonder range). Folded 54 x 25 x 34 cm. Breathable mesh seat, 2-stage canopy, colour Moonlight (white frame, black canopy). Best for travel and short walks.",
+  "wind": "Wind range is the entry range for occasional and travel use, same patented steering and stroller-standard safety, 2-stage canopy, 10 months to 3 years. Wind: $249.99 RRP, 5.6 kg, colours Aqua, Blush, Black. Wind+: $299.99 RRP, 5.9 kg, Black, low step-in frame, adjustable child handlebar, detachable pedals and footrest. Folded sizes for the Wind range are not published yet; say so and offer the phone number. The Wonder range adds better fabrics, upgraded wheels and a sturdier frame for daily use.",
+  "xtend": "Xtend is for after the trike, 12 months to 12 years. Xtend Ride-on: $149.99 RRP (was $249.99), parent-controlled ride-on from 12 months, ride-on from 2, converts to a 3-wheel then 2-wheel scooter, colours Blue, Pink, Teal, Cool Grey, Soft green. Xtend Mini+ scooter: $99.99 RRP (was $149.99), 2 to 9 years, the only extendable scooter, colours Green, Pink, Blue, Grey. Weights and dimensions not published; say so."
+ },
+ "choosing": "Under 10 months: Wonder max only (recline). 10 months to 2 years: any model; naps on the move -> Wonder max; strong sun or long days -> Wonder+; lightest or travel -> Wonder; occasional or holiday use on a budget -> Wind or Wind+. 2 years and up: Wonder or Wonder+ (they pedal more than they are pushed, so the recline matters less). After 3: Xtend.",
+ "policies": {
+  "shipping": "Free shipping Australia-wide on every order, no minimum, from the Melbourne warehouse. Business days from dispatch: Melbourne metro 2 to 3; Sydney, Brisbane, Adelaide and Canberra 2 to 5; Perth, Hobart and Darwin 3 to 5; regional and remote 4 to 5. Orders before 10am AEST on a business day usually dispatch the same day. Tracking is emailed at dispatch. Most deliveries need a signature; if nobody is home the carrier leaves a card and takes it to a collection point. No international shipping, no PO boxes.",
+  "returns": "30 days from delivery for change of mind. Unused (or assembled only enough to look at), in the original packaging with all parts. Self-service through the Australia Post returns portal. Refund within 5 business days of arrival, to the original payment method. Transit damage: report within 48 hours with photos.",
+  "warranty": "2 years on every smarTrike sold in Australia, on top of Australian Consumer Law, no registration needed. Covers manufacturing faults in the frame, steering, brake, folding mechanism, wheels, bearings, shock absorber, harness, buckles, bumper bar, seat fabric and canopy. Not covered: normal wear and tear, misuse, accident, use beyond age or weight limits, modification, outdoor or damp storage damage, second-hand purchases, commercial or hire use. Claims go through the help centre with proof of purchase, model name and photos or a short video. Registering the product means we can reach you about safety updates and process a claim faster.",
+  "air_travel": "The Wonder range is carry-on approved and designed for the overhead locker. It folds to one piece in three seconds. Cabin allowances vary by airline and fare: always tell the customer to check their airline's allowance against the folded size. Never state an airline's allowance. If it goes in the hold it travels as a stroller."
+ },
+ "safety": "Certified to stroller safety standards rather than toy standards, with a 5-point harness, safety bumper bar, shock-absorbing front wheel, one-foot rear brake and a fold lock that cannot fold with a child in it. Habits: harness on every time; brake on when stopped; recline only on the Wonder max with the harness done up; keep a hand on the parent handle until they can pedal and brake on purpose; check both fold locks after every fold; register the product.",
+ "development": "General guidance for parents, not clinical advice. 6 to 9 months: sitting with support, needs a reclining seat. 10 to 12 months: sits unaided, holds the handlebar, cannot steer or pedal. 12 to 18 months: walking, scoots with feet on a trike. 18 months to 2 years: finds the pedals, one foot at a time, often backwards first; training mode with the parent handle on. 2 to 3 years: pedals continuously and steers on purpose; free riding, parent handle back on for the tired ride home. For any concern about development, suggest a maternal and child health nurse or GP.",
+ "awards": "Red Dot Award: Product Design 2026. German Design Award 2026 (Winner). 2025 Baby Innovation Award, All-Terrain Stroller Product of the Year. 100+ patents, sold in 80+ countries to 20 million families, founded 2006.",
+ "pages": {
+  "Compare the range": "/pages/compare",
+  "Find your smarTrike (quiz)": "/pages/find-your-smartrike",
+  "Learn hub (guides by age)": "/blogs/learn",
+  "Milestones, 6 months to 3 years": "/pages/milestones",
+  "Travel with Wonder": "/pages/travel",
+  "Safety and certification": "/pages/safety",
+  "Support hub": "/pages/support",
+  "FAQ": "/pages/faqs",
+  "Warranty": "/pages/warranty",
+  "Shipping and delivery": "/pages/shipping-delivery",
+  "Returns": "/pages/product-returns",
+  "Manuals and videos": "/pages/product-manuals",
+  "Register your product": "/pages/register-your-product",
+  "Contact": "/pages/contact-us",
+  "Stockists and showroom": "/pages/stockists",
+  "Wonder max": "/products/smartrike-wonder-max-stone-beige",
+  "Wonder+": "/products/smartrike-wonder-plus",
+  "Wonder": "/products/wonder-trike",
+  "Wind": "/products/wind-trike",
+  "Wind+": "/products/smartrike-wind-plus",
+  "Xtend Ride-on": "/products/xtend-ride-on",
+  "Xtend Mini+ scooter": "/products/xtend-scooter"
+ },
+ "faq": [
+  {"q": "Which smarTrike is right for my child?", "a": "Start with age. Under 10 months, only the Wonder max is suitable because its seat reclines to 140 degrees. From 10 months all five trikes fit; daily use points to the Wonder range, occasional and travel use to the Wind range."},
+  {"q": "What is the difference between the Wonder, Wonder+ and Wonder max?", "a": "Same fold, steering and safety. The Wonder is the lightest at 5.9 kg and $389 with a mesh seat and 2-stage canopy. The Wonder+ ($489, 6.42 kg) adds a 3-stage canopy and an extra-large seat. The Wonder max ($579, 6.95 kg) is the only one from 6 months because it reclines to 140 degrees, with premium cushioned fabrics."},
+  {"q": "Can my toddler fall asleep in it?", "a": "In the Wonder max, yes: the seat reclines to 140 degrees and the canopy pulls forward. The Wonder and Wonder+ sit upright."},
+  {"q": "Can I steer it with one hand?", "a": "Yes. The patented 360 degree steering turns the front wheel from the parent handle, on the spot and in reverse, with one hand."},
+  {"q": "Is it approved as carry-on luggage?", "a": "The Wonder range is carry-on approved and designed for the overhead locker. Check your airline's cabin allowance against the folded size before you fly."},
+  {"q": "How long does assembly take?", "a": "Under ten minutes for most parents. Wheels click on, the handle slides in and locks. Call 1300 722 302 if you get stuck."},
+  {"q": "Do I need to register to get the warranty?", "a": "No. The 2-year warranty applies from purchase. Registering means we can reach you about safety updates and process a claim faster."},
+  {"q": "Where is it made and who do I deal with?", "a": "smarTrike is designed in Israel and sold in over 80 countries. In Australia you deal with Coolkidz in Braeside, Victoria, who hold the stock and handle every claim."}
+ ]
+}
