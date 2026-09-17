@@ -4,6 +4,7 @@ import React from "react";
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Tooltip, Legend } from "chart.js";
 import { Chart } from "react-chartjs-2";
 import { fmtFull } from "@/lib/format";
+import { brandMatch } from "@/lib/channels";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Tooltip, Legend);
 
@@ -14,27 +15,33 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointEleme
 // whole-business revenue stays off team-visible surfaces.
 
 type SpendRow = { brand_id?: number; month_key: string; spend: number };
+type BrandLite = { id: number; name: string; color?: string | null; live?: boolean };
 
-export function MerCard({ channelSales, googleAds, metaAds, pinterestAds, amazonAds, marketingActuals, targets, marketingBudgets, monthKeys, monthLabels, fy, fyLabel, role }: {
-  channelSales: any[]; googleAds: SpendRow[]; metaAds: SpendRow[]; pinterestAds: SpendRow[]; amazonAds: SpendRow[];
+export function MerCard({ brands, channelSales, googleAds, metaAds, pinterestAds, amazonAds, marketingActuals, targets, marketingBudgets, monthKeys, monthLabels, fy, fyLabel, role }: {
+  brands: BrandLite[]; channelSales: any[]; googleAds: SpendRow[]; metaAds: SpendRow[]; pinterestAds: SpendRow[]; amazonAds: SpendRow[];
   marketingActuals: any[]; targets: any[]; marketingBudgets: any[];
   monthKeys: string[]; monthLabels: string[]; fy: string; fyLabel: string; role: string | null;
 }) {
   const [inflSpend, setInflSpend] = React.useState<SpendRow[]>([]);
+  const [brandId, setBrandId] = React.useState<number | "all">("all");
   React.useEffect(() => {
     if (role !== "admin") return;
     fetch("/api/influencer/spend").then(r => r.json()).then(j => setInflSpend(j.rows ?? [])).catch(() => {});
   }, [role]);
   if (role !== "admin") return null;
 
+  const selected = brandId === "all" ? null : brands.find(b => b.id === brandId) ?? null;
+  const byBrandId = <T extends { brand_id?: number }>(rows: T[]) => selected ? rows.filter(r => r.brand_id === selected.id) : rows;
+  const byBrandName = (rows: any[]) => selected ? rows.filter(r => brandMatch(selected.name, r.brand)) : rows;
+
   const sum = (rows: any[], mk: string, key: string, val: string) =>
     rows.filter(r => r[key] === mk).reduce((s, r) => s + (Number(r[val]) || 0), 0);
 
-  const revenue = monthKeys.map(mk => sum(channelSales, mk, "month_key", "value"));
+  const revenue = monthKeys.map(mk => sum(byBrandName(channelSales), mk, "month_key", "value"));
   const cost = monthKeys.map(mk =>
-    sum(googleAds, mk, "month_key", "spend") + sum(metaAds, mk, "month_key", "spend") +
-    sum(pinterestAds, mk, "month_key", "spend") + sum(amazonAds, mk, "month_key", "spend") +
-    sum(marketingActuals, mk, "month_key", "spend") + sum(inflSpend, mk, "month_key", "spend"));
+    sum(byBrandId(googleAds), mk, "month_key", "spend") + sum(byBrandId(metaAds), mk, "month_key", "spend") +
+    sum(byBrandId(pinterestAds), mk, "month_key", "spend") + sum(byBrandId(amazonAds), mk, "month_key", "spend") +
+    sum(byBrandId(marketingActuals), mk, "month_key", "spend") + sum(byBrandId(inflSpend), mk, "month_key", "spend"));
 
   // Only months with real revenue count (channel sales upload lags the month end)
   const liveIdx = monthKeys.map((_, i) => i).filter(i => revenue[i] > 0);
@@ -46,9 +53,12 @@ export function MerCard({ channelSales, googleAds, metaAds, pinterestAds, amazon
   const fytdMer = fytdCost > 0 ? fytdRev / fytdCost : null;
   const lastIdx = liveIdx[liveIdx.length - 1];
 
-  // Implied target: FY revenue target ÷ FY marketing budget
-  const targetRev = targets.filter((t: any) => monthKeys.includes(t.month_key)).reduce((s: number, t: any) => s + (Number(t.revenue_target) || 0), 0);
-  const budget = marketingBudgets.filter((b: any) => (b.fy ?? "2025-26") === fy).reduce((s: number, b: any) => s + (Number(b.annual_budget) || 0), 0);
+  // Implied target: FY revenue target ÷ FY marketing budget. Per-brand target
+  // is D2C (brand_targets has no whole-business figure), so a brand's own MER
+  // vs the whole-business target line is an approximation, same as the
+  // all-brands view already is.
+  const targetRev = byBrandId(targets).filter((t: any) => monthKeys.includes(t.month_key)).reduce((s: number, t: any) => s + (Number(t.revenue_target) || 0), 0);
+  const budget = byBrandId(marketingBudgets).filter((b: any) => (b.fy ?? "2025-26") === fy).reduce((s: number, b: any) => s + (Number(b.annual_budget) || 0), 0);
   const targetMer = budget > 0 && targetRev > 0 ? targetRev / budget : null;
 
   const kpis = [
@@ -65,13 +75,20 @@ export function MerCard({ channelSales, googleAds, metaAds, pinterestAds, amazon
       <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
         <div>
           <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Marketing efficiency (MER)</h2>
-          <p className="text-xs text-gray-400 mt-0.5">Every dollar of marketing → dollars of whole-business revenue · all channels, all costs</p>
+          <p className="text-xs text-gray-400 mt-0.5">Every dollar of marketing → dollars of {selected ? `${selected.name} ` : "whole-business "}revenue · all channels, all costs</p>
         </div>
-        {onTrack != null && (
-          <span className={`text-[11px] font-bold rounded-full px-3 py-1.5 ${onTrack ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-            {onTrack ? "▲ Ahead of target" : "▼ Below target"}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          <select value={brandId} onChange={e => setBrandId(e.target.value === "all" ? "all" : Number(e.target.value))}
+            className="text-[11px] font-semibold text-slate-600 bg-gray-50 border border-gray-200 rounded-lg pl-2.5 pr-7 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+            <option value="all">All brands</option>
+            {[...brands].sort((a, b) => a.name.localeCompare(b.name)).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+          </select>
+          {onTrack != null && (
+            <span className={`text-[11px] font-bold rounded-full px-3 py-1.5 whitespace-nowrap ${onTrack ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+              {onTrack ? "▲ Ahead of target" : "▼ Below target"}
+            </span>
+          )}
+        </div>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         {kpis.map(k => (

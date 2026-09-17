@@ -1273,7 +1273,7 @@ export function DashboardTabs({
 
               <BrandShareCard brands={brands} monthly={monthly} monthKeys={monthKeys} channelSales={channelSales} role={role} fyLabel={fyLabel} />
 
-              <MerCard channelSales={channelSales} googleAds={googleAds} metaAds={metaAds} pinterestAds={pinterestAds} amazonAds={amazonAds}
+              <MerCard brands={brands} channelSales={channelSales} googleAds={googleAds} metaAds={metaAds} pinterestAds={pinterestAds} amazonAds={amazonAds}
                 marketingActuals={marketingActuals} targets={targets} marketingBudgets={marketingBudgets}
                 monthKeys={monthKeys} monthLabels={monthLabels} fy={fy} fyLabel={fyLabel} role={role} />
 
