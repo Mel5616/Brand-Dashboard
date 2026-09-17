@@ -133,34 +133,39 @@ export function UtmTrackingPanel({ brands, admin }: { brands: { name: string }[]
         <p className="text-sm text-gray-400 text-center py-10">No tracked links yet.</p>
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <p className="text-[11px] text-gray-400 px-4 pt-3">Sessions / conversions / revenue are GA4 traffic matched to each link by source, medium and campaign over the last 180 days — a dash means no GA4 traffic has landed on that exact combination yet.</p>
-          <table className="w-full text-sm">
-            <thead><tr className="text-[10.5px] uppercase tracking-wide text-gray-400 border-b border-gray-100">
-              <th className="text-left py-2 pl-4">Date</th><th className="text-left py-2">Partner / activity</th><th className="text-left py-2">Brand</th>
-              <th className="text-left py-2">Source</th><th className="text-left py-2">Medium</th><th className="text-left py-2">Campaign</th>
-              <th className="text-right py-2" title="Sessions, last 180 days (GA4)">Sessions</th>
-              <th className="text-right py-2" title="Conversions, last 180 days (GA4)">Conv.</th>
-              <th className="text-right py-2" title="Revenue, last 180 days (GA4)">Revenue</th>
-              <th className="text-left py-2 pr-4">Link</th>
+          <p className="text-[11px] text-gray-400 px-5 pt-4 pb-1">Sessions / conversions / revenue are GA4 traffic matched to each link by source, medium and campaign over the last 180 days — a dash means no GA4 traffic has landed on that exact combination yet.</p>
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm border-separate" style={{ borderSpacing: 0 }}>
+            <thead><tr className="text-[10.5px] uppercase tracking-wide text-gray-400">
+              <th className="text-left py-2.5 px-3 pl-5 whitespace-nowrap">Date</th>
+              <th className="text-left py-2.5 px-3">Partner / activity</th>
+              <th className="text-left py-2.5 px-3">Brand</th>
+              <th className="text-left py-2.5 px-3">Source</th>
+              <th className="text-left py-2.5 px-3">Medium</th>
+              <th className="text-left py-2.5 px-3">Campaign</th>
+              <th className="text-right py-2.5 px-3 whitespace-nowrap" title="Sessions, last 180 days (GA4)">Sessions</th>
+              <th className="text-right py-2.5 px-3 whitespace-nowrap" title="Conversions, last 180 days (GA4)">Conv.</th>
+              <th className="text-right py-2.5 px-3 whitespace-nowrap" title="Revenue, last 180 days (GA4)">Revenue</th>
+              <th className="text-left py-2.5 px-3 pr-5">Actions</th>
             </tr></thead>
             <tbody>
               {rows.map(r => (
-                <tr key={r.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
-                  <td className="py-2.5 pl-4 text-gray-400 whitespace-nowrap">{fmtD(r.created_at)}</td>
-                  <td className="py-2.5 font-medium text-slate-700">{r.partner}</td>
-                  <td className="py-2.5 text-gray-500">{r.brand ?? "—"}</td>
-                  <td className="py-2.5 text-gray-500">{r.source}</td>
-                  <td className="py-2.5 text-gray-500">{r.medium}</td>
-                  <td className="py-2.5 text-gray-500">{r.campaign ?? "—"}</td>
-                  <td className="py-2.5 text-right text-gray-500 tabular-nums">{r.stats ? fmtN(r.stats.sessions) : "—"}</td>
-                  <td className="py-2.5 text-right text-gray-500 tabular-nums">{r.stats ? fmtN(Math.round(r.stats.conversions)) : "—"}</td>
-                  <td className="py-2.5 text-right text-gray-500 tabular-nums" title={r.stats ? `Synced ${fmtD(r.stats.synced_at)}` : "No GA4 data matched yet"}>{r.stats ? fmtMoney(r.stats.revenue) : "—"}</td>
-                  <td className="py-2.5 pr-4">
-                    <div className="flex items-center gap-1.5">
-                      <button onClick={() => copy(r)} title={r.final_url} className="text-xs font-semibold text-indigo-600 border border-indigo-100 rounded-lg px-2.5 py-1 hover:bg-indigo-50 whitespace-nowrap">
+                <tr key={r.id} className="hover:bg-gray-50 [&>td]:border-t [&>td]:border-gray-100">
+                  <td className="py-2.5 px-3 pl-5 text-gray-400 whitespace-nowrap">{fmtD(r.created_at)}</td>
+                  <td className="py-2.5 px-3 font-medium text-slate-700 max-w-[220px] truncate" title={r.partner}>{r.partner}</td>
+                  <td className="py-2.5 px-3 text-gray-500 whitespace-nowrap">{r.brand ?? "—"}</td>
+                  <td className="py-2.5 px-3"><span className="inline-block text-[11px] font-medium text-slate-600 bg-slate-100 rounded-full px-2 py-0.5 whitespace-nowrap">{r.source}</span></td>
+                  <td className="py-2.5 px-3"><span className="inline-block text-[11px] font-medium text-sky-700 bg-sky-50 rounded-full px-2 py-0.5 whitespace-nowrap">{r.medium}</span></td>
+                  <td className="py-2.5 px-3 text-gray-500 max-w-[160px] truncate" title={r.campaign ?? undefined}>{r.campaign ?? "—"}</td>
+                  <td className="py-2.5 px-3 text-right text-gray-500 tabular-nums whitespace-nowrap">{r.stats ? fmtN(r.stats.sessions) : "—"}</td>
+                  <td className="py-2.5 px-3 text-right text-gray-500 tabular-nums whitespace-nowrap">{r.stats ? fmtN(Math.round(r.stats.conversions)) : "—"}</td>
+                  <td className="py-2.5 px-3 text-right text-gray-500 tabular-nums whitespace-nowrap" title={r.stats ? `Synced ${fmtD(r.stats.synced_at)}` : "No GA4 data matched yet"}>{r.stats ? fmtMoney(r.stats.revenue) : "—"}</td>
+                  <td className="py-2.5 px-3 pr-5">
+                    <div className="flex items-center gap-1.5 whitespace-nowrap">
+                      <button onClick={() => copy(r)} title={r.final_url} className="text-xs font-semibold text-indigo-600 border border-indigo-100 rounded-lg px-2.5 py-1 hover:bg-indigo-50">
                         {copiedId === r.id ? "Copied ✓" : "Copy link"}
                       </button>
-                      <a href={`/api/utm-links/qr?id=${r.id}`} download className="text-xs font-semibold text-slate-600 border border-gray-200 rounded-lg px-2.5 py-1 hover:bg-gray-50 whitespace-nowrap">QR ↓</a>
+                      <a href={`/api/utm-links/qr?id=${r.id}`} download className="text-xs font-semibold text-slate-600 border border-gray-200 rounded-lg px-2.5 py-1 hover:bg-gray-50">QR ↓</a>
                       {admin && <button onClick={() => remove(r.id)} title="Delete" className="text-gray-300 hover:text-rose-600 px-1">🗑</button>}
                     </div>
                   </td>
@@ -168,6 +173,7 @@ export function UtmTrackingPanel({ brands, admin }: { brands: { name: string }[]
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>
