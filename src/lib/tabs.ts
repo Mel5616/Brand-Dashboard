@@ -38,6 +38,7 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "discount-codes", label: "Discount Codes" },
     { id: "reviews", label: "Reviews" },
     { id: "website-requests", label: "Website Requests" },
+    { id: "utm-tracking", label: "UTM Tracking" },
     { id: "calendar", label: "Calendar" },
     { id: "content", label: "Briefing Engine" },
     { id: "events", label: "Tune Up Days" },
