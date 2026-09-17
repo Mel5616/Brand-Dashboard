@@ -1275,7 +1275,7 @@ export function DashboardTabs({
 
               <MerCard brands={brands} channelSales={channelSales} googleAds={googleAds} metaAds={metaAds} pinterestAds={pinterestAds} amazonAds={amazonAds}
                 marketingActuals={marketingActuals} targets={targets} marketingBudgets={marketingBudgets}
-                monthKeys={monthKeys} monthLabels={monthLabels} fy={fy} fyLabel={fyLabel} role={role} />
+                monthKeys={monthKeys} monthLabels={monthLabels} fy={fy} fyLabel={fyLabel} role={role} canView={(allowedTabs ?? []).includes("mer")} />
 
               <AnnotationsCard items={annotations} brands={brands.map((b: any) => ({ name: b.name }))}
                 isAdmin={role === "admin"} me={currentEmail ?? null} onChange={loadAnnotations} />

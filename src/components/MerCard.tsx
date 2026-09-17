@@ -17,18 +17,22 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointEleme
 type SpendRow = { brand_id?: number; month_key: string; spend: number };
 type BrandLite = { id: number; name: string; color?: string | null; live?: boolean };
 
-export function MerCard({ brands, channelSales, googleAds, metaAds, pinterestAds, amazonAds, marketingActuals, targets, marketingBudgets, monthKeys, monthLabels, fy, fyLabel, role }: {
+export function MerCard({ brands, channelSales, googleAds, metaAds, pinterestAds, amazonAds, marketingActuals, targets, marketingBudgets, monthKeys, monthLabels, fy, fyLabel, role, canView }: {
   brands: BrandLite[]; channelSales: any[]; googleAds: SpendRow[]; metaAds: SpendRow[]; pinterestAds: SpendRow[]; amazonAds: SpendRow[];
   marketingActuals: any[]; targets: any[]; marketingBudgets: any[];
   monthKeys: string[]; monthLabels: string[]; fy: string; fyLabel: string; role: string | null;
+  // Admins always see it; a member needs it explicitly granted (whole-business
+  // revenue is otherwise kept off team-visible surfaces) — see canView below.
+  canView?: boolean;
 }) {
   const [inflSpend, setInflSpend] = React.useState<SpendRow[]>([]);
   const [brandId, setBrandId] = React.useState<number | "all">("all");
+  const allowed = role === "admin" || !!canView;
   React.useEffect(() => {
-    if (role !== "admin") return;
+    if (!allowed) return;
     fetch("/api/influencer/spend").then(r => r.json()).then(j => setInflSpend(j.rows ?? [])).catch(() => {});
-  }, [role]);
-  if (role !== "admin") return null;
+  }, [allowed]);
+  if (!allowed) return null;
 
   const selected = brandId === "all" ? null : brands.find(b => b.id === brandId) ?? null;
   const byBrandId = <T extends { brand_id?: number }>(rows: T[]) => selected ? rows.filter(r => r.brand_id === selected.id) : rows;
