@@ -1,9 +1,11 @@
-// smarTrike Australia product registration: same dedicated warranty Supabase
-// project as Gaia Baby (customer PII stays out of the shared ops database),
-// plus a receipt file in a private storage bucket. Self-contained so it can
+// smarTrike Australia product registration. Registrations live in the
+// COOLKIDZ WARRANTY Supabase project (the dedicated one all brands' warranty
+// registrations share), NOT the brand-dashboard project the rest of this repo
+// uses. Customer PII stays out of the shared ops database. Receipt files go to
+// a private bucket in that same warranty project. Self-contained so it can
 // ship independently of the Gaia route.
-const url = process.env.WARRANTY_SUPABASE_URL || process.env.GAIA_WARRANTY_SUPABASE_URL;
-const key = process.env.WARRANTY_SUPABASE_SERVICE_ROLE_KEY || process.env.GAIA_WARRANTY_SUPABASE_SERVICE_ROLE_KEY;
+const url = process.env.COOLKIDZ_WARRANTY_SUPABASE_URL || process.env.WARRANTY_SUPABASE_URL || process.env.GAIA_WARRANTY_SUPABASE_URL;
+const key = process.env.COOLKIDZ_WARRANTY_SUPABASE_SERVICE_ROLE_KEY || process.env.WARRANTY_SUPABASE_SERVICE_ROLE_KEY || process.env.GAIA_WARRANTY_SUPABASE_SERVICE_ROLE_KEY;
 
 export const BUCKET = "warranty-receipts";
 export const configured = () => Boolean(url && key);
