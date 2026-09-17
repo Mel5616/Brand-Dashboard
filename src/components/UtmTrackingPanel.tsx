@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 type Stats = { sessions: number; conversions: number; revenue: number; synced_at: string };
 type Link = {
   id: string; brand: string | null; partner: string; source: string; medium: string;
-  campaign: string | null; landing_page: string; final_url: string; created_by: string | null; created_at: string;
+  campaign: string | null; description: string | null; landing_page: string; final_url: string; created_by: string | null; created_at: string;
   stats?: Stats | null;
 };
 
@@ -41,7 +41,7 @@ export function UtmTrackingPanel({ brands, admin }: { brands: { name: string }[]
   const [q, setQ] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const [f, setF] = useState({ partner: "", brand: "", source: "", medium: "", campaign: "", landing_page: "" });
+  const [f, setF] = useState({ partner: "", brand: "", source: "", medium: "", campaign: "", description: "", landing_page: "" });
 
   async function load() {
     const res = await fetch("/api/utm-links").then(r => r.json()).catch(() => ({ ok: false }));
@@ -52,13 +52,13 @@ export function UtmTrackingPanel({ brands, admin }: { brands: { name: string }[]
 
   async function create() {
     setMsg("");
-    if (!f.partner.trim() || !f.source.trim() || !f.medium.trim() || !f.landing_page.trim()) {
-      setMsg("Partner/activity, source, medium and landing page are all required."); return;
+    if (!f.partner.trim() || !f.source.trim() || !f.medium.trim() || !f.campaign.trim() || !f.landing_page.trim()) {
+      setMsg("Partner/activity, source, medium, campaign and landing page are all required — the site reads source + campaign off the link to know which offer to show."); return;
     }
     setBusy(true);
     const d = await fetch("/api/utm-links", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(f) }).then(r => r.json()).catch(() => null);
     setBusy(false);
-    if (d?.ok) { setF({ partner: "", brand: f.brand, source: "", medium: "", campaign: "", landing_page: "" }); load(); setMsg("Link created."); }
+    if (d?.ok) { setF({ partner: "", brand: f.brand, source: "", medium: "", campaign: "", description: "", landing_page: "" }); load(); setMsg("Link created."); }
     else { setNeedsSetup(!!d?.needsSetup); setMsg(d?.error || "Couldn't create the link."); }
   }
 
@@ -78,7 +78,7 @@ export function UtmTrackingPanel({ brands, admin }: { brands: { name: string }[]
   const brandList = useMemo(() => [...new Set([...brands.map(b => b.name), ...items.map(i => i.brand).filter(Boolean) as string[]])].sort(), [brands, items]);
   const rows = items.filter(r =>
     (!brandF || r.brand === brandF) &&
-    (!q.trim() || `${r.partner} ${r.source} ${r.medium} ${r.campaign ?? ""} ${r.brand ?? ""}`.toLowerCase().includes(q.toLowerCase())));
+    (!q.trim() || `${r.partner} ${r.source} ${r.medium} ${r.campaign ?? ""} ${r.brand ?? ""} ${r.description ?? ""}`.toLowerCase().includes(q.toLowerCase())));
 
   if (loading) return <p className="text-sm text-slate-400 py-8 text-center">Loading…</p>;
   if (needsSetup) {
@@ -92,7 +92,8 @@ export function UtmTrackingPanel({ brands, admin }: { brands: { name: string }[]
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-5">
-        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-600 mb-3">New tracked link</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-600 mb-1">New tracked link</p>
+        <p className="text-xs text-gray-400 mb-3">Source and campaign are what the website itself reads off the link to know which offer to show — both are required, not just for our own reporting.</p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <div><div className={lbl}>Partner / activity *</div><input value={f.partner} onChange={e => setF(p => ({ ...p, partner: e.target.value }))} placeholder="e.g. Bounty Parents, Boxing Day flyer" className={inp} /></div>
           <div>
@@ -110,7 +111,11 @@ export function UtmTrackingPanel({ brands, admin }: { brands: { name: string }[]
             <input value={f.medium} onChange={e => setF(p => ({ ...p, medium: e.target.value }))} placeholder="e.g. cpc, affiliates, qrcode" className={inp} list="utm-medium-list" />
             <datalist id="utm-medium-list">{MEDIUMS.map(m => <option key={m} value={m} />)}</datalist>
           </div>
-          <div><div className={lbl}>Campaign</div><input value={f.campaign} onChange={e => setF(p => ({ ...p, campaign: e.target.value }))} placeholder="optional" className={inp} /></div>
+          <div><div className={lbl}>Campaign *</div><input value={f.campaign} onChange={e => setF(p => ({ ...p, campaign: e.target.value }))} placeholder="e.g. UB_Traffic, boxing_day" className={inp} /></div>
+          <div className="sm:col-span-2 lg:col-span-3">
+            <div className={lbl}>Description</div>
+            <textarea value={f.description} onChange={e => setF(p => ({ ...p, description: e.target.value }))} placeholder="What is this link for, and where is it being used? e.g. QR code on the Boxing Day catalogue insert" rows={2} className={inp} />
+          </div>
         </div>
         {preview && (
           <div className="mt-3 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 text-xs text-slate-600 break-all">
@@ -152,7 +157,10 @@ export function UtmTrackingPanel({ brands, admin }: { brands: { name: string }[]
               {rows.map(r => (
                 <tr key={r.id} className="hover:bg-gray-50 [&>td]:border-t [&>td]:border-gray-100">
                   <td className="py-2.5 px-3 pl-5 text-gray-400 whitespace-nowrap">{fmtD(r.created_at)}</td>
-                  <td className="py-2.5 px-3 font-medium text-slate-700 max-w-[220px] truncate" title={r.partner}>{r.partner}</td>
+                  <td className="py-2.5 px-3 max-w-[220px]">
+                    <div className="font-medium text-slate-700 truncate" title={r.partner}>{r.partner}</div>
+                    {r.description && <div className="text-[11px] text-gray-400 truncate" title={r.description}>{r.description}</div>}
+                  </td>
                   <td className="py-2.5 px-3 text-gray-500 whitespace-nowrap">{r.brand ?? "—"}</td>
                   <td className="py-2.5 px-3"><span className="inline-block text-[11px] font-medium text-slate-600 bg-slate-100 rounded-full px-2 py-0.5 whitespace-nowrap">{r.source}</span></td>
                   <td className="py-2.5 px-3"><span className="inline-block text-[11px] font-medium text-sky-700 bg-sky-50 rounded-full px-2 py-0.5 whitespace-nowrap">{r.medium}</span></td>

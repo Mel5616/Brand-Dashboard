@@ -12,11 +12,11 @@ const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const h = (extra: Record<string, string> = {}) => ({ apikey: sbKey!, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json", ...extra });
 const missing = (s: number, b: string) => s === 404 || /PGRST205|does not exist|schema cache/i.test(b);
 
-function buildFinalUrl(landingPage: string, source: string, medium: string, campaign: string | null) {
+function buildFinalUrl(landingPage: string, source: string, medium: string, campaign: string) {
   const u = new URL(landingPage);
   u.searchParams.set("utm_source", source);
   u.searchParams.set("utm_medium", medium);
-  if (campaign) u.searchParams.set("utm_campaign", campaign);
+  u.searchParams.set("utm_campaign", campaign);
   return u.toString();
 }
 
@@ -56,13 +56,17 @@ export async function POST(req: Request) {
   const partner = String(b.partner || "").trim().slice(0, 200);
   const source = String(b.source || "").trim().slice(0, 100);
   const medium = String(b.medium || "").trim().slice(0, 100);
-  const campaign = b.campaign ? String(b.campaign).trim().slice(0, 150) : null;
+  const campaign = String(b.campaign || "").trim().slice(0, 150);
   const brand = b.brand ? String(b.brand).trim().slice(0, 80) : null;
+  const description = b.description ? String(b.description).trim().slice(0, 500) : null;
   const landingPage = String(b.landing_page || "").trim();
 
   if (!partner) return NextResponse.json({ ok: false, error: "Partner / activity is required" }, { status: 400 });
   if (!source) return NextResponse.json({ ok: false, error: "Source is required" }, { status: 400 });
   if (!medium) return NextResponse.json({ ok: false, error: "Medium is required" }, { status: 400 });
+  // Campaign isn't optional — the site's own promo/offer detection reads
+  // source + campaign off the URL, so a link without one won't trigger it.
+  if (!campaign) return NextResponse.json({ ok: false, error: "Campaign is required" }, { status: 400 });
   let finalUrl: string;
   try {
     if (!/^https?:\/\//i.test(landingPage)) throw new Error();
@@ -71,7 +75,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Landing page must be a full URL, e.g. https://uppababy.com.au/" }, { status: 400 });
   }
 
-  const row = { brand, partner, source, medium, campaign, landing_page: landingPage, final_url: finalUrl, created_by: acc.user?.email ?? null };
+  const row = { brand, partner, source, medium, campaign, description, landing_page: landingPage, final_url: finalUrl, created_by: acc.user?.email ?? null };
   const res = await fetch(`${sbUrl}/rest/v1/utm_links`, { method: "POST", headers: h({ Prefer: "return=representation" }), body: JSON.stringify(row) });
   const text = await res.text();
   if (!res.ok) return NextResponse.json({ ok: false, needsSetup: missing(res.status, text), error: text.slice(0, 200) }, { status: 500 });
