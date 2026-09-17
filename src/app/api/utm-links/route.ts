@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
+import { brandMatch } from "@/lib/channels";
 
 // UTM Tracking (Plan > UTM Tracking) — a shared link library replacing the
 // "UTM - ALL BRANDS.xlsx" spreadsheet. Any signed-in team member with the tab
@@ -22,10 +23,29 @@ function buildFinalUrl(landingPage: string, source: string, medium: string, camp
 export async function GET() {
   const acc = await getAccess();
   if (!acc.role) return NextResponse.json({ ok: false, error: "No access" }, { status: 401 });
-  const res = await fetch(`${sbUrl}/rest/v1/utm_links?select=*&order=created_at.desc&limit=2000`, { headers: h(), cache: "no-store" });
-  const text = await res.text();
-  if (!res.ok) return NextResponse.json({ ok: true, needsSetup: missing(res.status, text), items: [] });
-  return NextResponse.json({ ok: true, items: JSON.parse(text || "[]") });
+  const [linksRes, brandsRes, statsRes] = await Promise.all([
+    fetch(`${sbUrl}/rest/v1/utm_links?select=*&order=created_at.desc&limit=2000`, { headers: h(), cache: "no-store" }),
+    fetch(`${sbUrl}/rest/v1/brands?select=id,name`, { headers: h(), cache: "no-store" }),
+    fetch(`${sbUrl}/rest/v1/utm_link_stats?select=*`, { headers: h(), cache: "no-store" }),
+  ]);
+  const text = await linksRes.text();
+  if (!linksRes.ok) return NextResponse.json({ ok: true, needsSetup: missing(linksRes.status, text), items: [] });
+  const items = JSON.parse(text || "[]");
+
+  // GA4 traffic per link (scripts/sync_utm_stats.py), matched by brand name →
+  // brand_id and case-insensitive source/medium/campaign. Stats are optional —
+  // a link with none synced yet just has no stats attached.
+  if (brandsRes.ok && statsRes.ok) {
+    const brands = await brandsRes.json().catch(() => []);
+    const stats = await statsRes.json().catch(() => []);
+    const statKey = (bid: number, source: string, medium: string, campaign: string) => `${bid}|${source.toLowerCase()}|${medium.toLowerCase()}|${campaign.toLowerCase()}`;
+    const statMap = new Map(stats.map((s: any) => [statKey(s.brand_id, s.source, s.medium, s.campaign || ""), s]));
+    for (const item of items) {
+      const b = item.brand ? brands.find((x: any) => brandMatch(x.name, item.brand)) : null;
+      item.stats = b ? statMap.get(statKey(b.id, item.source, item.medium, item.campaign || "")) ?? null : null;
+    }
+  }
+  return NextResponse.json({ ok: true, items });
 }
 
 export async function POST(req: Request) {

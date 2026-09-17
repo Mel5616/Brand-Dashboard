@@ -7,15 +7,19 @@ import { useEffect, useMemo, useState } from "react";
 // new offer/link; the final tracked URL is built server-side (so a typo
 // never breaks the ?utm_source= string) and every link gets a downloadable
 // QR code for print/signage use.
+type Stats = { sessions: number; conversions: number; revenue: number; synced_at: string };
 type Link = {
   id: string; brand: string | null; partner: string; source: string; medium: string;
   campaign: string | null; landing_page: string; final_url: string; created_by: string | null; created_at: string;
+  stats?: Stats | null;
 };
 
 const inp = "text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400 w-full";
 const lbl = "text-[11px] font-bold uppercase tracking-wide text-slate-400 mb-1";
 const MEDIUMS = ["cpc", "affiliates", "qrcode", "pos", "organic", "email", "social", "collab", "display"];
 const fmtD = (s: string) => new Date(s).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "2-digit" });
+const fmtN = (n: number) => n.toLocaleString("en-AU");
+const fmtMoney = (n: number) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Math.round(n)}`;
 
 function previewUrl(landingPage: string, source: string, medium: string, campaign: string) {
   try {
@@ -129,10 +133,14 @@ export function UtmTrackingPanel({ brands, admin }: { brands: { name: string }[]
         <p className="text-sm text-gray-400 text-center py-10">No tracked links yet.</p>
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <p className="text-[11px] text-gray-400 px-4 pt-3">Sessions / conversions / revenue are GA4 traffic matched to each link by source, medium and campaign over the last 180 days — a dash means no GA4 traffic has landed on that exact combination yet.</p>
           <table className="w-full text-sm">
             <thead><tr className="text-[10.5px] uppercase tracking-wide text-gray-400 border-b border-gray-100">
               <th className="text-left py-2 pl-4">Date</th><th className="text-left py-2">Partner / activity</th><th className="text-left py-2">Brand</th>
               <th className="text-left py-2">Source</th><th className="text-left py-2">Medium</th><th className="text-left py-2">Campaign</th>
+              <th className="text-right py-2" title="Sessions, last 180 days (GA4)">Sessions</th>
+              <th className="text-right py-2" title="Conversions, last 180 days (GA4)">Conv.</th>
+              <th className="text-right py-2" title="Revenue, last 180 days (GA4)">Revenue</th>
               <th className="text-left py-2 pr-4">Link</th>
             </tr></thead>
             <tbody>
@@ -144,6 +152,9 @@ export function UtmTrackingPanel({ brands, admin }: { brands: { name: string }[]
                   <td className="py-2.5 text-gray-500">{r.source}</td>
                   <td className="py-2.5 text-gray-500">{r.medium}</td>
                   <td className="py-2.5 text-gray-500">{r.campaign ?? "—"}</td>
+                  <td className="py-2.5 text-right text-gray-500 tabular-nums">{r.stats ? fmtN(r.stats.sessions) : "—"}</td>
+                  <td className="py-2.5 text-right text-gray-500 tabular-nums">{r.stats ? fmtN(Math.round(r.stats.conversions)) : "—"}</td>
+                  <td className="py-2.5 text-right text-gray-500 tabular-nums" title={r.stats ? `Synced ${fmtD(r.stats.synced_at)}` : "No GA4 data matched yet"}>{r.stats ? fmtMoney(r.stats.revenue) : "—"}</td>
                   <td className="py-2.5 pr-4">
                     <div className="flex items-center gap-1.5">
                       <button onClick={() => copy(r)} title={r.final_url} className="text-xs font-semibold text-indigo-600 border border-indigo-100 rounded-lg px-2.5 py-1 hover:bg-indigo-50 whitespace-nowrap">
