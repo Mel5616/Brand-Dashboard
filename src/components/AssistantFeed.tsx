@@ -10,6 +10,7 @@ const BRANDS: { id: string; label: string; site: string; color: string }[] = [
   { id: "nanit", label: "Nanit · Ask Nanit", site: "nanit.com.au", color: "bg-indigo-100 text-indigo-700" },
   { id: "miamily", label: "MiaMily · Ask MiaMily", site: "miamily.com.au", color: "bg-emerald-100 text-emerald-800" },
   { id: "gaia", label: "Gaia Baby · Ask Gaia", site: "gaia-baby.com.au", color: "bg-amber-100 text-amber-800" },
+  { id: "smartrike", label: "smarTrike · Ask Wonder", site: "smartrike.com.au", color: "bg-cyan-100 text-cyan-800" },
 ];
 const when = (s: string) => new Date(s).toLocaleString("en-AU", { dateStyle: "medium", timeStyle: "short" });
 const STOP = new Set("the a an and or to of in on for is it my me i do does can how what when where which with your you are be will this that about there from have has not no yes at as if any".split(" "));
