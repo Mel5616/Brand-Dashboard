@@ -1,0 +1,227 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+
+// Blogging > AI Blog Writer — full-post drafts written in-brand from a
+// one-line brief, reviewed here, and pushed straight to the right brand's
+// Shopify blog on approval. Currently wired up for Frida and smarTrike;
+// see BRAND_VOICE in src/app/api/blog-drafts/route.ts to add another brand.
+type Draft = {
+  id: string; brand_id: number; status: "draft" | "published" | "rejected"; blog_key: string | null;
+  title: string; slug: string | null; meta_title: string | null; meta_description: string | null;
+  target_keyword: string | null; intent: string | null; site_role: string | null; body_html: string;
+  brief: string | null; note: string | null; published_url: string | null;
+  created_by: string | null; approved_by: string | null; published_at: string | null; created_at: string;
+};
+type BlogDef = { key: string; handle: string; label: string; audience: string; tieins: string };
+type VoiceMap = Record<string, { blogs: BlogDef[]; voice: string }>;
+
+const inp = "text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400 w-full";
+const lbl = "text-[11px] font-bold uppercase tracking-wide text-slate-400 mb-1";
+const fmtD = (s: string) => new Date(s).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "2-digit" });
+const STATUS_META: Record<string, { label: string; cls: string }> = {
+  draft: { label: "Needs review", cls: "bg-amber-100 text-amber-700" },
+  published: { label: "Published", cls: "bg-emerald-100 text-emerald-700" },
+  rejected: { label: "Rejected", cls: "bg-gray-100 text-gray-400" },
+};
+
+export function BlogStudio({ brands, admin }: { brands: { id: number; name: string }[]; admin: boolean }) {
+  const [items, setItems] = useState<Draft[]>([]);
+  const [voices, setVoices] = useState<VoiceMap>({});
+  const [loading, setLoading] = useState(true);
+  const [needsSetup, setNeedsSetup] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [edit, setEdit] = useState<Partial<Draft>>({});
+  const [statusF, setStatusF] = useState<"all" | Draft["status"]>("draft");
+
+  const voiceBrands = useMemo(() => brands.filter(b => voices[b.name]), [brands, voices]);
+  const [form, setForm] = useState({ brand_name: "", blog_key: "", brief: "", target_keyword: "", intent: "", site_role: "cluster" });
+
+  async function load() {
+    const res = await fetch("/api/blog-drafts").then(r => r.json()).catch(() => ({ ok: false }));
+    if (res.ok) { setItems(res.items || []); setVoices(res.brandVoices || {}); setNeedsSetup(!!res.needsSetup); }
+    setLoading(false);
+  }
+  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    if (!form.brand_name && voiceBrands.length) setForm(p => ({ ...p, brand_name: voiceBrands[0].name, blog_key: voices[voiceBrands[0].name]?.blogs[0]?.key || "" }));
+  }, [voiceBrands, voices]);
+
+  const brandBlogs = voices[form.brand_name]?.blogs ?? [];
+  const brandOf = (id: number) => brands.find(b => b.id === id);
+
+  async function generate() {
+    setMsg("");
+    if (!form.brand_name || !form.brief.trim()) { setMsg("Pick a brand and give it a topic/brief."); return; }
+    const brandId = brands.find(b => b.name === form.brand_name)?.id;
+    if (brandId == null) { setMsg("Unknown brand."); return; }
+    setBusy(true); setMsg("Writing — this takes a minute…");
+    const d = await fetch("/api/blog-drafts", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ brand_id: brandId, brand_name: form.brand_name, blog_key: form.blog_key, brief: form.brief, target_keyword: form.target_keyword, intent: form.intent, site_role: form.site_role }),
+    }).then(r => r.json()).catch(() => null);
+    setBusy(false);
+    if (d?.ok) { setForm(p => ({ ...p, brief: "", target_keyword: "", intent: "" })); load(); setMsg("Draft ready — review it below."); setStatusF("draft"); setOpenId(d.item.id); setEdit(d.item); }
+    else { setNeedsSetup(!!d?.needsSetup); setMsg(d?.error || "Couldn't generate that draft."); }
+  }
+
+  function openDraft(d: Draft) { setOpenId(d.id === openId ? null : d.id); setEdit(d); setMsg(""); }
+
+  async function saveEdit() {
+    if (!openId) return;
+    setBusy(true);
+    const d = await fetch("/api/blog-drafts", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: openId, action: "edit", title: edit.title, slug: edit.slug, meta_title: edit.meta_title, meta_description: edit.meta_description, body_html: edit.body_html, target_keyword: edit.target_keyword, intent: edit.intent }),
+    }).then(r => r.json()).catch(() => null);
+    setBusy(false);
+    if (d?.ok) { setMsg("Saved."); load(); } else setMsg(d?.error || "Couldn't save.");
+  }
+
+  async function approve() {
+    if (!openId) return;
+    if (!confirm("Publish this live to the brand's blog right now? This is the only approval step — there's no draft stage on Shopify.")) return;
+    setBusy(true); setMsg("Publishing…");
+    const d = await fetch("/api/blog-drafts", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: openId, action: "approve" }) }).then(r => r.json()).catch(() => null);
+    setBusy(false);
+    if (d?.ok) { setMsg("Published ✓"); load(); } else setMsg(d?.error || "Couldn't publish — the draft is still saved, try again.");
+  }
+
+  async function reject() {
+    if (!openId) return;
+    const note = prompt("Why is this getting rejected? (helps refine future briefs)") || "";
+    setBusy(true);
+    const d = await fetch("/api/blog-drafts", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: openId, action: "reject", note }) }).then(r => r.json()).catch(() => null);
+    setBusy(false);
+    if (d?.ok) { setOpenId(null); load(); } else setMsg(d?.error || "Couldn't reject.");
+  }
+
+  async function remove(id: string) {
+    if (!confirm("Delete this draft permanently?")) return;
+    await fetch(`/api/blog-drafts?id=${id}`, { method: "DELETE" });
+    if (openId === id) setOpenId(null);
+    load();
+  }
+
+  const rows = items.filter(i => statusF === "all" || i.status === statusF);
+
+  if (loading) return <p className="text-sm text-slate-400 py-8 text-center">Loading…</p>;
+  if (needsSetup) {
+    return (
+      <div className="text-sm text-slate-500 bg-white rounded-xl border border-gray-100 p-6">
+        AI Blog Writer isn&apos;t set up yet — run <code className="text-xs bg-slate-100 px-1 py-0.5 rounded">supabase/add_blog_drafts.sql</code> in Supabase.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-5">
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-600 mb-1">New blog draft</p>
+        <p className="text-xs text-gray-400 mb-3">Written to the house content guidelines and that brand&apos;s voice/compliance rules — a full, structured, SEO-ready post from a one-line brief. Nothing goes live until you approve it below.</p>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div>
+            <div className={lbl}>Brand</div>
+            <select value={form.brand_name} onChange={e => { const bn = e.target.value; setForm(p => ({ ...p, brand_name: bn, blog_key: voices[bn]?.blogs[0]?.key || "" })); }} className={inp}>
+              {voiceBrands.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <div className={lbl}>Blog</div>
+            <select value={form.blog_key} onChange={e => setForm(p => ({ ...p, blog_key: e.target.value }))} className={inp}>
+              {brandBlogs.map(bl => <option key={bl.key} value={bl.key}>{bl.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <div className={lbl}>Target keyword</div>
+            <input value={form.target_keyword} onChange={e => setForm(p => ({ ...p, target_keyword: e.target.value }))} placeholder="optional" className={inp} />
+          </div>
+          <div>
+            <div className={lbl}>Site role</div>
+            <select value={form.site_role} onChange={e => setForm(p => ({ ...p, site_role: e.target.value }))} className={inp}>
+              <option value="cluster">Cluster (product-specific)</option>
+              <option value="hero">Hero (broad buying guide)</option>
+            </select>
+          </div>
+          <div className="sm:col-span-2 lg:col-span-4">
+            <div className={lbl}>Topic / brief *</div>
+            <textarea value={form.brief} onChange={e => setForm(p => ({ ...p, brief: e.target.value }))} rows={2} placeholder="e.g. Is the Frida Mom Postpartum Recovery Kit worth it? What's actually in it and who it's for." className={inp} />
+          </div>
+        </div>
+        {msg && <p className="text-[13px] text-slate-500 mt-2">{msg}</p>}
+        <button onClick={generate} disabled={busy || !voiceBrands.length} className="mt-3 text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2.5 disabled:opacity-60">{busy ? "Working…" : "Generate draft"}</button>
+        {!voiceBrands.length && <p className="text-xs text-amber-600 mt-2">No brand voice guides are wired up yet.</p>}
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        {(["draft", "published", "rejected", "all"] as const).map(s => (
+          <button key={s} onClick={() => setStatusF(s)} className={`text-xs font-semibold rounded-full px-3 py-1.5 ${statusF === s ? "bg-slate-800 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
+            {s === "all" ? "All" : STATUS_META[s].label} ({s === "all" ? items.length : items.filter(i => i.status === s).length})
+          </button>
+        ))}
+      </div>
+
+      {rows.length === 0 ? (
+        <p className="text-sm text-gray-400 text-center py-10">Nothing here yet.</p>
+      ) : (
+        <div className="space-y-3">
+          {rows.map(d => {
+            const isOpen = openId === d.id;
+            const brand = brandOf(d.brand_id);
+            const blogLabel = voices[brand?.name ?? ""]?.blogs.find(bl => bl.key === d.blog_key)?.label ?? d.blog_key;
+            return (
+              <div key={d.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <button onClick={() => openDraft(d)} className="w-full text-left px-5 py-3.5 flex items-center gap-3">
+                  <span className={`text-[10.5px] font-bold px-2 py-1 rounded-full shrink-0 ${STATUS_META[d.status].cls}`}>{STATUS_META[d.status].label}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-slate-800 truncate">{d.title}</div>
+                    <div className="text-xs text-gray-400">{brand?.name ?? "—"} · {blogLabel} · {fmtD(d.created_at)}{d.target_keyword ? ` · "${d.target_keyword}"` : ""}</div>
+                  </div>
+                  {d.published_url && <a href={d.published_url} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} className="text-xs font-semibold text-indigo-600 hover:underline shrink-0">View live ↗</a>}
+                </button>
+
+                {isOpen && (
+                  <div className="border-t border-gray-100 px-5 py-4 space-y-3">
+                    {d.status === "draft" ? (
+                      <>
+                        <div className="grid sm:grid-cols-2 gap-3">
+                          <div><div className={lbl}>Title</div><input value={edit.title ?? ""} onChange={e => setEdit(p => ({ ...p, title: e.target.value }))} className={inp} /></div>
+                          <div><div className={lbl}>Slug</div><input value={edit.slug ?? ""} onChange={e => setEdit(p => ({ ...p, slug: e.target.value }))} className={inp} /></div>
+                          <div><div className={lbl}>Meta title</div><input value={edit.meta_title ?? ""} onChange={e => setEdit(p => ({ ...p, meta_title: e.target.value }))} className={inp} /></div>
+                          <div><div className={lbl}>Target keyword</div><input value={edit.target_keyword ?? ""} onChange={e => setEdit(p => ({ ...p, target_keyword: e.target.value }))} className={inp} /></div>
+                          <div className="sm:col-span-2"><div className={lbl}>Meta description</div><input value={edit.meta_description ?? ""} onChange={e => setEdit(p => ({ ...p, meta_description: e.target.value }))} className={inp} /></div>
+                        </div>
+                        <div>
+                          <div className={lbl}>Body (HTML — as it'll appear on Shopify)</div>
+                          <textarea value={edit.body_html ?? ""} onChange={e => setEdit(p => ({ ...p, body_html: e.target.value }))} rows={16} className={`${inp} font-mono text-xs`} />
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                          <button onClick={saveEdit} disabled={busy} className="text-sm font-semibold text-slate-700 bg-gray-100 hover:bg-gray-200 rounded-lg px-4 py-2">Save changes</button>
+                          {admin && <button onClick={approve} disabled={busy} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2">Approve & publish live</button>}
+                          {!admin && <span className="text-xs text-gray-400">Only an admin can publish this live.</span>}
+                          <button onClick={reject} disabled={busy} className="text-sm font-semibold text-rose-500 hover:text-rose-600 ml-auto">Reject</button>
+                          <button onClick={() => remove(d.id)} disabled={busy} className="text-sm font-semibold text-gray-300 hover:text-rose-500">Delete</button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {d.status === "published" && (
+                          <p className="text-xs text-gray-500">Published {d.published_at ? fmtD(d.published_at) : ""} by {d.approved_by} — {d.published_url ? <a href={d.published_url} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline">{d.published_url}</a> : "no live link recorded"}</p>
+                        )}
+                        {d.status === "rejected" && d.note && <p className="text-xs text-rose-500">Rejected: {d.note}</p>}
+                        <div className="prose-sm max-w-none text-sm text-slate-700 bg-gray-50 rounded-lg p-4 max-h-64 overflow-y-auto" dangerouslySetInnerHTML={{ __html: d.body_html }} />
+                        <button onClick={() => remove(d.id)} className="text-xs font-semibold text-gray-300 hover:text-rose-500">Delete</button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
