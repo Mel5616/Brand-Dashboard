@@ -11,6 +11,13 @@ const hdr = (extra: Record<string, string> = {}) => ({ apikey: sbKey!, Authoriza
 const missing = (status: number, body: string) => status === 404 || /PGRST205|does not exist|schema cache/i.test(body);
 
 const FIELDS = ["brand_id", "event_type", "title", "date", "end_date", "product_name", "quantity", "status", "note", "image_url"];
+
+// Show-organiser logos, matched against the tradeshow's name — gives trade
+// events a recognisable image on the timeline instead of the generic icon.
+const SHOW_LOGOS: { pattern: RegExp; url: string }[] = [
+  { pattern: /one fine baby/i, url: "/tradeshows/one-fine-baby.png" },
+];
+const showLogoFor = (name: string) => SHOW_LOGOS.find(s => s.pattern.test(name))?.url ?? null;
 function clean(b: any) {
   const row: Record<string, any> = {};
   for (const f of FIELDS) if (b[f] !== undefined) row[f] = ((f === "end_date" || f === "date") && b[f] === "") ? null : b[f];
@@ -60,7 +67,7 @@ async function pulledEvents() {
       event_type: "trade", title: show.name, date: show.date_start, end_date: show.date_end || null,
       product_name: null, quantity: null, status: "locked",
       note: [[show.location, show.state].filter(Boolean).join(", "), participants.length ? `Brands: ${participants.join(", ")}` : null].filter(Boolean).join(" — ") || null,
-      image_url: null,
+      image_url: showLogoFor(show.name),
     });
   }
 
