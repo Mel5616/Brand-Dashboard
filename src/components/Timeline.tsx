@@ -69,15 +69,17 @@ function cardStatus(startMs: number, endMs: number | null, today: number) {
   return dueLabel(startMs, today);
 }
 
-// soft pill: pastel fill + coloured text when active, quiet outline when not
-function Pill({ active, color, onClick, children }: { active: boolean; color: string; onClick: () => void; children: React.ReactNode }) {
+// soft pill: pastel fill + coloured text when active, quiet outline when not.
+// `sm` is a lower-profile variant for dense rows (Brand) that shouldn't
+// compete for attention with the primary Key dates filters.
+function Pill({ active, color, onClick, children, sm = false }: { active: boolean; color: string; onClick: () => void; children: React.ReactNode; sm?: boolean }) {
   return (
     <button onClick={onClick}
-      className="text-xs font-semibold rounded-full px-3 py-1.5 border transition flex items-center gap-1.5 whitespace-nowrap"
+      className={`font-semibold rounded-full border transition flex items-center whitespace-nowrap ${sm ? "text-[11px] px-2.5 py-1 gap-1" : "text-xs px-3 py-1.5 gap-1.5"}`}
       style={active
         ? { background: `color-mix(in srgb, ${color} 14%, #fff)`, borderColor: `color-mix(in srgb, ${color} 35%, #fff)`, color }
         : { background: "#fff", borderColor: "#e8eaed", color: "#9aa1ab" }}>
-      <span className="w-[7px] h-[7px] rounded-full shrink-0" style={{ background: active ? color : "#d1d5db" }} />
+      <span className={`rounded-full shrink-0 ${sm ? "w-[6px] h-[6px]" : "w-[7px] h-[7px]"}`} style={{ background: active ? color : "#d1d5db" }} />
       {children}
     </button>
   );
@@ -295,15 +297,20 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
   return (
     <div className="space-y-4">
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        {/* counts + view toggle */}
-        <div className="flex flex-wrap items-center gap-6 px-6 py-4">
-          {[["On calendar", counts.all], ["Locked", counts.locked], ["Working", counts.working], ["Next 30 days", counts.next30]].map(([label, n]) => (
-            <div key={label as string}>
-              <p className="text-2xl font-extrabold text-slate-800 leading-none tabular-nums">{n}</p>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mt-1">{label}</p>
+        {/* stat row */}
+        <div className="flex flex-wrap items-stretch gap-2.5 px-5 pt-5 pb-4">
+          {([
+            ["On calendar", counts.all, "#1e293b"],
+            ["Locked", counts.locked, "#0f766e"],
+            ["Working", counts.working, "#b45309"],
+            ["Next 30 days", counts.next30, "#1a5893"],
+          ] as const).map(([label, n, accent]) => (
+            <div key={label} className="flex-1 min-w-[112px] rounded-xl px-4 py-3" style={{ background: `color-mix(in srgb, ${accent} 6%, #fff)`, border: `1px solid color-mix(in srgb, ${accent} 16%, #fff)` }}>
+              <p className="text-2xl font-extrabold leading-none tabular-nums" style={{ color: accent }}>{n}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mt-1.5">{label}</p>
             </div>
           ))}
-          <div className="ml-auto flex items-center gap-1 bg-gray-50 rounded-full p-1">
+          <div className="flex items-center gap-1 bg-gray-50 rounded-full p-1 h-fit self-center">
             {(["gantt", "list"] as const).map(v => (
               <button key={v} onClick={() => setView(v)} className={`text-xs font-semibold rounded-full px-3.5 py-1.5 transition ${view === v ? "bg-slate-800 text-white" : "text-gray-500 hover:text-slate-700"}`}>
                 {v === "gantt" ? "Timeline" : "List"}
@@ -312,52 +319,59 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
           </div>
         </div>
 
-        {/* filters */}
-        <div className="border-t border-gray-50 px-6 py-4 space-y-3 bg-gray-50/40">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mr-1.5 shrink-0">Key dates</span>
-            {KEY_TYPES.map(t => (
-              <button key={t} onClick={() => setTypeFilter(s => toggleSet(s, t, TYPES))}
-                className="text-[13px] font-bold rounded-full pl-2.5 pr-3.5 py-2 border-2 transition flex items-center gap-2 whitespace-nowrap"
-                style={typeFilter.has(t) ? { background: TYPE_META[t].color, borderColor: TYPE_META[t].color, color: "#fff" } : { background: "#fff", borderColor: "#e2e5ea", color: "#9aa1ab" }}>
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: typeFilter.has(t) ? "#fff" : TYPE_META[t].color }} />
-                {TYPE_META[t].short}
+        {/* primary filter: what matters most, given the loudest visual weight */}
+        <div className="border-t border-gray-100 px-5 py-3.5 flex flex-wrap items-center gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mr-0.5 shrink-0">Key dates</span>
+          {KEY_TYPES.map(t => (
+            <button key={t} onClick={() => setTypeFilter(s => toggleSet(s, t, TYPES))}
+              className="text-[13px] font-bold rounded-full pl-2.5 pr-3.5 py-2 border-2 transition flex items-center gap-2 whitespace-nowrap"
+              style={typeFilter.has(t) ? { background: TYPE_META[t].color, borderColor: TYPE_META[t].color, color: "#fff" } : { background: "#fff", borderColor: "#e2e5ea", color: "#9aa1ab" }}>
+              <span className="w-2 h-2 rounded-full shrink-0" style={{ background: typeFilter.has(t) ? "#fff" : TYPE_META[t].color }} />
+              {TYPE_META[t].short}
+            </button>
+          ))}
+          <span className="flex items-center gap-0.5 bg-gray-100 rounded-full p-0.5 ml-1">
+            {(["all", "locked", "working"] as const).map(s => (
+              <button key={s} onClick={() => setStatusFilter(s)} className={`text-[11px] font-semibold rounded-full px-2.5 py-1 transition ${statusFilter === s ? "bg-slate-800 text-white" : "text-gray-400 hover:text-slate-600"}`}>
+                {s === "all" ? "All dates" : s === "locked" ? "Locked" : "Working"}
               </button>
             ))}
-            <span className="ml-2 flex items-center gap-0.5 bg-white border border-gray-200 rounded-full p-0.5">
-              {(["all", "locked", "working"] as const).map(s => (
-                <button key={s} onClick={() => setStatusFilter(s)} className={`text-[11px] font-semibold rounded-full px-2.5 py-1 transition ${statusFilter === s ? "bg-slate-800 text-white" : "text-gray-400 hover:text-slate-600"}`}>
-                  {s === "all" ? "All dates" : s === "locked" ? "Locked" : "Working"}
-                </button>
-              ))}
-            </span>
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mr-1.5 shrink-0">Other activity</span>
-            {OTHER_TYPES.map(t => (
-              <Pill key={t} active={typeFilter.has(t)} color={TYPE_META[t].color} onClick={() => setTypeFilter(s => toggleSet(s, t, TYPES))}>{TYPE_META[t].short}</Pill>
-            ))}
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mr-1.5 shrink-0">Brand</span>
-            {live.map(b => (
-              <Pill key={b.id} active={brandFilter.has(b.id)} color={b.color || "#334155"} onClick={() => setBrandFilter(s => toggleSet(s, b.id, live.map(x => x.id)))}>{b.name}</Pill>
-            ))}
-            <button onClick={() => { setBrandFilter(new Set(live.map(b => b.id))); setTypeFilter(new Set(TYPES)); setStatusFilter("all"); setQ(""); }} className="text-[11px] text-gray-400 underline underline-offset-2 hover:text-gray-600 ml-1">Reset</button>
-          </div>
-          <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
-            <input value={q} onChange={e => setQ(e.target.value.toLowerCase())} placeholder="Search titles and notes…" className={inp + " min-w-[220px] bg-white"} />
-            <label className="text-xs text-gray-400 flex items-center gap-1.5"><input type="checkbox" checked={showPast} onChange={e => setShowPast(e.target.checked)} />Show past</label>
-            <label className="text-xs text-gray-400 flex items-center gap-1.5">
-              <input type="checkbox" checked={showSeasonality} onChange={e => setShowSeasonality(e.target.checked)} />
-              <i className="w-3 h-1.5 rounded-sm" style={{ background: `color-mix(in srgb, ${SEASON_COLOR} 16%, #fff)`, borderTop: `2px solid ${SEASON_COLOR}` }} />
-              Seasonality
+          </span>
+          <span className="flex items-center gap-1.5 ml-auto">
+            <label className={`text-[11px] font-semibold rounded-full pl-2 pr-2.5 py-1.5 border flex items-center gap-1.5 cursor-pointer transition ${showSeasonality ? "border-amber-200 bg-amber-50" : "border-gray-200 bg-white"}`}>
+              <input type="checkbox" className="sr-only" checked={showSeasonality} onChange={e => setShowSeasonality(e.target.checked)} />
+              <i className="w-3 h-1.5 rounded-sm shrink-0" style={{ background: `color-mix(in srgb, ${SEASON_COLOR} 16%, #fff)`, borderTop: `2px solid ${SEASON_COLOR}` }} />
+              <span style={{ color: showSeasonality ? SEASON_COLOR : "#9aa1ab" }}>Seasonality</span>
             </label>
-            <div className="ml-auto flex items-center gap-2">
-              {admin && <button onClick={() => { setSeasForm(emptySeasForm); setShowSeasAdd(v => !v); }} className="text-sm font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg px-4 py-2 shrink-0">{showSeasAdd ? "Close" : "+ Add seasonality"}</button>}
-              {admin && <button onClick={() => { resetForm(); setShowAdd(v => !v); }} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2 shrink-0">{showAdd ? "Close" : "+ Add event"}</button>}
-            </div>
+          </span>
+        </div>
+
+        {/* secondary filters: quieter, lower visual priority than Key dates */}
+        <div className="border-t border-gray-50 px-5 py-3 bg-gray-50/60 space-y-2">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-300 mr-1 shrink-0">Other activity</span>
+            {OTHER_TYPES.map(t => (
+              <Pill key={t} sm active={typeFilter.has(t)} color={TYPE_META[t].color} onClick={() => setTypeFilter(s => toggleSet(s, t, TYPES))}>{TYPE_META[t].short}</Pill>
+            ))}
+            <span className="w-px self-stretch bg-gray-200 mx-1" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-300 mr-1 shrink-0">Brand</span>
+            {live.map(b => (
+              <Pill key={b.id} sm active={brandFilter.has(b.id)} color={b.color || "#334155"} onClick={() => setBrandFilter(s => toggleSet(s, b.id, live.map(x => x.id)))}>{b.name}</Pill>
+            ))}
+            <button onClick={() => { setBrandFilter(new Set(live.map(b => b.id))); setTypeFilter(new Set(TYPES)); setStatusFilter("all"); setQ(""); }} className="text-[11px] text-gray-400 underline underline-offset-2 hover:text-gray-600 ml-1 shrink-0">Reset</button>
           </div>
+        </div>
+
+        {/* utility row: search + admin actions */}
+        <div className="border-t border-gray-100 px-5 py-3 flex flex-wrap items-center gap-2.5">
+          <input value={q} onChange={e => setQ(e.target.value.toLowerCase())} placeholder="Search titles and notes…" className={inp + " min-w-[200px] flex-1 max-w-xs bg-white"} />
+          <label className="text-xs text-gray-400 flex items-center gap-1.5 shrink-0"><input type="checkbox" checked={showPast} onChange={e => setShowPast(e.target.checked)} />Show past</label>
+          {admin && (
+            <div className="flex items-center gap-2 ml-auto flex-wrap justify-end">
+              <button onClick={() => { setSeasForm(emptySeasForm); setShowSeasAdd(v => !v); }} className="text-sm font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg px-4 py-2 shrink-0">{showSeasAdd ? "Close" : "+ Add seasonality"}</button>
+              <button onClick={() => { resetForm(); setShowAdd(v => !v); }} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2 shrink-0">{showAdd ? "Close" : "+ Add event"}</button>
+            </div>
+          )}
         </div>
       </div>
       {msg && <p className="text-xs text-rose-500">{msg}</p>}
