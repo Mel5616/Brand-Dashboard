@@ -20,6 +20,11 @@ type TimelineEvent = {
   product_name: string | null; quantity: number | null; status: string | null; note: string | null; image_url: string | null;
   source?: Source;
 };
+// Recurring (year-less) promotion window — "Prams peak Aug-Nov" repeats every
+// year, unlike a one-off dated event, so it's stored as months, not dates.
+type Seasonality = { id: number; brand_id: number; product: string; start_month: number; end_month: number; note: string | null };
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const SEASON_COLOR = "#b45309"; // amber-700 — distinct from every TYPE_META color
 
 const TYPE_META: Record<EventType, { label: string; short: string; color: string; bg: string; key: boolean }> = {
   stock:    { label: "Stock & freight",     short: "Stock",       color: "#0f766e", bg: "#ecfdf5", key: true },
@@ -90,6 +95,8 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
   const [statusFilter, setStatusFilter] = useState<"all" | Status>("all");
   const [q, setQ] = useState("");
   const [showPast, setShowPast] = useState(false);
+  const [seasonality, setSeasonality] = useState<Seasonality[]>([]);
+  const [showSeasonality, setShowSeasonality] = useState(true);
 
   function reload() {
     setLoading(true);
@@ -98,7 +105,11 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
       setEvents(d.events ?? []);
     }).catch(() => {}).finally(() => setLoading(false));
   }
+  function reloadSeasonality() {
+    fetch("/api/product-seasonality").then(r => r.json()).then(d => { if (d.ok) setSeasonality(d.items ?? []); }).catch(() => {});
+  }
   useEffect(reload, []);
+  useEffect(reloadSeasonality, []);
 
   const today = useMemo(() => { const n = new Date(); return Date.UTC(n.getFullYear(), n.getMonth(), n.getDate()); }, []);
   const brandOf = (id: number) => id === COOLKIDZ_BRAND.id ? COOLKIDZ_BRAND : brands.find(b => b.id === id);
@@ -147,14 +158,16 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
     const x = (ms: number) => Math.round(((ms - start) / DAY) * px);
     const total = x(end) + px;
 
-    const months: { left: number; w: number; label: string; yr: string }[] = [];
+    const months: { left: number; w: number; label: string; yr: string; monthNum: number }[] = [];
     let c = new Date(start);
     while (Date.UTC(c.getUTCFullYear(), c.getUTCMonth(), 1) <= end) {
       const ms = Date.UTC(c.getUTCFullYear(), c.getUTCMonth(), 1);
       const me = Date.UTC(c.getUTCFullYear(), c.getUTCMonth() + 1, 0);
-      months.push({ left: x(ms), w: x(me) - x(ms) + px, label: c.toLocaleDateString("en-AU", { month: "short" }), yr: String(c.getUTCFullYear()).slice(2) });
+      months.push({ left: x(ms), w: x(me) - x(ms) + px, label: c.toLocaleDateString("en-AU", { month: "short" }), yr: String(c.getUTCFullYear()).slice(2), monthNum: c.getUTCMonth() + 1 });
       c = new Date(Date.UTC(c.getUTCFullYear(), c.getUTCMonth() + 1, 1));
     }
+    const inPeak = (m: number, s: number, e: number) => s <= e ? (m >= s && m <= e) : (m >= s || m <= e);
+    const seasH = 15;
 
     const rows = live.filter(br => brandFilter.has(br.id)).map(br => {
       const items = filtered.filter(e => e.brand_id === br.id);
@@ -171,12 +184,31 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
         return { e, left, w, bar: !!isBar, lane };
       });
       const laneCount = Math.max(1, lanes.length);
-      return { brand: br, items: placed, h: laneCount * 27 + 13 };
+
+      // Seasonality bands: merge each product's contiguous "in peak" months
+      // (across the whole visible date range, wrapping year to year) into
+      // one strip per run, one lane per product.
+      const products = showSeasonality ? seasonality.filter(s => s.brand_id === br.id) : [];
+      const seasonBands = products.map((s, si) => {
+        const segs: { left: number; w: number }[] = [];
+        let run: { left: number; w: number } | null = null;
+        for (const m of months) {
+          if (inPeak(m.monthNum, s.start_month, s.end_month)) {
+            if (run) run.w = m.left + m.w - run.left;
+            else run = { left: m.left, w: m.w };
+          } else if (run) { segs.push(run); run = null; }
+        }
+        if (run) segs.push(run);
+        return { s, lane: si, segs };
+      });
+      const seasLaneCount = seasonBands.length;
+
+      return { brand: br, items: placed, seasonBands, seasLaneCount, seasH, h: seasLaneCount * seasH + laneCount * 27 + 13 };
     });
 
     const todayX = (today >= start && today <= end) ? x(today) : null;
     return { px, nameW, total, months, rows, todayX };
-  }, [filtered, live, brandFilter, today]);
+  }, [filtered, live, brandFilter, today, seasonality, showSeasonality]);
 
   // ---------- add / edit (native rows only) ----------
   const emptyForm = { brand_id: "", event_type: "stock" as EventType, title: "", date: "", end_date: "", product_name: "", quantity: "", status: "locked" as Status, note: "" };
@@ -225,6 +257,23 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
     setUploadingId(null);
     if (d?.ok) setEvents(prev => prev.map(e => e.id === id ? { ...e, image_url: d.url } : e));
     else setMsg(d?.error || "Couldn't upload the photo.");
+  }
+
+  // ---------- seasonality add / remove ----------
+  const emptySeasForm = { brand_id: "", product: "", start_month: "8", end_month: "11", note: "" };
+  const [seasForm, setSeasForm] = useState(emptySeasForm);
+  const [showSeasAdd, setShowSeasAdd] = useState(false);
+  async function submitSeason() {
+    if (!seasForm.brand_id || !seasForm.product.trim()) return;
+    const body = { brand_id: Number(seasForm.brand_id), product: seasForm.product.trim(), start_month: Number(seasForm.start_month), end_month: Number(seasForm.end_month), note: seasForm.note || null };
+    const d = await fetch("/api/product-seasonality", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()).catch(() => null);
+    if (d?.ok) { setSeasonality(prev => [...prev, d.item]); setSeasForm(emptySeasForm); setShowSeasAdd(false); }
+    else setMsg(d?.error || "Couldn't add.");
+  }
+  async function removeSeason(id: number) {
+    if (!confirm("Remove this seasonality window?")) return;
+    const d = await fetch(`/api/product-seasonality?id=${id}`, { method: "DELETE" }).then(r => r.json()).catch(() => null);
+    if (d?.ok) setSeasonality(prev => prev.filter(s => s.id !== id));
   }
 
   const grouped = useMemo(() => {
@@ -299,7 +348,15 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
           <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
             <input value={q} onChange={e => setQ(e.target.value.toLowerCase())} placeholder="Search titles and notes…" className={inp + " min-w-[220px] bg-white"} />
             <label className="text-xs text-gray-400 flex items-center gap-1.5"><input type="checkbox" checked={showPast} onChange={e => setShowPast(e.target.checked)} />Show past</label>
-            {admin && <button onClick={() => { resetForm(); setShowAdd(v => !v); }} className="ml-auto text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2 shrink-0">{showAdd ? "Close" : "+ Add event"}</button>}
+            <label className="text-xs text-gray-400 flex items-center gap-1.5">
+              <input type="checkbox" checked={showSeasonality} onChange={e => setShowSeasonality(e.target.checked)} />
+              <i className="w-3 h-1.5 rounded-sm" style={{ background: `color-mix(in srgb, ${SEASON_COLOR} 16%, #fff)`, borderTop: `2px solid ${SEASON_COLOR}` }} />
+              Seasonality
+            </label>
+            <div className="ml-auto flex items-center gap-2">
+              {admin && <button onClick={() => { setSeasForm(emptySeasForm); setShowSeasAdd(v => !v); }} className="text-sm font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg px-4 py-2 shrink-0">{showSeasAdd ? "Close" : "+ Add seasonality"}</button>}
+              {admin && <button onClick={() => { resetForm(); setShowAdd(v => !v); }} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2 shrink-0">{showAdd ? "Close" : "+ Add event"}</button>}
+            </div>
           </div>
         </div>
       </div>
@@ -375,6 +432,44 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
         </div>
       )}
 
+      {showSeasAdd && admin && (
+        <div className="bg-white rounded-2xl border border-amber-200 shadow-sm p-5 space-y-2.5">
+          <p className="text-xs text-gray-400">A recurring window — no year, just the months this product peaks every year. Shown as a band behind the timeline.</p>
+          <div className="grid sm:grid-cols-2 gap-2.5">
+            <select value={seasForm.brand_id} onChange={e => setSeasForm(p => ({ ...p, brand_id: e.target.value }))} className={inp}>
+              <option value="">Select brand…</option>
+              {brands.filter(b => b.live !== false).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+            </select>
+            <input value={seasForm.product} onChange={e => setSeasForm(p => ({ ...p, product: e.target.value }))} placeholder="Product or category (e.g. Prams, Swaddles)" className={inp} />
+          </div>
+          <div className="grid sm:grid-cols-2 gap-2.5">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-400 shrink-0">Peaks from</span>
+              <select value={seasForm.start_month} onChange={e => setSeasForm(p => ({ ...p, start_month: e.target.value }))} className={inp}>
+                {MONTH_NAMES.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+              </select>
+              <span className="text-xs text-gray-400 shrink-0">to</span>
+              <select value={seasForm.end_month} onChange={e => setSeasForm(p => ({ ...p, end_month: e.target.value }))} className={inp}>
+                {MONTH_NAMES.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+              </select>
+            </div>
+            <input value={seasForm.note} onChange={e => setSeasForm(p => ({ ...p, note: e.target.value }))} placeholder="Note (optional) — e.g. why, or which retailers" className={inp} />
+          </div>
+          <button onClick={submitSeason} disabled={!seasForm.brand_id || !seasForm.product.trim()} className="text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-40 rounded-lg px-4 py-2">Add seasonality window</button>
+        </div>
+      )}
+
+      {seasonality.length > 0 && admin && (
+        <div className="flex flex-wrap gap-1.5">
+          {seasonality.map(s => (
+            <span key={s.id} className="inline-flex items-center gap-1.5 text-xs font-medium rounded-full pl-2.5 pr-1.5 py-1" style={{ background: "#fffbeb", color: SEASON_COLOR, border: "1px solid #fde68a" }}>
+              {brandOf(s.brand_id)?.name}: {s.product} ({MONTH_NAMES[s.start_month - 1]}–{MONTH_NAMES[s.end_month - 1]})
+              <button onClick={() => removeSeason(s.id)} className="hover:text-rose-600 rounded-full w-4 h-4 flex items-center justify-center">×</button>
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* ---------- gantt view ---------- */}
       {view === "gantt" && (
         gantt ? (
@@ -407,19 +502,31 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
                     </div>
                     <div style={{ position: "relative", width: gantt.total, flex: "0 0 auto" }}>
                       {gantt.months.map((m, i) => <div key={i} className="absolute top-0 bottom-0 border-l border-gray-50" style={{ left: m.left }} />)}
-                      {row.items.length === 0 && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] italic text-gray-300 z-0">—</span>}
+                      {row.items.length === 0 && row.seasonBands.length === 0 && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] italic text-gray-300 z-0">—</span>}
+                      {row.seasonBands.map(({ s, lane, segs }) => segs.map((seg, i) => (
+                        <div key={`${s.id}-${i}`} title={`${s.product} peaks ${MONTH_NAMES[s.start_month - 1]}–${MONTH_NAMES[s.end_month - 1]}${s.note ? ` — ${s.note}` : ""}`}
+                          className="absolute rounded flex items-center overflow-hidden"
+                          style={{
+                            left: seg.left, width: seg.w, top: 2 + lane * row.seasH, height: row.seasH - 2,
+                            background: `color-mix(in srgb, ${SEASON_COLOR} 16%, #fff)`,
+                            borderTop: `2px solid ${SEASON_COLOR}`,
+                          }}>
+                          {i === 0 && <span className="text-[9.5px] font-bold px-1.5 truncate" style={{ color: SEASON_COLOR }}>{s.product}</span>}
+                        </div>
+                      )))}
                       {row.items.map(({ e, left, w, bar, lane }) => {
                         const meta = TYPE_META[e.event_type];
                         const working = statusOf(e) === "working";
                         const past = toMs(e.end_date || e.date!) < today;
                         const key = meta.key;
+                        const yOff = row.seasLaneCount * row.seasH;
                         // Key dates (stock/launch/coming soon) get a bold solid pill;
                         // other activity (events/trade/campaigns) stays quiet and outlined.
                         return (
                           <button key={e.id} onClick={() => setDrawerId(e.id)} title={e.title}
                             className={`absolute rounded-full flex items-center gap-1.5 whitespace-nowrap hover:shadow-md hover:-translate-y-px transition z-[1] ${key ? "h-[24px] text-[12px] font-bold" : "h-[19px] text-[10.5px] font-medium"}`}
                             style={{
-                              left, top: (key ? 5 : 8) + lane * 27, width: bar ? w : undefined,
+                              left, top: yOff + (key ? 5 : 8) + lane * 27, width: bar ? w : undefined,
                               padding: bar ? (key ? "0 11px 0 12px" : "0 8px 0 9px") : (key ? "0 11px 0 8px" : "0 8px 0 6px"),
                               border: key ? `1.5px solid ${meta.color}` : `1px solid color-mix(in srgb, ${meta.color} 40%, #fff)`,
                               borderStyle: working ? "dashed" : "solid",
@@ -528,6 +635,7 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
           <span key={t} className="inline-flex items-center gap-1.5 text-xs text-gray-500"><i className="w-4 h-2.5 rounded-full border" style={{ background: TYPE_META[t].color, borderColor: TYPE_META[t].color }} />{TYPE_META[t].label}</span>
         ))}
         <span className="inline-flex items-center gap-1.5 text-xs text-gray-500"><i className="w-4 h-2.5 rounded-full border border-dashed border-gray-400" /> Working, needs sign off</span>
+        <span className="inline-flex items-center gap-1.5 text-xs text-gray-500"><i className="w-4 h-2.5 rounded-sm" style={{ background: `color-mix(in srgb, ${SEASON_COLOR} 16%, #fff)`, borderTop: `2px solid ${SEASON_COLOR}` }} /> Seasonality — when to promote</span>
       </div>
 
       {/* ---------- drawer ---------- */}
