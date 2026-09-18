@@ -7,10 +7,10 @@ import { useEffect, useMemo, useState } from "react";
 // Shopify blog on approval. Currently wired up for Frida and smarTrike;
 // see BRAND_VOICE in src/app/api/blog-drafts/route.ts to add another brand.
 type Draft = {
-  id: string; brand_id: number; status: "draft" | "published" | "rejected"; blog_key: string | null;
+  id: string; brand_id: number; status: "planned" | "draft" | "published" | "rejected"; blog_key: string | null;
   title: string; slug: string | null; meta_title: string | null; meta_description: string | null;
   target_keyword: string | null; intent: string | null; site_role: string | null; body_html: string;
-  brief: string | null; note: string | null; published_url: string | null;
+  brief: string | null; note: string | null; published_url: string | null; scheduled_for: string | null;
   created_by: string | null; approved_by: string | null; published_at: string | null; created_at: string;
 };
 type BlogDef = { key: string; handle: string; label: string; audience: string; tieins: string };
@@ -20,6 +20,7 @@ const inp = "text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 
 const lbl = "text-[11px] font-bold uppercase tracking-wide text-slate-400 mb-1";
 const fmtD = (s: string) => new Date(s).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "2-digit" });
 const STATUS_META: Record<string, { label: string; cls: string }> = {
+  planned: { label: "Planned", cls: "bg-sky-100 text-sky-700" },
   draft: { label: "Needs review", cls: "bg-amber-100 text-amber-700" },
   published: { label: "Published", cls: "bg-emerald-100 text-emerald-700" },
   rejected: { label: "Rejected", cls: "bg-gray-100 text-gray-400" },
@@ -34,10 +35,11 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
   const [msg, setMsg] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
   const [edit, setEdit] = useState<Partial<Draft>>({});
-  const [statusF, setStatusF] = useState<"all" | Draft["status"]>("draft");
+  const [statusF, setStatusF] = useState<"all" | Draft["status"]>("planned");
 
   const voiceBrands = useMemo(() => brands.filter(b => voices[b.name]), [brands, voices]);
   const [form, setForm] = useState({ brand_name: "", blog_key: "", brief: "", target_keyword: "", intent: "", site_role: "cluster" });
+  const [supersedeId, setSupersedeId] = useState<string | null>(null);
 
   async function load() {
     const res = await fetch("/api/blog-drafts").then(r => r.json()).catch(() => ({ ok: false }));
@@ -52,6 +54,15 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
   const brandBlogs = voices[form.brand_name]?.blogs ?? [];
   const brandOf = (id: number) => brands.find(b => b.id === id);
 
+  function useThisBrief(d: Draft) {
+    const brandName = brandOf(d.brand_id)?.name ?? "";
+    setForm({ brand_name: brandName, blog_key: d.blog_key || voices[brandName]?.blogs[0]?.key || "", brief: d.brief || d.title, target_keyword: d.target_keyword || "", intent: d.intent || "", site_role: d.site_role || "cluster" });
+    setSupersedeId(d.id);
+    setOpenId(null);
+    setMsg(`Loaded "${d.title}" into the generator above — hit Generate draft when ready.`);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   async function generate() {
     setMsg("");
     if (!form.brand_name || !form.brief.trim()) { setMsg("Pick a brand and give it a topic/brief."); return; }
@@ -63,8 +74,10 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
       body: JSON.stringify({ brand_id: brandId, brand_name: form.brand_name, blog_key: form.blog_key, brief: form.brief, target_keyword: form.target_keyword, intent: form.intent, site_role: form.site_role }),
     }).then(r => r.json()).catch(() => null);
     setBusy(false);
-    if (d?.ok) { setForm(p => ({ ...p, brief: "", target_keyword: "", intent: "" })); load(); setMsg("Draft ready — review it below."); setStatusF("draft"); setOpenId(d.item.id); setEdit(d.item); }
-    else { setNeedsSetup(!!d?.needsSetup); setMsg(d?.error || "Couldn't generate that draft."); }
+    if (d?.ok) {
+      if (supersedeId) { await fetch(`/api/blog-drafts?id=${supersedeId}`, { method: "DELETE" }).catch(() => {}); setSupersedeId(null); }
+      setForm(p => ({ ...p, brief: "", target_keyword: "", intent: "" })); load(); setMsg("Draft ready — review it below."); setStatusF("draft"); setOpenId(d.item.id); setEdit(d.item);
+    } else { setNeedsSetup(!!d?.needsSetup); setMsg(d?.error || "Couldn't generate that draft."); }
   }
 
   function openDraft(d: Draft) { setOpenId(d.id === openId ? null : d.id); setEdit(d); setMsg(""); }
@@ -105,7 +118,8 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
     load();
   }
 
-  const rows = items.filter(i => statusF === "all" || i.status === statusF);
+  const rows = items.filter(i => statusF === "all" || i.status === statusF)
+    .sort((a, b) => statusF === "planned" ? (a.scheduled_for || "9999").localeCompare(b.scheduled_for || "9999") : 0);
 
   if (loading) return <p className="text-sm text-slate-400 py-8 text-center">Loading…</p>;
   if (needsSetup) {
@@ -156,7 +170,7 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
       </div>
 
       <div className="flex flex-wrap gap-1.5">
-        {(["draft", "published", "rejected", "all"] as const).map(s => (
+        {(["planned", "draft", "published", "rejected", "all"] as const).map(s => (
           <button key={s} onClick={() => setStatusF(s)} className={`text-xs font-semibold rounded-full px-3 py-1.5 ${statusF === s ? "bg-slate-800 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
             {s === "all" ? "All" : STATUS_META[s].label} ({s === "all" ? items.length : items.filter(i => i.status === s).length})
           </button>
@@ -177,14 +191,27 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
                   <span className={`text-[10.5px] font-bold px-2 py-1 rounded-full shrink-0 ${STATUS_META[d.status].cls}`}>{STATUS_META[d.status].label}</span>
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold text-slate-800 truncate">{d.title}</div>
-                    <div className="text-xs text-gray-400">{brand?.name ?? "—"} · {blogLabel} · {fmtD(d.created_at)}{d.target_keyword ? ` · "${d.target_keyword}"` : ""}</div>
+                    <div className="text-xs text-gray-400">
+                      {brand?.name ?? "—"} · {blogLabel} · {d.status === "planned" && d.scheduled_for ? <span className="font-semibold text-sky-600">Suggested {fmtD(d.scheduled_for)}</span> : fmtD(d.created_at)}
+                      {d.target_keyword ? ` · "${d.target_keyword}"` : ""}
+                    </div>
                   </div>
+                  {d.status === "planned" && <button onClick={e => { e.stopPropagation(); useThisBrief(d); }} className="text-xs font-semibold text-emerald-600 border border-emerald-200 rounded-lg px-3 py-1.5 hover:bg-emerald-50 shrink-0">Use this brief ↑</button>}
                   {d.published_url && <a href={d.published_url} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} className="text-xs font-semibold text-indigo-600 hover:underline shrink-0">View live ↗</a>}
                 </button>
 
                 {isOpen && (
                   <div className="border-t border-gray-100 px-5 py-4 space-y-3">
-                    {d.status === "draft" ? (
+                    {d.status === "planned" ? (
+                      <>
+                        <p className="text-sm text-slate-600">{d.brief}</p>
+                        {d.intent && <p className="text-xs text-gray-400">Intent: {d.intent}</p>}
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => useThisBrief(d)} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2">Use this brief ↑</button>
+                          <button onClick={() => remove(d.id)} className="text-sm font-semibold text-gray-300 hover:text-rose-500">Delete</button>
+                        </div>
+                      </>
+                    ) : d.status === "draft" ? (
                       <>
                         <div className="grid sm:grid-cols-2 gap-3">
                           <div><div className={lbl}>Title</div><input value={edit.title ?? ""} onChange={e => setEdit(p => ({ ...p, title: e.target.value }))} className={inp} /></div>
