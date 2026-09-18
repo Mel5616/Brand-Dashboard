@@ -16,6 +16,7 @@ const FIELDS = ["brand_id", "event_type", "title", "date", "end_date", "product_
 // events a recognisable image on the timeline instead of the generic icon.
 const SHOW_LOGOS: { pattern: RegExp; url: string }[] = [
   { pattern: /one fine baby/i, url: "/tradeshows/one-fine-baby.png" },
+  { pattern: /\bpbc\b/i, url: "/tradeshows/pbc-expo.png" },
 ];
 const showLogoFor = (name: string) => SHOW_LOGOS.find(s => s.pattern.test(name))?.url ?? null;
 function clean(b: any) {
