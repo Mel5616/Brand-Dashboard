@@ -79,10 +79,20 @@ async function callClaude(system: string, user: string, maxTokens: number) {
   return text;
 }
 
-function extractJson(text: string): any {
-  const match = text.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error("AI did not return JSON");
-  return JSON.parse(match[0]);
+// Delimiter-based, not JSON — a full HTML article is full of quotes and
+// newlines that routinely break JSON.parse on model output. Header fields
+// are one per line; the body is everything between two markers, verbatim.
+const FIELD_KEYS = ["TITLE", "META_TITLE", "META_DESCRIPTION", "SLUG", "TARGET_KEYWORD", "INTENT"] as const;
+function extractFields(text: string): Record<string, string> {
+  const bodyMatch = text.match(/===BODY_HTML===([\s\S]*?)===END===/);
+  if (!bodyMatch) throw new Error("AI response was missing the body markers — try again");
+  const header = text.slice(0, bodyMatch.index).trim();
+  const out: Record<string, string> = { body_html: bodyMatch[1].trim() };
+  for (const key of FIELD_KEYS) {
+    const m = header.match(new RegExp(`^${key}:\\s*(.*)$`, "m"));
+    out[key.toLowerCase()] = (m?.[1] ?? "").trim();
+  }
+  return out;
 }
 
 export async function GET(req: Request) {
@@ -114,7 +124,19 @@ export async function POST(req: Request) {
   const siteRole = b.site_role === "hero" ? "hero" : "cluster";
   if (!brief) return NextResponse.json({ ok: false, error: "Give it a topic/brief to write from" }, { status: 400 });
 
-  const system = `You are the on-brand blog writer for ${brandName}, an Australian baby-goods brand. Follow the house rules and the brand voice exactly. Output ONLY a single JSON object, no markdown fences, no commentary, with these keys: title, meta_title, meta_description, slug (lowercase-hyphenated, no leading slash), target_keyword, intent, body_html (the full article as clean HTML using <h2>/<p>/<ul>/<table> as appropriate, including the FAQ section as its own <h2>FAQs</h2> with each question as an <h3> or <strong> lead-in — do not include the H1/title inside body_html).
+  const system = `You are the on-brand blog writer for ${brandName}, an Australian baby-goods brand. Follow the house rules and the brand voice exactly.
+
+Respond in EXACTLY this plain-text format, nothing before or after it, no markdown fences:
+
+TITLE: <the article title>
+META_TITLE: <~50-60 characters>
+META_DESCRIPTION: <~140-160 characters>
+SLUG: <lowercase-hyphenated, no leading slash>
+TARGET_KEYWORD: <the primary keyword>
+INTENT: <the search intent this post answers, one short phrase>
+===BODY_HTML===
+<the full article body as clean HTML using <h2>/<p>/<ul>/<table> as appropriate, including the FAQ section as its own <h2>FAQs</h2> with each question as an <h3> or <strong> lead-in. Do not include the H1/title inside this body. Do not escape quotes or special characters — write plain HTML exactly as it should appear on the page.>
+===END===
 
 ${HOUSE_RULES}
 
@@ -126,12 +148,12 @@ This post is for the "${blogDef.label}" blog. Audience: ${blogDef.audience}. Pro
 Topic/brief: ${brief}
 ${targetKeyword ? `Target keyword: ${targetKeyword}` : ""}
 ${intent ? `Search intent: ${intent}` : ""}
-Return the JSON object now.`;
+Write it now, in the exact format specified.`;
 
   let draft: any;
   try {
     const text = await callClaude(system, user, 6000);
-    draft = extractJson(text);
+    draft = extractFields(text);
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: String(e.message || e).slice(0, 300) }, { status: 502 });
   }
