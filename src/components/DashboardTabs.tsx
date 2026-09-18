@@ -403,7 +403,8 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info", "brand-assets", "stock-report", "cost-sheet"] },
   { label: "Retailer Hub", ids: ["brand-packs", "price-lists", "hub-fact-sheets", "brand-overview", "stock-availability", "order-forms", "customers", "customer-forms"] },
   { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads", "amazon-ads"] },
-  { label: "Owned & Earned", ids: ["email", "seo", "social", "youtube", "influencer", "gifting", "influencer-agreements", "campaign-briefs", "nanit", "releases", "affiliates", "pa-budget", "pa-tracker", "pa-revenue", "documents"] },
+  { label: "Owned & Earned", ids: ["email", "seo", "social", "youtube", "influencer", "gifting", "influencer-agreements", "campaign-briefs", "nanit", "releases"] },
+  { label: "Partnerships & Affiliates", ids: ["affiliates", "pa-budget", "pa-tracker", "pa-revenue", "documents"] },
   { label: "Sales Hub", ids: ["sales-hub"] },
 ];
 
@@ -486,8 +487,6 @@ function BrandShareCard({ brands, monthly, monthKeys, channelSales, role, fyLabe
     </div>
   );
 }
-// Partnerships pages collapse under a "Partnerships & Affiliates" dropdown.
-const PARTNERSHIP_IDS: TabId[] = ["pa-budget", "pa-tracker", "pa-revenue", "affiliates", "documents"];
 // Some tabs nest children under THEMSELVES (not a standalone header like
 // Influencers/Partnerships above) — the parent stays directly clickable, with
 // a chevron that reveals its children indented beneath it.
@@ -622,7 +621,6 @@ export function DashboardTabs({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [influencersOpen, setInfluencersOpen] = useState<boolean>(() => INFLUENCER_IDS.includes(firstTab));
-  const [partnershipsOpen, setPartnershipsOpen] = useState<boolean>(() => PARTNERSHIP_IDS.includes(firstTab));
   const [nestedOpen, setNestedOpen] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(NESTED_PARENTS.map(p => [p.parentId, p.childIds.includes(firstTab)])));
   const [mobileNavOpen, setMobileNavOpen] = useState(false); // slide-in nav drawer on small screens
@@ -955,14 +953,12 @@ export function DashboardTabs({
             </div>
           ) : null;
           const inflActive = INFLUENCER_IDS.includes(active);
-          const paActive = PARTNERSHIP_IDS.includes(active);
           const nestedChildTabsByParent = Object.fromEntries(
             NESTED_PARENTS.map(p => [p.parentId, TABS.filter(t => p.childIds.includes(t.id) && visIds.has(t.id))])
           ) as Record<string, typeof TABS[number][]>;
           return (<>{searchTrigger}{pinnedBlock}{groups.map(g => {
-            const flatTabs = g.tabs.filter(t => !INFLUENCER_IDS.includes(t.id as TabId) && !PARTNERSHIP_IDS.includes(t.id as TabId) && !ALL_NESTED_CHILD_IDS.includes(t.id as TabId));
+            const flatTabs = g.tabs.filter(t => !INFLUENCER_IDS.includes(t.id as TabId) && !ALL_NESTED_CHILD_IDS.includes(t.id as TabId));
             const inflTabs = g.tabs.filter(t => INFLUENCER_IDS.includes(t.id as TabId));
-            const paTabs = g.tabs.filter(t => PARTNERSHIP_IDS.includes(t.id as TabId));
             const collapsed = collapsedGroups.has(g.label);
             return (
               <div key={g.label} ref={el => { sidebarGroupRefs.current[g.label] = el; }} className="mb-2">
@@ -983,17 +979,6 @@ export function DashboardTabs({
                       </button>
                       {influencersOpen && <div className="ml-3 pl-1.5 border-l border-gray-200 space-y-0.5">{inflTabs.map(Btn)}</div>}
                     </>
-                  )}
-                  {paTabs.length > 0 && (
-                    <div className="mb-1">
-                      <button onClick={() => setPartnershipsOpen(o => !o)}
-                        className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[12.5px] font-bold transition-colors shadow-sm ${paActive ? "bg-blue-700 text-white" : "bg-blue-600 text-white hover:bg-blue-700"}`}>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 00-3-3.87" /></svg>
-                        Partnerships &amp; Affiliates
-                        <svg className={`ml-auto w-3.5 h-3.5 transition-transform ${partnershipsOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                      </button>
-                      {partnershipsOpen && <div className="mt-0.5 ml-1.5 pl-2 border-l-2 border-blue-100 space-y-0.5">{paTabs.map(Btn)}</div>}
-                    </div>
                   )}
                   {flatTabs.map(tab => {
                     const childTabs = nestedChildTabsByParent[tab.id];
