@@ -24,7 +24,7 @@ type TimelineEvent = {
 // year, unlike a one-off dated event, so it's stored as months, not dates.
 type Seasonality = { id: number; brand_id: number; product: string; start_month: number; end_month: number; note: string | null };
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const SEASON_COLOR = "#b45309"; // amber-700 — distinct from every TYPE_META color
+const SEASON_COLOR = "#7c8493"; // slate — deliberately quiet/neutral so it reads as background texture, not competing with campaign/event colors
 
 const TYPE_META: Record<EventType, { label: string; short: string; color: string; bg: string; key: boolean }> = {
   stock:    { label: "Stock & freight",     short: "Stock",       color: "#0f766e", bg: "#ecfdf5", key: true },
@@ -169,7 +169,7 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
       c = new Date(Date.UTC(c.getUTCFullYear(), c.getUTCMonth() + 1, 1));
     }
     const inPeak = (m: number, s: number, e: number) => s <= e ? (m >= s && m <= e) : (m >= s || m <= e);
-    const seasH = 15;
+    const seasH = 11;
 
     const rows = live.filter(br => brandFilter.has(br.id)).map(br => {
       const items = filtered.filter(e => e.brand_id === br.id);
@@ -189,9 +189,12 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
 
       // Seasonality bands: merge each product's contiguous "in peak" months
       // (across the whole visible date range, wrapping year to year) into
-      // one strip per run, one lane per product.
+      // one strip per run, then pack products onto shared lanes by time
+      // overlap (like the event lanes above) so unrelated products that
+      // don't overlap in time don't each force their own row of height.
       const products = showSeasonality ? seasonality.filter(s => s.brand_id === br.id) : [];
-      const seasonBands = products.map((s, si) => {
+      const seasLanes: number[] = [];
+      const seasonBands = products.map(s => {
         const segs: { left: number; w: number }[] = [];
         let run: { left: number; w: number } | null = null;
         for (const m of months) {
@@ -201,11 +204,17 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
           } else if (run) { segs.push(run); run = null; }
         }
         if (run) segs.push(run);
-        return { s, lane: si, segs };
+        const left = segs.length ? Math.min(...segs.map(sg => sg.left)) : 0;
+        const right = segs.length ? Math.max(...segs.map(sg => sg.left + sg.w)) : 0;
+        let lane = 0;
+        while (seasLanes[lane] !== undefined && seasLanes[lane] > left - 4) lane++;
+        seasLanes[lane] = right;
+        return { s, lane, segs };
       });
-      const seasLaneCount = seasonBands.length;
+      const seasLaneCount = seasLanes.length;
 
-      return { brand: br, items: placed, seasonBands, seasLaneCount, seasH, h: seasLaneCount * seasH + laneCount * 27 + 13 };
+      const seasGap = seasLaneCount > 0 ? 5 : 0;
+      return { brand: br, items: placed, seasonBands, seasLaneCount, seasH, h: seasLaneCount * seasH + seasGap + laneCount * 27 + 13 };
     });
 
     const todayX = (today >= start && today <= end) ? x(today) : null;
@@ -340,7 +349,7 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
           <span className="flex items-center gap-1.5 ml-auto">
             <label className={`text-[11px] font-semibold rounded-full pl-2 pr-2.5 py-1.5 border flex items-center gap-1.5 cursor-pointer transition ${showSeasonality ? "border-amber-200 bg-amber-50" : "border-gray-200 bg-white"}`}>
               <input type="checkbox" className="sr-only" checked={showSeasonality} onChange={e => setShowSeasonality(e.target.checked)} />
-              <i className="w-3 h-1.5 rounded-sm shrink-0" style={{ background: `color-mix(in srgb, ${SEASON_COLOR} 16%, #fff)`, borderTop: `2px solid ${SEASON_COLOR}` }} />
+              <i className="w-3 h-1.5 rounded-sm shrink-0" style={{ background: "rgba(148,163,184,0.35)" }} />
               <span style={{ color: showSeasonality ? SEASON_COLOR : "#9aa1ab" }}>Seasonality</span>
             </label>
           </span>
@@ -476,7 +485,7 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
       {seasonality.length > 0 && admin && (
         <div className="flex flex-wrap gap-1.5">
           {seasonality.map(s => (
-            <span key={s.id} className="inline-flex items-center gap-1.5 text-xs font-medium rounded-full pl-2.5 pr-1.5 py-1" style={{ background: "#fffbeb", color: SEASON_COLOR, border: "1px solid #fde68a" }}>
+            <span key={s.id} className="inline-flex items-center gap-1.5 text-xs font-medium rounded-full pl-2.5 pr-1.5 py-1 bg-gray-50 border border-gray-200" style={{ color: SEASON_COLOR }}>
               {brandOf(s.brand_id)?.name}: {s.product} ({MONTH_NAMES[s.start_month - 1]}–{MONTH_NAMES[s.end_month - 1]})
               <button onClick={() => removeSeason(s.id)} className="hover:text-rose-600 rounded-full w-4 h-4 flex items-center justify-center">×</button>
             </span>
@@ -508,24 +517,26 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
                     <div className="absolute -translate-x-1/2 text-white text-[9px] font-bold uppercase tracking-wide rounded-full px-2 py-0.5 whitespace-nowrap shadow-sm" style={{ top: -1, background: "#b8342a" }}>Today</div>
                   </div>
                 )}
-                {gantt.rows.map(row => (
-                  <div key={row.brand.id} className="flex border-b border-gray-50" style={{ height: row.h }}>
-                    <div className="sticky left-0 z-10 bg-white border-r border-gray-100 flex items-center gap-2 px-3" style={{ width: gantt.nameW, flex: "0 0 auto" }}>
+                {gantt.rows.map((row, ri) => (
+                  <div key={row.brand.id} className={`flex border-b border-gray-50 ${ri % 2 === 1 ? "bg-gray-50/40" : ""}`} style={{ height: row.h }}>
+                    <div className={`sticky left-0 z-10 border-r border-gray-100 flex items-center gap-2 px-3 ${ri % 2 === 1 ? "bg-gray-50" : "bg-white"}`} style={{ width: gantt.nameW, flex: "0 0 auto" }}>
                       <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: row.brand.color || "#94a3b8" }} />
                       <b className="text-[13px] font-semibold text-slate-800 leading-tight truncate">{row.brand.name}</b>
                     </div>
                     <div style={{ position: "relative", width: gantt.total, flex: "0 0 auto" }}>
                       {gantt.months.map((m, i) => <div key={i} className="absolute top-0 bottom-0 border-l border-gray-50" style={{ left: m.left }} />)}
                       {row.items.length === 0 && row.seasonBands.length === 0 && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] italic text-gray-300 z-0">—</span>}
+                      {row.seasLaneCount > 0 && (
+                        <div className="absolute left-0 right-0 top-0 border-b border-gray-100/80" style={{ height: row.seasLaneCount * row.seasH + 3, background: "rgba(148,163,184,0.06)" }} />
+                      )}
                       {row.seasonBands.map(({ s, lane, segs }) => segs.map((seg, i) => (
                         <div key={`${s.id}-${i}`} title={`${s.product} peaks ${MONTH_NAMES[s.start_month - 1]}–${MONTH_NAMES[s.end_month - 1]}${s.note ? ` — ${s.note}` : ""}`}
-                          className="absolute rounded flex items-center overflow-hidden"
+                          className="absolute rounded-[3px] flex items-center overflow-hidden"
                           style={{
-                            left: seg.left, width: seg.w, top: 2 + lane * row.seasH, height: row.seasH - 2,
-                            background: `color-mix(in srgb, ${SEASON_COLOR} 16%, #fff)`,
-                            borderTop: `2px solid ${SEASON_COLOR}`,
+                            left: seg.left, width: seg.w, top: 2 + lane * row.seasH, height: row.seasH - 3,
+                            background: "rgba(148,163,184,0.22)",
                           }}>
-                          {i === 0 && <span className="text-[9.5px] font-bold px-1.5 truncate" style={{ color: SEASON_COLOR }}>{s.product}</span>}
+                          {i === 0 && seg.w > 46 && <span className="text-[8.5px] font-semibold px-1.5 truncate" style={{ color: SEASON_COLOR }}>{s.product}</span>}
                         </div>
                       )))}
                       {row.items.map(({ e, left, w, bar, lane }) => {
@@ -533,7 +544,7 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
                         const working = statusOf(e) === "working";
                         const past = toMs(e.end_date || e.date!) < today;
                         const key = meta.key;
-                        const yOff = row.seasLaneCount * row.seasH;
+                        const yOff = row.seasLaneCount > 0 ? row.seasLaneCount * row.seasH + 5 : 0;
                         // Key dates (stock/launch/coming soon) get a bold solid pill;
                         // other activity (events/trade/campaigns) stays quiet and outlined.
                         return (
@@ -649,7 +660,7 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
           <span key={t} className="inline-flex items-center gap-1.5 text-xs text-gray-500"><i className="w-4 h-2.5 rounded-full border" style={{ background: TYPE_META[t].color, borderColor: TYPE_META[t].color }} />{TYPE_META[t].label}</span>
         ))}
         <span className="inline-flex items-center gap-1.5 text-xs text-gray-500"><i className="w-4 h-2.5 rounded-full border border-dashed border-gray-400" /> Working, needs sign off</span>
-        <span className="inline-flex items-center gap-1.5 text-xs text-gray-500"><i className="w-4 h-2.5 rounded-sm" style={{ background: `color-mix(in srgb, ${SEASON_COLOR} 16%, #fff)`, borderTop: `2px solid ${SEASON_COLOR}` }} /> Seasonality — when to promote</span>
+        <span className="inline-flex items-center gap-1.5 text-xs text-gray-500"><i className="w-4 h-2.5 rounded-sm" style={{ background: "rgba(148,163,184,0.35)" }} /> Seasonality — when to promote</span>
       </div>
 
       {/* ---------- drawer ---------- */}
