@@ -985,15 +985,15 @@ export function DashboardTabs({
                     </>
                   )}
                   {paTabs.length > 0 && (
-                    <>
+                    <div className="mb-1">
                       <button onClick={() => setPartnershipsOpen(o => !o)}
-                        className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${paActive ? "text-emerald-600 font-semibold" : "text-gray-500 hover:bg-gray-100/70 hover:text-gray-700"}`}>
+                        className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[12.5px] font-bold transition-colors shadow-sm ${paActive ? "bg-blue-700 text-white" : "bg-blue-600 text-white hover:bg-blue-700"}`}>
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 00-3-3.87" /></svg>
                         Partnerships &amp; Affiliates
                         <svg className={`ml-auto w-3.5 h-3.5 transition-transform ${partnershipsOpen ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                       </button>
-                      {partnershipsOpen && <div className="ml-3 pl-1.5 border-l border-gray-200 space-y-0.5">{paTabs.map(Btn)}</div>}
-                    </>
+                      {partnershipsOpen && <div className="mt-0.5 ml-1.5 pl-2 border-l-2 border-blue-100 space-y-0.5">{paTabs.map(Btn)}</div>}
+                    </div>
                   )}
                   {flatTabs.map(tab => {
                     const childTabs = nestedChildTabsByParent[tab.id];
