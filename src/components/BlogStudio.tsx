@@ -97,12 +97,22 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
   async function uploadImage(id: string, file: File) {
     setUploadingId(id);
     setMsg("Uploading image…");
-    const fd = new FormData(); fd.append("file", file); fd.append("id", id);
-    const res = await fetch("/api/blog-drafts/image", { method: "POST", body: fd }).catch(() => null);
-    const d = await res?.json().catch(() => null);
+    // Straight to storage on a signed URL — not through this function's own
+    // body, which Vercel caps around 4.5MB (a real phone photo often exceeds that).
+    const init = await fetch("/api/blog-drafts/image", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "init", id, fileName: file.name, contentType: file.type, bytes: file.size }),
+    }).then(r => r.json()).catch(() => null);
+    if (!init?.ok) { setUploadingId(null); setMsg(`Image upload failed: ${init?.error || "couldn't start the upload"}`); return; }
+    const put = await fetch(init.signedUrl, { method: "PUT", headers: { "Content-Type": file.type || "image/jpeg" }, body: file }).catch(() => null);
+    if (!put?.ok) { setUploadingId(null); setMsg("Image upload failed: the file didn't reach storage — try again"); return; }
+    const fin = await fetch("/api/blog-drafts/image", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "finish", id, path: init.path }),
+    }).then(r => r.json()).catch(() => null);
     setUploadingId(null);
-    if (res?.ok && d?.ok) { setMsg("Image uploaded ✓"); load(); }
-    else setMsg(`Image upload failed: ${d?.error || res?.statusText || "unknown error"}`);
+    if (fin?.ok) { setMsg("Image uploaded ✓"); load(); }
+    else setMsg(`Image upload failed: ${fin?.error || "unknown error"}`);
   }
 
   async function approve() {
