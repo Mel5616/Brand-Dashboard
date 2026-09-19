@@ -46,6 +46,7 @@ COMPLIANCE (non-negotiable):
 - Any content touching infant sleep must align with Red Nose Australia safe sleep guidance (on their back, in their own sleep space, smoke-free) — never contradict or omit it.
 - Perineal/postpartum products: can describe what they do physically (cooling, soothing, protecting) — never frame as a treatment for tears, trauma or episiotomies.
 PRODUCT MENTION: single mention near the end, its own short paragraph, natural and useful — never salesy. Never more than two product references.
+FAQ MARKUP (mandatory, matches the site's native accordion — do not use h3/p pairs for FAQs): each question must be its own <details class="faq"><summary class="faq__q">Question text<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" class="icon icon-plus"><path d="M12 5v14M5 12h14"></path></svg></summary><div class="faq__a"><p>Answer text.</p></div></details> block, one after another with no other markup between them, directly under the FAQs H2.
 Target length: ~900-1100 words excluding FAQs; FAQs (min 6, max 10, standalone Q&A) add ~400-600 words on top.`,
     blogs: [
       { key: "pregnancy-guides", handle: "pregnancy-guides", label: "Pregnancy Guides", audience: "Pregnant women, mostly 2nd trimester on, research-heavy and often anxious", tieins: "Frida Mum: Hospital Labour & Delivery Kit, Postpartum Recovery Kit, Peri Bottle, Instant Ice Maxi Pads, Perineal Cooling Pad Liners" },
@@ -61,6 +62,7 @@ Target length: ~900-1100 words excluding FAQs; FAQs (min 6, max 10, standalone Q
 - Real provable strengths to lead with: ultra-lightweight, carry-on approved / ready for air travel, 3-second fold, patented 360° easy steer, 140° reclining seat, grows with the child.
 - Awards worth citing where credibility helps: Red Dot Award: Product Design 2026, German Design Award 2026 (Winner), 2025 Baby Innovation Award (All-Terrain Stroller Product of the Year).
 - Tone: clean, confident, warm, modern, aspirational but grounded, parent-friendly — never gimmicky or loud. Short elegant phrasing over dense paragraphs.
+FAQ MARKUP (mandatory, matches the site's native accordion — do not use h3/p pairs for FAQs): each question must be its own <details><summary>Question text</summary><p>Answer text.</p></details> block, one after another with no other markup between them, directly under the FAQs H2.
 Target length: ~900-1100 words excluding FAQs; FAQs (min 6) add ~300-500 words on top.`,
     blogs: [
       { key: "news", handle: "news", label: "Journal", audience: "Parents comparing travel strollers and researching the Wonder range", tieins: "smarTrike® Wonder™, Wonder+™, Wonder max™" },
