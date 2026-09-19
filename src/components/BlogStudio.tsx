@@ -10,7 +10,7 @@ type Draft = {
   id: string; brand_id: number; status: "planned" | "draft" | "published" | "rejected"; blog_key: string | null;
   title: string; slug: string | null; meta_title: string | null; meta_description: string | null;
   target_keyword: string | null; intent: string | null; site_role: string | null; body_html: string;
-  brief: string | null; note: string | null; published_url: string | null; scheduled_for: string | null;
+  brief: string | null; note: string | null; published_url: string | null; scheduled_for: string | null; image_url: string | null;
   created_by: string | null; approved_by: string | null; published_at: string | null; created_at: string;
 };
 type BlogDef = { key: string; handle: string; label: string; audience: string; tieins: string };
@@ -32,6 +32,7 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
   const [loading, setLoading] = useState(true);
   const [needsSetup, setNeedsSetup] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
   const [edit, setEdit] = useState<Partial<Draft>>({});
@@ -91,6 +92,14 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
     }).then(r => r.json()).catch(() => null);
     setBusy(false);
     if (d?.ok) { setMsg("Saved."); load(); } else setMsg(d?.error || "Couldn't save.");
+  }
+
+  async function uploadImage(id: string, file: File) {
+    setUploadingId(id);
+    const fd = new FormData(); fd.append("file", file); fd.append("id", id);
+    const d = await fetch("/api/blog-drafts/image", { method: "POST", body: fd }).then(r => r.json()).catch(() => null);
+    setUploadingId(null);
+    if (d?.ok) load(); else setMsg(d?.error || "Couldn't upload the image.");
   }
 
   async function approve() {
@@ -221,6 +230,17 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
                           <div className="sm:col-span-2"><div className={lbl}>Meta description</div><input value={edit.meta_description ?? ""} onChange={e => setEdit(p => ({ ...p, meta_description: e.target.value }))} className={inp} /></div>
                         </div>
                         <div>
+                          <div className={lbl}>Featured image</div>
+                          <div className="flex items-center gap-3">
+                            {d.image_url && <img src={d.image_url} alt="" className="w-20 h-20 rounded-lg object-cover border border-gray-200 shrink-0" />}
+                            <label className="text-xs font-semibold text-slate-600 bg-gray-100 hover:bg-gray-200 rounded-lg px-3 py-2 cursor-pointer">
+                              {uploadingId === d.id ? "Uploading…" : d.image_url ? "Replace image" : "Upload image"}
+                              <input type="file" accept="image/*" className="hidden" onChange={ev => { const f = ev.target.files?.[0]; if (f) uploadImage(d.id, f); ev.currentTarget.value = ""; }} />
+                            </label>
+                            <span className="text-[11px] text-gray-400">This becomes the article's featured image on Shopify — inline images inside the body still need adding in Shopify's editor.</span>
+                          </div>
+                        </div>
+                        <div>
                           <div className={lbl}>Body (HTML — as it'll appear on Shopify)</div>
                           <textarea value={edit.body_html ?? ""} onChange={e => setEdit(p => ({ ...p, body_html: e.target.value }))} rows={16} className={`${inp} font-mono text-xs`} />
                         </div>
@@ -238,6 +258,7 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
                           <p className="text-xs text-gray-500">Published {d.published_at ? fmtD(d.published_at) : ""} by {d.approved_by} — {d.published_url ? <a href={d.published_url} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline">{d.published_url}</a> : "no live link recorded"}</p>
                         )}
                         {d.status === "rejected" && d.note && <p className="text-xs text-rose-500">Rejected: {d.note}</p>}
+                        {d.image_url && <img src={d.image_url} alt="" className="w-full max-w-xs rounded-lg object-cover border border-gray-200" />}
                         <div className="prose-sm max-w-none text-sm text-slate-700 bg-gray-50 rounded-lg p-4 max-h-64 overflow-y-auto" dangerouslySetInnerHTML={{ __html: d.body_html }} />
                         <button onClick={() => remove(d.id)} className="text-xs font-semibold text-gray-300 hover:text-rose-500">Delete</button>
                       </>

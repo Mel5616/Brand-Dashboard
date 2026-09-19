@@ -210,6 +210,7 @@ async function publishToShopify(brandId: number, blogHandle: string, draft: any)
         title: draft.title, handle: draft.slug || undefined,
         body_html: draft.body_html, summary_html: draft.meta_description || undefined,
         published: true,
+        ...(draft.image_url ? { image: { src: draft.image_url } } : {}),
         metafields: [
           { namespace: "global", key: "description_tag", value: draft.meta_description || "", type: "single_line_text_field" },
           { namespace: "global", key: "title_tag", value: draft.meta_title || draft.title, type: "single_line_text_field" },
