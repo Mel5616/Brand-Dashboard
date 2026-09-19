@@ -96,10 +96,13 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
 
   async function uploadImage(id: string, file: File) {
     setUploadingId(id);
+    setMsg("Uploading image…");
     const fd = new FormData(); fd.append("file", file); fd.append("id", id);
-    const d = await fetch("/api/blog-drafts/image", { method: "POST", body: fd }).then(r => r.json()).catch(() => null);
+    const res = await fetch("/api/blog-drafts/image", { method: "POST", body: fd }).catch(() => null);
+    const d = await res?.json().catch(() => null);
     setUploadingId(null);
-    if (d?.ok) load(); else setMsg(d?.error || "Couldn't upload the image.");
+    if (res?.ok && d?.ok) { setMsg("Image uploaded ✓"); load(); }
+    else setMsg(`Image upload failed: ${d?.error || res?.statusText || "unknown error"}`);
   }
 
   async function approve() {
@@ -239,6 +242,7 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
                             </label>
                             <span className="text-[11px] text-gray-400">This becomes the article's featured image on Shopify — inline images inside the body still need adding in Shopify's editor.</span>
                           </div>
+                          {uploadingId === d.id || (openId === d.id && msg && /image/i.test(msg)) ? <p className={`text-xs mt-1.5 ${msg.startsWith("Image upload failed") ? "text-rose-500" : "text-emerald-600"}`}>{msg}</p> : null}
                         </div>
                         <div>
                           <div className={lbl}>Body (HTML — as it'll appear on Shopify)</div>
