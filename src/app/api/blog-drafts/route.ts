@@ -221,7 +221,7 @@ async function publishToShopify(brandId: number, blogHandle: string, draft: any)
   const articleJson = await articleRes.json().catch(() => ({}));
   if (!articleRes.ok || !articleJson.article) return { ok: false, error: JSON.stringify(articleJson.errors ?? articleJson).slice(0, 250) };
 
-  return { ok: true, shopify_blog_id: String(blog.id), shopify_article_id: String(articleJson.article.id), shopify_handle: articleJson.article.handle, blog_handle: blog.handle };
+  return { ok: true, shopify_blog_id: String(blog.id), shopify_article_id: String(articleJson.article.id), shopify_handle: articleJson.article.handle, blog_handle: blog.handle, store_domain: store.domain };
 }
 
 const STOREFRONT_DOMAIN: Record<string, string> = { Frida: "fridaaustralia.com.au", SmarTrike: "smartrike.com.au" };
@@ -262,8 +262,11 @@ export async function PATCH(req: Request) {
     const pub = await publishToShopify(draft.brand_id, blogHandle, draft);
     if (!pub.ok) return NextResponse.json({ ok: false, error: pub.error }, { status: 502 });
 
-    const domain = STOREFRONT_DOMAIN[brandName];
-    const publishedUrl = domain ? `https://${domain}/blogs/${pub.blog_handle}/${pub.shopify_handle}` : null;
+    // Prefer the brand's real storefront domain; the store's own
+    // myshopify.com domain always resolves too, so it's a safe fallback
+    // rather than leaving published_url empty when a brand isn't mapped yet.
+    const domain = STOREFRONT_DOMAIN[brandName] || pub.store_domain;
+    const publishedUrl = `https://${domain}/blogs/${pub.blog_handle}/${pub.shopify_handle}`;
     const fields = {
       status: "published", shopify_blog_id: pub.shopify_blog_id, shopify_article_id: pub.shopify_article_id,
       shopify_handle: pub.shopify_handle, published_url: publishedUrl, approved_by: acc.user?.email ?? null,

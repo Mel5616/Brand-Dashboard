@@ -121,7 +121,8 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
     setBusy(true); setMsg("Publishing…");
     const d = await fetch("/api/blog-drafts", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: openId, action: "approve" }) }).then(r => r.json()).catch(() => null);
     setBusy(false);
-    if (d?.ok) { setMsg("Published ✓"); load(); } else setMsg(d?.error || "Couldn't publish — the draft is still saved, try again.");
+    if (d?.ok) { setMsg(d.item?.published_url ? `Published ✓ — live now: ${d.item.published_url}` : "Published ✓ — but no live link came back, check Shopify directly."); load(); }
+    else setMsg(d?.error || "Couldn't publish — the draft is still saved, try again.");
   }
 
   async function reject() {
