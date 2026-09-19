@@ -42,12 +42,13 @@ async function sb(path: string) {
 // Pull in read-only entries from Tradeshows, Campaign Calendar and New
 // Products, so the timeline doesn't need everything re-typed by hand.
 async function pulledEvents() {
-  const [shows, showBrands, campaigns, products, brands] = await Promise.all([
+  const [shows, showBrands, campaigns, products, brands, blogDrafts] = await Promise.all([
     sb("tradeshows?select=id,name,date_start,date_end,state,location"),
     sb("tradeshow_brands?select=tradeshow_id,brand_id"),
     sb("campaigns?select=id,campaign,brand,key_date,end_date,note,image_url,confirmed"),
     sb("new_products?select=id,name,brand_id,status,launch_date,attrs"),
     sb("brands?select=id,name"),
+    sb("blog_drafts?select=id,brand_id,title,status,blog_key,target_keyword,scheduled_for,created_at,image_url&status=eq.draft"),
   ]);
 
   const out: any[] = [];
@@ -101,6 +102,18 @@ async function pulledEvents() {
       event_type: p.status === "coming_soon" ? "coming" : "launch", title: p.name, date: p.launch_date || null, end_date: null,
       product_name: group.length > 1 ? `${group.length} colourways` : null, quantity: null,
       status: p.status === "launched" ? "locked" : "working", note: null, image_url: withImg?.attrs?.image_url || null,
+    });
+  }
+
+  // Blog drafts sitting in "Needs review" — dated on their planned slot if
+  // they came from one, otherwise when the draft was written, so they show
+  // up on the timeline instead of only living inside AI Blog Writer.
+  for (const d of blogDrafts) {
+    out.push({
+      id: `blog-${d.id}`, source: "blog_drafts", brand_id: d.brand_id,
+      event_type: "blog", title: d.title, date: (d.scheduled_for || d.created_at.slice(0, 10)), end_date: null,
+      product_name: d.blog_key || null, quantity: null, status: "working",
+      note: d.target_keyword ? `Needs review — target keyword "${d.target_keyword}"` : "Needs review", image_url: d.image_url || null,
     });
   }
 

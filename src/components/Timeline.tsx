@@ -12,9 +12,9 @@ import { useEffect, useMemo, useState } from "react";
 // a native timeline entry that admins can edit or remove.
 
 type Brand = { id: number; name: string; live?: boolean; color?: string };
-type EventType = "stock" | "launch" | "coming" | "retail" | "event" | "trade" | "campaign";
+type EventType = "stock" | "launch" | "coming" | "retail" | "event" | "trade" | "campaign" | "blog";
 type Status = "locked" | "working";
-type Source = "tradeshows" | "campaigns" | "new_products";
+type Source = "tradeshows" | "campaigns" | "new_products" | "blog_drafts";
 type TimelineEvent = {
   id: number | string; brand_id: number; event_type: EventType; title: string; date: string | null; end_date: string | null;
   product_name: string | null; quantity: number | null; status: string | null; note: string | null; image_url: string | null;
@@ -34,11 +34,12 @@ const TYPE_META: Record<EventType, { label: string; short: string; color: string
   event:    { label: "Events",              short: "Event",       color: "#6d28d9", bg: "#f5f0ff", key: false },
   trade:    { label: "Trade shows",         short: "Trade",       color: "#1a5893", bg: "#eff6fc", key: false },
   campaign: { label: "Campaign & content",  short: "Campaign",    color: "#9e2f72", bg: "#fdf1f8", key: false },
+  blog:     { label: "Blog — needs review", short: "Blog",        color: "#0e7490", bg: "#ecfeff", key: false },
 };
 const TYPES = Object.keys(TYPE_META) as EventType[];
 const KEY_TYPES = TYPES.filter(t => TYPE_META[t].key);
 const OTHER_TYPES = TYPES.filter(t => !TYPE_META[t].key);
-const SOURCE_META: Record<Source, string> = { tradeshows: "Synced from Tradeshows", campaigns: "Synced from Campaign Calendar", new_products: "Synced from New Products" };
+const SOURCE_META: Record<Source, string> = { tradeshows: "Synced from Tradeshows", campaigns: "Synced from Campaign Calendar", new_products: "Synced from New Products", blog_drafts: "Synced from AI Blog Writer" };
 
 // Tradeshows and the Australian retail calendar are portfolio-wide, not
 // brand-specific — pulled/added once under this pseudo "brand" row instead
