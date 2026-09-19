@@ -32,7 +32,7 @@ const TYPE_META: Record<EventType, { label: string; short: string; color: string
   coming:   { label: "Coming soon",         short: "Coming soon", color: "#a9680a", bg: "#fff8ec", key: true },
   retail:   { label: "Key shopping period", short: "Retail",      color: "#a21caf", bg: "#fdf2fb", key: true },
   event:    { label: "Events",              short: "Event",       color: "#6d28d9", bg: "#f5f0ff", key: false },
-  trade:    { label: "Trade shows",         short: "Trade",       color: "#1a5893", bg: "#eff6fc", key: false },
+  trade:    { label: "Trade shows",         short: "Expo",        color: "#1a5893", bg: "#eff6fc", key: false },
   campaign: { label: "Campaign & content",  short: "Campaign",    color: "#9e2f72", bg: "#fdf1f8", key: false },
   blog:     { label: "Blog — needs review", short: "Blog",        color: "#0e7490", bg: "#ecfeff", key: false },
 };
@@ -178,7 +178,10 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
       const placed = items.map(e => {
         const isBar = (e.end_date && e.end_date !== e.date);
         const barW = isBar ? Math.max(24, x(toMs(e.end_date!)) - x(toMs(e.date!)) + px) : 0;
-        const lblW = e.title.length * (TYPE_META[e.event_type].key ? 7.1 : 6) + 28;
+        // Every pill leads with its type ("BLOG · ", "CAMPAIGN · ") so the
+        // activity kind reads at a glance, not just from color.
+        const prefixLen = TYPE_META[e.event_type].short.length + 3;
+        const lblW = (e.title.length + prefixLen) * (TYPE_META[e.event_type].key ? 7.1 : 6) + 28;
         const w = isBar ? Math.max(barW, lblW) : lblW;
         const left = Math.max(0, x(toMs(e.date!)) - (isBar ? 0 : 5));
         let lane = 0;
@@ -563,7 +566,11 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
                             }}>
                             {!bar && <span className="w-[7px] h-[7px] rounded-full shrink-0" style={{ background: key ? (working ? meta.color : "#fff") : meta.color, border: key && working ? `1.5px solid ${meta.color}` : undefined }} />}
                             {bar && <span className="absolute left-0 top-0 bottom-0 rounded-l-full" style={{ width: key ? 4 : 3, background: meta.color }} />}
-                            <span className={bar ? "pl-1" : ""}>{e.title}</span>
+                            <span className={bar ? "pl-1" : ""}>
+                              <span className="uppercase tracking-wide opacity-70">{meta.short}</span>
+                              <span className="opacity-50"> · </span>
+                              {e.title}
+                            </span>
                           </button>
                         );
                       })}
