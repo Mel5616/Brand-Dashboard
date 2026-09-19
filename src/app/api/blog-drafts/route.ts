@@ -68,6 +68,150 @@ Target length: ~900-1100 words excluding FAQs; FAQs (min 6) add ~300-500 words o
       { key: "news", handle: "news", label: "Journal", audience: "Parents comparing travel strollers and researching the Wonder range", tieins: "smarTrike® Wonder™, Wonder+™, Wonder max™" },
     ],
   },
+  Nanit: {
+    voice: `NANIT VOICE (nanit.com.au):
+- Confident, research-led, reassuring-not-alarmist. Positions Nanit as "one system, not a gadget drawer" — video, breathing motion and sleep insights combined, backed by the in-house "Nanit Lab" (sleep scientists, paediatric clinicians, engineers).
+- Audience is comfortable with a premium, tech-forward purchase and wants data-backed reassurance, not just a camera.
+- Value props to lead with: nothing worn on baby beyond fabric (sensor-free breathing motion), 1080p overhead view, AI nap prediction, Sleep Score, Australian warranty/support out of Melbourne.
+COMPLIANCE (non-negotiable): Nanit is NOT a medical device and must never be described as one. Never claim it monitors, prevents, diagnoses or reduces the risk of SIDS or any medical condition. Describe breathing-motion tracking only as "for reassurance/insight," never as safety or medical monitoring. Always frame it alongside, never instead of, safe sleep practices.
+FAQ MARKUP (mandatory, matches the site's native accordion — do not use h3/p pairs for FAQs): wrap the whole FAQ section in <div class="nau-faq"> and give each question its own <details class="nau-faq__item"><summary>Question text</summary><div class="nau-faq__a"><p>Answer text.</p></div></details> block inside it, one after another, directly under the FAQs H2.
+Target length: ~900-1100 words excluding FAQs; FAQs (min 6, max 10) add ~400-600 words on top.`,
+    blogs: [
+      { key: "news", handle: "news", label: "Nanit Blog", audience: "New and expecting parents researching baby monitors and sleep tech, comfortable with a premium/tech-forward purchase", tieins: "Nanit Smart Baby Pro Monitor (Wall Mount/Floor Stand), Nanit Smart Baby Monitor + Flex Stand, Nanit Breathing Wear Band, Nanit Sound + Light Machine" },
+    ],
+  },
+  Magic: {
+    voice: `MAGIC VOICE (magicbabyproducts.com.au):
+- Magic sells nappy (diaper) disposal bins and bathroom accessories, not strollers or carriers — flagship line is the Heka telescopic nappy bin (M/L) plus the Bathroom Lid accessory that converts it to a regular bin post-nappy years.
+- Tone: light, practical, a little wry ("Parenting is full of little miracles, and a few smells you'd rather forget"), design-forward, sustainability-leaning. Muted colourways (Beige, Blush Pink, Concrete, Graphite, Lichen, Pigeon Blue, White) — mention colour options naturally where relevant.
+- Audience: Australian parents furnishing a nursery/bathroom, price-and-design conscious.
+COMPLIANCE: "100% odour control"/"odourless" is the brand's own marketing claim — you may repeat it as the brand's claim, but don't independently assert it as a guaranteed fact in all conditions; the product's own FAQ notes odour control depends on correct bag/lid use, so keep that nuance where relevant.
+FAQ MARKUP (mandatory, do not use h3/p pairs for FAQs): each question as its own plain <details><summary>Question text</summary><p>Answer text.</p></details> block, one after another, directly under the FAQs H2.
+Target length: ~900-1100 words excluding FAQs; FAQs (min 6) add ~300-500 words on top.`,
+    blogs: [
+      { key: "news", handle: "news", label: "Learning Hub", audience: "Australian parents furnishing a nursery/bathroom, comparing nappy disposal systems", tieins: "MAGIC Heka Nappy Bin (M/L), Heka Bathroom Lid accessory" },
+    ],
+  },
+  Hannie: {
+    voice: `HANNIE VOICE (hannie.com.au):
+- Hannie makes one product family: a portable, chair-mounted high chair for babies/toddlers (~6 months to 5 years, up to 25kg), positioned as a space-saving, travel-friendly alternative to a full-size high chair.
+- Tone: warm, plain-spoken, benefit-led with practical specifics (weights, ages, cm measurements) rather than fluffy claims — confident but not hard-sell.
+- Sustainability-minded framing where natural: "fewer, better baby products," recyclable materials, transferable 2-year warranty.
+- Audience: parents of infants/toddlers who are short on space or dine out/travel often.
+COMPLIANCE: safety claims may reference real standards the product is tested to (e.g. EN 16120, AS/NZS 8124.3) — only restate standards Mel has confirmed elsewhere, never invent a certification or number.
+FAQ MARKUP (mandatory, do not use h3/p pairs for FAQs): each question as its own plain <details><summary>Question text</summary><p>Answer text.</p></details> block, one after another, directly under the FAQs H2.
+Target length: ~900-1100 words excluding FAQs; FAQs (min 6) add ~300-500 words on top.`,
+    blogs: [
+      { key: "learning-hub", handle: "news", label: "Learning Hub", audience: "Parents of babies 6 months to 5 years choosing a portable high chair, practical and safety-conscious", tieins: "Hannie Portable High Chair (Charcoal Black, Mahogany Red, Sage Green, White Sand)" },
+    ],
+  },
+  "Gaia Baby": {
+    voice: `GAIA BABY VOICE (www.gaia-baby.com.au):
+- Calm, warm, minimal, design-led nursery furniture — never baby-themed or busy. Family-business framing ("Gaia Baby is a family business. So is the team who brought it to Australia"). Mission line to draw on: "baby products should be timeless, practical and beautiful too."
+- Audience: style-conscious first-time parents (25-40) and grandparents (50-65) wanting ease of mind and something that lasts beyond the baby years.
+- Premium but approachable — avoid discount-led or hard-sell language, especially for the flagship Eos range.
+- Product range: Eos Cot Bed, Hera Cot Bed, Serena Cot Bed (patented 8-in-1 convertible), Hera Dresser, Hera Wardrobe, Hera Rocking Chair, Changing Station.
+COMPLIANCE (non-negotiable): this brand makes real, specific safety/standards claims (AS/NZS ISO 8124.3, EN 716-1/716-2, BS 8509, GECA certification, formaldehyde levels). Never invent or generalise a certification — only restate what is already confirmed, and keep any cert claim scoped to the specific range it applies to (standards can differ between Hera, Serena and the mattress).
+FAQ MARKUP (mandatory, do not use h3/p pairs for FAQs): each question as its own plain <details><summary>Question text</summary><p>Answer text.</p></details> block, one after another, directly under the FAQs H2.
+Target length: ~900-1100 words excluding FAQs; FAQs (min 6) add ~300-500 words on top.`,
+    blogs: [
+      { key: "buying-guides", handle: "news", label: "Buying Guides", audience: "Parents comparing nursery furniture ranges and researching Eos/Hera/Serena", tieins: "Gaia Baby Eos Cot Bed, Hera Cot Bed, Serena Cot Bed, Hera Dresser, Hera Wardrobe" },
+      { key: "materials-safety", handle: "news", label: "Materials & Safety", audience: "Safety-conscious parents and grandparents researching certifications and materials", tieins: "AS/NZS & EN safety standards, GECA certification, sustainable timber sourcing" },
+    ],
+  },
+  WonderFold: {
+    voice: `WONDERFOLD VOICE (wonderfold.com.au):
+- Warm, practical, family-first: "versatility meets durability," built for "everyday adventures" and stress-free outings (beach, park, farmers' market).
+- Core value props: durability/premium materials, all-terrain capability, convenience for multi-child/multi-item hauling.
+- Strong inclusivity thread — explicitly known for catering to parents of multiples and families with children who have disabilities or illnesses; frame wagons as safety- and inclusion-promoting, not just gear. Supports the Starlight Children's Foundation.
+- Audience: Australian parents of 2+ kids (twins/multiples), special-needs families, outing-heavy households wanting one vehicle for kids and gear.
+- Product range: W2 (2-seat) and W4 (4-seat) Elite/Luxe/Luxe Pro Stroller Wagons.
+FAQ MARKUP (mandatory, matches the site's native accordion — do not use h3/p pairs for FAQs): each question as its own <details class="details" is="accordion-details"><summary class="details__summary flex items-center justify-between gap-2 cursor-pointer"><span class="text-base lg:text-lg xl:text-xl font-medium leading-tight">Question text</span></summary><div class="details__content text-base rte"><p>Answer text.</p></div></details> block, one after another, directly under the FAQs H2.
+Target length: ~900-1100 words excluding FAQs; FAQs (min 6) add ~300-500 words on top.`,
+    blogs: [
+      { key: "news", handle: "news", label: "News", audience: "Parents of multiples and families needing all-terrain, multi-child transport for outings", tieins: "WonderFold W2 (2-seat) and W4 (4-seat) Elite/Luxe/Luxe Pro Stroller Wagons" },
+    ],
+  },
+  UPPAbaby: {
+    voice: `UPPABABY VOICE (uppababy.com.au):
+- Premium, design-led stroller brand for parents who see a stroller as a long-term investment, not a commodity. Confident, considered, quietly aspirational — never showy, never generic "premium quality" claims. Back every claim with a spec or real scenario.
+- Speaks to detail-oriented Australian parents researching Vista vs Cruz vs Ridge vs Minu — cite real mechanisms (bassinet-to-toddler-seat conversion, adapters, one-hand fold, travel-system compatibility) tied to real parenting moments.
+- Key value props: modularity/grows-with-family (multi-child configurations), safety engineering, premium materials (leather trims, melange fabrics), longevity/resale value.
+- Price point is genuinely high — content should help justify the investment (worth-it framing), never apologise for it.
+- Product range: Vista V3, Cruz V3, Ridge, Minu, MESA Max Infant Car Seat, Ciro Highchair.
+FAQ MARKUP (mandatory, matches the site's native accordion — do not use h3/p pairs for FAQs): each question as its own <details class="details" is="accordion-details"><summary class="details__summary flex items-center justify-between gap-2 cursor-pointer"><span class="text-base lg:text-lg xl:text-xl font-medium leading-tight">Question text</span></summary><div class="details__content text-base rte"><p>Answer text.</p></div></details> block, one after another, directly under the FAQs H2.
+Target length: ~900-1100 words excluding FAQs; FAQs (min 6) add ~300-500 words on top.`,
+    blogs: [
+      { key: "news", handle: "news", label: "Journal", audience: "Parents comparing premium strollers and researching the Vista/Cruz/Ridge/Minu range, often mid-purchase-decision", tieins: "UPPAbaby Vista V3, Cruz V3, Ridge, Minu, MESA Max Infant Car Seat" },
+    ],
+  },
+  ZAZU: {
+    voice: `ZAZU VOICE (zazu-kids.com.au):
+- Warm, plain-spoken, parent-to-parent — "Made by parents who were also up at 5am." Practical and a little playful, never saccharine.
+- Leans on named characters (Lou the Owl, Katie the Cat, Emmy the Elephant etc.) rather than clinical spec talk — "a face they know, a colour they understand."
+- Audience: parents of toddlers/young kids navigating bedtime resistance, early waking, night fears, naps/travel disruption.
+- Value props: sleep training via visual wake-time cues (colour-change clocks/nightlights), comfort/soothing (white noise, breathing light), routine and independence.
+COMPLIANCE: these are sleep-comfort products, not medical or behavioural-therapy devices — avoid clinical "sleep training method" or developmental-milestone claims; use "helps with"/"designed for" framing and never guarantee a behavioural outcome.
+FAQ MARKUP (mandatory, do not use h3/p pairs for FAQs): each question as its own <details><summary>Question text</summary><p class="ans">Answer text.</p></details> block, one after another, directly under the FAQs H2.
+Target length: ~900-1100 words excluding FAQs; FAQs (min 6) add ~300-500 words on top.`,
+    blogs: [
+      { key: "news", handle: "news", label: "News", audience: "Parents of toddlers navigating bedtime resistance, early waking, and night fears", tieins: "ZAZU Nightlight/Clock range (Lou the Owl, Katie the Cat), Bedtime Projectors (Leo the Lion, Cody the Crab), Emmy the Elephant Nightlight & White Noise" },
+    ],
+  },
+  MiaMily: {
+    voice: `MIAMILY VOICE (miamily.com.au):
+- MiaMily is a Swiss-designed ride-on luggage/travel brand (hard-shell suitcases with a patented built-in child seat, plus an expandable backpack) — NOT baby carriers, do not write about babywearing.
+- Tone: warm, plain and practical — parent to parent, honest about trade-offs.
+- Audience: parents of toddlers through teens planning air travel who want less airport friction.
+- Value props: the patented built-in seat (100kg rated, doubles as a resting spot/high chair/bag hook), TSA-approved locks, 360° spinner wheels, Swiss design, Limited Lifetime Warranty.
+COMPLIANCE: never guarantee a case fits every airline's cabin-baggage allowance — the brand's own language is "fits most airline overhead compartments," always keep that hedge since it varies by carrier. Never invent a minimum rider age; the brand sets none, only that the child must sit unassisted, belted, and supervised.
+- Product range: Carry On, Carry On Plus, Carry On Pro, Check In, Check In Plus, Expandable Backpack.
+FAQ MARKUP (mandatory, do not use h3/p pairs for FAQs): each question as its own plain <details><summary>Question text</summary><p>Answer text.</p></details> block, one after another, directly under the FAQs H2.
+Target length: ~900-1100 words excluding FAQs; FAQs (min 6) add ~300-500 words on top.`,
+    blogs: [
+      { key: "news", handle: "news", label: "Journal", audience: "Parents researching ride-on luggage, flying with toddlers, or choosing between MiaMily models", tieins: "MiaMily Carry On, Carry On Plus, Carry On Pro, Check In, Check In Plus, Expandable Backpack" },
+    ],
+  },
+  "Coolkidz Australia": {
+    voice: `COOLKIDZ AUSTRALIA VOICE (coolkidz.com.au):
+- This is the umbrella "hero" retail site — broad buying guides and category authority across brands, not any single brand's product copy. Never duplicate a brand's own "cluster" site content or intent (see HOUSE_RULES site-role rule).
+- Tone: warm, practical, Australian English, genuinely helpful rather than salesy — an experienced friend who's tried everything, not any one brand's marketing voice.
+- Audience: parents comparison-shopping across brands/categories rather than fans of one label.
+- Value props: curated multi-brand range, honest trade-off comparisons across brands, one trusted destination instead of researching many brand sites separately.
+- Stock spans Nanit, Frida, Mamave, SmarTrike, UPPAbaby, WonderFold, ZAZU, MiaMily, Matchstick Monkey, Hannie, Gaia Baby and Magic — pull in real cross-brand comparisons where relevant rather than pushing one brand.
+FAQ MARKUP (mandatory, do not use h3/p pairs for FAQs): each question as its own plain <details><summary>Question text</summary><p>Answer text.</p></details> block, one after another, directly under the FAQs H2.
+Target length: ~900-1100 words excluding FAQs; FAQs (min 6) add ~300-500 words on top.`,
+    blogs: [
+      { key: "strollers", handle: "news", label: "Stroller & Travel Guides", audience: "Parents comparing strollers/travel systems across brands (smarTrike, UPPAbaby, WonderFold, ZAZU, MiaMily)", tieins: "cross-brand stroller/travel-system range" },
+      { key: "nursery-sleep", handle: "news", label: "Nursery & Sleep Guides", audience: "Parents researching monitors, sleep safety, nursery setup", tieins: "Nanit monitors, Gaia Baby nursery furniture" },
+      { key: "baby-care", handle: "news", label: "Baby Care & Feeding Guides", audience: "Parents comparing grooming/health/feeding essentials", tieins: "Frida Baby grooming range, Mamave skincare, Matchstick Monkey teethers" },
+    ],
+  },
+  "Matchstick Monkey": {
+    voice: `MATCHSTICK MONKEY VOICE (www.matchstickmonkey.com.au):
+- Playful, sensory, design-led (award-winning, BioCote-protected silicone). Punchier and a little cheekier than Frida — confident, visually driven (colour, texture, "the iconic shape").
+- Audience: parents of teething infants (roughly 3-24 months), practical and design-conscious, often gifting/multi-colour collectors.
+- Value props: hygienic gel-applicator design, textured bumps that massage gums and reach back molars, fridge-coolable for extra soothing, medical-grade silicone.
+COMPLIANCE (non-negotiable): never claim the product treats, cures or relieves teething as a medical/clinical fact. Safe language: "designed to soothe/massage gums," "textured bumps help massage tender gums," "cooling relief" — never "relieves teething pain" or "treats teething symptoms."
+- Product range: Giraffe Teether, Fox Teether, Dancing Monkey Teether, Gigi Giraffe Teething Starter Set, Baby Sonic Toothbrush range.
+FAQ MARKUP (mandatory, matches the site's native accordion — do not use h3/p pairs for FAQs): each question as its own <details><summary>Question text<span class="ind">+</span></summary><div class="ans"><p>Answer text.</p></div></details> block, one after another, directly under the FAQs H2.
+Target length: ~900-1100 words excluding FAQs; FAQs (min 6) add ~300-500 words on top.`,
+    blogs: [
+      { key: "news", handle: "news", label: "Teething Guides", audience: "Parents of teething infants (3-24 months), researching gum relief, safe silicone, and sensory teether options", tieins: "Matchstick Monkey Giraffe Teether, Fox Teether, Dancing Monkey Teether, Gigi Giraffe Teething Starter Set, Baby Sonic Toothbrush range" },
+    ],
+  },
+  Mamave: {
+    voice: `MAMAVE VOICE (mamave.com.au):
+- Pregnancy-to-newborn skincare brand, two ranges: "Mumma" (pregnancy-safe body oils, moisturiser, scrub, soak) and "Bubba" (newborn/baby barrier cream, moisturiser, wash, massage oil).
+- Tone: warm, reassuring, cosmetic-science-credible — "developed by a cosmetic chemist," free from retinoids/parabens/synthetic fragrance. "Natural doesn't automatically mean safe" is a brand line worth echoing where relevant.
+- Audience: pregnant women and new parents of newborns, ingredient-conscious.
+COMPLIANCE (non-negotiable, same pattern as Frida): never claim a product treats, cures or prevents any medical/skin condition (eczema, dermatitis, PUPPP, stretch marks forming, etc.) — use "helps with"/"supports"/"designed for." Include a nudge to check with a healthcare professional for clinical/skin questions — the brand's own FAQ already uses this exact phrasing, reuse it naturally.
+FAQ MARKUP (mandatory, matches the site's native accordion — do not use h3/p pairs for FAQs): each question as its own <details class="faq"><summary>Question text<span class="fx">+</span></summary><div class="ans">Answer text.</div></details> block, one after another, directly under the FAQs H2.
+Target length: ~900-1100 words excluding FAQs; FAQs (min 6) add ~300-500 words on top.`,
+    blogs: [
+      { key: "mamave-journal", handle: "journal", label: "The Mamave Journal", audience: "Pregnant women and new parents researching pregnancy-safe and newborn skincare", tieins: "Mumma's Oil, Mumma's Moisturiser, Mumma's Scrub, Mumma's Soak, Bubba's Barrier Cream, Bubba's Moisturiser, Bubba's Wash, Bubba's Massage Oil" },
+    ],
+  },
 };
 
 async function callClaude(system: string, user: string, maxTokens: number) {
@@ -227,7 +371,13 @@ async function publishToShopify(brandId: number, blogHandle: string, draft: any)
   return { ok: true, shopify_blog_id: String(blog.id), shopify_article_id: String(articleJson.article.id), shopify_handle: articleJson.article.handle, blog_handle: blog.handle, store_domain: store.domain };
 }
 
-const STOREFRONT_DOMAIN: Record<string, string> = { Frida: "fridaaustralia.com.au", SmarTrike: "smartrike.com.au" };
+const STOREFRONT_DOMAIN: Record<string, string> = {
+  Frida: "fridaaustralia.com.au", SmarTrike: "smartrike.com.au",
+  Nanit: "nanit.com.au", Magic: "magicbabyproducts.com.au", Hannie: "hannie.com.au",
+  "Gaia Baby": "www.gaia-baby.com.au", WonderFold: "wonderfold.com.au", UPPAbaby: "uppababy.com.au",
+  ZAZU: "zazu-kids.com.au", MiaMily: "miamily.com.au", "Coolkidz Australia": "coolkidz.com.au",
+  "Matchstick Monkey": "www.matchstickmonkey.com.au", Mamave: "mamave.com.au",
+};
 
 export async function PATCH(req: Request) {
   const acc = await getAccess();
