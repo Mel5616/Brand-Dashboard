@@ -33,6 +33,7 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
   const [needsSetup, setNeedsSetup] = useState(false);
   const [busy, setBusy] = useState(false);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [confirmingApprove, setConfirmingApprove] = useState(false);
   const [msg, setMsg] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
   const [edit, setEdit] = useState<Partial<Draft>>({});
@@ -81,7 +82,7 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
     } else { setNeedsSetup(!!d?.needsSetup); setMsg(d?.error || "Couldn't generate that draft."); }
   }
 
-  function openDraft(d: Draft) { setOpenId(d.id === openId ? null : d.id); setEdit(d); setMsg(""); }
+  function openDraft(d: Draft) { setOpenId(d.id === openId ? null : d.id); setEdit(d); setMsg(""); setConfirmingApprove(false); setConfirmDeleteId(null); setShowReject(false); setRejectNote(""); }
 
   async function saveEdit() {
     if (!openId) return;
@@ -117,7 +118,7 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
 
   async function approve() {
     if (!openId) return;
-    if (!confirm("Publish this live to the brand's blog right now? This is the only approval step — there's no draft stage on Shopify.")) return;
+    setConfirmingApprove(false);
     setBusy(true); setMsg("Publishing…");
     const d = await fetch("/api/blog-drafts", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: openId, action: "approve" }) }).then(r => r.json()).catch(() => null);
     setBusy(false);
@@ -125,17 +126,20 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
     else setMsg(d?.error || "Couldn't publish — the draft is still saved, try again.");
   }
 
+  const [rejectNote, setRejectNote] = useState("");
+  const [showReject, setShowReject] = useState(false);
   async function reject() {
     if (!openId) return;
-    const note = prompt("Why is this getting rejected? (helps refine future briefs)") || "";
     setBusy(true);
-    const d = await fetch("/api/blog-drafts", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: openId, action: "reject", note }) }).then(r => r.json()).catch(() => null);
+    const d = await fetch("/api/blog-drafts", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: openId, action: "reject", note: rejectNote }) }).then(r => r.json()).catch(() => null);
     setBusy(false);
-    if (d?.ok) { setOpenId(null); load(); } else setMsg(d?.error || "Couldn't reject.");
+    if (d?.ok) { setOpenId(null); setShowReject(false); setRejectNote(""); load(); } else setMsg(d?.error || "Couldn't reject.");
   }
 
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   async function remove(id: string) {
-    if (!confirm("Delete this draft permanently?")) return;
+    if (confirmDeleteId !== id) { setConfirmDeleteId(id); return; }
+    setConfirmDeleteId(null);
     await fetch(`/api/blog-drafts?id=${id}`, { method: "DELETE" });
     if (openId === id) setOpenId(null);
     load();
@@ -231,7 +235,7 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
                         {d.intent && <p className="text-xs text-gray-400">Intent: {d.intent}</p>}
                         <div className="flex items-center gap-2">
                           <button onClick={() => useThisBrief(d)} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2">Use this brief ↑</button>
-                          <button onClick={() => remove(d.id)} className="text-sm font-semibold text-gray-300 hover:text-rose-500">Delete</button>
+                          <button onClick={() => remove(d.id)} className={`text-sm font-semibold ${confirmDeleteId === d.id ? "text-rose-600" : "text-gray-300 hover:text-rose-500"}`}>{confirmDeleteId === d.id ? "Click again to delete" : "Delete"}</button>
                         </div>
                       </>
                     ) : d.status === "draft" ? (
@@ -261,11 +265,29 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
                         </div>
                         <div className="flex flex-wrap items-center gap-2 pt-1">
                           <button onClick={saveEdit} disabled={busy} className="text-sm font-semibold text-slate-700 bg-gray-100 hover:bg-gray-200 rounded-lg px-4 py-2">Save changes</button>
-                          {admin && <button onClick={approve} disabled={busy} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2">Approve & publish live</button>}
+                          {admin && !confirmingApprove && <button onClick={() => setConfirmingApprove(true)} disabled={busy} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2">Approve & publish live</button>}
                           {!admin && <span className="text-xs text-gray-400">Only an admin can publish this live.</span>}
-                          <button onClick={reject} disabled={busy} className="text-sm font-semibold text-rose-500 hover:text-rose-600 ml-auto">Reject</button>
-                          <button onClick={() => remove(d.id)} disabled={busy} className="text-sm font-semibold text-gray-300 hover:text-rose-500">Delete</button>
+                          {!showReject && <button onClick={() => setShowReject(true)} disabled={busy} className="text-sm font-semibold text-rose-500 hover:text-rose-600 ml-auto">Reject</button>}
+                          <button onClick={() => remove(d.id)} disabled={busy} className={`text-sm font-semibold ${confirmDeleteId === d.id ? "text-rose-600" : "text-gray-300 hover:text-rose-500"}`}>{confirmDeleteId === d.id ? "Click again to delete" : "Delete"}</button>
                         </div>
+                        {confirmingApprove && (
+                          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex flex-wrap items-center gap-3">
+                            <span className="text-sm text-emerald-800">Publish this live to the brand&apos;s blog right now? This is the only approval step — there&apos;s no draft stage on Shopify.</span>
+                            <div className="flex gap-2 ml-auto">
+                              <button onClick={approve} disabled={busy} className="text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg px-4 py-2 whitespace-nowrap">{busy ? "Publishing…" : "Yes, publish now"}</button>
+                              <button onClick={() => setConfirmingApprove(false)} disabled={busy} className="text-sm font-semibold text-gray-500 hover:text-gray-700 px-3">Cancel</button>
+                            </div>
+                          </div>
+                        )}
+                        {showReject && (
+                          <div className="bg-rose-50 border border-rose-200 rounded-lg p-3 space-y-2">
+                            <textarea value={rejectNote} onChange={e => setRejectNote(e.target.value)} rows={2} placeholder="Why is this getting rejected? (optional — helps refine future briefs)" className={`${inp} bg-white`} />
+                            <div className="flex gap-2 justify-end">
+                              <button onClick={reject} disabled={busy} className="text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg px-4 py-2">{busy ? "Rejecting…" : "Confirm reject"}</button>
+                              <button onClick={() => { setShowReject(false); setRejectNote(""); }} disabled={busy} className="text-sm font-semibold text-gray-500 hover:text-gray-700 px-3">Cancel</button>
+                            </div>
+                          </div>
+                        )}
                       </>
                     ) : (
                       <>
@@ -275,7 +297,7 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
                         {d.status === "rejected" && d.note && <p className="text-xs text-rose-500">Rejected: {d.note}</p>}
                         {d.image_url && <img src={d.image_url} alt="" className="w-full max-w-xs rounded-lg object-cover border border-gray-200" />}
                         <div className="prose-sm max-w-none text-sm text-slate-700 bg-gray-50 rounded-lg p-4 max-h-64 overflow-y-auto" dangerouslySetInnerHTML={{ __html: d.body_html }} />
-                        <button onClick={() => remove(d.id)} className="text-xs font-semibold text-gray-300 hover:text-rose-500">Delete</button>
+                        <button onClick={() => remove(d.id)} className={`text-xs font-semibold ${confirmDeleteId === d.id ? "text-rose-600" : "text-gray-300 hover:text-rose-500"}`}>{confirmDeleteId === d.id ? "Click again to delete" : "Delete"}</button>
                       </>
                     )}
                   </div>
