@@ -82,7 +82,7 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
     } else { setNeedsSetup(!!d?.needsSetup); setMsg(d?.error || "Couldn't generate that draft."); }
   }
 
-  function openDraft(d: Draft) { setOpenId(d.id === openId ? null : d.id); setEdit(d); setMsg(""); setConfirmingApprove(false); setConfirmDeleteId(null); setShowReject(false); setRejectNote(""); }
+  function openDraft(d: Draft) { setOpenId(d.id === openId ? null : d.id); setEdit(d); setMsg(""); setConfirmingApprove(false); setApproveError(""); setConfirmDeleteId(null); setShowReject(false); setRejectNote(""); }
 
   async function saveEdit() {
     if (!openId) return;
@@ -116,14 +116,20 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
     else setMsg(`Image upload failed: ${fin?.error || "unknown error"}`);
   }
 
+  const [approveError, setApproveError] = useState("");
   async function approve() {
     if (!openId) return;
-    setConfirmingApprove(false);
-    setBusy(true); setMsg("Publishing…");
+    setApproveError(""); setBusy(true); setMsg("Publishing…");
     const d = await fetch("/api/blog-drafts", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: openId, action: "approve" }) }).then(r => r.json()).catch(() => null);
     setBusy(false);
-    if (d?.ok) { setMsg(d.item?.published_url ? `Published ✓ — live now: ${d.item.published_url}` : "Published ✓ — but no live link came back, check Shopify directly."); load(); }
-    else setMsg(d?.error || "Couldn't publish — the draft is still saved, try again.");
+    if (d?.ok) {
+      setConfirmingApprove(false);
+      setMsg(d.item?.published_url ? `Published ✓ — live now: ${d.item.published_url}` : "Published ✓ — but no live link came back, check Shopify directly.");
+      load();
+    } else {
+      // Keep the confirm panel open so the error shows right where you're looking, not in a message box off-screen.
+      setApproveError(d?.error || "Couldn't publish — the draft is still saved, try again.");
+    }
   }
 
   const [rejectNote, setRejectNote] = useState("");
@@ -271,12 +277,15 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
                           <button onClick={() => remove(d.id)} disabled={busy} className={`text-sm font-semibold ${confirmDeleteId === d.id ? "text-rose-600" : "text-gray-300 hover:text-rose-500"}`}>{confirmDeleteId === d.id ? "Click again to delete" : "Delete"}</button>
                         </div>
                         {confirmingApprove && (
-                          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex flex-wrap items-center gap-3">
-                            <span className="text-sm text-emerald-800">Publish this live to the brand&apos;s blog right now? This is the only approval step — there&apos;s no draft stage on Shopify.</span>
-                            <div className="flex gap-2 ml-auto">
-                              <button onClick={approve} disabled={busy} className="text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg px-4 py-2 whitespace-nowrap">{busy ? "Publishing…" : "Yes, publish now"}</button>
-                              <button onClick={() => setConfirmingApprove(false)} disabled={busy} className="text-sm font-semibold text-gray-500 hover:text-gray-700 px-3">Cancel</button>
+                          <div className={`border rounded-lg p-3 space-y-2 ${approveError ? "bg-rose-50 border-rose-200" : "bg-emerald-50 border-emerald-200"}`}>
+                            <div className="flex flex-wrap items-center gap-3">
+                              <span className="text-sm text-emerald-800">Publish this live to the brand&apos;s blog right now? This is the only approval step — there&apos;s no draft stage on Shopify.</span>
+                              <div className="flex gap-2 ml-auto">
+                                <button onClick={approve} disabled={busy} className="text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg px-4 py-2 whitespace-nowrap">{busy ? "Publishing…" : approveError ? "Try again" : "Yes, publish now"}</button>
+                                <button onClick={() => { setConfirmingApprove(false); setApproveError(""); }} disabled={busy} className="text-sm font-semibold text-gray-500 hover:text-gray-700 px-3">Cancel</button>
+                              </div>
                             </div>
+                            {approveError && <p className="text-sm text-rose-700 font-medium">Publish failed: {approveError}</p>}
                           </div>
                         )}
                         {showReject && (
