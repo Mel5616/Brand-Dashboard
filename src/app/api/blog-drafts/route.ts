@@ -28,6 +28,7 @@ const HOUSE_RULES = `HOUSE CONTENT RULES (apply to every article, every brand):
 - Structure (use as the backbone, adapt headings to the brand's own house style if one is given below): Quick Answer (1-2 short paragraphs) -> At a Glance (best for / not ideal for / key strength / trade-off) -> Category context -> Why parents choose it (3-5 reasons, each a feature tied to a benefit) -> Trade-offs (honest) -> Comparison if relevant -> When it's the right choice -> Is it worth it? -> FAQs (real search-style questions, standalone answers) -> Conclusion with a soft CTA. Never a hard sell.
 - SEO: meta title ~50-60 characters, primary keyword near the front; meta description ~140-160 characters, benefit-led, soft CTA, includes the primary keyword; H2s should mirror real questions people ask.
 - Claims: no unconfirmed AU prices/specs/launch dates; state trade-offs as clearly as benefits; cite comparisons around the reader's real use case (family size, travel, terrain, budget), not just spec tables.
+- Punctuation: avoid em dashes (—). Use a period for a new sentence, a comma, or a colon to introduce a list or explanation instead. Commas and full stops only — no em dashes anywhere in the output.
 - Output must be ready to paste into Shopify as-is.`;
 
 // ── Per-brand voice + compliance guardrails ──────────────────────────────
