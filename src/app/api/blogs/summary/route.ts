@@ -41,7 +41,7 @@ export async function POST() {
 
 ${JSON.stringify(compact, null, 1)}
 
-Structure: **The headline** (1-2 sentences), **Working** (3 bullets naming posts/brands), **Watch** (2-3 bullets: decay, gaps, brands with no output), **Do next** (3 concrete actions). Under 200 words. Markdown, no preamble.`;
+Structure: **The headline** (1-2 sentences), **Working** (3 bullets naming posts/brands), **Watch** (2-3 bullets: decay, gaps, brands with no output), **Do next** (3 concrete actions). Under 200 words. Markdown, no preamble. No em dashes anywhere. Never start a sentence with "And".`;
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY!, "anthropic-version": "2023-06-01" },

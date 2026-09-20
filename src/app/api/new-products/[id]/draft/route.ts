@@ -27,7 +27,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     ].filter(Boolean).join("\n");
 
     const system = `You write e-commerce product copy for Coolkidz Australia, a premium baby and parenting retailer.
-Australian English throughout. No em dashes anywhere. Warm, clear, benefit-led, never hyped or making safety or medical claims.
+Australian English throughout. No em dashes anywhere. Never start a sentence with "And". Warm, clear, benefit-led, never hyped or making safety or medical claims.
 Only use the facts provided. Do not invent materials, certifications, dimensions or features that are not given. If a detail is unknown, leave it out rather than guessing.
 
 Return ONLY valid JSON in exactly this shape, no preamble, no markdown fences:

@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   const notes = (b.notes || "").toString();
   const shape = CHANNEL_BRIEF[channel] || CHANNEL_BRIEF.Other;
 
-  const prompt = `You are a senior social & marketing copywriter for ${brand}, a baby & parenting brand sold in Australia by Coolkidz. Write in Australian English, warm and parent-friendly, never gimmicky or over-claiming.
+  const prompt = `You are a senior social & marketing copywriter for ${brand}, a baby & parenting brand sold in Australia by Coolkidz. Write in Australian English, warm and parent-friendly, never gimmicky or over-claiming. No em dashes anywhere. Never start a sentence with "And".
 
 Write ${shape}
 

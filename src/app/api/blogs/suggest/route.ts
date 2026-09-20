@@ -27,7 +27,7 @@ export async function POST() {
   const userMsg = `You are the SEO content strategist for Coolkidz Australia (baby/nursery brands, Australian D2C). Suggest NEW blog topics for our Blogs board.
 
 OUR HOUSE STYLE (follow exactly):
-- Every blog is an SEO brief: question-led or how-to titles aimed at Australian parents, e.g. "Is the UPPAbaby VISTA V3 Worth It? An Honest Review for Australian Parents", "Are Nappy Bins Bad for the Environment? What Australian Parents Should Know", "How Nanit Takes the Guesswork Out of Nursery Temperature and Humidity".
+- Every blog is an SEO brief: question-led or how-to titles aimed at Australian parents, e.g. "Is the UPPAbaby VISTA V3 Worth It? An Honest Review for Australian Parents", "Are Nappy Bins Bad for the Environment? What Australian Parents Should Know", "How Nanit Takes the Guesswork Out of Nursery Temperature and Humidity". No em dashes in any title. Never start a title or description with "And".
 - Each has a Category (Buying Guide / Comparison / Feature Education / Problem-Solving), a Customer Stage (Awareness → Consideration → Purchase), a primary keyword and 3-4 secondary keywords.
 - Hero + cluster structure: a big "Hero" pillar piece with numbered "Cluster" support articles.
 - Task names on the board use brand-code prefixes, e.g. "MM - When Should You Start Brushing Your Baby's Teeth? An Australian Parent's Guide", "CK/MM - Baby Teething, First Teeth & Oral Development (Hero #1)". Brand codes: UB=UPPAbaby, NAN=Nanit, FR=Frida, ST=SmarTrike, GB=Gaia Baby, WF=WonderFold, HN=Hannie, MG=Magic, MV=Mamave, MM=Matchstick Monkey, MIA=MiaMily, ZZ=Zazu, CK=Coolkidz.

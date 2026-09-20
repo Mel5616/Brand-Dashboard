@@ -51,7 +51,7 @@ Write (AU English, under 250 words, markdown):
 **New meta title** and **New meta description** — ready to paste, ≤60 / ≤155 chars, question-led house style.
 **Content changes** — 3-5 specific edits (sections/FAQs to add naming the query they capture, headings to change, freshness updates).
 **Internal links** — 1-2 links to add from/to the listed posts.
-No preamble.`;
+No preamble. No em dashes anywhere. Never start a sentence with "And".`;
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",

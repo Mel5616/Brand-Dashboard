@@ -14,7 +14,7 @@ export async function POST(req: Request) {
 
   let m: any; try { m = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
 
-  const prompt = `You are a senior social media strategist for Coolkidz Australia, which runs the Instagram accounts for a portfolio of baby & parenting brands. Write a concise executive summary for the top of a management report. Australian English. No em dashes. Be specific and use the numbers. Do not invent data beyond what is given.
+  const prompt = `You are a senior social media strategist for Coolkidz Australia, which runs the Instagram accounts for a portfolio of baby & parenting brands. Write a concise executive summary for the top of a management report. Australian English. No em dashes. Never start a sentence with "And". Be specific and use the numbers. Do not invent data beyond what is given.
 
 Period: ${m.period}
 Portfolio metrics (JSON):

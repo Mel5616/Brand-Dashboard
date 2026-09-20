@@ -41,7 +41,7 @@ PILLAR FOR THIS BRIEF: ${pillar.name}. ${pillar.desc}
 CAMPAIGN MOMENT: ${moment.name}. Objective: ${moment.objective}. Focus: ${moment.focus}
 
 HARD RULES
-- Australian English throughout. No em dashes anywhere.
+- Australian English throughout. No em dashes anywhere. Never start a sentence with "And".
 - Honour every standing compliance flag for this brand:
 ${p.standingFlags.map((f) => `  - ${f.level.toUpperCase()}: ${f.note}`).join("\n")}
 - Do not assert any regulatory status. Soften or flag claims rather than stating them as fact.
