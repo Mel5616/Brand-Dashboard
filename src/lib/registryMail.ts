@@ -2,11 +2,11 @@
 // no passwords: the manage link IS the way back in, so if this does not arrive
 // a parent who clears their browser has lost their list.
 //
-// Sent from the verified Coolkidz sender because that is what Resend is set up
-// for, but named and written as UPPAbaby, because that is the shop the parent
-// thinks they are dealing with. If it should come from an uppababy.com.au
-// address, that domain has to be verified in Resend first.
-const FROM = "UPPAbaby Australia <mel@coolkidz.com.au>";
+// Sent from the shop the parent thinks they are dealing with. uppababy.com.au
+// was verified in Resend on 20 Sep 2026; before that it went out from the
+// Coolkidz sender under the UPPAbaby name. registry@ is a sending address
+// only, so replies are steered to a mailbox someone reads.
+const FROM = "UPPAbaby Australia <registry@uppababy.com.au>";
 const REPLY_TO = "marketing@coolkidz.com.au";
 const SITE = "https://uppababy.com.au";
 
