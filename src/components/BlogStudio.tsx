@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-// Blogging > AI Blog Writer — full-post drafts written in-brand from a
+// Blogging > Blog Writing — full-post drafts written in-brand from a
 // one-line brief, reviewed here, and pushed straight to the right brand's
 // Shopify blog on approval. Currently wired up for Frida and smarTrike;
 // see BRAND_VOICE in src/app/api/blog-drafts/route.ts to add another brand.
@@ -177,7 +177,7 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
   if (needsSetup) {
     return (
       <div className="text-sm text-slate-500 bg-white rounded-xl border border-gray-100 p-6">
-        AI Blog Writer isn&apos;t set up yet — run <code className="text-xs bg-slate-100 px-1 py-0.5 rounded">supabase/add_blog_drafts.sql</code> in Supabase.
+        Blog Writing isn&apos;t set up yet — run <code className="text-xs bg-slate-100 px-1 py-0.5 rounded">supabase/add_blog_drafts.sql</code> in Supabase.
       </div>
     );
   }

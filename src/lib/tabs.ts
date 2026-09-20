@@ -52,7 +52,7 @@ export const TAB_SECTIONS: TabSection[] = [
   ] },
   { label: "Blogging", tabs: [
     { id: "tasks", label: "Blogs" },
-    { id: "blog-pipeline", label: "AI Blog Writer" },
+    { id: "blog-pipeline", label: "Blog Writing" },
   ] },
   { label: "Operations", tabs: [
     { id: "budget", label: "Budget" },
