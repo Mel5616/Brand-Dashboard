@@ -242,10 +242,63 @@ function extractFields(text: string): Record<string, string> {
   return out;
 }
 
+// Topic suggestions are informed by the brand's own audience/tie-ins and what
+// it's already covered, not by real keyword-volume data (no SEO tool is
+// wired up here) — framed to the model as editorial judgement, not stats.
+async function suggestTopics(req: Request, acc: Awaited<ReturnType<typeof getAccess>>) {
+  if (!process.env.ANTHROPIC_API_KEY) return NextResponse.json({ ok: false, error: "ANTHROPIC_API_KEY not configured" }, { status: 500 });
+  const url = new URL(req.url);
+  const brandId = url.searchParams.get("brand_id");
+  const brandName = url.searchParams.get("brand_name") || "";
+  const blogKey = url.searchParams.get("blog_key") || "";
+  const voice = BRAND_VOICE[brandName];
+  if (!voice) return NextResponse.json({ ok: false, error: `No voice guide set up yet for ${brandName || "this brand"}` }, { status: 400 });
+  const blogDef = voice.blogs.find(bl => bl.key === blogKey) ?? voice.blogs[0];
+
+  let covered: string[] = [];
+  if (brandId) {
+    const cRes = await fetch(`${sbUrl}/rest/v1/blog_drafts?brand_id=eq.${encodeURIComponent(brandId)}&select=title,target_keyword&order=created_at.desc&limit=40`, { headers: h(), cache: "no-store" });
+    const cJson = await cRes.json().catch(() => []);
+    covered = (Array.isArray(cJson) ? cJson : []).map((r: any) => [r.title, r.target_keyword].filter(Boolean).join(" — ")).filter(Boolean);
+  }
+
+  const system = `You are an SEO content strategist for ${brandName}, an Australian baby-goods brand. You have no keyword-volume tool — base suggestions on real parent search behaviour (what people actually type into Google), the site's role, and this blog's audience, not invented statistics.
+
+${HOUSE_RULES}
+
+${voice.voice}
+
+This is for the "${blogDef.label}" blog. Audience: ${blogDef.audience}. Product tie-ins available: ${blogDef.tieins}.
+${covered.length ? `Already covered on this brand's blog, don't repeat these or anything too close to them:\n${covered.map(t => `- ${t}`).join("\n")}` : ""}
+
+Suggest 6 distinct blog topics. Spread them across different search intents (a direct question, a buying/worth-it decision, a comparison, an age/stage guide, a how-to, a myth/misconception) so they don't overlap each other either. Each needs a real, specific angle a parent would actually search for, not a generic category name.
+
+Respond with ONLY a JSON array, no markdown fences, no text before or after, exactly this shape:
+[{"title": "...", "target_keyword": "...", "intent": "one short phrase", "site_role": "cluster or hero", "why": "one sentence on the real search behaviour or gap this fills"}]`;
+
+  let text: string;
+  try {
+    text = await callClaude(system, "Suggest the 6 topics now, as the JSON array only.", 1500);
+  } catch (e: any) {
+    return NextResponse.json({ ok: false, error: String(e.message || e).slice(0, 300) }, { status: 502 });
+  }
+  let suggestions: any[];
+  try {
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    suggestions = JSON.parse(jsonMatch ? jsonMatch[0] : text);
+    if (!Array.isArray(suggestions)) throw new Error("not an array");
+  } catch {
+    return NextResponse.json({ ok: false, error: "AI response wasn't valid — try again" }, { status: 502 });
+  }
+  return NextResponse.json({ ok: true, suggestions });
+}
+
 export async function GET(req: Request) {
   const acc = await getAccess();
   if (!canWrite(acc)) return NextResponse.json({ ok: false, error: "No access" }, { status: 403 });
-  const brandId = new URL(req.url).searchParams.get("brand_id");
+  const url = new URL(req.url);
+  if (url.searchParams.get("action") === "suggest-topics") return suggestTopics(req, acc);
+  const brandId = url.searchParams.get("brand_id");
   let q = `${sbUrl}/rest/v1/blog_drafts?select=*&order=created_at.desc&limit=200`;
   if (brandId) q += `&brand_id=eq.${encodeURIComponent(brandId)}`;
   const res = await fetch(q, { headers: h(), cache: "no-store" });

@@ -42,6 +42,9 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
   const voiceBrands = useMemo(() => brands.filter(b => voices[b.name]), [brands, voices]);
   const [form, setForm] = useState({ brand_name: "", blog_key: "", brief: "", target_keyword: "", intent: "", site_role: "cluster" });
   const [supersedeId, setSupersedeId] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<{ title: string; target_keyword: string; intent: string; site_role: string; why: string }[] | null>(null);
+  const [suggestBusy, setSuggestBusy] = useState(false);
+  const [suggestError, setSuggestError] = useState("");
 
   async function load() {
     const res = await fetch("/api/blog-drafts").then(r => r.json()).catch(() => ({ ok: false }));
@@ -55,6 +58,22 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
 
   const brandBlogs = voices[form.brand_name]?.blogs ?? [];
   const brandOf = (id: number) => brands.find(b => b.id === id);
+
+  async function suggestTopics() {
+    if (!form.brand_name) return;
+    const brandId = brands.find(b => b.name === form.brand_name)?.id;
+    setSuggestBusy(true); setSuggestError(""); setSuggestions(null);
+    const params = new URLSearchParams({ action: "suggest-topics", brand_name: form.brand_name, blog_key: form.blog_key, ...(brandId != null ? { brand_id: String(brandId) } : {}) });
+    const d = await fetch(`/api/blog-drafts?${params}`).then(r => r.json()).catch(() => null);
+    setSuggestBusy(false);
+    if (d?.ok) setSuggestions(d.suggestions || []);
+    else setSuggestError(d?.error || "Couldn't get suggestions.");
+  }
+
+  function useSuggestion(s: { title: string; target_keyword: string; intent: string; site_role: string }) {
+    setForm(p => ({ ...p, brief: s.title, target_keyword: s.target_keyword || "", intent: s.intent || "", site_role: s.site_role === "hero" ? "hero" : "cluster" }));
+    setSuggestions(null);
+  }
 
   function useThisBrief(d: Draft) {
     const brandName = brandOf(d.brand_id)?.name ?? "";
@@ -171,13 +190,13 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div>
             <div className={lbl}>Brand</div>
-            <select value={form.brand_name} onChange={e => { const bn = e.target.value; setForm(p => ({ ...p, brand_name: bn, blog_key: voices[bn]?.blogs[0]?.key || "" })); }} className={inp}>
+            <select value={form.brand_name} onChange={e => { const bn = e.target.value; setForm(p => ({ ...p, brand_name: bn, blog_key: voices[bn]?.blogs[0]?.key || "" })); setSuggestions(null); setSuggestError(""); }} className={inp}>
               {voiceBrands.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
             </select>
           </div>
           <div>
             <div className={lbl}>Blog</div>
-            <select value={form.blog_key} onChange={e => setForm(p => ({ ...p, blog_key: e.target.value }))} className={inp}>
+            <select value={form.blog_key} onChange={e => { setForm(p => ({ ...p, blog_key: e.target.value })); setSuggestions(null); setSuggestError(""); }} className={inp}>
               {brandBlogs.map(bl => <option key={bl.key} value={bl.key}>{bl.label}</option>)}
             </select>
           </div>
@@ -193,10 +212,29 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
             </select>
           </div>
           <div className="sm:col-span-2 lg:col-span-4">
-            <div className={lbl}>Topic / brief *</div>
+            <div className="flex items-center justify-between mb-1">
+              <div className={lbl + " mb-0"}>Topic / brief *</div>
+              <button type="button" onClick={suggestTopics} disabled={suggestBusy || !form.brand_name} className="text-[11px] font-semibold text-emerald-600 hover:text-emerald-700 disabled:opacity-50">
+                {suggestBusy ? "Thinking…" : "✨ Suggest SEO topics"}
+              </button>
+            </div>
             <textarea value={form.brief} onChange={e => setForm(p => ({ ...p, brief: e.target.value }))} rows={2} placeholder="e.g. Is the Frida Mom Postpartum Recovery Kit worth it? What's actually in it and who it's for." className={inp} />
           </div>
         </div>
+
+        {suggestError && <p className="text-[13px] text-red-500 mt-2">{suggestError}</p>}
+        {suggestions && (
+          <div className="mt-3 grid sm:grid-cols-2 gap-2">
+            {suggestions.map((s, i) => (
+              <button key={i} type="button" onClick={() => useSuggestion(s)} className="text-left bg-emerald-50/60 hover:bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2.5 transition-colors">
+                <p className="text-[13px] font-semibold text-slate-700 leading-snug">{s.title}</p>
+                <p className="text-[11px] text-emerald-700 mt-1">{s.target_keyword}{s.intent ? ` · ${s.intent}` : ""}</p>
+                <p className="text-[11px] text-gray-400 mt-1">{s.why}</p>
+              </button>
+            ))}
+          </div>
+        )}
+
         {msg && <p className="text-[13px] text-slate-500 mt-2">{msg}</p>}
         <button onClick={generate} disabled={busy || !voiceBrands.length} className="mt-3 text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2.5 disabled:opacity-60">{busy ? "Working…" : "Generate draft"}</button>
         {!voiceBrands.length && <p className="text-xs text-amber-600 mt-2">No brand voice guides are wired up yet.</p>}
