@@ -34,7 +34,7 @@ const TYPE_META: Record<EventType, { label: string; short: string; color: string
   event:    { label: "Events",              short: "Event",       color: "#6d28d9", bg: "#f5f0ff", key: false },
   trade:    { label: "Trade shows",         short: "Expo",        color: "#1a5893", bg: "#eff6fc", key: false },
   campaign: { label: "Campaign & content",  short: "Campaign",    color: "#9e2f72", bg: "#fdf1f8", key: false },
-  blog:     { label: "Blog — needs review", short: "Blog",        color: "#0e7490", bg: "#ecfeff", key: false },
+  blog:     { label: "Blog",                short: "Blog",        color: "#0e7490", bg: "#ecfeff", key: false },
 };
 const TYPES = Object.keys(TYPE_META) as EventType[];
 const KEY_TYPES = TYPES.filter(t => TYPE_META[t].key);

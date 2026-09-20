@@ -48,7 +48,7 @@ async function pulledEvents() {
     sb("campaigns?select=id,campaign,brand,key_date,end_date,note,image_url,confirmed"),
     sb("new_products?select=id,name,brand_id,status,launch_date,attrs"),
     sb("brands?select=id,name"),
-    sb("blog_drafts?select=id,brand_id,title,status,blog_key,target_keyword,scheduled_for,created_at,image_url&status=eq.draft"),
+    sb("blog_drafts?select=id,brand_id,title,status,blog_key,target_keyword,scheduled_for,created_at,image_url&status=in.(planned,draft,published)"),
   ]);
 
   const out: any[] = [];
@@ -105,15 +105,19 @@ async function pulledEvents() {
     });
   }
 
-  // Blog drafts sitting in "Needs review" — dated on their planned slot if
-  // they came from one, otherwise when the draft was written, so they show
-  // up on the timeline instead of only living inside AI Blog Writer.
+  // Planned, needs-review and published blog drafts all land here — dated on
+  // their planned slot if they came from one, otherwise when the draft was
+  // written — so the whole blog pipeline shows up on the timeline instead of
+  // only living inside Blog Writing. Only published counts as "confirmed"
+  // (locked); planned/needs-review both still show as working.
+  const BLOG_STAGE: Record<string, string> = { planned: "Planned", draft: "Needs review", published: "Published" };
   for (const d of blogDrafts) {
+    const stage = BLOG_STAGE[d.status] || d.status;
     out.push({
       id: `blog-${d.id}`, source: "blog_drafts", brand_id: d.brand_id,
       event_type: "blog", title: d.title, date: (d.scheduled_for || d.created_at.slice(0, 10)), end_date: null,
-      product_name: d.blog_key || null, quantity: null, status: "working",
-      note: d.target_keyword ? `Needs review — target keyword "${d.target_keyword}"` : "Needs review", image_url: d.image_url || null,
+      product_name: d.blog_key || null, quantity: null, status: d.status === "published" ? "locked" : "working",
+      note: d.target_keyword ? `${stage} — target keyword "${d.target_keyword}"` : stage, image_url: d.image_url || null,
     });
   }
 
