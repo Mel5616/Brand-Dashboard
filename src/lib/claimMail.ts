@@ -8,7 +8,7 @@
 const FROM = "UPPAbaby Australia <noreply@uppababy.com.au>";
 // Claims go to the UPPAbaby support desk, and a customer replying to their
 // confirmation lands there too (Mel, 21 Sep 2026).
-const REPLY_TO = "uppababysupport@coolkidz.net.au";
+const REPLY_TO = "support@uppababy.com.au";
 const TEAM = ["uppababysupport@coolkidz.net.au"];
 
 type Claim = {

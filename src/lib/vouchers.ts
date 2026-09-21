@@ -107,7 +107,7 @@ const esc = (s: unknown) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&a
 // uppababy.com.au is verified in Resend; noreply, never a personal address
 // (Mel, 21 Sep 2026). Replies go to the support desk via REPLY_TO.
 const FROM = "UPPAbaby Australia <noreply@uppababy.com.au>";
-const REPLY_TO = "uppababysupport@coolkidz.net.au";
+const REPLY_TO = "support@uppababy.com.au";
 const fmtDate = (d: Date) => d.toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric", timeZone: "Australia/Melbourne" });
 
 export async function sendVoucherEmail(o: { to: string; firstName: string; brand: VoucherBrand; code: string; expiresAt: Date; orderName: string }) {
