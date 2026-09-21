@@ -26,6 +26,10 @@ const SENDERS: Record<number, { fromEmail: string; fromLabel: string }> = {
   // UPPAbaby's Klaviyo account — the bare uppababy.com.au isn't authenticated
   // there, so sending from it would silently fail deliverability.
   5: { fromEmail: "hello@email.uppababy.com.au", fromLabel: "UPPAbaby Australia" },
+  // Pulled straight from SmarTrike's own Klaviyo account (GET /api/accounts/,
+  // contact_information.default_sender_email/name) — its own configured
+  // default, not guessed.
+  12: { fromEmail: "hello@smartrike.com.au", fromLabel: "smarTrike Australia" },
 };
 
 export function klaviyoSenderForBrand(brandId?: number | null): { fromEmail: string; fromLabel: string } {
