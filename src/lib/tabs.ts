@@ -15,7 +15,6 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "insights", label: "Insights" },
     { id: "team-hub", label: "Team" },
     { id: "weekly-brief", label: "Weekly Brief" },
-    { id: "assistants", label: "AI Assistants" },
   ] },
   { label: "Reports", tabs: [
     { id: "report", label: "Budget vs Actuals" },
@@ -35,16 +34,20 @@ export const TAB_SECTIONS: TabSection[] = [
   { label: "Plan", tabs: [
     { id: "campaign-calendar", label: "Campaigns" },
     { id: "promotions", label: "Promotions" },
-    { id: "discount-codes", label: "Discount Codes" },
-    { id: "reviews", label: "Reviews" },
-    { id: "website-requests", label: "Website Requests" },
-    { id: "utm-tracking", label: "UTM Tracking" },
     { id: "calendar", label: "Calendar" },
     { id: "content", label: "Briefing Engine" },
     { id: "events", label: "Tune Up Days" },
     { id: "event-concepts", label: "Event Concepts" },
     { id: "decks", label: "Launch Decks" },
     { id: "show-deals", label: "Tradeshow Deals" },
+  ] },
+  { label: "Websites", tabs: [
+    { id: "assistants", label: "AI Assistants" },
+    { id: "discount-codes", label: "Discount Codes" },
+    { id: "website-requests", label: "Website Requests" },
+    { id: "utm-tracking", label: "UTM Tracking" },
+    { id: "reviews", label: "Reviews" },
+    { id: "seo", label: "SEO" },
   ] },
   { label: "Creative", tabs: [
     { id: "design-requests", label: "Design Requests" },
@@ -86,7 +89,6 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "amazon-ads", label: "Amazon Ads" },
   ] },
   { label: "Owned & Earned", tabs: [
-    { id: "seo", label: "SEO" },
     { id: "social", label: "Social" },
     { id: "youtube", label: "YouTube" },
     { id: "influencer", label: "Influencer Budget" },
