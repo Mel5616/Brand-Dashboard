@@ -12,7 +12,7 @@ import { useEffect, useMemo, useState } from "react";
 // a native timeline entry that admins can edit or remove.
 
 type Brand = { id: number; name: string; live?: boolean; color?: string };
-type EventType = "stock" | "launch" | "coming" | "retail" | "event" | "trade" | "campaign" | "blog";
+type EventType = "stock" | "launch" | "coming" | "retail" | "event" | "trade" | "campaign" | "blog" | "edm";
 type Status = "locked" | "working";
 type Source = "tradeshows" | "campaigns" | "new_products" | "blog_drafts";
 type TimelineEvent = {
@@ -35,6 +35,7 @@ const TYPE_META: Record<EventType, { label: string; short: string; color: string
   trade:    { label: "Trade shows",         short: "Expo",        color: "#1a5893", bg: "#eff6fc", key: false },
   campaign: { label: "Campaign & content",  short: "Campaign",    color: "#9e2f72", bg: "#fdf1f8", key: false },
   blog:     { label: "Blog",                short: "Blog",        color: "#0e7490", bg: "#ecfeff", key: false },
+  edm:      { label: "Email",               short: "EDM",         color: "#c026d3", bg: "#fdf4ff", key: false },
 };
 const TYPES = Object.keys(TYPE_META) as EventType[];
 const KEY_TYPES = TYPES.filter(t => TYPE_META[t].key);

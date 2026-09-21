@@ -42,13 +42,14 @@ async function sb(path: string) {
 // Pull in read-only entries from Tradeshows, Campaign Calendar and New
 // Products, so the timeline doesn't need everything re-typed by hand.
 async function pulledEvents() {
-  const [shows, showBrands, campaigns, products, brands, blogDrafts] = await Promise.all([
+  const [shows, showBrands, campaigns, products, brands, blogDrafts, edmDrafts] = await Promise.all([
     sb("tradeshows?select=id,name,date_start,date_end,state,location"),
     sb("tradeshow_brands?select=tradeshow_id,brand_id"),
     sb("campaigns?select=id,campaign,brand,key_date,end_date,note,image_url,confirmed"),
     sb("new_products?select=id,name,brand_id,status,launch_date,attrs"),
     sb("brands?select=id,name"),
     sb("blog_drafts?select=id,brand_id,title,status,blog_key,target_keyword,scheduled_for,created_at,image_url&status=in.(planned,draft,published)"),
+    sb("edm_drafts?select=id,brand_id,subject,status,scheduled_for,created_at,image_url&status=in.(planned,draft,sent)"),
   ]);
 
   const out: any[] = [];
@@ -118,6 +119,20 @@ async function pulledEvents() {
       event_type: "blog", title: d.title, date: (d.scheduled_for || d.created_at.slice(0, 10)), end_date: null,
       product_name: d.blog_key || null, quantity: null, status: d.status === "published" ? "locked" : "working",
       note: d.target_keyword ? `${stage} — target keyword "${d.target_keyword}"` : stage, image_url: d.image_url || null,
+    });
+  }
+
+  // Same pattern as blog drafts above — planned/needs-review/sent EDMs all
+  // land on the timeline so the whole Email Writing pipeline is visible
+  // alongside everything else, not just inside that tab.
+  const EDM_STAGE: Record<string, string> = { planned: "Planned", draft: "Needs review", sent: "Sent" };
+  for (const d of edmDrafts) {
+    const stage = EDM_STAGE[d.status] || d.status;
+    out.push({
+      id: `edm-${d.id}`, source: "edm_drafts", brand_id: d.brand_id,
+      event_type: "edm", title: d.subject, date: (d.scheduled_for || d.created_at.slice(0, 10)), end_date: null,
+      product_name: null, quantity: null, status: d.status === "sent" ? "locked" : "working",
+      note: stage, image_url: d.image_url || null,
     });
   }
 

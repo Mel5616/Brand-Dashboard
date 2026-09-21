@@ -85,6 +85,7 @@ import { BrandAssets } from "./BrandAssets";
 import { BlogHub } from "./BlogHub";
 import { BlogPipeline } from "./BlogPipeline";
 import { BlogStudio } from "./BlogStudio";
+import { EmailStudio } from "./EmailStudio";
 import { MediaReleases } from "./MediaReleases";
 import { InfluencerAgreements } from "./InfluencerAgreements";
 import { CampaignBriefs } from "./CampaignBriefs";
@@ -109,7 +110,7 @@ import { StockReport } from "./StockReport";
 import { fmt, fmtFull } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "assistants" | "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "reviews" | "website-requests" | "utm-tracking" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "seo" | "social" | "youtube" | "tradeshows" | "show-insights" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "campaign-briefs" | "nanit" | "affiliates" | "commission-factory" | "pa-budget" | "pa-tracker" | "pa-revenue" | "documents" | "team" | "brand-packs" | "price-lists" | "hub-fact-sheets" | "brand-overview" | "stock-availability" | "order-forms" | "customers" | "customer-forms" | "blog-pipeline";
+type TabId = "assistants" | "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "reviews" | "website-requests" | "utm-tracking" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "seo" | "social" | "youtube" | "tradeshows" | "show-insights" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "campaign-briefs" | "nanit" | "affiliates" | "commission-factory" | "email-writing" | "pa-budget" | "pa-tracker" | "pa-revenue" | "documents" | "team" | "brand-packs" | "price-lists" | "hub-fact-sheets" | "brand-overview" | "stock-availability" | "order-forms" | "customers" | "customer-forms" | "blog-pipeline";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -211,6 +212,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
     id: "email", label: "Email",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+  },
+  {
+    id: "email-writing", label: "Email Writing",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15.828H9v-2.828l8.586-8.586zM3 8l7 5" /></svg>,
   },
   {
     id: "seo", label: "SEO",
@@ -413,7 +418,7 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info", "brand-assets", "stock-report", "cost-sheet"] },
   { label: "Retailer Hub", ids: ["brand-packs", "price-lists", "hub-fact-sheets", "brand-overview", "stock-availability", "order-forms", "customers", "customer-forms"] },
   { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads", "amazon-ads"] },
-  { label: "Owned & Earned", ids: ["email", "seo", "social", "youtube", "influencer", "gifting", "influencer-agreements", "campaign-briefs", "nanit", "releases"] },
+  { label: "Owned & Earned", ids: ["email", "email-writing", "seo", "social", "youtube", "influencer", "gifting", "influencer-agreements", "campaign-briefs", "nanit", "releases"] },
   { label: "Partnerships & Affiliates", ids: ["affiliates", "commission-factory", "pa-budget", "pa-tracker", "pa-revenue", "documents"] },
   { label: "Sales Hub", ids: ["sales-hub"] },
 ];
@@ -2364,6 +2369,14 @@ export function DashboardTabs({
               })()}
               </>
               )}
+            </>
+          )}
+
+          {/* ── Email Writing (EDM drafts, Klaviyo push) ── */}
+          {active === "email-writing" && (
+            <>
+              <SectionBar title="Email Writing" />
+              <EmailStudio brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} admin={role === "admin"} />
             </>
           )}
 

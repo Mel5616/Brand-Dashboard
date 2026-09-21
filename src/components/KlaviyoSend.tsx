@@ -17,7 +17,7 @@ type FixedAudience = { name: string; included: { id: string; name: string }[]; e
 // ad-hoc list of newly-subscribed profiles) — Klaviyo's list-membership
 // index can lag the subscription write by up to ~60s, and a send fired
 // before it catches up gets silently cancelled with no recipients.
-export function KlaviyoSendPanel({ getHtml, defaultSubject, fixedAudience, brandId, notBefore, openByDefault }: { getHtml: () => string; defaultSubject: string; fixedAudience?: FixedAudience; brandId?: number; notBefore?: number; openByDefault?: boolean }) {
+export function KlaviyoSendPanel({ getHtml, defaultSubject, fixedAudience, brandId, notBefore, openByDefault, onSent }: { getHtml: () => string; defaultSubject: string; fixedAudience?: FixedAudience; brandId?: number; notBefore?: number; openByDefault?: boolean; onSent?: (sent: { item?: Send }) => void }) {
   const [open, setOpen] = useState(!!openByDefault);
   const [lists, setLists] = useState<List[] | null>(null);
   const [sends, setSends] = useState<Send[]>([]);
@@ -31,6 +31,12 @@ export function KlaviyoSendPanel({ getHtml, defaultSubject, fixedAudience, brand
   const [previewOpen, setPreviewOpen] = useState(false);
   const [testStatus, setTestStatus] = useState<"idle" | "sending" | "sent">("idle");
   const [now, setNow] = useState(() => Date.now());
+  // window.confirm() doesn't work in the embedded preview pane this dashboard
+  // often runs inside, so every confirm-before-live-action step below uses an
+  // inline reveal panel instead (same fix already applied to blog approve).
+  const [confirmingSend, setConfirmingSend] = useState(false);
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
 
   useEffect(() => {
     if (!notBefore || now >= notBefore) return;
@@ -70,27 +76,21 @@ export function KlaviyoSendPanel({ getHtml, defaultSubject, fixedAudience, brand
   }
   async function send() {
     if (!draft) return;
-    const confirmText = scheduleAt
-      ? `Schedule "${draft.subject}" to send ${new Date(scheduleAt).toLocaleString("en-AU")} to ${draft.list_name}?`
-      : `Send "${draft.subject}" right now to ${draft.list_name}? This emails the whole audience immediately.`;
-    if (!confirm(confirmText)) return;
     setBusy(true); setErr("");
     const datetimeIso = scheduleAt ? new Date(scheduleAt).toISOString() : undefined;
     const d = await fetch("/api/klaviyo/sends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "schedule", id: draft.id, campaignId: draft.campaign_id, datetimeIso, brandId }) }).then(r => r.json());
     setBusy(false);
-    if (d.ok) { setDraft(null); setListId(""); setScheduleAt(""); load(); } else setErr(d.error || "Couldn't schedule send.");
+    if (d.ok) { const sentDraft = draft; setConfirmingSend(false); setDraft(null); setListId(""); setScheduleAt(""); load(); onSent?.({ item: sentDraft }); } else setErr(d.error || "Couldn't schedule send.");
   }
   async function cancelDraft() {
     if (!draft) return;
-    if (!confirm("Discard this draft? It won't be sent.")) return;
     setBusy(true);
     await fetch("/api/klaviyo/sends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "cancel", id: draft.id, campaignId: draft.campaign_id, brandId }) });
-    setBusy(false); setDraft(null); load();
+    setBusy(false); setConfirmingCancel(false); setDraft(null); load();
   }
   async function deleteSend(s: Send) {
-    if (!confirm(`Remove "${s.subject}" from history? This can't be undone.`)) return;
     await fetch("/api/klaviyo/sends", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "delete", id: s.id, campaignId: s.campaign_id, brandId }) });
-    load();
+    setConfirmingDelete(null); load();
   }
 
   if (needsSetup) return null;
@@ -149,16 +149,43 @@ export function KlaviyoSendPanel({ getHtml, defaultSubject, fixedAudience, brand
           ) : (
             <div className="bg-emerald-50/60 border border-emerald-100 rounded-xl p-4 space-y-3">
               <p className="text-sm text-emerald-800">Draft created in Klaviyo — &ldquo;<strong>{draft.subject}</strong>&rdquo; to <strong>{draft.list_name}</strong>. Nothing has been sent yet.</p>
-              <div className="flex flex-wrap items-end gap-2">
-                <div>
-                  <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Schedule for (optional)</label>
-                  <input type="datetime-local" value={scheduleAt} onChange={e => setScheduleAt(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-300" />
+
+              {!confirmingSend && !confirmingCancel && (
+                <div className="flex flex-wrap items-end gap-2">
+                  <div>
+                    <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Schedule for (optional)</label>
+                    <input type="datetime-local" value={scheduleAt} onChange={e => setScheduleAt(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-300" />
+                  </div>
+                  <button onClick={() => setConfirmingSend(true)} disabled={busy || cooling} className="text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg px-4 py-2 disabled:opacity-40">
+                    {scheduleAt ? "Schedule send" : "Send now"}
+                  </button>
+                  <button onClick={() => setConfirmingCancel(true)} disabled={busy} className="text-sm font-semibold text-gray-500 hover:text-rose-600 rounded-lg px-3 py-2">Discard draft</button>
                 </div>
-                <button onClick={send} disabled={busy || cooling} className="text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg px-4 py-2 disabled:opacity-40">
-                  {busy ? "Working…" : scheduleAt ? "Schedule send" : "Send now"}
-                </button>
-                <button onClick={cancelDraft} disabled={busy} className="text-sm font-semibold text-gray-500 hover:text-rose-600 rounded-lg px-3 py-2">Discard draft</button>
-              </div>
+              )}
+
+              {confirmingSend && (
+                <div className="bg-white border border-emerald-200 rounded-lg p-3 space-y-2">
+                  <p className="text-sm text-slate-700">
+                    {scheduleAt
+                      ? <>Schedule &ldquo;<strong>{draft.subject}</strong>&rdquo; to send <strong>{new Date(scheduleAt).toLocaleString("en-AU")}</strong> to <strong>{draft.list_name}</strong>?</>
+                      : <>Send &ldquo;<strong>{draft.subject}</strong>&rdquo; right now to <strong>{draft.list_name}</strong>? This emails the whole audience immediately.</>}
+                  </p>
+                  <div className="flex gap-2">
+                    <button onClick={send} disabled={busy} className="text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg px-4 py-2 disabled:opacity-40">{busy ? "Working…" : "Yes, confirm"}</button>
+                    <button onClick={() => setConfirmingSend(false)} disabled={busy} className="text-sm font-semibold text-gray-500 rounded-lg px-3 py-2">Cancel</button>
+                  </div>
+                </div>
+              )}
+
+              {confirmingCancel && (
+                <div className="bg-white border border-gray-200 rounded-lg p-3 space-y-2">
+                  <p className="text-sm text-slate-700">Discard this draft? It won&apos;t be sent.</p>
+                  <div className="flex gap-2">
+                    <button onClick={cancelDraft} disabled={busy} className="text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg px-4 py-2 disabled:opacity-40">{busy ? "Working…" : "Yes, discard"}</button>
+                    <button onClick={() => setConfirmingCancel(false)} disabled={busy} className="text-sm font-semibold text-gray-500 rounded-lg px-3 py-2">Cancel</button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -179,20 +206,33 @@ export function KlaviyoSendPanel({ getHtml, defaultSubject, fixedAudience, brand
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {sends.map(s => (
-                      <tr key={s.id} className="group">
-                        <td className="py-1.5 pr-3 font-medium text-slate-700 whitespace-nowrap">{s.subject}</td>
-                        <td className="py-1.5 pr-3 text-slate-500 whitespace-nowrap">{s.list_name ?? "—"}</td>
-                        <td className="py-1.5 pr-3 whitespace-nowrap">
-                          <span className={`text-[10.5px] font-bold rounded-full px-2 py-0.5 ${s.status === "sent" ? "bg-emerald-50 text-emerald-600" : s.status === "scheduled" ? "bg-sky-50 text-sky-600" : s.status === "cancelled" ? "bg-gray-100 text-gray-400" : "bg-amber-50 text-amber-600"}`}>
-                            {s.status}{s.status === "scheduled" && s.scheduled_at ? ` · ${new Date(s.scheduled_at).toLocaleString("en-AU", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}` : ""}
-                          </span>
-                        </td>
-                        <td className="py-1.5 pr-3 text-right text-slate-600 tabular-nums">{s.stats ? `${s.stats.opensUnique.toLocaleString()} (${Math.round(s.stats.openRate * 100)}%)` : "—"}</td>
-                        <td className="py-1.5 pr-3 text-right text-slate-600 tabular-nums">{s.stats ? `${s.stats.clicksUnique.toLocaleString()} (${Math.round(s.stats.clickRate * 100)}%)` : "—"}</td>
-                        <td className="py-1.5 text-right">
-                          <button onClick={() => deleteSend(s)} title="Remove from history" className="text-gray-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity px-1">✕</button>
-                        </td>
-                      </tr>
+                      <>
+                        <tr key={s.id} className="group">
+                          <td className="py-1.5 pr-3 font-medium text-slate-700 whitespace-nowrap">{s.subject}</td>
+                          <td className="py-1.5 pr-3 text-slate-500 whitespace-nowrap">{s.list_name ?? "—"}</td>
+                          <td className="py-1.5 pr-3 whitespace-nowrap">
+                            <span className={`text-[10.5px] font-bold rounded-full px-2 py-0.5 ${s.status === "sent" ? "bg-emerald-50 text-emerald-600" : s.status === "scheduled" ? "bg-sky-50 text-sky-600" : s.status === "cancelled" ? "bg-gray-100 text-gray-400" : "bg-amber-50 text-amber-600"}`}>
+                              {s.status}{s.status === "scheduled" && s.scheduled_at ? ` · ${new Date(s.scheduled_at).toLocaleString("en-AU", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}` : ""}
+                            </span>
+                          </td>
+                          <td className="py-1.5 pr-3 text-right text-slate-600 tabular-nums">{s.stats ? `${s.stats.opensUnique.toLocaleString()} (${Math.round(s.stats.openRate * 100)}%)` : "—"}</td>
+                          <td className="py-1.5 pr-3 text-right text-slate-600 tabular-nums">{s.stats ? `${s.stats.clicksUnique.toLocaleString()} (${Math.round(s.stats.clickRate * 100)}%)` : "—"}</td>
+                          <td className="py-1.5 text-right">
+                            <button onClick={() => setConfirmingDelete(s.id)} title="Remove from history" className="text-gray-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity px-1">✕</button>
+                          </td>
+                        </tr>
+                        {confirmingDelete === s.id && (
+                          <tr key={s.id + "-confirm"}><td colSpan={6} className="pb-2">
+                            <div className="bg-rose-50 border border-rose-100 rounded-lg px-3 py-2 flex items-center justify-between gap-2">
+                              <span className="text-[12.5px] text-rose-700">Remove &ldquo;{s.subject}&rdquo; from history? This can&apos;t be undone.</span>
+                              <div className="flex gap-2 shrink-0">
+                                <button onClick={() => deleteSend(s)} className="text-[12.5px] font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg px-3 py-1">Yes, remove</button>
+                                <button onClick={() => setConfirmingDelete(null)} className="text-[12.5px] font-semibold text-gray-500 rounded-lg px-2 py-1">Cancel</button>
+                              </div>
+                            </div>
+                          </td></tr>
+                        )}
+                      </>
                     ))}
                   </tbody>
                 </table>
