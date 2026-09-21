@@ -90,6 +90,7 @@ import { EdmPlanner } from "./EdmPlanner";
 import { CredentialsPanel } from "./CredentialsPanel";
 import { ADMIN_ONLY_TABS } from "@/lib/tabs";
 import { MediaReleases } from "./MediaReleases";
+import { VouchersCard } from "./VouchersCard";
 import { InfluencerAgreements } from "./InfluencerAgreements";
 import { CampaignBriefs } from "./CampaignBriefs";
 import { AssistantFeed } from "./AssistantFeed";
@@ -1591,6 +1592,7 @@ export function DashboardTabs({
               <SectionBar title="Discount Codes" />
               <DiscountCodesTab brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} />
               <CrossCodeCard canCreate={role === "admin" || (allowedTabs ?? []).includes("discount-codes")} />
+              <VouchersCard admin={role === "admin"} />
             </>
           )}
 
