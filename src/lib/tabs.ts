@@ -56,6 +56,7 @@ export const TAB_SECTIONS: TabSection[] = [
   ] },
   { label: "Email Marketing", tabs: [
     { id: "email", label: "Email" },
+    { id: "edm-planner", label: "EDM Planner" },
     { id: "email-writing", label: "Email Writing" },
   ] },
   { label: "Operations", tabs: [
