@@ -18,20 +18,32 @@ export async function GET() {
   return NextResponse.json({ ok: true, items: JSON.parse(text || "[]") });
 }
 
+function cleanRow(b: any, email: string) {
+  const brandId = Number(b.brand_id);
+  const product = String(b.product ?? "").trim().slice(0, 150);
+  const startMonth = Number(b.start_month), endMonth = Number(b.end_month);
+  if (!brandId || !product || !(startMonth >= 1 && startMonth <= 12) || !(endMonth >= 1 && endMonth <= 12)) return null;
+  return { brand_id: brandId, product, start_month: startMonth, end_month: endMonth, note: b.note ? String(b.note).trim().slice(0, 300) : null, created_by: email };
+}
+
 export async function POST(req: Request) {
   const acc = await getAccess();
   if (acc.role !== "admin") return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false }, { status: 500 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
 
-  const brandId = Number(b.brand_id);
-  const product = String(b.product ?? "").trim().slice(0, 150);
-  const startMonth = Number(b.start_month), endMonth = Number(b.end_month);
-  if (!brandId || !product) return NextResponse.json({ ok: false, error: "Brand and product are required" }, { status: 400 });
-  if (!(startMonth >= 1 && startMonth <= 12) || !(endMonth >= 1 && endMonth <= 12)) {
-    return NextResponse.json({ ok: false, error: "Pick a start and end month" }, { status: 400 });
+  // Bulk import (CSV/Excel upload) — an array of rows in one call.
+  if (Array.isArray(b.rows)) {
+    const clean = b.rows.map((r: any) => cleanRow(r, acc.user!.email)).filter(Boolean);
+    if (!clean.length) return NextResponse.json({ ok: false, error: "No valid rows (need brand, product, start month, end month)" }, { status: 400 });
+    const res = await fetch(`${sbUrl}/rest/v1/product_seasonality`, { method: "POST", headers: hdr({ Prefer: "return=representation" }), body: JSON.stringify(clean) });
+    const text = await res.text();
+    if (!res.ok) return NextResponse.json({ ok: false, needsSetup: missing(res.status, text), error: text.slice(0, 200) }, { status: 500 });
+    return NextResponse.json({ ok: true, imported: JSON.parse(text).length, received: b.rows.length, items: JSON.parse(text) });
   }
-  const row = { brand_id: brandId, product, start_month: startMonth, end_month: endMonth, note: b.note ? String(b.note).trim().slice(0, 300) : null, created_by: acc.user!.email };
+
+  const row = cleanRow(b, acc.user!.email);
+  if (!row) return NextResponse.json({ ok: false, error: "Brand, product and a start/end month are required" }, { status: 400 });
   const res = await fetch(`${sbUrl}/rest/v1/product_seasonality`, { method: "POST", headers: hdr({ Prefer: "return=representation" }), body: JSON.stringify(row) });
   const text = await res.text();
   if (!res.ok) return NextResponse.json({ ok: false, needsSetup: missing(res.status, text), error: text.slice(0, 200) }, { status: 500 });

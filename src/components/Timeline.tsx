@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 // Portfolio-wide, highly visual timeline of what's physically landing:
 // stock arrivals, product launches, coming-soon teasers, plus events, trade
@@ -58,6 +58,23 @@ const SOURCE_META: Record<Source, string> = { tradeshows: "Synced from Tradeshow
 // of duplicating across every brand. Matches COOLKIDZ_TIMELINE_BRAND in
 // src/app/api/timeline-events/route.ts.
 const COOLKIDZ_BRAND: Brand = { id: -1, name: "Coolkidz calendar", color: "#0f172a" };
+
+// True if two same-brand, same-product seasonality windows share a month —
+// almost always an accidental duplicate rather than intentional (unlike two
+// DIFFERENT products for a brand overlapping, which is normal). Handles
+// wraparound windows (e.g. Nov–Mar) by expanding each to its included months.
+function monthsOf(startMonth: number, endMonth: number): Set<number> {
+  const out = new Set<number>();
+  let m = startMonth;
+  while (true) { out.add(m); if (m === endMonth) break; m = m === 12 ? 1 : m + 1; }
+  return out;
+}
+function seasonalityOverlaps(a: Seasonality, b: Seasonality): boolean {
+  if (a.id === b.id || a.brand_id !== b.brand_id || a.product.trim().toLowerCase() !== b.product.trim().toLowerCase()) return false;
+  const am = monthsOf(a.start_month, a.end_month);
+  for (const m of monthsOf(b.start_month, b.end_month)) if (am.has(m)) return true;
+  return false;
+}
 
 const DAY = 86400000;
 const inp = "text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400";
@@ -291,6 +308,40 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
   const emptySeasForm = { brand_id: "", product: "", start_month: "8", end_month: "11", note: "" };
   const [seasForm, setSeasForm] = useState(emptySeasForm);
   const [showSeasAdd, setShowSeasAdd] = useState(false);
+  const seasFileRef = useRef<HTMLInputElement>(null);
+  const [seasImporting, setSeasImporting] = useState(false);
+
+  async function handleSeasFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]; if (!file) return;
+    setSeasImporting(true); setMsg("");
+    try {
+      const XLSX = await import("xlsx");
+      const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const grid = XLSX.utils.sheet_to_json<any[]>(ws, { header: 1, blankrows: false, defval: "" });
+      const headers = (grid[0] || []).map((h: any) => String(h).trim());
+      const idx = (name: string) => headers.findIndex(h => h.toLowerCase() === name.toLowerCase());
+      const iBrand = idx("Brand"), iProduct = idx("Product"), iStart = idx("Start Month"), iEnd = idx("End Month"), iNote = idx("Note");
+      if (iBrand < 0 || iProduct < 0 || iStart < 0 || iEnd < 0) { setMsg("Couldn't find the Brand, Product, Start Month and End Month columns in that sheet."); setSeasImporting(false); return; }
+      const brandIdByName = new Map(live.map(b => [b.name.toLowerCase(), b.id]));
+      const monthByName = new Map(MONTH_NAMES.map((m, i) => [m.toLowerCase(), i + 1]));
+      const toMonth = (v: any) => { const n = Number(v); if (n >= 1 && n <= 12) return n; return monthByName.get(String(v).trim().toLowerCase()) ?? null; };
+      const rows = grid.slice(1).filter((r: any) => String(r[iBrand] ?? "").trim() && String(r[iProduct] ?? "").trim()).map((r: any) => ({
+        brand_id: brandIdByName.get(String(r[iBrand]).trim().toLowerCase()) ?? null,
+        product: r[iProduct], start_month: toMonth(r[iStart]), end_month: toMonth(r[iEnd]),
+        note: iNote >= 0 ? r[iNote] : "",
+      }));
+      const badBrand = rows.filter(r => r.brand_id == null).length;
+      const badMonth = rows.filter(r => !r.start_month || !r.end_month).length;
+      const j = await fetch("/api/product-seasonality", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows }) }).then(r => r.json());
+      if (j.error) setMsg(j.error);
+      else {
+        setMsg(`Imported ${j.imported} of ${j.received}${badBrand || badMonth ? ` — ${badBrand} row(s) had a brand name that didn't match, ${badMonth} had an invalid month` : ""}.`);
+        reloadSeasonality();
+      }
+    } catch { setMsg("Could not read that file."); }
+    finally { setSeasImporting(false); if (seasFileRef.current) seasFileRef.current.value = ""; }
+  }
   async function submitSeason() {
     if (!seasForm.brand_id || !seasForm.product.trim()) return;
     const body = { brand_id: Number(seasForm.brand_id), product: seasForm.product.trim(), start_month: Number(seasForm.start_month), end_month: Number(seasForm.end_month), note: seasForm.note || null };
@@ -394,6 +445,9 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
           <label className="text-xs text-gray-400 flex items-center gap-1.5 shrink-0"><input type="checkbox" checked={showPast} onChange={e => setShowPast(e.target.checked)} />Show past</label>
           {admin && (
             <div className="flex items-center gap-2 ml-auto flex-wrap justify-end">
+              <a href="/templates/seasonality-import-template.xlsx" download className="text-xs font-semibold text-amber-700 border border-amber-200 hover:bg-amber-50 rounded-lg px-3 py-2 shrink-0">Download seasonality template</a>
+              <input ref={seasFileRef} type="file" accept=".xlsx,.xls" onChange={handleSeasFile} className="hidden" />
+              <button onClick={() => seasFileRef.current?.click()} disabled={seasImporting} className="text-xs font-semibold text-amber-700 border border-amber-200 hover:bg-amber-50 rounded-lg px-3 py-2 shrink-0 disabled:opacity-50">{seasImporting ? "Importing…" : "Upload seasonality Excel"}</button>
               <button onClick={() => { setSeasForm(emptySeasForm); setShowSeasAdd(v => !v); }} className="text-sm font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-lg px-4 py-2 shrink-0">{showSeasAdd ? "Close" : "+ Add seasonality"}</button>
               <button onClick={() => { resetForm(); setShowAdd(v => !v); }} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2 shrink-0">{showAdd ? "Close" : "+ Add event"}</button>
             </div>
@@ -684,17 +738,22 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
       {/* ---------- seasonality windows (manage, below the calendar) ---------- */}
       {seasonality.length > 0 && admin && (
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-2">Seasonality windows</p>
+          <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-2">Seasonality windows <span className="font-normal normal-case text-gray-300">— click a chip to jump to that brand</span></p>
           <div className="flex flex-wrap gap-1.5">
             {seasonality
               .filter(s => brandFilter.has(s.brand_id))
               .sort((a, b) => (brandOf(a.brand_id)?.name ?? "").localeCompare(brandOf(b.brand_id)?.name ?? "") || a.start_month - b.start_month)
-              .map(s => (
-              <span key={s.id} className="inline-flex items-center gap-1.5 text-xs font-medium rounded-full pl-2.5 pr-1.5 py-1 bg-gray-50 border border-gray-200" style={{ color: SEASON_COLOR }}>
-                {brandOf(s.brand_id)?.name}: {s.product} ({MONTH_NAMES[s.start_month - 1]}–{MONTH_NAMES[s.end_month - 1]})
-                <button onClick={() => removeSeason(s.id)} className="hover:text-rose-600 rounded-full w-4 h-4 flex items-center justify-center">×</button>
-              </span>
-            ))}
+              .map(s => {
+                const overlap = seasonality.some(other => seasonalityOverlaps(s, other));
+                return (
+                  <span key={s.id} className={`inline-flex items-center gap-1.5 text-xs font-medium rounded-full pl-2.5 pr-1.5 py-1 border ${overlap ? "bg-amber-50 border-amber-300" : "bg-gray-50 border-gray-200"}`} style={{ color: overlap ? "#92400e" : SEASON_COLOR }}>
+                    <button onClick={() => setBrandFilter(new Set([s.brand_id]))} title={overlap ? "Overlaps another window for the same brand and product — probably a duplicate" : "Click to jump to this brand"} className="hover:underline">
+                      {overlap && "⚠ "}{brandOf(s.brand_id)?.name}: {s.product} ({MONTH_NAMES[s.start_month - 1]}–{MONTH_NAMES[s.end_month - 1]})
+                    </button>
+                    <button onClick={() => removeSeason(s.id)} className="hover:text-rose-600 rounded-full w-4 h-4 flex items-center justify-center">×</button>
+                  </span>
+                );
+              })}
           </div>
         </div>
       )}
