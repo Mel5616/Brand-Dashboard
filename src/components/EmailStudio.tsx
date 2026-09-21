@@ -121,6 +121,7 @@ export function EmailStudio({ brands, admin, openDraftId, onOpened }: { brands: 
   }
 
   const [previewId, setPreviewId] = useState<string | null>(null);
+  const [fullscreenId, setFullscreenId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   async function copyHtml(id: string, html: string) {
     try {
@@ -227,6 +228,7 @@ export function EmailStudio({ brands, admin, openDraftId, onOpened }: { brands: 
                         <div className={lbl + " mb-0"}>Body HTML</div>
                         <div className="flex items-center gap-3">
                           <button onClick={() => setPreviewId(previewId === d.id ? null : d.id)} className="text-[11px] font-semibold text-slate-500 hover:text-slate-700">{previewId === d.id ? "Hide preview" : "Preview"}</button>
+                          {previewId === d.id && <button onClick={() => setFullscreenId(d.id)} className="text-[11px] font-semibold text-slate-500 hover:text-slate-700">Full screen ⤢</button>}
                           <button onClick={() => copyHtml(d.id, edit.body_html ?? d.body_html)} className="text-[11px] font-semibold text-emerald-600 hover:text-emerald-700">{copiedId === d.id ? "Copied ✓" : "Copy HTML"}</button>
                         </div>
                       </div>
@@ -276,6 +278,21 @@ export function EmailStudio({ brands, admin, openDraftId, onOpened }: { brands: 
           })}
         </div>
       )}
+
+      {fullscreenId && (() => {
+        const d = items.find(i => i.id === fullscreenId);
+        if (!d) return null;
+        const html = (openId === d.id ? edit.body_html : null) ?? d.body_html;
+        return (
+          <div className="fixed inset-0 z-50 bg-black/60 flex flex-col" onClick={() => setFullscreenId(null)}>
+            <div className="flex items-center justify-between px-5 py-3 bg-white border-b border-gray-100" onClick={e => e.stopPropagation()}>
+              <p className="text-sm font-semibold text-slate-700">{d.subject}</p>
+              <button onClick={() => setFullscreenId(null)} className="text-sm font-semibold text-gray-500 hover:text-gray-800">Close ✕</button>
+            </div>
+            <iframe title="Email preview, full screen" srcDoc={html} className="flex-1 w-full bg-white" onClick={e => e.stopPropagation()} />
+          </div>
+        );
+      })()}
     </div>
   );
 }
