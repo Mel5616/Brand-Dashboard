@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
+import { mintToken, storeCreds } from "@/lib/shopifyMint";
 
 // Email Writing pipeline (Owned & Earned > Email Writing): generate a full,
 // on-brand EDM draft from a one-line brief, review it, then push it to
@@ -26,7 +27,9 @@ const HOUSE_RULES = `HOUSE EMAIL RULES (apply to every EDM, every brand):
 - Voice: human, warm, conversational, Australian English. Concrete over vague — reject "premium quality" style claims. No keyword stuffing, no robotic marketing-speak, no clichés.
 - Punctuation: no em dashes anywhere. Never start a sentence with "And".
 - Claims: no unconfirmed AU prices/specs/launch dates/stock levels; state trade-offs honestly.
-- Output must be ready to paste into Klaviyo as-is: a self-contained HTML email using inline CSS only (Klaviyo strips <style> blocks in some clients), a single <table role="presentation"> layout at 600px max-width, Arial/Helvetica fallback fonts, mobile-first single column. Include {% unsubscribe_link %} in the footer, Klaviyo's own Liquid tag, verbatim.`;
+- Output must be ready to paste into Klaviyo as-is: a self-contained HTML email using inline CSS only (Klaviyo strips <style> blocks in some clients), a single <table role="presentation"> layout at 600px max-width, Arial/Helvetica fallback fonts, mobile-first single column. Include {% unsubscribe_link %} in the footer, Klaviyo's own Liquid tag, verbatim.
+- Design it properly, not a wall of text: a real hero image block up top, generous padding, a brand-coloured CTA button (not just a text link), clear visual hierarchy between the hero message and any secondary content.
+- Images: only ever use an exact image URL you are explicitly given below (as the hero image, or a product photo). Never invent, guess, or paraphrase an image URL — if none are given, skip images entirely and rely on typography and colour instead. A fabricated src just breaks in the inbox.`;
 
 // ── Per-brand email voice (condensed from the blog voice guides — same tone
 // and compliance rules, restructured for a short, single-CTA email rather
@@ -46,6 +49,22 @@ const EMAIL_VOICE: Record<string, string> = {
   "Matchstick Monkey": `MATCHSTICK MONKEY (www.matchstickmonkey.com.au) — playful, sensory, design-led, a little cheekier than most. COMPLIANCE: never claim the product treats/cures/relieves teething as a medical fact ("designed to soothe/massage gums" only).`,
   Mamave: `MAMAVE (mamave.com.au) — warm, reassuring, cosmetic-science-credible; pregnancy-to-newborn skincare (Mumma/Bubba ranges). COMPLIANCE: never claim a product treats/cures/prevents a skin/medical condition.`,
 };
+
+// Real, live product photos for this brand — so the model has actual hosted
+// URLs to build a hero image from instead of inventing an <img src> that
+// 404s. Best-effort: an empty list just means the email goes text-only.
+async function fetchBrandImages(brandId: number, limit = 6): Promise<string[]> {
+  const store = storeCreds().find(s => s.id === brandId);
+  if (!store) return [];
+  const token = await mintToken(store);
+  if (!token) return [];
+  const res = await fetch(`https://${store.domain}/admin/api/2024-10/products.json?limit=${limit}&status=active&fields=images`, { headers: { "X-Shopify-Access-Token": token }, cache: "no-store" }).catch(() => null);
+  if (!res?.ok) return [];
+  const json = await res.json().catch(() => ({}));
+  const urls: string[] = [];
+  for (const p of json.products || []) { const src = p.images?.[0]?.src; if (src) urls.push(src); }
+  return urls;
+}
 
 async function callClaude(system: string, user: string, maxTokens: number) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -97,7 +116,21 @@ export async function POST(req: Request) {
   if (!voice) return NextResponse.json({ ok: false, error: `No email voice guide set up yet for ${brandName || "this brand"}` }, { status: 400 });
   const brief = String(b.brief || "").trim();
   const scheduledFor = b.scheduled_for ? String(b.scheduled_for) : null;
+  const brandId = Number(b.brand_id);
+  // Set when this draft was started "Send as EDM" from a blog post — a real
+  // hero image and a real link already exist, so use them exactly rather
+  // than asking the model to invent either.
+  const sourceUrl = b.source_url ? String(b.source_url) : null;
+  const sourceImageUrl = b.source_image_url ? String(b.source_image_url) : null;
   if (!brief) return NextResponse.json({ ok: false, error: "Give it a topic/brief to write from" }, { status: 400 });
+
+  const brandImages = sourceImageUrl ? [] : await fetchBrandImages(brandId).catch(() => []);
+  const imageNote = sourceImageUrl
+    ? `Hero image — use this EXACT url for the hero image, don't alter it: ${sourceImageUrl}`
+    : brandImages.length
+      ? `Real product photos you may use as the hero/feature image (use one EXACT url from this list, don't alter it, don't use any other image):\n${brandImages.map(u => `- ${u}`).join("\n")}`
+      : `No real images are available for this email — skip images entirely, don't invent an image url.`;
+  const linkNote = sourceUrl ? `The CTA button must link to this EXACT url: ${sourceUrl}` : "";
 
   const system = `You are the on-brand EDM (email marketing) writer for ${brandName}, an Australian baby-goods brand. Follow the house rules and the brand voice exactly.
 
@@ -111,7 +144,10 @@ PREVIEW_TEXT: <the preview/preheader text>
 
 ${HOUSE_RULES}
 
-${voice}`;
+${voice}
+
+${imageNote}
+${linkNote}`;
 
   const user = `Write the email.
 Topic/brief: ${brief}
@@ -126,11 +162,12 @@ Write it now, in the exact format specified.`;
   }
 
   const row = {
-    brand_id: Number(b.brand_id), status: "draft",
+    brand_id: brandId, status: "draft",
     subject: String(draft.subject || "").slice(0, 200),
     preview_text: String(draft.preview_text || "").slice(0, 200),
     body_html: String(draft.body_html || ""),
     scheduled_for: scheduledFor,
+    image_url: sourceImageUrl || brandImages[0] || null,
     brief, created_by: acc.user?.email ?? null,
   };
   if (!row.subject || !row.body_html) return NextResponse.json({ ok: false, error: "AI response was missing a subject or body — try again" }, { status: 502 });

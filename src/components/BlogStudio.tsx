@@ -26,7 +26,7 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
   rejected: { label: "Rejected", cls: "bg-gray-100 text-gray-400" },
 };
 
-export function BlogStudio({ brands, admin }: { brands: { id: number; name: string }[]; admin: boolean }) {
+export function BlogStudio({ brands, admin, onSendAsEdm }: { brands: { id: number; name: string }[]; admin: boolean; onSendAsEdm?: (edmDraftId: string) => void }) {
   const [items, setItems] = useState<Draft[]>([]);
   const [voices, setVoices] = useState<VoiceMap>({});
   const [loading, setLoading] = useState(true);
@@ -168,6 +168,24 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
     await fetch(`/api/blog-drafts?id=${id}`, { method: "DELETE" });
     if (openId === id) setOpenId(null);
     load();
+  }
+
+  // Links Blog Writing to Email Writing: uses the post's own title/summary/
+  // live URL/image as the brief, so the EDM draft is a real promotion of a
+  // real post, not a generic new email — see /api/edm-drafts's source_url /
+  // source_image_url handling.
+  const [edmBusyId, setEdmBusyId] = useState<string | null>(null);
+  async function sendAsEdm(d: Draft) {
+    setEdmBusyId(d.id); setMsg("");
+    const brandName = brandOf(d.brand_id)?.name ?? "";
+    const brief = `Announce and promote the blog post "${d.title}"${d.meta_description ? `: ${d.meta_description}` : ""}. Link readers to the full post: ${d.published_url}`;
+    const res = await fetch("/api/edm-drafts", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ brand_id: d.brand_id, brand_name: brandName, brief, source_url: d.published_url, source_image_url: d.image_url || null }),
+    }).then(r => r.json()).catch(() => null);
+    setEdmBusyId(null);
+    if (res?.ok) onSendAsEdm?.(res.item.id);
+    else setMsg(res?.error || "Couldn't create the EDM draft.");
   }
 
   const rows = items.filter(i => statusF === "all" || i.status === statusF)
@@ -339,7 +357,14 @@ export function BlogStudio({ brands, admin }: { brands: { id: number; name: stri
                     ) : (
                       <>
                         {d.status === "published" && (
-                          <p className="text-xs text-gray-500">Published {d.published_at ? fmtD(d.published_at) : ""} by {d.approved_by} — {d.published_url ? <a href={d.published_url} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline">{d.published_url}</a> : "no live link recorded"}</p>
+                          <div className="flex items-center justify-between gap-3 flex-wrap">
+                            <p className="text-xs text-gray-500">Published {d.published_at ? fmtD(d.published_at) : ""} by {d.approved_by} — {d.published_url ? <a href={d.published_url} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline">{d.published_url}</a> : "no live link recorded"}</p>
+                            {d.published_url && (
+                              <button onClick={() => sendAsEdm(d)} disabled={edmBusyId === d.id} className="text-xs font-semibold text-white bg-fuchsia-600 hover:bg-fuchsia-700 rounded-lg px-3 py-1.5 disabled:opacity-60 shrink-0">
+                                {edmBusyId === d.id ? "Writing EDM…" : "Send as EDM →"}
+                              </button>
+                            )}
+                          </div>
                         )}
                         {d.status === "rejected" && d.note && <p className="text-xs text-rose-500">Rejected: {d.note}</p>}
                         {d.image_url && <img src={d.image_url} alt="" className="w-full max-w-xs rounded-lg object-cover border border-gray-200" />}

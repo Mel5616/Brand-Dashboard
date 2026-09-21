@@ -26,7 +26,7 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
   rejected: { label: "Rejected", cls: "bg-gray-100 text-gray-400" },
 };
 
-export function EmailStudio({ brands, admin }: { brands: { id: number; name: string }[]; admin: boolean }) {
+export function EmailStudio({ brands, admin, openDraftId, onOpened }: { brands: { id: number; name: string }[]; admin: boolean; openDraftId?: string | null; onOpened?: () => void }) {
   const [items, setItems] = useState<Draft[]>([]);
   const [voices, setVoices] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -50,6 +50,15 @@ export function EmailStudio({ brands, admin }: { brands: { id: number; name: str
   useEffect(() => {
     if (!form.brand_name && voiceBrands.length) setForm(p => ({ ...p, brand_name: voiceBrands[0].name }));
   }, [voiceBrands]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Jumped here from "Send as EDM →" in Blog Writing — open that new draft
+  // as soon as it shows up in the loaded list, then clear the pending id.
+  useEffect(() => {
+    if (!openDraftId) return;
+    const d = items.find(i => i.id === openDraftId);
+    if (!d) return;
+    setStatusF(d.status); setOpenId(d.id); setEdit(d); onOpened?.();
+  }, [openDraftId, items]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const brandOf = (id: number) => brands.find(b => b.id === id);
 
@@ -109,6 +118,22 @@ export function EmailStudio({ brands, admin }: { brands: { id: number; name: str
     const d = await fetch("/api/edm-drafts", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: openId, action: "reject", note: rejectNote }) }).then(r => r.json()).catch(() => null);
     setBusy(false);
     if (d?.ok) { setOpenId(null); setShowReject(false); setRejectNote(""); load(); } else setMsg(d?.error || "Couldn't reject.");
+  }
+
+  const [previewId, setPreviewId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  async function copyHtml(id: string, html: string) {
+    try {
+      if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(html); setCopiedId(id); setTimeout(() => setCopiedId(null), 2500); return; }
+    } catch { /* fall through */ }
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = html; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      setCopiedId(id); setTimeout(() => setCopiedId(null), 2500);
+    } catch { setMsg("Couldn't copy automatically — select the HTML below and copy it manually."); }
   }
 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -198,8 +223,18 @@ export function EmailStudio({ brands, admin }: { brands: { id: number; name: str
                       <input value={edit.preview_text ?? ""} onChange={e => setEdit(p => ({ ...p, preview_text: e.target.value }))} className={inp} disabled={!admin && d.status !== "draft"} />
                     </div>
                     <div>
-                      <div className={lbl}>Body HTML</div>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className={lbl + " mb-0"}>Body HTML</div>
+                        <div className="flex items-center gap-3">
+                          <button onClick={() => setPreviewId(previewId === d.id ? null : d.id)} className="text-[11px] font-semibold text-slate-500 hover:text-slate-700">{previewId === d.id ? "Hide preview" : "Preview"}</button>
+                          <button onClick={() => copyHtml(d.id, edit.body_html ?? d.body_html)} className="text-[11px] font-semibold text-emerald-600 hover:text-emerald-700">{copiedId === d.id ? "Copied ✓" : "Copy HTML"}</button>
+                        </div>
+                      </div>
+                      {previewId === d.id && (
+                        <iframe title="Email preview" srcDoc={edit.body_html ?? d.body_html} className="w-full h-[480px] border border-gray-200 rounded-lg mb-2 bg-white" />
+                      )}
                       <textarea value={edit.body_html ?? ""} onChange={e => setEdit(p => ({ ...p, body_html: e.target.value }))} rows={12} className={inp + " font-mono text-xs"} disabled={!admin && d.status !== "draft"} />
+                      <p className="text-[11px] text-gray-400 mt-1">Copy this HTML to paste straight into Klaviyo&apos;s own code/HTML editor as an alternative to pushing it below.</p>
                     </div>
                     {d.note && <p className="text-xs text-rose-500">Rejected: {d.note}</p>}
                     {d.published_url && <p className="text-xs text-emerald-600">Sent — <a href={d.published_url} target="_blank" rel="noopener noreferrer" className="underline">view in Klaviyo</a></p>}

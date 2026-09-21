@@ -629,6 +629,9 @@ export function DashboardTabs({
     : TABS.filter(t => effectiveTabs.includes(t.id) && !FINANCIAL.includes(t.id));
   const firstTab = (visibleTabs[0]?.id ?? "brands") as TabId;
   const [active, setActive] = useState<TabId>(firstTab);
+  // "Send as EDM →" in Blog Writing creates the draft then jumps here and
+  // opens it — see BlogStudio's onSendAsEdm / EmailStudio's openDraftId.
+  const [pendingEmailOpenId, setPendingEmailOpenId] = useState<string | null>(null);
   // Deep-link support (?tab=sales-hub) — lets other pages (e.g. /command) link
   // straight to a specific section instead of dropping the user on the default tab.
   useEffect(() => {
@@ -2377,7 +2380,7 @@ export function DashboardTabs({
           {active === "email-writing" && (
             <>
               <SectionBar title="Email Writing" />
-              <EmailStudio brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} admin={role === "admin"} />
+              <EmailStudio brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} admin={role === "admin"} openDraftId={pendingEmailOpenId} onOpened={() => setPendingEmailOpenId(null)} />
             </>
           )}
 
@@ -2485,7 +2488,7 @@ export function DashboardTabs({
           {active === "blog-pipeline" && (
             <>
               <SectionBar title="Blog Writing" />
-              <BlogStudio brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} admin={role === "admin"} />
+              <BlogStudio brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} admin={role === "admin"} onSendAsEdm={id => { setPendingEmailOpenId(id); setActive("email-writing"); }} />
             </>
           )}
 
