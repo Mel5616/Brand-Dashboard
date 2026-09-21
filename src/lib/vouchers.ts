@@ -99,7 +99,10 @@ export const VOUCHER_TERMS = (brand: VoucherBrand, expiresAt: Date) => [
 
 /* ---- the email ---- */
 const esc = (s: unknown) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
-const FROM = "UPPAbaby Australia <mel@coolkidz.com.au>";
+// noreply on the verified coolkidz.com.au domain, never a personal address
+// (Mel, 21 Sep 2026). To send as support@uppababy.com.au, verify
+// uppababy.com.au in Resend first and change this line.
+const FROM = "UPPAbaby Australia <noreply@coolkidz.com.au>";
 const REPLY_TO = "uppababysupport@coolkidz.net.au";
 const fmtDate = (d: Date) => d.toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric", timeZone: "Australia/Melbourne" });
 
