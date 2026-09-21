@@ -10,7 +10,7 @@ const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const hdr = (extra: Record<string, string> = {}) => ({ apikey: sbKey!, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json", ...extra });
 const missing = (status: number, body: string) => status === 404 || /PGRST205|does not exist|schema cache/i.test(body);
 
-const FIELDS = ["brand_id", "event_type", "title", "date", "end_date", "product_name", "quantity", "status", "note", "image_url"];
+const FIELDS = ["brand_id", "event_type", "title", "date", "end_date", "product_name", "quantity", "status", "note", "image_url", "date_confirmed"];
 
 // Show-organiser logos, matched against the tradeshow's name — gives trade
 // events a recognisable image on the timeline instead of the generic icon.

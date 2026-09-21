@@ -12,12 +12,14 @@ import { useEffect, useMemo, useState } from "react";
 // a native timeline entry that admins can edit or remove.
 
 type Brand = { id: number; name: string; live?: boolean; color?: string };
-type EventType = "stock" | "launch" | "coming" | "retail" | "event" | "trade" | "campaign" | "blog" | "edm";
+type EventType = "stock" | "launch" | "coming" | "retail" | "event" | "trade" | "campaign" | "blog" | "edm"
+  | "key_date" | "tentpole" | "dtc_promo" | "retailer_promo" | "trade_deadline" | "social" | "influencer" | "paid_media" | "pr";
 type Status = "locked" | "working";
 type Source = "tradeshows" | "campaigns" | "new_products" | "blog_drafts";
 type TimelineEvent = {
   id: number | string; brand_id: number; event_type: EventType; title: string; date: string | null; end_date: string | null;
   product_name: string | null; quantity: number | null; status: string | null; note: string | null; image_url: string | null;
+  date_confirmed?: boolean;
   source?: Source;
 };
 // Recurring (year-less) promotion window — "Prams peak Aug-Nov" repeats every
@@ -36,6 +38,15 @@ const TYPE_META: Record<EventType, { label: string; short: string; color: string
   campaign: { label: "Campaign & content",  short: "Campaign",    color: "#9e2f72", bg: "#fdf1f8", key: false },
   blog:     { label: "Blog",                short: "Blog",        color: "#0e7490", bg: "#ecfeff", key: false },
   edm:      { label: "Email",               short: "EDM",         color: "#c026d3", bg: "#fdf4ff", key: false },
+  key_date:      { label: "Key date",             short: "Key date",  color: "#78716c", bg: "#fafaf9", key: false },
+  tentpole:      { label: "Tentpole",              short: "Tentpole",  color: "#c2410c", bg: "#fff4ed", key: true },
+  dtc_promo:     { label: "DTC promotion",         short: "DTC",       color: "#15803d", bg: "#f0fdf4", key: false },
+  retailer_promo:{ label: "Retailer promotion",    short: "Retailer",  color: "#be123c", bg: "#fff1f2", key: false },
+  trade_deadline:{ label: "Trade deadline",        short: "Deadline",  color: "#b45309", bg: "#fffbeb", key: false },
+  social:        { label: "Social",                short: "Social",    color: "#0369a1", bg: "#f0f9ff", key: false },
+  influencer:    { label: "Influencer",            short: "Influencer",color: "#db2777", bg: "#fdf2f8", key: false },
+  paid_media:    { label: "Paid media",            short: "Paid",      color: "#4338ca", bg: "#eef2ff", key: false },
+  pr:            { label: "PR",                    short: "PR",        color: "#4d7c0f", bg: "#f7fee7", key: false },
 };
 const TYPES = Object.keys(TYPE_META) as EventType[];
 const KEY_TYPES = TYPES.filter(t => TYPE_META[t].key);
@@ -227,7 +238,7 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
   }, [filtered, live, brandFilter, today, seasonality, showSeasonality]);
 
   // ---------- add / edit (native rows only) ----------
-  const emptyForm = { brand_id: "", event_type: "stock" as EventType, title: "", date: "", end_date: "", product_name: "", quantity: "", status: "locked" as Status, note: "" };
+  const emptyForm = { brand_id: "", event_type: "stock" as EventType, title: "", date: "", end_date: "", product_name: "", quantity: "", status: "locked" as Status, note: "", date_confirmed: true };
   const [form, setForm] = useState(emptyForm);
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -239,6 +250,7 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
     setForm({
       brand_id: String(e.brand_id), event_type: e.event_type, title: e.title, date: e.date || "", end_date: e.end_date || "",
       product_name: e.product_name || "", quantity: e.quantity != null ? String(e.quantity) : "", status: statusOf(e), note: e.note || "",
+      date_confirmed: e.date_confirmed !== false,
     });
     setShowAdd(true);
     setDrawerId(null);
@@ -400,10 +412,11 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
               const brand = brandOf(e.brand_id);
               const working = statusOf(e) === "working";
               const key = meta.key;
+              const tbc = e.date_confirmed === false;
               return (
                 <button key={e.id} onClick={() => setDrawerId(e.id)}
                   className={`text-left bg-white rounded-2xl shrink-0 overflow-hidden flex flex-col hover:-translate-y-0.5 transition ${key ? "w-[228px] shadow-md" : "w-[190px] shadow-sm opacity-80 hover:opacity-100"}`}
-                  style={key ? { border: `2px solid ${meta.color}` } : { border: "1px solid #edeef0" }}>
+                  style={key ? { border: `2px ${tbc ? "dashed" : "solid"} ${meta.color}` } : { border: `1px ${tbc ? "dashed" : "solid"} #edeef0` }}>
                   {e.image_url ? (
                     <img src={e.image_url} alt={e.title} className={key ? "w-full h-32 object-cover" : "w-full h-16 object-cover"} />
                   ) : (
@@ -416,7 +429,7 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
                       {e.image_url && <span className={`font-bold uppercase tracking-wide rounded-full ${key ? "text-[10px] px-2 py-0.5" : "text-[8px] px-1.5 py-0.5"}`} style={{ background: meta.bg, color: meta.color }}>{meta.short}</span>}
                       {brand && <span className={`font-semibold ${key ? "text-[11px]" : "text-[9px]"}`} style={{ color: brand.color ?? "#64748b" }}>{brand.name}</span>}
                     </div>
-                    <p className={key ? "text-[15px] font-extrabold text-slate-800 leading-snug" : "text-[12px] font-semibold text-slate-600 leading-snug"}>{e.title}</p>
+                    <p className={key ? "text-[15px] font-extrabold text-slate-800 leading-snug" : "text-[12px] font-semibold text-slate-600 leading-snug"}>{e.title}{tbc && <span className="text-gray-400 font-semibold"> (TBC)</span>}</p>
                     <div className="mt-auto pt-1.5 flex items-center justify-between">
                       <span className="text-[11px] font-semibold text-slate-500">{fmtD(toMs(e.date!))}</span>
                       <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full" style={{ background: working ? "#fffbeb" : "#f0fdf4", color: working ? "#b45309" : "#15803d" }}>{cardStatus(toMs(e.date!), e.end_date ? toMs(e.end_date) : null, today)}</span>
@@ -451,6 +464,10 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
             </select>
             <input value={form.product_name} onChange={e => setForm(p => ({ ...p, product_name: e.target.value }))} placeholder="Product (optional)" className={inp} />
           </div>
+          <label className="flex items-center gap-2 text-[13px] text-slate-600">
+            <input type="checkbox" checked={!form.date_confirmed} onChange={e => setForm(p => ({ ...p, date_confirmed: !e.target.checked }))} className="rounded border-gray-300" />
+            Date is TBC — shows dashed with &quot;(TBC)&quot; until confirmed
+          </label>
           <textarea value={form.note} onChange={e => setForm(p => ({ ...p, note: e.target.value }))} rows={2} placeholder="Note — who owns it, what it depends on, what's still unconfirmed" className={inp + " w-full"} />
           <p className="text-[11px] text-gray-400">No date yet? Leave the date blank — it'll land in the "waiting on a date" tray below instead.</p>
           <div className="flex items-center gap-2">
@@ -547,13 +564,14 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
                       {row.items.map(({ e, left, w, bar, lane }) => {
                         const meta = TYPE_META[e.event_type];
                         const working = statusOf(e) === "working";
+                        const tbc = e.date_confirmed === false;
                         const past = toMs(e.end_date || e.date!) < today;
                         const key = meta.key;
                         const yOff = row.seasLaneCount > 0 ? row.seasLaneCount * row.seasH + 5 : 0;
                         // Key dates (stock/launch/coming soon) get a bold solid pill;
                         // other activity (events/trade/campaigns) stays quiet and outlined.
                         return (
-                          <button key={e.id} onClick={() => setDrawerId(e.id)} title={e.title}
+                          <button key={e.id} onClick={() => setDrawerId(e.id)} title={tbc ? `${e.title} (TBC)` : e.title}
                             className={`absolute rounded-full flex items-center gap-1.5 whitespace-nowrap hover:shadow-md hover:-translate-y-px transition z-[1] ${key ? "h-[24px] text-[12px] font-bold" : "h-[19px] text-[10.5px] font-medium"}`}
                             style={{
                               left, top: yOff + (key ? 5 : 8) + lane * 27, width: bar ? w : undefined,
@@ -570,7 +588,7 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
                             <span className={bar ? "pl-1" : ""}>
                               <span className="uppercase tracking-wide opacity-70">{meta.short}</span>
                               <span className="opacity-50"> · </span>
-                              {e.title}
+                              {e.title}{tbc && <span className="opacity-60"> (TBC)</span>}
                             </span>
                           </button>
                         );
@@ -601,11 +619,12 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
                     const meta = TYPE_META[e.event_type];
                     const brand = brandOf(e.brand_id);
                     const working = statusOf(e) === "working";
+                    const tbc = e.date_confirmed === false;
                     const isPast = toMs(e.end_date || e.date!) < today;
                     return (
                       <div key={e.id} className="relative">
                         <span className="absolute -left-6 top-4 w-4 h-4 rounded-full border-4 border-white shadow" style={{ background: meta.color }} />
-                        <button onClick={() => setDrawerId(e.id)} className={`w-full text-left bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex ${isPast ? "opacity-60" : ""}`}>
+                        <button onClick={() => setDrawerId(e.id)} className={`w-full text-left bg-white rounded-2xl shadow-sm overflow-hidden flex ${isPast ? "opacity-60" : ""}`} style={{ border: tbc ? "1.5px dashed #cbd5e1" : "1px solid #f3f4f6" }}>
                           {e.image_url && <img src={e.image_url} alt={e.title} className="w-28 h-28 object-cover shrink-0" />}
                           <div className="flex-1 min-w-0 p-4">
                             <div className="flex items-start justify-between gap-3">
@@ -614,9 +633,10 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
                                   <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full" style={{ background: meta.bg, color: meta.color }}>{meta.short}</span>
                                   {brand && <span className="text-[11px] font-semibold" style={{ color: brand.color ?? "#64748b" }}>{brand.name}</span>}
                                   <span className={`text-[10px] font-semibold rounded-full px-2 py-0.5 ${working ? "text-amber-600 bg-amber-50" : "text-gray-500 bg-gray-100"}`}>{working ? "Working" : "Locked"}</span>
+                                  {tbc && <span className="text-[10px] font-bold rounded-full px-2 py-0.5 text-gray-500 bg-gray-100 border border-dashed border-gray-300">TBC</span>}
                                   {e.source && <span className="text-[10px] font-semibold text-gray-400">· {SOURCE_META[e.source]}</span>}
                                 </div>
-                                <p className="font-semibold text-slate-800 mt-1.5">{e.title}</p>
+                                <p className="font-semibold text-slate-800 mt-1.5">{e.title}{tbc && <span className="text-gray-400 font-medium"> (TBC)</span>}</p>
                                 {e.product_name && <p className="text-xs text-gray-500 mt-0.5">{e.product_name}{e.quantity != null ? ` · ${e.quantity.toLocaleString()} units` : ""}</p>}
                                 {e.note && <p className="text-xs text-gray-400 mt-1 whitespace-pre-line line-clamp-2">{e.note}</p>}
                               </div>
@@ -680,7 +700,7 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
             <div className="flex justify-between items-start">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{brandOf(drawerEv.brand_id)?.name}</p>
-                <h2 className="text-xl font-extrabold text-slate-800 mt-1">{drawerEv.title}</h2>
+                <h2 className="text-xl font-extrabold text-slate-800 mt-1">{drawerEv.title}{drawerEv.date_confirmed === false && <span className="text-gray-400 font-semibold"> (TBC)</span>}</h2>
               </div>
               <button onClick={() => setDrawerId(null)} className="w-8 h-8 rounded-full border border-gray-200 text-gray-400 hover:text-gray-700 shrink-0">×</button>
             </div>
@@ -688,6 +708,7 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
             <div className="flex items-center gap-2 mt-4 flex-wrap">
               <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full" style={{ background: TYPE_META[drawerEv.event_type].bg, color: TYPE_META[drawerEv.event_type].color }}>{TYPE_META[drawerEv.event_type].label}</span>
               <span className={`text-[10px] font-semibold rounded-full px-2 py-0.5 ${statusOf(drawerEv) === "working" ? "text-amber-600 bg-amber-50" : "text-gray-500 bg-gray-100"}`}>{statusOf(drawerEv) === "working" ? "Working, not signed off" : "Locked date"}</span>
+              {drawerEv.date_confirmed === false && <span className="text-[10px] font-bold rounded-full px-2 py-0.5 text-gray-500 bg-gray-100 border border-dashed border-gray-300">TBC</span>}
             </div>
             <p className="text-sm font-semibold text-slate-700 mt-4">{drawerEv.date ? fmtLong(toMs(drawerEv.date)) : "No date set"}{drawerEv.end_date && drawerEv.end_date !== drawerEv.date ? ` – ${fmtD(toMs(drawerEv.end_date))}` : ""}</p>
             {drawerEv.product_name && <p className="text-xs text-gray-500 mt-1">{drawerEv.product_name}{drawerEv.quantity != null ? ` · ${drawerEv.quantity.toLocaleString()} units` : ""}</p>}
