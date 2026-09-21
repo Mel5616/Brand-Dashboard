@@ -36,7 +36,13 @@ const HOUSE_RULES = `HOUSE EMAIL RULES (apply to every EDM, every brand):
 // than a long-form article) ──────────────────────────────────────────────
 const EMAIL_VOICE: Record<string, string> = {
   Frida: `FRIDA AUSTRALIA (fridaaustralia.com.au) — warm, honest, reassuring; the reader is often pregnant or a new mum who may be anxious. Australian English (labour, mum, colour). Never preachy or alarmist. COMPLIANCE: never say a product treats/cures/prevents/manages a medical condition ("helps with"/"designed for" only); no therapeutic claims; any infant-sleep content must align with Red Nose Australia guidance.`,
-  SmarTrike: `SMARTRIKE / WONDER (smartrike.com.au) — clean, confident, warm, modern, aspirational but grounded, never gimmicky. Render product names exactly: smarTrike® Wonder™, Wonder+™, Wonder max™ ("max" lowercase). Lead with real strengths: ultra-lightweight, carry-on approved, 3-second fold, 360° easy steer.`,
+  SmarTrike: `SMARTRIKE / WONDER (smartrike.com.au) — clean, confident, warm, modern, aspirational but grounded, never gimmicky. Render product names exactly: smarTrike® Wonder™, Wonder+™, Wonder max™ ("max" lowercase). Lead with real strengths: ultra-lightweight, carry-on approved, 3-second fold, 360° easy steer.
+BRAND STYLE GUIDE (follow exactly):
+- Palette: blue grey #41414e (primary — headlines, logotype, text on light backgrounds), light grey #e5e1e6 (default background), warm sand/beige #c4bc9b (supporting accent). Blue grey text on a light grey background is the house look. Keep it bright, airy, lots of clean space — never busy or cluttered.
+- Typography: the brand face is Stabil Grotesk, not available as a web-safe email font, so fall back to a clean geometric sans (Helvetica Neue, Arial) — bold weight for headlines, light/regular for body. Headline should read clearly larger and bolder than body copy.
+- Header logo — use this EXACT image at the top of the email, roughly 140-160px wide, on a light background, don't distort its proportions: https://cdn.shopify.com/s/files/1/0264/7900/1677/t/69/assets/logo-smartrike-wonder-max.svg?v=1789640083
+- Core lines to reach for naturally: "Growing together", "Everyday travel with Wonder™".
+- CTA button: blue grey (#41414e) background, white text, rounded corners — not a plain text link.`,
   Nanit: `NANIT (nanit.com.au) — confident, research-led, reassuring-not-alarmist; premium/tech-forward audience. COMPLIANCE: Nanit is not a medical device; never claim it prevents/diagnoses SIDS or any condition.`,
   Magic: `MAGIC (magicbabyproducts.com.au) — light, practical, a little wry, design-forward, sustainability-leaning. Sells nappy disposal bins (Heka range), not strollers/carriers.`,
   Hannie: `HANNIE (hannie.com.au) — warm, plain-spoken, benefit-led with practical specifics (weights, ages, cm). Sells one product family: a portable high chair.`,
