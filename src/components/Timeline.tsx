@@ -504,17 +504,6 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
         </div>
       )}
 
-      {seasonality.length > 0 && admin && (
-        <div className="flex flex-wrap gap-1.5">
-          {seasonality.map(s => (
-            <span key={s.id} className="inline-flex items-center gap-1.5 text-xs font-medium rounded-full pl-2.5 pr-1.5 py-1 bg-gray-50 border border-gray-200" style={{ color: SEASON_COLOR }}>
-              {brandOf(s.brand_id)?.name}: {s.product} ({MONTH_NAMES[s.start_month - 1]}–{MONTH_NAMES[s.end_month - 1]})
-              <button onClick={() => removeSeason(s.id)} className="hover:text-rose-600 rounded-full w-4 h-4 flex items-center justify-center">×</button>
-            </span>
-          ))}
-        </div>
-      )}
-
       {/* ---------- gantt view ---------- */}
       {view === "gantt" && (
         gantt ? (
@@ -691,6 +680,24 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
         <span className="inline-flex items-center gap-1.5 text-xs text-gray-500"><i className="w-4 h-2.5 rounded-full border border-dashed border-gray-400" /> Working, needs sign off</span>
         <span className="inline-flex items-center gap-1.5 text-xs text-gray-500"><i className="w-4 h-2.5 rounded-sm" style={{ background: "rgba(148,163,184,0.35)" }} /> Seasonality — when to promote</span>
       </div>
+
+      {/* ---------- seasonality windows (manage, below the calendar) ---------- */}
+      {seasonality.length > 0 && admin && (
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-2">Seasonality windows</p>
+          <div className="flex flex-wrap gap-1.5">
+            {seasonality
+              .filter(s => brandFilter.has(s.brand_id))
+              .sort((a, b) => (brandOf(a.brand_id)?.name ?? "").localeCompare(brandOf(b.brand_id)?.name ?? "") || a.start_month - b.start_month)
+              .map(s => (
+              <span key={s.id} className="inline-flex items-center gap-1.5 text-xs font-medium rounded-full pl-2.5 pr-1.5 py-1 bg-gray-50 border border-gray-200" style={{ color: SEASON_COLOR }}>
+                {brandOf(s.brand_id)?.name}: {s.product} ({MONTH_NAMES[s.start_month - 1]}–{MONTH_NAMES[s.end_month - 1]})
+                <button onClick={() => removeSeason(s.id)} className="hover:text-rose-600 rounded-full w-4 h-4 flex items-center justify-center">×</button>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ---------- drawer ---------- */}
       {drawerEv && (
