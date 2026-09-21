@@ -3,10 +3,9 @@
 //
 // Sent from the verified Coolkidz sender, named and written as UPPAbaby. To
 // send from an uppababy.com.au address that domain has to be verified in Resend.
-// noreply on the verified coolkidz.com.au domain, never a personal address
-// (Mel, 21 Sep 2026). To send as support@uppababy.com.au, verify
-// uppababy.com.au in Resend first and change this line.
-const FROM = "UPPAbaby Australia <noreply@coolkidz.com.au>";
+// uppababy.com.au is verified in Resend; noreply, never a personal address
+// (Mel, 21 Sep 2026). Replies go to the support desk via REPLY_TO.
+const FROM = "UPPAbaby Australia <noreply@uppababy.com.au>";
 // Claims go to the UPPAbaby support desk, and a customer replying to their
 // confirmation lands there too (Mel, 21 Sep 2026).
 const REPLY_TO = "uppababysupport@coolkidz.net.au";
