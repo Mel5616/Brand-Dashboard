@@ -42,11 +42,22 @@ export async function POST(req: Request) {
     .filter(r => r.name && r.sku);
   if (!clean.length) return NextResponse.json({ error: "No valid rows (need Name and Code)" }, { status: 400 });
 
-  // Insert new SKUs only — never clobber products that already have edited copy.
+  // Upsert by SKU: new rows are inserted, existing ones get their supplier
+  // data (name, dims, barcode, wholesale/RRP) refreshed from the sheet. This
+  // only ever touches the columns listed in `clean` above, so it can't clobber
+  // the AI-drafted copy fields (long_description etc) — those simply aren't
+  // part of the payload. ignoreDuplicates was dropped because it was silently
+  // discarding pricing on every re-upload of a SKU already in the table.
+  const skus = clean.map(r => r.sku) as string[];
+  const { data: before } = await sb.from("new_products").select("sku").in("sku", skus);
+  const existed = new Set((before ?? []).map((r: any) => r.sku));
+
   const { data, error } = await sb
     .from("new_products")
-    .upsert(clean, { onConflict: "sku", ignoreDuplicates: true })
-    .select("id");
+    .upsert(clean, { onConflict: "sku" })
+    .select("id, sku");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true, imported: data?.length ?? 0, received: clean.length });
+  const created = (data ?? []).filter(r => !existed.has(r.sku)).length;
+  const updated = (data ?? []).length - created;
+  return NextResponse.json({ ok: true, imported: created, updated, received: clean.length });
 }

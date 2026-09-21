@@ -120,7 +120,7 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
         wholesale_price: iWp >= 0 ? r[iWp] : "", rrp: iR >= 0 ? r[iR] : "",
       }));
       const j = await fetch("/api/new-products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows }) }).then(r => r.json());
-      if (j.error) setMsg(j.error); else { setMsg(`Imported ${j.imported} new (${j.received} in file).`); await load(); }
+      if (j.error) setMsg(j.error); else { setMsg(`Imported ${j.imported} new, updated ${j.updated} existing (${j.received} in file).`); await load(); }
     } catch { setMsg("Could not read that file."); }
     finally { setBusy(""); if (fileRef.current) fileRef.current.value = ""; }
   }
