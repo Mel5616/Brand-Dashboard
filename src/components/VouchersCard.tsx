@@ -21,7 +21,7 @@ export function VouchersCard({ admin }: { admin: boolean }) {
   const [brands, setBrands] = React.useState<Brand[]>([]);
   const [cfg, setCfg] = React.useState<{ value: number; minSpend: number; days: number; threshold: number } | null>(null);
   const [needsSetup, setNeedsSetup] = React.useState(false);
-  const [filter, setFilter] = React.useState<"all" | "issued" | "redeemed" | "expired" | "failed">("all");
+  const [filter, setFilter] = React.useState<"all" | "issued" | "redeemed" | "expired" | "cancelled" | "failed">("all");
   const [busy, setBusy] = React.useState<string | null>(null);
 
   const load = React.useCallback((sweep = false) => {
@@ -56,6 +56,7 @@ export function VouchersCard({ admin }: { admin: boolean }) {
     issued: "bg-sky-50 text-sky-700 border-sky-200",
     redeemed: "bg-emerald-50 text-emerald-700 border-emerald-200",
     expired: "bg-gray-50 text-gray-500 border-gray-200",
+    cancelled: "bg-amber-50 text-amber-700 border-amber-200",
     failed: "bg-rose-50 text-rose-700 border-rose-200",
   }[s] || "bg-gray-50 text-gray-500 border-gray-200");
 
@@ -79,7 +80,7 @@ export function VouchersCard({ admin }: { admin: boolean }) {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
         {[
-          { l: "Issued", v: issued.length, s: `${open.length} open` },
+          { l: "Issued", v: issued.length, s: `${open.length} open · ${all.filter(r => r.status === "cancelled").length} cancelled` },
           { l: "Redeemed", v: redeemed.length, s: `${rate}% of issued` },
           { l: "Redemption revenue", v: money(revenue), s: "brand-site orders using a code" },
           { l: "Cost so far", v: money(redeemed.length * (cfg?.value || 20)), s: "only redeemed codes cost anything" },
@@ -105,7 +106,7 @@ export function VouchersCard({ admin }: { admin: boolean }) {
       )}
 
       <div className="flex items-center gap-1.5 mt-4 mb-2">
-        {(["all", "issued", "redeemed", "expired", "failed"] as const).map(f => (
+        {(["all", "issued", "redeemed", "expired", "cancelled", "failed"] as const).map(f => (
           <button key={f} onClick={() => setFilter(f)}
             className={`text-[11.5px] font-semibold rounded-full px-2.5 py-1 border capitalize ${filter === f ? "bg-slate-800 border-slate-800 text-white" : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50"}`}>
             {f}{f !== "all" ? ` (${all.filter(r => r.status === f).length})` : ""}
@@ -145,7 +146,7 @@ export function VouchersCard({ admin }: { admin: boolean }) {
                     <span className={`inline-block text-[11px] font-semibold rounded-full border px-2 py-0.5 capitalize ${pill(r.status)}`}>{r.status}</span>
                     {r.status === "redeemed" && <div className="text-[11.5px] text-gray-400 mt-0.5">{r.redeemed_order_name} · {money(r.redeemed_order_total || 0)} · {r.redeemed_at ? day(r.redeemed_at) : ""}</div>}
                     {!r.email_sent && r.status !== "failed" && <div className="text-[11.5px] text-amber-600 mt-0.5">Email not sent</div>}
-                    {r.error && <div className="text-[11.5px] text-rose-600 mt-0.5">{r.error}</div>}
+                    {r.error && <div className={`text-[11.5px] mt-0.5 ${r.status === "cancelled" ? "text-amber-600" : "text-rose-600"}`}>{r.error}</div>}
                   </td>
                   {admin && (
                     <td className="py-2 whitespace-nowrap">

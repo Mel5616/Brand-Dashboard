@@ -83,6 +83,17 @@ export async function createBrandCode(brand: VoucherBrand, code: string, expires
   return { ok: false as const, error: String(err).slice(0, 200) };
 }
 
+/** Switch a code off on the brand store (refund or cancellation of the
+ *  UPPAbaby order). Deactivate rather than delete, so the record survives. */
+export async function deactivateBrandCode(brandId: number, gid: string) {
+  const cred = storeCreds().find(c => c.id === brandId);
+  const token = cred ? await mintToken(cred) : null;
+  if (!cred || !token) return { ok: false as const, error: "no credentials" };
+  const j = await gql(cred.domain, token, `mutation($id: ID!) { discountCodeDeactivate(id: $id) { codeDiscountNode { id } userErrors { message } } }`, { id: gid });
+  const err = j?.data?.discountCodeDeactivate?.userErrors?.[0]?.message || j?.errors?.[0]?.message;
+  return err ? { ok: false as const, error: String(err).slice(0, 200) } : { ok: true as const };
+}
+
 /** Tag the UPPAbaby order so support can see the code from the order page. */
 export async function tagSourceOrder(orderGid: string, code: string) {
   const cred = storeCreds().find(c => c.id === VOUCHER.sourceBrandId);
