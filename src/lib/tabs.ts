@@ -66,6 +66,7 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "brand-assets", label: "Brand Assets" },
     { id: "stock-report", label: "Stock Report" },
     { id: "cost-sheet", label: "Cost Sheet" },
+    { id: "credentials", label: "Passwords" },
   ] },
   { label: "Retailer Hub", tabs: [
     { id: "brand-packs", label: "Brands" },
@@ -107,5 +108,7 @@ export const TAB_SECTIONS: TabSection[] = [
 export const ALL_TABS: string[] = TAB_SECTIONS.flatMap(s => s.tabs.map(t => t.id));
 
 // All sections can be granted to Management (view-only); editing/upload/export
-// actions stay admin-gated inside each section. Nothing is hard-locked here.
-export const ADMIN_ONLY_TABS: string[] = [];
+// actions stay admin-gated inside each section. Passwords is the one
+// exception — it's never viewable by a member even if somehow granted, hard
+// enforced both here (nav) and again server-side in /api/credentials.
+export const ADMIN_ONLY_TABS: string[] = ["credentials"];

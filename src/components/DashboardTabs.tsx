@@ -86,6 +86,8 @@ import { BlogHub } from "./BlogHub";
 import { BlogPipeline } from "./BlogPipeline";
 import { BlogStudio } from "./BlogStudio";
 import { EmailStudio } from "./EmailStudio";
+import { CredentialsPanel } from "./CredentialsPanel";
+import { ADMIN_ONLY_TABS } from "@/lib/tabs";
 import { MediaReleases } from "./MediaReleases";
 import { InfluencerAgreements } from "./InfluencerAgreements";
 import { CampaignBriefs } from "./CampaignBriefs";
@@ -110,7 +112,7 @@ import { StockReport } from "./StockReport";
 import { fmt, fmtFull } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "assistants" | "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "reviews" | "website-requests" | "utm-tracking" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "seo" | "social" | "youtube" | "tradeshows" | "show-insights" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "campaign-briefs" | "nanit" | "affiliates" | "commission-factory" | "email-writing" | "pa-budget" | "pa-tracker" | "pa-revenue" | "documents" | "team" | "brand-packs" | "price-lists" | "hub-fact-sheets" | "brand-overview" | "stock-availability" | "order-forms" | "customers" | "customer-forms" | "blog-pipeline";
+type TabId = "assistants" | "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "reviews" | "website-requests" | "utm-tracking" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "seo" | "social" | "youtube" | "tradeshows" | "show-insights" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "credentials" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "campaign-briefs" | "nanit" | "affiliates" | "commission-factory" | "email-writing" | "pa-budget" | "pa-tracker" | "pa-revenue" | "documents" | "team" | "brand-packs" | "price-lists" | "hub-fact-sheets" | "brand-overview" | "stock-availability" | "order-forms" | "customers" | "customer-forms" | "blog-pipeline";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -274,6 +276,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m-6 4h6m-6 4h4M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" /></svg>,
   },
   {
+    id: "credentials", label: "Passwords",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>,
+  },
+  {
     id: "event-concepts", label: "Event Concepts",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>,
   },
@@ -416,7 +422,7 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Creative", ids: ["design-requests", "creative", "event-concepts", "decks"] },
   { label: "Blogging", ids: ["tasks", "blog-pipeline"] },
   { label: "Email Marketing", ids: ["email", "email-writing"] },
-  { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info", "brand-assets", "stock-report", "cost-sheet"] },
+  { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info", "brand-assets", "stock-report", "cost-sheet", "credentials"] },
   { label: "Retailer Hub", ids: ["brand-packs", "price-lists", "hub-fact-sheets", "brand-overview", "stock-availability", "order-forms", "customers", "customer-forms"] },
   { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads", "amazon-ads"] },
   { label: "Owned & Earned", ids: ["seo", "social", "youtube", "influencer", "gifting", "influencer-agreements", "campaign-briefs", "nanit", "releases"] },
@@ -615,9 +621,11 @@ export function DashboardTabs({
   semrushKeywords, semrushPages, semrushKeywordGaps, brandInsights, instagramMedia, channelSales, shopifySources, eventbriteEvents, asanaTasks, salesBudget, productUnits,
   role = "admin", allowedTabs, currentEmail, lastSync,
 }: Props) {
-  // No tab is hard-locked from members anymore — granted sections are viewable
-  // (read-only); each section keeps its own admin gate on edit/upload/export.
-  const FINANCIAL: string[] = [];
+  // Every tab is grantable to a member EXCEPT the ones in ADMIN_ONLY_TABS
+  // (currently just Passwords) — those stay hidden from the nav here no
+  // matter what's in allowedTabs, and the API route enforces the same
+  // boundary again server-side as the real security check.
+  const FINANCIAL: string[] = ADMIN_ONLY_TABS;
   // Tabs this user may open (admin → all). Filter the nav + guard the active tab.
   // Summary + Portfolio Overview were one section ("brands"); anyone granted
   // "brands" keeps access to both halves without needing a separate grant.
@@ -2509,6 +2517,11 @@ export function DashboardTabs({
           {active === "cost-sheet" && (<>
             <SectionBar title="Cost Sheet" />
             <CostSheet />
+          </>)}
+
+          {active === "credentials" && role === "admin" && (<>
+            <SectionBar title="Passwords" />
+            <CredentialsPanel />
           </>)}
 
           {active === "sales-hub" && (
