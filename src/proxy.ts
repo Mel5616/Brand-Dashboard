@@ -19,9 +19,12 @@ const PUBLIC = ["/login", "/auth", "/log-gift", "/request", "/p", "/c", "/s", "/
 // They are not key-gated. Their protection is a CORS allowlist, per-IP rate
 // limiting, and unguessable tokens where a request touches an existing row
 // (see src/lib/registry.ts).
+// /api/webhooks is Shopify calling us (orders/paid from UPPAbaby for the $20
+// vouchers); each route there verifies the X-Shopify-Hmac-Sha256 signature
+// against the app secret, which is a stronger check than a session.
 // Everything else under /api now requires auth at the edge (defence in depth on top
 // of each route's own getAccess check).
-const PUBLIC_API = ["/api/influencer/products", "/api/influencer/roster", "/api/influencer/entries", "/api/influencer/invoice", "/api/influencer/avatar", "/api/nanit/public", "/api/releases/sign", "/api/decks/track", "/api/decks/og", "/api/documents/track", "/api/public-sales-request", "/api/sales-requests/upload", "/api/influencer-agreements/sign", "/api/credit-application", "/api/opening-order", "/api/feed", "/api/catalogue-review", "/api/tuneup/days", "/api/tuneup/book", "/api/tuneup/checkin", "/api/zazu-chat", "/api/frida-chat", "/api/nanit-chat", "/api/miamily-chat", "/api/mamave-chat", "/api/gaia-chat", "/api/smartrike-chat", "/api/review-request", "/api/review-incentives/qr", "/api/review-incentives/public", "/api/registry", "/api/crash-claim", "/api/uppababy-chat", "/api/public-website-request"];
+const PUBLIC_API = ["/api/influencer/products", "/api/influencer/roster", "/api/influencer/entries", "/api/influencer/invoice", "/api/influencer/avatar", "/api/nanit/public", "/api/releases/sign", "/api/decks/track", "/api/decks/og", "/api/documents/track", "/api/public-sales-request", "/api/sales-requests/upload", "/api/influencer-agreements/sign", "/api/credit-application", "/api/opening-order", "/api/feed", "/api/catalogue-review", "/api/tuneup/days", "/api/tuneup/book", "/api/tuneup/checkin", "/api/zazu-chat", "/api/frida-chat", "/api/nanit-chat", "/api/miamily-chat", "/api/mamave-chat", "/api/gaia-chat", "/api/smartrike-chat", "/api/review-request", "/api/review-incentives/qr", "/api/review-incentives/public", "/api/registry", "/api/crash-claim", "/api/uppababy-chat", "/api/public-website-request", "/api/webhooks"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
