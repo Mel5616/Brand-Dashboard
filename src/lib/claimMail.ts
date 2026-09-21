@@ -4,8 +4,10 @@
 // Sent from the verified Coolkidz sender, named and written as UPPAbaby. To
 // send from an uppababy.com.au address that domain has to be verified in Resend.
 const FROM = "UPPAbaby Australia <mel@coolkidz.com.au>";
-const REPLY_TO = "marketing@coolkidz.com.au";
-const TEAM = ["mel@coolkidz.com.au"];
+// Claims go to the UPPAbaby support desk, and a customer replying to their
+// confirmation lands there too (Mel, 21 Sep 2026).
+const REPLY_TO = "uppababysupport@coolkidz.net.au";
+const TEAM = ["uppababysupport@coolkidz.net.au"];
 
 type Claim = {
   id: string; reference: string; kind: string;
