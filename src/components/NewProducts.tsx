@@ -11,14 +11,24 @@ const STATUSES: { id: string; label: string; bg: string }[] = [
 const statusOf = (s: string) => STATUSES.find(x => x.id === s) ?? STATUSES[0];
 const fmtDate = (s?: string | null) => s ? new Date(s + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : null;
 
-// Variants share a base SKU (the part before the last hyphen, e.g. GSBW-G -> GSBW).
-// The base must be ≥3 chars: short stubs are brand prefixes, not product lines
-// (MM-ATT and MM-BSTBT are different Matchstick products, not colours of "MM").
+// Variants of the same product line get grouped into one card. Prefer the
+// product name: if it ends in a "(Colour)" parenthetical, everything before
+// it is the product line (e.g. "smarTrike - Wonder (Olive)" and
+// "smarTrike - Wonder (Moonlight Off White)" both become "smarTrike - Wonder").
+// Falls back to the base SKU (the part before the last hyphen, e.g.
+// GSBW-G -> GSBW) for names with no colour suffix — base must be ≥3 chars,
+// since short stubs are brand prefixes, not product lines (MM-ATT and
+// MM-BSTBT are different Matchstick products, not colours of "MM"). Always
+// scoped to brand_id so two brands never collide on the same key.
 const groupKeyOf = (p: any) => {
+  const brand = p.brand_id ?? "x";
+  const name = String(p.name || "").trim();
+  const baseName = name.replace(/\s*\([^)]*\)\s*$/, "").trim();
+  if (baseName && baseName !== name && baseName.length >= 3) return `${brand}::${baseName.toLowerCase()}`;
   const s = String(p.sku || "").trim();
   if (!s) return String(p.id);
   const base = s.includes("-") ? s.slice(0, s.lastIndexOf("-")) : s;
-  return (base.length >= 3 ? base : s).toUpperCase();
+  return `${brand}::${(base.length >= 3 ? base : s).toUpperCase()}`;
 };
 // Longest shared word-prefix across the variant names — the product line title.
 function commonPrefix(names: string[]): string {
