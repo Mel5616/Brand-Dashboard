@@ -112,11 +112,12 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
       const grid = XLSX.utils.sheet_to_json<any[]>(ws, { header: 1, blankrows: false, defval: "" });
       const headers = (grid[0] || []).map((h: any) => String(h).trim());
       const idx = (name: string) => headers.findIndex(h => h.toLowerCase() === name.toLowerCase());
-      const iN = idx("Name"), iC = idx("Code"), iD = idx("Product Description"), iB = idx("Barcode"), iW = idx("Gross Weight"), iL = idx("Length"), iWi = idx("Width"), iH = idx("Height");
+      const iN = idx("Name"), iC = idx("Code"), iD = idx("Product Description"), iB = idx("Barcode"), iW = idx("Gross Weight"), iL = idx("Length"), iWi = idx("Width"), iH = idx("Height"), iWp = idx("Wholesale Price"), iR = idx("RRP");
       if (iN < 0 || iC < 0) { setMsg("Couldn't find the Name and Code columns in that sheet."); setBusy(""); return; }
       const rows = grid.slice(1).filter((r: any) => String(r[iN] ?? "").trim()).map((r: any) => ({
         name: r[iN], sku: r[iC], source_description: iD >= 0 ? r[iD] : "", barcode: iB >= 0 ? r[iB] : "",
         weight: iW >= 0 ? r[iW] : "", length: iL >= 0 ? r[iL] : "", width: iWi >= 0 ? r[iWi] : "", height: iH >= 0 ? r[iH] : "",
+        wholesale_price: iWp >= 0 ? r[iWp] : "", rrp: iR >= 0 ? r[iR] : "",
       }));
       const j = await fetch("/api/new-products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows }) }).then(r => r.json());
       if (j.error) setMsg(j.error); else { setMsg(`Imported ${j.imported} new (${j.received} in file).`); await load(); }
@@ -173,6 +174,7 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
           )}
           {canEdit && (
             <>
+              <a href="/templates/new-products-import-template.xlsx" download className="text-sm font-medium text-emerald-700 bg-white border border-emerald-200 hover:bg-emerald-50 rounded-lg px-4 py-2">Download template</a>
               <input ref={fileRef} type="file" accept=".xlsx,.xls" onChange={handleFile} className="hidden" />
               <button onClick={() => fileRef.current?.click()} disabled={busy === "import"} className="text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg px-4 py-2 disabled:opacity-60">{busy === "import" ? "Importing…" : "Upload Excel"}</button>
             </>

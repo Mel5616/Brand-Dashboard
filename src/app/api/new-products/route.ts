@@ -36,6 +36,7 @@ export async function POST(req: Request) {
     .map(r => ({
       name: STR(r.name), sku: STR(r.sku), source_description: STR(r.source_description),
       barcode: STR(r.barcode), weight: NUM(r.weight), length: NUM(r.length), width: NUM(r.width), height: NUM(r.height),
+      wholesale_price: NUM(r.wholesale_price), rrp: NUM(r.rrp),
       brand_id: brandFor(r.name),
     }))
     .filter(r => r.name && r.sku);
