@@ -87,6 +87,16 @@ export async function tagSourceOrder(orderGid: string, code: string) {
     { id: orderGid, tags: ["voucher-issued", `voucher:${code}`] });
 }
 
+/* ---- the terms, as sent with every voucher ---- */
+export const VOUCHER_TERMS = (brand: VoucherBrand, expiresAt: Date) => [
+  `This voucher was issued because your UPPAbaby Australia order had a subtotal of $${VOUCHER.threshold} or more after discounts. One voucher per qualifying order.`,
+  `It gives $${VOUCHER.value} off one online order at ${brand.host.replace(/^www\./, "")} when that order's subtotal is $${VOUCHER.minSpend} or more, before shipping.`,
+  `Single use. It cannot be combined with other discount codes, applied to a previous order, used on gift cards or shipping, exchanged for cash or credit, and no change is given.`,
+  `Valid until ${fmtDate(expiresAt)}. Expired vouchers cannot be reissued or extended.`,
+  `If the qualifying UPPAbaby order is cancelled or returned for a refund, the voucher may be cancelled.`,
+  `Issued by Coolkidz Australia Pty Ltd (ABN 98 293 897 047), Australian distributor of UPPAbaby, Frida, Mamave and Matchstick Monkey. Nothing here limits your rights under the Australian Consumer Law.`,
+];
+
 /* ---- the email ---- */
 const esc = (s: unknown) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
 const FROM = "UPPAbaby Australia <mel@coolkidz.com.au>";
@@ -110,7 +120,11 @@ export async function sendVoucherEmail(o: { to: string; firstName: string; brand
       <div style="font-size:13px;color:#7A8798;margin-top:8px">$${VOUCHER.value} off when you spend $${VOUCHER.minSpend} or more. Valid until ${fmtDate(o.expiresAt)}.</div>
     </div>
     <p style="text-align:center;margin:0 0 22px"><a href="${shopUrl}" style="display:inline-block;background:${o.brand.colour};color:#fff;text-decoration:none;font-weight:600;font-size:15px;padding:13px 26px;border-radius:999px">Shop ${esc(o.brand.name)}</a></p>
-    <p style="font-size:13px;line-height:1.6;color:#7A8798;margin:0">One use, online at ${esc(o.brand.host.replace(/^www\./, ""))} only. Cannot be combined with other discount codes. Just reply to this email if you need anything.</p>
+    <p style="font-size:13px;line-height:1.6;color:#7A8798;margin:0 0 18px">Just reply to this email if you need anything.</p>
+    <div style="border-top:1px solid #E4E1DC;padding-top:14px">
+      <div style="font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:#7A8798;font-weight:600;margin-bottom:6px">Voucher terms</div>
+      <p style="font-size:12px;line-height:1.6;color:#7A8798;margin:0">${VOUCHER_TERMS(o.brand, o.expiresAt).map(esc).join(" ")}</p>
+    </div>
   </div>
   <p style="color:#98A2B0;font-size:11px;text-align:center;margin-top:6px;line-height:1.6">UPPAbaby, Frida, Mamave and Matchstick Monkey are distributed in Australia by Coolkidz Australia Pty Ltd<br>1 Beyer Road, Braeside, Victoria 3195</p>
 </div>`;
