@@ -21,12 +21,17 @@ export const VOUCHER = {
   prefix: "UB20-",
 };
 
-export type VoucherBrand = { id: number; name: string; host: string; colour: string; logo: string };
+export type VoucherBrand = { id: number; name: string; host: string; colour: string; logo: string; logoW: number; about: string };
 
+// "about" is Mel's copy (21 Sep 2026), used in the email and on the
+// explainer page. Frida does not sell the Windi here, so it is not mentioned.
 export const VOUCHER_BRANDS: VoucherBrand[] = [
-  { id: 8,  name: "Frida",            host: "fridaaustralia.com.au",     colour: "#0A3D62", logo: "/logos/Frida_logo_main.png" },
-  { id: 11, name: "Mamave",           host: "mamave.com.au",             colour: "#DD624B", logo: "/logos/Primary Logo - Red.png" },
-  { id: 10, name: "Matchstick Monkey", host: "www.matchstickmonkey.com.au", colour: "#5B7A5E", logo: "/logos/Matchstick Monkey Logo.jpg" },
+  { id: 8,  name: "Frida", host: "fridaaustralia.com.au", colour: "#2E9FD8", logo: "/email/frida.png", logoW: 110,
+    about: "Frida takes on the messy, uncomfortable parts of parenthood and makes them easier. It started with the NoseFrida snot sucker for clearing blocked little noses, and now covers bath time, nail care and everyday baby health. Frida Mom brings the same practical thinking to mum, with a postpartum recovery range for the weeks after birth." },
+  { id: 11, name: "Mamave", host: "mamave.com.au", colour: "#DD624B", logo: "/email/mamave.png", logoW: 96,
+    about: "Mamave is Australian skincare for mum and bub. Stretch oil, bath soak and body moisturiser care for mum through pregnancy and beyond, while a gentle wash, moisturiser, barrier cream and massage oil cover bub's daily routine from day one. One simple ritual, made for this stage of life." },
+  { id: 10, name: "Matchstick Monkey", host: "www.matchstickmonkey.com.au", colour: "#4F6B72", logo: "/email/matchstick-monkey.png", logoW: 150,
+    about: "Matchstick Monkey makes teething relief that works. Its signature teether has a bumpy back that holds teething gel and delivers it straight to sore gums, in an easy-grip shape for little hands. Bath toys and comforters round out a range full of design smarts and characters babies love." },
 ];
 export const DEFAULT_BRAND = VOUCHER_BRANDS[0];
 
@@ -111,26 +116,47 @@ export async function sendVoucherEmail(o: { to: string; firstName: string; brand
   if (!key) return { ok: false, error: "RESEND_API_KEY not configured" };
   const base = process.env.NEXT_PUBLIC_SITE_URL || "https://marketing.coolkidz.com.au";
   const shopUrl = `https://${o.brand.host}/discount/${encodeURIComponent(o.code)}?redirect=/collections/all`;
-  const html = `<div style="font-family:-apple-system,Segoe UI,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#33404F">
-  <div style="padding:26px 28px 6px"><div style="font-size:19px;font-weight:700;letter-spacing:-.01em;color:#141C26">UPPAbaby</div></div>
-  <div style="padding:0 28px 28px">
-    <h1 style="font-size:23px;font-weight:400;color:#141C26;margin:16px 0 14px">Your $${VOUCHER.value} ${esc(o.brand.name)} voucher, ${esc(o.firstName)}.</h1>
-    <p style="font-size:15px;line-height:1.6;margin:0 0 20px">Thank you for your order (${esc(o.orderName)}). As promised, here is $${VOUCHER.value} to spend at ${esc(o.brand.name)}. Enter the code at checkout, or use the button and it is applied for you.</p>
-    <div style="border:1px solid #E4E1DC;border-radius:12px;padding:18px 20px;margin:0 0 18px;background:#FAF9F7;text-align:center">
-      <img src="${base}${o.brand.logo}" alt="${esc(o.brand.name)}" style="height:34px;max-width:180px;object-fit:contain;margin:0 auto 12px;display:block">
-      <div style="font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:#7A8798;font-weight:600;margin-bottom:6px">Your code</div>
-      <div style="font-size:26px;font-weight:700;color:#141C26;letter-spacing:.06em;font-variant-numeric:tabular-nums">${esc(o.code)}</div>
-      <div style="font-size:13px;color:#7A8798;margin-top:8px">$${VOUCHER.value} off when you spend $${VOUCHER.minSpend} or more. Valid until ${fmtDate(o.expiresAt)}.</div>
-    </div>
-    <p style="text-align:center;margin:0 0 22px"><a href="${shopUrl}" style="display:inline-block;background:${o.brand.colour};color:#fff;text-decoration:none;font-weight:600;font-size:15px;padding:13px 26px;border-radius:999px">Shop ${esc(o.brand.name)}</a></p>
-    <p style="font-size:13px;line-height:1.6;color:#7A8798;margin:0 0 18px">Just reply to this email if you need anything.</p>
-    <div style="border-top:1px solid #E4E1DC;padding-top:14px">
-      <div style="font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:#7A8798;font-weight:600;margin-bottom:6px">Voucher terms</div>
-      <p style="font-size:12px;line-height:1.6;color:#7A8798;margin:0">${VOUCHER_TERMS(o.brand, o.expiresAt).map(esc).join(" ")}</p>
-    </div>
-  </div>
-  <p style="color:#98A2B0;font-size:11px;text-align:center;margin-top:6px;line-height:1.6">UPPAbaby, Frida, Mamave and Matchstick Monkey are distributed in Australia by Coolkidz Australia Pty Ltd<br>1 Beyer Road, Braeside, Victoria 3195</p>
-</div>`;
+  const site = `https://${o.brand.host}`;
+  const shown = o.brand.host.replace(/^www\./, "");
+  const terms = VOUCHER_TERMS(o.brand, o.expiresAt).map(esc).join(" ");
+  const html = `<!doctype html><html><body style="margin:0;padding:0;background:#F3F2F0">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F3F2F0"><tr><td align="center" style="padding:28px 12px">
+<table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;width:100%;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;color:#33404F">
+  <tr><td align="center" style="background:#3B4C5E;padding:30px 24px;border-radius:14px 14px 0 0">
+    <img src="${base}/email/uppababy-white.png" width="150" alt="UPPAbaby" style="display:block;width:150px;height:auto;border:0">
+  </td></tr>
+  <tr><td style="background:#FFFFFF;padding:40px 40px 8px;text-align:center">
+    <div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#7A8798;font-weight:600">Our gift to you</div>
+    <div style="font-size:76px;line-height:1;font-weight:700;letter-spacing:-.03em;color:#141C26;margin:14px 0 6px">$${VOUCHER.value}</div>
+    <div style="font-size:21px;font-weight:300;color:#141C26">to spend at ${esc(o.brand.name)}</div>
+    <p style="font-size:15px;line-height:1.65;color:#5B6774;margin:22px auto 0;max-width:420px">Thank you for your order, ${esc(o.firstName)}. Order ${esc(o.orderName)} came to more than $${VOUCHER.threshold}, so here is a little something for the next stage. Use the code at checkout, or tap the button and it is applied for you.</p>
+  </td></tr>
+  <tr><td style="background:#FFFFFF;padding:26px 40px 10px">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="border:2px dashed #D9D5CE;border-radius:14px;background:#FAF9F7;padding:26px 20px 24px">
+      <img src="${base}${o.brand.logo}" width="${o.brand.logoW}" alt="${esc(o.brand.name)}" style="display:block;width:${o.brand.logoW}px;height:auto;border:0;margin:0 auto 16px">
+      <div style="font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#7A8798;font-weight:600">Your code</div>
+      <div style="font-size:30px;font-weight:700;letter-spacing:.12em;color:#141C26;margin:8px 0 10px;font-family:'SF Mono',Menlo,Consolas,'Courier New',monospace">${esc(o.code)}</div>
+      <div style="font-size:13px;color:#5B6774;line-height:1.5">$${VOUCHER.value} off when you spend $${VOUCHER.minSpend} or more<br>Valid until ${fmtDate(o.expiresAt)}</div>
+    </td></tr></table>
+  </td></tr>
+  <tr><td align="center" style="background:#FFFFFF;padding:22px 40px 34px">
+    <a href="${shopUrl}" style="display:inline-block;background:${o.brand.colour};color:#FFFFFF;text-decoration:none;font-weight:600;font-size:15px;padding:15px 34px;border-radius:999px">Shop ${esc(o.brand.name)}</a>
+    <div style="font-size:12.5px;color:#98A2B0;margin-top:12px">or enter the code at <a href="${site}" style="color:#5B6774">${esc(shown)}</a></div>
+  </td></tr>
+  <tr><td style="background:#F8F7F4;padding:28px 40px;border-top:1px solid #ECE9E3">
+    <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#7A8798;font-weight:600;margin-bottom:10px">About ${esc(o.brand.name)}</div>
+    <p style="font-size:14.5px;line-height:1.65;color:#33404F;margin:0 0 12px">${esc(o.brand.about)}</p>
+    <a href="${site}" style="font-size:14px;font-weight:600;color:${o.brand.colour};text-decoration:none">Visit ${esc(shown)} &rarr;</a>
+  </td></tr>
+  <tr><td style="background:#FFFFFF;padding:24px 40px 30px;border-radius:0 0 14px 14px">
+    <p style="font-size:13px;line-height:1.6;color:#5B6774;margin:0 0 18px">Questions? Just reply to this email and the UPPAbaby Australia team will help.</p>
+    <div style="font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#98A2B0;font-weight:600;margin-bottom:6px">Voucher terms</div>
+    <p style="font-size:11.5px;line-height:1.6;color:#98A2B0;margin:0">${terms}</p>
+  </td></tr>
+  <tr><td align="center" style="padding:22px 20px 0">
+    <p style="color:#98A2B0;font-size:11px;line-height:1.7;margin:0">UPPAbaby, Frida, Mamave and Matchstick Monkey are distributed in Australia by Coolkidz Australia Pty Ltd<br>1 Beyer Road, Braeside, Victoria 3195</p>
+  </td></tr>
+</table></td></tr></table></body></html>`;
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", "User-Agent": "coolkidz-dashboard/1.0" },
