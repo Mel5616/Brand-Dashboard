@@ -60,7 +60,11 @@ export async function POST(req: Request) {
   // Already handled? Shopify re-sends on any retry and orders can be paid twice
   // (a partial then a balance), so the order id is the key.
   const dup = await rest(`issued_vouchers?source_order_id=eq.${orderId}&select=id,status`);
-  const dupRows = dup.ok ? await dup.json().catch(() => []) : [];
+  // No table yet (add_issued_vouchers.sql not run) or Supabase down: do not
+  // issue anything we cannot record. A non-2xx makes Shopify retry for two
+  // days, which covers running the SQL.
+  if (!dup.ok) return NextResponse.json({ ok: false, error: "issued_vouchers unavailable" }, { status: 503 });
+  const dupRows = await dup.json().catch(() => []);
   if (Array.isArray(dupRows) && dupRows.length && dupRows[0].status !== "failed") {
     return NextResponse.json({ ok: true, skipped: "already issued" }, { status: 200 });
   }
