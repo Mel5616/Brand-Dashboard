@@ -29,7 +29,8 @@ const HOUSE_RULES = `HOUSE EMAIL RULES (apply to every EDM, every brand):
 - Claims: no unconfirmed AU prices/specs/launch dates/stock levels; state trade-offs honestly.
 - Output must be ready to paste into Klaviyo as-is: a self-contained HTML email using inline CSS only (Klaviyo strips <style> blocks in some clients), a single <table role="presentation"> layout at 600px max-width, Arial/Helvetica fallback fonts, mobile-first single column. Include {% unsubscribe_link %} in the footer, Klaviyo's own Liquid tag, verbatim.
 - Design it properly, not a wall of text: a real hero image block up top, generous padding, a brand-coloured CTA button (not just a text link), clear visual hierarchy between the hero message and any secondary content.
-- Images: only ever use an exact image URL you are explicitly given below (as the hero image, or a product photo). Never invent, guess, or paraphrase an image URL — if none are given, skip images entirely and rely on typography and colour instead. A fabricated src just breaks in the inbox.`;
+- Images: only ever use an exact image URL you are explicitly given below (as the hero image, or a product photo). Never invent, guess, or paraphrase an image URL — if none are given, skip images entirely and rely on typography and colour instead. A fabricated src just breaks in the inbox.
+- If the brand voice below gives you a "Header logo" URL, that logo MUST appear at the top of the email as a real <img src="..."> tag — never write the brand name out as styled text instead, even if you also use a separate product photo further down as the hero image. The logo image and the hero/product image are two different things and both can appear; the logo is never optional or replaceable with text when a URL is provided.`;
 
 // ── Per-brand email voice (condensed from the blog voice guides — same tone
 // and compliance rules, restructured for a short, single-CTA email rather
