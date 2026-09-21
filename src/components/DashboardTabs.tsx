@@ -114,7 +114,7 @@ import { StockReport } from "./StockReport";
 import { fmt, fmtFull } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "assistants" | "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "reviews" | "website-requests" | "utm-tracking" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "edm-planner" | "seo" | "social" | "youtube" | "tradeshows" | "show-insights" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "credentials" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "campaign-briefs" | "nanit" | "affiliates" | "commission-factory" | "email-writing" | "pa-budget" | "pa-tracker" | "pa-revenue" | "documents" | "team" | "brand-packs" | "price-lists" | "hub-fact-sheets" | "brand-overview" | "stock-availability" | "order-forms" | "customers" | "customer-forms" | "blog-pipeline";
+type TabId = "assistants" | "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "cross-site-discounts" | "reviews" | "website-requests" | "utm-tracking" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "edm-planner" | "seo" | "social" | "youtube" | "tradeshows" | "show-insights" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "credentials" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "campaign-briefs" | "nanit" | "affiliates" | "commission-factory" | "email-writing" | "pa-budget" | "pa-tracker" | "pa-revenue" | "documents" | "team" | "brand-packs" | "price-lists" | "hub-fact-sheets" | "brand-overview" | "stock-availability" | "order-forms" | "customers" | "customer-forms" | "blog-pipeline";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -144,6 +144,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
     id: "discount-codes", label: "Discount Codes",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+  },
+  {
+    id: "cross-site-discounts", label: "Cross Site Discounts",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" /></svg>,
   },
   {
     id: "reviews", label: "Reviews",
@@ -425,7 +429,7 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Reports", ids: ["report", "snapshot", "social-report", "d2c-weekly", "uppababy"] },
   { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows", "show-insights"] },
   { label: "Plan", ids: ["campaign-calendar", "promotions", "calendar", "content", "events", "show-deals", "activations", "timeline"] },
-  { label: "Websites", ids: ["assistants", "discount-codes", "website-requests", "utm-tracking", "reviews", "seo"] },
+  { label: "Websites", ids: ["assistants", "discount-codes", "cross-site-discounts", "website-requests", "utm-tracking", "reviews", "seo"] },
   { label: "Creative", ids: ["design-requests", "creative", "event-concepts", "decks"] },
   { label: "Blogging", ids: ["tasks", "blog-pipeline"] },
   { label: "Email Marketing", ids: ["email", "edm-planner", "email-writing"] },
@@ -1592,8 +1596,15 @@ export function DashboardTabs({
             <>
               <SectionBar title="Discount Codes" />
               <DiscountCodesTab brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} />
-              <CrossCodeCard canCreate={role === "admin" || (allowedTabs ?? []).includes("discount-codes")} />
+            </>
+          )}
+
+          {/* ── Cross Site Discounts: one code on every site, and the $20 vouchers UPPAbaby orders earn for the other brands ── */}
+          {active === "cross-site-discounts" && (
+            <>
+              <SectionBar title="Cross Site Discounts" />
               <VouchersCard admin={role === "admin"} />
+              <CrossCodeCard canCreate={role === "admin" || (allowedTabs ?? []).includes("cross-site-discounts")} />
             </>
           )}
 

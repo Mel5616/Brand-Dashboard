@@ -15,7 +15,7 @@ const h = (extra: Record<string, string> = {}) => ({ apikey: sbKey!, Authorizati
 
 export async function GET() {
   const acc = await getAccess();
-  if (acc.role !== "admin" && !acc.allowedTabs?.includes("discount-codes")) return NextResponse.json({ ok: false }, { status: 403 });
+  if (acc.role !== "admin" && !acc.allowedTabs?.some(t => t === "cross-site-discounts" || t === "discount-codes")) return NextResponse.json({ ok: false }, { status: 403 });
   const res = await fetch(`${sbUrl}/rest/v1/cross_site_codes?select=*&order=created_at.desc&limit=20`, { headers: h(), cache: "no-store" });
   const text = await res.text();
   return NextResponse.json({ ok: true, stores: storeCreds().map(s => ({ id: s.id, name: s.name })), items: res.ok ? JSON.parse(text || "[]") : [], needsSetup: !res.ok });
@@ -23,7 +23,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const acc = await getAccess();
-  if (!(await canManage("discount-codes"))) return NextResponse.json({ ok: false, error: "Not permitted" }, { status: 403 });
+  if (!((await canManage("cross-site-discounts")) || (await canManage("discount-codes")))) return NextResponse.json({ ok: false, error: "Not permitted" }, { status: 403 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
   const code = String(b.code || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 40);
   const discountType = b.discount_type === "fixed_amount" ? "fixed_amount" : "percentage";

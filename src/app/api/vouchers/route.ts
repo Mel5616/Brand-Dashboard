@@ -11,7 +11,7 @@ export const maxDuration = 60;
 
 const allowed = async () => {
   const acc = await getAccess();
-  return acc.role === "admin" || (acc.allowedTabs ?? []).includes("discount-codes");
+  return acc.role === "admin" || (acc.allowedTabs ?? []).some(t => t === "cross-site-discounts" || t === "discount-codes");
 };
 
 export async function GET(req: Request) {
