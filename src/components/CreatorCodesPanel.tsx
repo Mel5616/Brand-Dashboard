@@ -27,6 +27,7 @@ export function CreatorCodesPanel({ brands, brandFilter, monthKeys, admin }: { b
   const [loading, setLoading] = useState(true);
   const [needsSetup, setNeedsSetup] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
+  const [programFilter, setProgramFilter] = useState("all");
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState<any>({ ...empty, brand_id: brandFilter === "all" ? "" : String(brandFilter) });
   const [err, setErr] = useState("");
@@ -44,8 +45,10 @@ export function CreatorCodesPanel({ brands, brandFilter, monthKeys, admin }: { b
   useEffect(load, [from, to, brandFilter]);
 
   const brandName = (id: number) => brands.find(b => b.id === id)?.name || `Brand ${id}`;
-  const sum = (f: (c: Creator) => number) => rows.reduce((s, c) => s + f(c), 0);
-  const kpis = useMemo(() => ({ orders: sum(c => c.totals.orders), net: sum(c => c.totals.net), discount: sum(c => c.totals.discount), commission: sum(c => c.totals.commission), owed: sum(c => c.totals.owed) }), [rows]);
+  const programs = useMemo(() => [...new Set(rows.map(c => c.program).filter((p): p is string => !!p))].sort(), [rows]);
+  const visibleRows = useMemo(() => programFilter === "all" ? rows : rows.filter(c => c.program === programFilter), [rows, programFilter]);
+  const sum = (f: (c: Creator) => number) => visibleRows.reduce((s, c) => s + f(c), 0);
+  const kpis = useMemo(() => ({ orders: sum(c => c.totals.orders), net: sum(c => c.totals.net), discount: sum(c => c.totals.discount), commission: sum(c => c.totals.commission), owed: sum(c => c.totals.owed) }), [visibleRows]);
 
   async function save() {
     setErr(""); setBusy(true);
@@ -83,7 +86,15 @@ export function CreatorCodesPanel({ brands, brandFilter, monthKeys, admin }: { b
           <h3 className="text-base font-semibold text-gray-900">Creator codes</h3>
           <p className="text-xs text-gray-500">Influencer discount codes, read live from each store. Sales are attributed revenue already in Shopify, not extra. Commission is on net sales after discount, shipping and refunds.</p>
         </div>
-        {admin && <button onClick={() => setAdding(a => !a)} className="text-sm px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 whitespace-nowrap">{adding ? "Close" : "+ Add code"}</button>}
+        <div className="flex items-center gap-2 shrink-0">
+          {programs.length > 0 && (
+            <select value={programFilter} onChange={e => setProgramFilter(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
+              <option value="all">All programs</option>
+              {programs.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+          )}
+          {admin && <button onClick={() => setAdding(a => !a)} className="text-sm px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 whitespace-nowrap">{adding ? "Close" : "+ Add code"}</button>}
+        </div>
       </div>
 
       {adding && (
@@ -114,7 +125,7 @@ export function CreatorCodesPanel({ brands, brandFilter, monthKeys, admin }: { b
         ))}
       </div>
 
-      {loading && !rows.length ? <div className="text-sm text-gray-400">Reading orders from Shopify…</div> : !rows.length ? <div className="text-sm text-gray-400">No creator codes registered{brandFilter !== "all" ? " for this brand" : ""} yet.</div> : (
+      {loading && !rows.length ? <div className="text-sm text-gray-400">Reading orders from Shopify…</div> : !visibleRows.length ? <div className="text-sm text-gray-400">No creator codes registered{brandFilter !== "all" ? " for this brand" : ""}{programFilter !== "all" ? ` on ${programFilter}` : ""} yet.</div> : (
         <div className="rounded-xl border border-gray-200 bg-white overflow-x-auto">
           <table className="w-full text-sm min-w-[900px]">
             <thead><tr className="text-[11px] uppercase tracking-wide text-gray-500 bg-gray-50">
@@ -122,7 +133,7 @@ export function CreatorCodesPanel({ brands, brandFilter, monthKeys, admin }: { b
               <th className="text-right px-3 py-2">Orders</th><th className="text-right px-3 py-2">New customers</th><th className="text-right px-3 py-2">Sales</th><th className="text-right px-3 py-2">Discount</th><th className="text-right px-3 py-2">Commission</th><th className="text-right px-3 py-2">Owed</th><th className="px-3 py-2"></th>
             </tr></thead>
             <tbody>
-              {rows.map(c => (
+              {visibleRows.map(c => (
                 <>
                   <tr key={c.id} className={`border-t border-gray-100 ${c.active ? "" : "opacity-50"}`}>
                     <td className="px-3 py-2"><div className="font-medium text-gray-900">{c.creator_name}</div><div className="text-xs text-gray-500">{c.handle || ""}{c.followers ? ` · ${fmt(c.followers).replace("$", "")} followers` : ""}{brandFilter === "all" ? ` · ${brandName(c.brand_id)}` : ""}</div></td>

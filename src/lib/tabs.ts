@@ -91,6 +91,7 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "nanit", label: "Nanit Codes" },
     { id: "releases", label: "Media Releases" },
     { id: "affiliates", label: "Affiliates" },
+    { id: "commission-factory", label: "Commission Factory" },
     { id: "pa-budget", label: "Partnerships Budget" },
     { id: "pa-tracker", label: "Partnerships Tracker" },
   ] },
