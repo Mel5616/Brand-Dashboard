@@ -54,6 +54,10 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "tasks", label: "Blogs" },
     { id: "blog-pipeline", label: "Blog Writing" },
   ] },
+  { label: "Email Marketing", tabs: [
+    { id: "email", label: "Email" },
+    { id: "email-writing", label: "Email Writing" },
+  ] },
   { label: "Operations", tabs: [
     { id: "budget", label: "Budget" },
     { id: "expenses", label: "Expenses" },
@@ -80,8 +84,6 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "amazon-ads", label: "Amazon Ads" },
   ] },
   { label: "Owned & Earned", tabs: [
-    { id: "email", label: "Email" },
-    { id: "email-writing", label: "Email Writing" },
     { id: "seo", label: "SEO" },
     { id: "social", label: "Social" },
     { id: "youtube", label: "YouTube" },
