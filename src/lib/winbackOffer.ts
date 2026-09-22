@@ -100,7 +100,8 @@ export async function candidates(from: string, to: string): Promise<Checkout[] |
     if (!lines.some((l: { handle: string; title: string }) => WINBACK.pramMatch(l.handle) && !WINBACK.runout(l.title))) continue;
     byEmail.set(email, {
       id: x.id, createdAt: x.createdAt, url: x.abandonedCheckoutUrl, email,
-      firstName: String(x.customer.firstName || "").trim() || "there",
+      // "SADDAM" and "rebecca" both happen at checkout; the greeting should not repeat them.
+      firstName: (() => { const f = String(x.customer.firstName || "").trim(); return f ? (f === f.toUpperCase() || f === f.toLowerCase() ? f[0].toUpperCase() + f.slice(1).toLowerCase() : f) : "there"; })(),
       name: [x.customer.firstName, x.customer.lastName].filter(Boolean).join(" ") || null,
       value: Number(x.totalPriceSet?.shopMoney?.amount || 0), lines,
       summary: lines.map((l: { title: string }) => l.title.replace(/^UPPAbaby /, "")).join(", ").slice(0, 200),
