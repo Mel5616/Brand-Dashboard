@@ -246,7 +246,7 @@ export async function PATCH(req: Request) {
 
   if (action === "edit") {
     const fields: any = { updated_at: new Date().toISOString() };
-    for (const f of ["subject", "preview_text", "body_html", "scheduled_for"]) {
+    for (const f of ["subject", "preview_text", "body_html", "scheduled_for", "image_url"]) {
       if (b[f] !== undefined) fields[f] = b[f];
     }
     const res = await fetch(`${sbUrl}/rest/v1/edm_drafts?id=eq.${id}`, { method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify(fields) });

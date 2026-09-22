@@ -38,8 +38,16 @@ export function EmailStudio({ brands, admin, openDraftId, onOpened }: { brands: 
   const [statusF, setStatusF] = useState<"all" | Draft["status"]>("draft");
 
   const voiceBrands = useMemo(() => brands.filter(b => voices[b.name]), [brands, voices]);
-  const [form, setForm] = useState({ brand_name: "", brief: "", scheduled_for: "" });
+  const [form, setForm] = useState({ brand_name: "", brief: "", scheduled_for: "", image_url: "" });
   const [supersedeId, setSupersedeId] = useState<string | null>(null);
+  const [uploadingNew, setUploadingNew] = useState(false);
+  const [uploadingFor, setUploadingFor] = useState<string | null>(null);
+
+  async function uploadImage(file: File): Promise<string | null> {
+    const fd = new FormData(); fd.append("file", file);
+    const res = await fetch("/api/edm-drafts/upload-image", { method: "POST", body: fd }).then(r => r.json()).catch(() => null);
+    return res?.ok ? res.url : null;
+  }
 
   async function load() {
     const res = await fetch("/api/edm-drafts").then(r => r.json()).catch(() => ({ ok: false }));
@@ -64,7 +72,7 @@ export function EmailStudio({ brands, admin, openDraftId, onOpened }: { brands: 
 
   function useThisBrief(d: Draft) {
     const brandName = brandOf(d.brand_id)?.name ?? "";
-    setForm({ brand_name: brandName, brief: d.brief || d.subject, scheduled_for: d.scheduled_for || "" });
+    setForm({ brand_name: brandName, brief: d.brief || d.subject, scheduled_for: d.scheduled_for || "", image_url: "" });
     setSupersedeId(d.id);
     setOpenId(null);
     setMsg(`Loaded "${d.subject}" into the generator above — hit Generate draft when ready.`);
@@ -79,16 +87,35 @@ export function EmailStudio({ brands, admin, openDraftId, onOpened }: { brands: 
     setBusy(true); setMsg("Writing — this takes a minute…");
     const d = await fetch("/api/edm-drafts", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ brand_id: brandId, brand_name: form.brand_name, brief: form.brief, scheduled_for: form.scheduled_for || null }),
+      body: JSON.stringify({ brand_id: brandId, brand_name: form.brand_name, brief: form.brief, scheduled_for: form.scheduled_for || null, source_image_url: form.image_url || undefined }),
     }).then(r => r.json()).catch(() => null);
     setBusy(false);
     if (d?.ok) {
       if (supersedeId) { await fetch(`/api/edm-drafts?id=${supersedeId}`, { method: "DELETE" }).catch(() => {}); setSupersedeId(null); }
-      setForm(p => ({ ...p, brief: "", scheduled_for: "" })); load(); setMsg("Draft ready — review it below."); setStatusF("draft"); setOpenId(d.item.id); setEdit(d.item);
+      setForm(p => ({ ...p, brief: "", scheduled_for: "", image_url: "" })); load(); setMsg("Draft ready — review it below."); setStatusF("draft"); setOpenId(d.item.id); setEdit(d.item);
     } else { setNeedsSetup(!!d?.needsSetup); setMsg(d?.error || "Couldn't generate that draft."); }
   }
 
   function openDraft(d: Draft) { setOpenId(d.id === openId ? null : d.id); setEdit(d); setMsg(""); setConfirmDeleteId(null); setShowReject(false); setRejectNote(""); }
+
+  async function replaceHeroImage(d: Draft, file: File) {
+    setUploadingFor(d.id);
+    const url = await uploadImage(file);
+    setUploadingFor(null);
+    if (!url) { setMsg("Couldn't upload that image — try again."); return; }
+    const currentBody = edit.body_html ?? d.body_html;
+    const currentImage = edit.image_url ?? d.image_url;
+    const newBody = currentImage ? currentBody.split(currentImage).join(url) : currentBody;
+    setEdit(p => ({ ...p, image_url: url, body_html: newBody }));
+    setBusy(true);
+    const res = await fetch("/api/edm-drafts", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: d.id, action: "edit", image_url: url, body_html: newBody }),
+    }).then(r => r.json()).catch(() => null);
+    setBusy(false);
+    if (res?.ok) { setMsg(currentImage ? "Hero image swapped." : "Image uploaded — add it into the Body HTML below if it didn't have one already."); load(); }
+    else setMsg(res?.error || "Couldn't save the new image.");
+  }
 
   async function saveEdit() {
     if (!openId) return;
@@ -178,6 +205,28 @@ export function EmailStudio({ brands, admin, openDraftId, onOpened }: { brands: 
             <div className={lbl}>Topic / brief *</div>
             <textarea value={form.brief} onChange={e => setForm(p => ({ ...p, brief: e.target.value }))} rows={2} placeholder="e.g. Spring sale on the Wonder max range, 20% off this weekend only." className={inp} />
           </div>
+          <div className="sm:col-span-2 lg:col-span-3">
+            <div className={lbl}>Hero image (optional — upload your own instead of an auto-picked product photo)</div>
+            {form.image_url ? (
+              <div className="flex items-center gap-3">
+                <img src={form.image_url} alt="Hero" className="h-14 w-14 object-cover rounded-lg border border-gray-200" />
+                <button onClick={() => setForm(p => ({ ...p, image_url: "" }))} className="text-xs font-semibold text-gray-400 hover:text-rose-500">Remove</button>
+              </div>
+            ) : (
+              <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 bg-gray-50 border border-dashed border-gray-300 rounded-lg px-3 py-2 cursor-pointer hover:bg-gray-100">
+                {uploadingNew ? "Uploading…" : "Upload an image"}
+                <input type="file" accept="image/*" className="hidden" disabled={uploadingNew}
+                  onChange={async e => {
+                    const file = e.target.files?.[0]; if (!file) return;
+                    setUploadingNew(true);
+                    const url = await uploadImage(file);
+                    setUploadingNew(false);
+                    if (url) setForm(p => ({ ...p, image_url: url })); else setMsg("Couldn't upload that image — try again.");
+                    e.target.value = "";
+                  }} />
+              </label>
+            )}
+          </div>
         </div>
         {msg && <p className="text-[13px] text-slate-500 mt-2">{msg}</p>}
         <button onClick={generate} disabled={busy || !voiceBrands.length} className="mt-3 text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-5 py-2.5 disabled:opacity-60">{busy ? "Working…" : "Generate draft"}</button>
@@ -223,6 +272,19 @@ export function EmailStudio({ brands, admin, openDraftId, onOpened }: { brands: 
                       <div className={lbl}>Preview text</div>
                       <input value={edit.preview_text ?? ""} onChange={e => setEdit(p => ({ ...p, preview_text: e.target.value }))} className={inp} disabled={!admin && d.status !== "draft"} />
                     </div>
+                    {d.status === "draft" && (
+                      <div>
+                        <div className={lbl}>Hero image</div>
+                        <div className="flex items-center gap-3">
+                          {(edit.image_url ?? d.image_url) && <img src={edit.image_url ?? d.image_url ?? ""} alt="Hero" className="h-12 w-12 object-cover rounded-lg border border-gray-200" />}
+                          <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 bg-gray-50 border border-dashed border-gray-300 rounded-lg px-3 py-2 cursor-pointer hover:bg-gray-100">
+                            {uploadingFor === d.id ? "Uploading…" : (edit.image_url ?? d.image_url) ? "Replace image" : "Upload an image"}
+                            <input type="file" accept="image/*" className="hidden" disabled={uploadingFor === d.id}
+                              onChange={e => { const file = e.target.files?.[0]; if (file) replaceHeroImage(d, file); e.target.value = ""; }} />
+                          </label>
+                        </div>
+                      </div>
+                    )}
                     <div>
                       <div className="flex items-center justify-between mb-1">
                         <div className={lbl + " mb-0"}>Body HTML</div>
