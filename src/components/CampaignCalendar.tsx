@@ -18,6 +18,7 @@ type Campaign = {
   owner: string; channel: string; status: string; key_date: string; end_date?: string; note: string;
   sort_order: number; brief?: Brief; share_token?: string; image_url?: string | null;
   asana_task_gid?: string | null; asana_permalink_url?: string | null;
+  deliverables_status?: { blog: number; edm: number; website: number };
 };
 type Maint = { id: string; name: string; tier: string; sort_order: number };
 
@@ -161,16 +162,26 @@ function TimelineGantt({ items, onOpen }: { items: Campaign[]; onOpen: (id: stri
                 </div>
                 {isOpen && (
                   <div className="mt-1 space-y-1">
-                    {ranges.map(r => (
-                      <div key={r.key} className="flex items-center gap-2">
-                        <span className="w-4 shrink-0" />
-                        <span className="text-[10px] text-gray-400 w-[13.5rem] shrink-0 truncate pl-1.5">{r.label}</span>
-                        <span className="relative flex-1 h-3">
-                          <span className="absolute top-0.5 h-2 rounded-full" style={{ left: `${pct(r.start)}%`, width: `${Math.max(0.6, pct(r.end) - pct(r.start))}%`, background: r.color }}
-                            title={`${r.label}: ${r.start.toLocaleDateString("en-AU", { day: "numeric", month: "short" })} – ${r.end.toLocaleDateString("en-AU", { day: "numeric", month: "short" })}`} />
-                        </span>
-                      </div>
-                    ))}
+                    {ranges.map(r => {
+                      // Only Blog and EDM actually link back to real drafts today
+                      // (Generate campaign kit) — Design/Paid/Social stay pure
+                      // date estimates until something produces real content for them too.
+                      const trackable = r.key === "blog" || r.key === "edm";
+                      const done = trackable && (c.deliverables_status?.[r.key as "blog" | "edm"] ?? 0) > 0;
+                      return (
+                        <div key={r.key} className="flex items-center gap-2">
+                          <span className="w-4 shrink-0" />
+                          <span className="text-[10px] text-gray-400 w-[13.5rem] shrink-0 truncate pl-1.5 flex items-center gap-1">
+                            {r.label}
+                            {trackable && <span title={done ? "Connected draft exists" : "No draft connected yet"}>{done ? "✓" : "○"}</span>}
+                          </span>
+                          <span className="relative flex-1 h-3">
+                            <span className="absolute top-0.5 h-2 rounded-full" style={{ left: `${pct(r.start)}%`, width: `${Math.max(0.6, pct(r.end) - pct(r.start))}%`, background: r.color, opacity: trackable && !done ? 0.35 : 1 }}
+                              title={`${r.label}: ${r.start.toLocaleDateString("en-AU", { day: "numeric", month: "short" })} – ${r.end.toLocaleDateString("en-AU", { day: "numeric", month: "short" })}${trackable ? (done ? " · connected" : " · not connected yet") : ""}`} />
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -350,7 +361,7 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
     const brand = brands.find(b => b.name === item.brand) ?? brands.find(b => item.brand.includes(b.name));
     if (!brand) { setLinkError(`Couldn't match "${item.brand}" to a single brand to start a blog draft.`); return; }
     setLinkBusy("blog"); setLinkError(null);
-    const res = await fetch("/api/blog-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief: campaignBrief(item) }) }).then(r => r.json()).catch(() => null);
+    const res = await fetch("/api/blog-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief: campaignBrief(item), campaign_id: item.id, campaign_name: item.campaign }) }).then(r => r.json()).catch(() => null);
     setLinkBusy(null);
     if (res?.ok) onStartBlog?.(res.item.id);
     else setLinkError(res?.error || "Couldn't start a blog draft for that brand.");
@@ -430,7 +441,7 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
     const results: { label: string; ok: boolean; note?: string }[] = [];
 
     setKitStep("Drafting blog post… (30–60s)");
-    const blogRes = await fetch("/api/blog-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief }) }).then(r => r.json()).catch(() => null);
+    const blogRes = await fetch("/api/blog-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief, campaign_id: item.id, campaign_name: item.campaign }) }).then(r => r.json()).catch(() => null);
     results.push({ label: "Blog draft", ok: !!blogRes?.ok, note: blogRes?.ok ? undefined : (blogRes?.error || "failed") });
 
     const existingEmails: EmailDraft[] = (item.brief as any)?.emails ?? [];
@@ -455,7 +466,7 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
     const needsWebsite = /website|landing page|configurator|shopify|d2c/i.test(`${item.channel} ${item.note}`);
     if (needsWebsite) {
       setKitStep("Filing Website Request ticket…");
-      const wr = await fetch("/api/website-requests", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand: item.brand, description: `Build/landing page needed for campaign "${item.campaign}": ${item.note}`.slice(0, 2000), change_type: "new_page", priority: "normal" }) }).then(r => r.json()).catch(() => null);
+      const wr = await fetch("/api/website-requests", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand: item.brand, description: `Build/landing page needed for campaign "${item.campaign}": ${item.note}`.slice(0, 2000), change_type: "new_page", priority: "normal", campaign_id: item.id, campaign_name: item.campaign }) }).then(r => r.json()).catch(() => null);
       results.push({ label: "Website Request ticket", ok: !!wr?.ok, note: wr?.ok ? undefined : (wr?.error || "failed") });
     }
 
@@ -793,6 +804,21 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
                           })()}
                           <p className="text-[11px] text-gray-400">Owner {c.owner || "TBC"}{c.channel ? ` · ${c.channel}` : ""}</p>
                           {c.note && <p className="text-[11px] text-gray-500 leading-snug whitespace-pre-line">{c.note}</p>}
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {([
+                              ["blog", "📝", "Blog"],
+                              ["edm", "✉️", "EDM"],
+                              ["website", "🌐", "Website"],
+                            ] as const).map(([key, icon, label]) => {
+                              const n = c.deliverables_status?.[key] ?? 0;
+                              return (
+                                <span key={key} title={n ? `${n} ${label} draft${n === 1 ? "" : "s"} connected` : `No ${label} connected yet`}
+                                  className={`inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-1.5 py-0.5 ${n ? "bg-emerald-50 text-emerald-700" : "text-gray-300 bg-gray-50"}`}>
+                                  {n ? "✓" : "○"} {icon} {label}{n > 1 ? ` (${n})` : ""}
+                                </span>
+                              );
+                            })}
+                          </div>
                           <div className="flex items-center justify-between gap-2">
                             {c.share_token
                               ? <a href={`/c/${c.share_token}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}

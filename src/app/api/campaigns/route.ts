@@ -27,15 +27,43 @@ function clean(b: any) {
   return row;
 }
 
+// Real, connected deliverables per campaign (not just the brief's own
+// checklist text) — how many blog drafts, EDMs and website tickets actually
+// exist with this campaign_id, so the board card and Timeline can show what's
+// really been produced instead of just what was planned. Each of these
+// tables is small; fetching just the campaign_id column for linked rows is
+// cheap, and one failing table (e.g. not set up yet) doesn't block the rest.
+async function deliverableCounts(): Promise<Record<string, { blog: number; edm: number; website: number }>> {
+  const counts: Record<string, { blog: number; edm: number; website: number }> = {};
+  const bump = (id: string, key: "blog" | "edm" | "website") => {
+    if (!counts[id]) counts[id] = { blog: 0, edm: 0, website: 0 };
+    counts[id][key]++;
+  };
+  const tables: { table: string; key: "blog" | "edm" | "website" }[] = [
+    { table: "blog_drafts", key: "blog" }, { table: "edm_drafts", key: "edm" }, { table: "website_requests", key: "website" },
+  ];
+  await Promise.all(tables.map(async ({ table, key }) => {
+    const res = await fetch(`${sbUrl}/rest/v1/${table}?select=campaign_id&campaign_id=not.is.null`, { headers: headers(), cache: "no-store" }).catch(() => null);
+    if (!res?.ok) return;
+    const rows = await res.json().catch(() => []);
+    for (const r of rows) if (r.campaign_id) bump(String(r.campaign_id), key);
+  }));
+  return counts;
+}
+
 export async function GET() {
   if (!sbUrl || !sbKey) return NextResponse.json({ ok: false, items: [] }, { status: 500 });
-  const res = await fetch(`${sbUrl}/rest/v1/campaigns?select=*&order=sort_order.asc`, { headers: headers(), cache: "no-store" });
+  const [res, counts] = await Promise.all([
+    fetch(`${sbUrl}/rest/v1/campaigns?select=*&order=sort_order.asc`, { headers: headers(), cache: "no-store" }),
+    deliverableCounts(),
+  ]);
   const text = await res.text();
   if (!res.ok) {
     if (isMissingTable(res.status, text)) return NextResponse.json({ ok: false, needsSetup: true, items: [] });
     return NextResponse.json({ ok: false, items: [] }, { status: 500 });
   }
-  return NextResponse.json({ ok: true, items: JSON.parse(text || "[]") });
+  const items = JSON.parse(text || "[]").map((c: any) => ({ ...c, deliverables_status: counts[c.id] ?? { blog: 0, edm: 0, website: 0 } }));
+  return NextResponse.json({ ok: true, items });
 }
 
 export async function POST(req: Request) {

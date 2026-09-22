@@ -32,6 +32,7 @@ export async function POST(req: Request) {
     requester_name: b.requester_name ? String(b.requester_name).trim().slice(0, 100) : (acc.user?.email ?? "Team"),
     requester_email: emailRe.test(requesterEmail) ? requesterEmail : (acc.user?.email ?? null),
     priority: ["low", "normal", "urgent"].includes(b.priority) ? b.priority : "normal",
+    ...(b.campaign_id ? { campaign_id: String(b.campaign_id), campaign_name: b.campaign_name ? String(b.campaign_name).slice(0, 200) : null } : {}),
   };
   const res = await fetch(`${sbUrl}/rest/v1/website_requests`, { method: "POST", headers: h({ Prefer: "return=representation" }), body: JSON.stringify(row) });
   const text = await res.text();
