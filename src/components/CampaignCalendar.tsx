@@ -346,8 +346,10 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
     return [b?.oneLiner, b?.objective].filter(Boolean).join(" — ") || item.note || item.campaign;
   }
   async function startBlog(item: Campaign) {
+    const brand = brands.find(b => b.name === item.brand) ?? brands.find(b => item.brand.includes(b.name));
+    if (!brand) { setLinkError(`Couldn't match "${item.brand}" to a single brand to start a blog draft.`); return; }
     setLinkBusy("blog"); setLinkError(null);
-    const res = await fetch("/api/blog-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_name: item.brand, brief: campaignBrief(item) }) }).then(r => r.json()).catch(() => null);
+    const res = await fetch("/api/blog-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief: campaignBrief(item) }) }).then(r => r.json()).catch(() => null);
     setLinkBusy(null);
     if (res?.ok) onStartBlog?.(res.item.id);
     else setLinkError(res?.error || "Couldn't start a blog draft for that brand.");
@@ -402,7 +404,7 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
     const brief = campaignBrief(item);
     const results: { label: string; ok: boolean; note?: string }[] = [];
 
-    const blogRes = await fetch("/api/blog-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_name: brand.name, brief }) }).then(r => r.json()).catch(() => null);
+    const blogRes = await fetch("/api/blog-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief }) }).then(r => r.json()).catch(() => null);
     results.push({ label: "Blog draft", ok: !!blogRes?.ok, note: blogRes?.ok ? undefined : (blogRes?.error || "failed") });
 
     const existingEmails: EmailDraft[] = (item.brief as any)?.emails ?? [];
