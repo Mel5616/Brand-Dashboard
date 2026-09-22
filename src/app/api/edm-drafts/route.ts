@@ -130,6 +130,28 @@ export async function POST(req: Request) {
   if (!process.env.ANTHROPIC_API_KEY) return NextResponse.json({ ok: false, error: "ANTHROPIC_API_KEY not configured" }, { status: 500 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
 
+  // Campaigns' "Send to Email Planner →" — the email was already written by
+  // hand in the campaign brief (brief.emails[]), so import it as-is (status
+  // "draft", ready to review/send) instead of asking Claude to write it again.
+  if (b.import) {
+    const brandId = Number(b.brand_id);
+    const subject = String(b.subject || "").trim().slice(0, 200);
+    const bodyHtml = String(b.body_html || "");
+    if (!brandId || !subject || !bodyHtml) return NextResponse.json({ ok: false, error: "Brand, subject and a body are required" }, { status: 400 });
+    const row = {
+      brand_id: brandId, status: "draft", subject,
+      preview_text: b.preview_text ? String(b.preview_text).trim().slice(0, 200) : null,
+      body_html: bodyHtml,
+      scheduled_for: b.scheduled_for ? String(b.scheduled_for) : null,
+      brief: b.brief ? String(b.brief).trim() : null,
+      created_by: acc.user?.email ?? null,
+    };
+    const res = await fetch(`${sbUrl}/rest/v1/edm_drafts`, { method: "POST", headers: h({ Prefer: "return=representation" }), body: JSON.stringify(row) });
+    const text = await res.text();
+    if (!res.ok) return NextResponse.json({ ok: false, needsSetup: missing(res.status, text), error: text.slice(0, 200) }, { status: 500 });
+    return NextResponse.json({ ok: true, item: JSON.parse(text)[0] });
+  }
+
   // EDM Planner "+ Plan EDM" — a bare placeholder (brand, date, one-line
   // brief), no AI call. Stays status "planned" until someone hits "Use this
   // brief ↑" in Email Writing to actually generate it.

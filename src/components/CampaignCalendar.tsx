@@ -96,7 +96,7 @@ const isFlagged = (v: string) => /^\s*(high|check)/i.test(v || "");
 
 const jsonHeaders = { "Content-Type": "application/json" };
 
-export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, onStartEdm }: { canEdit?: boolean; brands?: { id: number; name: string }[]; onStartBlog?: (draftId: string) => void; onStartEdm?: (draftId: string) => void }) {
+export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, onStartEdm, onSendToPlanner }: { canEdit?: boolean; brands?: { id: number; name: string }[]; onStartBlog?: (draftId: string) => void; onStartEdm?: (draftId: string) => void; onSendToPlanner?: () => void }) {
   const [view, setView] = useState<"roadmap" | "sends" | "bf" | "promos">("roadmap");
   const [items, setItems] = useState<Campaign[]>([]);
   const [maint, setMaint] = useState<Maint[]>([]);
@@ -271,6 +271,33 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
     setLinkBusy(null);
     if (res?.ok) onStartEdm?.(res.item.id);
     else setLinkError(res?.error || "Couldn't start an EDM draft for that brand.");
+  }
+  const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+  function htmlFromPlainBody(text: string): string {
+    const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const paras = (text || "").split(/\n{2,}/).filter(Boolean)
+      .map(p => `<p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#333333;font-family:Arial,Helvetica,sans-serif;">${esc(p).replace(/\n/g, "<br>")}</p>`)
+      .join("");
+    return `<div style="max-width:600px;margin:0 auto;">${paras}</div>`;
+  }
+  // "Send to Email Planner →" on a campaign's hand-written email draft —
+  // imports it as-is (already has real subject/body, no need to regenerate)
+  // into edm_drafts so it shows on the EDM Planner calendar at its send date.
+  async function sendToPlanner(item: Campaign, em: EmailDraft) {
+    const brand = brands.find(b => b.name === item.brand) ?? brands.find(b => item.brand.includes(b.name));
+    if (!brand) { setLinkError(`Couldn't match "${item.brand}" to a single brand to send this email to.`); return; }
+    setLinkBusy("edm"); setLinkError(null);
+    const subject = (em.subject || "").split("\n").map(s => s.trim()).filter(Boolean)[0] || item.campaign;
+    const res = await fetch("/api/edm-drafts", {
+      method: "POST", headers: jsonHeaders, body: JSON.stringify({
+        import: true, brand_id: brand.id, subject, preview_text: em.preview || null,
+        body_html: htmlFromPlainBody(em.body || ""), scheduled_for: DATE_RE.test(em.sendDate || "") ? em.sendDate : null,
+        brief: `From campaign: ${item.campaign}${em.segment ? ` — segment: ${em.segment}` : ""}`,
+      }),
+    }).then(r => r.json()).catch(() => null);
+    setLinkBusy(null);
+    if (res?.ok) onSendToPlanner?.();
+    else setLinkError(res?.error || "Couldn't send that email to the planner.");
   }
   // Channels checklist toggles save immediately (no debounce — checkboxes don't lose focus).
   function toggleChannel(item: Campaign, opt: string) {
@@ -815,7 +842,14 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
                         onBlur={e => updateEmail(open, i, "preview", e.target.value)} className={inp} />
                       <textarea readOnly={ro} defaultValue={em?.body ?? ""} rows={8} placeholder="Email body"
                         onBlur={e => updateEmail(open, i, "body", e.target.value)} className={`${inp} resize-y leading-relaxed`} />
-                      <div className="no-print flex justify-end">
+                      <div className="no-print flex justify-end gap-2">
+                        {canEdit && (
+                          <button onClick={() => sendToPlanner(open, em)} disabled={linkBusy === "edm" || !em?.subject?.trim() || !em?.body?.trim()}
+                            title={!em?.sendDate ? "No send date set — it'll land in the planner unscheduled" : undefined}
+                            className="text-[13px] font-medium text-fuchsia-700 bg-white border border-fuchsia-200 hover:bg-fuchsia-50 rounded-lg px-3 py-1 transition disabled:opacity-40">
+                            {linkBusy === "edm" ? "Sending…" : "Send to Email Planner →"}
+                          </button>
+                        )}
                         <button onClick={() => copyEmail(em, i)} className="text-[13px] font-medium text-sky-700 bg-white border border-sky-200 hover:bg-sky-50 rounded-lg px-3 py-1 transition">
                           {emailCopied === i ? "Copied" : "Copy for Klaviyo"}
                         </button>
