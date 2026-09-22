@@ -32,7 +32,6 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "show-insights", label: "Show Insights" },
   ] },
   { label: "Plan", tabs: [
-    { id: "campaign-calendar", label: "Campaigns" },
     { id: "promotions", label: "Promotions" },
     { id: "calendar", label: "Calendar" },
     { id: "content", label: "Briefing Engine" },
@@ -54,6 +53,7 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "seo", label: "SEO" },
   ] },
   { label: "Creative", tabs: [
+    { id: "campaign-calendar", label: "Campaigns" },
     { id: "design-requests", label: "Design Requests" },
     { id: "creative", label: "Creative Production" },
     { id: "event-concepts", label: "Event Concepts" },
