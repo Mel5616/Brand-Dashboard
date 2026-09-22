@@ -24,7 +24,7 @@ export function WinbackCard({ admin }: { admin: boolean }) {
   const [loading, setLoading] = React.useState(false);
 
   const load = React.useCallback(() => {
-    fetch(`/api/winback?from=${from}&to=${to}`).then(r => r.json()).then(d => {
+    fetch(`/api/winback-offer?from=${from}&to=${to}`).then(r => r.json()).then(d => {
       if (!d.ok) return;
       setData(d); setSel(new Set((d.candidates as Cand[]).filter(c => !c.sent).map(c => c.id)));
     }).catch(() => {}).finally(() => setLoading(false));
@@ -38,7 +38,7 @@ export function WinbackCard({ admin }: { admin: boolean }) {
     if (!test && !confirm(`Send the free-accessory offer to ${n} ${n === 1 ? "person" : "people"}? Each gets a one-use code created on the store and one email.`)) return;
     setBusy(true); setResult(null);
     const body = test ? { from, to, test_to: testTo, ids: [...sel].slice(0, 1) } : { from, to, ids: [...sel] };
-    const d = await fetch("/api/winback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()).catch(() => null);
+    const d = await fetch("/api/winback-offer", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()).catch(() => null);
     setBusy(false);
     if (!d?.ok) { setResult(d?.error || "Failed"); return; }
     const ok = d.results.filter((r: { ok: boolean }) => r.ok).length, bad = d.results.filter((r: { ok: boolean }) => !r.ok);
@@ -68,7 +68,7 @@ export function WinbackCard({ admin }: { admin: boolean }) {
         </div>
       </div>
 
-      {data?.needsSetup && <p className="mt-3 text-[12.5px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">Run <code className="font-mono">supabase/add_winback_sends.sql</code> in Supabase before sending, so every send and recovery is recorded.</p>}
+      {data?.needsSetup && <p className="mt-3 text-[12.5px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">Run <code className="font-mono">supabase/add_winback_offers.sql</code> in Supabase before sending, so every send and recovery is recorded.</p>}
       {data && !data.live && <p className="mt-3 text-[12.5px] text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">Could not read abandoned checkouts from Shopify.</p>}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">

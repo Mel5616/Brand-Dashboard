@@ -8,7 +8,7 @@ import { rest } from "@/lib/registry";
 // makes one accessory free when the pram is in the cart (organiser, cup
 // holder, Reed liner or snack tray), with four one-click links that rebuild
 // their cart, add the chosen gift and apply the code. Sends and recoveries
-// are tracked in winback_sends. Built 22 Sep 2026 for the September list.
+// are tracked in winback_offers. Built 22 Sep 2026 for the September list.
 
 export const WINBACK = {
   brandId: 5,
@@ -217,7 +217,7 @@ export async function sweepRecoveries(rows: SendRow[]) {
       if (!row || row.status !== "sent") continue;
       row.status = "recovered"; row.recovered_at = o.createdAt; row.recovered_order = o.name;
       row.recovered_value = Number(o.currentTotalPriceSet?.shopMoney?.amount || 0);
-      updates.push(rest(`winback_sends?id=eq.${row.id}`, { method: "PATCH", headers: { Prefer: "return=minimal" },
+      updates.push(rest(`winback_offers?id=eq.${row.id}`, { method: "PATCH", headers: { Prefer: "return=minimal" },
         body: JSON.stringify({ status: "recovered", recovered_at: row.recovered_at, recovered_order: row.recovered_order, recovered_value: row.recovered_value }) }));
     }
     if (!d.pageInfo.hasNextPage) break;
@@ -226,7 +226,7 @@ export async function sweepRecoveries(rows: SendRow[]) {
   const now = new Date().toISOString();
   for (const r of open) if (r.status === "sent" && r.expires_at && r.expires_at < now) {
     r.status = "expired";
-    updates.push(rest(`winback_sends?id=eq.${r.id}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status: "expired" }) }));
+    updates.push(rest(`winback_offers?id=eq.${r.id}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status: "expired" }) }));
   }
   await Promise.all(updates);
   return rows;
