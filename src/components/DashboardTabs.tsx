@@ -91,6 +91,7 @@ import { CredentialsPanel } from "./CredentialsPanel";
 import { ADMIN_ONLY_TABS } from "@/lib/tabs";
 import { MediaReleases } from "./MediaReleases";
 import { VouchersCard } from "./VouchersCard";
+import { WinbackCard } from "./WinbackCard";
 import { InfluencerAgreements } from "./InfluencerAgreements";
 import { CampaignBriefs } from "./CampaignBriefs";
 import { AssistantFeed } from "./AssistantFeed";
@@ -1827,6 +1828,7 @@ export function DashboardTabs({
               <LtvPanel brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} />
 
               <AbandonedCheckoutsPanel brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} />
+              <WinbackCard admin={role === "admin"} />
               <div className="flex items-center gap-2 mb-2">
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}
