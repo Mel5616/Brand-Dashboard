@@ -50,6 +50,7 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "utm-tracking", label: "UTM Tracking" },
     { id: "reviews", label: "Reviews" },
     { id: "abandoned", label: "Abandoned Checkouts" },
+    { id: "zazu-wheel", label: "Zazu Spin Wheel" },
     { id: "seo", label: "SEO" },
   ] },
   { label: "Creative", tabs: [

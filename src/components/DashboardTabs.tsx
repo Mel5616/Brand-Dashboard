@@ -109,13 +109,14 @@ import { AbandonedCheckoutsPanel, LiveStockPanel, DiscountCodesPanel, CrossCodeC
 import { DiscountCodesTab } from "./DiscountCodesTab";
 import { ReviewsPanel } from "./ReviewsPanel";
 import { WebsiteRequestsPanel } from "./WebsiteRequestsPanel";
+import { ZazuWheelPanel } from "./ZazuWheelPanel";
 import { UtmTrackingPanel } from "./UtmTrackingPanel";
 import { Notifier } from "./Notifier";
 import { StockReport } from "./StockReport";
 import { fmt, fmtFull } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "assistants" | "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "cross-site-discounts" | "create-codes" | "abandoned" | "reviews" | "website-requests" | "utm-tracking" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "edm-planner" | "seo" | "social" | "youtube" | "tradeshows" | "show-insights" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "credentials" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "campaign-briefs" | "nanit" | "affiliates" | "commission-factory" | "email-writing" | "pa-budget" | "pa-tracker" | "pa-revenue" | "documents" | "team" | "brand-packs" | "price-lists" | "hub-fact-sheets" | "brand-overview" | "stock-availability" | "order-forms" | "customers" | "customer-forms" | "blog-pipeline";
+type TabId = "assistants" | "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "cross-site-discounts" | "create-codes" | "abandoned" | "zazu-wheel" | "reviews" | "website-requests" | "utm-tracking" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "edm-planner" | "seo" | "social" | "youtube" | "tradeshows" | "show-insights" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "credentials" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "campaign-briefs" | "nanit" | "affiliates" | "commission-factory" | "email-writing" | "pa-budget" | "pa-tracker" | "pa-revenue" | "documents" | "team" | "brand-packs" | "price-lists" | "hub-fact-sheets" | "brand-overview" | "stock-availability" | "order-forms" | "customers" | "customer-forms" | "blog-pipeline";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -157,6 +158,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
     id: "abandoned", label: "Abandoned Checkouts",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
+  },
+  {
+    id: "zazu-wheel", label: "Zazu Spin Wheel",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" strokeWidth={2} /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v9l6.36 6.36M12 3a9 9 0 019 9M3 12a9 9 0 019-9" /></svg>,
   },
   {
     id: "reviews", label: "Reviews",
@@ -438,7 +443,7 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Reports", ids: ["report", "snapshot", "social-report", "d2c-weekly", "uppababy"] },
   { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows", "show-insights"] },
   { label: "Plan", ids: ["campaign-calendar", "promotions", "calendar", "content", "events", "show-deals", "activations", "timeline"] },
-  { label: "Websites", ids: ["assistants", "discount-codes", "cross-site-discounts", "create-codes", "website-requests", "utm-tracking", "reviews", "abandoned", "seo"] },
+  { label: "Websites", ids: ["assistants", "discount-codes", "cross-site-discounts", "create-codes", "website-requests", "utm-tracking", "reviews", "abandoned", "zazu-wheel", "seo"] },
   { label: "Creative", ids: ["design-requests", "creative", "event-concepts", "decks"] },
   { label: "Blogging", ids: ["tasks", "blog-pipeline"] },
   { label: "Email Marketing", ids: ["email", "edm-planner", "email-writing"] },
@@ -1631,6 +1636,14 @@ export function DashboardTabs({
               <AbandonedCheckoutsPanel brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} />
               <WinbackCard admin={role === "admin"} />
               {role === "admin" && <WinbackPanel />}
+            </>
+          )}
+
+          {/* ── Zazu Spin Wheel: entries + prizes from the "Spin for a sleep-in" wheel on zazu-kids.com.au ── */}
+          {active === "zazu-wheel" && (
+            <>
+              <SectionBar title="Zazu Spin Wheel" />
+              <ZazuWheelPanel />
             </>
           )}
 
