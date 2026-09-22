@@ -5,10 +5,11 @@ import { rest } from "@/lib/registry";
 // Abandoned checkout win-back for uppababy.com.au.
 //
 // Someone left a Vista or Cruz in the bag. We email them a one-use code that
-// makes one accessory free when the pram is in the cart (organiser, cup
-// holder, Reed liner or snack tray), with four one-click links that rebuild
-// their cart, add the chosen gift and apply the code. Sends and recoveries
-// are tracked in winback_offers. Built 22 Sep 2026 for the September list.
+// makes ALL FOUR accessories free when the pram is in the cart (organiser,
+// cup holder, Reed liner and snack tray, about $340), with a one-click link
+// that rebuilds their cart with the four gifts in it and the code applied.
+// Sends and recoveries are tracked in winback_offers. Built 22 Sep 2026 for
+// the September list; Mel confirmed all four, not one (22 Sep).
 
 export const WINBACK = {
   brandId: 5,
@@ -101,15 +102,15 @@ export async function candidates(from: string, to: string): Promise<Checkout[] |
   return [...byEmail.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
-/** One-use code: one of the four accessories free with a Vista or Cruz in the cart. */
+/** One-use code: all four accessories free with a Vista or Cruz in the cart. */
 export async function createWinbackCode(code: string, expiresAt: Date, who: string) {
   const j = await gql(`mutation($d: DiscountCodeBxgyInput!) { discountCodeBxgyCreate(bxgyCodeDiscount: $d) {
     codeDiscountNode { id } userErrors { field message } } }`, { d: {
-      title: `Win-back: free accessory, ${who}`, code,
+      title: `Win-back: four free accessories, ${who}`, code,
       startsAt: new Date().toISOString(), endsAt: expiresAt.toISOString(),
       usageLimit: 1, appliesOncePerCustomer: true, customerSelection: { all: true },
       customerBuys: { items: { collections: { add: WINBACK.buysCollections } }, value: { quantity: "1" } },
-      customerGets: { items: { products: { productsToAdd: GETS_PRODUCTS } }, value: { discountOnQuantity: { quantity: "1", effect: { percentage: 1.0 } } } },
+      customerGets: { items: { products: { productsToAdd: GETS_PRODUCTS } }, value: { discountOnQuantity: { quantity: "4", effect: { percentage: 1.0 } } } },
       combinesWith: { orderDiscounts: false, productDiscounts: true, shippingDiscounts: true },
     } });
   const gid = j?.data?.discountCodeBxgyCreate?.codeDiscountNode?.id;
@@ -127,9 +128,9 @@ const FROM = "UPPAbaby Australia <noreply@uppababy.com.au>";
 const REPLY_TO = "support@uppababy.com.au";
 const fmtDate = (d: Date) => d.toLocaleDateString("en-AU", { day: "numeric", month: "long", timeZone: "Australia/Melbourne" });
 
-/** Cart permalink that rebuilds the bag, adds the gift and applies the code. */
-export function permalink(c: Checkout, gift: Gift, code: string) {
-  const items = c.lines.map(l => `${l.variantId}:${l.qty}`).concat(`${gift.variantId}:1`).join(",");
+/** Cart permalink that rebuilds the bag, adds every gift and applies the code. */
+export function permalink(c: Checkout, code: string) {
+  const items = c.lines.map(l => `${l.variantId}:${l.qty}`).concat(GIFTS.map(g => `${g.variantId}:1`)).join(",");
   return `https://uppababy.com.au/cart/${items}?discount=${encodeURIComponent(code)}`;
 }
 
@@ -140,15 +141,17 @@ export async function sendWinbackEmail(c: Checkout, code: string, expiresAt: Dat
   const pram = c.lines.find(l => WINBACK.pramMatch(l.handle));
   const pramName = pram ? (/vista/.test(pram.handle) ? "Vista V3" : "Cruz V3") : "pram";
   const gifts = GIFTS.map(g => `
-    <tr><td style="padding:0 0 10px">
+    <tr><td style="padding:0 0 8px">
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #E4E1DC;border-radius:12px;background:#FFFFFF">
         <tr>
           <td width="84" style="padding:10px"><img src="${g.img}" width="64" height="64" alt="" style="display:block;width:64px;height:64px;object-fit:contain;border-radius:8px;background:#F3F2F0"></td>
-          <td style="padding:10px 6px 10px 0"><div style="font-size:15px;font-weight:600;color:#141C26">${esc(g.name)}</div><div style="font-size:12.5px;color:#5B6774;line-height:1.45;margin-top:2px">${esc(g.line)} <span style="color:#98A2B0">Usually $${g.price}</span></div></td>
-          <td width="118" align="right" style="padding:10px 12px 10px 0"><a href="${permalink(c, g, code)}" style="display:inline-block;background:#3B4C5E;color:#fff;text-decoration:none;font-weight:600;font-size:13px;padding:10px 14px;border-radius:999px;white-space:nowrap">Add it free</a></td>
+          <td style="padding:10px 6px 10px 0"><div style="font-size:15px;font-weight:600;color:#141C26">${esc(g.name)}</div><div style="font-size:12.5px;color:#5B6774;line-height:1.45;margin-top:2px">${esc(g.line)}</div></td>
+          <td width="96" align="right" style="padding:10px 14px 10px 0;white-space:nowrap"><span style="font-size:12px;color:#98A2B0;text-decoration:line-through">$${g.price}</span> <span style="display:inline-block;font-size:12px;font-weight:700;color:#1F7A4D;background:#E7F5EC;padding:4px 9px;border-radius:999px;margin-left:4px">Free</span></td>
         </tr>
       </table>
     </td></tr>`).join("");
+  const total = GIFTS.reduce((s, g) => s + Number(g.price), 0);
+  const link = permalink(c, code);
   const html = `<!doctype html><html><body style="margin:0;padding:0;background:#F3F2F0">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F3F2F0"><tr><td align="center" style="padding:28px 12px">
 <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;width:100%;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;color:#33404F">
@@ -157,21 +160,25 @@ export async function sendWinbackEmail(c: Checkout, code: string, expiresAt: Dat
   </td></tr>
   <tr><td style="background:#FFFFFF;padding:38px 40px 10px">
     <div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#7A8798;font-weight:600">Still in your bag</div>
-    <h1 style="font-size:28px;line-height:1.15;font-weight:400;letter-spacing:-.02em;color:#141C26;margin:12px 0 14px">Your ${esc(pramName)} is waiting, ${esc(c.firstName)}. We have added a gift.</h1>
-    <p style="font-size:15px;line-height:1.65;color:#5B6774;margin:0 0 8px">You left a ${esc(pramName)} at the checkout earlier this month. Pick one of the four accessories below and it comes free with the pram. One click rebuilds your bag with the gift in it and the code applied.</p>
+    <h1 style="font-size:28px;line-height:1.15;font-weight:400;letter-spacing:-.02em;color:#141C26;margin:12px 0 14px">Your ${esc(pramName)} is waiting, ${esc(c.firstName)}. We have added $${Math.round(total)} of accessories, free.</h1>
+    <p style="font-size:15px;line-height:1.65;color:#5B6774;margin:0 0 8px">You left a ${esc(pramName)} at the checkout earlier this month. Finish the order and all four of these come with it at no charge. One click rebuilds your bag with the four in it and the code applied.</p>
     <p style="font-size:13px;line-height:1.6;color:#98A2B0;margin:0">In your bag: ${esc(c.summary)}</p>
   </td></tr>
-  <tr><td style="background:#FFFFFF;padding:18px 40px 8px">
+  <tr><td style="background:#FFFFFF;padding:18px 40px 6px">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0">${gifts}</table>
   </td></tr>
-  <tr><td style="background:#FFFFFF;padding:10px 40px 34px;border-radius:0 0 14px 14px">
+  <tr><td align="center" style="background:#FFFFFF;padding:14px 40px 26px">
+    <a href="${link}" style="display:inline-block;background:#3B4C5E;color:#FFFFFF;text-decoration:none;font-weight:600;font-size:15px;padding:15px 34px;border-radius:999px">Finish my order with the four gifts</a>
+    <div style="font-size:12.5px;color:#98A2B0;margin-top:12px">Rebuilds your bag, adds all four and applies the code.</div>
+  </td></tr>
+  <tr><td style="background:#FFFFFF;padding:0 40px 34px;border-radius:0 0 14px 14px">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="border:2px dashed #D9D5CE;border-radius:12px;background:#FAF9F7;padding:16px 18px">
       <div style="font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#7A8798;font-weight:600">Or use this code at checkout</div>
       <div style="font-size:24px;font-weight:700;letter-spacing:.12em;color:#141C26;margin:6px 0 6px;font-family:'SF Mono',Menlo,Consolas,'Courier New',monospace">${esc(code)}</div>
-      <div style="font-size:12.5px;color:#5B6774;line-height:1.5">Add the pram and one accessory to your bag, enter the code, and the accessory drops to $0.<br>Valid until ${fmtDate(expiresAt)}, one use.</div>
+      <div style="font-size:12.5px;color:#5B6774;line-height:1.5">Add the pram and the four accessories to your bag, enter the code, and the accessories drop to $0.<br>Valid until ${fmtDate(expiresAt)}, one use.</div>
     </td></tr></table>
-    <p style="font-size:13px;line-height:1.6;color:#5B6774;margin:20px 0 0">Prefer the bag exactly as you left it? <a href="${c.url}" style="color:#3B4C5E;font-weight:600">Return to your checkout</a>. Questions about which pram, what fits or delivery: reply to this email and the UPPAbaby Australia team will help.</p>
-    <p style="font-size:11.5px;line-height:1.6;color:#98A2B0;margin:18px 0 0">Free delivery over $99, a three year warranty and Lifetime Service Support on every pram. The free accessory applies to one Vista V3 or Cruz V3 order, cannot be exchanged for cash and is not available with other codes.</p>
+    <p style="font-size:13px;line-height:1.6;color:#5B6774;margin:20px 0 0">Prefer the bag exactly as you left it? <a href="${c.url}" style="color:#3B4C5E;font-weight:600">Return to your checkout</a> and add the accessories there. Questions about which pram, what fits or delivery: reply to this email and the UPPAbaby Australia team will help.</p>
+    <p style="font-size:11.5px;line-height:1.6;color:#98A2B0;margin:18px 0 0">Free delivery over $99, a three year warranty and Lifetime Service Support on every pram. The free accessories apply to one Vista V3 or Cruz V3 order, cannot be exchanged for cash and are not available with other codes.</p>
   </td></tr>
   <tr><td align="center" style="padding:22px 20px 0">
     <p style="color:#98A2B0;font-size:11px;line-height:1.7;margin:0">You are receiving this because you started a checkout at uppababy.com.au. This is a one-off note about that bag.<br>UPPAbaby is distributed in Australia by Coolkidz Australia Pty Ltd, 1 Beyer Road, Braeside, Victoria 3195</p>
@@ -180,7 +187,7 @@ export async function sendWinbackEmail(c: Checkout, code: string, expiresAt: Dat
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", "User-Agent": "coolkidz-dashboard/1.0" },
-    body: JSON.stringify({ from: FROM, reply_to: REPLY_TO, to: [c.email], subject: `Your ${pramName} is still in your bag, ${c.firstName}. Pick a free accessory.`, html }),
+    body: JSON.stringify({ from: FROM, reply_to: REPLY_TO, to: [c.email], subject: `Your ${pramName} is still in your bag, ${c.firstName}. Four accessories on us.`, html }),
   }).catch(() => null);
   if (!res?.ok) return { ok: false, error: res ? (await res.text()).slice(0, 200) : "network" };
   return { ok: true };
