@@ -15,7 +15,7 @@ export const WINBACK = {
   days: 14,
   prefix: "WB-",
   // The prams that qualify: the Vista V3 and Cruz V3 collections.
-  buysCollections: ["gid://shopify/Collection/433596858623", "gid://shopify/Collection/462055047423"],
+  buysCollections: ["gid://shopify/Collection/433596858623", "gid://shopify/Collection/462055047423", "gid://shopify/Collection/456575287551"], // Vista V3, Cruz V3, Vista no-bassinet
   pramMatch: (handle: string) => /vista-v3|cruz-v3/.test(handle) && !/accessor|adapter|rumbleseat|bassinet-|liner|organiser|cup-holder|snack|piggyback|travel-bag|cover|shield/.test(handle),
 };
 
