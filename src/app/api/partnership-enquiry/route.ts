@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 // the subject, so Mel can filter rather than watch three addresses (22 Sep 2026).
 // No table behind this: the email is the record, and Reply goes to the enquirer.
 export const revalidate = 0;
-const TO = "mel@uppababy.com.au";
+const TO = "melanie@uppababy.com.au";
 const FROM = "UPPAbaby Australia <noreply@uppababy.com.au>";
 const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "POST,OPTIONS", "Access-Control-Allow-Headers": "Content-Type" };
 const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
