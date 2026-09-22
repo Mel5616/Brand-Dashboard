@@ -11,31 +11,44 @@ import { rest } from "@/lib/registry";
 // Sends and recoveries are tracked in winback_offers. Built 22 Sep 2026 for
 // the September list; Mel confirmed all four, not one (22 Sep).
 
-export const WINBACK = {
-  brandId: 5,
-  days: 14,
-  prefix: "WB-",
-  // The prams that qualify: the Vista V3 and Cruz V3 collections.
-  buysCollections: ["gid://shopify/Collection/433596858623", "gid://shopify/Collection/462055047423", "gid://shopify/Collection/456575287551"], // Vista V3, Cruz V3, Vista no-bassinet
-  // Pram handles all start "uppababy-vista-v3-pram…" or "uppababy-cruz-v3-pram…"
-  // (with bassinet, toddler seat only, damaged box). Matching on words like
-  // "vista-v3" and excluding "bassinet" threw out every "pram-with-bassinet"
-  // cart on the first run, which was most of them.
-  pramMatch: (handle: string) => /^uppababy-(vista|cruz)-v3-pram/.test(handle),
-  // Damaged box, ex-display and clearance prams do not earn the gift (Mel,
-  // 22 Sep 2026), same as the free Nappy Bag Pro.
-  runout: (title: string) => /damaged box|ex[- ]?display|clearance|outlet/i.test(title),
-};
+export const WINBACK = { brandId: 5, days: 14, prefix: "WB-" };
 
 export type Gift = { key: string; name: string; line: string; productGid: string; variantId: string; price: string; img: string };
-export const GIFTS: Gift[] = [
-  { key: "organiser", name: "Parent Organiser", line: "Two cup holders, a phone pocket and a zip, on the handlebar.", productGid: "gid://shopify/Product/9230963245311", variantId: "47389173481727", price: "99.95", img: "https://cdn.shopify.com/s/files/1/0681/1877/4015/files/0902-CAO-CHC_inUse_3e6f7402-8f8c-4f09-a46e-5a561b8c673c.png?v=1784780977&width=400" },
-  { key: "cupholder", name: "Cup Holder", line: "Clips to the frame, fits a coffee or a bottle.", productGid: "gid://shopify/Product/9128285143295", variantId: "46948947755263", price: "69.95", img: "https://cdn.shopify.com/s/files/1/0681/1877/4015/files/0902-CUP_Front.png?v=1784780912&width=400" },
-  { key: "liner", name: "Reed Seat Liner", line: "Reversible, cotton one side and mesh the other.", productGid: "gid://shopify/Product/8532197998847", variantId: "45264278028543", price: "79.95", img: "https://cdn.shopify.com/s/files/1/0681/1877/4015/files/0920-SEL-WW-REE_1-1.webp?v=1784780730&width=400" },
-  { key: "tray", name: "Snack Tray", line: "For the toddler seat, with a cup holder of its own.", productGid: "gid://shopify/Product/8531853082879", variantId: "45261898875135", price: "89.95", img: "https://cdn.shopify.com/s/files/1/0681/1877/4015/files/UPPAbaby_Vista_Alta_Cruz_Snack_Tray.webp?v=1784780729&width=400" },
+const G = {
+  organiser: { key: "organiser", name: "Parent Organiser", line: "Two cup holders, a phone pocket and a zip, on the handlebar.", productGid: "gid://shopify/Product/9230963245311", variantId: "47389173481727", price: "99.95", img: "https://cdn.shopify.com/s/files/1/0681/1877/4015/files/0902-CAO-CHC_inUse_3e6f7402-8f8c-4f09-a46e-5a561b8c673c.png?v=1784780977&width=400" },
+  cupholder: { key: "cupholder", name: "Cup Holder", line: "Clips to the frame, fits a coffee or a bottle.", productGid: "gid://shopify/Product/9128285143295", variantId: "46948947755263", price: "69.95", img: "https://cdn.shopify.com/s/files/1/0681/1877/4015/files/0902-CUP_Front.png?v=1784780912&width=400" },
+  liner: { key: "liner", name: "Reed Seat Liner", line: "Reversible, cotton one side and mesh the other.", productGid: "gid://shopify/Product/8532197998847", variantId: "45264278028543", price: "79.95", img: "https://cdn.shopify.com/s/files/1/0681/1877/4015/files/0920-SEL-WW-REE_1-1.webp?v=1784780730&width=400" },
+  tray: { key: "tray", name: "Snack Tray", line: "For the toddler seat, with a cup holder of its own.", productGid: "gid://shopify/Product/8531853082879", variantId: "45261898875135", price: "89.95", img: "https://cdn.shopify.com/s/files/1/0681/1877/4015/files/UPPAbaby_Vista_Alta_Cruz_Snack_Tray.webp?v=1784780729&width=400" },
+  minutray: { key: "minutray", name: "Minu V3 Snack Tray", line: "Made for the Minu seat, with a cup holder of its own.", productGid: "gid://shopify/Product/9049661800703", variantId: "46686379540735", price: "99.95", img: "https://cdn.shopify.com/s/files/1/0681/1877/4015/files/UPPAbaby_Minu_V3_Snack_Tray.png?v=1784780840&width=400" },
+} satisfies Record<string, Gift>;
+
+const RUNOUT = /damaged box|ex[- ]?display|clearance|outlet/i;
+const COLL = { vista: "gid://shopify/Collection/433596858623", cruz: "gid://shopify/Collection/462055047423", vistaNoBassinet: "gid://shopify/Collection/456575287551", damagedBox: "gid://shopify/Collection/458130620671", minu: "gid://shopify/Collection/453197431039" };
+
+/** A preset = who qualifies + what they get. The card offers these by name. */
+export type Preset = {
+  key: string; label: string; pramLabel: (handle: string) => string;
+  qualifies: (line: { handle: string; title: string }) => boolean;   // a cart needs one line that passes
+  buysCollections: string[]; gifts: Gift[]; extraGets?: string[];
+};
+export const PRESETS: Preset[] = [
+  { key: "vista-cruz-four", label: "Vista / Cruz full price: four accessories free",
+    pramLabel: h => (/vista/.test(h) ? "Vista V3" : "Cruz V3"),
+    qualifies: l => /^uppababy-(vista|cruz)-v3-pram/.test(l.handle) && !RUNOUT.test(l.title),
+    buysCollections: [COLL.vista, COLL.cruz, COLL.vistaNoBassinet], gifts: [G.organiser, G.cupholder, G.liner, G.tray],
+    extraGets: ["gid://shopify/Product/9572335452415"] },
+  { key: "vista-cruz-damaged-cup", label: "Vista / Cruz damaged box: free Cup Holder",
+    pramLabel: h => (/vista/.test(h) ? "Vista V3" : "Cruz V3"),
+    qualifies: l => /^uppababy-(vista|cruz)-v3-pram/.test(l.handle) && RUNOUT.test(l.title),
+    buysCollections: [COLL.vista, COLL.cruz, COLL.vistaNoBassinet, COLL.damagedBox], gifts: [G.cupholder] },
+  { key: "minu-tray", label: "Minu V3: free Snack Tray",
+    pramLabel: () => "Minu V3",
+    qualifies: l => /^uppababy-minu-v3-stroller/.test(l.handle) && !RUNOUT.test(l.title),
+    buysCollections: [COLL.minu], gifts: [G.minutray] },
 ];
-// The light grey organiser is also free under the code, so either colour works.
-const GETS_PRODUCTS = [...GIFTS.map(g => g.productGid), "gid://shopify/Product/9572335452415"];
+export const presetByKey = (k: string | null | undefined) => PRESETS.find(p => p.key === k) || PRESETS[0];
+// Kept for the card's gift list.
+export const GIFTS: Gift[] = PRESETS[0].gifts;
 
 export function winbackCode() {
   const A = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -65,7 +78,7 @@ export type Checkout = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Raw = any;
 
-export async function candidates(from: string, to: string): Promise<Checkout[] | null> {
+export async function candidates(from: string, to: string, preset: Preset = PRESETS[0]): Promise<Checkout[] | null> {
   const rows: Raw[] = [];
   let cursor: string | null = null;
   for (let page = 0; page < 10; page++) {
@@ -97,7 +110,7 @@ export async function candidates(from: string, to: string): Promise<Checkout[] |
     if (bought.has(email)) continue;
     const lines = (x.lineItems?.nodes || []).filter((l: Raw) => l.variant?.id).map((l: Raw) => ({
       title: String(l.title), qty: Number(l.quantity || 1), variantId: String(l.variant.id).split("/").pop()!, handle: String(l.variant.product?.handle || "") }));
-    if (!lines.some((l: { handle: string; title: string }) => WINBACK.pramMatch(l.handle) && !WINBACK.runout(l.title))) continue;
+    if (!lines.some((l: { handle: string; title: string }) => preset.qualifies(l))) continue;
     byEmail.set(email, {
       id: x.id, createdAt: x.createdAt, url: x.abandonedCheckoutUrl, email,
       // "SADDAM" and "rebecca" both happen at checkout; the greeting should not repeat them.
@@ -111,14 +124,14 @@ export async function candidates(from: string, to: string): Promise<Checkout[] |
 }
 
 /** One-use code: all four accessories free with a Vista or Cruz in the cart. */
-export async function createWinbackCode(code: string, expiresAt: Date, who: string) {
+export async function createWinbackCode(code: string, expiresAt: Date, who: string, preset: Preset = PRESETS[0]) {
   const j = await gql(`mutation($d: DiscountCodeBxgyInput!) { discountCodeBxgyCreate(bxgyCodeDiscount: $d) {
     codeDiscountNode { id } userErrors { field message } } }`, { d: {
-      title: `Win-back: four free accessories, ${who}`, code,
+      title: `Win-back (${preset.key}), ${who}`, code,
       startsAt: new Date().toISOString(), endsAt: expiresAt.toISOString(),
       usageLimit: 1, appliesOncePerCustomer: true, customerSelection: { all: true },
-      customerBuys: { items: { collections: { add: WINBACK.buysCollections } }, value: { quantity: "1" } },
-      customerGets: { items: { products: { productsToAdd: GETS_PRODUCTS } }, value: { discountOnQuantity: { quantity: "4", effect: { percentage: 1.0 } } } },
+      customerBuys: { items: { collections: { add: preset.buysCollections } }, value: { quantity: "1" } },
+      customerGets: { items: { products: { productsToAdd: [...preset.gifts.map(g => g.productGid), ...(preset.extraGets || [])] } }, value: { discountOnQuantity: { quantity: String(preset.gifts.length), effect: { percentage: 1.0 } } } },
       combinesWith: { orderDiscounts: false, productDiscounts: true, shippingDiscounts: true },
     } });
   const gid = j?.data?.discountCodeBxgyCreate?.codeDiscountNode?.id;
@@ -137,18 +150,20 @@ const REPLY_TO = "support@uppababy.com.au";
 const fmtDate = (d: Date) => d.toLocaleDateString("en-AU", { day: "numeric", month: "long", timeZone: "Australia/Melbourne" });
 
 /** Cart permalink that rebuilds the bag, adds every gift and applies the code. */
-export function permalink(c: Checkout, code: string) {
-  const items = c.lines.map(l => `${l.variantId}:${l.qty}`).concat(GIFTS.map(g => `${g.variantId}:1`)).join(",");
+export function permalink(c: Checkout, code: string, preset: Preset = PRESETS[0]) {
+  const items = c.lines.map(l => `${l.variantId}:${l.qty}`).concat(preset.gifts.map(g => `${g.variantId}:1`)).join(",");
   return `https://uppababy.com.au/cart/${items}?discount=${encodeURIComponent(code)}`;
 }
 
-export async function sendWinbackEmail(c: Checkout, code: string, expiresAt: Date) {
+export async function sendWinbackEmail(c: Checkout, code: string, expiresAt: Date, preset: Preset = PRESETS[0]) {
+  const gifts = preset.gifts; const n = gifts.length;
+  const giftWord = n === 1 ? gifts[0].name : `${n === 4 ? "four" : n === 2 ? "two" : n === 3 ? "three" : n} accessories`;
   const key = process.env.RESEND_API_KEY;
   if (!key) return { ok: false, error: "RESEND_API_KEY not configured" };
   const base = process.env.NEXT_PUBLIC_SITE_URL || "https://marketing.coolkidz.com.au";
-  const pram = c.lines.find(l => WINBACK.pramMatch(l.handle));
-  const pramName = pram ? (/vista/.test(pram.handle) ? "Vista V3" : "Cruz V3") : "pram";
-  const gifts = GIFTS.map(g => `
+  const pram = c.lines.find(l => preset.qualifies(l));
+  const pramName = pram ? preset.pramLabel(pram.handle) : "pram";
+  const giftRows = gifts.map(g => `
     <tr><td style="padding:0 0 8px">
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border:1px solid #E4E1DC;border-radius:12px;background:#FFFFFF">
         <tr>
@@ -158,8 +173,8 @@ export async function sendWinbackEmail(c: Checkout, code: string, expiresAt: Dat
         </tr>
       </table>
     </td></tr>`).join("");
-  const total = GIFTS.reduce((s, g) => s + Number(g.price), 0);
-  const link = permalink(c, code);
+  const total = gifts.reduce((s, g) => s + Number(g.price), 0);
+  const link = permalink(c, code, preset);
   const html = `<!doctype html><html><body style="margin:0;padding:0;background:#F3F2F0">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F3F2F0"><tr><td align="center" style="padding:28px 12px">
 <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;width:100%;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;color:#33404F">
@@ -168,25 +183,25 @@ export async function sendWinbackEmail(c: Checkout, code: string, expiresAt: Dat
   </td></tr>
   <tr><td style="background:#FFFFFF;padding:38px 40px 10px">
     <div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#7A8798;font-weight:600">Still in your bag</div>
-    <h1 style="font-size:28px;line-height:1.15;font-weight:400;letter-spacing:-.02em;color:#141C26;margin:12px 0 14px">Your ${esc(pramName)} is waiting, ${esc(c.firstName)}. We have added $${Math.round(total)} of accessories, free.</h1>
-    <p style="font-size:15px;line-height:1.65;color:#5B6774;margin:0 0 8px">You left a ${esc(pramName)} at the checkout earlier this month. Finish the order and all four of these come with it at no charge. One click rebuilds your bag with the four in it and the code applied.</p>
+    <h1 style="font-size:28px;line-height:1.15;font-weight:400;letter-spacing:-.02em;color:#141C26;margin:12px 0 14px">Your ${esc(pramName)} is waiting, ${esc(c.firstName)}. We have added ${n === 1 ? `a ${esc(gifts[0].name)}` : `$${Math.round(total)} of accessories`}, free.</h1>
+    <p style="font-size:15px;line-height:1.65;color:#5B6774;margin:0 0 8px">You left a ${esc(pramName)} at the checkout earlier this month. Finish the order and ${n === 1 ? "it comes with the pram at no charge" : `all ${giftWord} come with it at no charge`}. One click rebuilds your bag with ${n === 1 ? "it" : "them"} in it and the code applied.</p>
     <p style="font-size:13px;line-height:1.6;color:#98A2B0;margin:0">In your bag: ${esc(c.summary)}</p>
   </td></tr>
   <tr><td style="background:#FFFFFF;padding:18px 40px 6px">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">${gifts}</table>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">${giftRows}</table>
   </td></tr>
   <tr><td align="center" style="background:#FFFFFF;padding:14px 40px 26px">
-    <a href="${link}" style="display:inline-block;background:#3B4C5E;color:#FFFFFF;text-decoration:none;font-weight:600;font-size:15px;padding:15px 34px;border-radius:999px">Finish my order with the four gifts</a>
-    <div style="font-size:12.5px;color:#98A2B0;margin-top:12px">Rebuilds your bag, adds all four and applies the code.</div>
+    <a href="${link}" style="display:inline-block;background:#3B4C5E;color:#FFFFFF;text-decoration:none;font-weight:600;font-size:15px;padding:15px 34px;border-radius:999px">Finish my order with the ${n === 1 ? "gift" : "gifts"}</a>
+    <div style="font-size:12.5px;color:#98A2B0;margin-top:12px">Rebuilds your bag, adds ${n === 1 ? "it" : "them"} and applies the code.</div>
   </td></tr>
   <tr><td style="background:#FFFFFF;padding:0 40px 34px;border-radius:0 0 14px 14px">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="border:2px dashed #D9D5CE;border-radius:12px;background:#FAF9F7;padding:16px 18px">
       <div style="font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#7A8798;font-weight:600">Or use this code at checkout</div>
       <div style="font-size:24px;font-weight:700;letter-spacing:.12em;color:#141C26;margin:6px 0 6px;font-family:'SF Mono',Menlo,Consolas,'Courier New',monospace">${esc(code)}</div>
-      <div style="font-size:12.5px;color:#5B6774;line-height:1.5">Add the pram and the four accessories to your bag, enter the code, and the accessories drop to $0.<br>Valid until ${fmtDate(expiresAt)}, one use.</div>
+      <div style="font-size:12.5px;color:#5B6774;line-height:1.5">Add the pram and ${n === 1 ? "the " + esc(gifts[0].name) : "the " + giftWord} to your bag, enter the code, and ${n === 1 ? "it drops" : "they drop"} to $0.<br>Valid until ${fmtDate(expiresAt)}, one use.</div>
     </td></tr></table>
     <p style="font-size:13px;line-height:1.6;color:#5B6774;margin:20px 0 0">Prefer the bag exactly as you left it? <a href="${c.url}" style="color:#3B4C5E;font-weight:600">Return to your checkout</a> and add the accessories there. Questions about which pram, what fits or delivery: reply to this email and the UPPAbaby Australia team will help.</p>
-    <p style="font-size:11.5px;line-height:1.6;color:#98A2B0;margin:18px 0 0">Free delivery over $99, a three year warranty and Lifetime Service Support on every pram. The free accessories apply to one Vista V3 or Cruz V3 order, cannot be exchanged for cash and are not available with other codes.</p>
+    <p style="font-size:11.5px;line-height:1.6;color:#98A2B0;margin:18px 0 0">Free delivery over $99, a three year warranty and Lifetime Service Support on every pram. The free ${n === 1 ? "accessory applies" : "accessories apply"} to one ${esc(pramName)} order, cannot be exchanged for cash and ${n === 1 ? "is" : "are"} not available with other codes.</p>
   </td></tr>
   <tr><td align="center" style="padding:22px 20px 0">
     <p style="color:#98A2B0;font-size:11px;line-height:1.7;margin:0">You are receiving this because you started a checkout at uppababy.com.au. This is a one-off note about that bag.<br>UPPAbaby is distributed in Australia by Coolkidz Australia Pty Ltd, 1 Beyer Road, Braeside, Victoria 3195</p>
@@ -195,7 +210,7 @@ export async function sendWinbackEmail(c: Checkout, code: string, expiresAt: Dat
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", "User-Agent": "coolkidz-dashboard/1.0" },
-    body: JSON.stringify({ from: FROM, reply_to: REPLY_TO, to: [c.email], subject: `Your ${pramName} is still in your bag, ${c.firstName}. Four accessories on us.`, html }),
+    body: JSON.stringify({ from: FROM, reply_to: REPLY_TO, to: [c.email], subject: n === 1 ? `Your ${pramName} is still in your bag, ${c.firstName}. A ${gifts[0].name} on us.` : `Your ${pramName} is still in your bag, ${c.firstName}. Four accessories on us.`, html }),
   }).catch(() => null);
   if (!res?.ok) return { ok: false, error: res ? (await res.text()).slice(0, 200) : "network" };
   return { ok: true };
