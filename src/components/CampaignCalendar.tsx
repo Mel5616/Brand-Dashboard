@@ -359,7 +359,7 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
     const brand = brands.find(b => b.name === item.brand) ?? brands.find(b => item.brand.includes(b.name));
     if (!brand) { setLinkError(`Couldn't match "${item.brand}" to a single brand to send an EDM from.`); return; }
     setLinkBusy("edm"); setLinkError(null);
-    const res = await fetch("/api/edm-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief: campaignBrief(item) }) }).then(r => r.json()).catch(() => null);
+    const res = await fetch("/api/edm-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief: campaignBrief(item), campaign_id: item.id, campaign_name: item.campaign }) }).then(r => r.json()).catch(() => null);
     setLinkBusy(null);
     if (res?.ok) onStartEdm?.(res.item.id);
     else setLinkError(res?.error || "Couldn't start an EDM draft for that brand.");
@@ -385,6 +385,7 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
         import: true, brand_id: brand.id, subject, preview_text: em.preview || null,
         body_html: htmlFromPlainBody(em.body || ""), scheduled_for: DATE_RE.test(em.sendDate || "") ? em.sendDate : null,
         brief: `From campaign: ${item.campaign}${em.segment ? ` — segment: ${em.segment}` : ""}`,
+        campaign_id: item.id, campaign_name: item.campaign,
       }),
     }).then(r => r.json()).catch(() => null);
     setLinkBusy(null);
@@ -416,7 +417,7 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
       let edmOk = 0;
       for (let i = 0; i < dates.length; i++) {
         setKitStep(`Writing EDM ${i + 1} of ${dates.length}… (30–60s each)`);
-        const r = await fetch("/api/edm-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief, scheduled_for: dates[i] }) }).then(r2 => r2.json()).catch(() => null);
+        const r = await fetch("/api/edm-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief, scheduled_for: dates[i], campaign_id: item.id, campaign_name: item.campaign }) }).then(r2 => r2.json()).catch(() => null);
         if (r?.ok) edmOk++;
       }
       results.push({ label: `EDM sends (${edmOk}/${dates.length})`, ok: edmOk > 0, note: edmOk < dates.length ? "one or more failed — check Email Writing" : undefined });

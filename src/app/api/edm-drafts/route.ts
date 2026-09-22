@@ -132,6 +132,11 @@ export async function POST(req: Request) {
   if (!canWrite(acc)) return NextResponse.json({ ok: false, error: "No access" }, { status: 403 });
   if (!process.env.ANTHROPIC_API_KEY) return NextResponse.json({ ok: false, error: "ANTHROPIC_API_KEY not configured" }, { status: 500 });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
+  // Links this draft back to the campaign it belongs to (see
+  // supabase/add_edm_drafts_campaign_link.sql) — how a multi-email series
+  // (Generate campaign kit's 3 EDMs, or Send to Email Planner) shows as a
+  // connected set instead of unrelated one-off drafts.
+  const campaignFields = b.campaign_id ? { campaign_id: String(b.campaign_id), campaign_name: b.campaign_name ? String(b.campaign_name).slice(0, 200) : null } : {};
 
   // Campaigns' "Send to Email Planner →" — the email was already written by
   // hand in the campaign brief (brief.emails[]), so import it as-is (status
@@ -148,6 +153,7 @@ export async function POST(req: Request) {
       scheduled_for: b.scheduled_for ? String(b.scheduled_for) : null,
       brief: b.brief ? String(b.brief).trim() : null,
       created_by: acc.user?.email ?? null,
+      ...campaignFields,
     };
     const res = await fetch(`${sbUrl}/rest/v1/edm_drafts`, { method: "POST", headers: h({ Prefer: "return=representation" }), body: JSON.stringify(row) });
     const text = await res.text();
@@ -162,7 +168,7 @@ export async function POST(req: Request) {
     const brandId = Number(b.brand_id);
     const brief = String(b.brief || "").trim();
     if (!brandId || !brief) return NextResponse.json({ ok: false, error: "A brand and a brief are required" }, { status: 400 });
-    const row = { brand_id: brandId, status: "planned", brief, scheduled_for: b.scheduled_for ? String(b.scheduled_for) : null, created_by: acc.user?.email ?? null };
+    const row = { brand_id: brandId, status: "planned", brief, scheduled_for: b.scheduled_for ? String(b.scheduled_for) : null, created_by: acc.user?.email ?? null, ...campaignFields };
     const res = await fetch(`${sbUrl}/rest/v1/edm_drafts`, { method: "POST", headers: h({ Prefer: "return=representation" }), body: JSON.stringify(row) });
     const text = await res.text();
     if (!res.ok) return NextResponse.json({ ok: false, needsSetup: missing(res.status, text), error: text.slice(0, 200) }, { status: 500 });
@@ -227,6 +233,7 @@ Write it now, in the exact format specified.`;
     scheduled_for: scheduledFor,
     image_url: sourceImageUrl || brandImages[0]?.url || null,
     brief, created_by: acc.user?.email ?? null,
+    ...campaignFields,
   };
   if (!row.subject || !row.body_html) return NextResponse.json({ ok: false, error: "AI response was missing a subject or body — try again" }, { status: 502 });
 

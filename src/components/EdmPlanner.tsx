@@ -13,6 +13,7 @@ type Draft = {
   id: string; brand_id: number; status: "planned" | "draft" | "sent" | "rejected";
   subject: string; preview_text: string | null; brief: string | null;
   scheduled_for: string | null; created_at: string;
+  campaign_id: string | null; campaign_name: string | null;
 };
 type Brand = { id: number; name: string; color: string; live: boolean };
 
@@ -182,6 +183,21 @@ export function EdmPlanner({ brands, onOpenInStudio }: { brands: Brand[]; onOpen
               <input type="date" value={open.scheduled_for ?? ""} onChange={e => moveDate(open.id, e.target.value || null)}
                 className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400" />
             </div>
+            {open.campaign_id && (
+              <div className="mt-3">
+                <label className="text-[11px] font-semibold text-fuchsia-600 uppercase tracking-wide">🔗 Part of {open.campaign_name ?? "a series"}</label>
+                <div className="mt-1 space-y-1">
+                  {items.filter(i => i.campaign_id === open.campaign_id).sort((a, b) => (a.scheduled_for ?? "9999").localeCompare(b.scheduled_for ?? "9999")).map(sib => (
+                    <button key={sib.id} onClick={() => setOpenId(sib.id)}
+                      className={`w-full text-left flex items-center gap-2 text-xs rounded-lg px-2 py-1.5 ${sib.id === open.id ? "bg-fuchsia-50 text-fuchsia-700 font-semibold" : "text-gray-500 hover:bg-gray-50"}`}>
+                      <span className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full shrink-0`} style={{ color: statusMeta(sib.status).dot, background: `${statusMeta(sib.status).dot}18` }}>{statusMeta(sib.status).label}</span>
+                      <span className="truncate">{sib.subject || sib.brief || "Untitled"}</span>
+                      {sib.scheduled_for && <span className="ml-auto text-gray-400 shrink-0">{fmtD(sib.scheduled_for)}</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="flex items-center gap-2 mt-5">
               <button onClick={() => onOpenInStudio(open.id)} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2">
                 {open.status === "planned" ? "Write this in Email Writing →" : "Open in Email Writing →"}
@@ -242,6 +258,7 @@ function DraftCard({ it, colorOf, brandOf, onClick }: { it: Draft; colorOf: (id:
       </div>
       <p className="text-xs text-slate-700 font-medium leading-snug">{it.subject || it.brief || "Untitled"}</p>
       {it.scheduled_for && <span className="text-[10px] text-gray-400 mt-1 block">{fmtD(it.scheduled_for)}</span>}
+      {it.campaign_id && <span className="text-[9px] font-semibold text-fuchsia-500 mt-0.5 block truncate">🔗 {it.campaign_name ?? "part of a series"}</span>}
     </button>
   );
 }

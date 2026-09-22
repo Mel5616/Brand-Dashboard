@@ -13,6 +13,7 @@ type Draft = {
   subject: string; preview_text: string | null; body_html: string;
   brief: string | null; note: string | null; scheduled_for: string | null; image_url: string | null;
   klaviyo_campaign_id: string | null; published_url: string | null;
+  campaign_id: string | null; campaign_name: string | null;
   created_by: string | null; approved_by: string | null; published_at: string | null; created_at: string;
 };
 
@@ -36,6 +37,7 @@ export function EmailStudio({ brands, admin, openDraftId, onOpened }: { brands: 
   const [openId, setOpenId] = useState<string | null>(null);
   const [edit, setEdit] = useState<Partial<Draft>>({});
   const [statusF, setStatusF] = useState<"all" | Draft["status"]>("draft");
+  const [seriesFilter, setSeriesFilter] = useState<string | null>(null);
 
   const voiceBrands = useMemo(() => brands.filter(b => voices[b.name]), [brands, voices]);
   const [form, setForm] = useState({ brand_name: "", brief: "", scheduled_for: "", image_url: "" });
@@ -173,8 +175,9 @@ export function EmailStudio({ brands, admin, openDraftId, onOpened }: { brands: 
     load();
   }
 
-  const rows = items.filter(i => statusF === "all" || i.status === statusF)
-    .sort((a, b) => statusF === "planned" ? (a.scheduled_for || "9999").localeCompare(b.scheduled_for || "9999") : 0);
+  const rows = items.filter(i => seriesFilter ? i.campaign_id === seriesFilter : (statusF === "all" || i.status === statusF))
+    .sort((a, b) => (a.scheduled_for || "9999").localeCompare(b.scheduled_for || "9999") || a.created_at.localeCompare(b.created_at));
+  const seriesCount = (campaignId: string) => items.filter(i => i.campaign_id === campaignId).length;
 
   if (loading) return <p className="text-sm text-slate-400 py-8 text-center">Loading…</p>;
   if (needsSetup) {
@@ -233,12 +236,18 @@ export function EmailStudio({ brands, admin, openDraftId, onOpened }: { brands: 
         {!voiceBrands.length && <p className="text-xs text-amber-600 mt-2">No brand voice guides are wired up yet.</p>}
       </div>
 
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
         {(["planned", "draft", "sent", "rejected", "all"] as const).map(s => (
           <button key={s} onClick={() => setStatusF(s)} className={`text-xs font-semibold rounded-full px-3 py-1.5 ${statusF === s ? "bg-slate-800 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
             {s === "all" ? "All" : STATUS_META[s].label} ({s === "all" ? items.length : items.filter(i => i.status === s).length})
           </button>
         ))}
+        {seriesFilter && (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-fuchsia-700 bg-fuchsia-50 border border-fuchsia-200 rounded-full px-3 py-1.5">
+            Series: {items.find(i => i.campaign_id === seriesFilter)?.campaign_name ?? "campaign"}
+            <button onClick={() => setSeriesFilter(null)} className="text-fuchsia-400 hover:text-fuchsia-700">✕</button>
+          </span>
+        )}
       </div>
 
       {rows.length === 0 ? (
@@ -256,6 +265,14 @@ export function EmailStudio({ brands, admin, openDraftId, onOpened }: { brands: 
                     <p className="text-sm font-semibold text-slate-700 truncate">{d.subject}</p>
                     <p className="text-[12px] text-gray-400 truncate">
                       {brand?.name ?? "—"} · {d.status === "planned" && d.scheduled_for ? <span className="font-semibold text-sky-600">Suggested {fmtD(d.scheduled_for)}</span> : fmtD(d.created_at)}
+                      {d.campaign_id && (
+                        <>
+                          {" · "}
+                          <button onClick={e => { e.stopPropagation(); setSeriesFilter(d.campaign_id); }} className="font-semibold text-fuchsia-600 hover:text-fuchsia-800 hover:underline">
+                            Part of {d.campaign_name ?? "a campaign"} ({seriesCount(d.campaign_id)})
+                          </button>
+                        </>
+                      )}
                     </p>
                   </div>
                   {d.status === "planned" && <button onClick={e => { e.stopPropagation(); useThisBrief(d); }} className="text-xs font-semibold text-emerald-600 border border-emerald-200 rounded-lg px-3 py-1.5 hover:bg-emerald-50 shrink-0">Use this brief ↑</button>}
