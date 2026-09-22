@@ -116,6 +116,8 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
   const [aiVersion, setAiVersion] = useState(0);
   const [linkBusy, setLinkBusy] = useState<"blog" | "edm" | null>(null);
   const [linkError, setLinkError] = useState<string | null>(null);
+  const [kitBusy, setKitBusy] = useState(false);
+  const [kitResults, setKitResults] = useState<{ label: string; ok: boolean; note?: string }[] | null>(null);
   const imgRef = useRef<HTMLInputElement>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<string | null>(null);
@@ -298,6 +300,45 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
     setLinkBusy(null);
     if (res?.ok) onSendToPlanner?.();
     else setLinkError(res?.error || "Couldn't send that email to the planner.");
+  }
+  const addDays = (iso: string, n: number) => { const d = parseDate(iso); if (!d) return null; d.setDate(d.getDate() + n); return isoDate(d); };
+  // "Generate campaign kit" — one click for a blank campaign: drafts the
+  // blog post, proposes 3 EDM sends spread across the campaign window (only
+  // when brief.emails is still empty — a campaign with hand-written emails
+  // already uses "Send to Email Planner →" per email instead), and files a
+  // Website Request ticket if the channel/note points at a build. Every step
+  // is independent and reported separately — one failing doesn't block the rest.
+  async function generateKit(item: Campaign) {
+    const brand = brands.find(b => b.name === item.brand) ?? brands.find(b => item.brand.includes(b.name));
+    if (!brand) { setKitResults([{ label: "Setup", ok: false, note: `Couldn't match "${item.brand}" to a single brand.` }]); return; }
+    setKitBusy(true); setKitResults(null);
+    const brief = campaignBrief(item);
+    const results: { label: string; ok: boolean; note?: string }[] = [];
+
+    const blogRes = await fetch("/api/blog-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_name: brand.name, brief }) }).then(r => r.json()).catch(() => null);
+    results.push({ label: "Blog draft", ok: !!blogRes?.ok, note: blogRes?.ok ? undefined : (blogRes?.error || "failed") });
+
+    const existingEmails: EmailDraft[] = (item.brief as any)?.emails ?? [];
+    if (existingEmails.length === 0) {
+      const base = item.key_date && parseDate(item.key_date) ? item.key_date : isoDate(new Date());
+      const dates = [base, addDays(base, 7), addDays(base, 14)].filter(Boolean) as string[];
+      let edmOk = 0;
+      for (const scheduled_for of dates) {
+        const r = await fetch("/api/edm-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief, scheduled_for }) }).then(r2 => r2.json()).catch(() => null);
+        if (r?.ok) edmOk++;
+      }
+      results.push({ label: `EDM sends (${edmOk}/${dates.length})`, ok: edmOk > 0, note: edmOk < dates.length ? "one or more failed — check Email Writing" : undefined });
+    } else {
+      results.push({ label: "EDM sends", ok: true, note: "skipped — this campaign already has hand-written email drafts, use Send to Email Planner instead" });
+    }
+
+    const needsWebsite = /website|landing page|configurator|shopify|d2c/i.test(`${item.channel} ${item.note}`);
+    if (needsWebsite) {
+      const wr = await fetch("/api/website-requests", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand: item.brand, description: `Build/landing page needed for campaign "${item.campaign}": ${item.note}`.slice(0, 2000), change_type: "new_page", priority: "normal" }) }).then(r => r.json()).catch(() => null);
+      results.push({ label: "Website Request ticket", ok: !!wr?.ok, note: wr?.ok ? undefined : (wr?.error || "failed") });
+    }
+
+    setKitBusy(false); setKitResults(results);
   }
   // Channels checklist toggles save immediately (no debounce — checkboxes don't lose focus).
   function toggleChannel(item: Campaign, opt: string) {
@@ -867,6 +908,13 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
               {linkError && (
                 <p role="alert" className="no-print text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mt-4">{linkError}</p>
               )}
+              {kitResults && (
+                <div className="no-print text-[13px] space-y-0.5 mt-4 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+                  {kitResults.map((r, i) => (
+                    <p key={i} className={r.ok ? "text-emerald-700" : "text-rose-600"}>{r.ok ? "✓" : "✗"} {r.label}{r.note ? ` — ${r.note}` : ""}</p>
+                  ))}
+                </div>
+              )}
               <div className="no-print flex flex-wrap gap-2 mt-5 pt-4 border-t border-gray-100">
                 {parseDate(open.key_date) && (
                   <>
@@ -878,6 +926,10 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
                   </>
                 )}
                 {canEdit && <>
+                  <button onClick={() => generateKit(open)} disabled={kitBusy} title="Drafts the blog post, proposes 3 EDM sends, and files a Website Request if the brief points at a build"
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg px-3.5 py-1.5 transition disabled:opacity-60 motion-reduce:transition-none">
+                    ✨ {kitBusy ? "Generating kit…" : "Generate campaign kit"}
+                  </button>
                   <button onClick={() => startBlog(open)} disabled={linkBusy === "blog"} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg px-3.5 py-1.5 transition disabled:opacity-60 motion-reduce:transition-none">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15.828H9v-2.828l8.586-8.586zM3 8l7 5" /></svg>
                     {linkBusy === "blog" ? "Starting…" : "Start blog →"}
