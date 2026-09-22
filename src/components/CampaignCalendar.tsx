@@ -96,7 +96,7 @@ const isFlagged = (v: string) => /^\s*(high|check)/i.test(v || "");
 
 const jsonHeaders = { "Content-Type": "application/json" };
 
-export function CampaignCalendar({ canEdit = false, brands = [] }: { canEdit?: boolean; brands?: { id: number; name: string }[] }) {
+export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, onStartEdm }: { canEdit?: boolean; brands?: { id: number; name: string }[]; onStartBlog?: (draftId: string) => void; onStartEdm?: (draftId: string) => void }) {
   const [view, setView] = useState<"roadmap" | "sends" | "bf" | "promos">("roadmap");
   const [items, setItems] = useState<Campaign[]>([]);
   const [maint, setMaint] = useState<Maint[]>([]);
@@ -111,6 +111,11 @@ export function CampaignCalendar({ canEdit = false, brands = [] }: { canEdit?: b
   const [showCompleted, setShowCompleted] = useState(false);
   const [imgBusy, setImgBusy] = useState(false);
   const [emailCopied, setEmailCopied] = useState<number | null>(null);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiVersion, setAiVersion] = useState(0);
+  const [linkBusy, setLinkBusy] = useState<"blog" | "edm" | null>(null);
+  const [linkError, setLinkError] = useState<string | null>(null);
   const imgRef = useRef<HTMLInputElement>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<string | null>(null);
@@ -228,6 +233,44 @@ export function CampaignCalendar({ canEdit = false, brands = [] }: { canEdit?: b
     const cur = { ...(briefDraft.current[item.id] ?? (item.brief as any) ?? {}), [fieldKey]: value };
     briefDraft.current[item.id] = cur;
     setItems(prev => prev.map(it => (it.id === item.id ? { ...it, brief: { ...cur } } : it)));
+  }
+  // Draft the blank narrative fields with Claude from the card note — only
+  // fills what's empty, never touches a field that already has content. The
+  // brief textareas are uncontrolled (defaultValue), so bump aiVersion into
+  // their key to force a remount once the fill lands.
+  async function draftBriefWithAI(item: Campaign) {
+    setAiBusy(true); setAiError(null);
+    const res = await fetch(`/api/campaigns/${item.id}/draft`, { method: "POST" }).then(r => r.json()).catch(() => null);
+    setAiBusy(false);
+    if (res?.ok) {
+      briefDraft.current[item.id] = res.item.brief;
+      setItems(prev => prev.map(it => (it.id === item.id ? { ...it, brief: res.item.brief } : it)));
+      setAiVersion(v => v + 1);
+    } else setAiError(res?.error || "Couldn't draft that — try again.");
+  }
+  // "Start blog →" / "Start EDM →" — generates a real draft in Blog Writing /
+  // Email Writing from this campaign's one-liner + objective, then the parent
+  // switches tabs and opens it (same hand-off Blog Writing already uses for
+  // "Send as EDM →": see BlogStudio's onSendAsEdm / EmailStudio's openDraftId).
+  function campaignBrief(item: Campaign): string {
+    const b = item.brief as any;
+    return [b?.oneLiner, b?.objective].filter(Boolean).join(" — ") || item.note || item.campaign;
+  }
+  async function startBlog(item: Campaign) {
+    setLinkBusy("blog"); setLinkError(null);
+    const res = await fetch("/api/blog-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_name: item.brand, brief: campaignBrief(item) }) }).then(r => r.json()).catch(() => null);
+    setLinkBusy(null);
+    if (res?.ok) onStartBlog?.(res.item.id);
+    else setLinkError(res?.error || "Couldn't start a blog draft for that brand.");
+  }
+  async function startEdm(item: Campaign) {
+    const brand = brands.find(b => b.name === item.brand) ?? brands.find(b => item.brand.includes(b.name));
+    if (!brand) { setLinkError(`Couldn't match "${item.brand}" to a single brand to send an EDM from.`); return; }
+    setLinkBusy("edm"); setLinkError(null);
+    const res = await fetch("/api/edm-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief: campaignBrief(item) }) }).then(r => r.json()).catch(() => null);
+    setLinkBusy(null);
+    if (res?.ok) onStartEdm?.(res.item.id);
+    else setLinkError(res?.error || "Couldn't start an EDM draft for that brand.");
   }
   // Channels checklist toggles save immediately (no debounce — checkboxes don't lose focus).
   function toggleChannel(item: Campaign, opt: string) {
@@ -674,6 +717,16 @@ export function CampaignCalendar({ canEdit = false, brands = [] }: { canEdit?: b
 
               {/* Brief body */}
               <div className="space-y-3 border-t border-gray-100 pt-4">
+                {canEdit && (
+                  <div className="no-print flex items-center gap-2">
+                    <button onClick={() => draftBriefWithAI(open)} disabled={aiBusy || !open.note?.trim()}
+                      title={!open.note?.trim() ? "Add a card note first" : "Fill any blank fields below from the card note"}
+                      className="text-[13px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 rounded-lg px-3 py-1.5 disabled:opacity-40 transition">
+                      {aiBusy ? "✨ Drafting…" : "✨ Draft blank fields with AI"}
+                    </button>
+                    {aiError && <p className="text-xs text-rose-500">{aiError}</p>}
+                  </div>
+                )}
                 {BRIEF_FIELDS.map(f => {
                   const val = open.brief?.[f.key] ?? "";
                   const guard = GUARD.has(f.key);
@@ -695,7 +748,7 @@ export function CampaignCalendar({ canEdit = false, brands = [] }: { canEdit?: b
                         </div>
                       ) : (
                         <textarea
-                          key={open.id + f.key}
+                          key={open.id + f.key + aiVersion}
                           aria-label={f.label} readOnly={ro} defaultValue={val} rows={f.key === "offerMechanic" ? 4 : 2}
                           placeholder={`Add the ${f.label.toLowerCase()}`}
                           onChange={e => saveBrief(open, f.key, e.target.value)} onBlur={e => commitBrief(open, f.key, e.target.value)}
@@ -777,6 +830,9 @@ export function CampaignCalendar({ canEdit = false, brands = [] }: { canEdit?: b
               {asanaError && (
                 <p role="alert" className="no-print text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mt-4">{asanaError}</p>
               )}
+              {linkError && (
+                <p role="alert" className="no-print text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mt-4">{linkError}</p>
+              )}
               <div className="no-print flex flex-wrap gap-2 mt-5 pt-4 border-t border-gray-100">
                 {parseDate(open.key_date) && (
                   <>
@@ -788,6 +844,14 @@ export function CampaignCalendar({ canEdit = false, brands = [] }: { canEdit?: b
                   </>
                 )}
                 {canEdit && <>
+                  <button onClick={() => startBlog(open)} disabled={linkBusy === "blog"} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg px-3.5 py-1.5 transition disabled:opacity-60 motion-reduce:transition-none">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15.828H9v-2.828l8.586-8.586zM3 8l7 5" /></svg>
+                    {linkBusy === "blog" ? "Starting…" : "Start blog →"}
+                  </button>
+                  <button onClick={() => startEdm(open)} disabled={linkBusy === "edm"} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-fuchsia-500 hover:bg-fuchsia-600 rounded-lg px-3.5 py-1.5 transition disabled:opacity-60 motion-reduce:transition-none">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                    {linkBusy === "edm" ? "Starting…" : "Start EDM →"}
+                  </button>
                   <button onClick={() => pushToAsana(open)} disabled={asanaBusy} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-[#F06A6A] hover:bg-[#e05555] rounded-lg px-3.5 py-1.5 transition disabled:opacity-60 motion-reduce:transition-none">
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="18" cy="7" r="4" /><circle cx="6" cy="7" r="4" /><circle cx="12" cy="16" r="4" /></svg>
                     {asanaBusy ? "Pushing…" : open.asana_task_gid ? "Update Asana task" : "Push to Asana"}

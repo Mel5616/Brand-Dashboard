@@ -26,7 +26,7 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
   rejected: { label: "Rejected", cls: "bg-gray-100 text-gray-400" },
 };
 
-export function BlogStudio({ brands, admin, onSendAsEdm }: { brands: { id: number; name: string }[]; admin: boolean; onSendAsEdm?: (edmDraftId: string) => void }) {
+export function BlogStudio({ brands, admin, onSendAsEdm, openDraftId, onOpened }: { brands: { id: number; name: string }[]; admin: boolean; onSendAsEdm?: (edmDraftId: string) => void; openDraftId?: string | null; onOpened?: () => void }) {
   const [items, setItems] = useState<Draft[]>([]);
   const [voices, setVoices] = useState<VoiceMap>({});
   const [loading, setLoading] = useState(true);
@@ -55,6 +55,15 @@ export function BlogStudio({ brands, admin, onSendAsEdm }: { brands: { id: numbe
   useEffect(() => {
     if (!form.brand_name && voiceBrands.length) setForm(p => ({ ...p, brand_name: voiceBrands[0].name, blog_key: voices[voiceBrands[0].name]?.blogs[0]?.key || "" }));
   }, [voiceBrands, voices]);
+
+  // Jumped here from "Start a blog →" on a Campaign card — open that new
+  // draft as soon as it shows up in the loaded list, then clear the pending id.
+  useEffect(() => {
+    if (!openDraftId) return;
+    const d = items.find(i => i.id === openDraftId);
+    if (!d) return;
+    setStatusF(d.status); setOpenId(d.id); setEdit(d); onOpened?.();
+  }, [openDraftId, items]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const brandBlogs = voices[form.brand_name]?.blogs ?? [];
   const brandOf = (id: number) => brands.find(b => b.id === id);

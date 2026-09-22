@@ -665,6 +665,8 @@ export function DashboardTabs({
   // "Send as EDM →" in Blog Writing creates the draft then jumps here and
   // opens it — see BlogStudio's onSendAsEdm / EmailStudio's openDraftId.
   const [pendingEmailOpenId, setPendingEmailOpenId] = useState<string | null>(null);
+  // Same hand-off for "Start blog →" on a Campaign card.
+  const [pendingBlogOpenId, setPendingBlogOpenId] = useState<string | null>(null);
   // Deep-link support (?tab=sales-hub) — lets other pages (e.g. /command) link
   // straight to a specific section instead of dropping the user on the default tab.
   useEffect(() => {
@@ -1588,7 +1590,11 @@ export function DashboardTabs({
           )}
 
           {/* ── Campaign Calendar (portfolio Now/Next/Later roadmap) ── */}
-          {active === "campaign-calendar" && <CampaignCalendar canEdit={role === "admin"} brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} />}
+          {active === "campaign-calendar" && (
+            <CampaignCalendar canEdit={role === "admin"} brands={brands.map((b: any) => ({ id: b.id, name: b.name }))}
+              onStartBlog={id => { setPendingBlogOpenId(id); setActive("blog-pipeline"); }}
+              onStartEdm={id => { setPendingEmailOpenId(id); setActive("email-writing"); }} />
+          )}
 
           {active === "weekly-brief" && (
             <>
@@ -2562,7 +2568,8 @@ export function DashboardTabs({
           {active === "blog-pipeline" && (
             <>
               <SectionBar title="Blog Writing" />
-              <BlogStudio brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} admin={role === "admin"} onSendAsEdm={id => { setPendingEmailOpenId(id); setActive("email-writing"); }} />
+              <BlogStudio brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} admin={role === "admin"} onSendAsEdm={id => { setPendingEmailOpenId(id); setActive("email-writing"); }}
+                openDraftId={pendingBlogOpenId} onOpened={() => setPendingBlogOpenId(null)} />
             </>
           )}
 
