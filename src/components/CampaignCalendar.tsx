@@ -96,8 +96,95 @@ const isFlagged = (v: string) => /^\s*(high|check)/i.test(v || "");
 
 const jsonHeaders = { "Content-Type": "application/json" };
 
+// ── Timeline (Gantt) view ────────────────────────────────────────────────
+// Read-only visualisation, not a new source of truth: each discipline's
+// window is computed from the campaign's own key_date/end_date with fixed
+// lead/lag offsets, not stored anywhere. Matches the requirement fields
+// already on the brief (edmBrief, socialsBrief, paidBrief, designBrief) plus
+// the blog/EDM drafts "Generate campaign kit" already creates.
+const addDaysD = (d: Date, n: number) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const DISCIPLINES: { key: string; label: string; color: string; offset: (key: Date, end: Date) => [Date, Date] }[] = [
+  { key: "design", label: "Design", color: "#ec4899", offset: (key) => [addDaysD(key, -21), addDaysD(key, -1)] },
+  { key: "blog", label: "Blog", color: "#6366f1", offset: (key) => [addDaysD(key, -7), key] },
+  { key: "paid", label: "Google / Paid", color: "#f59e0b", offset: (key, end) => [key, end] },
+  { key: "social", label: "Social", color: "#0ea5e9", offset: (key, end) => [addDaysD(key, -3), end] },
+  { key: "edm", label: "EDM", color: "#d946ef", offset: (key, end) => [key, end] },
+];
+function disciplineRanges(item: Campaign) {
+  const key = parseDate(item.key_date) || new Date();
+  const end = parseDate(item.end_date ?? "") || addDaysD(key, 14);
+  return DISCIPLINES.map(d => { const [start, e] = d.offset(key, end); return { ...d, start, end: e < start ? start : e }; });
+}
+function TimelineGantt({ items, onOpen }: { items: Campaign[]; onOpen: (id: string) => void }) {
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const visible = items.filter(i => i.status !== "Completed" && parseDate(i.key_date)).sort((a, b) => (a.key_date || "").localeCompare(b.key_date || ""));
+  if (!visible.length) return <p className="text-sm text-gray-400 py-8 text-center bg-white rounded-2xl border border-gray-100">No upcoming campaigns with a start date set.</p>;
+
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const allDates = [today, ...visible.flatMap(c => disciplineRanges(c).flatMap(r => [r.start, r.end]))];
+  const rangeStart = new Date(Math.min(...allDates.map(d => d.getTime()))); rangeStart.setDate(1);
+  const rangeEndRaw = new Date(Math.max(...allDates.map(d => d.getTime())));
+  const rangeEnd = new Date(rangeEndRaw.getFullYear(), rangeEndRaw.getMonth() + 1, 0);
+  const totalMs = Math.max(1, rangeEnd.getTime() - rangeStart.getTime());
+  const pct = (d: Date) => Math.max(0, Math.min(100, ((d.getTime() - rangeStart.getTime()) / totalMs) * 100));
+
+  const months: { label: string; leftPct: number }[] = [];
+  for (let cur = new Date(rangeStart); cur <= rangeEnd; cur.setMonth(cur.getMonth() + 1)) {
+    months.push({ label: cur.toLocaleDateString("en-AU", { month: "short", year: "numeric" }), leftPct: pct(new Date(cur)) });
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 overflow-x-auto">
+      <div className="min-w-[900px]">
+        <div className="relative h-6 mb-2 border-b border-gray-100 ml-[15rem]">
+          {months.map(m => <div key={m.label} className="absolute top-0 text-[10px] font-semibold text-gray-400 uppercase tracking-wide" style={{ left: `${m.leftPct}%` }}>{m.label}</div>)}
+          <div className="absolute top-0 bottom-[-1px] w-px bg-emerald-400" style={{ left: `${pct(today)}%` }} title="Today" />
+        </div>
+        <div className="space-y-0.5">
+          {visible.map(c => {
+            const isOpen = expanded.has(c.id);
+            const ranges = disciplineRanges(c);
+            const rowStart = new Date(Math.min(...ranges.map(r => r.start.getTime())));
+            const rowEnd = new Date(Math.max(...ranges.map(r => r.end.getTime())));
+            return (
+              <div key={c.id} className="border-b border-gray-50 last:border-0 py-1.5">
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setExpanded(p => { const n = new Set(p); n.has(c.id) ? n.delete(c.id) : n.add(c.id); return n; })}
+                    className="text-gray-300 hover:text-slate-500 text-xs w-4 shrink-0">{isOpen ? "▾" : "▸"}</button>
+                  <button onClick={() => onOpen(c.id)} className="flex items-center gap-1.5 w-[13.5rem] shrink-0 text-left hover:underline">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: STATUS_COLOR[c.status] ?? "#9A9A9A" }} />
+                    <span className="text-xs font-medium text-slate-700 truncate">{c.brand} — {c.campaign}</span>
+                  </button>
+                  <span className="relative flex-1 h-4">
+                    <span className="absolute top-1 h-2 rounded-full bg-slate-200" style={{ left: `${pct(rowStart)}%`, width: `${Math.max(0.6, pct(rowEnd) - pct(rowStart))}%` }} />
+                  </span>
+                </div>
+                {isOpen && (
+                  <div className="mt-1 space-y-1">
+                    {ranges.map(r => (
+                      <div key={r.key} className="flex items-center gap-2">
+                        <span className="w-4 shrink-0" />
+                        <span className="text-[10px] text-gray-400 w-[13.5rem] shrink-0 truncate pl-1.5">{r.label}</span>
+                        <span className="relative flex-1 h-3">
+                          <span className="absolute top-0.5 h-2 rounded-full" style={{ left: `${pct(r.start)}%`, width: `${Math.max(0.6, pct(r.end) - pct(r.start))}%`, background: r.color }}
+                            title={`${r.label}: ${r.start.toLocaleDateString("en-AU", { day: "numeric", month: "short" })} – ${r.end.toLocaleDateString("en-AU", { day: "numeric", month: "short" })}`} />
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <p className="text-[11px] text-gray-300 mt-3">Auto-estimated from each campaign's key/end date, not editable here — open the campaign to adjust dates.</p>
+    </div>
+  );
+}
+
 export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, onStartEdm, onSendToPlanner }: { canEdit?: boolean; brands?: { id: number; name: string }[]; onStartBlog?: (draftId: string) => void; onStartEdm?: (draftId: string) => void; onSendToPlanner?: () => void }) {
-  const [view, setView] = useState<"roadmap" | "sends" | "bf" | "promos">("roadmap");
+  const [view, setView] = useState<"roadmap" | "timeline" | "sends" | "bf" | "promos">("roadmap");
   const [items, setItems] = useState<Campaign[]>([]);
   const [maint, setMaint] = useState<Maint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -576,7 +663,7 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
       </div>
 
       <div className="flex gap-1 mb-4 no-print">
-        {([["roadmap", "Roadmap"], ["sends", "Send Schedule"], ["bf", "Black Friday"], ["promos", "Live Promotions"]] as const).map(([id, label]) => (
+        {([["roadmap", "Roadmap"], ["timeline", "Timeline"], ["sends", "Send Schedule"], ["bf", "Black Friday"], ["promos", "Live Promotions"]] as const).map(([id, label]) => (
           <button
             key={id}
             onClick={() => setView(id)}
@@ -730,6 +817,7 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
       )}
       </>}
 
+      {view === "timeline" && <TimelineGantt items={items} onOpen={setOpenId} />}
       {view === "sends" && <SendSchedule canEdit={canEdit} />}
       {view === "bf" && <BlackFridayPlanner canEdit={canEdit} />}
       {view === "promos" && <LivePromotions canEdit={canEdit} brands={brands} />}
