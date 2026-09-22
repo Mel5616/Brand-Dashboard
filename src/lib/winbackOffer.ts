@@ -22,6 +22,9 @@ export const WINBACK = {
   // "vista-v3" and excluding "bassinet" threw out every "pram-with-bassinet"
   // cart on the first run, which was most of them.
   pramMatch: (handle: string) => /^uppababy-(vista|cruz)-v3-pram/.test(handle),
+  // Damaged box, ex-display and clearance prams do not earn the gift (Mel,
+  // 22 Sep 2026), same as the free Nappy Bag Pro.
+  runout: (title: string) => /damaged box|ex[- ]?display|clearance|outlet/i.test(title),
 };
 
 export type Gift = { key: string; name: string; line: string; productGid: string; variantId: string; price: string; img: string };
@@ -94,7 +97,7 @@ export async function candidates(from: string, to: string): Promise<Checkout[] |
     if (bought.has(email)) continue;
     const lines = (x.lineItems?.nodes || []).filter((l: Raw) => l.variant?.id).map((l: Raw) => ({
       title: String(l.title), qty: Number(l.quantity || 1), variantId: String(l.variant.id).split("/").pop()!, handle: String(l.variant.product?.handle || "") }));
-    if (!lines.some((l: { handle: string }) => WINBACK.pramMatch(l.handle))) continue;
+    if (!lines.some((l: { handle: string; title: string }) => WINBACK.pramMatch(l.handle) && !WINBACK.runout(l.title))) continue;
     byEmail.set(email, {
       id: x.id, createdAt: x.createdAt, url: x.abandonedCheckoutUrl, email,
       firstName: String(x.customer.firstName || "").trim() || "there",

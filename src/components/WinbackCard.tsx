@@ -59,7 +59,7 @@ export function WinbackCard({ admin }: { admin: boolean }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Win-back: four free accessories (UPPAbaby)</h2>
-          <p className="text-xs text-gray-400 mt-0.5">People who left a Vista V3 or Cruz V3 at checkout and have not ordered since. Each send creates a one-use code (Parent Organiser, Cup Holder, Reed liner and Snack Tray all free with the pram, {data?.config.days ?? 14} days) and emails a one-click link that rebuilds the bag with the four gifts.</p>
+          <p className="text-xs text-gray-400 mt-0.5">People who left a full-price Vista V3 or Cruz V3 at checkout (damaged box and clearance excluded) and have not ordered since. Each send creates a one-use code (Parent Organiser, Cup Holder, Reed liner and Snack Tray all free with the pram, {data?.config.days ?? 14} days) and emails a one-click link that rebuilds the bag with the four gifts.</p>
         </div>
         <div className="flex items-center gap-2">
           <input type="date" value={from} onChange={e => setFrom(e.target.value)} className={inp} />
