@@ -11,7 +11,15 @@ const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const h = (extra: Record<string, string> = {}) => ({ apikey: sbKey!, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json", ...extra });
 
-const DRAFT_FIELDS = ["oneLiner", "objective", "whyNow", "audience", "keyMessage", "offerMechanic", "do", "dont", "successMeasure", "compliance"] as const;
+const DRAFT_FIELDS = [
+  "oneLiner", "objective", "whyNow", "audience", "keyMessage", "offerMechanic", "do", "dont", "successMeasure", "compliance",
+  "edmBrief", "paidBrief", "socialsBrief", "designBrief", "retailBrief", "websiteBrief", "affiliateBrief", "creativeDirection",
+] as const;
+// These per-discipline fields feed straight into that team's Asana subtask
+// on "Push to Asana" — see src/app/api/campaigns/asana-push/route.ts — so
+// they need to be genuinely actionable instructions for that person, not a
+// restatement of the campaign summary.
+const AFFILIATE_BRANDS = new Set(["UPPAbaby", "Nanit"]);
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false, error: "Admins only" }, { status: 403 });
@@ -25,7 +33,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   if (!item.note?.trim()) return NextResponse.json({ ok: false, error: "Add a card note first — that's what the draft works from" }, { status: 400 });
 
   const existing: Record<string, string> = item.brief || {};
-  const blankFields = DRAFT_FIELDS.filter(k => !existing[k]?.trim());
+  const applicable = DRAFT_FIELDS.filter(k => k !== "affiliateBrief" || AFFILIATE_BRANDS.has(item.brand));
+  const blankFields = applicable.filter(k => !existing[k]?.trim());
   if (!blankFields.length) return NextResponse.json({ ok: false, error: "Every field already has content — nothing blank to draft" }, { status: 400 });
 
   const system = `You are a senior campaign strategist for Coolkidz Australia, drafting the internal brief for a marketing campaign card from a short card note.
@@ -45,7 +54,19 @@ offerMechanic — the actual offer/mechanic, if there is one (leave blank if thi
 do — 2-4 short guardrails on what to include/emphasise.
 dont — 2-4 short guardrails on what to avoid.
 successMeasure — how you'd know this worked.
-compliance — any claims/compliance care needed, or unresolved dependencies flagged in the note.`;
+compliance — any claims/compliance care needed, or unresolved dependencies flagged in the note.
+edmBrief — a genuinely actionable instruction to the email writer: how many sends, what each one needs to cover, tone/angle notes. If "deliverables" below already lists specific dates/topics, work from those exactly, don't invent different ones.
+paidBrief — instruction to paid media: which channels, what the ad should say/show, targeting angle, where it sends people.
+socialsBrief — instruction to social: what to post, which formats (reel, static, stories), how it should mirror or support the EDM/blog angle.
+designBrief — instruction to design: what assets are needed (hero images, social tiles, banners), any visual direction beyond the brand's existing style guide.
+retailBrief — instruction for retail/wholesale, only if this campaign has any in-store, wholesale or stockist angle — leave blank for a D2C-only campaign.
+websiteBrief — instruction to the website/e-commerce owner: what needs to exist on-site (landing page, capture form, PDP updates).
+affiliateBrief — only ever write this for UPPAbaby or Nanit; instruction to the affiliate manager on what to brief partners/creators.
+creativeDirection — the visual/tonal direction for creative assets across the campaign, one level more specific than "on brand".
+Base every one of these on the facts given below plus the existing brief fields already filled in (shown below) — stay consistent with them, don't contradict a date, offer or audience already decided.`;
+
+  const existingBriefSummary = Object.entries(existing).filter(([k, v]) => v && !blankFields.includes(k as any))
+    .map(([k, v]) => `${k}: ${v}`).join("\n");
 
   const facts = [
     `Brand: ${item.brand}`,
@@ -53,12 +74,13 @@ compliance — any claims/compliance care needed, or unresolved dependencies fla
     item.channel && `Channel: ${item.channel}`,
     item.key_date && `Key date: ${item.key_date}`,
     `Card note: ${item.note}`,
+    existingBriefSummary && `Already decided (brief fields already filled in — treat as settled facts):\n${existingBriefSummary}`,
   ].filter(Boolean).join("\n");
 
   const aiRes = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-api-key": process.env.ANTHROPIC_API_KEY!, "anthropic-version": "2023-06-01" },
-    body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 1200, system, messages: [{ role: "user", content: `${facts}\n\nWrite the brief fields. Return only the JSON object.` }] }),
+    body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 2000, system, messages: [{ role: "user", content: `${facts}\n\nWrite the brief fields. Return only the JSON object.` }] }),
   });
   const aiJson = await aiRes.json();
   if (!aiRes.ok) return NextResponse.json({ ok: false, error: aiJson?.error?.message || "Model call failed" }, { status: 502 });
