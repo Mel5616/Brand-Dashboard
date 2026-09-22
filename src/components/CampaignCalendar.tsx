@@ -90,7 +90,7 @@ const BRIEF_FIELDS: { key: string; label: string }[] = [
   { key: "compliance", label: "Compliance" },
 ];
 // The brief "Channels" field is a fixed checklist (stored as a comma-joined string).
-const CHANNEL_OPTIONS = ["Brand Website", "Retail", "Baby Bunting", "Marketplace", "Google", "Meta", "EDM", "Social Media", "Influencers"];
+const CHANNEL_OPTIONS = ["Brand Website", "D2C Offer", "Retail", "Baby Bunting", "Marketplace", "Google", "Meta", "EDM", "Blog", "Social Media", "Influencers", "Affiliate"];
 const splitChannels = (v: string) => (v || "").split(",").map(s => s.trim()).filter(Boolean);
 const GUARD = new Set(["do", "dont", "compliance"]);
 const isFlagged = (v: string) => /^\s*(high|check)/i.test(v || "");
