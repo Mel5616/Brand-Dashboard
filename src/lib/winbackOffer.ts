@@ -108,7 +108,9 @@ export async function candidates(from: string, to: string, preset: Preset = PRES
     if (x.completedAt || !x.customer?.email) continue;
     const email = String(x.customer.email).toLowerCase();
     if (bought.has(email)) continue;
-    const lines = (x.lineItems?.nodes || []).filter((l: Raw) => l.variant?.id).map((l: Raw) => ({
+    // The $20 brand voucher is auto-added by cart.js at $500+; it is not something
+    // they chose, and the site re-adds it once the pram is back in the bag.
+    const lines = (x.lineItems?.nodes || []).filter((l: Raw) => l.variant?.id && !/voucher/i.test(String(l.variant.product?.handle || "") + String(l.title))).map((l: Raw) => ({
       title: String(l.title), qty: Number(l.quantity || 1), variantId: String(l.variant.id).split("/").pop()!, handle: String(l.variant.product?.handle || "") }));
     if (!lines.some((l: { handle: string; title: string }) => preset.qualifies(l))) continue;
     byEmail.set(email, {

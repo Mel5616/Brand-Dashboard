@@ -51,3 +51,4 @@ credentials.json
 # never commit config backups (contain secrets)
 stores.config.json.*
 *.bak
+.env.brandfolder
