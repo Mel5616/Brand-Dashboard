@@ -37,9 +37,9 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "calendar", label: "Calendar" },
     { id: "content", label: "Briefing Engine" },
     { id: "events", label: "Tune Up Days" },
-    { id: "event-concepts", label: "Event Concepts" },
-    { id: "decks", label: "Launch Decks" },
     { id: "show-deals", label: "Tradeshow Deals" },
+    { id: "activations", label: "Marketing Snapshot" },
+    { id: "timeline", label: "Timeline" },
   ] },
   { label: "Websites", tabs: [
     { id: "assistants", label: "AI Assistants" },
@@ -54,6 +54,8 @@ export const TAB_SECTIONS: TabSection[] = [
   { label: "Creative", tabs: [
     { id: "design-requests", label: "Design Requests" },
     { id: "creative", label: "Creative Production" },
+    { id: "event-concepts", label: "Event Concepts" },
+    { id: "decks", label: "Launch Decks" },
   ] },
   { label: "Blogging", tabs: [
     { id: "tasks", label: "Blogs" },
@@ -99,10 +101,14 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "campaign-briefs", label: "Campaign Briefs" },
     { id: "nanit", label: "Nanit Codes" },
     { id: "releases", label: "Media Releases" },
+  ] },
+  { label: "Partnerships & Affiliates", tabs: [
     { id: "affiliates", label: "Affiliates" },
     { id: "commission-factory", label: "Commission Factory" },
     { id: "pa-budget", label: "Partnerships Budget" },
     { id: "pa-tracker", label: "Partnerships Tracker" },
+    { id: "pa-revenue", label: "Partnerships Revenue" },
+    { id: "documents", label: "Partnerships Documents" },
   ] },
   { label: "Sales Hub", tabs: [
     { id: "sales-hub", label: "Sales Hub" },
