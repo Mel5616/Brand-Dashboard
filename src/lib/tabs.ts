@@ -48,6 +48,7 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "website-requests", label: "Website Requests" },
     { id: "utm-tracking", label: "UTM Tracking" },
     { id: "reviews", label: "Reviews" },
+    { id: "abandoned", label: "Abandoned Checkouts" },
     { id: "seo", label: "SEO" },
   ] },
   { label: "Creative", tabs: [

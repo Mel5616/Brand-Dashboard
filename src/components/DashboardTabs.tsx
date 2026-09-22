@@ -115,7 +115,7 @@ import { StockReport } from "./StockReport";
 import { fmt, fmtFull } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "assistants" | "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "cross-site-discounts" | "reviews" | "website-requests" | "utm-tracking" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "edm-planner" | "seo" | "social" | "youtube" | "tradeshows" | "show-insights" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "credentials" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "campaign-briefs" | "nanit" | "affiliates" | "commission-factory" | "email-writing" | "pa-budget" | "pa-tracker" | "pa-revenue" | "documents" | "team" | "brand-packs" | "price-lists" | "hub-fact-sheets" | "brand-overview" | "stock-availability" | "order-forms" | "customers" | "customer-forms" | "blog-pipeline";
+type TabId = "assistants" | "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "cross-site-discounts" | "abandoned" | "reviews" | "website-requests" | "utm-tracking" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "edm-planner" | "seo" | "social" | "youtube" | "tradeshows" | "show-insights" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "credentials" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "campaign-briefs" | "nanit" | "affiliates" | "commission-factory" | "email-writing" | "pa-budget" | "pa-tracker" | "pa-revenue" | "documents" | "team" | "brand-packs" | "price-lists" | "hub-fact-sheets" | "brand-overview" | "stock-availability" | "order-forms" | "customers" | "customer-forms" | "blog-pipeline";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -149,6 +149,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
     id: "cross-site-discounts", label: "Cross Site Discounts",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" /></svg>,
+  },
+  {
+    id: "abandoned", label: "Abandoned Checkouts",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
   },
   {
     id: "reviews", label: "Reviews",
@@ -430,7 +434,7 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Reports", ids: ["report", "snapshot", "social-report", "d2c-weekly", "uppababy"] },
   { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows", "show-insights"] },
   { label: "Plan", ids: ["campaign-calendar", "promotions", "calendar", "content", "events", "show-deals", "activations", "timeline"] },
-  { label: "Websites", ids: ["assistants", "discount-codes", "cross-site-discounts", "website-requests", "utm-tracking", "reviews", "seo"] },
+  { label: "Websites", ids: ["assistants", "discount-codes", "cross-site-discounts", "website-requests", "utm-tracking", "reviews", "abandoned", "seo"] },
   { label: "Creative", ids: ["design-requests", "creative", "event-concepts", "decks"] },
   { label: "Blogging", ids: ["tasks", "blog-pipeline"] },
   { label: "Email Marketing", ids: ["email", "edm-planner", "email-writing"] },
@@ -1592,11 +1596,10 @@ export function DashboardTabs({
             </>
           )}
 
-          {/* ── Discount Codes — main promo codes w/ expiry + usage, abandoned-cart winback offers, and the cross-site code creator ── */}
+          {/* ── Discount Codes — main promo codes w/ expiry + usage ── */}
           {active === "discount-codes" && (
             <>
               <SectionBar title="Discount Codes" />
-              {role === "admin" && <WinbackPanel />}
               <DiscountCodesTab brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} />
             </>
           )}
@@ -1607,6 +1610,16 @@ export function DashboardTabs({
               <SectionBar title="Cross Site Discounts" />
               <VouchersCard admin={role === "admin"} />
               <CrossCodeCard canCreate={role === "admin" || (allowedTabs ?? []).includes("cross-site-discounts")} />
+            </>
+          )}
+
+          {/* ── Abandoned Checkouts: the money left at checkout, and the two ways of going after it ── */}
+          {active === "abandoned" && (
+            <>
+              <SectionBar title="Abandoned Checkouts" />
+              <AbandonedCheckoutsPanel brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} />
+              <WinbackCard admin={role === "admin"} />
+              {role === "admin" && <WinbackPanel />}
             </>
           )}
 
@@ -1828,7 +1841,6 @@ export function DashboardTabs({
               <LtvPanel brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} />
 
               <AbandonedCheckoutsPanel brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} />
-              <WinbackCard admin={role === "admin"} />
               <div className="flex items-center gap-2 mb-2">
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}

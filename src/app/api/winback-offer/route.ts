@@ -14,7 +14,7 @@ const missing = (m: string) => /PGRST205|does not exist/i.test(m || "");
 
 export async function GET(req: Request) {
   const acc = await getAccess();
-  if (acc.role !== "admin" && !acc.allowedTabs?.includes("shopify")) return NextResponse.json({ ok: false }, { status: 403 });
+  if (acc.role !== "admin" && !acc.allowedTabs?.some(t => t === "abandoned" || t === "shopify")) return NextResponse.json({ ok: false }, { status: 403 });
   const u = new URL(req.url);
   const from = DATE.test(u.searchParams.get("from") || "") ? u.searchParams.get("from")! : new Date().toISOString().slice(0, 8) + "01";
   const to = DATE.test(u.searchParams.get("to") || "") ? u.searchParams.get("to")! : new Date().toISOString().slice(0, 10);
