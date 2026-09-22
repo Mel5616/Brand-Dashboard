@@ -1591,10 +1591,11 @@ export function DashboardTabs({
             </>
           )}
 
-          {/* ── Discount Codes — main promo codes w/ expiry + usage, and the cross-site code creator ── */}
+          {/* ── Discount Codes — main promo codes w/ expiry + usage, abandoned-cart winback offers, and the cross-site code creator ── */}
           {active === "discount-codes" && (
             <>
               <SectionBar title="Discount Codes" />
+              {role === "admin" && <WinbackPanel />}
               <DiscountCodesTab brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} />
             </>
           )}
@@ -2254,7 +2255,6 @@ export function DashboardTabs({
           {active === "email" && (
             <>
               <SectionBar title="Email Marketing · Klaviyo" />
-              {role === "admin" && <WinbackPanel />}
               <div className="flex items-center justify-between gap-2 mb-2 no-print">
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}
