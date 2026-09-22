@@ -393,8 +393,31 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
     else setLinkError(res?.error || "Couldn't send that email to the planner.");
   }
   const addDays = (iso: string, n: number) => { const d = parseDate(iso); if (!d) return null; d.setDate(d.getDate() + n); return isoDate(d); };
+  const MONTH_NUM: Record<string, number> = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+  // The brief's "deliverables" field often already spells out real send
+  // dates + a topic per email, e.g. "Thu 1 Oct: The list nobody gives you /
+  // Thu 15 Oct: What midwives actually pack" — parse those out so each EDM
+  // gets its own real date and its own topic, instead of guessing key_date
+  // +7/+14 with the same generic brief repeated three times.
+  function parseDeliverableSends(item: Campaign): { date: string; topic: string }[] {
+    const text = String((item.brief as any)?.deliverables || "");
+    const keyDate = parseDate(item.key_date);
+    const endDate = parseDate(item.end_date ?? "");
+    const out: { date: string; topic: string }[] = [];
+    const re = /\b(\d{1,2})\s+([A-Za-z]{3,9})\s*:\s*([^\n/]+)/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(text))) {
+      const day = Number(m[1]);
+      const month = MONTH_NUM[m[2].slice(0, 3).toLowerCase()];
+      if (!month || !day) continue;
+      let year = keyDate?.getFullYear() ?? new Date().getFullYear();
+      if (keyDate && month < keyDate.getMonth() + 1 && endDate && endDate.getFullYear() > keyDate.getFullYear()) year = endDate.getFullYear();
+      out.push({ date: `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`, topic: m[3].replace(/\)+\s*$/, "").trim() });
+    }
+    return out;
+  }
   // "Generate campaign kit" — one click for a blank campaign: drafts the
-  // blog post, proposes 3 EDM sends spread across the campaign window (only
+  // blog post, proposes EDM sends spread across the campaign window (only
   // when brief.emails is still empty — a campaign with hand-written emails
   // already uses "Send to Email Planner →" per email instead), and files a
   // Website Request ticket if the channel/note points at a build. Every step
@@ -412,15 +435,19 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
 
     const existingEmails: EmailDraft[] = (item.brief as any)?.emails ?? [];
     if (existingEmails.length === 0) {
+      const fromDeliverables = parseDeliverableSends(item);
       const base = item.key_date && parseDate(item.key_date) ? item.key_date : isoDate(new Date());
-      const dates = [base, addDays(base, 7), addDays(base, 14)].filter(Boolean) as string[];
+      const sends = fromDeliverables.length
+        ? fromDeliverables
+        : ([base, addDays(base, 7), addDays(base, 14)].filter(Boolean) as string[]).map(date => ({ date, topic: "" }));
       let edmOk = 0;
-      for (let i = 0; i < dates.length; i++) {
-        setKitStep(`Writing EDM ${i + 1} of ${dates.length}… (30–60s each)`);
-        const r = await fetch("/api/edm-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief, scheduled_for: dates[i], campaign_id: item.id, campaign_name: item.campaign }) }).then(r2 => r2.json()).catch(() => null);
+      for (let i = 0; i < sends.length; i++) {
+        setKitStep(`Writing EDM ${i + 1} of ${sends.length}… (30–60s each)`);
+        const emailBrief = sends[i].topic ? `${brief} — this specific send: ${sends[i].topic}` : brief;
+        const r = await fetch("/api/edm-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief: emailBrief, scheduled_for: sends[i].date, campaign_id: item.id, campaign_name: item.campaign }) }).then(r2 => r2.json()).catch(() => null);
         if (r?.ok) edmOk++;
       }
-      results.push({ label: `EDM sends (${edmOk}/${dates.length})`, ok: edmOk > 0, note: edmOk < dates.length ? "one or more failed — check Email Writing" : undefined });
+      results.push({ label: `EDM sends (${edmOk}/${sends.length})`, ok: edmOk > 0, note: edmOk < sends.length ? "one or more failed — check Email Writing" : (fromDeliverables.length ? "dates and topics read from the brief's deliverables" : undefined) });
     } else {
       results.push({ label: "EDM sends", ok: true, note: "skipped — this campaign already has hand-written email drafts, use Send to Email Planner instead" });
     }
