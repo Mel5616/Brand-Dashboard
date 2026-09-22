@@ -29,6 +29,7 @@ export async function POST(req: Request) {
     approved_by: b.approved_by ? String(b.approved_by).slice(0, 40) : null,
     note: b.note ? String(b.note).slice(0, 300) : null,
     created_by: (acc.user as any)?.email ?? null,
+    ...(b.campaign_id ? { campaign_id: String(b.campaign_id), campaign_name: b.campaign_name ? String(b.campaign_name).slice(0, 200) : null } : {}),
   };
   if (!row.brand || !row.title || !row.period_start || !row.period_end)
     return NextResponse.json({ ok: false, error: "Brand, deal and dates required" }, { status: 400 });

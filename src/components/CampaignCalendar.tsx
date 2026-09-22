@@ -18,7 +18,7 @@ type Campaign = {
   owner: string; channel: string; status: string; key_date: string; end_date?: string; note: string;
   sort_order: number; brief?: Brief; share_token?: string; image_url?: string | null;
   asana_task_gid?: string | null; asana_permalink_url?: string | null;
-  deliverables_status?: { blog: number; edm: number; website: number };
+  deliverables_status?: { blog: number; edm: number; website: number; promo: number };
 };
 type Maint = { id: string; name: string; tier: string; sort_order: number };
 
@@ -194,7 +194,7 @@ function TimelineGantt({ items, onOpen }: { items: Campaign[]; onOpen: (id: stri
   );
 }
 
-export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, onStartEdm, onSendToPlanner }: { canEdit?: boolean; brands?: { id: number; name: string }[]; onStartBlog?: (draftId: string) => void; onStartEdm?: (draftId: string) => void; onSendToPlanner?: () => void }) {
+export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, onStartEdm, onSendToPlanner, onStartPromo }: { canEdit?: boolean; brands?: { id: number; name: string }[]; onStartBlog?: (draftId: string) => void; onStartEdm?: (draftId: string) => void; onSendToPlanner?: () => void; onStartPromo?: () => void }) {
   const [view, setView] = useState<"roadmap" | "timeline" | "sends" | "bf" | "promos">("roadmap");
   const [items, setItems] = useState<Campaign[]>([]);
   const [maint, setMaint] = useState<Maint[]>([]);
@@ -212,7 +212,7 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
   const [aiBusy, setAiBusy] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiVersion, setAiVersion] = useState(0);
-  const [linkBusy, setLinkBusy] = useState<"blog" | "edm" | null>(null);
+  const [linkBusy, setLinkBusy] = useState<"blog" | "edm" | "promo" | null>(null);
   const [linkError, setLinkError] = useState<string | null>(null);
   const [kitBusy, setKitBusy] = useState(false);
   const [kitStep, setKitStep] = useState<string | null>(null);
@@ -374,6 +374,28 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
     setLinkBusy(null);
     if (res?.ok) onStartEdm?.(res.item.id);
     else setLinkError(res?.error || "Couldn't start an EDM draft for that brand.");
+  }
+  // "Start D2C promo →" — lays the campaign's offer/mechanic out as a real
+  // entry in the D2C promo tracker (site_deals, Plan > Promotions), instead
+  // of it only living as free text in the brief. Best-effort $ extraction so
+  // the value badge is pre-filled when the offer is a dollar figure.
+  async function startD2cPromo(item: Campaign) {
+    const offer = String((item.brief as any)?.offerMechanic || "").trim();
+    if (!offer) { setLinkError("Add an offer/mechanic to the brief first — that's what the promo is built from."); return; }
+    setLinkBusy("promo"); setLinkError(null);
+    const priceMatch = offer.match(/\$\s?[\d,]+(\.\d{2})?/);
+    const periodEnd = item.end_date && parseDate(item.end_date) ? item.end_date : (addDays(item.key_date, 30) ?? item.key_date);
+    const res = await fetch("/api/site-deals", {
+      method: "POST", headers: jsonHeaders, body: JSON.stringify({
+        brand: item.brand, title: item.campaign, note: offer.slice(0, 300),
+        period_start: item.key_date, period_end: periodEnd,
+        price: priceMatch ? priceMatch[0].replace(/\s/g, "") : null,
+        campaign_id: item.id, campaign_name: item.campaign,
+      }),
+    }).then(r => r.json()).catch(() => null);
+    setLinkBusy(null);
+    if (res?.ok) onStartPromo?.();
+    else setLinkError(res?.error || "Couldn't create the promo.");
   }
   const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
   function htmlFromPlainBody(text: string): string {
@@ -809,6 +831,7 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
                               ["blog", "📝", "Blog"],
                               ["edm", "✉️", "EDM"],
                               ["website", "🌐", "Website"],
+                              ["promo", "🎟️", "Promo"],
                             ] as const).map(([key, icon, label]) => {
                               const n = c.deliverables_status?.[key] ?? 0;
                               return (
@@ -1093,6 +1116,11 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
                   <button onClick={() => startEdm(open)} disabled={linkBusy === "edm"} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-fuchsia-500 hover:bg-fuchsia-600 rounded-lg px-3.5 py-1.5 transition disabled:opacity-60 motion-reduce:transition-none">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
                     {linkBusy === "edm" ? "Starting…" : "Start EDM →"}
+                  </button>
+                  <button onClick={() => startD2cPromo(open)} disabled={linkBusy === "promo"} title="Lays the brief's offer/mechanic out as a real entry in the D2C promo tracker"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-amber-500 hover:bg-amber-600 rounded-lg px-3.5 py-1.5 transition disabled:opacity-60 motion-reduce:transition-none">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    {linkBusy === "promo" ? "Starting…" : "Start D2C promo →"}
                   </button>
                   <button onClick={() => pushToAsana(open)} disabled={asanaBusy} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-[#F06A6A] hover:bg-[#e05555] rounded-lg px-3.5 py-1.5 transition disabled:opacity-60 motion-reduce:transition-none">
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="18" cy="7" r="4" /><circle cx="6" cy="7" r="4" /><circle cx="12" cy="16" r="4" /></svg>
