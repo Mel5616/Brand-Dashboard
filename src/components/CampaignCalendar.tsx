@@ -204,6 +204,7 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
   const [linkBusy, setLinkBusy] = useState<"blog" | "edm" | null>(null);
   const [linkError, setLinkError] = useState<string | null>(null);
   const [kitBusy, setKitBusy] = useState(false);
+  const [kitStep, setKitStep] = useState<string | null>(null);
   const [kitResults, setKitResults] = useState<{ label: string; ok: boolean; note?: string }[] | null>(null);
   const imgRef = useRef<HTMLInputElement>(null);
   const [dragId, setDragId] = useState<string | null>(null);
@@ -404,6 +405,7 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
     const brief = campaignBrief(item);
     const results: { label: string; ok: boolean; note?: string }[] = [];
 
+    setKitStep("Drafting blog post… (30–60s)");
     const blogRes = await fetch("/api/blog-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief }) }).then(r => r.json()).catch(() => null);
     results.push({ label: "Blog draft", ok: !!blogRes?.ok, note: blogRes?.ok ? undefined : (blogRes?.error || "failed") });
 
@@ -412,8 +414,9 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
       const base = item.key_date && parseDate(item.key_date) ? item.key_date : isoDate(new Date());
       const dates = [base, addDays(base, 7), addDays(base, 14)].filter(Boolean) as string[];
       let edmOk = 0;
-      for (const scheduled_for of dates) {
-        const r = await fetch("/api/edm-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief, scheduled_for }) }).then(r2 => r2.json()).catch(() => null);
+      for (let i = 0; i < dates.length; i++) {
+        setKitStep(`Writing EDM ${i + 1} of ${dates.length}… (30–60s each)`);
+        const r = await fetch("/api/edm-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief, scheduled_for: dates[i] }) }).then(r2 => r2.json()).catch(() => null);
         if (r?.ok) edmOk++;
       }
       results.push({ label: `EDM sends (${edmOk}/${dates.length})`, ok: edmOk > 0, note: edmOk < dates.length ? "one or more failed — check Email Writing" : undefined });
@@ -423,11 +426,12 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
 
     const needsWebsite = /website|landing page|configurator|shopify|d2c/i.test(`${item.channel} ${item.note}`);
     if (needsWebsite) {
+      setKitStep("Filing Website Request ticket…");
       const wr = await fetch("/api/website-requests", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand: item.brand, description: `Build/landing page needed for campaign "${item.campaign}": ${item.note}`.slice(0, 2000), change_type: "new_page", priority: "normal" }) }).then(r => r.json()).catch(() => null);
       results.push({ label: "Website Request ticket", ok: !!wr?.ok, note: wr?.ok ? undefined : (wr?.error || "failed") });
     }
 
-    setKitBusy(false); setKitResults(results);
+    setKitBusy(false); setKitStep(null); setKitResults(results);
   }
   // Channels checklist toggles save immediately (no debounce — checkboxes don't lose focus).
   function toggleChannel(item: Campaign, opt: string) {
@@ -998,6 +1002,12 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
               {linkError && (
                 <p role="alert" className="no-print text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mt-4">{linkError}</p>
               )}
+              {kitBusy && (
+                <div className="no-print flex items-center gap-2 text-[13px] text-emerald-700 mt-4 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+                  <svg className="w-4 h-4 animate-spin shrink-0" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                  {kitStep}
+                </div>
+              )}
               {kitResults && (
                 <div className="no-print text-[13px] space-y-0.5 mt-4 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
                   {kitResults.map((r, i) => (
@@ -1016,9 +1026,11 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
                   </>
                 )}
                 {canEdit && <>
-                  <button onClick={() => generateKit(open)} disabled={kitBusy} title="Drafts the blog post, proposes 3 EDM sends, and files a Website Request if the brief points at a build"
+                  <button onClick={() => generateKit(open)} disabled={kitBusy} title={kitBusy ? undefined : "Drafts the blog post, proposes 3 EDM sends, and files a Website Request if the brief points at a build"}
                     className="inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg px-3.5 py-1.5 transition disabled:opacity-60 motion-reduce:transition-none">
-                    ✨ {kitBusy ? "Generating kit…" : "Generate campaign kit"}
+                    {kitBusy
+                      ? <svg className="w-4 h-4 animate-spin shrink-0" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                      : "✨"} {kitBusy ? "Generating kit…" : "Generate campaign kit"}
                   </button>
                   <button onClick={() => startBlog(open)} disabled={linkBusy === "blog"} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg px-3.5 py-1.5 transition disabled:opacity-60 motion-reduce:transition-none">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15.828H9v-2.828l8.586-8.586zM3 8l7 5" /></svg>
