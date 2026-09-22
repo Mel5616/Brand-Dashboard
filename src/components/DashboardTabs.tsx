@@ -1644,7 +1644,7 @@ export function DashboardTabs({
           {active === "website-requests" && (
             <>
               <SectionBar title="Website Requests" />
-              <WebsiteRequestsPanel canEdit={role === "admin" || (allowedTabs ?? []).includes("website-requests")} />
+              <WebsiteRequestsPanel canEdit={role === "admin" || (allowedTabs ?? []).includes("website-requests")} brands={brands.map((b: any) => b.name)} />
             </>
           )}
 

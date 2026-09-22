@@ -9,6 +9,35 @@ const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const h = (extra: Record<string, string> = {}) => ({ apikey: sbKey!, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json", ...extra });
 const missing = (s: number, b: string) => s === 404 || /PGRST205|does not exist|schema cache/i.test(b);
+const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const CHANGE_TYPES = ["copy", "broken_link", "new_page", "image_banner", "product_info", "other"];
+
+// Staff can log an issue straight from this tab, not just via the public
+// /website-request share link — same table, same shape, just signed-in
+// instead of key-gated, and no email notification (the team already has
+// eyes on this tab).
+export async function POST(req: Request) {
+  const acc = await getAccess();
+  if (!acc.role) return NextResponse.json({ ok: false }, { status: 401 });
+  let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false }, { status: 400 }); }
+  const brand = String(b.brand || "").trim().slice(0, 80);
+  const description = String(b.description || "").trim().slice(0, 2000);
+  if (!brand || !description) return NextResponse.json({ ok: false, error: "Brand and description are required" }, { status: 400 });
+  const requesterEmail = String(b.requester_email || "").trim().toLowerCase();
+  const row = {
+    brand,
+    page_url: b.page_url ? String(b.page_url).trim().slice(0, 500) : null,
+    change_type: CHANGE_TYPES.includes(b.change_type) ? b.change_type : "other",
+    description,
+    requester_name: b.requester_name ? String(b.requester_name).trim().slice(0, 100) : (acc.user?.email ?? "Team"),
+    requester_email: emailRe.test(requesterEmail) ? requesterEmail : (acc.user?.email ?? null),
+    priority: ["low", "normal", "urgent"].includes(b.priority) ? b.priority : "normal",
+  };
+  const res = await fetch(`${sbUrl}/rest/v1/website_requests`, { method: "POST", headers: h({ Prefer: "return=representation" }), body: JSON.stringify(row) });
+  const text = await res.text();
+  if (!res.ok) return NextResponse.json({ ok: false, needsSetup: missing(res.status, text), error: text.slice(0, 200) }, { status: 500 });
+  return NextResponse.json({ ok: true, item: JSON.parse(text)[0] });
+}
 
 export async function GET() {
   if (!(await getAccess()).role) return NextResponse.json({ ok: false }, { status: 401 });

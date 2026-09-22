@@ -19,14 +19,20 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
 };
 const STATUS_LIST = ["new", "in_progress", "done", "declined"];
 const TYPE_LABEL: Record<string, string> = { copy: "Copy / text", broken_link: "Broken link", new_page: "New page", image_banner: "Image / banner", product_info: "Product info", other: "Other" };
+const TYPE_LIST = ["copy", "broken_link", "new_page", "image_banner", "product_info", "other"];
 const fmtD = (s: string) => new Date(s).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "2-digit" });
+const emptyForm = { brand: "", page_url: "", change_type: "other", priority: "normal", description: "" };
 
-export function WebsiteRequestsPanel({ canEdit = false }: { canEdit?: boolean }) {
+export function WebsiteRequestsPanel({ canEdit = false, brands = [] }: { canEdit?: boolean; brands?: string[] }) {
   const [items, setItems] = useState<Req[]>([]);
   const [loading, setLoading] = useState(true);
   const [needsSetup, setNeedsSetup] = useState(false);
   const [statusF, setStatusF] = useState("");
   const [noteEdit, setNoteEdit] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
+  const [addErr, setAddErr] = useState("");
 
   async function load() {
     const res = await fetch("/api/website-requests").then(r => r.json()).catch(() => ({ ok: false }));
@@ -50,6 +56,15 @@ export function WebsiteRequestsPanel({ canEdit = false }: { canEdit?: boolean })
     if (!confirm("Delete this request?")) return;
     await fetch(`/api/website-requests?id=${id}`, { method: "DELETE" });
     setItems(prev => prev.filter(r => r.id !== id));
+  }
+
+  async function addIssue() {
+    if (!form.brand || !form.description.trim()) { setAddErr("Brand and a description are required."); return; }
+    setSaving(true); setAddErr("");
+    const res = await fetch("/api/website-requests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) }).then(r => r.json()).catch(() => null);
+    setSaving(false);
+    if (res?.ok) { setItems(prev => [res.item, ...prev]); setForm(emptyForm); setAdding(false); }
+    else setAddErr(res?.error || "Couldn't save that — try again.");
   }
 
   if (loading) return <p className="text-sm text-slate-400 py-8 text-center">Loading…</p>;
@@ -79,14 +94,70 @@ export function WebsiteRequestsPanel({ canEdit = false }: { canEdit?: boolean })
         </button>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <button onClick={() => setStatusF("")} className={`text-sm font-medium rounded-lg px-3 py-1.5 ${!statusF ? "bg-slate-800 text-white" : "bg-white border border-gray-200 text-gray-600"}`}>All ({items.length})</button>
         {STATUS_LIST.map(s => (
           <button key={s} onClick={() => setStatusF(s)} className={`text-sm font-medium rounded-lg px-3 py-1.5 ${statusF === s ? "bg-slate-800 text-white" : "bg-white border border-gray-200 text-gray-600"}`}>
             {STATUS_META[s].label} ({items.filter(r => r.status === s).length})
           </button>
         ))}
+        {canEdit && (
+          <button onClick={() => { setAdding(p => !p); setAddErr(""); }} className="ml-auto text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-3 py-1.5">
+            {adding ? "Cancel" : "+ Add issue"}
+          </button>
+        )}
       </div>
+
+      {adding && canEdit && (
+        <div className="bg-white rounded-xl border border-emerald-200 p-4 space-y-3">
+          <p className="text-sm font-semibold text-slate-700">Log an issue directly</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Brand</label>
+              <select value={form.brand} onChange={e => setForm(p => ({ ...p, brand: e.target.value }))}
+                className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400">
+                <option value="">Select a brand…</option>
+                {brands.map(b => <option key={b} value={b}>{b}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Type</label>
+              <select value={form.change_type} onChange={e => setForm(p => ({ ...p, change_type: e.target.value }))}
+                className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400">
+                {TYPE_LIST.map(t => <option key={t} value={t}>{TYPE_LABEL[t]}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Page URL (optional)</label>
+              <input value={form.page_url} onChange={e => setForm(p => ({ ...p, page_url: e.target.value }))} placeholder="https://…"
+                className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Priority</label>
+              <select value={form.priority} onChange={e => setForm(p => ({ ...p, priority: e.target.value }))}
+                className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400">
+                <option value="low">Low</option>
+                <option value="normal">Normal</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Description</label>
+            <textarea autoFocus value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} rows={3}
+              placeholder="What needs fixing/changing?"
+              className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400 resize-none" />
+          </div>
+          {addErr && <p className="text-xs text-rose-500">{addErr}</p>}
+          <div className="flex items-center gap-2">
+            <button onClick={addIssue} disabled={saving || !form.brand || !form.description.trim()}
+              className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 rounded-lg px-4 py-2">
+              {saving ? "Saving…" : "Add issue"}
+            </button>
+            <button onClick={() => { setAdding(false); setForm(emptyForm); setAddErr(""); }} className="text-sm text-gray-400 hover:text-gray-600 px-2">Cancel</button>
+          </div>
+        </div>
+      )}
 
       {rows.length === 0 ? (
         <p className="text-sm text-slate-400">No requests here.</p>
