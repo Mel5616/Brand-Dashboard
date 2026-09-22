@@ -28,8 +28,8 @@ const HOUSE_RULES = `HOUSE EMAIL RULES (apply to every EDM, every brand):
 - Punctuation: no em dashes anywhere. Never start a sentence with "And".
 - Claims: no unconfirmed AU prices/specs/launch dates/stock levels; state trade-offs honestly.
 - Output must be ready to paste into Klaviyo as-is: a self-contained HTML email using inline CSS only (Klaviyo strips <style> blocks in some clients), a single <table role="presentation"> layout at 600px max-width, Arial/Helvetica fallback fonts, mobile-first single column. Include {% unsubscribe_link %} in the footer, Klaviyo's own Liquid tag, verbatim.
-- Design it properly, not a wall of text: a real hero image block up top, generous padding, a brand-coloured CTA button (not just a text link), clear visual hierarchy between the hero message and any secondary content.
-- Images: only ever use an exact image URL you are explicitly given below (as the hero image, or a product photo). Never invent, guess, or paraphrase an image URL — if none are given, skip images entirely and rely on typography and colour instead. A fabricated src just breaks in the inbox.
+- Design it properly, not a wall of text: a real hero image block up top, generous padding, a brand-coloured CTA button (not just a text link), clear visual hierarchy between the hero message and any secondary content. This should read as a polished, high-end send, not a template filled in — considered whitespace, a refined type scale (a noticeably larger/bolder headline than body copy), a full-width rounded-corner hero image, and restrained use of colour (the brand palette only, no rainbow of accent colours).
+- Images: only ever use an exact image URL you are explicitly given below (as the hero image, or a product photo). Never invent, guess, or paraphrase an image URL — if none are given, skip images entirely and rely on typography and colour instead. A fabricated src just breaks in the inbox. When you're given a titled list of real product photos, pick the one whose product title actually matches what this email is about — never default to the first one in the list just because it's first.
 - If the brand voice below gives you a "Header logo" URL, that logo MUST appear at the top of the email as a real <img src="..."> tag — never write the brand name out as styled text instead, even if you also use a separate product photo further down as the hero image. The logo image and the hero/product image are two different things and both can appear; the logo is never optional or replaceable with text when a URL is provided.`;
 
 // ── Per-brand email voice (condensed from the blog voice guides — same tone
@@ -72,17 +72,20 @@ BRAND STYLE GUIDE: Palette — coral/red primary #DD624B (matches the logo), dee
 // Real, live product photos for this brand — so the model has actual hosted
 // URLs to build a hero image from instead of inventing an <img src> that
 // 404s. Best-effort: an empty list just means the email goes text-only.
-async function fetchBrandImages(brandId: number, limit = 6): Promise<string[]> {
+// Titled, not just bare URLs — a longer pool with product names is what lets
+// the model actually pick something relevant to the brief instead of
+// defaulting to whatever came back first from the store.
+async function fetchBrandImages(brandId: number, limit = 25): Promise<{ title: string; url: string }[]> {
   const store = storeCreds().find(s => s.id === brandId);
   if (!store) return [];
   const token = await mintToken(store);
   if (!token) return [];
-  const res = await fetch(`https://${store.domain}/admin/api/2024-10/products.json?limit=${limit}&status=active&fields=images`, { headers: { "X-Shopify-Access-Token": token }, cache: "no-store" }).catch(() => null);
+  const res = await fetch(`https://${store.domain}/admin/api/2024-10/products.json?limit=${limit}&status=active&fields=title,images`, { headers: { "X-Shopify-Access-Token": token }, cache: "no-store" }).catch(() => null);
   if (!res?.ok) return [];
   const json = await res.json().catch(() => ({}));
-  const urls: string[] = [];
-  for (const p of json.products || []) { const src = p.images?.[0]?.src; if (src) urls.push(src); }
-  return urls;
+  const items: { title: string; url: string }[] = [];
+  for (const p of json.products || []) { const src = p.images?.[0]?.src; if (src && p.title) items.push({ title: p.title, url: src }); }
+  return items;
 }
 
 async function callClaude(system: string, user: string, maxTokens: number) {
@@ -183,7 +186,7 @@ export async function POST(req: Request) {
   const imageNote = sourceImageUrl
     ? `Hero image — use this EXACT url for the hero image, don't alter it: ${sourceImageUrl}`
     : brandImages.length
-      ? `Real product photos you may use as the hero/feature image (use one EXACT url from this list, don't alter it, don't use any other image):\n${brandImages.map(u => `- ${u}`).join("\n")}`
+      ? `Real product photos you may use as the hero/feature image — pick the one whose title actually matches this email's topic, don't just take the first one. Use the EXACT url, don't alter it, don't use any other image:\n${brandImages.map(i => `- "${i.title}": ${i.url}`).join("\n")}`
       : `No real images are available for this email — skip images entirely, don't invent an image url.`;
   const linkNote = sourceUrl ? `The CTA button must link to this EXACT url: ${sourceUrl}` : "";
 
@@ -222,7 +225,7 @@ Write it now, in the exact format specified.`;
     preview_text: String(draft.preview_text || "").slice(0, 200),
     body_html: String(draft.body_html || ""),
     scheduled_for: scheduledFor,
-    image_url: sourceImageUrl || brandImages[0] || null,
+    image_url: sourceImageUrl || brandImages[0]?.url || null,
     brief, created_by: acc.user?.email ?? null,
   };
   if (!row.subject || !row.body_html) return NextResponse.json({ ok: false, error: "AI response was missing a subject or body — try again" }, { status: 502 });
