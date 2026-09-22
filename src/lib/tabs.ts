@@ -45,6 +45,7 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "assistants", label: "AI Assistants" },
     { id: "discount-codes", label: "Discount Codes" },
     { id: "cross-site-discounts", label: "Cross Site Discounts" },
+    { id: "create-codes", label: "Create Website Codes" },
     { id: "website-requests", label: "Website Requests" },
     { id: "utm-tracking", label: "UTM Tracking" },
     { id: "reviews", label: "Reviews" },

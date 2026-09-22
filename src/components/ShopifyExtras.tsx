@@ -226,7 +226,7 @@ export function CrossCodeCard({ canCreate = true }: { canCreate?: boolean }) {
   const [stores, setStores] = React.useState<{ id: number; name: string }[]>([]);
   const [history, setHistory] = React.useState<any[]>([]);
   const [sel, setSel] = React.useState<Set<number>>(new Set());
-  const [f, setF] = React.useState({ code: "", discount_type: "percentage" as "percentage" | "fixed_amount", percent: "", amount: "", min_spend: "", starts_at: "", ends_at: "" });
+  const [f, setF] = React.useState({ code: "", discount_type: "percentage" as "percentage" | "fixed_amount", percent: "", amount: "", min_spend: "", starts_at: "", ends_at: "", combines_with: false });
   const [busy, setBusy] = React.useState(false);
   const [results, setResults] = React.useState<{ brand: string; ok: boolean; error?: string }[] | null>(null);
 
@@ -240,13 +240,13 @@ export function CrossCodeCard({ canCreate = true }: { canCreate?: boolean }) {
 
   const isFixed = f.discount_type === "fixed_amount";
   const value = isFixed ? f.amount : f.percent;
-  const label = (isFixed ? `$${f.amount} off` : `${f.percent}% off`) + (Number(f.min_spend) > 0 ? `, min spend $${f.min_spend}` : "");
+  const label = (isFixed ? `$${f.amount} off` : `${f.percent}% off`) + (Number(f.min_spend) > 0 ? `, min spend $${f.min_spend}` : "") + (f.combines_with ? ", stacks with other discounts" : "");
 
   async function create() {
     if (!f.code.trim() || !Number(value) || sel.size === 0) return;
     if (!confirm(`Create ${f.code.toUpperCase()} (${label}) on ${sel.size} store(s)? This makes a LIVE discount code.`)) return;
     setBusy(true); setResults(null);
-    const body = { code: f.code, discount_type: f.discount_type, percent: Number(f.percent), amount: Number(f.amount), min_spend: f.min_spend ? Number(f.min_spend) : null, starts_at: f.starts_at, ends_at: f.ends_at, store_ids: [...sel] };
+    const body = { code: f.code, discount_type: f.discount_type, percent: Number(f.percent), amount: Number(f.amount), min_spend: f.min_spend ? Number(f.min_spend) : null, starts_at: f.starts_at, ends_at: f.ends_at, combines_with: f.combines_with, store_ids: [...sel] };
     const d = await fetch("/api/cross-code", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()).catch(() => null);
     setBusy(false);
     setResults(d?.results ?? [{ brand: "request", ok: false, error: d?.error || "failed" }]);
@@ -276,6 +276,10 @@ export function CrossCodeCard({ canCreate = true }: { canCreate?: boolean }) {
         <input value={f.min_spend} onChange={e => setF(p => ({ ...p, min_spend: e.target.value }))} placeholder="Min spend $ (optional)" type="number" className={`${inp} w-36`} title="Minimum subtotal to use the code" />
         <input value={f.starts_at} onChange={e => setF(p => ({ ...p, starts_at: e.target.value }))} type="date" className={inp} title="Starts" />
         <input value={f.ends_at} onChange={e => setF(p => ({ ...p, ends_at: e.target.value }))} type="date" className={inp} title="Ends" />
+        <label className="flex items-center gap-1.5 text-xs text-gray-500 select-none">
+          <input type="checkbox" checked={f.combines_with} onChange={e => setF(p => ({ ...p, combines_with: e.target.checked }))} className="rounded border-gray-300 text-emerald-500 focus:ring-emerald-300" />
+          Stacks with other discounts
+        </label>
         <button onClick={create} disabled={busy || !f.code.trim() || !Number(value) || sel.size === 0}
           className="text-[12.5px] font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg px-4 py-2 disabled:opacity-40">
           {busy ? "Creating…" : `Create on ${sel.size} store${sel.size === 1 ? "" : "s"}`}
@@ -296,7 +300,7 @@ export function CrossCodeCard({ canCreate = true }: { canCreate?: boolean }) {
         </div>
       )}
       {history.length > 0 && (
-        <p className="text-[11px] text-gray-300">Previously created: {history.slice(0, 5).map((x: any) => `${x.code} (${x.discount_type === "fixed_amount" ? `$${x.amount} off` : `${Math.round(x.percent)}%`}${x.min_spend ? `, min $${x.min_spend}` : ""})`).join(" · ")}</p>
+        <p className="text-[11px] text-gray-300">Previously created: {history.slice(0, 5).map((x: any) => `${x.code} (${x.discount_type === "fixed_amount" ? `$${x.amount} off` : `${Math.round(x.percent)}%`}${x.min_spend ? `, min $${x.min_spend}` : ""}${x.combines_with ? ", stacks" : ""})`).join(" · ")}</p>
       )}
     </div>
   );
