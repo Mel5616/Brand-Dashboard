@@ -956,16 +956,19 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
 
               {/* Brief body */}
               <div className="space-y-3 border-t border-gray-100 pt-4">
-                {canEdit && (
-                  <div className="no-print flex items-center gap-2">
-                    <button onClick={() => draftBriefWithAI(open)} disabled={aiBusy || !open.note?.trim()}
-                      title={!open.note?.trim() ? "Add a card note first" : "Fill any blank fields below from the card note"}
-                      className="text-[13px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 rounded-lg px-3 py-1.5 disabled:opacity-40 transition">
-                      {aiBusy ? "✨ Drafting…" : "✨ Draft blank fields with AI"}
-                    </button>
-                    {aiError && <p className="text-xs text-rose-500">{aiError}</p>}
-                  </div>
-                )}
+                {canEdit && (() => {
+                  const hasSomethingToDraftFrom = !!open.note?.trim() || Object.values(open.brief ?? {}).some(v => String(v ?? "").trim());
+                  return (
+                    <div className="no-print flex items-center gap-2">
+                      <button onClick={() => draftBriefWithAI(open)} disabled={aiBusy || !hasSomethingToDraftFrom}
+                        title={!hasSomethingToDraftFrom ? "Add a card note or fill in at least one field first" : "Fill any blank fields below from the card note and what's already filled in"}
+                        className="text-[13px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 rounded-lg px-3 py-1.5 disabled:opacity-40 transition">
+                        {aiBusy ? "✨ Drafting…" : "✨ Draft blank fields with AI"}
+                      </button>
+                      {aiError && <p className="text-xs text-rose-500">{aiError}</p>}
+                    </div>
+                  );
+                })()}
                 {BRIEF_FIELDS.map(f => {
                   const val = open.brief?.[f.key] ?? "";
                   const guard = GUARD.has(f.key);

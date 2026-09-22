@@ -30,9 +30,13 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const rows = await res.json().catch(() => []);
   const item = rows?.[0];
   if (!item) return NextResponse.json({ ok: false, error: "Campaign not found" }, { status: 404 });
-  if (!item.note?.trim()) return NextResponse.json({ ok: false, error: "Add a card note first — that's what the draft works from" }, { status: 400 });
 
   const existing: Record<string, string> = item.brief || {};
+  // Work from whatever's actually there — the card note, or fields already
+  // filled in (oneLiner/objective/etc, or an earlier AI Draft pass). Only
+  // block when there's genuinely nothing to draft from at all.
+  if (!item.note?.trim() && !Object.values(existing).some(v => String(v || "").trim()))
+    return NextResponse.json({ ok: false, error: "Add a card note or fill in at least one brief field first — that's what the draft works from" }, { status: 400 });
   const applicable = DRAFT_FIELDS.filter(k => k !== "affiliateBrief" || AFFILIATE_BRANDS.has(item.brand));
   const blankFields = applicable.filter(k => !existing[k]?.trim());
   if (!blankFields.length) return NextResponse.json({ ok: false, error: "Every field already has content — nothing blank to draft" }, { status: 400 });
@@ -73,7 +77,7 @@ Base every one of these on the facts given below plus the existing brief fields 
     `Campaign: ${item.campaign}`,
     item.channel && `Channel: ${item.channel}`,
     item.key_date && `Key date: ${item.key_date}`,
-    `Card note: ${item.note}`,
+    item.note?.trim() && `Card note: ${item.note}`,
     existingBriefSummary && `Already decided (brief fields already filled in — treat as settled facts):\n${existingBriefSummary}`,
   ].filter(Boolean).join("\n");
 
