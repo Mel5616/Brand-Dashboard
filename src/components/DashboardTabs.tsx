@@ -460,10 +460,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
 
 // Sidebar grouping — how you market (top) vs where you sell (bottom).
 const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
-  { label: "Overview", ids: ["today", "brands", "summary", "insights", "team-hub", "weekly-brief"] },
+  { label: "Overview", ids: ["today", "brands", "summary", "insights", "team-hub", "weekly-brief", "timeline"] },
   { label: "Reports", ids: ["report", "snapshot", "social-report", "d2c-weekly", "uppababy"] },
   { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows", "show-insights"] },
-  { label: "Plan", ids: ["promotions", "calendar", "content", "events", "show-deals", "activations", "timeline"] },
+  { label: "Plan", ids: ["promotions", "calendar", "content", "events", "show-deals", "activations"] },
   { label: "Websites", ids: ["assistants", "discount-codes", "cross-site-discounts", "create-codes", "website-requests", "utm-tracking", "reviews", "abandoned", "zazu-wheel", "seo"] },
   { label: "Creative", ids: ["campaign-calendar", "design-requests", "creative", "event-concepts", "decks"] },
   { label: "Blogging", ids: ["tasks", "blog-pipeline"] },
@@ -563,10 +563,8 @@ function BrandShareCard({ brands, monthly, monthKeys, channelSales, role, fyLabe
 // Influencers/Partnerships above) — the parent stays directly clickable, with
 // a chevron that reveals its children indented beneath it.
 const TRADESHOW_CHILD_IDS: TabId[] = ["show-insights", "show-deals"];
-const CALENDAR_CHILD_IDS: TabId[] = ["timeline"];
 const NESTED_PARENTS: { parentId: TabId; childIds: TabId[] }[] = [
   { parentId: "tradeshows", childIds: TRADESHOW_CHILD_IDS },
-  { parentId: "calendar", childIds: CALENDAR_CHILD_IDS },
 ];
 const ALL_NESTED_CHILD_IDS: TabId[] = NESTED_PARENTS.flatMap(p => p.childIds);
 
