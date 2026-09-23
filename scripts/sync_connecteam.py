@@ -148,6 +148,9 @@ def main():
             print(f"  ⚠ {name}: {e}")
             continue
         for e in entries:
+            if entries and not globals().get("_DEBUGGED"):
+                print(f"    [debug] raw entry: {json.dumps(e)[:1000]}")
+                globals()["_DEBUGGED"] = True
             st = (e.get("startTime") or {}).get("timestamp")
             et = (e.get("endTime") or {}).get("timestamp")
             if not st or not et:
