@@ -192,6 +192,53 @@ function D2cPlan({ d2c, promos, siteDeals, brands, onReload, canEdit, brandF, ti
     else setSdMsg(r?.needsSetup ? "Run add_site_deals.sql first." : r?.error || "Couldn't save.");
   }
 
+  // D2C promo row edit/add — a row usually arrives from the Monthly Promo
+  // Tracker sync, but one brought in some other way (a retailer's own
+  // calendar, say) needs the same edit/add path a person would use, not
+  // just the status dropdown.
+  const blankD2cForm = { id: null as number | null, brand: "", brand_id: "", sku: "", product: "", period_start: "", period_end: "", tier: "", rrp: "", promo_price: "", discount_rrp: "", retailers: "", note: "" };
+  const [d2cOpen, setD2cOpen] = useState(false);
+  const [d2cForm, setD2cForm] = useState(blankD2cForm);
+  const [d2cMsg, setD2cMsg] = useState("");
+  function openEditD2c(row: D2c) {
+    setD2cForm({
+      id: row.id, brand: row.brand, brand_id: row.brand_id != null ? String(row.brand_id) : "",
+      sku: row.sku ?? "", product: row.product ?? "", period_start: row.period_start, period_end: row.period_end,
+      tier: row.tier != null ? String(row.tier) : "", rrp: row.rrp != null ? String(row.rrp) : "",
+      promo_price: row.promo_price != null ? String(row.promo_price) : "",
+      discount_rrp: row.discount_rrp != null ? String(Math.round(Math.abs(row.discount_rrp) * 1000) / 10) : "",
+      retailers: row.retailers ?? "", note: row.note ?? "",
+    });
+    setD2cMsg(""); setD2cOpen(true);
+  }
+  function openAddD2c() {
+    setD2cForm(blankD2cForm); setD2cMsg(""); setD2cOpen(true);
+  }
+  async function saveD2c() {
+    if (!d2cForm.brand || !d2cForm.period_start || !d2cForm.period_end) { setD2cMsg("Brand and both dates are required."); return; }
+    const brandId = brands.find(b => b.name === d2cForm.brand)?.id;
+    const body: any = {
+      brand: d2cForm.brand, brand_id: brandId ?? (d2cForm.brand_id || null),
+      sku: d2cForm.sku || null, product: d2cForm.product || null,
+      period_start: d2cForm.period_start, period_end: d2cForm.period_end,
+      tier: d2cForm.tier || null, rrp: d2cForm.rrp || null, promo_price: d2cForm.promo_price || null,
+      // Entered as a plain percent (e.g. 15 for 15% off) — stored as a fraction, matching every existing row.
+      discount_rrp: d2cForm.discount_rrp ? String(Number(d2cForm.discount_rrp) / 100) : null,
+      retailers: d2cForm.retailers || null, note: d2cForm.note || null,
+    };
+    const r = d2cForm.id != null
+      ? await fetch("/api/d2c", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: d2cForm.id, ...body }) }).then(x => x.json()).catch(() => null)
+      : await fetch("/api/d2c", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(x => x.json()).catch(() => null);
+    if (r?.ok) { setD2cOpen(false); setD2cForm(blankD2cForm); setD2cMsg(""); onReload(); }
+    else setD2cMsg(r?.needsSetup ? "Run add_d2c_promos.sql first." : r?.error || "Couldn't save.");
+  }
+  async function deleteD2c() {
+    if (d2cForm.id == null) return;
+    if (!confirm("Delete this D2C promo row?")) return;
+    await fetch(`/api/d2c?id=${d2cForm.id}`, { method: "DELETE" });
+    setD2cOpen(false); setD2cForm(blankD2cForm); onReload();
+  }
+
   const rows = d2c.filter(r => (!brandF || r.brand === brandF) && (!tierF || String(r.tier) === tierF) && (!statusF || r.status === statusF));
   const counts = d2c.reduce((m, r) => { m[r.status] = (m[r.status] || 0) + 1; return m; }, {} as Record<string, number>);
 
@@ -299,6 +346,7 @@ function D2cPlan({ d2c, promos, siteDeals, brands, onReload, canEdit, brandF, ti
           <span key={s} className={`px-2.5 py-1 rounded-full font-semibold ${STATUS_META[s].cls}`}>{STATUS_META[s].label}: {counts[s] || 0}</span>
         ))}
         <div className="ml-auto flex items-center gap-3">
+          {canEdit && <button onClick={openAddD2c} className="text-[11px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-full px-2.5 py-1">＋ Add promo</button>}
           <label className="flex items-center gap-1.5 text-slate-500 cursor-pointer"><input type="checkbox" checked={groupColours} onChange={e => setGroupColours(e.target.checked)} className="accent-emerald-500" /> Group colours</label>
           <button onClick={() => setOpenMonths(new Set(monthsOrder))} className="text-emerald-600 hover:underline">Expand all</button>
           <button onClick={() => setOpenMonths(new Set())} className="text-slate-400 hover:underline">Collapse all</button>
@@ -461,13 +509,47 @@ function D2cPlan({ d2c, promos, siteDeals, brands, onReload, canEdit, brandF, ti
             {isOpen && (
               <div className="border-t border-gray-100 divide-y divide-gray-50">
                 {brandsIn.map(brand => (
-                  <BrandGroup key={brand} brand={brand} rows={list.filter(r => r.brand === brand)} canEdit={canEdit} setStatus={setStatus} action={action} groupColours={groupColours} sel={sel} toggleGroup={toggleGroup} toggleMany={toggleMany} />
+                  <BrandGroup key={brand} brand={brand} rows={list.filter(r => r.brand === brand)} canEdit={canEdit} setStatus={setStatus} action={action} groupColours={groupColours} sel={sel} toggleGroup={toggleGroup} toggleMany={toggleMany} onEdit={openEditD2c} />
                 ))}
               </div>
             )}
           </div>
         );
       })}
+
+      {d2cOpen && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4" onClick={() => setD2cOpen(false)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-5 space-y-3" onClick={e => e.stopPropagation()}>
+            <p className="text-sm font-bold text-slate-700">{d2cForm.id != null ? "Edit D2C promo" : "Add a D2C promo"}</p>
+            <div className="grid sm:grid-cols-2 gap-2">
+              <select value={d2cForm.brand} onChange={e => setD2cForm(p => ({ ...p, brand: e.target.value }))} className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white">
+                <option value="">Brand *</option>
+                {brands.map(b => <option key={b.id}>{b.name}</option>)}
+              </select>
+              <input value={d2cForm.retailers} onChange={e => setD2cForm(p => ({ ...p, retailers: e.target.value }))} placeholder="Retailer(s) · e.g. Baby Bunting" className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5" />
+              <input value={d2cForm.sku} onChange={e => setD2cForm(p => ({ ...p, sku: e.target.value }))} placeholder="SKU (optional)" className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5" />
+              <input value={d2cForm.product} onChange={e => setD2cForm(p => ({ ...p, product: e.target.value }))} placeholder="Product" className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5" />
+              <input type="date" value={d2cForm.period_start} onChange={e => setD2cForm(p => ({ ...p, period_start: e.target.value }))} className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5" />
+              <input type="date" value={d2cForm.period_end} onChange={e => setD2cForm(p => ({ ...p, period_end: e.target.value }))} className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5" />
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              <select value={d2cForm.tier} onChange={e => setD2cForm(p => ({ ...p, tier: e.target.value }))} className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white">
+                <option value="">Tier?</option><option value="1">Tier 1</option><option value="2">Tier 2</option>
+              </select>
+              <input value={d2cForm.rrp} onChange={e => setD2cForm(p => ({ ...p, rrp: e.target.value }))} placeholder="RRP" type="number" className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5" />
+              <input value={d2cForm.promo_price} onChange={e => setD2cForm(p => ({ ...p, promo_price: e.target.value }))} placeholder="Promo $" type="number" className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5" />
+              <input value={d2cForm.discount_rrp} onChange={e => setD2cForm(p => ({ ...p, discount_rrp: e.target.value }))} placeholder="Disc. %" type="number" className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5" />
+            </div>
+            <textarea value={d2cForm.note} onChange={e => setD2cForm(p => ({ ...p, note: e.target.value }))} placeholder="Note — the offer detail, bonus items, scan-back terms, source, etc." rows={3} className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 w-full" />
+            {d2cMsg && <p className="text-[12px] text-rose-500">{d2cMsg}</p>}
+            <div className="flex items-center gap-2 pt-1">
+              <button onClick={saveD2c} className="text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg px-4 py-1.5">{d2cForm.id != null ? "Save changes" : "Add promo"}</button>
+              <button onClick={() => setD2cOpen(false)} className="text-sm font-medium text-gray-500 hover:text-gray-700 px-3 py-1.5">Cancel</button>
+              {d2cForm.id != null && <button onClick={deleteD2c} className="ml-auto text-sm font-medium text-rose-500 hover:text-rose-600">Delete</button>}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -487,7 +569,7 @@ function buildGroups(rows: D2c[]): VGroup[] {
   return order.map(k => map.get(k)!);
 }
 
-function BrandGroup({ brand, rows, canEdit, setStatus, action, groupColours, sel, toggleGroup, toggleMany }: { brand: string; rows: D2c[]; canEdit: boolean; setStatus: (ids: number[], s: string) => void; action: (g: VGroup) => void; groupColours: boolean; sel: Map<string, VGroup>; toggleGroup: (g: VGroup, on: boolean) => void; toggleMany: (gs: VGroup[], on: boolean) => void }) {
+function BrandGroup({ brand, rows, canEdit, setStatus, action, groupColours, sel, toggleGroup, toggleMany, onEdit }: { brand: string; rows: D2c[]; canEdit: boolean; setStatus: (ids: number[], s: string) => void; action: (g: VGroup) => void; groupColours: boolean; sel: Map<string, VGroup>; toggleGroup: (g: VGroup, on: boolean) => void; toggleMany: (gs: VGroup[], on: boolean) => void; onEdit: (row: D2c) => void }) {
   const [open, setOpen] = useState(false);
   const groups = groupColours ? buildGroups(rows) : rows.map(r => ({ key: `${r.brand}|${r.product || r.sku}|${r.period_start}|${r.period_end}|${r.tier}|${r.promo_price}`, base: r.product || r.sku || "—", colours: [], ids: [r.id], rows: [r], rep: r } as VGroup));
   const statusSummary = Array.from(new Set(rows.map(r => r.status)));
@@ -510,6 +592,7 @@ function BrandGroup({ brand, rows, canEdit, setStatus, action, groupColours, sel
               <th className="text-left font-semibold px-3 py-2">Dates</th><th className="text-right font-semibold px-3 py-2">RRP</th>
               <th className="text-right font-semibold px-3 py-2">Promo</th><th className="text-right font-semibold px-3 py-2">Disc.</th>
               <th className="text-left font-semibold px-3 py-2">Retailers</th><th className="text-left font-semibold px-3 py-2">D2C status</th>
+              {canEdit && <th className="w-8"></th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
@@ -541,6 +624,7 @@ function BrandGroup({ brand, rows, canEdit, setStatus, action, groupColours, sel
                       </select>
                     ) : <span className={`text-xs font-semibold rounded-full px-2.5 py-1 ${STATUS_META[unified]?.cls || "bg-slate-100 text-slate-400"}`}>{unified ? STATUS_META[unified].label : "Mixed"}</span>}
                   </td>
+                  {canEdit && <td className="px-2 py-2"><button onClick={() => onEdit(r)} className="text-gray-300 hover:text-emerald-600 text-[12px] leading-none px-0.5" title={grouped ? "Edit this colour" : "Edit"}>✎</button></td>}
                 </tr>
               );
             })}
