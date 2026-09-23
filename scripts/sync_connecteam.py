@@ -99,9 +99,16 @@ def unavailabilities_for(user_id, start_ts, end_ts):
         "userId": user_id, "startTime": start_ts, "endTime": end_ts,
     })
     payload = data.get("data") or {}
-    # Confirmed against a live response, 23 Sep 2026 — the docs call this
-    # field "unavailabilities"; the real API returns "userUnavailabilities".
-    return payload.get("userUnavailabilities") or []
+    # Confirmed against a live response, 23 Sep 2026. The docs call this field
+    # "unavailabilities" and imply it's the entry list directly; the real API
+    # nests one level deeper: "userUnavailabilities" is a list of per-user
+    # wrapper objects ({"userId": ..., "unavailabilities": [...]}), even
+    # though the call is already scoped to one user — the actual time-off
+    # entries are inside that inner "unavailabilities" array.
+    out = []
+    for wrapper in (payload.get("userUnavailabilities") or []):
+        out.extend(wrapper.get("unavailabilities") or [])
+    return out
 
 
 def to_date(ts):
@@ -148,9 +155,6 @@ def main():
             print(f"  ⚠ {name}: {e}")
             continue
         for e in entries:
-            if entries and not globals().get("_DEBUGGED"):
-                print(f"    [debug] raw entry: {json.dumps(e)[:1000]}")
-                globals()["_DEBUGGED"] = True
             st = (e.get("startTime") or {}).get("timestamp")
             et = (e.get("endTime") or {}).get("timestamp")
             if not st or not et:
