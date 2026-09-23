@@ -123,6 +123,49 @@ export function BlogStudio({ brands, admin, onSendAsEdm, openDraftId, onOpened }
     if (d?.ok) { setMsg("Saved."); load(); } else setMsg(d?.error || "Couldn't save.");
   }
 
+  // Opens a rendered preview in a new tab — the current unsaved edits (title,
+  // image, body), not just what's persisted, so "does this look right" can be
+  // checked before "Save changes" even runs. Client-side only, a Blob URL, so
+  // it needs no Shopify credentials and works for a draft that's never been
+  // pushed live.
+  function previewDraft(d: Draft) {
+    const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const title = edit.title ?? d.title;
+    const metaDescription = edit.meta_description ?? d.meta_description ?? "";
+    const bodyHtml = edit.body_html ?? d.body_html;
+    const imageUrl = d.image_url;
+    const html = `<!doctype html>
+<html><head><meta charset="utf-8"><title>${esc(title)} — preview</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body{font-family:Georgia,'Times New Roman',serif;max-width:700px;margin:0 auto;padding:48px 20px 80px;color:#1f2933;line-height:1.75;font-size:17px;}
+  .badge{display:inline-block;font:600 11px/1 -apple-system,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#b45309;background:#fef3c7;border-radius:999px;padding:6px 12px;margin-bottom:20px;}
+  h1{font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:2.1rem;line-height:1.25;margin:0 0 10px;color:#0f172a;}
+  .meta-desc{font-family:-apple-system,sans-serif;color:#64748b;font-size:15px;margin:0 0 28px;}
+  .hero{width:100%;border-radius:14px;margin-bottom:28px;display:block;}
+  h2{font-family:-apple-system,sans-serif;font-size:1.35rem;margin:2.4rem 0 .8rem;color:#0f172a;}
+  p{margin:0 0 1.1em;}
+  ul,ol{margin:0 0 1.1em;padding-left:1.4em;}
+  a{color:#0e7490;}
+  table{border-collapse:collapse;width:100%;margin:0 0 1.5em;font-family:-apple-system,sans-serif;font-size:14px;}
+  td,th{border:1px solid #e2e8f0;padding:8px 10px;text-align:left;}
+  details.faq{border-top:1px solid #e2e8f0;padding:14px 0;font-family:-apple-system,sans-serif;}
+  details.faq:last-of-type{border-bottom:1px solid #e2e8f0;}
+  details.faq summary{cursor:pointer;font-weight:600;font-size:15.5px;list-style:none;}
+  details.faq summary::-webkit-details-marker{display:none;}
+  .faq__a{padding-top:10px;font-size:15px;color:#334155;}
+</style></head>
+<body>
+  <span class="badge">Preview — not live</span>
+  ${imageUrl ? `<img class="hero" src="${esc(imageUrl)}" alt="">` : ""}
+  <h1>${esc(title)}</h1>
+  ${metaDescription ? `<p class="meta-desc">${esc(metaDescription)}</p>` : ""}
+  ${bodyHtml}
+</body></html>`;
+    const url = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+    window.open(url, "_blank");
+  }
+
   async function uploadImage(id: string, file: File) {
     setUploadingId(id);
     setMsg("Uploading image…");
@@ -340,6 +383,7 @@ export function BlogStudio({ brands, admin, onSendAsEdm, openDraftId, onOpened }
                         </div>
                         <div className="flex flex-wrap items-center gap-2 pt-1">
                           <button onClick={saveEdit} disabled={busy} className="text-sm font-semibold text-slate-700 bg-gray-100 hover:bg-gray-200 rounded-lg px-4 py-2">Save changes</button>
+                          <button onClick={() => previewDraft(d)} className="text-sm font-semibold text-indigo-600 border border-indigo-200 hover:bg-indigo-50 rounded-lg px-4 py-2">Preview ↗</button>
                           {admin && !confirmingApprove && <button onClick={() => setConfirmingApprove(true)} disabled={busy} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg px-4 py-2">Approve & publish live</button>}
                           {!admin && <span className="text-xs text-gray-400">Only an admin can publish this live.</span>}
                           {!showReject && <button onClick={() => setShowReject(true)} disabled={busy} className="text-sm font-semibold text-rose-500 hover:text-rose-600 ml-auto">Reject</button>}
