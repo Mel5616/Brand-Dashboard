@@ -48,7 +48,14 @@ def ct_get(path, params=None, _tries=5):
     url = f"{API}{path}"
     if params:
         url += "?" + urlencode(params)
-    req = urllib.request.Request(url, headers={"X-API-KEY": CT_KEY, "Accept": "application/json"})
+    # Connecteam's API sits behind Cloudflare, which rejects Python's default
+    # urllib User-Agent outright ("Error 1010: blocked based on your browser's
+    # signature") before the request ever reaches the API itself — a real,
+    # observed block, not a guess. A normal-looking UA is enough to pass it.
+    req = urllib.request.Request(url, headers={
+        "X-API-KEY": CT_KEY, "Accept": "application/json",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+    })
     for attempt in range(_tries):
         try:
             with urllib.request.urlopen(req, timeout=30) as r:
