@@ -96,6 +96,7 @@ export const TAB_SECTIONS: TabSection[] = [
   ] },
   { label: "Owned & Earned", tabs: [
     { id: "social", label: "Social" },
+    { id: "social-writing", label: "Social Writing" },
     { id: "youtube", label: "YouTube" },
     { id: "influencer", label: "Influencer Budget" },
     { id: "gifting", label: "Influencer Tracker" },

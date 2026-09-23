@@ -33,14 +33,15 @@ function clean(b: any) {
 // really been produced instead of just what was planned. Each of these
 // tables is small; fetching just the campaign_id column for linked rows is
 // cheap, and one failing table (e.g. not set up yet) doesn't block the rest.
-async function deliverableCounts(): Promise<Record<string, { blog: number; edm: number; website: number; promo: number }>> {
-  const counts: Record<string, { blog: number; edm: number; website: number; promo: number }> = {};
-  const bump = (id: string, key: "blog" | "edm" | "website" | "promo") => {
-    if (!counts[id]) counts[id] = { blog: 0, edm: 0, website: 0, promo: 0 };
+type DeliverableKey = "blog" | "edm" | "website" | "promo" | "social";
+async function deliverableCounts(): Promise<Record<string, Record<DeliverableKey, number>>> {
+  const counts: Record<string, Record<DeliverableKey, number>> = {};
+  const bump = (id: string, key: DeliverableKey) => {
+    if (!counts[id]) counts[id] = { blog: 0, edm: 0, website: 0, promo: 0, social: 0 };
     counts[id][key]++;
   };
-  const tables: { table: string; key: "blog" | "edm" | "website" | "promo" }[] = [
-    { table: "blog_drafts", key: "blog" }, { table: "edm_drafts", key: "edm" }, { table: "website_requests", key: "website" }, { table: "site_deals", key: "promo" },
+  const tables: { table: string; key: DeliverableKey }[] = [
+    { table: "blog_drafts", key: "blog" }, { table: "edm_drafts", key: "edm" }, { table: "website_requests", key: "website" }, { table: "site_deals", key: "promo" }, { table: "social_drafts", key: "social" },
   ];
   await Promise.all(tables.map(async ({ table, key }) => {
     const res = await fetch(`${sbUrl}/rest/v1/${table}?select=campaign_id&campaign_id=not.is.null`, { headers: headers(), cache: "no-store" }).catch(() => null);
@@ -62,7 +63,7 @@ export async function GET() {
     if (isMissingTable(res.status, text)) return NextResponse.json({ ok: false, needsSetup: true, items: [] });
     return NextResponse.json({ ok: false, items: [] }, { status: 500 });
   }
-  const items = JSON.parse(text || "[]").map((c: any) => ({ ...c, deliverables_status: counts[c.id] ?? { blog: 0, edm: 0, website: 0, promo: 0 } }));
+  const items = JSON.parse(text || "[]").map((c: any) => ({ ...c, deliverables_status: counts[c.id] ?? { blog: 0, edm: 0, website: 0, promo: 0, social: 0 } }));
   return NextResponse.json({ ok: true, items });
 }
 

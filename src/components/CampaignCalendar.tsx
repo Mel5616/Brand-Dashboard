@@ -18,7 +18,7 @@ type Campaign = {
   owner: string; channel: string; status: string; key_date: string; end_date?: string; note: string;
   sort_order: number; brief?: Brief; share_token?: string; image_url?: string | null;
   asana_task_gid?: string | null; asana_permalink_url?: string | null;
-  deliverables_status?: { blog: number; edm: number; website: number; promo: number };
+  deliverables_status?: { blog: number; edm: number; website: number; promo: number; social: number };
 };
 type Maint = { id: string; name: string; tier: string; sort_order: number };
 
@@ -163,11 +163,11 @@ function TimelineGantt({ items, onOpen }: { items: Campaign[]; onOpen: (id: stri
                 {isOpen && (
                   <div className="mt-1 space-y-1">
                     {ranges.map(r => {
-                      // Only Blog and EDM actually link back to real drafts today
-                      // (Generate campaign kit) — Design/Paid/Social stay pure
-                      // date estimates until something produces real content for them too.
-                      const trackable = r.key === "blog" || r.key === "edm";
-                      const done = trackable && (c.deliverables_status?.[r.key as "blog" | "edm"] ?? 0) > 0;
+                      // Blog, EDM and Social link back to real drafts today —
+                      // Design/Paid stay pure date estimates until something
+                      // produces real content for them too.
+                      const trackable = r.key === "blog" || r.key === "edm" || r.key === "social";
+                      const done = trackable && (c.deliverables_status?.[r.key as "blog" | "edm" | "social"] ?? 0) > 0;
                       return (
                         <div key={r.key} className="flex items-center gap-2">
                           <span className="w-4 shrink-0" />
@@ -194,7 +194,7 @@ function TimelineGantt({ items, onOpen }: { items: Campaign[]; onOpen: (id: stri
   );
 }
 
-export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, onStartEdm, onSendToPlanner, onStartPromo }: { canEdit?: boolean; brands?: { id: number; name: string }[]; onStartBlog?: (draftId: string) => void; onStartEdm?: (draftId: string) => void; onSendToPlanner?: () => void; onStartPromo?: () => void }) {
+export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, onStartEdm, onSendToPlanner, onStartPromo, onStartSocial }: { canEdit?: boolean; brands?: { id: number; name: string }[]; onStartBlog?: (draftId: string) => void; onStartEdm?: (draftId: string) => void; onSendToPlanner?: () => void; onStartPromo?: () => void; onStartSocial?: (draftId: string) => void }) {
   const [view, setView] = useState<"roadmap" | "timeline" | "sends" | "bf" | "promos">("roadmap");
   const [items, setItems] = useState<Campaign[]>([]);
   const [maint, setMaint] = useState<Maint[]>([]);
@@ -212,7 +212,7 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
   const [aiBusy, setAiBusy] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiVersion, setAiVersion] = useState(0);
-  const [linkBusy, setLinkBusy] = useState<"blog" | "edm" | "promo" | null>(null);
+  const [linkBusy, setLinkBusy] = useState<"blog" | "edm" | "promo" | "social" | null>(null);
   const [linkError, setLinkError] = useState<string | null>(null);
   const [kitBusy, setKitBusy] = useState(false);
   const [kitStep, setKitStep] = useState<string | null>(null);
@@ -396,6 +396,25 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
     setLinkBusy(null);
     if (res?.ok) onStartPromo?.();
     else setLinkError(res?.error || "Couldn't create the promo.");
+  }
+  // "Start social →" — generates one Instagram feed draft from the
+  // campaign's socialsBrief (falling back to the general brief) and jumps
+  // to Social Writing to review it. One platform to start; more can be
+  // generated for the same brief from Social Writing directly.
+  async function startSocial(item: Campaign) {
+    const brand = brands.find(b => b.name === item.brand) ?? brands.find(b => item.brand.includes(b.name));
+    if (!brand) { setLinkError(`Couldn't match "${item.brand}" to a single brand to start a social draft.`); return; }
+    setLinkBusy("social"); setLinkError(null);
+    const socialsBrief = (item.brief as any)?.socialsBrief as string | undefined;
+    const res = await fetch("/api/social-drafts", {
+      method: "POST", headers: jsonHeaders, body: JSON.stringify({
+        brand_id: brand.id, brand_name: brand.name, brief: socialsBrief?.trim() || campaignBrief(item),
+        platform: "instagram", format: "feed", campaign_id: item.id, campaign_name: item.campaign,
+      }),
+    }).then(r => r.json()).catch(() => null);
+    setLinkBusy(null);
+    if (res?.ok) onStartSocial?.(res.item.id);
+    else setLinkError(res?.error || "Couldn't start a social draft for that brand.");
   }
   const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
   function htmlFromPlainBody(text: string): string {
@@ -830,6 +849,7 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
                             {([
                               ["blog", "📝", "Blog"],
                               ["edm", "✉️", "EDM"],
+                              ["social", "📷", "Social"],
                               ["website", "🌐", "Website"],
                               ["promo", "🎟️", "Promo"],
                             ] as const).map(([key, icon, label]) => {
@@ -1124,6 +1144,11 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
                     className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-amber-500 hover:bg-amber-600 rounded-lg px-3.5 py-1.5 transition disabled:opacity-60 motion-reduce:transition-none">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                     {linkBusy === "promo" ? "Starting…" : "Start D2C promo →"}
+                  </button>
+                  <button onClick={() => startSocial(open)} disabled={linkBusy === "social"} title="Drafts an Instagram caption from the brief's socialsBrief (or the general brief if that's blank)"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-pink-500 hover:bg-pink-600 rounded-lg px-3.5 py-1.5 transition disabled:opacity-60 motion-reduce:transition-none">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5" strokeWidth={2} /><circle cx="12" cy="12" r="3.5" strokeWidth={2} /><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" /></svg>
+                    {linkBusy === "social" ? "Starting…" : "Start social →"}
                   </button>
                   <button onClick={() => pushToAsana(open)} disabled={asanaBusy} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-[#F06A6A] hover:bg-[#e05555] rounded-lg px-3.5 py-1.5 transition disabled:opacity-60 motion-reduce:transition-none">
                     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="18" cy="7" r="4" /><circle cx="6" cy="7" r="4" /><circle cx="12" cy="16" r="4" /></svg>

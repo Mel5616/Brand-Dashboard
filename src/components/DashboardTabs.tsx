@@ -86,6 +86,7 @@ import { BlogHub } from "./BlogHub";
 import { BlogPipeline } from "./BlogPipeline";
 import { BlogStudio } from "./BlogStudio";
 import { EmailStudio } from "./EmailStudio";
+import { SocialStudio } from "./SocialStudio";
 import { EdmPlanner } from "./EdmPlanner";
 import { CredentialsPanel } from "./CredentialsPanel";
 import { ADMIN_ONLY_TABS } from "@/lib/tabs";
@@ -116,7 +117,7 @@ import { StockReport } from "./StockReport";
 import { fmt, fmtFull } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "assistants" | "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "cross-site-discounts" | "create-codes" | "abandoned" | "zazu-wheel" | "reviews" | "website-requests" | "utm-tracking" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "edm-planner" | "seo" | "social" | "youtube" | "tradeshows" | "show-insights" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "credentials" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "campaign-briefs" | "nanit" | "affiliates" | "commission-factory" | "email-writing" | "pa-budget" | "pa-tracker" | "pa-revenue" | "documents" | "team" | "brand-packs" | "price-lists" | "hub-fact-sheets" | "brand-overview" | "stock-availability" | "order-forms" | "customers" | "customer-forms" | "blog-pipeline";
+type TabId = "assistants" | "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "cross-site-discounts" | "create-codes" | "abandoned" | "zazu-wheel" | "reviews" | "website-requests" | "utm-tracking" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "edm-planner" | "seo" | "social" | "social-writing" | "youtube" | "tradeshows" | "show-insights" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "credentials" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "campaign-briefs" | "nanit" | "affiliates" | "commission-factory" | "email-writing" | "pa-budget" | "pa-tracker" | "pa-revenue" | "documents" | "team" | "brand-packs" | "price-lists" | "hub-fact-sheets" | "brand-overview" | "stock-availability" | "order-forms" | "customers" | "customer-forms" | "blog-pipeline";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -250,6 +251,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
     id: "social", label: "Social",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5" strokeWidth={2} /><circle cx="12" cy="12" r="3.5" strokeWidth={2} /><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" /></svg>,
+  },
+  {
+    id: "social-writing", label: "Social Writing",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15.828H9v-2.828l8.586-8.586zM3 8l7 5" /></svg>,
   },
   {
     id: "youtube", label: "YouTube",
@@ -450,7 +455,7 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info", "brand-assets", "stock-report", "cost-sheet", "credentials"] },
   { label: "Retailer Hub", ids: ["brand-packs", "price-lists", "hub-fact-sheets", "brand-overview", "stock-availability", "order-forms", "customers", "customer-forms"] },
   { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads", "amazon-ads"] },
-  { label: "Owned & Earned", ids: ["social", "youtube", "influencer", "gifting", "influencer-agreements", "campaign-briefs", "nanit", "releases"] },
+  { label: "Owned & Earned", ids: ["social", "social-writing", "youtube", "influencer", "gifting", "influencer-agreements", "campaign-briefs", "nanit", "releases"] },
   { label: "Partnerships & Affiliates", ids: ["affiliates", "commission-factory", "pa-budget", "pa-tracker", "pa-revenue", "documents"] },
   { label: "Sales Hub", ids: ["sales-hub"] },
 ];
@@ -667,6 +672,8 @@ export function DashboardTabs({
   const [pendingEmailOpenId, setPendingEmailOpenId] = useState<string | null>(null);
   // Same hand-off for "Start blog →" on a Campaign card.
   const [pendingBlogOpenId, setPendingBlogOpenId] = useState<string | null>(null);
+  // Same hand-off for "Start social →" on a Campaign card.
+  const [pendingSocialOpenId, setPendingSocialOpenId] = useState<string | null>(null);
   // Deep-link support (?tab=sales-hub) — lets other pages (e.g. /command) link
   // straight to a specific section instead of dropping the user on the default tab.
   useEffect(() => {
@@ -1595,7 +1602,8 @@ export function DashboardTabs({
               onStartBlog={id => { setPendingBlogOpenId(id); setActive("blog-pipeline"); }}
               onStartEdm={id => { setPendingEmailOpenId(id); setActive("email-writing"); }}
               onSendToPlanner={() => setActive("edm-planner")}
-              onStartPromo={() => setActive("promotions")} />
+              onStartPromo={() => setActive("promotions")}
+              onStartSocial={id => { setPendingSocialOpenId(id); setActive("social-writing"); }} />
           )}
 
           {active === "weekly-brief" && (
@@ -2499,6 +2507,15 @@ export function DashboardTabs({
                 </select>
               </div>
               <SocialPanel scope={brandFilter} brands={brands} instagramOrganic={instagramOrganicAll} instagramMedia={instagramMedia} monthKeys={monthKeys} onSelectBrand={setBrandFilter} />
+            </>
+          )}
+
+          {/* ── Social Writing (caption/hashtag/visual-direction drafts) ── */}
+          {active === "social-writing" && (
+            <>
+              <SectionBar title="Social Writing" />
+              <SocialStudio brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} admin={role === "admin"}
+                openDraftId={pendingSocialOpenId} onOpened={() => setPendingSocialOpenId(null)} />
             </>
           )}
 
