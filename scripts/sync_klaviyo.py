@@ -22,7 +22,7 @@ Setup:
   4. python3 scripts/sync_klaviyo.py
 """
 
-import sys, os, json, time
+import sys, os, json, time, re
 from datetime import datetime, date, timedelta
 from calendar import monthrange
 
@@ -305,6 +305,154 @@ def sync_brand(db, api_key, brand, brand_id):
 
     # Per-campaign results for the weekly brief's "sent this week" panel
     sync_campaigns(db, api_key, brand, brand_id, revenue_id)
+    # Lifecycle flow grid + per-flow performance, and the portfolio send calendar
+    sync_flows(db, api_key, brand, brand_id, metrics)
+    sync_campaign_calendar(db, api_key, brand_id)
+
+
+# ── Lifecycle flows: status grid + per-flow performance ─────────────────────
+# One row per flow in lifecycle_flows (the Email Marketing > Lifecycle Flows
+# grid, matched by name to the grid's fixed flow keys) and one row per flow
+# per month in klaviyo_flow_metrics (recipients/opens/clicks/orders/revenue).
+FLOW_KEY_RULES = [
+    ("welcome",        r"welcome"),
+    ("browse_abandon", r"browse"),
+    ("cart_abandon",   r"abandon(ed)? (cart|checkout)|checkout"),
+    ("post_purchase",  r"post[- ]purchase|thank you|unboxing|tips|bounce back|installation"),
+    ("replenishment",  r"replenish|reorder|refill|filters|running low|time to restock"),
+    ("winback",        r"win ?back|lapsed"),
+    ("birthday",       r"birthday|anniversary|\bdob\b"),
+    ("review_request", r"review"),
+    ("back_in_stock",  r"back in stock"),
+]
+GRID_STATUS = {"live": "live", "manual": "paused", "paused": "paused", "draft": "planned"}
+
+def list_flows(api_key):
+    out = []
+    data = klaviyo_get(api_key, "flows/", {"fields[flow]": "name,status,trigger_type", "page[size]": 50})
+    while True:
+        out.extend(data.get("data", []))
+        nxt = (data.get("links") or {}).get("next")
+        if not nxt:
+            break
+        headers = {"Authorization": f"Klaviyo-API-Key {api_key}", "revision": "2024-10-15", "Accept": "application/json"}
+        r = requests.get(nxt, headers=headers, timeout=20); r.raise_for_status(); data = r.json()
+    return out
+
+def agg_by_flow(api_key, metric_id, year, month, measurement, dim):
+    """{flow_id: value} for a metric grouped by $flow (email events) or $attributed_flow (orders)."""
+    out = {}
+    for row in metric_aggregate(api_key, metric_id, year, month, measurement, by=[dim]):
+        dims = row.get("dimensions") or []
+        fid = dims[0] if dims else None
+        vals = row.get("measurements", {}).get(measurement, [])
+        if fid and vals:
+            out[str(fid)] = out.get(str(fid), 0) + (vals[0] or 0)
+    return out
+
+def sync_flows(db, api_key, brand, brand_id, metrics):
+    try:
+        flows = list_flows(api_key)
+    except Exception as e:
+        print(f"    Warning: flow list failed — {e}")
+        return
+    # 1. Coverage grid: best-status flow per grid key (live beats paused beats planned)
+    rank = {"live": 3, "paused": 2, "planned": 1}
+    found = {}
+    for f in flows:
+        name = f["attributes"].get("name") or ""
+        st = GRID_STATUS.get(f["attributes"].get("status"), "planned")
+        for key, rx in FLOW_KEY_RULES:
+            if re.search(rx, name, re.I):
+                if key not in found or rank[st] > rank[found[key][0]]:
+                    found[key] = (st, name, f["id"])
+                break
+    rows = []
+    for key, _ in FLOW_KEY_RULES:
+        st, name, fid = found.get(key, ("not_built", "", ""))
+        rows.append({"brand_id": brand_id, "flow_key": key, "status": st, "klaviyo_url": f"https://www.klaviyo.com/flow/{fid}/edit" if fid else None,
+                     "note": name or None, "updated_by": "klaviyo-sync", "updated_at": datetime.utcnow().isoformat() + "Z"})
+    try:
+        db.table("lifecycle_flows").upsert(rows, on_conflict="brand_id,flow_key").execute()
+        live = sum(1 for r in rows if r["status"] == "live")
+        print(f"    Flows: {len(flows)} in Klaviyo, {live}/{len(rows)} grid flows live")
+    except Exception as e:
+        print(f"    Warning: lifecycle_flows upsert failed — {e}")
+    # 2. Per-flow performance, current + previous month
+    received_id, opened_id, clicked_id, revenue_id = metrics.get("Received Email"), metrics.get("Opened Email"), metrics.get("Clicked Email"), metrics.get("Placed Order")
+    today = date.today()
+    months = [(today.year, today.month)]
+    prev = (today.year - 1, 12) if today.month == 1 else (today.year, today.month - 1)
+    months.append(prev)
+    by_id = {f["id"]: f["attributes"] for f in flows}
+    for (y, m) in months:
+        mk = f"{y:04d}-{m:02d}"
+        rec = agg_by_flow(api_key, received_id, y, m, "unique", "$flow") if received_id else {}
+        opn = agg_by_flow(api_key, opened_id, y, m, "unique", "$flow") if opened_id else {}
+        clk = agg_by_flow(api_key, clicked_id, y, m, "unique", "$flow") if clicked_id else {}
+        orders = agg_by_flow(api_key, revenue_id, y, m, "unique", "$attributed_flow") if revenue_id else {}
+        rev = agg_by_flow(api_key, revenue_id, y, m, "sum_value", "$attributed_flow") if revenue_id else {}
+        mrows = []
+        for fid, att in by_id.items():
+            if not (rec.get(fid) or rev.get(fid)):
+                continue
+            mrows.append({"brand_id": brand_id, "flow_id": fid, "month_key": mk, "flow_name": (att.get("name") or "")[:200], "status": att.get("status"),
+                          "trigger_type": att.get("trigger_type"), "recipients": int(rec.get(fid, 0)), "opens": int(opn.get(fid, 0)), "clicks": int(clk.get(fid, 0)),
+                          "orders": int(orders.get(fid, 0)), "revenue": round(float(rev.get(fid, 0)), 2), "synced_at": datetime.utcnow().isoformat() + "Z"})
+        if mrows:
+            try:
+                db.table("klaviyo_flow_metrics").upsert(mrows, on_conflict="brand_id,flow_id,month_key").execute()
+                print(f"    Flow performance {mk}: {len(mrows)} flows, ${sum(r['revenue'] for r in mrows):,.0f} attributed")
+            except Exception as e:
+                print(f"    Warning: klaviyo_flow_metrics upsert failed (run add_klaviyo_flow_metrics_and_campaigns.sql?) — {e}")
+        time.sleep(0.3)
+
+def sync_campaign_calendar(db, api_key, brand_id):
+    """Every email campaign scheduled in the last 30 or next 90 days, with status,
+    send time, subject and audience names — the portfolio send calendar."""
+    since = (datetime.utcnow() - timedelta(days=30)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    try:
+        names = {}
+        for kind in ("lists", "segments"):
+            data = klaviyo_get(api_key, f"{kind}/", {f"fields[{kind[:-1]}]": "name"})
+            while True:
+                for x in data.get("data", []):
+                    names[x["id"]] = x["attributes"].get("name")
+                nxt = (data.get("links") or {}).get("next")
+                if not nxt:
+                    break
+                r = requests.get(nxt, headers={"Authorization": f"Klaviyo-API-Key {api_key}", "revision": "2024-10-15", "Accept": "application/json"}, timeout=20); r.raise_for_status(); data = r.json()
+        data = klaviyo_get(api_key, "campaigns/", {
+            "filter": f"and(equals(messages.channel,'email'),greater-than(scheduled_at,{since}))",
+            "fields[campaign]": "name,status,send_time,scheduled_at,audiences",
+            "include": "campaign-messages", "fields[campaign-message]": "definition",
+        })
+    except Exception as e:
+        print(f"    Warning: campaign calendar failed — {e}")
+        return
+    subjects = {}
+    for inc in data.get("included", []) or []:
+        if inc.get("type") == "campaign-message":
+            content = ((inc.get("attributes") or {}).get("definition") or {}).get("content") or {}
+            subjects[inc["id"]] = content.get("subject")
+    rows = []
+    for c in data.get("data", []):
+        att = c.get("attributes", {})
+        msg_ids = [m["id"] for m in ((c.get("relationships") or {}).get("campaign-messages") or {}).get("data", [])]
+        subject = next((subjects[m] for m in msg_ids if subjects.get(m)), None)
+        aud = att.get("audiences") or {}
+        inc_names = [names.get(i, i) for i in (aud.get("included") or [])]
+        rows.append({"brand_id": brand_id, "campaign_id": c["id"], "name": (att.get("name") or "Campaign")[:200],
+                     "status": att.get("status"), "send_time": att.get("send_time") or att.get("scheduled_at"),
+                     "subject": (subject or "")[:300] or None, "audiences": ", ".join(inc_names)[:500] or None,
+                     "synced_at": datetime.utcnow().isoformat() + "Z"})
+    if rows:
+        try:
+            db.table("klaviyo_campaigns").upsert(rows, on_conflict="brand_id,campaign_id").execute()
+            sched = sum(1 for r in rows if (r["status"] or "").lower() == "scheduled")
+            print(f"    Calendar: {len(rows)} campaigns (last 30d + upcoming), {sched} scheduled")
+        except Exception as e:
+            print(f"    Warning: campaign calendar upsert failed (run add_klaviyo_flow_metrics_and_campaigns.sql?) — {e}")
 
 def sync_campaigns(db, api_key, brand, brand_id, revenue_id):
     """Recent email campaigns (last 21 days) with per-campaign results."""

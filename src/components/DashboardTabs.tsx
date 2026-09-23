@@ -88,6 +88,8 @@ import { BlogStudio } from "./BlogStudio";
 import { EmailStudio } from "./EmailStudio";
 import { SocialStudio } from "./SocialStudio";
 import { LifecycleFlowGrid } from "./LifecycleFlowGrid";
+import { FlowPerformance } from "./FlowPerformance";
+import { SendCalendar } from "./SendCalendar";
 import { DatabaseSizeCard } from "./DatabaseSizeCard";
 import { EdmPlanner } from "./EdmPlanner";
 import { CredentialsPanel } from "./CredentialsPanel";
@@ -2467,6 +2469,7 @@ export function DashboardTabs({
           {active === "edm-planner" && (
             <>
               <SectionBar title="EDM Planner" />
+              <SendCalendar brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} />
               <EdmPlanner brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color, live: b.live }))}
                 onOpenInStudio={id => { setPendingEmailOpenId(id); setActive("email-writing"); }} />
             </>
@@ -2486,6 +2489,7 @@ export function DashboardTabs({
               <SectionBar title="Lifecycle Flows" />
               <DatabaseSizeCard />
               <LifecycleFlowGrid brands={brands.map((b: any) => ({ id: b.id, name: b.name, live: b.live }))} />
+              <FlowPerformance brands={brands.filter((b: any) => b.live !== false).map((b: any) => ({ id: b.id, name: b.name, live: b.live }))} />
             </>
           )}
 
