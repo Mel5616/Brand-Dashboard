@@ -67,10 +67,21 @@ retailBrief — instruction for retail/wholesale, only if this campaign has any 
 websiteBrief — instruction to the website/e-commerce owner: what needs to exist on-site (landing page, capture form, PDP updates).
 affiliateBrief — only ever write this for UPPAbaby or Nanit; instruction to the affiliate manager on what to brief partners/creators.
 creativeDirection — the visual/tonal direction for creative assets across the campaign, one level more specific than "on brand".
-Base every one of these on the facts given below plus the existing brief fields already filled in (shown below) — stay consistent with them, don't contradict a date, offer or audience already decided.`;
+Base every one of these on the facts given below plus the existing brief fields already filled in (shown below) — stay consistent with them, don't contradict a date, offer or audience already decided.
+If "Recent performance for this brand" is given below, let it genuinely inform your guardrails (do/dont) and channel briefs — lean into what worked, avoid repeating what didn't. Don't mention it as a citation, just apply the lesson.`;
 
   const existingBriefSummary = Object.entries(existing).filter(([k, v]) => v && !blankFields.includes(k as any))
     .map(([k, v]) => `${k}: ${v}`).join("\n");
+
+  // Closes the loop: what actually happened on this brand's recent
+  // completed campaigns, so guardrails/briefs aren't guessed cold every time.
+  const histRes = await fetch(`${sbUrl}/rest/v1/campaigns?brand=eq.${encodeURIComponent(item.brand)}&performance_verdict=not.is.null&id=neq.${id}&select=campaign,performance_verdict,performance_note&order=updated_at.desc&limit=3`, { headers: h(), cache: "no-store" }).catch(() => null);
+  const histRows = histRes?.ok ? await histRes.json().catch(() => []) : [];
+  const VERDICT_LABEL: Record<string, string> = { worked: "Worked well", mixed: "Mixed", didnt_work: "Didn't work", too_early: "Too early to tell" };
+  const performanceHistory = (histRows as any[])
+    .filter(r => r.performance_verdict && r.performance_verdict !== "too_early")
+    .map(r => `"${r.campaign}" — ${VERDICT_LABEL[r.performance_verdict] ?? r.performance_verdict}${r.performance_note ? `: ${r.performance_note}` : ""}`)
+    .join("\n");
 
   const facts = [
     `Brand: ${item.brand}`,
@@ -79,6 +90,7 @@ Base every one of these on the facts given below plus the existing brief fields 
     item.key_date && `Key date: ${item.key_date}`,
     item.note?.trim() && `Card note: ${item.note}`,
     existingBriefSummary && `Already decided (brief fields already filled in — treat as settled facts):\n${existingBriefSummary}`,
+    performanceHistory && `Recent performance for this brand (from past campaigns):\n${performanceHistory}`,
   ].filter(Boolean).join("\n");
 
   const aiRes = await fetch("https://api.anthropic.com/v1/messages", {

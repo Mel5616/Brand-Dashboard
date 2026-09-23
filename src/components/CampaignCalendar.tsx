@@ -19,6 +19,7 @@ type Campaign = {
   sort_order: number; brief?: Brief; share_token?: string; image_url?: string | null;
   asana_task_gid?: string | null; asana_permalink_url?: string | null;
   deliverables_status?: { blog: number; edm: number; website: number; promo: number; social: number };
+  performance_verdict?: string | null; performance_note?: string | null;
 };
 type Maint = { id: string; name: string; tier: string; sort_order: number };
 
@@ -60,6 +61,14 @@ const gcalUrl = (c: Campaign) => {
 const TIERS = ["A", "B", "C"];
 const STATUSES = ["Live", "Build", "Planned", "Pipeline", "Paused", "Completed"];
 const STATUS_COLOR: Record<string, string> = { Live: "#2E7D5B", Build: "#C77D3C", Planned: "#3C6E9E", Pipeline: "#8A7BB0", Paused: "#9A9A9A", Completed: "#475569" };
+// Closes the loop: what actually happened, feeds into the next AI Draft for
+// this brand (src/app/api/campaigns/[id]/draft pulls recent verdicts in).
+const VERDICT_META: Record<string, { label: string; color: string }> = {
+  worked: { label: "Worked well", color: "#2E7D5B" },
+  mixed: { label: "Mixed", color: "#C77D3C" },
+  didnt_work: { label: "Didn't work", color: "#B4413C" },
+  too_early: { label: "Too early to tell", color: "#9A9A9A" },
+};
 const TIER_DOT: Record<string, string> = { A: "#E8956B", B: "#7FA9A0", C: "#B9A7C9" };
 
 // Fixed brief field order — the team learns where each guardrail lives once.
@@ -878,6 +887,11 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
                                 </span>
                               );
                             })}
+                            {c.performance_verdict && VERDICT_META[c.performance_verdict] && (
+                              <span title={c.performance_note || undefined} className="inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-1.5 py-0.5" style={{ color: VERDICT_META[c.performance_verdict].color, background: `${VERDICT_META[c.performance_verdict].color}18` }}>
+                                ● {VERDICT_META[c.performance_verdict].label}
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center justify-between gap-2">
                             {c.share_token
@@ -1056,6 +1070,21 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
                   </div>
                 ))}
                 {canEdit && <button onClick={() => setFlags(open, [...(open.brief?.complianceFlags ?? []), { label: "", note: "" }])} className="text-[13px] font-medium text-amber-700 hover:text-amber-800">+ Add compliance flag</button>}
+              </div>
+
+              {/* Performance — closes the loop, feeds the next AI Draft for this brand */}
+              <div className="space-y-2 border-t border-gray-100 pt-4 mt-3">
+                <label className="block text-[11px] font-semibold uppercase tracking-widest text-gray-400">
+                  Performance <span className="font-normal lowercase tracking-normal text-gray-300">· what actually happened, so next time's AI draft can reference it</span>
+                </label>
+                <select value={open.performance_verdict ?? ""} disabled={ro} onChange={e => { commitText(open.id, "performance_verdict", e.target.value); saveText(open.id, "performance_verdict", e.target.value); }}
+                  className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400 disabled:cursor-default">
+                  <option value="">Not assessed yet</option>
+                  {Object.entries(VERDICT_META).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                </select>
+                <textarea key={open.id + "performance_note"} readOnly={ro} defaultValue={open.performance_note ?? ""} rows={2} placeholder="What worked, what didn't, what to change next time"
+                  onChange={e => saveText(open.id, "performance_note", e.target.value)} onBlur={e => commitText(open.id, "performance_note", e.target.value)}
+                  className="w-full bg-transparent text-sm text-slate-700 leading-relaxed rounded px-1 -ml-1 resize-y focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400 read-only:cursor-default placeholder:text-gray-300 placeholder:italic border border-gray-100" />
               </div>
 
               {/* Email drafts — the actual copy, ready to paste into Klaviyo */}
