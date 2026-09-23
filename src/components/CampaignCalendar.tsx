@@ -535,11 +535,24 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
 
     const existingEmails: EmailDraft[] = (item.brief as any)?.emails ?? [];
     if (existingEmails.length === 0) {
-      const fromDeliverables = parseDeliverableSends(item);
+      // Three ways to find the real send plan, cheapest/most reliable first:
+      // 1. A "Thu 1 Oct: topic" style deliverables list (parseDeliverableSends,
+      //    free, no AI call).
+      // 2. When that finds nothing (deliverables rewritten as a checklist,
+      //    say), ask Claude to read edmBrief the way a person would — it can
+      //    follow relative/conditional wording ("within 48 hours", "once sold
+      //    out") that a regex can't, and returns date: null for a send that's
+      //    genuinely trigger-based rather than inventing a calendar date.
+      // 3. Only if both come back empty: the old blind +7/+14 day guess.
+      let sends: { date: string | null; topic: string }[] = parseDeliverableSends(item);
+      let sendsSource: "deliverables" | "edmBrief" | "guess" = sends.length ? "deliverables" : "guess";
+      if (!sends.length) {
+        setKitStep("Reading the EDM brief for send dates…");
+        const parsed = await kitCall(`/api/campaigns/${item.id}/parse-sends`, { method: "POST" });
+        if (parsed?.ok && Array.isArray(parsed.sends) && parsed.sends.length) { sends = parsed.sends; sendsSource = "edmBrief"; }
+      }
       const base = item.key_date && parseDate(item.key_date) ? item.key_date : isoDate(new Date());
-      const sends = fromDeliverables.length
-        ? fromDeliverables
-        : ([base, addDays(base, 7), addDays(base, 14)].filter(Boolean) as string[]).map(date => ({ date, topic: "" }));
+      if (!sends.length) sends = ([base, addDays(base, 7), addDays(base, 14)].filter(Boolean) as string[]).map(date => ({ date, topic: "" }));
       const existingEdms = await fetch(`/api/edm-drafts?brand_id=${brand.id}&campaign_id=${item.id}`).then(r => r.json()).catch(() => null);
       const edmRows: { id: string; status: string; scheduled_for: string | null }[] = existingEdms?.ok ? existingEdms.items : [];
       let edmOk = 0, edmOverwritten = 0, edmSkippedSent = 0, edmFirstError = "";
@@ -558,7 +571,7 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
         edmOk < (sends.length - edmSkippedSent) ? `one or more failed: ${edmFirstError || "check Email Writing"}` : null,
         edmOverwritten ? `overwrote ${edmOverwritten} existing draft${edmOverwritten === 1 ? "" : "s"}` : null,
         edmSkippedSent ? `${edmSkippedSent} already sent, not touched` : null,
-        fromDeliverables.length ? "dates and topics read from the brief's deliverables" : null,
+        sendsSource === "deliverables" ? "dates and topics read from the brief's deliverables" : sendsSource === "edmBrief" ? "dates and topics read from the EDM requirements brief" : null,
       ].filter(Boolean).join(" · ");
       results.push({ label: `EDM sends (${edmOk}/${sends.length})`, ok: edmOk > 0 || edmSkippedSent > 0, note: edmNotes || undefined });
     } else {
