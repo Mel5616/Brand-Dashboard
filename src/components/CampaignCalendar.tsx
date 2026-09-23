@@ -485,6 +485,24 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
   // already uses "Send to Email Planner →" per email instead), and files a
   // Website Request ticket if the channel/note points at a build. Every step
   // is independent and reported separately — one failing doesn't block the rest.
+  // Every kit step used to swallow its failure into a bare "failed": a
+  // gateway timeout, an expired session or a network drop all looked the
+  // same. Reads the JSON when there is some and otherwise explains the HTTP
+  // status so the result line says what actually went wrong.
+  async function kitCall(url: string, init?: RequestInit): Promise<{ ok: boolean; error?: string; [k: string]: any }> {
+    let res: Response;
+    try { res = await fetch(url, init); }
+    catch (e: any) { return { ok: false, error: `network error (${String(e?.message || e).slice(0, 80)}) — keep this tab open while it runs` }; }
+    const text = await res.text().catch(() => "");
+    try {
+      const j = JSON.parse(text);
+      if (j && typeof j === "object") { if (!j.ok && !j.error) j.error = `HTTP ${res.status}`; return j; }
+    } catch { /* not JSON */ }
+    if (res.status === 504) return { ok: false, error: "timed out (504) — the draft took longer than Vercel allows; try again" };
+    if (res.status === 401) return { ok: false, error: "signed out (401) — reload the page and sign in again" };
+    return { ok: false, error: `HTTP ${res.status} ${res.statusText || ""}`.trim() + (text ? `: ${text.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 120)}` : "") };
+  }
+
   async function generateKit(item: Campaign) {
     const brand = brands.find(b => b.name === item.brand) ?? brands.find(b => item.brand.includes(b.name));
     if (!brand) { setKitResults([{ label: "Setup", ok: false, note: `Couldn't match "${item.brand}" to a single brand.` }]); return; }
@@ -508,7 +526,7 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
         for (const r of blogRows) await fetch(`/api/blog-drafts?id=${r.id}`, { method: "DELETE" }).catch(() => null);
         setKitStep(blogRows.length ? "Rewriting blog post… (30–60s)" : "Drafting blog post… (30–60s)");
         const blogBrief = (item.brief as any)?.blogBrief as string | undefined;
-        const blogRes = await fetch("/api/blog-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief: blogBrief?.trim() || brief, campaign_id: item.id, campaign_name: item.campaign, scheduled_for: item.key_date }) }).then(r => r.json()).catch(() => null);
+        const blogRes = await kitCall("/api/blog-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief: blogBrief?.trim() || brief, campaign_id: item.id, campaign_name: item.campaign, scheduled_for: item.key_date }) });
         results.push({ label: "Blog draft", ok: !!blogRes?.ok, note: blogRes?.ok ? (blogRows.length ? "overwrote the existing draft" : undefined) : (blogRes?.error || "failed") });
       }
     } else {
@@ -524,7 +542,7 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
         : ([base, addDays(base, 7), addDays(base, 14)].filter(Boolean) as string[]).map(date => ({ date, topic: "" }));
       const existingEdms = await fetch(`/api/edm-drafts?brand_id=${brand.id}&campaign_id=${item.id}`).then(r => r.json()).catch(() => null);
       const edmRows: { id: string; status: string; scheduled_for: string | null }[] = existingEdms?.ok ? existingEdms.items : [];
-      let edmOk = 0, edmOverwritten = 0, edmSkippedSent = 0;
+      let edmOk = 0, edmOverwritten = 0, edmSkippedSent = 0, edmFirstError = "";
       for (let i = 0; i < sends.length; i++) {
         const matching = edmRows.filter(r => r.scheduled_for === sends[i].date);
         const untouchable = matching.find(r => r.status === "sent");
@@ -533,11 +551,11 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
         if (matching.length) edmOverwritten++;
         setKitStep(`${matching.length ? "Rewriting" : "Writing"} EDM ${i + 1} of ${sends.length}… (30–60s each)`);
         const emailBrief = sends[i].topic ? `${brief}. This specific send: ${sends[i].topic}` : brief;
-        const r = await fetch("/api/edm-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief: emailBrief, scheduled_for: sends[i].date, campaign_id: item.id, campaign_name: item.campaign }) }).then(r2 => r2.json()).catch(() => null);
-        if (r?.ok) edmOk++;
+        const r = await kitCall("/api/edm-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief: emailBrief, scheduled_for: sends[i].date, campaign_id: item.id, campaign_name: item.campaign }) });
+        if (r?.ok) edmOk++; else if (!edmFirstError) edmFirstError = r?.error || "failed";
       }
       const edmNotes = [
-        edmOk < (sends.length - edmSkippedSent) ? "one or more failed — check Email Writing" : null,
+        edmOk < (sends.length - edmSkippedSent) ? `one or more failed: ${edmFirstError || "check Email Writing"}` : null,
         edmOverwritten ? `overwrote ${edmOverwritten} existing draft${edmOverwritten === 1 ? "" : "s"}` : null,
         edmSkippedSent ? `${edmSkippedSent} already sent, not touched` : null,
         fromDeliverables.length ? "dates and topics read from the brief's deliverables" : null,

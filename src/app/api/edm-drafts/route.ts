@@ -8,7 +8,7 @@ import { mintToken, storeCreds } from "@/lib/shopifyMint";
 // actual send/schedule/test flow lives there already (src/components/KlaviyoSend.tsx),
 // this route only handles drafting + tracking. Mirrors blog-drafts/route.ts.
 export const revalidate = 0;
-export const maxDuration = 90;
+export const maxDuration = 300;
 const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const h = (extra: Record<string, string> = {}) => ({ apikey: sbKey!, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json", ...extra });
@@ -276,6 +276,7 @@ Write it now, in the exact format specified.`;
     const text = await callClaude(system, user, 4000);
     draft = extractFields(text);
   } catch (e: any) {
+    console.error("[edm-drafts] AI step failed:", String(e.message || e).slice(0, 300));
     return NextResponse.json({ ok: false, error: String(e.message || e).slice(0, 300) }, { status: 502 });
   }
 

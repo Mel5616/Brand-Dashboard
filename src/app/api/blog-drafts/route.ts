@@ -8,7 +8,7 @@ import { mintToken, storeCreds } from "@/lib/shopifyMint";
 // Generation/editing: admin or Alison. Publishing live to a real storefront:
 // admin only.
 export const revalidate = 0;
-export const maxDuration = 90;
+export const maxDuration = 300;
 const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const h = (extra: Record<string, string> = {}) => ({ apikey: sbKey!, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json", ...extra });
@@ -280,6 +280,7 @@ Respond with ONLY a JSON array, no markdown fences, no text before or after, exa
   try {
     text = await callClaude(system, "Suggest the 6 topics now, as the JSON array only.", 1500);
   } catch (e: any) {
+    console.error("[blog-drafts] AI step failed:", String(e.message || e).slice(0, 300));
     return NextResponse.json({ ok: false, error: String(e.message || e).slice(0, 300) }, { status: 502 });
   }
   let suggestions: any[];
@@ -362,6 +363,7 @@ Write it now, in the exact format specified.`;
     const text = await callClaude(system, user, 6000);
     draft = extractFields(text);
   } catch (e: any) {
+    console.error("[blog-drafts] AI step failed:", String(e.message || e).slice(0, 300));
     return NextResponse.json({ ok: false, error: String(e.message || e).slice(0, 300) }, { status: 502 });
   }
 
