@@ -97,6 +97,7 @@ import { ADMIN_ONLY_TABS } from "@/lib/tabs";
 import { MediaReleases } from "./MediaReleases";
 import { VouchersCard } from "./VouchersCard";
 import { FlowGoLive } from "./FlowGoLive";
+import { TodayPanel } from "./TodayPanel";
 import { ListGrowth } from "./ListGrowth";
 import { EmailHealthStrip } from "./EmailHealthStrip";
 import { WinbackCard } from "./WinbackCard";
@@ -124,9 +125,13 @@ import { StockReport } from "./StockReport";
 import { fmt, fmtFull } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "assistants" | "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "cross-site-discounts" | "create-codes" | "abandoned" | "zazu-wheel" | "reviews" | "website-requests" | "utm-tracking" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "edm-planner" | "seo" | "social" | "social-writing" | "youtube" | "tradeshows" | "show-insights" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "credentials" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "campaign-briefs" | "nanit" | "affiliates" | "commission-factory" | "email-writing" | "lifecycle-flows" | "pa-budget" | "pa-tracker" | "pa-revenue" | "documents" | "team" | "brand-packs" | "price-lists" | "hub-fact-sheets" | "brand-overview" | "stock-availability" | "order-forms" | "customers" | "customer-forms" | "blog-pipeline";
+type TabId = "today" | "assistants" | "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "cross-site-discounts" | "create-codes" | "abandoned" | "zazu-wheel" | "reviews" | "website-requests" | "utm-tracking" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "edm-planner" | "seo" | "social" | "social-writing" | "youtube" | "tradeshows" | "show-insights" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "credentials" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "campaign-briefs" | "nanit" | "affiliates" | "commission-factory" | "email-writing" | "lifecycle-flows" | "pa-budget" | "pa-tracker" | "pa-revenue" | "documents" | "team" | "brand-packs" | "price-lists" | "hub-fact-sheets" | "brand-overview" | "stock-availability" | "order-forms" | "customers" | "customer-forms" | "blog-pipeline";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
+  {
+    id: "today", label: "Today",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  },
   {
     id: "assistants", label: "AI Assistants",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-4 4v-4z" /></svg>,
@@ -455,21 +460,26 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
 
 // Sidebar grouping — how you market (top) vs where you sell (bottom).
 const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
-  { label: "Overview", ids: ["brands", "summary", "insights", "team-hub", "weekly-brief"] },
-  { label: "Reports", ids: ["report", "snapshot", "social-report", "d2c-weekly", "uppababy"] },
-  { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows", "show-insights"] },
-  { label: "Plan", ids: ["promotions", "calendar", "content", "events", "show-deals", "activations", "timeline"] },
-  { label: "Websites", ids: ["assistants", "discount-codes", "cross-site-discounts", "create-codes", "website-requests", "utm-tracking", "reviews", "abandoned", "zazu-wheel", "seo"] },
-  { label: "Creative", ids: ["campaign-calendar", "design-requests", "creative", "event-concepts", "decks"] },
+  // Everyday tabs only. Anything not listed here lands in "More" at the bottom
+  // of the sidebar (still searchable with ⌘K, still pinnable) — see MORE_IDS.
+  { label: "Overview", ids: ["today", "brands", "summary", "insights", "weekly-brief", "team-hub"] },
+  { label: "Reports", ids: ["report", "d2c-weekly"] },
+  { label: "Revenue & Channels", ids: ["sales", "sales-budget", "shopify", "tradeshows"] },
+  { label: "Plan", ids: ["promotions", "calendar", "content", "events"] },
+  { label: "Websites", ids: ["reviews", "discount-codes", "website-requests", "abandoned", "seo"] },
+  { label: "Creative", ids: ["campaign-calendar", "design-requests", "creative"] },
   { label: "Blogging", ids: ["tasks", "blog-pipeline"] },
   { label: "Email Marketing", ids: ["email", "edm-planner", "lifecycle-flows"] },
-  { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info", "brand-assets", "stock-report", "cost-sheet", "credentials"] },
-  { label: "Retailer Hub", ids: ["brand-packs", "price-lists", "hub-fact-sheets", "brand-overview", "stock-availability", "order-forms", "customers", "customer-forms"] },
   { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads", "amazon-ads"] },
-  { label: "Owned & Earned", ids: ["social", "social-writing", "youtube", "influencer", "gifting", "influencer-agreements", "campaign-briefs", "nanit", "releases"] },
-  { label: "Partnerships & Affiliates", ids: ["affiliates", "commission-factory", "pa-budget", "pa-tracker", "pa-revenue", "documents"] },
+  { label: "Owned & Earned", ids: ["social", "influencer", "gifting", "campaign-briefs"] },
+  { label: "Partnerships & Affiliates", ids: ["affiliates", "commission-factory"] },
+  { label: "Operations", ids: ["budget", "expenses", "new-products", "stock-report"] },
+  { label: "Retailer Hub", ids: ["brand-packs", "price-lists", "stock-availability", "order-forms"] },
   { label: "Sales Hub", ids: ["sales-hub"] },
 ];
+// Tabs merged into another tab's page: still routable (old links, saved
+// permissions) but never listed in the sidebar.
+const HIDDEN_TAB_IDS: TabId[] = ["cross-site-discounts", "create-codes", "email-writing"];
 
 // Influencer pages collapse under an "Influencers" dropdown in the sidebar.
 const INFLUENCER_IDS: TabId[] = ["influencer", "gifting", "influencer-agreements", "campaign-briefs", "nanit", "releases"];
@@ -987,11 +997,11 @@ export function DashboardTabs({
           </a>
         )}
         {(() => {
-          const visIds = new Set(visibleTabs.map(t => t.id));
+          const visIds = new Set(visibleTabs.filter(t => !HIDDEN_TAB_IDS.includes(t.id)).map(t => t.id));
           const grouped = new Set(TAB_GROUPS.flatMap(g => g.ids));
           const groups = [
             ...TAB_GROUPS.map(g => ({ label: g.label, tabs: g.ids.filter(id => visIds.has(id)).map(id => TABS.find(t => t.id === id)!) })),
-            { label: "More", tabs: visibleTabs.filter(t => !grouped.has(t.id) && t.id !== "team") }, // ungrouped tabs (Team is pinned at the bottom)
+            { label: "More", tabs: visibleTabs.filter(t => !grouped.has(t.id) && t.id !== "team" && !HIDDEN_TAB_IDS.includes(t.id)) }, // everything not in an everyday group (Team is pinned at the bottom)
           ].filter(g => g.tabs.length > 0);
           const Btn = (tab: typeof TABS[number]) => {
             const isActive = active === tab.id && !(selectedBrand && (active === "brands" || active === "summary"));
@@ -1638,7 +1648,16 @@ export function DashboardTabs({
             <>
               <SectionBar title="Discount Codes" />
               <DiscountCodesTab brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} />
+              <div className="mt-8"><SectionBar title="Create a code on every site" /></div>
+              <CrossCodeCard canCreate={role === "admin" || (allowedTabs ?? []).includes("create-codes") || (allowedTabs ?? []).includes("discount-codes")} />
+              <div className="mt-8"><SectionBar title="Cross-site vouchers" /></div>
+              <VouchersCard admin={role === "admin"} />
             </>
+          )}
+
+          {/* ── Today: the one queue of everything that needs a person ── */}
+          {active === "today" && (
+            <TodayPanel onOpen={id => setActive(id as TabId)} firstName={(currentEmail || "").split("@")[0].split(/[._]/)[0].replace(/^\w/, c => c.toUpperCase()) || undefined} />
           )}
 
           {/* ── Cross Site Discounts: the $20 vouchers UPPAbaby orders earn for the other brands ── */}

@@ -11,9 +11,12 @@ const money = (n: number) => "$" + Math.round(n).toLocaleString("en-AU");
 const pct = (n: number | null, d = 1) => n == null ? "—" : `${n.toFixed(d)}%`;
 // thresholds: [good below, warn below] (share is the other way round)
 const BENCH = {
-  bounce: { good: 0.5, warn: 1.0, label: "Bounce", help: "Klaviyo: under 0.5% healthy, over 1% hurts inbox placement." },
-  spam: { good: 0.05, warn: 0.1, label: "Spam", help: "Klaviyo: under 0.05% healthy, over 0.1% is a deliverability risk." },
-  unsub: { good: 0.3, warn: 0.5, label: "Unsub", help: "Klaviyo: under 0.3% healthy, over 0.5% means the list is tiring." },
+  // Rates are per delivered PROFILE for the month (the sync stores unique
+  // recipients, not total emails), so they run higher than Klaviyo's
+  // per-email benchmarks; thresholds are set for that basis.
+  bounce: { good: 1, warn: 2, label: "Bounce", help: "Bounced ÷ unique recipients. Under 1% healthy; over 2% means a stale or imported list." },
+  spam: { good: 0.05, warn: 0.1, label: "Spam", help: "Spam complaints ÷ unique recipients. Under 0.05% healthy; over 0.1% is a deliverability risk." },
+  unsub: { good: 2, warn: 5, label: "Unsub", help: "Unsubscribes ÷ unique recipients in the month (not per email). Under 2% is normal; over 5% is a lot for one month." },
 };
 const tone = (v: number | null, good: number, warn: number) => v == null ? "text-slate-400" : v <= good ? "text-emerald-700" : v <= warn ? "text-amber-700" : "text-rose-600";
 const shareTone = (v: number | null) => v == null ? "text-slate-400" : v >= 25 ? "text-emerald-700" : v >= 15 ? "text-slate-700" : "text-amber-700";
@@ -31,7 +34,7 @@ export function EmailHealthStrip({ brands, klaviyo, monthly, monthKey, monthLabe
       unsub: sent ? ((k?.unsubscribes || 0) / sent) * 100 : null,
       flowShare: k && k.revenue > 0 ? ((k.flow_revenue || 0) / k.revenue) * 100 : null,
     };
-  }).filter(r => r.sent > 0 || r.emailRev > 0).sort((a, c) => c.emailRev - a.emailRev), [brands, klaviyo, monthly, monthKey, brandFilter]);
+  }).filter(r => r.sent >= 100 || r.emailRev > 0).sort((a, c) => c.emailRev - a.emailRev), [brands, klaviyo, monthly, monthKey, brandFilter]);
   const tot = useMemo(() => {
     const sent = rows.reduce((s, r) => s + r.sent, 0), emailRev = rows.reduce((s, r) => s + r.emailRev, 0), shopRev = rows.reduce((s, r) => s + r.shopRev, 0);
     const sum = (f: (r: typeof rows[number]) => number | null) => rows.reduce((s, r) => s + ((f(r) || 0) / 100) * r.sent, 0);
@@ -44,7 +47,7 @@ export function EmailHealthStrip({ brands, klaviyo, monthly, monthKey, monthLabe
     <section className="mb-5 grid lg:grid-cols-[1.4fr_1fr] gap-4">
       <div className={`rounded-2xl border p-5 ${flags.length ? "border-amber-200 bg-amber-50/60" : "border-emerald-200 bg-emerald-50/50"}`}>
         <h3 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600 mb-2">Needs a look · {monthLabel}</h3>
-        {flags.length === 0 ? <p className="text-sm text-emerald-800">Every brand is inside Klaviyo&apos;s deliverability benchmarks and email is carrying at least 15% of revenue.</p> : (
+        {flags.length === 0 ? <p className="text-sm text-emerald-800">Every brand is inside the deliverability thresholds and email is carrying at least 15% of revenue.</p> : (
           <ul className="space-y-1 text-sm text-slate-700">
             {flags.map(r => (
               <li key={r.b.id} className="flex flex-wrap gap-x-2 items-baseline"><span className="font-medium">{r.b.name}</span>
@@ -74,7 +77,7 @@ export function EmailHealthStrip({ brands, klaviyo, monthly, monthKey, monthLabe
             </tbody>
           </table>
         </div>
-        <p className="text-[11px] text-slate-400 mt-2">Green = inside Klaviyo&apos;s benchmark, amber = watch, red = act. Share: green 25%+, amber under 15%.</p>
+        <p className="text-[11px] text-slate-400 mt-2">Green = healthy, amber = watch, red = act. Rates are per unique recipient for the month, so they read higher than Klaviyo&apos;s per-email figures. Share: green 25%+, amber under 15%. Brands with under 100 recipients in the month are left out.</p>
       </div>
       <div className="grid grid-cols-2 gap-3 content-start">
         {[["Email revenue", money(tot.emailRev)], ["Share of revenue", pct(tot.share, 0)], ["Delivered", tot.sent.toLocaleString("en-AU")], ["Bounce · spam · unsub", `${pct(tot.bounce)} · ${pct(tot.spam, 2)} · ${pct(tot.unsub)}`]].map(([l, v]) => (

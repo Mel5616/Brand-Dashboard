@@ -9,6 +9,7 @@ export type TabSection = { label: string; tabs: TabDef[] };
 // Order here = the order of the blue-heading groups in the sidebar.
 export const TAB_SECTIONS: TabSection[] = [
   { label: "Overview", tabs: [
+    { id: "today", label: "Today (what needs you)" },
     { id: "brands", label: "Business Overview" },
     { id: "summary", label: "Digital Portfolio Summary" },
     { id: "mer", label: "Marketing Efficiency (MER) card" },
@@ -42,9 +43,9 @@ export const TAB_SECTIONS: TabSection[] = [
   ] },
   { label: "Websites", tabs: [
     { id: "assistants", label: "AI Assistants" },
-    { id: "discount-codes", label: "Discount Codes" },
-    { id: "cross-site-discounts", label: "Cross Site Discounts" },
-    { id: "create-codes", label: "Create Website Codes" },
+    { id: "discount-codes", label: "Discount Codes (incl. cross-site vouchers + create codes)" },
+    { id: "cross-site-discounts", label: "Cross Site Discounts (now inside Discount Codes)" },
+    { id: "create-codes", label: "Create Website Codes (now inside Discount Codes)" },
     { id: "website-requests", label: "Website Requests" },
     { id: "utm-tracking", label: "UTM Tracking" },
     { id: "reviews", label: "Reviews" },

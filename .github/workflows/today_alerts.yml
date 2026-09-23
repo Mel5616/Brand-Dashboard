@@ -1,0 +1,19 @@
+name: Today alerts (hourly)
+
+# Emails only URGENT Today items, each once: a 1-star review, a failed or
+# stale job, a same-day send clash, an overdue post.
+on:
+  schedule:
+    - cron: "35 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  alert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for new urgent items
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python3 scripts/today_ping.py alerts
