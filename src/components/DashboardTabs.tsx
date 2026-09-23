@@ -460,21 +460,19 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
 
 // Sidebar grouping — how you market (top) vs where you sell (bottom).
 const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
-  // Everyday tabs only. Anything not listed here lands in "More" at the bottom
-  // of the sidebar (still searchable with ⌘K, still pinnable) — see MORE_IDS.
-  { label: "Overview", ids: ["today", "brands", "summary", "insights", "weekly-brief", "team-hub"] },
-  { label: "Reports", ids: ["report", "d2c-weekly"] },
-  { label: "Revenue & Channels", ids: ["sales", "sales-budget", "shopify", "tradeshows"] },
-  { label: "Plan", ids: ["promotions", "calendar", "content", "events"] },
-  { label: "Websites", ids: ["reviews", "discount-codes", "website-requests", "abandoned", "seo"] },
-  { label: "Creative", ids: ["campaign-calendar", "design-requests", "creative"] },
+  { label: "Overview", ids: ["today", "brands", "summary", "insights", "team-hub", "weekly-brief"] },
+  { label: "Reports", ids: ["report", "snapshot", "social-report", "d2c-weekly", "uppababy"] },
+  { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows", "show-insights"] },
+  { label: "Plan", ids: ["promotions", "calendar", "content", "events", "show-deals", "activations", "timeline"] },
+  { label: "Websites", ids: ["assistants", "discount-codes", "cross-site-discounts", "create-codes", "website-requests", "utm-tracking", "reviews", "abandoned", "zazu-wheel", "seo"] },
+  { label: "Creative", ids: ["campaign-calendar", "design-requests", "creative", "event-concepts", "decks"] },
   { label: "Blogging", ids: ["tasks", "blog-pipeline"] },
   { label: "Email Marketing", ids: ["email", "edm-planner", "lifecycle-flows"] },
+  { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info", "brand-assets", "stock-report", "cost-sheet", "credentials"] },
+  { label: "Retailer Hub", ids: ["brand-packs", "price-lists", "hub-fact-sheets", "brand-overview", "stock-availability", "order-forms", "customers", "customer-forms"] },
   { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads", "amazon-ads"] },
-  { label: "Owned & Earned", ids: ["social", "influencer", "gifting", "campaign-briefs"] },
-  { label: "Partnerships & Affiliates", ids: ["affiliates", "commission-factory"] },
-  { label: "Operations", ids: ["budget", "expenses", "new-products", "stock-report"] },
-  { label: "Retailer Hub", ids: ["brand-packs", "price-lists", "stock-availability", "order-forms"] },
+  { label: "Owned & Earned", ids: ["social", "social-writing", "youtube", "influencer", "gifting", "influencer-agreements", "campaign-briefs", "nanit", "releases"] },
+  { label: "Partnerships & Affiliates", ids: ["affiliates", "commission-factory", "pa-budget", "pa-tracker", "pa-revenue", "documents"] },
   { label: "Sales Hub", ids: ["sales-hub"] },
 ];
 // Tabs merged into another tab's page: still routable (old links, saved
