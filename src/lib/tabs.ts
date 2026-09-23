@@ -64,10 +64,9 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "blog-pipeline", label: "Blog Writing" },
   ] },
   { label: "Email Marketing", tabs: [
-    { id: "email", label: "Email" },
-    { id: "edm-planner", label: "EDM Planner" },
-    { id: "email-writing", label: "Email Writing" },
-    { id: "lifecycle-flows", label: "Lifecycle Flows" },
+    { id: "email", label: "Performance" },
+    { id: "edm-planner", label: "Planner (calendar, drafts, writing studio)" },
+    { id: "lifecycle-flows", label: "Flows" },
   ] },
   { label: "Operations", tabs: [
     { id: "budget", label: "Budget" },

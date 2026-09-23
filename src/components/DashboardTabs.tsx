@@ -96,7 +96,9 @@ import { CredentialsPanel } from "./CredentialsPanel";
 import { ADMIN_ONLY_TABS } from "@/lib/tabs";
 import { MediaReleases } from "./MediaReleases";
 import { VouchersCard } from "./VouchersCard";
-import { ReviewRewardsCard } from "./ReviewRewardsCard";
+import { FlowGoLive } from "./FlowGoLive";
+import { ListGrowth } from "./ListGrowth";
+import { EmailHealthStrip } from "./EmailHealthStrip";
 import { WinbackCard } from "./WinbackCard";
 import { InfluencerAgreements } from "./InfluencerAgreements";
 import { CampaignBriefs } from "./CampaignBriefs";
@@ -238,11 +240,11 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18" /></svg>,
   },
   {
-    id: "email", label: "Email",
+    id: "email", label: "Performance",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
   },
   {
-    id: "edm-planner", label: "EDM Planner",
+    id: "edm-planner", label: "Planner",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2" strokeWidth={2} /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9h18M8 2v4M16 2v4" /></svg>,
   },
   {
@@ -250,7 +252,7 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15.828H9v-2.828l8.586-8.586zM3 8l7 5" /></svg>,
   },
   {
-    id: "lifecycle-flows", label: "Lifecycle Flows",
+    id: "lifecycle-flows", label: "Flows",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5M4 9a8 8 0 0114-5.3M20 15a8 8 0 01-14 5.3" /></svg>,
   },
   {
@@ -460,7 +462,7 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Websites", ids: ["assistants", "discount-codes", "cross-site-discounts", "create-codes", "website-requests", "utm-tracking", "reviews", "abandoned", "zazu-wheel", "seo"] },
   { label: "Creative", ids: ["campaign-calendar", "design-requests", "creative", "event-concepts", "decks"] },
   { label: "Blogging", ids: ["tasks", "blog-pipeline"] },
-  { label: "Email Marketing", ids: ["email", "edm-planner", "email-writing", "lifecycle-flows"] },
+  { label: "Email Marketing", ids: ["email", "edm-planner", "lifecycle-flows"] },
   { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info", "brand-assets", "stock-report", "cost-sheet", "credentials"] },
   { label: "Retailer Hub", ids: ["brand-packs", "price-lists", "hub-fact-sheets", "brand-overview", "stock-availability", "order-forms", "customers", "customer-forms"] },
   { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads", "amazon-ads"] },
@@ -693,6 +695,7 @@ export function DashboardTabs({
   const [influencersOpen, setInfluencersOpen] = useState<boolean>(() => INFLUENCER_IDS.includes(firstTab));
   const [nestedOpen, setNestedOpen] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(NESTED_PARENTS.map(p => [p.parentId, p.childIds.includes(firstTab)])));
+  const [studioOpen, setStudioOpen] = useState(false); // writing studio drawer on the Planner tab
   const [mobileNavOpen, setMobileNavOpen] = useState(false); // slide-in nav drawer on small screens
   // Sidebar section groups the user has collapsed. Default: all open ("auto open").
   // Persisted to localStorage so a collapsed group stays collapsed across reloads.
@@ -1609,7 +1612,7 @@ export function DashboardTabs({
           {active === "campaign-calendar" && (
             <CampaignCalendar canEdit={role === "admin"} brands={brands.map((b: any) => ({ id: b.id, name: b.name, live: b.live }))}
               onStartBlog={id => { setPendingBlogOpenId(id); setActive("blog-pipeline"); }}
-              onStartEdm={id => { setPendingEmailOpenId(id); setActive("email-writing"); }}
+              onStartEdm={id => { setPendingEmailOpenId(id); setStudioOpen(true); setActive("edm-planner"); }}
               onSendToPlanner={() => setActive("edm-planner")}
               onStartPromo={() => setActive("promotions")}
               onStartSocial={id => { setPendingSocialOpenId(id); setActive("social-writing"); }} />
@@ -1643,7 +1646,6 @@ export function DashboardTabs({
             <>
               <SectionBar title="Cross Site Discounts" />
               <VouchersCard admin={role === "admin"} />
-              <ReviewRewardsCard />
             </>
           )}
 
@@ -2318,7 +2320,7 @@ export function DashboardTabs({
           {/* ── Email (Klaviyo) ── */}
           {active === "email" && (
             <>
-              <SectionBar title="Email Marketing · Klaviyo" />
+              <SectionBar title="Email Performance · Klaviyo" />
               <div className="flex items-center justify-between gap-2 mb-2 no-print">
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}
@@ -2335,6 +2337,7 @@ export function DashboardTabs({
                   </button>
                 )}
               </div>
+              <EmailHealthStrip brands={brands} klaviyo={klaviyo} monthly={monthly} monthKey={LATEST} monthLabel={monthLabels[monthKeys.indexOf(LATEST)] || LATEST} brandFilter={brandFilter} />
               {brandFilter !== "all" ? (
                 <EmailBrandDetail brand={brands.find((b: any) => b.id === brandFilter)!} klaviyo={klaviyo} monthly={monthly} monthKeys={monthKeys} monthLabels={monthLabels} />
               ) : (
@@ -2464,31 +2467,39 @@ export function DashboardTabs({
               })()}
               </>
               )}
+              <ListGrowth brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} brandFilter={brandFilter} />
             </>
           )}
 
-          {/* ── EDM Planner (calendar/pipeline over edm_drafts, all brands) ── */}
-          {active === "edm-planner" && (
+          {/* ── Planner: send calendar, EDM pipeline, and the writing studio as a drawer ── */}
+          {(active === "edm-planner" || active === "email-writing") && (
             <>
-              <SectionBar title="EDM Planner" />
+              <SectionBar title="Email Planner" />
               <SendCalendar brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} />
               <EdmPlanner brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color, live: b.live }))}
-                onOpenInStudio={id => { setPendingEmailOpenId(id); setActive("email-writing"); }} />
+                onOpenInStudio={id => { setPendingEmailOpenId(id); setStudioOpen(true); setActive("edm-planner"); }} />
+              <div className="mt-8 rounded-2xl border border-slate-200 bg-white overflow-hidden">
+                <button onClick={() => setStudioOpen(v => !v)} className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-gray-50/60">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Writing studio</p>
+                    <p className="text-[12.5px] text-gray-400 mt-1">Draft, edit and push EDMs to Klaviyo. Opens automatically when you pick a draft above.</p>
+                  </div>
+                  <span className="text-sm text-gray-400">{studioOpen || active === "email-writing" ? "Close ▲" : "Open ▼"}</span>
+                </button>
+                {(studioOpen || active === "email-writing") && (
+                  <div className="border-t border-gray-100 p-5">
+                    <EmailStudio brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} admin={role === "admin"} openDraftId={pendingEmailOpenId} onOpened={() => setPendingEmailOpenId(null)} />
+                  </div>
+                )}
+              </div>
             </>
           )}
 
-          {/* ── Email Writing (EDM drafts, Klaviyo push) ── */}
-          {active === "email-writing" && (
-            <>
-              <SectionBar title="Email Writing" />
-              <EmailStudio brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} admin={role === "admin"} openDraftId={pendingEmailOpenId} onOpened={() => setPendingEmailOpenId(null)} />
-            </>
-          )}
-
-          {/* ── Lifecycle Flows (Klaviyo flow coverage grid, portfolio-wide) ── */}
+          {/* ── Flows (go-live checklist, database size, coverage grid, per-flow revenue) ── */}
           {active === "lifecycle-flows" && (
             <>
-              <SectionBar title="Lifecycle Flows" />
+              <SectionBar title="Email Flows" />
+              <FlowGoLive brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} />
               <DatabaseSizeCard />
               <LifecycleFlowGrid brands={brands.map((b: any) => ({ id: b.id, name: b.name, live: b.live }))} />
               <FlowPerformance brands={brands.filter((b: any) => b.live !== false).map((b: any) => ({ id: b.id, name: b.name, live: b.live }))} />
@@ -2608,7 +2619,7 @@ export function DashboardTabs({
           {active === "blog-pipeline" && (
             <>
               <SectionBar title="Blog Writing" />
-              <BlogStudio brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} admin={role === "admin"} onSendAsEdm={id => { setPendingEmailOpenId(id); setActive("email-writing"); }}
+              <BlogStudio brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} admin={role === "admin"} onSendAsEdm={id => { setPendingEmailOpenId(id); setStudioOpen(true); setActive("edm-planner"); }}
                 openDraftId={pendingBlogOpenId} onOpened={() => setPendingBlogOpenId(null)} />
             </>
           )}

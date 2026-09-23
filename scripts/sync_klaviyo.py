@@ -308,6 +308,7 @@ def sync_brand(db, api_key, brand, brand_id):
     # Lifecycle flow grid + per-flow performance, and the portfolio send calendar
     sync_flows(db, api_key, brand, brand_id, metrics)
     sync_campaign_calendar(db, api_key, brand_id)
+    sync_list_growth(db, api_key, brand_id, metrics)
 
 
 # ── Lifecycle flows: status grid + per-flow performance ─────────────────────
@@ -356,6 +357,18 @@ def sync_flows(db, api_key, brand, brand_id, metrics):
     except Exception as e:
         print(f"    Warning: flow list failed — {e}")
         return
+    # 0. Every flow, whatever its status, into klaviyo_flows — the Flows tab's
+    #    go-live checklist reads drafts from here (klaviyo_flow_metrics only
+    #    holds flows that actually sent something).
+    try:
+        frows = [{"brand_id": brand_id, "flow_id": f["id"], "name": (f["attributes"].get("name") or "")[:200], "status": f["attributes"].get("status"),
+                  "trigger_type": f["attributes"].get("trigger_type"), "synced_at": datetime.utcnow().isoformat() + "Z"} for f in flows]
+        if frows:
+            db.table("klaviyo_flows").upsert(frows, on_conflict="brand_id,flow_id").execute()
+            # drop flows deleted in Klaviyo since last sync
+            db.table("klaviyo_flows").delete().eq("brand_id", brand_id).not_.in_("flow_id", [f["id"] for f in flows]).execute()
+    except Exception as e:
+        print(f"    Warning: klaviyo_flows upsert failed (run add_reviews_email_upgrade.sql?) — {e}")
     # 1. Coverage grid: best-status flow per grid key (live beats paused beats planned)
     rank = {"live": 3, "paused": 2, "planned": 1}
     found = {}
@@ -406,6 +419,43 @@ def sync_flows(db, api_key, brand, brand_id, metrics):
             except Exception as e:
                 print(f"    Warning: klaviyo_flow_metrics upsert failed (run add_klaviyo_flow_metrics_and_campaigns.sql?) — {e}")
         time.sleep(0.3)
+
+def sync_list_growth(db, api_key, brand_id, metrics):
+    """Weekly 'Subscribed to List' / 'Unsubscribed from List' counts per list for
+    the last 12 weeks — which lists (checklist gate, popup, giveaway, checkout…)
+    are actually growing the database. One row per brand/week/list."""
+    sub_id, unsub_id = metrics.get("Subscribed to List"), metrics.get("Unsubscribed from List")
+    if not sub_id:
+        return
+    start = (date.today() - timedelta(days=date.today().weekday() + 7 * 11))  # Monday, 12 weeks back
+    def weekly(metric_id):
+        out = {}
+        if not metric_id:
+            return out
+        payload = {"data": {"type": "metric-aggregate", "attributes": {
+            "metric_id": metric_id, "measurements": ["count"], "interval": "week", "by": ["List"], "timezone": "Australia/Melbourne",
+            "filter": [f"greater-or-equal(datetime,{start.isoformat()}T00:00:00+10:00)", f"less-than(datetime,{(date.today() + timedelta(days=1)).isoformat()}T00:00:00+10:00)"]}}}
+        try:
+            d = klaviyo_post(api_key, "metric-aggregates/", payload).get("data", {}).get("attributes", {})
+        except Exception as e:
+            print(f"    Warning: list growth aggregate failed — {e}"); return out
+        dates = [x[:10] for x in d.get("dates", [])]
+        for row in d.get("data", []) or []:
+            lst = (row.get("dimensions") or [""])[0] or "(no list)"
+            for wk, v in zip(dates, row.get("measurements", {}).get("count", [])):
+                if v:
+                    out[(wk, lst)] = out.get((wk, lst), 0) + int(v)
+        return out
+    subs, unsubs = weekly(sub_id), weekly(unsub_id)
+    keys = set(subs) | set(unsubs)
+    rows = [{"brand_id": brand_id, "week_start": wk, "list_name": lst[:200], "subscribes": subs.get((wk, lst), 0), "unsubscribes": unsubs.get((wk, lst), 0),
+             "synced_at": datetime.utcnow().isoformat() + "Z"} for (wk, lst) in keys]
+    if rows:
+        try:
+            db.table("klaviyo_list_growth").upsert(rows, on_conflict="brand_id,week_start,list_name").execute()
+            print(f"    List growth: {sum(r['subscribes'] for r in rows):,} subscribes across {len({r['list_name'] for r in rows})} lists, 12 weeks")
+        except Exception as e:
+            print(f"    Warning: klaviyo_list_growth upsert failed (run add_reviews_email_upgrade.sql?) — {e}")
 
 def sync_campaign_calendar(db, api_key, brand_id):
     """Every email campaign scheduled in the last 30 or next 90 days, with status,
