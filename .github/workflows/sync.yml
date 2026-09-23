@@ -49,6 +49,15 @@ jobs:
           ASANA_PROJECTS: ${{ secrets.ASANA_PROJECTS }}
         run: python3 -u scripts/sync_asana.py
 
+      - name: Run Connecteam staff time-off sync
+        if: ${{ always() }}
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          CONNECTEAM_API_KEY: ${{ secrets.CONNECTEAM_API_KEY }}
+        run: python3 -u scripts/sync_connecteam.py
+
       - name: Run sync
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
