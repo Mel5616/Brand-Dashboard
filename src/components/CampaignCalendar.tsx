@@ -194,7 +194,7 @@ function TimelineGantt({ items, onOpen }: { items: Campaign[]; onOpen: (id: stri
   );
 }
 
-export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, onStartEdm, onSendToPlanner, onStartPromo, onStartSocial }: { canEdit?: boolean; brands?: { id: number; name: string }[]; onStartBlog?: (draftId: string) => void; onStartEdm?: (draftId: string) => void; onSendToPlanner?: () => void; onStartPromo?: () => void; onStartSocial?: (draftId: string) => void }) {
+export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, onStartEdm, onSendToPlanner, onStartPromo, onStartSocial }: { canEdit?: boolean; brands?: { id: number; name: string; live?: boolean }[]; onStartBlog?: (draftId: string) => void; onStartEdm?: (draftId: string) => void; onSendToPlanner?: () => void; onStartPromo?: () => void; onStartSocial?: (draftId: string) => void }) {
   const [view, setView] = useState<"roadmap" | "timeline" | "sends" | "bf" | "promos">("roadmap");
   const [items, setItems] = useState<Campaign[]>([]);
   const [maint, setMaint] = useState<Maint[]>([]);
@@ -780,6 +780,23 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
         </div>
       ) : (
         <>
+          {(() => {
+            // With 12 brands, the real risk isn't one bad campaign, it's a
+            // brand going quiet without anyone noticing — flag any live brand
+            // with nothing in Now or Next (Later is fine to be sparse this far out).
+            const liveBrands = brands.filter(b => b.live !== false);
+            const activeBrandNames = new Set(items.filter(c => (c.horizon === "now" || c.horizon === "next") && c.status !== "Completed").map(c => c.brand));
+            const quiet = liveBrands.filter(b => !activeBrandNames.has(b.name) && ![...activeBrandNames].some(n => n.includes(b.name)));
+            if (!quiet.length) return null;
+            return (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4 no-print">
+                <p className="text-xs text-amber-800">
+                  <span className="font-semibold">Nothing planned in Now/Next for:</span>{" "}
+                  {quiet.map((b, i) => <span key={b.id}>{b.name}{i < quiet.length - 1 ? ", " : ""}</span>)}
+                </p>
+              </div>
+            );
+          })()}
           <div className="grid gap-4 md:grid-cols-3">
             {HORIZONS.map(h => {
               const rows = items.filter(i => i.horizon === h.id && (showCompleted || i.status !== "Completed")).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));

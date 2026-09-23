@@ -1598,7 +1598,7 @@ export function DashboardTabs({
 
           {/* ── Campaign Calendar (portfolio Now/Next/Later roadmap) ── */}
           {active === "campaign-calendar" && (
-            <CampaignCalendar canEdit={role === "admin"} brands={brands.map((b: any) => ({ id: b.id, name: b.name }))}
+            <CampaignCalendar canEdit={role === "admin"} brands={brands.map((b: any) => ({ id: b.id, name: b.name, live: b.live }))}
               onStartBlog={id => { setPendingBlogOpenId(id); setActive("blog-pipeline"); }}
               onStartEdm={id => { setPendingEmailOpenId(id); setActive("email-writing"); }}
               onSendToPlanner={() => setActive("edm-planner")}
