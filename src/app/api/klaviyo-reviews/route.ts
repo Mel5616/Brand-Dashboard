@@ -18,12 +18,23 @@ type Row = {
 
 export async function GET() {
   if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false }, { status: 403 });
-  const res = await rest("klaviyo_reviews?select=*&order=created.desc&limit=5000");
-  if (!res.ok) {
-    const text = await res.text();
-    return NextResponse.json({ ok: true, needsSetup: missingTable(text), brands: [], lastSynced: null });
+  // PostgREST caps a single response at 1,000 rows (UPPAbaby alone has more),
+  // so page through with Range headers until a short page comes back.
+  const rows: Row[] = [];
+  for (let from = 0; ; from += 1000) {
+    const res = await rest("klaviyo_reviews?select=*&order=created.desc", { headers: { Range: `${from}-${from + 999}` } });
+    if (!res.ok) {
+      const text = await res.text();
+      if (from === 0) return NextResponse.json({ ok: true, needsSetup: missingTable(text), brands: [], lastSynced: null });
+      break;
+    }
+    const page = (await res.json()) as Row[];
+    rows.push(...page);
+    if (page.length < 1000) break;
   }
-  const rows = (await res.json()) as Row[];
+  // Klaviyo marks a published review that is pinned as "featured"; it is
+  // still live on the site, so it counts as published here.
+  const isLive = (r: Row) => r.status === "published" || r.status === "featured";
   const now = Date.now();
   const d30 = now - 30 * 864e5, d90 = now - 90 * 864e5;
   const lastSynced = rows.reduce<string | null>((m, r) => (!m || r.synced_at > m ? r.synced_at : m), null);
@@ -33,7 +44,7 @@ export async function GET() {
   const PLATFORM: Record<number, string> = { 0: "yotpo" };
   const brands = REWARD_BRANDS.map(b => {
     const mine = rows.filter(r => r.brand_id === b.id && r.review_type !== "question");
-    const published = mine.filter(r => r.status === "published");
+    const published = mine.filter(isLive);
     const rated = published.filter(r => r.rating != null);
     const avg = rated.length ? rated.reduce((s, r) => s + (r.rating as number), 0) / rated.length : null;
     return {
