@@ -83,10 +83,31 @@ export function CampaignBriefSheet({ c }: { c: any }) {
   const emails: any[] = Array.isArray(brief.emails) ? brief.emails.filter((e: any) => e && (e.name || e.subject || e.body)) : [];
   const deps = lines(brief.dependencies);
 
-  const readiness: { text: string; done?: boolean }[] = [];
+  // Per-discipline requirements, as typed in the campaign brief drawer. Same
+  // split and owners as Push to Asana (src/app/api/campaigns/asana-push): the
+  // sheet is what the team reads, Asana is where they tick it off.
+  const socialOwner = ["UPPAbaby", "Mamave", "Frida", "Nanit", "Hannie", "Coolkidz"].includes(c.brand) ? "Nicky" : "Alicia";
+  const disciplines = [
+    { key: "edmBrief", label: "EDM", owner: "Pier Ann", tint: "blue" as const },
+    { key: "blogBrief", label: "Blog", owner: "", tint: "teal" as const },
+    { key: "paidBrief", label: "Paid marketing", owner: "Anna", tint: "green" as const },
+    { key: "socialsBrief", label: "Socials", owner: socialOwner, tint: "coral" as const },
+    { key: "designBrief", label: "Design", owner: "Diep", tint: "amber" as const },
+    { key: "retailBrief", label: "Retail", owner: "Alison", tint: "teal" as const },
+    { key: "websiteBrief", label: "Website", owner: "Melanie", tint: "blue" as const },
+    { key: "affiliateBrief", label: "Affiliate", owner: "Jane", tint: "green" as const },
+  ].map(d => ({ ...d, items: lines(brief[d.key]) })).filter(d => d.items.length && (d.key !== "affiliateBrief" || c.brand === "UPPAbaby" || c.brand === "Nanit"));
+  const cascade = lines(brief.cascade);
+
+  // Launch checklist (bottom of the sheet): owner, then every dependency,
+  // then one line per discipline with work to do — mirrors the Asana
+  // subtasks so a teammate can read the brief top to bottom and know
+  // exactly what is theirs before they open Asana.
+  const readiness: { text: string; done?: boolean; who?: string }[] = [];
   if (ownerMissing) readiness.push({ text: "Assign an owner (currently TBC)", done: false });
+  else readiness.push({ text: `Campaign owner: ${c.owner}`, done: true });
   deps.forEach(d => readiness.push({ text: d, done: false }));
-  if (!ownerMissing) readiness.push({ text: `Owner: ${c.owner}`, done: true });
+  disciplines.forEach(d => readiness.push({ text: `${d.label}: ${d.items[0]}${d.items.length > 1 ? ` (+${d.items.length - 1} more above)` : ""}`, done: false, who: d.owner }));
   const readinessWarn = ownerMissing || deps.length > 0;
 
   const glance = [
@@ -179,9 +200,9 @@ export function CampaignBriefSheet({ c }: { c: any }) {
         )}
 
 
-        {/* 6 · Deliverables + readiness */}
-        {(lines(brief.deliverables).length > 0 || readiness.length > 0) && (
-          <div className="grid sm:grid-cols-2 gap-4 break-inside-avoid print:grid-cols-2">
+        {/* 6 · Deliverables (the launch checklist now lives at the bottom of the sheet) */}
+        {lines(brief.deliverables).length > 0 && (
+          <div className="grid gap-4 break-inside-avoid">
             {lines(brief.deliverables).length > 0 && (
               <div className="rounded-xl px-4 py-3" style={{ background: TINT.blue.bg }}>
                 <Heading><span style={{ color: TINT.blue.text }}>Deliverables</span></Heading>
@@ -191,23 +212,6 @@ export function CampaignBriefSheet({ c }: { c: any }) {
                       <span className="mt-0.5 inline-block w-4 h-4 rounded border shrink-0 bg-white" style={{ borderColor: TINT.blue.text }} />{linkify(t)}
                     </li>
                   ))}
-                </ul>
-              </div>
-            )}
-            {readiness.length > 0 && (
-              <div className="rounded-xl px-4 py-3" style={{ background: readinessWarn ? TINT.amber.bg : TINT.teal.bg }}>
-                <Heading icon={readinessWarn ? <AlertIcon color={TINT.amber.text} /> : undefined}><span style={{ color: readinessWarn ? TINT.amber.text : TINT.teal.text }}>Ready to launch</span></Heading>
-                <ul className="space-y-1.5">
-                  {readiness.map((it, i) => {
-                    const t = readinessWarn ? TINT.amber : TINT.teal;
-                    return (
-                      <li key={i} className="flex items-start gap-2 text-[14px] leading-relaxed" style={{ color: t.strong }}>
-                        <span className={`mt-0.5 inline-flex items-center justify-center w-4 h-4 rounded border shrink-0 ${it.done ? "text-white" : "bg-white"}`} style={{ borderColor: t.text, background: it.done ? t.text : "#fff" }}>
-                          {it.done && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>}
-                        </span>{linkify(it.text)}
-                      </li>
-                    );
-                  })}
                 </ul>
               </div>
             )}
@@ -278,6 +282,34 @@ export function CampaignBriefSheet({ c }: { c: any }) {
           </div>
         )}
 
+        {/* 7b · Team requirements — what each discipline owns, straight from the brief drawer */}
+        {disciplines.length > 0 && (
+          <section>
+            <Heading icon={TealDot}>Team requirements</Heading>
+            <div className="grid sm:grid-cols-2 gap-4 print:grid-cols-2">
+              {disciplines.map(d => (
+                <div key={d.key} className="break-inside-avoid rounded-xl px-5 py-4" style={{ background: TINT[d.tint].bg }}>
+                  <div className="flex items-baseline justify-between gap-2 mb-2">
+                    <h3 className="text-[15px] font-medium" style={{ color: TINT[d.tint].strong }}>{d.label}</h3>
+                    {d.owner && <span className="text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color: TINT[d.tint].text }}>{d.owner}</span>}
+                  </div>
+                  <ul className="space-y-1.5 text-[14px] leading-relaxed" style={{ color: TINT[d.tint].text }}>
+                    {d.items.map((x, i) => <li key={i} className="flex gap-2"><span className="mt-[9px] inline-block w-1.5 h-1.5 rounded-full shrink-0" style={{ background: TINT[d.tint].text }} /><span>{linkify(x)}</span></li>)}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* 7c · Send cascade — what mirrors where, after the EDM goes */}
+        {cascade.length > 0 && (
+          <section className="break-inside-avoid rounded-xl border border-slate-200 bg-slate-50/70 px-5 py-4 print:bg-white">
+            <Heading icon={TealDot}>Send cascade</Heading>
+            <ul className="space-y-1.5 text-[14px] text-slate-600 leading-relaxed">{cascade.map((x, i) => <li key={i} className="flex gap-2"><span className="text-slate-400">→</span><span>{linkify(x)}</span></li>)}</ul>
+          </section>
+        )}
+
         {/* 8 · Email drafts — the actual copy, so the team and designer see it with the brief.
             brief.showEmails === false hides them (toggle in the campaign editor). */}
         {emails.length > 0 && brief.showEmails !== false && (
@@ -308,6 +340,33 @@ export function CampaignBriefSheet({ c }: { c: any }) {
                 {complianceLines.map((p, i) => <p key={i} className="mb-2 break-inside-avoid">{linkify(p)}</p>)}
               </div>
             </div>
+          </section>
+        )}
+
+        {/* 10 · Launch checklist — last thing on the page: who owns it, what
+            must be true before launch, and one line per discipline. Ticked
+            off in Asana; linked when the campaign has been pushed. */}
+        {readiness.length > 0 && (
+          <section className="break-inside-avoid rounded-xl px-5 py-4" style={{ background: readinessWarn ? TINT.amber.bg : TINT.teal.bg }}>
+            <div className="flex items-baseline justify-between gap-3 mb-2">
+              <Heading icon={readinessWarn ? <AlertIcon color={TINT.amber.text} /> : undefined}><span style={{ color: readinessWarn ? TINT.amber.text : TINT.teal.text }}>Launch checklist</span></Heading>
+              {c.asana_permalink_url && <a href={c.asana_permalink_url} target="_blank" rel="noreferrer" className="text-[12px] font-semibold underline underline-offset-2 print:hidden" style={{ color: readinessWarn ? TINT.amber.text : TINT.teal.text }}>Tick these off in Asana →</a>}
+            </div>
+            <ul className="space-y-1.5">
+              {readiness.map((it, i) => {
+                const t = readinessWarn ? TINT.amber : TINT.teal;
+                return (
+                  <li key={i} className="flex items-start gap-2 text-[14px] leading-relaxed" style={{ color: t.strong }}>
+                    <span className={`mt-0.5 inline-flex items-center justify-center w-4 h-4 rounded border shrink-0 ${it.done ? "text-white" : "bg-white"}`} style={{ borderColor: t.text, background: it.done ? t.text : "#fff" }}>
+                      {it.done && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>}
+                    </span>
+                    <span className="flex-1">{linkify(it.text)}</span>
+                    {it.who && <span className="text-[11px] font-semibold uppercase tracking-[0.1em] shrink-0" style={{ color: t.text }}>{it.who}</span>}
+                  </li>
+                );
+              })}
+            </ul>
+            {!c.asana_permalink_url && <p className="mt-2 text-[12px]" style={{ color: readinessWarn ? TINT.amber.text : TINT.teal.text }}>Not in Asana yet. The owner pushes it from the campaign card, then each line above becomes a subtask for the person named.</p>}
           </section>
         )}
       </div>
