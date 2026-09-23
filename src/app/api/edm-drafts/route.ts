@@ -185,6 +185,47 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, item: JSON.parse(text)[0] });
   }
 
+  // SMS — the same drafting/scheduling pipeline as email (Klaviyo treats
+  // them as parallel campaign types), just a short message instead of a
+  // full HTML send. No hero image, no subject line.
+  if (b.channel === "sms") {
+    const brandName = String(b.brand_name || "");
+    const voice = EMAIL_VOICE[brandName];
+    if (!voice) return NextResponse.json({ ok: false, error: `No brand voice set up yet for ${brandName || "this brand"}` }, { status: 400 });
+    const brief = String(b.brief || "").trim();
+    if (!brief) return NextResponse.json({ ok: false, error: "Give it a topic/brief to write from" }, { status: 400 });
+    const brandId = Number(b.brand_id);
+    const linkNote = b.source_url
+      ? `Include this exact link: ${b.source_url}`
+      : `If a link is genuinely needed, use the placeholder {{ organization.url }} rather than inventing a real one.`;
+
+    const system = `You are the on-brand SMS marketing writer for ${brandName}, an Australian baby-goods brand.
+SMS RULES: 160 characters is the target, 300 is the absolute max including any link. One idea, one CTA. Plain, direct, human — this gets read in a pocket, not a Klaviyo modal. No em dashes. Never start a sentence with "And". Australian English. Klaviyo appends its own opt-out line automatically — never write your own "reply STOP" text.
+${linkNote}
+Respond with ONLY the message text, nothing else — no preamble, no quote marks around it, no markdown.
+
+${voice}`;
+    const user = `Write the SMS.
+Topic/brief: ${brief}
+Write it now, message text only.`;
+
+    let smsText: string;
+    try { smsText = (await callClaude(system, user, 300)).trim().replace(/^"|"$/g, ""); }
+    catch (e: any) { return NextResponse.json({ ok: false, error: String(e.message || e).slice(0, 300) }, { status: 502 }); }
+    if (!smsText) return NextResponse.json({ ok: false, error: "AI response was empty — try again" }, { status: 502 });
+
+    const row = {
+      brand_id: brandId, status: "draft", channel: "sms", sms_text: smsText.slice(0, 320),
+      scheduled_for: b.scheduled_for ? String(b.scheduled_for) : null,
+      brief, created_by: acc.user?.email ?? null,
+      ...campaignFields,
+    };
+    const res = await fetch(`${sbUrl}/rest/v1/edm_drafts`, { method: "POST", headers: h({ Prefer: "return=representation" }), body: JSON.stringify(row) });
+    const text = await res.text();
+    if (!res.ok) return NextResponse.json({ ok: false, needsSetup: missing(res.status, text), error: text.slice(0, 200) }, { status: 500 });
+    return NextResponse.json({ ok: true, item: JSON.parse(text)[0] });
+  }
+
   const brandName = String(b.brand_name || "");
   const voice = EMAIL_VOICE[brandName];
   if (!voice) return NextResponse.json({ ok: false, error: `No email voice guide set up yet for ${brandName || "this brand"}` }, { status: 400 });
@@ -263,7 +304,7 @@ export async function PATCH(req: Request) {
 
   if (action === "edit") {
     const fields: any = { updated_at: new Date().toISOString() };
-    for (const f of ["subject", "preview_text", "body_html", "scheduled_for", "image_url"]) {
+    for (const f of ["subject", "preview_text", "body_html", "scheduled_for", "image_url", "sms_text"]) {
       if (b[f] !== undefined) fields[f] = b[f];
     }
     const res = await fetch(`${sbUrl}/rest/v1/edm_drafts?id=eq.${id}`, { method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify(fields) });

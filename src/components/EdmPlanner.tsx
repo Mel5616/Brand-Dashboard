@@ -11,10 +11,12 @@ import { useEffect, useMemo, useState } from "react";
 // and jump straight into Email Writing to draft or send it.
 type Draft = {
   id: string; brand_id: number; status: "planned" | "draft" | "sent" | "rejected";
-  subject: string; preview_text: string | null; brief: string | null;
+  channel: "email" | "sms";
+  subject: string; preview_text: string | null; brief: string | null; sms_text: string | null;
   scheduled_for: string | null; created_at: string;
   campaign_id: string | null; campaign_name: string | null;
 };
+const titleOf = (d: Draft) => (d.channel === "sms" ? d.sms_text : d.subject) || d.brief || "Untitled";
 type Brand = { id: number; name: string; color: string; live: boolean };
 
 const STATUSES = [
@@ -175,7 +177,7 @@ export function EdmPlanner({ brands, onOpenInStudio }: { brands: Brand[]; onOpen
               <span className="text-xs text-gray-400">{brandOf(open.brand_id)?.name}</span>
               <span className={`ml-auto text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full`} style={{ color: statusMeta(open.status).dot, background: `${statusMeta(open.status).dot}18` }}>{statusMeta(open.status).label}</span>
             </div>
-            <h3 className="font-semibold text-gray-800 leading-snug">{open.subject || open.brief || "Untitled"}</h3>
+            <h3 className="font-semibold text-gray-800 leading-snug">{titleOf(open)}</h3>
             {open.preview_text && <p className="text-xs text-gray-400 mt-1">{open.preview_text}</p>}
             {open.brief && open.subject && <p className="text-xs text-gray-400 mt-2">Brief: {open.brief}</p>}
             <div className="mt-3">
@@ -191,7 +193,7 @@ export function EdmPlanner({ brands, onOpenInStudio }: { brands: Brand[]; onOpen
                     <button key={sib.id} onClick={() => setOpenId(sib.id)}
                       className={`w-full text-left flex items-center gap-2 text-xs rounded-lg px-2 py-1.5 ${sib.id === open.id ? "bg-fuchsia-50 text-fuchsia-700 font-semibold" : "text-gray-500 hover:bg-gray-50"}`}>
                       <span className={`text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full shrink-0`} style={{ color: statusMeta(sib.status).dot, background: `${statusMeta(sib.status).dot}18` }}>{statusMeta(sib.status).label}</span>
-                      <span className="truncate">{sib.subject || sib.brief || "Untitled"}</span>
+                      <span className="truncate">{titleOf(sib)}</span>
                       {sib.scheduled_for && <span className="ml-auto text-gray-400 shrink-0">{fmtD(sib.scheduled_for)}</span>}
                     </button>
                   ))}
@@ -255,8 +257,9 @@ function DraftCard({ it, colorOf, brandOf, onClick }: { it: Draft; colorOf: (id:
       <div className="flex items-center gap-1.5 mb-1">
         <span className="w-2 h-2 rounded-full shrink-0" style={{ background: colorOf(it.brand_id) }} />
         <span className="text-[10px] text-gray-400 truncate">{brandOf(it.brand_id)?.name}</span>
+        {it.channel === "sms" && <span className="text-[8px] font-bold uppercase tracking-wide text-violet-600 bg-violet-50 rounded-full px-1.5 py-0.5 shrink-0">SMS</span>}
       </div>
-      <p className="text-xs text-slate-700 font-medium leading-snug">{it.subject || it.brief || "Untitled"}</p>
+      <p className="text-xs text-slate-700 font-medium leading-snug">{titleOf(it)}</p>
       {it.scheduled_for && <span className="text-[10px] text-gray-400 mt-1 block">{fmtD(it.scheduled_for)}</span>}
       {it.campaign_id && <span className="text-[9px] font-semibold text-fuchsia-500 mt-0.5 block truncate">🔗 {it.campaign_name ?? "part of a series"}</span>}
     </button>
@@ -299,7 +302,7 @@ function CalendarGrid({ monthKey, items, colorOf, onAdd, onOpen, onMove }: {
                     <button key={it.id} draggable onDragStart={() => setDragId(it.id)} onClick={() => onOpen(it.id)}
                       className="w-full text-left flex items-center gap-1 rounded px-1 py-0.5 hover:bg-gray-50" style={{ background: `${colorOf(it.brand_id)}14` }}>
                       <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: colorOf(it.brand_id) }} />
-                      <span className="text-[9px] text-slate-600 truncate">{it.subject || it.brief || "Untitled"}</span>
+                      <span className="text-[9px] text-slate-600 truncate">{titleOf(it)}</span>
                     </button>
                   ))}
                 </div>
