@@ -3,6 +3,12 @@ name: Sync dashboard data
 # Runs the Shopify / tradeshow / calendar / AI-insights sync on GitHub's runners
 # (Vercel has no Python). Twice daily + on demand from the dashboard's Sync Now
 # button (workflow_dispatch via the GitHub API).
+#
+# Each sync below is its own job (calling sync-one.yml, which does the real
+# checkout/setup/run), not a step in one big job — most of these scripts touch
+# completely different services and never needed to wait on each other; they
+# only used to run sequentially because they were written as steps. A handful
+# have a real order dependency (below), everything else runs in parallel.
 on:
   schedule:
     # Every 3 hours, around the clock (8×/day). UTC 00/03/06/09/12/15/18/21 =
@@ -15,248 +21,129 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  sync:
-    runs-on: ubuntu-latest
-    timeout-minutes: 50
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install --quiet anthropic supabase google-analytics-data requests openpyxl
+  # ── Independent syncs — run in parallel, no ordering between them ──
+  asana:
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/sync_asana.py" }
+    secrets: inherit
+  connecteam:
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/sync_connecteam.py" }
+    secrets: inherit
+  main:
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/sync.py" }
+    secrets: inherit
+  tradeshow_breakdown:
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/sync_tradeshow_breakdown.py" }
+    secrets: inherit
+  cin7_costs:
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/sync_cin7_costs.py" }
+    secrets: inherit
+  partnership_cin7_sales:
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/sync_partnership_cin7_sales.py" }
+    secrets: inherit
+  promo_calendar:
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/load_promotions.py" }
+    secrets: inherit
+  shopify_sources:
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/sync_shopify_sources.py" }
+    secrets: inherit
+  meta_ads:
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/sync_meta.py" }
+    secrets: inherit
+  pinterest:
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/sync_pinterest.py" }
+    secrets: inherit
+  youtube:
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/sync_youtube.py" }
+    secrets: inherit
+  commission_factory:
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/sync_cf.py" }
+    secrets: inherit
+  instagram:
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/sync_instagram.py" }
+    secrets: inherit
+  instagram_media:
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/sync_instagram_media.py" }
+    secrets: inherit
+  ga4:
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/sync_ga4.py" }
+    secrets: inherit
+  eventbrite:
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/sync_eventbrite.py" }
+    secrets: inherit
+  klaviyo:
+    # Used to run last on purpose, so its rate-limited metric-aggregates
+    # calls couldn't starve the faster steps of the shared job timeout.
+    # That reasoning only applied to sequential steps in one job — as its
+    # own job it has its own timeout budget, so it's free to run alongside
+    # everything else now.
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/sync_klaviyo.py" }
+    secrets: inherit
+  search_console:
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/sync_gsc.py" }
+    secrets: inherit
+  blog_hub:
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/sync_blogs.py" }
+    secrets: inherit
+  shopify_extras:
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/sync_shopify_extras.py" }
+    secrets: inherit
+  cost_sheet:
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/sync_cost_sheet.py" }
+    secrets: inherit
 
-      - name: Write config files (gitignored secrets)
-        env:
-          STORES_CONFIG_JSON: ${{ secrets.STORES_CONFIG_JSON }}
-          GOOGLE_ADS_CREDS_JSON: ${{ secrets.GOOGLE_ADS_CREDS_JSON }}
-          GA4_CREDENTIALS_JSON: ${{ secrets.GA4_CREDENTIALS_JSON }}
-        run: |
-          printf '%s' "$STORES_CONFIG_JSON" > stores.config.json
-          if [ -n "$GOOGLE_ADS_CREDS_JSON" ]; then printf '%s' "$GOOGLE_ADS_CREDS_JSON" > google_ads_creds.json; fi
-          if [ -n "$GA4_CREDENTIALS_JSON" ]; then printf '%s' "$GA4_CREDENTIALS_JSON" > credentials.json; fi
+  # ── Depends on fresh Shopify order data from `main` ──
+  influencer_sales:
+    needs: main
+    if: ${{ always() }}
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/sync_influencer_sales.py" }
+    secrets: inherit
 
-      # Asana is fast (a couple of API calls) and was timing out behind the slow
-      # Shopify/Klaviyo steps, so it runs first.
-      - name: Run Asana tasks sync
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          ASANA_TOKEN: ${{ secrets.ASANA_TOKEN }}
-          ASANA_PROJECT_ID: ${{ secrets.ASANA_PROJECT_ID }}
-          ASANA_DESIGN_PROJECT_ID: ${{ secrets.ASANA_DESIGN_PROJECT_ID }}
-          ASANA_PROJECTS: ${{ secrets.ASANA_PROJECTS }}
-        run: python3 -u scripts/sync_asana.py
+  # ── Read the metrics the syncs above just wrote, so they need those to
+  #    have actually run first (not necessarily succeeded — `always()` lets
+  #    them go ahead even if one upstream job failed, same as before) ──
+  metric_alerts:
+    needs: [main, meta_ads, ga4, klaviyo]
+    if: ${{ always() }}
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/metric_alerts.py" }
+    secrets: inherit
+  ai_insights:
+    needs: [main, meta_ads, ga4, klaviyo, metric_alerts]
+    if: ${{ always() }}
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/generate_insights.py" }
+    secrets: inherit
 
-      - name: Run Connecteam staff time-off sync
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          CONNECTEAM_API_KEY: ${{ secrets.CONNECTEAM_API_KEY }}
-        run: python3 -u scripts/sync_connecteam.py
-
-      - name: Run sync
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          BRAND_SHOPIFY: ${{ secrets.BRAND_SHOPIFY }}
-          BOOTH_SUPABASE_URL: ${{ secrets.BOOTH_SUPABASE_URL }}
-          BOOTH_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.BOOTH_SUPABASE_SERVICE_ROLE_KEY }}
-          UPPABABY_SHOPIFY_DOMAIN: ${{ secrets.UPPABABY_SHOPIFY_DOMAIN }}
-          UPPABABY_SHOPIFY_TOKEN: ${{ secrets.UPPABABY_SHOPIFY_TOKEN }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: python3 scripts/sync.py
-
-      - name: Run tradeshow breakdown (products + hourly + QR)
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python3 -u scripts/sync_tradeshow_breakdown.py
-
-      - name: Run Cin7 show costs (real dispatched-order COGS)
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          CIN7_USERNAME: ${{ secrets.CIN7_USERNAME }}
-          CIN7_API_KEY: ${{ secrets.CIN7_API_KEY }}
-        run: python3 -u scripts/sync_cin7_costs.py
-
-      - name: Run Partnership Cin7 sales (wholesale accounts tracked by customer, not code)
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          CIN7_USERNAME: ${{ secrets.CIN7_USERNAME }}
-          CIN7_API_KEY: ${{ secrets.CIN7_API_KEY }}
-        run: python3 -u scripts/sync_partnership_cin7_sales.py
-
-      - name: Run Promo Calendar sync (SharePoint via Graph)
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
-          MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
-          MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
-          MS_PROMO_SHARE_URL: ${{ secrets.MS_PROMO_SHARE_URL }}
-        run: python3 -u scripts/load_promotions.py
-
-      - name: Run Shopify special-source sync (Faire, Baby Bunting)
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python3 scripts/sync_shopify_sources.py
-
-      - name: Run Meta Ads sync
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python3 scripts/sync_meta.py
-
-      - name: Run Pinterest Ads sync
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python3 scripts/sync_pinterest.py
-
-      - name: Run YouTube sync
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python3 scripts/sync_youtube.py
-
-      - name: Run Commission Factory (affiliate) sync
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python3 -u scripts/sync_cf.py
-
-      - name: Run Instagram sync
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python3 scripts/sync_instagram.py
-
-      - name: Run Instagram media sync
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python3 scripts/sync_instagram_media.py
-
-      - name: Run GA4 sync
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python3 scripts/sync_ga4.py
-
-      - name: Run Eventbrite events sync
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          EVENTBRITE_TOKEN: ${{ secrets.EVENTBRITE_TOKEN }}
-        run: python3 -u scripts/sync_eventbrite.py
-
-      # Slow step (rate-limited metric aggregates) — kept after the faster syncs so a
-      # timeout here can't starve them.
-      - name: Run Klaviyo sync
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python3 scripts/sync_klaviyo.py
-
-      - name: Run Search Console (SEO) sync
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: python3 scripts/sync_gsc.py
-
-      - name: Run blog hub sync (articles + GA4 pages + GSC pages)
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python3 -u scripts/sync_blogs.py
-
-      - name: Run influencer sales matching (affiliate codes → Shopify orders)
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python3 -u scripts/sync_influencer_sales.py
-
-      - name: Shopify extras (abandoned checkouts, stock, discount codes)
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python3 -u scripts/sync_shopify_extras.py
-
-      - name: Cost sheet (live from SharePoint via Microsoft Graph)
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python3 -u scripts/sync_cost_sheet.py
-
-      - name: Metric exception alerts (revenue drops, spend spikes, ROAS)
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python3 -u scripts/metric_alerts.py
-
-      - name: Generate AI insights (brand health + portfolio digest)
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: python3 scripts/generate_insights.py
-
-      # Runs last: emails an alert if any feed failed or went stale this run.
-      - name: Sync failure alerts
-        if: ${{ always() }}
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-        run: python3 -u scripts/alert_sync.py
+  # ── Always runs last: emails an alert if any feed failed or went stale
+  #    this run, so it needs every other job to have finished first ──
+  sync_failure_alerts:
+    needs: [asana, connecteam, main, tradeshow_breakdown, cin7_costs, partnership_cin7_sales,
+            promo_calendar, shopify_sources, meta_ads, pinterest, youtube, commission_factory,
+            instagram, instagram_media, ga4, eventbrite, klaviyo, search_console, blog_hub,
+            shopify_extras, cost_sheet, influencer_sales, metric_alerts, ai_insights]
+    if: ${{ always() }}
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/alert_sync.py" }
+    secrets: inherit

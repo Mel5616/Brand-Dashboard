@@ -1,0 +1,65 @@
+name: Sync one source
+
+# Reusable job: checkout, Python setup, write the gitignored config files from
+# secrets, run one sync script. sync.yml calls this once per script as a
+# separate job so independent syncs run in parallel instead of as 26
+# sequential steps in one — most of them touch completely different services
+# (Shopify, Meta, Klaviyo, SharePoint...) and were only ever sequential
+# because they were written as steps in one job, not because any of them
+# needed to wait for the others.
+#
+# `secrets: inherit` on the caller side means every secret the caller can see
+# is available here under the same ${{ secrets.X }} names, without listing
+# each one — a script that doesn't need a given var just doesn't read it.
+on:
+  workflow_call:
+    inputs:
+      script:
+        required: true
+        type: string
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install --quiet anthropic supabase google-analytics-data requests openpyxl
+
+      - name: Write config files (gitignored secrets)
+        env:
+          STORES_CONFIG_JSON: ${{ secrets.STORES_CONFIG_JSON }}
+          GOOGLE_ADS_CREDS_JSON: ${{ secrets.GOOGLE_ADS_CREDS_JSON }}
+          GA4_CREDENTIALS_JSON: ${{ secrets.GA4_CREDENTIALS_JSON }}
+        run: |
+          printf '%s' "$STORES_CONFIG_JSON" > stores.config.json
+          if [ -n "$GOOGLE_ADS_CREDS_JSON" ]; then printf '%s' "$GOOGLE_ADS_CREDS_JSON" > google_ads_creds.json; fi
+          if [ -n "$GA4_CREDENTIALS_JSON" ]; then printf '%s' "$GA4_CREDENTIALS_JSON" > credentials.json; fi
+
+      - name: Run ${{ inputs.script }}
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BRAND_SHOPIFY: ${{ secrets.BRAND_SHOPIFY }}
+          BOOTH_SUPABASE_URL: ${{ secrets.BOOTH_SUPABASE_URL }}
+          BOOTH_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.BOOTH_SUPABASE_SERVICE_ROLE_KEY }}
+          UPPABABY_SHOPIFY_DOMAIN: ${{ secrets.UPPABABY_SHOPIFY_DOMAIN }}
+          UPPABABY_SHOPIFY_TOKEN: ${{ secrets.UPPABABY_SHOPIFY_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ASANA_TOKEN: ${{ secrets.ASANA_TOKEN }}
+          ASANA_PROJECT_ID: ${{ secrets.ASANA_PROJECT_ID }}
+          ASANA_DESIGN_PROJECT_ID: ${{ secrets.ASANA_DESIGN_PROJECT_ID }}
+          ASANA_PROJECTS: ${{ secrets.ASANA_PROJECTS }}
+          CONNECTEAM_API_KEY: ${{ secrets.CONNECTEAM_API_KEY }}
+          CIN7_USERNAME: ${{ secrets.CIN7_USERNAME }}
+          CIN7_API_KEY: ${{ secrets.CIN7_API_KEY }}
+          MS_TENANT_ID: ${{ secrets.MS_TENANT_ID }}
+          MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+          MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
+          MS_PROMO_SHARE_URL: ${{ secrets.MS_PROMO_SHARE_URL }}
+          EVENTBRITE_TOKEN: ${{ secrets.EVENTBRITE_TOKEN }}
+        run: python3 -u ${{ inputs.script }}
