@@ -96,6 +96,7 @@ import { CredentialsPanel } from "./CredentialsPanel";
 import { ADMIN_ONLY_TABS } from "@/lib/tabs";
 import { MediaReleases } from "./MediaReleases";
 import { VouchersCard } from "./VouchersCard";
+import { ReviewRewardsCard } from "./ReviewRewardsCard";
 import { WinbackCard } from "./WinbackCard";
 import { InfluencerAgreements } from "./InfluencerAgreements";
 import { CampaignBriefs } from "./CampaignBriefs";
@@ -1642,6 +1643,7 @@ export function DashboardTabs({
             <>
               <SectionBar title="Cross Site Discounts" />
               <VouchersCard admin={role === "admin"} />
+              <ReviewRewardsCard />
             </>
           )}
 
