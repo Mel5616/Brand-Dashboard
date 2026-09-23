@@ -89,12 +89,12 @@ export function CampaignBriefSheet({ c }: { c: any }) {
   const socialOwner = ["UPPAbaby", "Mamave", "Frida", "Nanit", "Hannie", "Coolkidz"].includes(c.brand) ? "Nicky" : "Alicia";
   const disciplines = [
     { key: "edmBrief", label: "EDM", owner: "Pier Ann", tint: "blue" as const },
-    { key: "blogBrief", label: "Blog", owner: "", tint: "teal" as const },
+    { key: "blogBrief", label: "Blog", owner: "Mel", tint: "teal" as const },
     { key: "paidBrief", label: "Paid marketing", owner: "Anna", tint: "green" as const },
     { key: "socialsBrief", label: "Socials", owner: socialOwner, tint: "coral" as const },
     { key: "designBrief", label: "Design", owner: "Diep", tint: "amber" as const },
     { key: "retailBrief", label: "Retail", owner: "Alison", tint: "teal" as const },
-    { key: "websiteBrief", label: "Website", owner: "Melanie", tint: "blue" as const },
+    { key: "websiteBrief", label: "Website", owner: "Mel", tint: "blue" as const },
     { key: "affiliateBrief", label: "Affiliate", owner: "Jane", tint: "green" as const },
   ].map(d => ({ ...d, items: lines(brief[d.key]) })).filter(d => d.items.length && (d.key !== "affiliateBrief" || c.brand === "UPPAbaby" || c.brand === "Nanit"));
   const cascade = lines(brief.cascade);
