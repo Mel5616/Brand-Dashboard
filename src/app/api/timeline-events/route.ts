@@ -42,7 +42,7 @@ async function sb(path: string) {
 // Pull in read-only entries from Tradeshows, Campaign Calendar and New
 // Products, so the timeline doesn't need everything re-typed by hand.
 async function pulledEvents() {
-  const [shows, showBrands, campaigns, products, brands, blogDrafts, edmDrafts] = await Promise.all([
+  const [shows, showBrands, campaigns, products, brands, blogDrafts, edmDrafts, siteDeals, socialDrafts] = await Promise.all([
     sb("tradeshows?select=id,name,date_start,date_end,state,location"),
     sb("tradeshow_brands?select=tradeshow_id,brand_id"),
     sb("campaigns?select=id,campaign,brand,key_date,end_date,note,image_url,confirmed"),
@@ -50,6 +50,8 @@ async function pulledEvents() {
     sb("brands?select=id,name"),
     sb("blog_drafts?select=id,brand_id,title,status,blog_key,target_keyword,scheduled_for,created_at,image_url&status=in.(planned,draft,published)"),
     sb("edm_drafts?select=id,brand_id,subject,status,scheduled_for,created_at,image_url&status=in.(planned,draft,sent)"),
+    sb("site_deals?select=id,brand,title,period_start,period_end,note,paused,campaign_name"),
+    sb("social_drafts?select=id,brand_id,platform,format,caption,status,scheduled_for,created_at,campaign_name&status=in.(draft,approved,posted)"),
   ]);
 
   const out: any[] = [];
@@ -76,6 +78,39 @@ async function pulledEvents() {
 
   const brandIdByName: Record<string, number> = {};
   for (const b of brands) brandIdByName[String(b.name).toLowerCase()] = b.id;
+
+  // D2C promos (Plan > Promotions' site_deals) — brand is stored by name
+  // here, not brand_id, unlike every other table this route reads.
+  for (const deal of siteDeals) {
+    if (!deal.period_start || !isoDate.test(deal.period_start)) continue;
+    const brandId = brandIdByName[String(deal.brand || "").toLowerCase()];
+    if (brandId === undefined) continue;
+    out.push({
+      id: `deal-${deal.id}`, source: "site_deals", brand_id: brandId,
+      event_type: "dtc_promo", title: deal.title, date: deal.period_start,
+      end_date: deal.period_end && isoDate.test(deal.period_end) ? deal.period_end : null,
+      product_name: null, quantity: null, status: deal.paused ? "working" : "locked",
+      note: [deal.campaign_name ? `Campaign: ${deal.campaign_name}` : null, deal.note].filter(Boolean).join(" — ") || null,
+      image_url: null,
+    });
+  }
+
+  // Social drafts (Social Writing) — same visibility pattern as blog/EDM
+  // above: draft/approved/posted all show, rejected doesn't. No dedicated
+  // title field, so the caption's first line stands in for one.
+  const SOCIAL_STAGE: Record<string, string> = { draft: "Needs review", approved: "Approved", posted: "Posted" };
+  for (const d of socialDrafts) {
+    const stage = SOCIAL_STAGE[d.status] || d.status;
+    const title = String(d.caption || "").split("\n")[0].slice(0, 80) || "Social post";
+    out.push({
+      id: `social-${d.id}`, source: "social_drafts", brand_id: d.brand_id,
+      event_type: "social", title, date: (d.scheduled_for || d.created_at.slice(0, 10)), end_date: null,
+      product_name: null, quantity: null, status: d.status === "posted" ? "locked" : "working",
+      note: [`${d.platform} · ${d.format} · ${stage}`, d.campaign_name ? `Campaign: ${d.campaign_name}` : null].filter(Boolean).join(" — "),
+      image_url: null,
+    });
+  }
+
   for (const c of campaigns) {
     if (!c.key_date || !isoDate.test(c.key_date)) continue; // skip placeholder month-only dates
     const brandId = brandIdByName[String(c.brand || "").toLowerCase()];

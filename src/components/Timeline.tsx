@@ -15,7 +15,7 @@ type Brand = { id: number; name: string; live?: boolean; color?: string };
 type EventType = "stock" | "launch" | "coming" | "retail" | "event" | "trade" | "campaign" | "blog" | "edm"
   | "key_date" | "tentpole" | "dtc_promo" | "retailer_promo" | "trade_deadline" | "social" | "influencer" | "paid_media" | "pr";
 type Status = "locked" | "working";
-type Source = "tradeshows" | "campaigns" | "new_products" | "blog_drafts";
+type Source = "tradeshows" | "campaigns" | "new_products" | "blog_drafts" | "edm_drafts" | "site_deals" | "social_drafts";
 type TimelineEvent = {
   id: number | string; brand_id: number; event_type: EventType; title: string; date: string | null; end_date: string | null;
   product_name: string | null; quantity: number | null; status: string | null; note: string | null; image_url: string | null;
@@ -51,7 +51,10 @@ const TYPE_META: Record<EventType, { label: string; short: string; color: string
 const TYPES = Object.keys(TYPE_META) as EventType[];
 const KEY_TYPES = TYPES.filter(t => TYPE_META[t].key);
 const OTHER_TYPES = TYPES.filter(t => !TYPE_META[t].key);
-const SOURCE_META: Record<Source, string> = { tradeshows: "Synced from Tradeshows", campaigns: "Synced from Campaign Calendar", new_products: "Synced from New Products", blog_drafts: "Synced from AI Blog Writer" };
+const SOURCE_META: Record<Source, string> = {
+  tradeshows: "Synced from Tradeshows", campaigns: "Synced from Campaign Calendar", new_products: "Synced from New Products",
+  blog_drafts: "Synced from Blog Writing", edm_drafts: "Synced from Email Writing", site_deals: "Synced from D2C Promotions", social_drafts: "Synced from Social Writing",
+};
 
 // Tradeshows and the Australian retail calendar are portfolio-wide, not
 // brand-specific — pulled/added once under this pseudo "brand" row instead
