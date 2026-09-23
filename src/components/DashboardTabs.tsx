@@ -471,7 +471,8 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Operations", ids: ["budget", "expenses", "new-products", "product-info", "brand-assets", "stock-report", "cost-sheet", "credentials"] },
   { label: "Retailer Hub", ids: ["brand-packs", "price-lists", "hub-fact-sheets", "brand-overview", "stock-availability", "order-forms", "customers", "customer-forms"] },
   { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads", "amazon-ads"] },
-  { label: "Owned & Earned", ids: ["social", "social-writing", "youtube", "influencer", "gifting", "influencer-agreements", "campaign-briefs", "nanit", "releases"] },
+  { label: "Owned & Earned", ids: ["social", "social-writing", "youtube"] },
+  { label: "Influencers", ids: ["influencer", "gifting", "influencer-agreements", "campaign-briefs", "nanit", "releases"] },
   { label: "Partnerships & Affiliates", ids: ["affiliates", "commission-factory", "pa-budget", "pa-tracker", "pa-revenue", "documents"] },
   { label: "Sales Hub", ids: ["sales-hub"] },
 ];
@@ -1038,8 +1039,14 @@ export function DashboardTabs({
             NESTED_PARENTS.map(p => [p.parentId, TABS.filter(t => p.childIds.includes(t.id) && visIds.has(t.id))])
           ) as Record<string, typeof TABS[number][]>;
           return (<>{searchTrigger}{pinnedBlock}{groups.map(g => {
-            const flatTabs = g.tabs.filter(t => !INFLUENCER_IDS.includes(t.id as TabId) && !ALL_NESTED_CHILD_IDS.includes(t.id as TabId));
-            const inflTabs = g.tabs.filter(t => INFLUENCER_IDS.includes(t.id as TabId));
+            // Influencers is its own top-level group now, so it renders flat
+            // like every other group — the nested sub-dropdown below only
+            // exists for the case of influencer tabs mixed into another
+            // group's list, which no longer happens, but is left in place in
+            // case that ever changes again.
+            const isInfluencersGroup = g.label === "Influencers";
+            const flatTabs = isInfluencersGroup ? g.tabs : g.tabs.filter(t => !INFLUENCER_IDS.includes(t.id as TabId) && !ALL_NESTED_CHILD_IDS.includes(t.id as TabId));
+            const inflTabs = isInfluencersGroup ? [] : g.tabs.filter(t => INFLUENCER_IDS.includes(t.id as TabId));
             const collapsed = collapsedGroups.has(g.label);
             return (
               <div key={g.label} ref={el => { sidebarGroupRefs.current[g.label] = el; }} className="mb-2">
