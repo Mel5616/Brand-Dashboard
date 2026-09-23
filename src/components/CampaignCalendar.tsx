@@ -84,6 +84,7 @@ const BRIEF_FIELDS: { key: string; label: string }[] = [
   // Per-discipline requirements — these push straight into that team's Asana
   // subtask (Push to Asana) instead of guessing from the deliverables list.
   { key: "edmBrief", label: "EDM requirements (Pier Ann)" },
+  { key: "blogBrief", label: "Blog requirements" },
   { key: "paidBrief", label: "Paid Marketing requirements (Anna)" },
   { key: "socialsBrief", label: "Socials requirements (Nicky / Alicia)" },
   { key: "designBrief", label: "Design requirements (Diep)" },
@@ -370,7 +371,8 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
     const brand = brands.find(b => b.name === item.brand) ?? brands.find(b => item.brand.includes(b.name));
     if (!brand) { setLinkError(`Couldn't match "${item.brand}" to a single brand to start a blog draft.`); return; }
     setLinkBusy("blog"); setLinkError(null);
-    const res = await fetch("/api/blog-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief: campaignBrief(item), campaign_id: item.id, campaign_name: item.campaign }) }).then(r => r.json()).catch(() => null);
+    const blogBrief = (item.brief as any)?.blogBrief as string | undefined;
+    const res = await fetch("/api/blog-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief: blogBrief?.trim() || campaignBrief(item), campaign_id: item.id, campaign_name: item.campaign, scheduled_for: item.key_date }) }).then(r => r.json()).catch(() => null);
     setLinkBusy(null);
     if (res?.ok) onStartBlog?.(res.item.id);
     else setLinkError(res?.error || "Couldn't start a blog draft for that brand.");
@@ -490,9 +492,15 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
     const brief = campaignBrief(item);
     const results: { label: string; ok: boolean; note?: string }[] = [];
 
-    setKitStep("Drafting blog post… (30–60s)");
-    const blogRes = await fetch("/api/blog-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief, campaign_id: item.id, campaign_name: item.campaign }) }).then(r => r.json()).catch(() => null);
-    results.push({ label: "Blog draft", ok: !!blogRes?.ok, note: blogRes?.ok ? undefined : (blogRes?.error || "failed") });
+    const wantsBlog = splitChannels((item.brief as any)?.channels ?? "").includes("Blog");
+    if (wantsBlog) {
+      setKitStep("Drafting blog post… (30–60s)");
+      const blogBrief = (item.brief as any)?.blogBrief as string | undefined;
+      const blogRes = await fetch("/api/blog-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief: blogBrief?.trim() || brief, campaign_id: item.id, campaign_name: item.campaign, scheduled_for: item.key_date }) }).then(r => r.json()).catch(() => null);
+      results.push({ label: "Blog draft", ok: !!blogRes?.ok, note: blogRes?.ok ? undefined : (blogRes?.error || "failed") });
+    } else {
+      results.push({ label: "Blog draft", ok: true, note: "skipped — Blog isn't ticked in this campaign's Channels" });
+    }
 
     const existingEmails: EmailDraft[] = (item.brief as any)?.emails ?? [];
     if (existingEmails.length === 0) {
@@ -1172,16 +1180,19 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
                   </>
                 )}
                 {canEdit && <>
-                  <button onClick={() => generateKit(open)} disabled={kitBusy} title={kitBusy ? undefined : "Drafts the blog post, proposes 3 EDM sends, and files a Website Request if the brief points at a build"}
+                  <button onClick={() => generateKit(open)} disabled={kitBusy} title={kitBusy ? undefined : "Drafts the blog post if Blog is ticked in Channels, proposes 3 EDM sends, and files a Website Request if the brief points at a build"}
                     className="inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg px-3.5 py-1.5 transition disabled:opacity-60 motion-reduce:transition-none">
                     {kitBusy
                       ? <svg className="w-4 h-4 animate-spin shrink-0" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
                       : "✨"} {kitBusy ? "Generating kit…" : "Generate campaign kit"}
                   </button>
-                  <button onClick={() => startBlog(open)} disabled={linkBusy === "blog"} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg px-3.5 py-1.5 transition disabled:opacity-60 motion-reduce:transition-none">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15.828H9v-2.828l8.586-8.586zM3 8l7 5" /></svg>
-                    {linkBusy === "blog" ? "Starting…" : "Start blog →"}
-                  </button>
+                  {splitChannels((open.brief as any)?.channels ?? "").includes("Blog") && (
+                    <button onClick={() => startBlog(open)} disabled={linkBusy === "blog"} title="Drafts from the brief's Blog requirements (or the general brief if that's blank)"
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-indigo-500 hover:bg-indigo-600 rounded-lg px-3.5 py-1.5 transition disabled:opacity-60 motion-reduce:transition-none">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15.828H9v-2.828l8.586-8.586zM3 8l7 5" /></svg>
+                      {linkBusy === "blog" ? "Starting…" : "Start blog →"}
+                    </button>
+                  )}
                   <button onClick={() => startEdm(open)} disabled={linkBusy === "edm"} className="inline-flex items-center gap-1.5 text-sm font-medium text-white bg-fuchsia-500 hover:bg-fuchsia-600 rounded-lg px-3.5 py-1.5 transition disabled:opacity-60 motion-reduce:transition-none">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
                     {linkBusy === "edm" ? "Starting…" : "Start EDM →"}

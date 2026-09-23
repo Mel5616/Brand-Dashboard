@@ -13,7 +13,7 @@ const h = (extra: Record<string, string> = {}) => ({ apikey: sbKey!, Authorizati
 
 const DRAFT_FIELDS = [
   "oneLiner", "objective", "whyNow", "audience", "keyMessage", "offerMechanic", "do", "dont", "successMeasure", "compliance",
-  "edmBrief", "paidBrief", "socialsBrief", "designBrief", "retailBrief", "websiteBrief", "affiliateBrief", "creativeDirection",
+  "edmBrief", "blogBrief", "paidBrief", "socialsBrief", "designBrief", "retailBrief", "websiteBrief", "affiliateBrief", "creativeDirection",
 ] as const;
 // These per-discipline fields feed straight into that team's Asana subtask
 // on "Push to Asana" — see src/app/api/campaigns/asana-push/route.ts — so
@@ -60,6 +60,7 @@ dont — 2-4 short guardrails on what to avoid.
 successMeasure — how you'd know this worked.
 compliance — any claims/compliance care needed, or unresolved dependencies flagged in the note.
 edmBrief — a genuinely actionable instruction to the email writer: how many sends, what each one needs to cover, tone/angle notes. If "deliverables" below already lists specific dates/topics, work from those exactly, don't invent different ones.
+blogBrief — instruction to the blog writer: topic/angle, target keyword if there is one, which blog it belongs on. Only write this if "channels" below includes Blog — leave it blank for a campaign with no blog planned, don't invent a blog post that isn't part of the plan.
 paidBrief — instruction to paid media: which channels, what the ad should say/show, targeting angle, where it sends people.
 socialsBrief — instruction to social: what to post, which formats (reel, static, stories), how it should mirror or support the EDM/blog angle.
 designBrief — instruction to design: what assets are needed (hero images, social tiles, banners), any visual direction beyond the brand's existing style guide.

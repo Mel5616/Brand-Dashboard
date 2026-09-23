@@ -290,7 +290,11 @@ export function BlogStudio({ brands, admin, onSendAsEdm, openDraftId, onOpened }
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold text-slate-800 truncate">{d.title}</div>
                     <div className="text-xs text-gray-400">
-                      {brand?.name ?? "—"} · {blogLabel} · {d.status === "planned" && d.scheduled_for ? <span className="font-semibold text-sky-600">Suggested {fmtD(d.scheduled_for)}</span> : fmtD(d.created_at)}
+                      {brand?.name ?? "—"} · {blogLabel} · {d.status === "planned" && d.scheduled_for
+                        ? <span className="font-semibold text-sky-600">Suggested {fmtD(d.scheduled_for)}</span>
+                        : d.status !== "planned" && d.scheduled_for
+                        ? <span className="font-semibold text-indigo-600">Go live {fmtD(d.scheduled_for)} · drafted {fmtD(d.created_at)}</span>
+                        : fmtD(d.created_at)}
                       {d.target_keyword ? ` · "${d.target_keyword}"` : ""}
                     </div>
                   </div>

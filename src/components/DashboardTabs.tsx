@@ -88,6 +88,7 @@ import { BlogStudio } from "./BlogStudio";
 import { EmailStudio } from "./EmailStudio";
 import { SocialStudio } from "./SocialStudio";
 import { LifecycleFlowGrid } from "./LifecycleFlowGrid";
+import { DatabaseSizeCard } from "./DatabaseSizeCard";
 import { EdmPlanner } from "./EdmPlanner";
 import { CredentialsPanel } from "./CredentialsPanel";
 import { ADMIN_ONLY_TABS } from "@/lib/tabs";
@@ -2483,6 +2484,7 @@ export function DashboardTabs({
           {active === "lifecycle-flows" && (
             <>
               <SectionBar title="Lifecycle Flows" />
+              <DatabaseSizeCard />
               <LifecycleFlowGrid brands={brands.map((b: any) => ({ id: b.id, name: b.name, live: b.live }))} />
             </>
           )}

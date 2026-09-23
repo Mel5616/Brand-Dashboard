@@ -324,6 +324,10 @@ export async function POST(req: Request) {
   const siteRole = b.site_role === "hero" ? "hero" : "cluster";
   if (!brief) return NextResponse.json({ ok: false, error: "Give it a topic/brief to write from" }, { status: 400 });
   const campaignFields = b.campaign_id ? { campaign_id: String(b.campaign_id), campaign_name: b.campaign_name ? String(b.campaign_name).slice(0, 200) : null } : {};
+  // The campaign's own key date, when this draft was started from a
+  // campaign — shown in Blog Writing as the expected go-live date so a
+  // "Needs review" post isn't just a bare creation date.
+  const scheduledFor = /^\d{4}-\d{2}-\d{2}$/.test(String(b.scheduled_for || "")) ? String(b.scheduled_for) : null;
 
   const system = `You are the on-brand blog writer for ${brandName}, an Australian baby-goods brand. Follow the house rules and the brand voice exactly.
 
@@ -370,6 +374,7 @@ Write it now, in the exact format specified.`;
     site_role: siteRole,
     body_html: String(draft.body_html || ""),
     brief, created_by: acc.user?.email ?? null,
+    scheduled_for: scheduledFor,
     ...campaignFields,
   };
   if (!row.title || !row.body_html) return NextResponse.json({ ok: false, error: "AI response was missing a title or body — try again" }, { status: 502 });
