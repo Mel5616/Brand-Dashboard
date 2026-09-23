@@ -2,18 +2,18 @@
 
 import { useEffect, useState } from "react";
 
-// Reviews, one place: what's actually been written — via Judge.me (the
-// brands being migrated to it, starting with Frida) or Klaviyo Reviews
-// (UPPAbaby, until/unless it moves too) — alongside the incentive links/QR
-// codes used to drive new ones, and who's claimed a reward so far.
+// Reviews, one place: every brand's Klaviyo Reviews (mirrored hourly into
+// Supabase by scripts/review_rewards.py, so all 13 brands show without live
+// keys) alongside the incentive links/QR codes used to drive new ones, and
+// who's claimed a reward so far.
 type Brand = { id: number; name: string };
 type Incentive = {
   id: string; slug: string; brand: string; brand_id: number; label: string; review_url: string | null; judgeme_product_id: string | null;
   discount_type: string; discount_value: number; min_spend: number | null; expiry_days: number; active: boolean;
 };
 type ReviewRequest = { id: string; brand: string; email: string; discount_code: string | null; status: string; created_at: string; rating: number | null };
-type SourceReview = { id: string; rating: number | null; content: string | null; author: string | null; product: string | null; created: string | null; verified: boolean };
-type BrandReviews = { brand: string; enabled: boolean; reviews: SourceReview[] };
+type SourceReview = { id: string; rating: number | null; title: string | null; content: string | null; author: string | null; product: string | null; productUrl: string | null; created: string | null; verified: boolean; status: string | null; reply: string | null };
+type BrandReviews = { id: number; brand: string; platform: string; enabled: boolean; total: number; last30: number; last90: number; pending: number; avgRating: number | null; reviews: SourceReview[] };
 
 const inp = "text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white";
 const stars = (n: number | null) => n == null ? "" : "★".repeat(n) + "☆".repeat(5 - n);
@@ -21,8 +21,10 @@ const stars = (n: number | null) => n == null ? "" : "★".repeat(n) + "☆".rep
 export function ReviewsPanel({ brands = [], canEdit = false }: { brands?: Brand[]; canEdit?: boolean }) {
   const [incentives, setIncentives] = useState<Incentive[]>([]);
   const [requests, setRequests] = useState<ReviewRequest[]>([]);
-  const [judgeMeReviews, setJudgeMeReviews] = useState<BrandReviews[]>([]);
   const [klaviyoReviews, setKlaviyoReviews] = useState<BrandReviews[]>([]);
+  const [reviewsSetup, setReviewsSetup] = useState(true);
+  const [lastSynced, setLastSynced] = useState<string | null>(null);
+  const [openBrand, setOpenBrand] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [needsSetup, setNeedsSetup] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -32,16 +34,16 @@ export function ReviewsPanel({ brands = [], canEdit = false }: { brands?: Brand[
   const [f, setF] = useState(empty);
 
   async function load() {
-    const [i, r, j, k] = await Promise.all([
+    const [i, r, k] = await Promise.all([
       fetch("/api/review-incentives").then(x => x.json()).catch(() => ({ ok: false })),
       fetch("/api/review-requests").then(x => x.json()).catch(() => ({ ok: false })),
-      fetch("/api/judgeme-reviews").then(x => x.json()).catch(() => ({ ok: false })),
       fetch("/api/klaviyo-reviews").then(x => x.json()).catch(() => ({ ok: false })),
     ]);
     if (i.ok) { setIncentives(i.items || []); setNeedsSetup(!!i.needsSetup); }
     setRequests(r.items || []);
-    setJudgeMeReviews(j.brands || []);
     setKlaviyoReviews(k.brands || []);
+    setReviewsSetup(!k.needsSetup);
+    setLastSynced(k.lastSynced || null);
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
@@ -87,36 +89,62 @@ export function ReviewsPanel({ brands = [], canEdit = false }: { brands?: Brand[
     <div className="space-y-6">
       {/* Reviews across your sites */}
       <div>
-        <h3 className="text-sm font-bold text-slate-700 mb-2">Reviews across your sites</h3>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {[
-            ...judgeMeReviews.map(b => ({ ...b, source: "judgeme" as const })),
-            ...klaviyoReviews.map(b => ({ ...b, source: "klaviyo" as const })),
-          ].map(b => (
-            <div key={b.brand} className="bg-white rounded-xl border border-gray-100 p-4">
-              <div className="flex items-center justify-between mb-2">
-                <p className="font-medium text-slate-800">{b.brand}</p>
-                {!b.enabled && <span className="text-[10px] font-bold uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">Not enabled</span>}
-              </div>
-              {b.enabled && b.reviews.length === 0 && <p className="text-xs text-gray-400">No reviews yet.</p>}
-              {!b.enabled && (
-                <p className="text-xs text-gray-400">
-                  {b.source === "judgeme"
-                    ? "Install Judge.me on this store and add its API token + shop domain to JUDGEME_API_TOKENS to see reviews here."
-                    : "Turn on Klaviyo Reviews for this account to see them here."}
-                </p>
-              )}
-              <div className="space-y-2 max-h-56 overflow-y-auto">
-                {b.reviews.slice(0, 5).map(r => (
-                  <div key={r.id} className="text-xs border-t border-gray-50 pt-2 first:border-0 first:pt-0">
-                    <p className="text-amber-500">{stars(r.rating)} {r.verified && <span className="text-emerald-600 font-medium">· verified</span>}</p>
-                    {r.content && <p className="text-slate-600 line-clamp-2 mt-0.5">{r.content}</p>}
-                    <p className="text-gray-400 mt-0.5">{r.author}{r.product ? ` · ${r.product}` : ""}</p>
+        <div className="flex items-baseline justify-between mb-2 gap-3 flex-wrap">
+          <h3 className="text-sm font-bold text-slate-700">Reviews across your sites</h3>
+          <p className="text-[11px] text-gray-400">
+            Klaviyo Reviews, every brand · published only · counts are last 30 / 90 days
+            {lastSynced ? ` · synced ${new Date(lastSynced).toLocaleString("en-AU", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}` : ""}
+          </p>
+        </div>
+        {!reviewsSetup && (
+          <p className="text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 mb-3">
+            Run <code className="font-mono text-xs">supabase/add_klaviyo_reviews.sql</code> in Supabase, then the hourly review job fills this in.
+          </p>
+        )}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          {klaviyoReviews.map(b => {
+            const open = openBrand === b.id;
+            return (
+              <div key={b.id} className={`bg-white rounded-xl border p-4 ${open ? "border-emerald-300 sm:col-span-2 lg:col-span-3 xl:col-span-4" : "border-gray-100"}`}>
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-medium text-slate-800">{b.brand}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {b.enabled
+                        ? <>{b.avgRating != null && <span className="text-amber-500">{"★".repeat(Math.round(b.avgRating))} {b.avgRating}</span>}{b.avgRating != null ? " · " : ""}{b.total} published{b.pending ? ` · ${b.pending} pending` : ""}</>
+                        : b.platform === "yotpo" ? "Moving to Yotpo · not connected yet" : "No reviews yet"}
+                    </p>
                   </div>
-                ))}
+                  <div className="text-right shrink-0">
+                    <p className="text-lg font-semibold text-slate-800 leading-none">{b.last30}<span className="text-xs text-gray-400 font-normal"> / {b.last90}</span></p>
+                    <p className="text-[10px] text-gray-400">30d / 90d</p>
+                  </div>
+                </div>
+                {b.enabled && (
+                  <button onClick={() => setOpenBrand(open ? null : b.id)} className="text-xs text-emerald-700 font-medium mt-2 hover:underline">
+                    {open ? "Hide reviews" : `Latest ${Math.min(b.reviews.length, open ? 12 : 12)} reviews`}
+                  </button>
+                )}
+                {open && (
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
+                    {b.reviews.map(r => (
+                      <div key={r.id} className="text-xs border border-gray-100 rounded-lg p-3">
+                        <p className="text-amber-500">{stars(r.rating)}{r.verified && <span className="text-emerald-600 font-medium"> · verified</span>}{r.status && r.status !== "published" && <span className="text-amber-700 font-medium"> · {r.status}</span>}</p>
+                        {r.title && <p className="font-medium text-slate-800 mt-1">{r.title}</p>}
+                        {r.content && <p className="text-slate-600 mt-0.5 whitespace-pre-line">{r.content}</p>}
+                        <p className="text-gray-400 mt-1.5">
+                          {r.author || "Anonymous"}
+                          {r.product ? <> · {r.productUrl ? <a href={r.productUrl} target="_blank" rel="noreferrer" className="hover:underline">{r.product}</a> : r.product}</> : ""}
+                          {r.created ? ` · ${new Date(r.created).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}` : ""}
+                        </p>
+                        {r.reply && <p className="text-slate-500 italic mt-1.5 border-l-2 border-gray-200 pl-2">Reply: {r.reply}</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

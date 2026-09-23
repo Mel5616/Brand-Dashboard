@@ -1,48 +1,55 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
-import { klaviyoKeyForBrand } from "@/lib/klaviyoBrandKeys";
+import { rest, missingTable } from "@/lib/registry";
+import { REWARD_BRANDS } from "@/lib/reviewRewards";
 
-// Aggregates Klaviyo Reviews across every brand that has it turned on, into
-// one list — read-only (Klaviyo's Reviews API is private-key/export only,
-// it can't power a write flow or a custom on-site widget). Reviews is a
-// separate paid add-on per Klaviyo account, so most of these brands will
-// 403/404 until it's enabled there — that's expected, not a bug, and is
-// surfaced per brand rather than failing the whole request.
-export const revalidate = 300;
-const BASE = "https://a.klaviyo.com/api";
-const REVISION = "2024-07-15.pre";
+// Every brand's Klaviyo Reviews, from the klaviyo_reviews mirror that
+// scripts/review_rewards.py refreshes hourly (GitHub Actions, all 13 brand
+// keys). Reading the mirror rather than Klaviyo live means brands whose keys
+// only live in stores.config.json still show up here.
+export const revalidate = 0;
 
-// Only UPPAbaby actually runs Klaviyo Reviews — the other five are moving to
-// Judge.me instead (src/app/api/judgeme-reviews/route.ts), not Klaviyo, so
-// they must not appear here too or they show up twice in the Reviews tab.
-const TARGET_BRANDS: { id: number; name: string }[] = [
-  { id: 5, name: "UPPAbaby" },
-];
+type Row = {
+  id: string; brand_id: number; brand_name: string; rating: number | null; title: string | null; content: string | null;
+  author: string | null; email: string | null; product_name: string | null; product_url: string | null; product_image: string | null;
+  status: string | null; verified: boolean | null; review_type: string | null; smart_quote: string | null; public_reply: string | null;
+  created: string | null; synced_at: string;
+};
 
 export async function GET() {
   if ((await getAccess()).role !== "admin") return NextResponse.json({ ok: false }, { status: 403 });
+  const res = await rest("klaviyo_reviews?select=*&order=created.desc&limit=5000");
+  if (!res.ok) {
+    const text = await res.text();
+    return NextResponse.json({ ok: true, needsSetup: missingTable(text), brands: [], lastSynced: null });
+  }
+  const rows = (await res.json()) as Row[];
+  const now = Date.now();
+  const d30 = now - 30 * 864e5, d90 = now - 90 * 864e5;
+  const lastSynced = rows.reduce<string | null>((m, r) => (!m || r.synced_at > m ? r.synced_at : m), null);
 
-  const results = await Promise.all(TARGET_BRANDS.map(async (b) => {
-    const apiKey = klaviyoKeyForBrand(b.id);
-    if (!apiKey) return { brand: b.name, enabled: false, reviews: [] as any[] };
-    try {
-      const res = await fetch(`${BASE}/reviews/?sort=-created&page[size]=25`, {
-        headers: { Authorization: `Klaviyo-API-Key ${apiKey}`, revision: REVISION },
-        cache: "no-store",
-      });
-      if (!res.ok) return { brand: b.name, enabled: false, reviews: [] as any[] };
-      const json = await res.json();
-      const reviews = (json.data || []).map((r: any) => ({
-        id: r.id, rating: r.attributes?.rating, content: r.attributes?.content,
-        author: r.attributes?.author, product: r.attributes?.product?.name,
-        productUrl: r.attributes?.product?.url, created: r.attributes?.created,
-        verified: r.attributes?.verified, status: r.attributes?.status,
-      }));
-      return { brand: b.name, enabled: true, reviews };
-    } catch {
-      return { brand: b.name, enabled: false, reviews: [] as any[] };
-    }
-  }));
+  // Nanit is moving to Yotpo rather than Klaviyo Reviews, so it is shown as
+  // such instead of "no reviews yet" until Yotpo is wired in here.
+  const PLATFORM: Record<number, string> = { 0: "yotpo" };
+  const brands = REWARD_BRANDS.map(b => {
+    const mine = rows.filter(r => r.brand_id === b.id && r.review_type !== "question");
+    const published = mine.filter(r => r.status === "published");
+    const rated = published.filter(r => r.rating != null);
+    const avg = rated.length ? rated.reduce((s, r) => s + (r.rating as number), 0) / rated.length : null;
+    return {
+      id: b.id, brand: b.name, platform: PLATFORM[b.id] ?? "klaviyo",
+      enabled: mine.length > 0,
+      total: published.length,
+      last30: published.filter(r => r.created && Date.parse(r.created) >= d30).length,
+      last90: published.filter(r => r.created && Date.parse(r.created) >= d90).length,
+      pending: mine.filter(r => r.status === "pending").length,
+      avgRating: avg == null ? null : Math.round(avg * 10) / 10,
+      reviews: mine.slice(0, 12).map(r => ({
+        id: r.id, rating: r.rating, title: r.title, content: r.content, author: r.author, product: r.product_name,
+        productUrl: r.product_url, created: r.created, verified: !!r.verified, status: r.status, reply: r.public_reply,
+      })),
+    };
+  }).sort((a, b) => b.last90 - a.last90 || b.total - a.total);
 
-  return NextResponse.json({ ok: true, brands: results });
+  return NextResponse.json({ ok: true, needsSetup: false, brands, lastSynced });
 }

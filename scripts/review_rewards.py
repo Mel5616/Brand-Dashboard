@@ -15,6 +15,9 @@ CONFIG_PATH = os.path.join(BASE_DIR, "stores.config.json")
 DASHBOARD = os.environ.get("DASHBOARD_URL", "https://marketing.coolkidz.com.au")
 KEY = hashlib.sha256(("review-reward:" + os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")).encode()).hexdigest()[:40]
 LOOKBACK_DAYS = int(os.environ.get("REVIEW_LOOKBACK_DAYS", "3"))
+MIRROR_DAYS = int(os.environ.get("REVIEW_MIRROR_DAYS", "400"))
+SB_URL = os.environ.get("NEXT_PUBLIC_SUPABASE_URL", "").rstrip("/")
+SB_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 
 def klaviyo(api_key, url):
     for attempt in range(6):
@@ -26,6 +29,40 @@ def klaviyo(api_key, url):
                 time.sleep(int(e.headers.get("Retry-After", "10")) + 1); continue
             return {"err": e.code, "body": e.read()[:200].decode()}
     return {"err": 429}
+
+def klaviyo_pages(api_key, url):
+    """Every page of a Klaviyo list endpoint (cursor pagination)."""
+    out = []
+    while url:
+        d = klaviyo(api_key, url)
+        if "err" in d:
+            return d
+        out += d.get("data", [])
+        url = ((d.get("links") or {}).get("next"))
+        if url: time.sleep(0.4)
+    return {"data": out}
+
+def mirror(brand_id, brand_name, reviews):
+    """Upsert this brand's reviews (all statuses) into klaviyo_reviews so the
+    dashboard's Reviews tab can show every brand without live Klaviyo keys."""
+    if not SB_URL or not SB_KEY or not reviews:
+        return 0
+    rows = []
+    for r in reviews:
+        a = r.get("attributes") or {}
+        p = a.get("product") or {}
+        rows.append({"id": r["id"], "brand_id": brand_id, "brand_name": brand_name, "rating": a.get("rating"), "title": a.get("title"),
+                     "content": a.get("content"), "author": a.get("author"), "email": a.get("email"), "product_name": p.get("name"),
+                     "product_url": p.get("url"), "product_image": p.get("image_url"), "status": (a.get("status") or {}).get("value"),
+                     "verified": a.get("verified"), "review_type": a.get("review_type"), "smart_quote": a.get("smart_quote"),
+                     "public_reply": a.get("public_reply"), "created": a.get("created"), "synced_at": datetime.now(timezone.utc).isoformat()})
+    req = urllib.request.Request(f"{SB_URL}/rest/v1/klaviyo_reviews?on_conflict=id", data=json.dumps(rows).encode(), method="POST",
+                                 headers={"apikey": SB_KEY, "Authorization": f"Bearer {SB_KEY}", "Content-Type": "application/json",
+                                          "Prefer": "resolution=merge-duplicates,return=minimal"})
+    try:
+        urllib.request.urlopen(req, timeout=60); return len(rows)
+    except urllib.error.HTTPError as e:
+        print(f"     mirror failed: HTTP {e.code} {e.read()[:200].decode()}"); return 0
 
 def issue(payload):
     req = urllib.request.Request(f"{DASHBOARD}/api/review-rewards/issue", data=json.dumps(payload).encode(),
@@ -45,13 +82,17 @@ def main():
         key = brand.get("klaviyoApiKey")
         if not key:
             continue
-        flt = urllib.parse.quote(f"greater-than(created,{since})")
-        url = f"https://a.klaviyo.com/api/reviews/?filter={flt}&fields[review]=email,author,rating,created,status,product,review_type&page[size]=100&sort=-created"
-        d = klaviyo(key, url)
+        mirror_since = (datetime.now(timezone.utc) - timedelta(days=MIRROR_DAYS)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        flt = urllib.parse.quote(f"greater-or-equal(created,{mirror_since})")
+        url = f"https://a.klaviyo.com/api/reviews/?filter={flt}&page[size]=100&sort=-created"
+        d = klaviyo_pages(key, url)
         if "err" in d:
             print(f"  ↷ {brand['name']}: reviews API {d['err']} (Klaviyo Reviews not enabled?)"); continue
-        reviews = [r for r in d.get("data", []) if (r.get("attributes") or {}).get("email") and ((r.get("attributes") or {}).get("status") or {}).get("value") == "published"]
-        print(f"  → {brand['name']}: {len(reviews)} published review(s) since {since[:10]}")
+        everything = d.get("data", [])
+        mirrored = mirror(i, brand["name"], everything)
+        reviews = [r for r in everything if (r.get("attributes") or {}).get("email") and ((r.get("attributes") or {}).get("status") or {}).get("value") == "published"
+                   and ((r.get("attributes") or {}).get("created") or "") >= since]
+        print(f"  → {brand['name']}: {len(everything)} review(s) mirrored ({mirrored} written), {len(reviews)} published since {since[:10]} to reward")
         for r in reviews:
             a = r["attributes"]
             res = issue({"brand_id": i, "brand_name": brand["name"], "review_id": f"kl-{r['id']}", "email": a["email"], "name": a.get("author"),
