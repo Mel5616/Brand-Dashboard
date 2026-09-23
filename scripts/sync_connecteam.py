@@ -94,10 +94,16 @@ def user_name(u):
     return name or u.get("email") or f"User {u.get('userId') or u.get('id')}"
 
 
+_DEBUGGED = False
+
 def unavailabilities_for(user_id, start_ts, end_ts):
+    global _DEBUGGED
     data = ct_get("/scheduler/v1/schedulers/user-unavailability", {
         "userId": user_id, "startTime": start_ts, "endTime": end_ts,
     })
+    if not _DEBUGGED:
+        print(f"    [debug] raw response shape for user {user_id}: {json.dumps(data)[:2000]}")
+        _DEBUGGED = True
     payload = data.get("data") or {}
     return payload.get("unavailabilities") or []
 
