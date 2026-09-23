@@ -10,9 +10,10 @@ import { useEffect, useMemo, useState } from "react";
 type Stats = { sessions: number; conversions: number; revenue: number; synced_at: string };
 type Link = {
   id: string; brand: string | null; partner: string; source: string; medium: string;
-  campaign: string | null; description: string | null; landing_page: string; final_url: string; created_by: string | null; created_at: string;
+  campaign: string | null; description: string | null; landing_page: string; final_url: string; short_code: string | null; created_by: string | null; created_at: string;
   stats?: Stats | null;
 };
+const SHORT_BASE = "https://marketing.coolkidz.com.au/l/";
 
 const inp = "text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400 w-full";
 const lbl = "text-[11px] font-bold uppercase tracking-wide text-slate-400 mb-1";
@@ -40,6 +41,7 @@ export function UtmTrackingPanel({ brands, admin }: { brands: { name: string }[]
   const [brandF, setBrandF] = useState("");
   const [q, setQ] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copiedShortId, setCopiedShortId] = useState<string | null>(null);
 
   const [f, setF] = useState({ partner: "", brand: "", source: "", medium: "", campaign: "", description: "", landing_page: "" });
 
@@ -72,6 +74,37 @@ export function UtmTrackingPanel({ brands, admin }: { brands: { name: string }[]
     navigator.clipboard?.writeText(link.final_url);
     setCopiedId(link.id);
     setTimeout(() => setCopiedId(null), 1800);
+  }
+  function copyShort(link: Link) {
+    if (!link.short_code) return;
+    navigator.clipboard?.writeText(`${SHORT_BASE}${link.short_code}`);
+    setCopiedShortId(link.id);
+    setTimeout(() => setCopiedShortId(null), 1800);
+  }
+
+  // Editing — id and short_code stay put, so a QR already printed for this
+  // link keeps working and just starts pointing at whatever the destination
+  // is after saving. Reuses the same field set as the create form.
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [ef, setEf] = useState({ partner: "", brand: "", source: "", medium: "", campaign: "", description: "", landing_page: "" });
+  const [editMsg, setEditMsg] = useState("");
+
+  function startEdit(link: Link) {
+    setEditingId(link.id);
+    setEf({ partner: link.partner, brand: link.brand ?? "", source: link.source, medium: link.medium, campaign: link.campaign ?? "", description: link.description ?? "", landing_page: link.landing_page });
+    setEditMsg("");
+  }
+  async function saveEdit() {
+    if (!editingId) return;
+    setEditMsg("");
+    if (!ef.partner.trim() || !ef.source.trim() || !ef.medium.trim() || !ef.campaign.trim() || !ef.landing_page.trim()) {
+      setEditMsg("Partner/activity, source, medium, campaign and landing page are all required."); return;
+    }
+    setBusy(true);
+    const d = await fetch("/api/utm-links", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editingId, ...ef }) }).then(r => r.json()).catch(() => null);
+    setBusy(false);
+    if (d?.ok) { setEditingId(null); load(); }
+    else setEditMsg(d?.error || "Couldn't save that.");
   }
 
   const preview = previewUrl(f.landing_page, f.source, f.medium, f.campaign);
@@ -173,7 +206,12 @@ export function UtmTrackingPanel({ brands, admin }: { brands: { name: string }[]
                       <button onClick={() => copy(r)} title={r.final_url} className="text-xs font-semibold text-indigo-600 border border-indigo-100 rounded-lg px-2.5 py-1 hover:bg-indigo-50">
                         {copiedId === r.id ? "Copied ✓" : "Copy link"}
                       </button>
+                      <button onClick={() => copyShort(r)} title={r.short_code ? `${SHORT_BASE}${r.short_code} — this is what the QR code encodes, stays valid even if you edit the link` : "Download the QR once to generate this link's short code"} disabled={!r.short_code}
+                        className="text-xs font-semibold text-violet-600 border border-violet-100 rounded-lg px-2.5 py-1 hover:bg-violet-50 disabled:opacity-40">
+                        {copiedShortId === r.id ? "Copied ✓" : "Copy short link"}
+                      </button>
                       <a href={`/api/utm-links/qr?id=${r.id}`} download className="text-xs font-semibold text-slate-600 border border-gray-200 rounded-lg px-2.5 py-1 hover:bg-gray-50">QR ↓</a>
+                      <button onClick={() => startEdit(r)} title="Edit — the QR code and short link keep working after you save" className="text-xs font-semibold text-slate-600 border border-gray-200 rounded-lg px-2.5 py-1 hover:bg-gray-50">✎ Edit</button>
                       {admin && <button onClick={() => remove(r.id)} title="Delete" className="text-gray-300 hover:text-rose-600 px-1">🗑</button>}
                     </div>
                   </td>
@@ -184,6 +222,41 @@ export function UtmTrackingPanel({ brands, admin }: { brands: { name: string }[]
           </div>
         </div>
       )}
+
+      {editingId && (() => {
+        const link = items.find(i => i.id === editingId);
+        const editPreview = previewUrl(ef.landing_page, ef.source, ef.medium, ef.campaign);
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4" onClick={() => setEditingId(null)}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-5" onClick={e => e.stopPropagation()}>
+              <h3 className="font-semibold text-gray-800 mb-1">Edit tracked link</h3>
+              <p className="text-xs text-gray-400 mb-4">The short link and any QR code already printed for this keep working — they&apos;ll just point at whatever you save here.</p>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div><div className={lbl}>Partner / activity *</div><input value={ef.partner} onChange={e => setEf(p => ({ ...p, partner: e.target.value }))} className={inp} /></div>
+                <div>
+                  <div className={lbl}>Brand</div>
+                  <input value={ef.brand} onChange={e => setEf(p => ({ ...p, brand: e.target.value }))} className={inp} list="utm-brand-list" />
+                </div>
+                <div className="sm:col-span-2"><div className={lbl}>Landing page URL *</div><input value={ef.landing_page} onChange={e => setEf(p => ({ ...p, landing_page: e.target.value }))} className={inp} /></div>
+                <div><div className={lbl}>Source *</div><input value={ef.source} onChange={e => setEf(p => ({ ...p, source: e.target.value }))} className={inp} /></div>
+                <div>
+                  <div className={lbl}>Medium *</div>
+                  <input value={ef.medium} onChange={e => setEf(p => ({ ...p, medium: e.target.value }))} className={inp} list="utm-medium-list" />
+                </div>
+                <div><div className={lbl}>Campaign *</div><input value={ef.campaign} onChange={e => setEf(p => ({ ...p, campaign: e.target.value }))} className={inp} /></div>
+                <div><div className={lbl}>Description</div><input value={ef.description} onChange={e => setEf(p => ({ ...p, description: e.target.value }))} className={inp} /></div>
+              </div>
+              {editPreview && <div className="mt-3 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 text-xs text-slate-600 break-all"><span className="text-gray-400">New destination: </span>{editPreview}</div>}
+              {link?.short_code && <p className="text-xs text-violet-600 mt-2">Stays at {SHORT_BASE}{link.short_code}</p>}
+              {editMsg && <p className="text-[13px] text-rose-500 mt-2">{editMsg}</p>}
+              <div className="flex items-center gap-2 mt-4">
+                <button onClick={saveEdit} disabled={busy} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-60 rounded-lg px-4 py-2">{busy ? "Saving…" : "Save"}</button>
+                <button onClick={() => setEditingId(null)} className="text-sm text-gray-400 hover:text-gray-600 px-2">Cancel</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
