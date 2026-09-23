@@ -95,7 +95,10 @@ export async function sendRewardEmail(o: { to: string; firstName: string; source
   const html = `<!doctype html><html><body style="margin:0;padding:0;background:#F3F2F0">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F3F2F0"><tr><td align="center" style="padding:28px 12px">
 <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;width:100%;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;color:#33404F">
-  <tr><td style="background:#FFFFFF;padding:44px 40px 8px;text-align:center;border-radius:14px 14px 0 0">
+  <tr><td align="center" style="background:#FFFFFF;padding:36px 40px 0;border-radius:14px 14px 0 0">
+    <img src="https://coolkidz.com.au/cdn/shop/files/Coolkidz_Logo.png?v=1744850972&width=500" width="150" alt="Coolkidz Australia" style="display:block;width:150px;height:auto;border:0">
+  </td></tr>
+  <tr><td style="background:#FFFFFF;padding:30px 40px 8px;text-align:center">
     <div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#7A8798;font-weight:600">Thank you for your review</div>
     <div style="font-size:76px;line-height:1;font-weight:700;letter-spacing:-.03em;color:#141C26;margin:14px 0 6px">$${REWARD.value}</div>
     <div style="font-size:21px;font-weight:300;color:#141C26">off at any of our brands</div>
@@ -109,6 +112,7 @@ export async function sendRewardEmail(o: { to: string; firstName: string; source
     </td></tr></table>
   </td></tr>
   <tr><td style="background:#FFFFFF;padding:18px 34px 30px">
+    <p style="font-size:14px;line-height:1.65;color:#5B6774;margin:0 6px 14px">${esc(o.sourceBrand)} is one of the brands Coolkidz Australia brings to Australian families. We are the family-owned distributor behind all of them, so one code works across the lot.</p>
     <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#7A8798;font-weight:600;margin:0 6px 8px">Pick your brand</div>
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0">${rows.join("")}</table>
   </td></tr>
@@ -117,7 +121,7 @@ export async function sendRewardEmail(o: { to: string; firstName: string; source
     <div style="font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#98A2B0;font-weight:600;margin-bottom:6px">Terms</div>
     <p style="font-size:11.5px;line-height:1.6;color:#98A2B0;margin:0">${REWARD_TERMS(o.expiresAt).map(esc).join(" ")}</p>
   </td></tr>
-  <tr><td align="center" style="padding:22px 20px 0"><p style="color:#98A2B0;font-size:11px;line-height:1.7;margin:0">Coolkidz Australia Pty Ltd · 1 Beyer Road, Braeside, Victoria 3195</p></td></tr>
+  <tr><td align="center" style="padding:22px 20px 0"><p style="color:#98A2B0;font-size:11px;line-height:1.7;margin:0">UPPAbaby, Nanit, Frida, smarTrike, WonderFold, Gaia Baby, Hannie, Magic, ZAZU, Mamave, Matchstick Monkey and MiaMily are distributed in Australia by Coolkidz Australia Pty Ltd<br>1 Beyer Road, Braeside, Victoria 3195</p></td></tr>
 </table></td></tr></table></body></html>`;
   const res = await fetch("https://api.resend.com/emails", { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" }, body: JSON.stringify({ from: FROM, reply_to: REPLY_TO, to: [o.to], subject: `Thanks for your review: $${REWARD.value} off any Coolkidz brand`, html }) }).catch(() => null);
   if (!res?.ok) return { ok: false, error: res ? (await res.text()).slice(0, 200) : "network" };
