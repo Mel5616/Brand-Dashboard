@@ -128,9 +128,12 @@ function extractFields(text: string): Record<string, string> {
 export async function GET(req: Request) {
   const acc = await getAccess();
   if (!canWrite(acc)) return NextResponse.json({ ok: false, error: "No access" }, { status: 403 });
-  const brandId = new URL(req.url).searchParams.get("brand_id");
+  const params = new URL(req.url).searchParams;
+  const brandId = params.get("brand_id");
+  const campaignId = params.get("campaign_id");
   let q = `${sbUrl}/rest/v1/edm_drafts?select=*&order=created_at.desc&limit=200`;
   if (brandId) q += `&brand_id=eq.${encodeURIComponent(brandId)}`;
+  if (campaignId) q += `&campaign_id=eq.${encodeURIComponent(campaignId)}`;
   const res = await fetch(q, { headers: h(), cache: "no-store" });
   const text = await res.text();
   if (!res.ok) return NextResponse.json({ ok: true, needsSetup: missing(res.status, text), items: [], emailVoices: EMAIL_VOICE });

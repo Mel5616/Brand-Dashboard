@@ -299,8 +299,10 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   if (url.searchParams.get("action") === "suggest-topics") return suggestTopics(req, acc);
   const brandId = url.searchParams.get("brand_id");
+  const campaignId = url.searchParams.get("campaign_id");
   let q = `${sbUrl}/rest/v1/blog_drafts?select=*&order=created_at.desc&limit=200`;
   if (brandId) q += `&brand_id=eq.${encodeURIComponent(brandId)}`;
+  if (campaignId) q += `&campaign_id=eq.${encodeURIComponent(campaignId)}`;
   const res = await fetch(q, { headers: h(), cache: "no-store" });
   const text = await res.text();
   if (!res.ok) return NextResponse.json({ ok: true, needsSetup: missing(res.status, text), items: [], brandVoices: BRAND_VOICE });

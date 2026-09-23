@@ -492,12 +492,25 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
     const brief = campaignBrief(item);
     const results: { label: string; ok: boolean; note?: string }[] = [];
 
+    // Re-running the kit on a campaign that already has connected drafts used
+    // to just pile up duplicates alongside them. Now it overwrites: a linked
+    // draft still in "draft"/"rejected" (not yet sent/published) is deleted
+    // and replaced with fresh content: one already sent or published is left
+    // alone and reported as skipped, never silently deleted.
     const wantsBlog = splitChannels((item.brief as any)?.channels ?? "").includes("Blog");
     if (wantsBlog) {
-      setKitStep("Drafting blog post… (30–60s)");
-      const blogBrief = (item.brief as any)?.blogBrief as string | undefined;
-      const blogRes = await fetch("/api/blog-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief: blogBrief?.trim() || brief, campaign_id: item.id, campaign_name: item.campaign, scheduled_for: item.key_date }) }).then(r => r.json()).catch(() => null);
-      results.push({ label: "Blog draft", ok: !!blogRes?.ok, note: blogRes?.ok ? undefined : (blogRes?.error || "failed") });
+      const existingBlogs = await fetch(`/api/blog-drafts?brand_id=${brand.id}&campaign_id=${item.id}`).then(r => r.json()).catch(() => null);
+      const blogRows: { id: string; status: string }[] = existingBlogs?.ok ? existingBlogs.items : [];
+      const untouchedBlog = blogRows.find(r => r.status === "published");
+      if (untouchedBlog) {
+        results.push({ label: "Blog draft", ok: true, note: "skipped — already published, not overwritten" });
+      } else {
+        for (const r of blogRows) await fetch(`/api/blog-drafts?id=${r.id}`, { method: "DELETE" }).catch(() => null);
+        setKitStep(blogRows.length ? "Rewriting blog post… (30–60s)" : "Drafting blog post… (30–60s)");
+        const blogBrief = (item.brief as any)?.blogBrief as string | undefined;
+        const blogRes = await fetch("/api/blog-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief: blogBrief?.trim() || brief, campaign_id: item.id, campaign_name: item.campaign, scheduled_for: item.key_date }) }).then(r => r.json()).catch(() => null);
+        results.push({ label: "Blog draft", ok: !!blogRes?.ok, note: blogRes?.ok ? (blogRows.length ? "overwrote the existing draft" : undefined) : (blogRes?.error || "failed") });
+      }
     } else {
       results.push({ label: "Blog draft", ok: true, note: "skipped — Blog isn't ticked in this campaign's Channels" });
     }
@@ -509,23 +522,42 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
       const sends = fromDeliverables.length
         ? fromDeliverables
         : ([base, addDays(base, 7), addDays(base, 14)].filter(Boolean) as string[]).map(date => ({ date, topic: "" }));
-      let edmOk = 0;
+      const existingEdms = await fetch(`/api/edm-drafts?brand_id=${brand.id}&campaign_id=${item.id}`).then(r => r.json()).catch(() => null);
+      const edmRows: { id: string; status: string; scheduled_for: string | null }[] = existingEdms?.ok ? existingEdms.items : [];
+      let edmOk = 0, edmOverwritten = 0, edmSkippedSent = 0;
       for (let i = 0; i < sends.length; i++) {
-        setKitStep(`Writing EDM ${i + 1} of ${sends.length}… (30–60s each)`);
-        const emailBrief = sends[i].topic ? `${brief} — this specific send: ${sends[i].topic}` : brief;
+        const matching = edmRows.filter(r => r.scheduled_for === sends[i].date);
+        const untouchable = matching.find(r => r.status === "sent");
+        if (untouchable) { edmSkippedSent++; continue; }
+        for (const r of matching) await fetch(`/api/edm-drafts?id=${r.id}`, { method: "DELETE" }).catch(() => null);
+        if (matching.length) edmOverwritten++;
+        setKitStep(`${matching.length ? "Rewriting" : "Writing"} EDM ${i + 1} of ${sends.length}… (30–60s each)`);
+        const emailBrief = sends[i].topic ? `${brief}. This specific send: ${sends[i].topic}` : brief;
         const r = await fetch("/api/edm-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief: emailBrief, scheduled_for: sends[i].date, campaign_id: item.id, campaign_name: item.campaign }) }).then(r2 => r2.json()).catch(() => null);
         if (r?.ok) edmOk++;
       }
-      results.push({ label: `EDM sends (${edmOk}/${sends.length})`, ok: edmOk > 0, note: edmOk < sends.length ? "one or more failed — check Email Writing" : (fromDeliverables.length ? "dates and topics read from the brief's deliverables" : undefined) });
+      const edmNotes = [
+        edmOk < (sends.length - edmSkippedSent) ? "one or more failed — check Email Writing" : null,
+        edmOverwritten ? `overwrote ${edmOverwritten} existing draft${edmOverwritten === 1 ? "" : "s"}` : null,
+        edmSkippedSent ? `${edmSkippedSent} already sent, not touched` : null,
+        fromDeliverables.length ? "dates and topics read from the brief's deliverables" : null,
+      ].filter(Boolean).join(" · ");
+      results.push({ label: `EDM sends (${edmOk}/${sends.length})`, ok: edmOk > 0 || edmSkippedSent > 0, note: edmNotes || undefined });
     } else {
       results.push({ label: "EDM sends", ok: true, note: "skipped — this campaign already has hand-written email drafts, use Send to Email Planner instead" });
     }
 
     const needsWebsite = /website|landing page|configurator|shopify|d2c/i.test(`${item.channel} ${item.note}`);
     if (needsWebsite) {
-      setKitStep("Filing Website Request ticket…");
-      const wr = await fetch("/api/website-requests", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand: item.brand, description: `Build/landing page needed for campaign "${item.campaign}": ${item.note}`.slice(0, 2000), change_type: "new_page", priority: "normal", campaign_id: item.id, campaign_name: item.campaign }) }).then(r => r.json()).catch(() => null);
-      results.push({ label: "Website Request ticket", ok: !!wr?.ok, note: wr?.ok ? undefined : (wr?.error || "failed") });
+      const existingRequests = await fetch(`/api/website-requests?campaign_id=${item.id}`).then(r => r.json()).catch(() => null);
+      const requestRows: { id: string }[] = existingRequests?.ok ? existingRequests.items : [];
+      if (requestRows.length) {
+        results.push({ label: "Website Request ticket", ok: true, note: "skipped — already filed for this campaign" });
+      } else {
+        setKitStep("Filing Website Request ticket…");
+        const wr = await fetch("/api/website-requests", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand: item.brand, description: `Build/landing page needed for campaign "${item.campaign}": ${item.note}`.slice(0, 2000), change_type: "new_page", priority: "normal", campaign_id: item.id, campaign_name: item.campaign }) }).then(r => r.json()).catch(() => null);
+        results.push({ label: "Website Request ticket", ok: !!wr?.ok, note: wr?.ok ? undefined : (wr?.error || "failed") });
+      }
     }
 
     setKitBusy(false); setKitStep(null); setKitResults(results);
@@ -1180,7 +1212,7 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
                   </>
                 )}
                 {canEdit && <>
-                  <button onClick={() => generateKit(open)} disabled={kitBusy} title={kitBusy ? undefined : "Drafts the blog post if Blog is ticked in Channels, proposes 3 EDM sends, and files a Website Request if the brief points at a build"}
+                  <button onClick={() => generateKit(open)} disabled={kitBusy} title={kitBusy ? undefined : "Drafts the blog post if Blog is ticked in Channels, proposes 3 EDM sends, and files a Website Request if the brief points at a build. Re-running overwrites what's already connected, unless it's already been sent or published."}
                     className="inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg px-3.5 py-1.5 transition disabled:opacity-60 motion-reduce:transition-none">
                     {kitBusy
                       ? <svg className="w-4 h-4 animate-spin shrink-0" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>

@@ -40,9 +40,12 @@ export async function POST(req: Request) {
   return NextResponse.json({ ok: true, item: JSON.parse(text)[0] });
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   if (!(await getAccess()).role) return NextResponse.json({ ok: false }, { status: 401 });
-  const res = await fetch(`${sbUrl}/rest/v1/website_requests?select=*&order=created_at.desc&limit=500`, { headers: h(), cache: "no-store" });
+  const campaignId = new URL(req.url).searchParams.get("campaign_id");
+  let q = `${sbUrl}/rest/v1/website_requests?select=*&order=created_at.desc&limit=500`;
+  if (campaignId) q += `&campaign_id=eq.${encodeURIComponent(campaignId)}`;
+  const res = await fetch(q, { headers: h(), cache: "no-store" });
   const text = await res.text();
   if (!res.ok) return NextResponse.json({ ok: true, needsSetup: missing(res.status, text), items: [] });
   return NextResponse.json({ ok: true, items: JSON.parse(text || "[]") });
