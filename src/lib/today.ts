@@ -79,8 +79,13 @@ export async function buildToday(): Promise<Today> {
   for (const b of REWARD_BRANDS) {
     const m = metrics.filter(x => x.brand_id === b.id && x.emails_sent >= 100).sort((a, c) => c.month_key.localeCompare(a.month_key))[0];
     if (!m) continue;
-    const bounce = (m.bounces / m.emails_sent) * 100, spam = (m.spam_complaints / m.emails_sent) * 100, unsub = (m.unsubscribes / m.emails_sent) * 100;
-    if (bounce > 2) push({ key: `bounce:${b.id}:${m.month_key}:${bounce.toFixed(0)}`, severity: bounce > 10 ? "urgent" : "attention", area: "Email", brand: b.name, brandId: b.id, title: `Bounce rate ${bounce.toFixed(1)}% in ${m.month_key}`, detail: bounce > 10 ? `${m.bounces.toLocaleString()} of ${m.emails_sent.toLocaleString()} bounced. Almost always one of two things: a bot creating fake checkouts that the abandoned-cart flow then emails, or a send to an imported list. Find the flow or campaign behind it in Klaviyo (Analytics → Metrics → Bounced Email), stop it, suppress the profiles.` : "Klaviyo wants bounces under 1%. Clean the list (suppress bounced profiles) before the next send.", tab: "email", href: null, at: null });
+    // emails_sent is Klaviyo's "Received Email" count — delivered mail only,
+    // by definition excluding bounces. Dividing bounces by that alone can
+    // read over 100% (a real case, 24 Sep 2026: 7,412 bounces on 7,016
+    // "sent"). The real attempt total is delivered + bounced.
+    const attempted = m.emails_sent + m.bounces;
+    const bounce = attempted > 0 ? (m.bounces / attempted) * 100 : 0, spam = (m.spam_complaints / m.emails_sent) * 100, unsub = (m.unsubscribes / m.emails_sent) * 100;
+    if (bounce > 2) push({ key: `bounce:${b.id}:${m.month_key}:${bounce.toFixed(0)}`, severity: bounce > 10 ? "urgent" : "attention", area: "Email", brand: b.name, brandId: b.id, title: `Bounce rate ${bounce.toFixed(1)}% in ${m.month_key}`, detail: bounce > 10 ? `${m.bounces.toLocaleString()} of ${attempted.toLocaleString()} attempted sends bounced. Almost always one of two things: a bot creating fake checkouts that the abandoned-cart flow then emails, or a send to an imported list. Find the flow or campaign behind it in Klaviyo (Analytics → Metrics → Bounced Email), stop it, suppress the profiles.` : "Klaviyo wants bounces under 1%. Clean the list (suppress bounced profiles) before the next send.", tab: "email", href: null, at: null });
     if (spam > 0.1) push({ key: `spam:${b.id}:${m.month_key}:${spam.toFixed(2)}`, severity: "attention", area: "Email", brand: b.name, brandId: b.id, title: `Spam complaints ${spam.toFixed(2)}% in ${m.month_key}`, detail: "Klaviyo's line is 0.1%. Ease off frequency and make sure the unsubscribe link is obvious.", tab: "email", href: null, at: null });
     if (unsub > 5) push({ key: `unsub:${b.id}:${m.month_key}:${unsub.toFixed(0)}`, severity: "info", area: "Email", brand: b.name, brandId: b.id, title: `Unsubscribes ${unsub.toFixed(1)}% of recipients in ${m.month_key}`, detail: "High for a month. Worth checking what went out and to whom.", tab: "email", href: null, at: null });
   }

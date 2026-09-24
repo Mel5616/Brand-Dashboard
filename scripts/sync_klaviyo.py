@@ -271,9 +271,13 @@ def sync_brand(db, api_key, brand, brand_id):
         opened  = agg_total(api_key, opened_id,   year, month, "unique") if opened_id   else 0
         clicked = agg_total(api_key, clicked_id,  year, month, "unique") if clicked_id  else 0
         revenue = agg_email_revenue(api_key, revenue_id, year, month)    if revenue_id  else 0
-        # Deliverability / list health (raw counts → rates computed in the UI)
+        # Deliverability / list health (raw counts → rates computed in the UI).
+        # Bounces are "unique" like `sent` above (not "count") — a profile
+        # re-bounced across several sends in the same month was inflating the
+        # rate on top of the emails_sent/emails_received mismatch (Mel, 24
+        # Sep 2026; see the bounce-rate calc in today.ts for the other half).
         unsubs  = agg_total(api_key, unsub_id,  year, month, "count") if unsub_id  else 0
-        bounces = agg_total(api_key, bounce_id, year, month, "count") if bounce_id else 0
+        bounces = agg_total(api_key, bounce_id, year, month, "unique") if bounce_id else 0
         spam    = agg_total(api_key, spam_id,   year, month, "count") if spam_id   else 0
         # Conversions + flow/campaign revenue split (email-attributed)
         orders  = agg_email_orders(api_key, revenue_id, year, month) if revenue_id else 0
