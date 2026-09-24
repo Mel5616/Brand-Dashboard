@@ -16,7 +16,7 @@
   "W4": "Four seats on two benches. For three or four children, or two with another on the way. 136 kg total, 45 kg per bench, 74 cm at its widest, inside 84 x 53 cm. W4 Elite $1,499 (Volcanic Black, Charcoal Grey), 26.3 kg. W4 Luxe $1,799 (Volcanic Black, Charcoal Grey), weight to be confirmed. W4 Luxe Pro $1,999 (Jet Black), 24.5 kg, folded 113 x 74 x 51 cm.",
   "W6": "Six seats on three benches, Luxe Pro only, $1,999 (Jet Black), 31.8 kg, 140 kg total, 45 kg per bench, 74 cm wide, dual faux-leather handlebars. For big families, multiples and early-learning groups. No AU car seat adapter for the W6 yet.",
   "finishes": "Elite: all-terrain EVA wheels, neoprene handlebar cover, padded 5-point harness; XL wheels can be added later ($379). Luxe: all-terrain XL wheels with suspension, vegan-leather handlebar, magnetic 5-point harness, extra front pocket. Luxe Pro: lighter aluminium frame, seats that can face forward or face the parent, lockable front wheels, faux-leather handlebar, insulated rear cooler basket (5 kg cooler, 1 kg mesh).",
-  "volkswagen": "W4 Volkswagen special edition in Bondi Blue, $1,999, four seats, VW bumper, working headlights, retro XL wheels. An online exclusive: only sold at wonderfold.com.au, not through Baby Bunting or other retailers. Currently out of stock.",
+  "volkswagen": "W4 Volkswagen special edition in Bondi Blue, $1,999, four seats, VW bumper, working headlights, retro XL wheels. An online exclusive: only sold at wonderfold.com.au, not through Baby Bunting or other retailers. Currently out of stock. Its frame material, weight and folded size are not confirmed: never say it shares the Luxe Pro's aluminium frame or state its weight.",
   "not_sizes": "Folded sizes for the W2, W6, Elite and Luxe are being confirmed; do not guess them.",
   "discontinued": "The WonderFold pet stroller has been discontinued in Australia and is no longer sold. Don't suggest putting pets in the stroller wagons."
  },
@@ -25,7 +25,7 @@
  "policies": {
   "shipping": "StarTrack Express shipping Australia-wide: $12.95 on orders under $100, free on orders of $100 or more (every wagon ships free). Free pickup from 1 Beyer Road, Braeside VIC, usually ready within 24 hours. Same-day delivery in selected Melbourne areas (see the same-day delivery terms page).",
   "returns": "Australian Consumer Law always applies. Faulty or wrong item: tell us within 48 hours of delivery; we issue a return authority within 1 to 2 working days, then replace, repair or refund. Change of mind: exchange or store credit within 7 days of purchase, unused, unopened, in original packaging with proof of purchase. Not eligible: gift cards, clearance and special orders. Do not send items back without a return authority.",
-  "warranty": "One-year manufacturer warranty on every wagon. To make a warranty claim or order spare parts, lodge a support ticket with the Coolkidz help desk at https://help.coolkidz.com.au/support/tickets/new, including the order number, the model and photos or a short video of the issue. Faulty on arrival: lodge a ticket within 48 hours of delivery. In warranty, the team repairs or replaces; out of warranty, it quotes spare parts (wheels, brakes, canopy poles and fabric, seats). Register within three months of purchase for a one-time 10% off accessories code: for now, register by emailing info@coolkidz.com.au with your name, contact details, model, serial number, purchase date, retailer and a photo of the receipt (an online form is coming)."
+  "warranty": "One-year manufacturer warranty on every wagon. To make a warranty claim or order spare parts, lodge a support ticket with the Coolkidz help desk at https://help.coolkidz.com.au/support/tickets/new (always link this help desk URL for claims, not the registration page), including the order number, the model and photos or a short video of the issue. Faulty on arrival: lodge a ticket within 48 hours of delivery. In warranty, the team repairs or replaces; out of warranty, it quotes spare parts (wheels, brakes, canopy poles and fabric, seats). Register within three months of purchase for a one-time 10% off accessories code: for now, register by emailing info@coolkidz.com.au with your name, contact details, model, serial number, purchase date, retailer and a photo of the receipt (an online form is coming)."
  },
  "programs": {
   "warriors": "WonderFold Warriors: 25% off WonderFold wagons and accessories for children professionally assessed as benefiting from a WonderFold, including mobility challenges, sensory sensitivities, physical disabilities, neurodivergent needs such as autism or ADHD, complex medical needs, and anxiety or emotional support needs. Apply by emailing info@coolkidz.com.au with the family's details, the child's first name and age, how a WonderFold would help, NDIS status, and a signed practitioner letter or the practitioner's contact details (an online application form is coming). Approval usually takes 3 to 5 business days. Purchases go through customer service; Warriors pricing isn't available on NDIA-managed purchases. More at /pages/wonderfold-warriors.",
@@ -33,7 +33,7 @@
   "whisperers": "WonderFold Whisperers: real families who share honest experience with other families. Apply on the Whisperers page.",
   "starlight": "WonderFold Australia proudly supports Starlight Children's Foundation; customers can add a $2, $5 or $10 donation at checkout."
  },
- "retail": "Also at authorised retailers: Baby Bunting, plus Myer, Harvey Norman and Big W online only, independent baby stores, and Source Kids expos. Stock varies; suggest checking with the retailer first. The W4 Volkswagen is only sold at wonderfold.com.au.",
+ "retail": "Authorised retailers: Baby Bunting (stores and online). Myer, Harvey Norman and Big W sell WonderFold ONLINE ONLY, not in their stores; always say 'online only' when naming any of these three. Also independent baby stores and Source Kids expos. Stock varies, so suggest checking with the retailer first. The W4 Volkswagen is only sold at wonderfold.com.au.",
  "pages": {
   "Find your size": "/pages/find-your-size",
   "Boot check": "/pages/find-your-size#boot",
@@ -58,7 +58,8 @@
   "Whisperers": "/pages/wonderfold-whisperers",
   "Find a store": "/pages/find-us-in-store",
   "Reviews": "/pages/reviews",
-  "Support and manuals": "/pages/customer-care"
+  "Support and manuals": "/pages/customer-care",
+  "Warranty claims and spare parts (help desk ticket)": "https://help.coolkidz.com.au/support/tickets/new"
  },
  "faq": [
   {
