@@ -12,7 +12,14 @@ type Entry = { id: number; connecteam_user_id: string; name: string; start_date:
 
 const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-const isoDate = (d: Date) => d.toISOString().slice(0, 10);
+// NOT d.toISOString() — that converts to UTC first, which silently shifts
+// the date back a day for anyone in Australia (UTC+10/+11) any time the
+// local date and the UTC date differ, i.e. most of the day. Build the ISO
+// string from the browser's own local calendar date instead.
+const isoDate = (d: Date) => {
+  const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, "0"), dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+};
 
 // Coloured by leave category, not by person — the question this calendar
 // answers is "who's off and why", so sick/time off/unpaid needs to read at a
