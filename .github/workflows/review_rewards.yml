@@ -23,3 +23,10 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: python3 scripts/review_rewards.py
+      - name: Publish reviews (3 stars and up) to product pages
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          REVIEW_METAFIELD_BRANDS: WonderFold
+          REVIEW_METAFIELD_MIN_RATING: "3"
+        run: python3 scripts/review_metafields.py
