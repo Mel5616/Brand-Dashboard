@@ -104,7 +104,12 @@ export const REWARD_TERMS = (expiresAt: Date) => [
 export async function sendRewardEmail(o: { to: string; firstName: string; sourceBrand: string; code: string; expiresAt: Date }) {
   const key = process.env.RESEND_API_KEY;
   if (!key) return { ok: false, error: "RESEND_API_KEY not configured" };
-  const tiles = REWARD_BRANDS.filter(b => b.id !== 9).map(b => `<td width="50%" style="padding:6px"><a href="https://${b.host}/discount/${encodeURIComponent(o.code)}?redirect=/collections/all" style="display:block;text-decoration:none;border:1px solid #E6E3DD;border-radius:12px;padding:14px 16px;background:#FFFFFF"><img src="${emailLogoUrl(b.id)}" alt="${esc(b.name)}" height="22" style="display:block;height:22px;width:auto;max-width:150px;border:0;margin:0 0 8px"><div style="font-size:15px;font-weight:700;color:${b.colour}">${esc(b.name)}</div><div style="font-size:12.5px;color:#5B6774;margin-top:2px">${esc(b.tagline)}</div></a></td>`);
+  // Fixed-height tile (a table, not a plain <a>, so `valign` reliably pins
+  // the pill row to the bottom even in Outlook) — every box is the same
+  // size regardless of whether a brand's tagline wraps to one line or two
+  // (Mel, 24 Sep 2026: the brand name moved off the header and into this
+  // pill so it no longer drives the tile's height).
+  const tiles = REWARD_BRANDS.filter(b => b.id !== 9).map(b => `<td width="50%" style="padding:6px"><a href="https://${b.host}/discount/${encodeURIComponent(o.code)}?redirect=/collections/all" style="display:block;text-decoration:none;border:1px solid #E6E3DD;border-radius:12px;background:#FFFFFF;overflow:hidden"><table role="presentation" width="100%" height="128" cellspacing="0" cellpadding="0"><tr><td valign="top" style="padding:16px 16px 0"><img src="${emailLogoUrl(b.id)}" alt="${esc(b.name)}" height="22" style="display:block;height:22px;width:auto;max-width:150px;border:0;margin:0 0 8px"><div style="font-size:12.5px;color:#5B6774;line-height:1.45">${esc(b.tagline)}</div></td></tr><tr><td valign="bottom" align="right" style="padding:0 14px 14px"><span style="display:inline-block;background:#F1F0EC;color:#7A8798;font-size:10.5px;font-weight:700;letter-spacing:.02em;border-radius:999px;padding:4px 11px;white-space:nowrap">${esc(b.name)}</span></td></tr></table></a></td>`);
   const rows: string[] = []; for (let i = 0; i < tiles.length; i += 2) rows.push(`<tr>${tiles[i]}${tiles[i + 1] || "<td></td>"}</tr>`);
   const html = `<!doctype html><html><body style="margin:0;padding:0;background:#F3F2F0">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F3F2F0"><tr><td align="center" style="padding:28px 12px">
