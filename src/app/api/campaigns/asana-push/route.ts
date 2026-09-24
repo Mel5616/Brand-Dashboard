@@ -29,6 +29,7 @@ const TEAM = {
   design: "design@coolkidz.com.au",   // Diep — Design
   retail: "alison@coolkidz.com.au",   // Alison Soulsby — Retail
   website: "mel@coolkidz.com.au",     // Melanie — Website
+  dooh: "mel@coolkidz.com.au",        // Melanie — Digital out-of-home (with BiND Digital)
 };
 // Socials assignee depends on who owns the brand — same split as the Social tab (src/lib/socialOwners.ts).
 const SOCIAL_OWNER_EMAIL: Record<string, string> = { Nicky: "nicky@coolkidz.com.au", Alicia: "alicia@coolkidz.com.au" };
@@ -38,12 +39,13 @@ const SOCIAL_BRAND_OWNER: Record<string, string> = {
 };
 const socialAssignee = (brand: string): string | undefined => SOCIAL_OWNER_EMAIL[SOCIAL_BRAND_OWNER[brand]];
 
-type Category = "paid" | "affiliate" | "design" | "retail" | "website" | "social";
-const CATEGORY_LABEL: Record<Category, string> = { paid: "Paid Marketing", affiliate: "Affiliate", design: "Design", retail: "Retail", website: "Website", social: "Socials" };
+type Category = "paid" | "affiliate" | "design" | "retail" | "website" | "social" | "dooh";
+const CATEGORY_LABEL: Record<Category, string> = { paid: "Paid Marketing", affiliate: "Affiliate", design: "Design", retail: "Retail", website: "Website", social: "Socials", dooh: "Digital out-of-home" };
 // Order matters — most specific first, Design catches everything left over
 // (statics, reels, kits, photoshoots — the bulk of "make the assets" work).
 function categorize(line: string): Category {
   if (/retail|\bpos\b|\bdoor(s)?\b/i.test(line)) return "retail";
+  if (/dooh|digital out.of.home|\bscreens?\b|\bvistar\b|bind digital/i.test(line)) return "dooh";
   if (/affiliate|partner/i.test(line)) return "affiliate";
   if (/google ad|ad set|shopping feed|\bpaid\b/i.test(line)) return "paid";
   if (/landing page|\bpdp\b|configurator|capture flow|checklist landing|website/i.test(line)) return "website";
@@ -189,7 +191,7 @@ export async function POST(req: Request) {
       }
 
       const deliverables = String(c.brief?.deliverables || "").split("\n").map((l: string) => l.trim()).filter(Boolean);
-      const buckets: Record<Category, string[]> = { paid: [], affiliate: [], design: [], retail: [], website: [], social: [] };
+      const buckets: Record<Category, string[]> = { paid: [], affiliate: [], design: [], retail: [], website: [], social: [], dooh: [] };
       for (const line of deliverables) {
         if (/^\d+\s*edm/i.test(line)) continue; // already covered by dated send subtasks
         let cat = categorize(line);
@@ -206,7 +208,7 @@ export async function POST(req: Request) {
       // categorisation, which stays as a fallback for older/looser briefs.
       const CATEGORY_BRIEF_FIELD: Record<Category, string> = {
         paid: "paidBrief", affiliate: "affiliateBrief", design: "designBrief",
-        retail: "retailBrief", website: "websiteBrief", social: "socialsBrief",
+        retail: "retailBrief", website: "websiteBrief", social: "socialsBrief", dooh: "doohBrief",
       };
 
       for (const cat of Object.keys(buckets) as Category[]) {

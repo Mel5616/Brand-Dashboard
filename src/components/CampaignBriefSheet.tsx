@@ -91,6 +91,7 @@ export function CampaignBriefSheet({ c }: { c: any }) {
     { key: "edmBrief", label: "EDM", owner: "Pier Ann", tint: "blue" as const },
     { key: "blogBrief", label: "Blog", owner: "Mel", tint: "teal" as const },
     { key: "paidBrief", label: "Paid marketing", owner: "Anna", tint: "green" as const },
+    { key: "doohBrief", label: "Digital out-of-home", owner: "Mel (with BiND Digital)", tint: "coral" as const },
     { key: "socialsBrief", label: "Socials", owner: socialOwner, tint: "coral" as const },
     { key: "designBrief", label: "Design", owner: "Diep", tint: "amber" as const },
     { key: "retailBrief", label: "Retail", owner: "Alison", tint: "teal" as const },

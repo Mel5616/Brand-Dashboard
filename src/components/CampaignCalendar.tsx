@@ -84,8 +84,9 @@ const BRIEF_FIELDS: { key: string; label: string }[] = [
   // Per-discipline requirements — these push straight into that team's Asana
   // subtask (Push to Asana) instead of guessing from the deliverables list.
   { key: "edmBrief", label: "EDM requirements (Pier Ann)" },
-  { key: "blogBrief", label: "Blog requirements" },
+  { key: "blogBrief", label: "Blog requirements (TBC)" },
   { key: "paidBrief", label: "Paid Marketing requirements (Anna)" },
+  { key: "doohBrief", label: "Digital out-of-home requirements (Mel — with BiND Digital)" },
   { key: "socialsBrief", label: "Socials requirements (Nicky / Alicia)" },
   { key: "designBrief", label: "Design requirements (Diep)" },
   { key: "retailBrief", label: "Retail requirements (Alison)" },
@@ -100,7 +101,7 @@ const BRIEF_FIELDS: { key: string; label: string }[] = [
   { key: "compliance", label: "Compliance" },
 ];
 // The brief "Channels" field is a fixed checklist (stored as a comma-joined string).
-const CHANNEL_OPTIONS = ["Brand Website", "D2C Offer", "Retail", "Baby Bunting", "Marketplace", "Google", "Meta", "EDM", "Blog", "Social Media", "Influencers", "Affiliate"];
+const CHANNEL_OPTIONS = ["Brand Website", "D2C Offer", "Retail", "Baby Bunting", "Marketplace", "Digital out-of-home", "Google", "Meta", "EDM", "Blog", "Social Media", "Influencers", "Affiliate"];
 const splitChannels = (v: string) => (v || "").split(",").map(s => s.trim()).filter(Boolean);
 const GUARD = new Set(["do", "dont", "compliance"]);
 const isFlagged = (v: string) => /^\s*(high|check)/i.test(v || "");
