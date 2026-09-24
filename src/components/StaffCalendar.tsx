@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 // "who's off this week" is a day-by-day question about workdays, and a
 // weekend column is never populated, so it's dropped rather than shown
 // empty every single week.
-type Entry = { id: number; connecteam_user_id: string; name: string; start_date: string; end_date: string; type: string; policy_name: string | null; note: string | null };
+type Entry = { id: number; connecteam_user_id: string; name: string; start_date: string; end_date: string; type: string; policy_name: string | null };
 
 const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];

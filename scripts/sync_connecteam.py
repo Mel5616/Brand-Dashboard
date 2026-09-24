@@ -160,11 +160,16 @@ def main():
             if not st or not et:
                 continue
             etype = e.get("type") or "timeOff"
+            # No "note" field on purpose (Mel, 24 Sep 2026) — someone's own
+            # free-text explanation to their manager ("Kasper's Birthday", a
+            # medical detail) isn't meant for a company-wide dashboard. Only
+            # the date range and leave type are; the column was dropped
+            # (supabase/drop_staff_time_off_note.sql), so this isn't just
+            # left blank, it's genuinely never collected.
             rows.append({
                 "connecteam_user_id": str(uid), "name": name,
                 "start_date": to_date(st), "end_date": to_date(et),
                 "type": etype, "policy_name": e.get("policyName"),
-                "note": e.get("note") or None,
                 "synced_at": now.isoformat() + "Z",
             })
         print(f"  {name}: {len(entries)} entries")
