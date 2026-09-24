@@ -11,13 +11,21 @@ type Entry = { id: number; connecteam_user_id: string; name: string; start_date:
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const isoDate = (d: Date) => d.toISOString().slice(0, 10);
-// A soft, distinguishable colour per person, stable across renders — not
-// meaningful, just so five people off the same week don't blur together.
-const PERSON_COLORS = ["#0e7490", "#9e2f72", "#b45309", "#15803d", "#4338ca", "#be123c", "#0369a1", "#a21caf"];
-function colorFor(name: string) {
-  let h = 0; for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
-  return PERSON_COLORS[h % PERSON_COLORS.length];
-}
+
+// Coloured by leave category, not by person — the question this calendar
+// answers is "who's off and why", so sick/time off/unpaid needs to read at a
+// glance, not just whose name it is. These are Connecteam's own configured
+// policy names (checked against the real synced data, 23 Sep 2026) — there's
+// no separate "Annual" or "Personal" policy on their side, "Time Off" is the
+// catch-all for both. A policy name outside this list still shows, just in
+// the neutral fallback colour, rather than being hidden.
+const TYPE_META: Record<string, { label: string; color: string }> = {
+  "Sick leave": { label: "Sick", color: "#b91c1c" },
+  "Time Off": { label: "Time off", color: "#0369a1" },
+  "Unpaid Leave": { label: "Unpaid", color: "#a16207" },
+};
+const FALLBACK_TYPE = { label: "Off", color: "#6b7280" };
+const typeFor = (policyName: string | null) => (policyName && TYPE_META[policyName]) || FALLBACK_TYPE;
 
 export function StaffCalendar() {
   const [cursor, setCursor] = useState(() => { const d = new Date(); d.setDate(1); return d; });
@@ -25,6 +33,7 @@ export function StaffCalendar() {
   const [loading, setLoading] = useState(true);
   const [needsSetup, setNeedsSetup] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
+  const [typeFilter, setTypeFilter] = useState<Set<string>>(() => new Set(Object.keys(TYPE_META)));
 
   const year = cursor.getFullYear(), month = cursor.getMonth();
   const firstOfMonth = new Date(year, month, 1);
@@ -50,13 +59,22 @@ export function StaffCalendar() {
     return out;
   }, [year, month, startWeekday, daysInMonth]);
 
+  // Any policy name actually present in the synced data, real names first
+  // (in TYPE_META's order), then anything unexpected appended after.
+  const typesPresent = useMemo(() => {
+    const seen = new Set(entries.map(e => e.policy_name || FALLBACK_TYPE.label));
+    return [...Object.keys(TYPE_META), ...[...seen].filter(t => !TYPE_META[t])].filter(t => seen.has(t));
+  }, [entries]);
+
   const entriesFor = (day: Date) => {
     const iso = isoDate(day);
-    return entries.filter(e => e.start_date <= iso && e.end_date >= iso);
+    return entries.filter(e => e.start_date <= iso && e.end_date >= iso && typeFilter.has(e.policy_name || FALLBACK_TYPE.label));
   };
 
-  const people = useMemo(() => Array.from(new Set(entries.map(e => e.name))).sort(), [entries]);
   const today = isoDate(new Date());
+  function toggleType(t: string) {
+    setTypeFilter(prev => { const next = new Set(prev); next.has(t) ? next.delete(t) : next.add(t); return next; });
+  }
 
   if (needsSetup) {
     return (
@@ -77,14 +95,20 @@ export function StaffCalendar() {
         <button onClick={() => { const d = new Date(); d.setDate(1); setCursor(d); }} className="text-xs font-semibold text-emerald-600 hover:text-emerald-700">Today</button>
       </div>
 
-      {people.length > 0 && (
+      {typesPresent.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {people.map(name => (
-            <span key={name} className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-full px-2.5 py-1" style={{ background: `${colorFor(name)}18`, color: colorFor(name) }}>
-              <span className="w-2 h-2 rounded-full" style={{ background: colorFor(name) }} />
-              {name}
-            </span>
-          ))}
+          {typesPresent.map(t => {
+            const meta = TYPE_META[t] || { ...FALLBACK_TYPE, label: t };
+            const on = typeFilter.has(t);
+            return (
+              <button key={t} onClick={() => toggleType(t)}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-full px-2.5 py-1 border transition-opacity"
+                style={{ background: on ? `${meta.color}18` : "#fff", color: on ? meta.color : "#9ca3af", borderColor: on ? `${meta.color}40` : "#e5e7eb" }}>
+                <span className="w-2 h-2 rounded-full" style={{ background: on ? meta.color : "#d1d5db" }} />
+                {meta.label}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -103,11 +127,14 @@ export function StaffCalendar() {
                 className={`min-h-[92px] border-b border-r border-gray-50 p-1.5 text-left align-top hover:bg-gray-50/60 transition-colors ${selected === iso ? "ring-2 ring-inset ring-emerald-400" : ""}`}>
                 <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold ${isToday ? "bg-emerald-500 text-white" : "text-gray-500"}`}>{day.getDate()}</span>
                 <div className="mt-1 space-y-0.5">
-                  {dayEntries.slice(0, 3).map(e => (
-                    <div key={e.id} className="text-[10.5px] font-semibold rounded px-1.5 py-0.5 truncate" style={{ background: `${colorFor(e.name)}18`, color: colorFor(e.name) }} title={`${e.name}${e.policy_name ? ` · ${e.policy_name}` : ""}`}>
-                      {e.name}
-                    </div>
-                  ))}
+                  {dayEntries.slice(0, 3).map(e => {
+                    const meta = typeFor(e.policy_name);
+                    return (
+                      <div key={e.id} className="text-[10.5px] font-semibold rounded px-1.5 py-0.5 truncate" style={{ background: `${meta.color}18`, color: meta.color }} title={`${e.name} · ${e.policy_name || meta.label}`}>
+                        {e.name}
+                      </div>
+                    );
+                  })}
                   {dayEntries.length > 3 && <div className="text-[10px] text-gray-400 px-1.5">+{dayEntries.length - 3} more</div>}
                 </div>
               </button>
@@ -129,14 +156,16 @@ export function StaffCalendar() {
               <p className="text-sm text-gray-400">Nobody off this day.</p>
             ) : (
               <div className="space-y-1.5">
-                {dayEntries.map(e => (
-                  <div key={e.id} className="flex items-center gap-2 text-sm">
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: colorFor(e.name) }} />
-                    <span className="font-semibold text-slate-700">{e.name}</span>
-                    {e.policy_name && <span className="text-gray-400">· {e.policy_name}</span>}
-                    <span className="text-gray-400 text-xs ml-auto">{e.start_date === e.end_date ? "1 day" : `${e.start_date} – ${e.end_date}`}</span>
-                  </div>
-                ))}
+                {dayEntries.map(e => {
+                  const meta = typeFor(e.policy_name);
+                  return (
+                    <div key={e.id} className="flex items-center gap-2 text-sm">
+                      <span className="text-[9.5px] font-bold uppercase tracking-wide rounded-full px-2 py-0.5 shrink-0" style={{ background: `${meta.color}18`, color: meta.color }}>{e.policy_name || meta.label}</span>
+                      <span className="font-semibold text-slate-700">{e.name}</span>
+                      <span className="text-gray-400 text-xs ml-auto">{e.start_date === e.end_date ? "1 day" : `${e.start_date} – ${e.end_date}`}</span>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
