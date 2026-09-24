@@ -4,13 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 
 // Operations > Staff — who's off, in one place. Read-only mirror of
 // Connecteam's approved time-off, synced by scripts/sync_connecteam.py.
-// A Mon-Fri work-week calendar (not the Timeline, not a 7-day grid) —
-// "who's off this week" is a day-by-day question about workdays, and a
-// weekend column is never populated, so it's dropped rather than shown
-// empty every single week.
+// A full Mon-Sun calendar, but Saturday/Sunday never list anyone (Mel, 24
+// Sep 2026) — leave spanning a weekend doesn't mean someone's "off work"
+// on a day nobody works anyway, so those cells stay visibly empty rather
+// than showing a name that reads as if it means something.
 type Entry = { id: number; connecteam_user_id: string; name: string; start_date: string; end_date: string; type: string; policy_name: string | null };
 
-const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+const WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const isoDate = (d: Date) => d.toISOString().slice(0, 10);
 
@@ -40,20 +40,13 @@ export function StaffCalendar() {
   const year = cursor.getFullYear(), month = cursor.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  // Only the month's weekdays, Mon (col 0) through Fri (col 4). Friday
-  // wraps straight to the next Monday with no gap in a 5-wide grid, so the
-  // only padding needed is enough leading blanks to align day 1.
+  const firstOfMonth = new Date(year, month, 1);
+  const startWeekday = (firstOfMonth.getDay() + 6) % 7; // Mon=0 .. Sun=6
   const cells: (Date | null)[] = useMemo(() => {
-    const weekdayDates: Date[] = [];
-    for (let d = 1; d <= daysInMonth; d++) {
-      const dt = new Date(year, month, d);
-      const dow = dt.getDay(); // 0 Sun .. 6 Sat
-      if (dow === 0 || dow === 6) continue;
-      weekdayDates.push(dt);
-    }
-    const leadingBlanks = weekdayDates.length ? (weekdayDates[0].getDay() + 6) % 7 : 0;
-    return [...Array(leadingBlanks).fill(null), ...weekdayDates];
-  }, [year, month, daysInMonth]);
+    const out: (Date | null)[] = Array(startWeekday).fill(null);
+    for (let d = 1; d <= daysInMonth; d++) out.push(new Date(year, month, d));
+    return out;
+  }, [year, month, startWeekday, daysInMonth]);
 
   // Padding either side, in real calendar days, so an entry spanning the
   // month boundary still shows on the first/last visible weekdays.
@@ -77,7 +70,9 @@ export function StaffCalendar() {
     return [...Object.keys(TYPE_META), ...[...seen].filter(t => !TYPE_META[t])].filter(t => seen.has(t));
   }, [entries]);
 
+  const isWeekend = (day: Date) => { const dow = day.getDay(); return dow === 0 || dow === 6; };
   const entriesFor = (day: Date) => {
+    if (isWeekend(day)) return [];
     const iso = isoDate(day);
     return entries.filter(e => e.start_date <= iso && e.end_date >= iso && typeFilter.has(e.policy_name || FALLBACK_TYPE.label));
   };
@@ -123,30 +118,33 @@ export function StaffCalendar() {
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="grid grid-cols-5 border-b border-gray-100 bg-gray-50/60">
-          {WEEKDAYS.map(w => <div key={w} className="text-[11px] font-bold uppercase tracking-wider text-gray-400 text-center py-2.5">{w}</div>)}
+        <div className="grid grid-cols-7 border-b border-gray-100 bg-gray-50/60">
+          {WEEKDAYS.map((w, i) => <div key={w} className={`text-[11px] font-bold uppercase tracking-wider text-center py-2.5 ${i >= 5 ? "text-gray-300" : "text-gray-400"}`}>{w.slice(0, 3)}</div>)}
         </div>
-        <div className="grid grid-cols-5">
+        <div className="grid grid-cols-7">
           {cells.map((day, i) => {
-            if (!day) return <div key={i} className="min-h-[104px] border-b border-r border-gray-50 last:border-r-0 bg-gray-50/20" />;
+            if (!day) return <div key={i} className="min-h-[92px] border-b border-r border-gray-50 last:border-r-0 bg-gray-50/20" />;
             const iso = isoDate(day);
             const dayEntries = entriesFor(day);
             const isToday = iso === today;
+            const weekend = isWeekend(day);
             return (
-              <button key={i} onClick={() => setSelected(iso)}
-                className={`min-h-[104px] border-b border-r border-gray-50 last:border-r-0 p-2 text-left align-top hover:bg-gray-50/70 transition-colors ${selected === iso ? "bg-emerald-50/50 ring-2 ring-inset ring-emerald-300" : ""}`}>
-                <span className={`inline-flex items-center justify-center w-[26px] h-[26px] rounded-full text-xs font-bold tabular-nums ${isToday ? "bg-emerald-500 text-white shadow-sm" : "text-gray-600"}`}>{day.getDate()}</span>
-                <div className="mt-1.5 space-y-1">
-                  {dayEntries.slice(0, 4).map(e => {
-                    const meta = typeFor(e.policy_name);
-                    return (
-                      <div key={e.id} className="text-[10.5px] font-semibold rounded-md px-1.5 py-1 truncate leading-none" style={{ background: `${meta.color}14`, color: meta.color }} title={`${e.name} · ${e.policy_name || meta.label}`}>
-                        {e.name}
-                      </div>
-                    );
-                  })}
-                  {dayEntries.length > 4 && <div className="text-[10px] font-medium text-gray-400 px-1.5">+{dayEntries.length - 4} more</div>}
-                </div>
+              <button key={i} onClick={() => !weekend && setSelected(iso)}
+                className={`min-h-[92px] border-b border-r border-gray-50 last:border-r-0 p-2 text-left align-top transition-colors ${weekend ? "bg-gray-50/40 cursor-default" : "hover:bg-gray-50/70"} ${selected === iso ? "bg-emerald-50/50 ring-2 ring-inset ring-emerald-300" : ""}`}>
+                <span className={`inline-flex items-center justify-center w-[26px] h-[26px] rounded-full text-xs font-bold tabular-nums ${isToday ? "bg-emerald-500 text-white shadow-sm" : weekend ? "text-gray-300" : "text-gray-600"}`}>{day.getDate()}</span>
+                {!weekend && (
+                  <div className="mt-1.5 space-y-1">
+                    {dayEntries.slice(0, 4).map(e => {
+                      const meta = typeFor(e.policy_name);
+                      return (
+                        <div key={e.id} className="text-[10.5px] font-semibold rounded-md px-1.5 py-1 truncate leading-none" style={{ background: `${meta.color}14`, color: meta.color }} title={`${e.name} · ${e.policy_name || meta.label}`}>
+                          {e.name}
+                        </div>
+                      );
+                    })}
+                    {dayEntries.length > 4 && <div className="text-[10px] font-medium text-gray-400 px-1.5">+{dayEntries.length - 4} more</div>}
+                  </div>
+                )}
               </button>
             );
           })}
