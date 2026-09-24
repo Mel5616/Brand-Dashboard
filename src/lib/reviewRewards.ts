@@ -1,6 +1,20 @@
 import { createHash, randomBytes } from "crypto";
 import { storeCreds, mintToken } from "@/lib/shopifyMint";
 import { rest } from "@/lib/registry";
+import { BRAND_LOGOS } from "@/lib/brandLogos";
+
+// Absolute — this app's own /public files, since an email needs a real URL,
+// not a relative path. Two brands (Nanit, Gaia Baby) get an email-specific
+// override: their BRAND_LOGOS entries are .svg/.avif, which Outlook and a
+// fair few other email clients don't render at all (a blank box, not a
+// broken-image icon, so it's easy to miss in testing) — these are plain PNG
+// re-exports of the same artwork, not a different logo.
+const LOGO_BASE = "https://marketing.coolkidz.com.au";
+const EMAIL_LOGO_OVERRIDES: Record<number, string> = {
+  0: "/logos/nanit-logo-email.png",
+  3: "/logos/gaia-baby-logo-email.png",
+};
+const emailLogoUrl = (id: number) => `${LOGO_BASE}${EMAIL_LOGO_OVERRIDES[id] || BRAND_LOGOS[id]}`;
 
 // Review rewards: one $5 code per published review, valid on any Coolkidz
 // brand store, single use across the portfolio. The customer picks the
@@ -90,7 +104,7 @@ export const REWARD_TERMS = (expiresAt: Date) => [
 export async function sendRewardEmail(o: { to: string; firstName: string; sourceBrand: string; code: string; expiresAt: Date }) {
   const key = process.env.RESEND_API_KEY;
   if (!key) return { ok: false, error: "RESEND_API_KEY not configured" };
-  const tiles = REWARD_BRANDS.filter(b => b.id !== 9).map(b => `<td width="50%" style="padding:6px"><a href="https://${b.host}/discount/${encodeURIComponent(o.code)}?redirect=/collections/all" style="display:block;text-decoration:none;border:1px solid #E6E3DD;border-radius:12px;padding:14px 16px;background:#FFFFFF"><div style="font-size:15px;font-weight:700;color:${b.colour}">${esc(b.name)}</div><div style="font-size:12.5px;color:#5B6774;margin-top:2px">${esc(b.tagline)}</div></a></td>`);
+  const tiles = REWARD_BRANDS.filter(b => b.id !== 9).map(b => `<td width="50%" style="padding:6px"><a href="https://${b.host}/discount/${encodeURIComponent(o.code)}?redirect=/collections/all" style="display:block;text-decoration:none;border:1px solid #E6E3DD;border-radius:12px;padding:14px 16px;background:#FFFFFF"><img src="${emailLogoUrl(b.id)}" alt="${esc(b.name)}" height="22" style="display:block;height:22px;width:auto;max-width:150px;border:0;margin:0 0 8px"><div style="font-size:15px;font-weight:700;color:${b.colour}">${esc(b.name)}</div><div style="font-size:12.5px;color:#5B6774;margin-top:2px">${esc(b.tagline)}</div></a></td>`);
   const rows: string[] = []; for (let i = 0; i < tiles.length; i += 2) rows.push(`<tr>${tiles[i]}${tiles[i + 1] || "<td></td>"}</tr>`);
   const html = `<!doctype html><html><body style="margin:0;padding:0;background:#F3F2F0">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F3F2F0"><tr><td align="center" style="padding:28px 12px">
