@@ -1,0 +1,49 @@
+{
+  "store": {
+    "brand": "Magic — odour-free nappy bins",
+    "distributor": "Coolkidz Australia, the exclusive authorised distributor of Magic products in Australia",
+    "address": "1 Beyer Road, Braeside VIC 3195 (showroom Mon–Fri 9:30am–2:30pm)",
+    "phone": "1300 722 302, Mon–Fri 8am–5pm",
+    "site": "magicbabyproducts.com.au"
+  },
+  "range": {
+    "Majestic": "Entry point. Fixed-height, compact drop-and-turn mechanism. 20L capacity, holds approx. 25 nappies. 24 × 52cm (W×H). From $119.95. Ships with a bag roll and dispenser included. No 2nd-life bathroom lid available. 7 colourways.",
+    "Thoth": "Slimline. Telescopic drop-and-turn, same height as Heka but a 24cm slimline footprint — built for tighter nurseries and bathrooms. 28L capacity, holds approx. 35 nappies. 24 × 63cm (W×H). From $149.95. Ships with a bag roll and dispenser included. 2nd-life bathroom lid available, $34.95. 6 colourways.",
+    "Heka L": "Flagship. Telescopic and wide-bodied for maximum capacity. 40L capacity, holds approx. 45 nappies. 28.5 × 63cm (W×H). From $149.95. Ships with bin only. 2nd-life bathroom lid available, $34.95. 7 colourways.",
+    "shared_mechanism": "All three ranges use the same wave-seal, drop-and-turn mechanism and work with any standard bin liner, or Magic's own bag for a guaranteed seal. Nothing about how the seal works changes between ranges — the difference is size, footprint and price.",
+    "material": "100% recycled polypropylene (PP), GRS-traceable material, across the whole range.",
+    "nappy_capacity_caveat": "Nappy capacity depends on nappy size — the figures above are approximate, based on newborn/infant sizing. Expect fewer nappies per bin as the baby (and their nappies) grow."
+  },
+  "choosing": "If floor space isn't a constraint and maximum capacity matters most (fewer bag changes), Heka L is the biggest. For a tight bathroom or nursery, Thoth has the same telescopic height as Heka but a slimmer 24cm footprint. For the lowest entry price and a compact fixed-height bin, Majestic is the starter option, though it doesn't have the 2nd-life bathroom lid.",
+  "accessories": "Bathroom lid accessory ($34.95) converts a Heka or Thoth base into a regular household bin once nappies are done — not available for Majestic. Magic's own nappy bags are designed for a guaranteed seal on any Magic bin and can help lock in odour for up to two weeks when used correctly.",
+  "how_it_works": "Drop the nappy through the top opening — no bag threading, no touching the waste. Turn the lid to seal the wave seal shut behind it, locking odour into the chamber below. When the bag is full, use the small release button, turn and lift the top section off together with the bag, twist the bag a few times to seal it, then slide it out and dispose as usual.",
+  "care": "Unscrew the drum holder and remove the round drum. Hand-wash all parts in lukewarm water with a few tablespoons of baking soda and a little mild soap. Don't put any part in the dishwasher — rinse and air-dry fully before reassembling.",
+  "troubleshooting": {
+    "smells": "Check three things in order: the liner is free of holes and installed correctly (use a standard bag or an official Magic bag — thinner supermarket bags may not seal properly), the lid is closed fully after every use, and the bin is left in stand-by position (cup open, not rounded-side-up).",
+    "wont_open": "Use the small release button to release the top. Turn it and lift the top section off together with the bag, then twist the bag a few times to seal it before sliding it out."
+  },
+  "policies": {
+    "shipping": "Orders typically leave the Braeside, Melbourne warehouse within 1–2 business days (longer during sales/promos/holidays). Standard delivery from dispatch: Melbourne/Sydney/Adelaide 1–2 business days, Brisbane 2–3 business days, Hobart 3–4 business days, Perth 4–7 business days. Multi-item orders may ship in separate cartons with separate tracking. No authority-to-leave unless specified, and Australia Post parcel lockers aren't supported.",
+    "returns": "30 days to return, from date of receipt. Start a return at help.coolkidz.com.au.",
+    "warranty": "1 year warranty, backed by Coolkidz Australia, on top of Australian Consumer Law rights (which can't be excluded — major failures get a replacement or refund). Covers normal use for its intended purpose, maintained per the manual, with valid dated proof of purchase and genuine Magic parts. Does not cover normal wear and tear, sun/heat/moisture damage, accidental damage, misuse, overloading, transport damage, or consequential loss. To claim: lodge a ticket at help.coolkidz.com.au with proof of purchase, a description of the issue and photos/video."
+  },
+  "retail": "Distributed exclusively in Australia by Coolkidz Australia, 1 Beyer Road, Braeside VIC 3195. Also available through select retail partners online.",
+  "pages": {
+    "buying_guide": "/pages/buying-guide",
+    "faqs": "/pages/faqs",
+    "delivery": "/pages/delivery-details",
+    "warranty": "/pages/warranty",
+    "sustainability": "/pages/sustainability",
+    "support": "/pages/support",
+    "video_guides": "/pages/video-guides",
+    "warranty_claim": "https://help.coolkidz.com.au/support/tickets/new"
+  },
+  "faq": [
+    { "q": "My Magic bin smells — what should I check?", "a": "Make sure the liner is installed correctly with no holes, use a standard bag or an official Magic bag (thinner bags may not seal properly), close the lid fully after every use, and keep the bin in stand-by position — cup open, not rounded-side up." },
+    { "q": "The top won't open when the bag is full — what do I do?", "a": "Use the small button to release the top. Turn it and lift the top section off together with the bag, then twist the bag a few times to seal it before sliding it out and disposing as usual." },
+    { "q": "How do I clean it?", "a": "Unscrew the drum holder, remove the round drum, and hand-wash all parts in lukewarm water with a few tablespoons of baking soda and a little mild soap. Don't put any part in the dishwasher — rinse and air-dry fully before reassembling." },
+    { "q": "Which bag should I actually use?", "a": "Most plastic bags work — avoid very thin supermarket bags, which may not seal. Magic's own nappy bags are built to fit and are designed to help lock in odour for up to two weeks when used correctly." },
+    { "q": "Heka or Thoth for a small bathroom?", "a": "Thoth — same drop-and-turn mechanism as Heka, but a 24cm slimline footprint instead of 28.5cm, in the same telescopic height." },
+    { "q": "Can I use it after nappies?", "a": "Yes — add the optional bathroom lid accessory ($34.95) and it converts into a regular household bin. Available for Heka and Thoth, not Majestic." }
+  ]
+}
