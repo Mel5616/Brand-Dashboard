@@ -35,7 +35,7 @@ export const REWARD_BRANDS: RewardBrand[] = [
   { id: 6,  name: "ZAZU",              host: "zazu-kids.com.au",             colour: "#F7B955", tagline: "Sleep trainers and night lights" },
   { id: 11, name: "Mamave",            host: "mamave.com.au",                colour: "#DD624B", tagline: "Skincare for mum and bub" },
   { id: 10, name: "Matchstick Monkey", host: "www.matchstickmonkey.com.au",  colour: "#7E9A8C", tagline: "Teethers and baby toothbrushes" },
-  { id: 7,  name: "MiaMily",           host: "miamily.com.au",               colour: "#5A7D9A", tagline: "Carriers and kids' luggage" },
+  { id: 7,  name: "MiaMily",           host: "miamily.com.au",               colour: "#5A7D9A", tagline: "Ride-on suitcases and kids' luggage" },
   { id: 9,  name: "Coolkidz Australia", host: "coolkidz.com.au",             colour: "#D63A2F", tagline: "Every brand, one place" },
 ];
 export const rewardBrand = (id: number) => REWARD_BRANDS.find(b => b.id === id);
