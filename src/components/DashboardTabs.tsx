@@ -89,6 +89,7 @@ import { EmailStudio } from "./EmailStudio";
 import { SocialStudio } from "./SocialStudio";
 import { LifecycleFlowGrid } from "./LifecycleFlowGrid";
 import { FlowPerformance } from "./FlowPerformance";
+import { EmailHealthOverview } from "./EmailHealthOverview";
 import { SendCalendar } from "./SendCalendar";
 import { DatabaseSizeCard } from "./DatabaseSizeCard";
 import { StaffCalendar } from "./StaffCalendar";
@@ -2539,6 +2540,7 @@ export function DashboardTabs({
           {active === "lifecycle-flows" && (
             <>
               <SectionBar title="Email Flows" />
+              <EmailHealthOverview />
               <FlowGoLive brands={brands.map((b: any) => ({ id: b.id, name: b.name, color: b.color }))} />
               <DatabaseSizeCard />
               <LifecycleFlowGrid brands={brands.map((b: any) => ({ id: b.id, name: b.name, live: b.live }))} />
