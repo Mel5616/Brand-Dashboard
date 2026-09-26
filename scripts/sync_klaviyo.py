@@ -479,15 +479,21 @@ def sync_campaign_calendar(db, api_key, brand_id):
         data = klaviyo_get(api_key, "campaigns/", {
             "filter": f"and(equals(messages.channel,'email'),greater-than(scheduled_at,{since}))",
             "fields[campaign]": "name,status,send_time,scheduled_at,audiences",
-            "include": "campaign-messages", "fields[campaign-message]": "definition",
+            "include": "campaign-messages",
         })
     except Exception as e:
         print(f"    Warning: campaign calendar failed — {e}")
         return
+    # Was requesting fields[campaign-message]=definition, which doesn't exist
+    # on this resource ("'definition' is not a field on the 'campaign-message'
+    # resource") — every call 400'd and got swallowed by the except above, so
+    # this has never actually written status/send_time/subject since the
+    # column was added. The real field is content.subject, at the top level
+    # of attributes (Mel, 26 Sep 2026 — found while building the send timeline).
     subjects = {}
     for inc in data.get("included", []) or []:
         if inc.get("type") == "campaign-message":
-            content = ((inc.get("attributes") or {}).get("definition") or {}).get("content") or {}
+            content = (inc.get("attributes") or {}).get("content") or {}
             subjects[inc["id"]] = content.get("subject")
     rows = []
     for c in data.get("data", []):
