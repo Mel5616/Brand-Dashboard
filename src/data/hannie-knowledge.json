@@ -1,0 +1,235 @@
+{
+  "store": {
+    "brand": "Hannie",
+    "site": "hannie.com.au",
+    "product": "One product: the Hannie Portable High Chair, $269 AUD, in four colours (White Sand, Sage Green, Charcoal Black, Mahogany Red). Each colour is its own product page.",
+    "distributor": "Distributed exclusively in Australia by Coolkidz Australia Pty Ltd, 1 Beyer Road, Braeside VIC 3195. Phone 1300 722 302 (Mon to Fri 8am-5pm). Email hello@hannie.com.au. Showroom open Mon to Fri 9:30am-2:30pm.",
+    "origin": "Designed in Sweden, born from real parenting experience. The name is a wordplay on honey and carries the founder's daughter's name, Hannah. The elephant logomark stands for strength, protection and wisdom.",
+    "instagram": "@hannie.australia (global account @hannie_global)"
+  },
+  "pages": {
+    "the high chair (White Sand default)": "/products/hannie-portable-high-chair-white-sand",
+    "fit guide (will it fit my chair?)": "/pages/fit-guide",
+    "FAQs": "/pages/frequently-asked-questions-faqs",
+    "compare seat types": "/pages/compare",
+    "learning hub": "/pages/learning-hub",
+    "how-to videos": "/pages/how-to-videos",
+    "about": "/pages/about-us",
+    "contact": "/pages/contact",
+    "support hub": "/pages/support",
+    "warranty information": "/pages/warranty-information",
+    "shipping information": "/pages/shipping-information",
+    "become a stockist": "/pages/stockist",
+    "partnerships and affiliates": "/pages/partnerships",
+    "user manual (PDF)": "https://cdn.shopify.com/s/files/1/0772/6930/3550/files/HANNIE_USER_MANUAL.pdf",
+    "support portal (tickets, warranty claims)": "https://help.coolkidz.com.au/support/tickets/new"
+  },
+  "product_facts": {
+    "age": "From around 6 months, once the baby has good head and neck control and can sit with support, to around 5 years.",
+    "modes": "Baby Chair mode (Reversible Cushion with Back Plate Support, 3-point harness, tray) supports up to 15 kg. Toddler Seat mode (cushion and harness removed, seat as booster) supports up to 25 kg.",
+    "weight": "About 2 kg packed including the Reversible Cushion. Comes with a travel tote and fits under most pram baskets.",
+    "chair_fit": "Attaches to a sturdy four-legged dining chair with a firm flat seat at least 38 cm wide and 35 cm deep, and a backrest at least 30 cm high. Not suitable for stools, swivel chairs, folding chairs, rocking chairs or soft padded seats. The interactive fit guide checks this in a minute.",
+    "in_the_box": "Seat, frame, Reversible Cushion, 3-point safety harness, tray, travel tote bag. Nothing extra to buy.",
+    "standards": "Tested to EN 16120:2012+A2:2017 (chair-mounted seats), AS/NZS 8124.3, CPN No. 11 and US FDA 21 CFR.",
+    "care": "Tray is food-safe and dishwasher-safe on a gentle cycle at 50-60C, or wipe clean. Cushion machine washes at up to 40C (remove the Back Plate Support first, tumble dry low, no dry cleaning). Harness machine washes at 40C in a laundry bag, no tumble drying. Seat and seat support wipe clean, never in the dishwasher.",
+    "sustainability": "Fewer, better products: one chair instead of a high chair, travel seat and booster. Built to hand down (warranty transfers to second-hand owners with proof of purchase) and 100% recyclable by the end user at end of life."
+  },
+  "safety_rules": [
+    "Always use the 3-point safety harness, every time, even for a short snack.",
+    "Only attach to a sturdy four-legged adult dining chair meeting the minimum sizes; never a stool, swivel, folding, rocking or soft padded chair.",
+    "Never use the seat freestanding on the floor, on a table, or in the bath or wet environments.",
+    "An adult must stay within arm's reach at all times; never leave a child unattended.",
+    "Respect the weight limits: 15 kg in Baby Chair mode, 25 kg in Toddler Seat mode.",
+    "Check both straps are tight before every use and attach exactly as the manual shows.",
+    "Start solids and high chair use from around 6 months, only once the baby has steady head and neck control; if unsure, ask a child health nurse or GP."
+  ],
+  "policies": {
+    "shipping": "Orders are picked and packed Monday to Friday at the Melbourne (Braeside) warehouse and typically dispatched within 1-2 business days, longer in busy periods. Tracking is emailed on dispatch (allow up to 24 hours to update). Standard delivery: Melbourne, Sydney and Adelaide 1-2 business days; Brisbane 2-3; Hobart 3-4; Perth 4-7. Multiple items may arrive in separate boxes with their own tracking. Couriers card and re-attempt if no one is home; no Authority to Leave unless requested; no Australia Post parcel lockers. Same Day Delivery exists for eligible Melbourne postcodes: order before 12pm weekdays, $50 minimum spend, see the Same Day Delivery terms page.",
+    "warranty": "2-year warranty from the original purchase date, honoured in Australia by Coolkidz Australia, in addition to Australian Consumer Law rights. Covers manufacturing faults under normal use with proper care; transfers to second-hand owners with the original proof of purchase. Does not cover normal wear, sun or moisture damage, accidents, misuse, overloading, transport damage or non-genuine parts. Claims: lodge a ticket at help.coolkidz.com.au/support/tickets/new with proof of purchase, a description and photos or video. Approved claims are repaired, replaced, refunded or credited.",
+    "returns": "30 days from the date of receipt to return a product; see the refund policy page (/policies/refund-policy) or contact support to start a return."
+  },
+  "faq": [
+    {
+      "category": "Getting started",
+      "q": "What is the Hannie Portable High Chair?",
+      "a": "A space-saving high chair for children from around 6 months to 5 years that attaches securely to a standard adult dining chair. It folds flat, weighs about 2 kg packed, and comes with a protective tote bag so it travels anywhere you do."
+    },
+    {
+      "category": "Getting started",
+      "q": "From what age can my baby use it?",
+      "a": "From around 6 months, once your baby has good head and neck control and can sit with support. Those are the same readiness signs used for starting solids. It then converts to a toddler seat and lasts to around 5 years (25 kg maximum)."
+    },
+    {
+      "category": "Getting started",
+      "q": "How long will it last?",
+      "a": "From roughly 6 months to 5 years. In Baby Chair mode (with the Reversible Cushion, harness and tray) it supports up to 15 kg; converted to Toddler Seat mode it supports up to 25 kg."
+    },
+    {
+      "category": "Getting started",
+      "q": "Can it replace a traditional high chair?",
+      "a": "For most families, yes. It puts your child at the family table using a chair you already own, then converts as they grow, without a bulky frame taking up floor space. See our comparison of seat types for an honest look at where each option wins."
+    },
+    {
+      "category": "Getting started",
+      "q": "Do I need the Reversible Cushion?",
+      "a": "The cushion gives younger babies extra comfort and support, and its ergonomic Back Plate Support adds stability while they're still learning to sit through a meal. As your child grows you simply remove it."
+    },
+    {
+      "category": "Safety & standards",
+      "q": "Is the Hannie Portable High Chair safe?",
+      "a": "Yes. It's tested to EN 16120:2012+A2:2017 (the European chair-mounted seat standard), AS/NZS 8124.3, CPN No. 11 and US FDA 21 CFR requirements. Always read the manual, fit the 3-point harness, and supervise your child during use."
+    },
+    {
+      "category": "Safety & standards",
+      "q": "What kind of dining chair should I attach it to?",
+      "a": "A sturdy four-legged chair with a firm, flat seat and a high backrest. The seat needs to be at least 38 cm wide, 35 cm deep and 30 cm high. Avoid stools, swivel chairs, folding chairs and soft, padded seats. Try our interactive fit guide to check your chairs."
+    },
+    {
+      "category": "Safety & standards",
+      "q": "Can I use it on the floor or in the bath?",
+      "a": "No. It's designed only for secure attachment to an adult dining chair. Never use it freestanding on the floor, on a table, or in wet environments."
+    },
+    {
+      "category": "Safety & standards",
+      "q": "What is the weight limit?",
+      "a": "Up to 15 kg in Baby Chair mode and up to 25 kg in Toddler Seat mode."
+    },
+    {
+      "category": "Travel & everyday use",
+      "q": "How much does it weigh?",
+      "a": "About 2 kg packed, including the Reversible Cushion, which is light enough to carry to a café, a restaurant, or the grandparents' place without thinking twice."
+    },
+    {
+      "category": "Travel & everyday use",
+      "q": "Does it fit under a pram?",
+      "a": "Yes. Packed in its tote bag it fits under most stroller baskets, so it can come along to brunch, holidays and weekends away."
+    },
+    {
+      "category": "Travel & everyday use",
+      "q": "How quickly does it set up?",
+      "a": "It attaches to a dining chair in well under a minute once you've done it a couple of times. Watch the 60-second setup video to see the whole process."
+    },
+    {
+      "category": "Cleaning & care",
+      "q": "Is the tray dishwasher-safe?",
+      "a": "Yes. The tray is food-safe and dishwasher-safe on a gentle cycle at 50–60°C, or you can simply wipe it with a damp cloth. The seat and seat support shouldn't go in the dishwasher."
+    },
+    {
+      "category": "Cleaning & care",
+      "q": "How do I clean the seat?",
+      "a": "Wipe the seat and seat support with a damp cloth after meals. For stubborn stains, use warm water and a mild detergent."
+    },
+    {
+      "category": "Cleaning & care",
+      "q": "Can I machine-wash the cushion and harness?",
+      "a": "Yes. The Reversible Cushion washes on a gentle cycle at up to 40°C. Always remove the Back Plate Support first, skip dry cleaning, and tumble dry low. The harness is machine washable at 40°C in a laundry bag, without tumble drying."
+    },
+    {
+      "category": "Sustainability & longevity",
+      "q": "Is the Hannie Portable High Chair sustainable?",
+      "a": "It's designed around the idea of fewer, better baby products: one chair replaces the high chair, travel seat and booster you'd otherwise buy, it's built to serve to 25 kg, and it's 100% recyclable by the end user at the end of its life."
+    },
+    {
+      "category": "Sustainability & longevity",
+      "q": "Can it be handed down to a second child or sold on?",
+      "a": "Yes, that's the point of building it to last. Every part wipes or machine-washes clean, the seat is rated to 25 kg, and the 2-year warranty even transfers to second-hand owners with proof of purchase."
+    },
+    {
+      "category": "Sustainability & longevity",
+      "q": "What happens when my child outgrows it?",
+      "a": "Pass it on to a sibling, a friend, or the second-hand market, where the transferable warranty keeps it genuinely useful. If it's truly at the end of its life, it's 100% recyclable by the end user."
+    },
+    {
+      "category": "Warranty, delivery & orders",
+      "q": "What warranty does it come with?",
+      "a": "A 2-year warranty from the original purchase date, honoured in Australia by Coolkidz Australia, the exclusive authorised distributor. It covers manufacturing faults under normal use, for original and second-hand owners with proof of purchase."
+    },
+    {
+      "category": "Warranty, delivery & orders",
+      "q": "How do I make a warranty claim?",
+      "a": "Lodge a ticket at help.coolkidz.com.au with your proof of purchase, a description of the issue and photos or video. Approved claims are repaired, replaced, refunded or credited."
+    },
+    {
+      "category": "Warranty, delivery & orders",
+      "q": "Who sells Hannie in Australia?",
+      "a": "Hannie is sold online at hannie.com.au and distributed exclusively by Coolkidz Australia Pty Ltd (Braeside, VIC), the family behind UPPAbaby, Frida, Nanit and other premium baby brands in Australia. Retailers can apply to become a stockist via the Coolkidz support portal."
+    },
+    {
+      "category": "Choosing a seat",
+      "q": "Is a chair-mounted seat as safe as a freestanding high chair?",
+      "a": "Used correctly, yes. Chair-mounted seats have their own dedicated safety standard, EN 16120, covering the attachment system, restraint and stability, and the Hannie is tested to it (plus AS/NZS 8124.3). The two rules that matter everywhere: a sturdy four-legged chair underneath, and the harness clipped every time."
+    },
+    {
+      "category": "Choosing a seat",
+      "q": "What age is a booster seat suitable for?",
+      "a": "Plain boosters generally suit children from around 12 months who can sit confidently unaided, as they add height rather than support. The Hannie covers that stage too: its Toddler Seat mode is a booster rated to 25 kg, but it starts earlier, from around 6 months, with cushion and harness."
+    },
+    {
+      "category": "Choosing a seat",
+      "q": "Do fabric travel high chairs have a tray?",
+      "a": "Rarely. Most fabric or clip-style travel seats hold your child at the table edge and rely on the table itself. The Hannie packs almost as small but includes a food-safe, dishwasher-safe tray, so your child has their own surface anywhere."
+    },
+    {
+      "category": "Choosing a seat",
+      "q": "Which seat is best for a small apartment?",
+      "a": "A chair-mounted seat wins on floor space: it uses a dining chair you already own and packs to about 2 kg in a tote, so there's no bulky frame to park in a corner. A traditional high chair suits homes with room to leave it standing."
+    }
+  ],
+  "guides": [
+    {
+      "title": "Is your baby ready for a high chair? The signs that matter",
+      "url": "/blogs/news/learn-ready-for-solids",
+      "summary": "Australian guidance says start solids around 6 months. Learn the readiness signs: head control, supported sitting and real interest in food."
+    },
+    {
+      "title": "High chair safety at home and out: what the standards actually mean",
+      "url": "/blogs/news/learn-high-chair-safety",
+      "summary": "EN 16120, AS/NZS 8124.3, harness rules and the right chair underneath: a plain-English guide to chair-mounted seat safety for Australian parents."
+    },
+    {
+      "title": "Eating out with a baby: the 2 kg trick that changes everything",
+      "url": "/blogs/news/learn-eating-out",
+      "summary": "Cafés without high chairs, holiday rentals, the grandparents' place: how a 2 kg portable high chair that fits under the pram makes eating out with a baby genuinely easy."
+    }
+  ],
+  "videos": [
+    {
+      "title": "How to set up the Portable High Chair",
+      "summary": "From carry bag to dining chair in under a minute: frame, seat, cushion, tray.",
+      "url": "/pages/how-to-videos"
+    },
+    {
+      "title": "How to take apart the Portable High Chair",
+      "summary": "Step-by-step disassembly for cleaning or packing away.",
+      "url": "/pages/how-to-videos"
+    },
+    {
+      "title": "The 3-point safety harness & Reversible Cushion",
+      "summary": "How to fit the harness correctly and when to use the cushion.",
+      "url": "/pages/how-to-videos"
+    },
+    {
+      "title": "Grab & go: packing the Portable High Chair",
+      "summary": "Fold it flat, slip it in the tote, tuck it under the pram.",
+      "url": "/pages/how-to-videos"
+    }
+  ],
+  "colours": [
+    {
+      "name": "White Sand",
+      "url": "/products/hannie-portable-high-chair-white-sand"
+    },
+    {
+      "name": "Sage Green",
+      "url": "/products/hannie-portable-high-chair-sage-green"
+    },
+    {
+      "name": "Charcoal Black",
+      "url": "/products/hannie-portable-high-chair-charcoal-black"
+    },
+    {
+      "name": "Mahogany Red",
+      "url": "/products/hannie-portable-high-chair-mahogany-red"
+    }
+  ]
+}
