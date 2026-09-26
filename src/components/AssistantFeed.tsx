@@ -11,6 +11,8 @@ const BRANDS: { id: string; label: string; site: string; color: string }[] = [
   { id: "miamily", label: "MiaMily · Ask MiaMily", site: "miamily.com.au", color: "bg-emerald-100 text-emerald-800" },
   { id: "hannie", label: "Hannie · Ask Hannie", site: "hannie.com.au", color: "bg-lime-100 text-lime-800" },
   { id: "matchstick", label: "Matchstick Monkey · Ask the Monkey", site: "matchstickmonkey.com.au", color: "bg-orange-100 text-orange-800" },
+  { id: "magic", label: "Magic · Ask Magic", site: "magicbabyproducts.com.au", color: "bg-pink-100 text-pink-800" },
+  { id: "mamave", label: "Mamave · Ask Mamave", site: "mamave.com.au", color: "bg-fuchsia-100 text-fuchsia-800" },
   { id: "gaia", label: "Gaia Baby · Ask Gaia", site: "gaia-baby.com.au", color: "bg-amber-100 text-amber-800" },
   { id: "smartrike", label: "smarTrike · Ask Wonder", site: "smartrike.com.au", color: "bg-cyan-100 text-cyan-800" },
   { id: "uppababy", label: "UPPAbaby · Ask UPPAbaby", site: "uppababy.com.au", color: "bg-violet-100 text-violet-800" },
