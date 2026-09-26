@@ -866,8 +866,11 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
             // brand going quiet without anyone noticing — flag any live brand
             // with nothing in Now or Next (Later is fine to be sparse this far out).
             const liveBrands = brands.filter(b => b.live !== false);
-            const activeBrandNames = new Set(items.filter(c => (c.horizon === "now" || c.horizon === "next") && c.status !== "Completed").map(c => c.brand));
-            const quiet = liveBrands.filter(b => !activeBrandNames.has(b.name) && ![...activeBrandNames].some(n => n.includes(b.name)));
+            // Case-insensitive — campaigns.brand and brands.name don't always agree on
+            // casing (e.g. "smarTrike" vs "SmarTrike"), which was falsely flagging a
+            // brand with a real campaign live as "quiet" (Mel, 26 Sep 2026).
+            const activeBrandNames = new Set(items.filter(c => (c.horizon === "now" || c.horizon === "next") && c.status !== "Completed").map(c => c.brand.toLowerCase()));
+            const quiet = liveBrands.filter(b => !activeBrandNames.has(b.name.toLowerCase()) && ![...activeBrandNames].some(n => n.includes(b.name.toLowerCase())));
             if (!quiet.length) return null;
             return (
               <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4 no-print">
