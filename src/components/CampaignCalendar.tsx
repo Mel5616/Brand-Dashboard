@@ -825,6 +825,7 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
             </label>
             <button onClick={exportCSV} className="text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3 py-1.5 transition motion-reduce:transition-none">Export CSV</button>
             <button onClick={exportJSON} className="text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3 py-1.5 transition motion-reduce:transition-none">Export JSON</button>
+            <button onClick={() => window.print()} title="Every campaign currently shown on the roadmap, one per page" className="text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3 py-1.5 transition motion-reduce:transition-none">Download all (PDF)</button>
           </>}
         </div>
       </div>
@@ -1295,6 +1296,37 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
           </div>
         </div>
       )}
+
+      {/* "Download all (PDF)" — every non-completed campaign (or all, with
+          Show completed on), one per printed page. Hidden on screen; the
+          global print CSS in globals.css isolates #campaigns-print-all the
+          same way #brief-print isolates a single campaign's drawer. */}
+      <div id="campaigns-print-all" className="hidden">
+        {items
+          .filter(i => showCompleted || i.status !== "Completed")
+          .sort((a, b) => (a.key_date || "").localeCompare(b.key_date || ""))
+          .map((c, i, arr) => (
+            <div key={c.id} className="p-8" style={{ pageBreakAfter: i < arr.length - 1 ? "always" : "auto" }}>
+              <h2 className="text-xl font-bold text-slate-800 mb-1">{c.campaign || "Untitled campaign"}</h2>
+              <p className="text-sm text-gray-500 mb-4">
+                {c.brand} · Tier {c.tier} · {c.status} · {fmtKeyDate(c.key_date)}{c.end_date ? ` – ${fmtKeyDate(c.end_date)}` : ""} · Owner {c.owner || "TBC"}
+              </p>
+              {c.note && <p className="text-sm text-gray-600 mb-4 whitespace-pre-line">{c.note}</p>}
+              <div className="space-y-3">
+                {BRIEF_FIELDS.map(f => {
+                  const val = String(c.brief?.[f.key] ?? "").trim();
+                  if (!val) return null;
+                  return (
+                    <div key={f.key}>
+                      <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">{f.label}</p>
+                      <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">{val}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+      </div>
     </div>
   );
 }
