@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 type Promo = {
   id: number; brand_id: number | null; brand: string; period_start: string; period_end: string;
-  channel: string | null; tier: number | null;
+  channel: string | null; tier: number | null; price: string | null; note: string | null;
 };
 type D2c = {
   id: number; brand: string; brand_id: number | null; sku: string | null; product: string | null;
@@ -145,11 +145,12 @@ export function PromotionalCalendar({ canEdit, brands = [], fy, month }: { canEd
                   {ps.map(p => {
                     const left = pos(p.period_start); const right = pos(p.period_end);
                     const w = Math.max(right - left, 1.5);
+                    const tip = [`Tier ${p.tier ?? "?"}`, p.channel || "Sale", p.price, fmt(p.period_start) + "–" + fmt(p.period_end), p.note].filter(Boolean).join(" · ");
                     return (
-                      <div key={p.id} title={`Tier ${p.tier ?? "?"} · ${p.channel || "Sale"} · ${fmt(p.period_start)}–${fmt(p.period_end)}`}
+                      <div key={p.id} title={tip}
                         className="absolute top-1 h-5 rounded-md text-[10px] text-white font-medium px-1.5 truncate flex items-center shadow-sm transition-transform hover:scale-[1.02] hover:z-10"
                         style={{ left: `${left}%`, width: `${w}%`, background: tierColor(p.tier) }}>
-                        {w > 6 ? (p.channel || "") : ""}
+                        {w > 6 ? (p.price || p.channel || "") : ""}
                       </div>
                     );
                   })}
