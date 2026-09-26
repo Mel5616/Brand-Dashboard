@@ -1,0 +1,195 @@
+{
+  "store": {
+    "name": "Matchstick Monkey Australia",
+    "who": "Official Australian home of Matchstick Monkey, the award-winning teether designed in the UK and loved in over 60 countries. Exclusively distributed in Australia by Coolkidz Australia Pty Ltd, 1 Beyer Road, Braeside VIC 3195 (Melbourne).",
+    "site": "https://www.matchstickmonkey.com.au",
+    "phone": "1300 722 302",
+    "email": "hello@matchstickmonkey.com.au",
+    "instagram": "@matchstickmonkeyau",
+    "support_portal": "https://help.coolkidz.com.au/support/tickets/new"
+  },
+  "offers": [
+    "Buy any 2 teethers (Original or Animal) and save 20%, applied automatically at checkout, no code needed.",
+    "Free standard shipping Australia-wide on orders over $50 (the $50 is counted after the 20% comes off). Under $50 standard shipping is a flat $12.95.",
+    "Both offers combine: two teethers get the 20% off, three teethers or a $50 basket also get free shipping."
+  ],
+  "pages": {
+    "All teethers": "/collections/teething",
+    "Original Teethers (14 colours)": "/collections/original-teethers",
+    "Animal Teethers (Fox, Lion, Giraffe, Tiger, Pig, Shark, Dancing Monkey)": "/collections/animal-teethers",
+    "Baby Sonic Toothbrushes": "/collections/toothbrushes",
+    "Bath Toys": "/collections/bathtime",
+    "Teething Starter Sets (gift sets)": "/collections/bundle-sets",
+    "Accessories (Multi-Use Product Holder)": "/collections/accessories",
+    "New products": "/collections/new-products",
+    "Learning Hub (blog)": "/blogs/news",
+    "About": "/pages/about",
+    "Contact": "/pages/contact",
+    "Shipping policy": "/policies/shipping-policy",
+    "Returns policy": "/policies/refund-policy",
+    "Privacy policy": "/policies/privacy-policy",
+    "Find My Match quiz (three questions, on the homepage)": "/#match",
+    "Colour Lab (see the Original in every colour)": "/#lab"
+  },
+  "product_facts": {
+    "Original Teether (Teething Toy and Gel Applicator)": "The classic monkey. Textured bumps on the back of the head massage sore gums and hold teething gel so it goes onto the gums, not fingers. Easy-grip arms for little hands, flexible and lightweight. 14 colours: Peach, Confetti Cream, Lilac, Olive, Mint Green, Dusty Pink, Baby Blue, Blue, Emerald, Grey, Orange, Pink, Red, Yellow. From $21.00 to $22.95 (the six newer pastel colours are $22.95).",
+    "Animal Teethers": "Same bumps and gel applicator, different characters: Fudge Fox (the charming one), Ludo Lion (the brave one), Gigi Giraffe (the smart one), Teddy Tiger (the new one), Pickle Pig (the gentle one), Shark (the speedy one). $21.00 to $22.95. Dancing Monkey Teether in Blue, $29.95.",
+    "Teething Starter Sets": "Gift-ready box with a full-size animal teether (Ludo Lion or Gigi Giraffe), a mini teether for the pram or nappy bag, and a handy case to keep them clean. $34.95.",
+    "Baby Sonic Toothbrush": "Gentle sonic vibrations, ultra-soft bristles and a protective cap for hygienic storage and travel. AAA battery included. Characters: Monkey, Ludo Lion, Gigi Giraffe, Teddy Tiger, and a Dusty Pink monkey. $24.95. Replacement heads (fit every Baby Sonic Toothbrush) $9.99, swap every 3 months or sooner if bristles splay.",
+    "Bath toys": "Bath Slide Set ($22.95): a slide with three animal rocks to sort and send down, attaches to smooth surfaces. Bath Time Boat Set ($27.95, Red, Blue or Yellow): boat and wobbler with no hidden chambers to trap water. Hair Rinser ($9.95): soft silicone lip sits against the forehead, gentle rainfall or free-flow pour, keeps soapy water out of eyes.",
+    "Multi-Use Product Holder": "$9.95 silicone strap in Blue, Green, Pink or Yellow. Clips a teether, bottle or toy to a pram, bag, highchair or car seat so it stays off the floor.",
+    "Materials": "Every teether is one piece of high quality food-grade, non-toxic, BPA-free silicone with BioCote antimicrobial protection built into the silicone during manufacturing, so it never wears or washes away. BioCote reduces microbes on the surface by up to 99.99% within 2 hours and is proven safe for direct food and water contact.",
+    "Age": "Every teether is tested for babies and toddlers from 3 months to 3 years. The Baby Sonic Toothbrush is for the first teeth, usually from around 6 months.",
+    "Awards": "Award-winning range, safety tested by recognised institutes, sold in over 60 countries. Designed in the UK."
+  },
+  "safety_rules": [
+    "Fridge, yes. Freezer, never: frozen silicone is too hard for tender gums.",
+    "Do not reuse a teether for a second child. Each little one should start with their own.",
+    "Clean regularly: steam or cold water steriliser, boiling water, or the dishwasher.",
+    "Check the teether before each use and replace it if it is damaged or torn.",
+    "Bath time: active adult supervision every time. Never leave a baby or toddler unattended in the bath, even for a moment.",
+    "Rinse bath toys after each bath and let them drain and dry fully. Do not leave them sitting in water.",
+    "Use a smear of low-fluoride toothpaste for children under 3."
+  ],
+  "policies": {
+    "shipping": "Orders are picked and dispatched from the Coolkidz Australia warehouse in Braeside, Melbourne, on business days and sent tracked Australia-wide. Standard shipping is free on orders over $50 and a flat $12.95 below that. Delivery times depend on the carrier and your postcode. The store does not currently ship overseas.",
+    "returns": "Change of mind: exchange or store credit within 30 days of purchase, with proof of purchase, unopened in original packaging with all parts and any bonus items. Wrong or faulty item: contact customer service within 48 hours of receiving it for a return authority; replacements are sent as soon as the goods are back, and return postage is refunded. Do not send anything back without a return authority. Australian Consumer Law rights apply on top of this.",
+    "warranty": "Matchstick Monkey products are covered by Australian Consumer Law guarantees. Faulty or damaged items are replaced, repaired or refunded through Coolkidz Australia customer service."
+  },
+  "teething_map": [
+    "3 to 6 months: first signs, drooling, flushed cheeks, gum rubbing, chewing everything.",
+    "4 to 7 months: first teeth, usually the two bottom front teeth.",
+    "10 to 14 months: first molars, often the grumpiest stretch.",
+    "16 to 23 months: canines fill the gaps.",
+    "2 to 3 years: second molars complete the set of 20 baby teeth."
+  ],
+  "guides": [
+    {
+      "title": "How to Choose the Best Teether for Your Baby",
+      "url": "/blogs/news/best-teether-for-baby-australia",
+      "summary": "Grip, texture, material, cleaning and your baby's stage."
+    },
+    {
+      "title": "Baby Teething Stages Explained: Month by Month",
+      "url": "/blogs/news/baby-teething-stages-month-by-month",
+      "summary": "When each tooth commonly appears and how to support your baby."
+    },
+    {
+      "title": "When Should You Start Brushing Your Baby's Teeth?",
+      "url": "/blogs/news/when-to-start-brushing-babys-teeth",
+      "summary": "Start at the first tooth, twice a day, smear of low-fluoride toothpaste."
+    },
+    {
+      "title": "Why Do Babies Chew Everything?",
+      "url": "/blogs/news/why-do-babies-chew-everything",
+      "summary": "Mouthing vs teething and what is normal."
+    }
+  ],
+  "faq": [
+    {
+      "category": "age",
+      "q": "What age are Matchstick Monkey teethers suitable for?",
+      "a": "All Matchstick Monkey teethers are tested for babies and toddlers from 3 months to 3 years. You can use the same teether for the whole time your child is teething, just keep it clean."
+    },
+    {
+      "category": "how-to",
+      "q": "How does the gel applicator work?",
+      "a": "Squeeze a pea-sized amount of your usual teething gel onto the textured bumps on the back of the monkey's head, hand it over, and let bub chew. The bumps massage the gel onto the gums, including the hard-to-reach back molars, with no gel on fingers or faces."
+    },
+    {
+      "category": "materials",
+      "q": "What are the teethers made from?",
+      "a": "High quality food-grade, non-toxic, BPA-free silicone, with BioCote antimicrobial technology built into the silicone during manufacturing. It reduces microbes on the surface by up to 99.99% within 2 hours and never washes away."
+    },
+    {
+      "category": "care",
+      "q": "Can I put the teether in the fridge or freezer?",
+      "a": "Fridge yes, for extra cooling relief. Freezer no, frozen silicone is too hard for tender gums."
+    },
+    {
+      "category": "care",
+      "q": "How do I clean and sterilise it?",
+      "a": "Each teether is a single piece of silicone with no seams, so use a steam or cold water steriliser, boil it, or run it through the dishwasher."
+    },
+    {
+      "category": "care",
+      "q": "Can I reuse the teether for my second child?",
+      "a": "No. Teethers are chewed hard over months, so each child should start with their own."
+    },
+    {
+      "category": "choosing",
+      "q": "Original or Animal teether, which should I choose?",
+      "a": "They work the same way with the same bumps and gel applicator. The Original comes in 14 colours to match a nursery or pram; the Animals add a character (Fox, Lion, Giraffe, Tiger, Pig, Shark). Many parents keep one of each so there is always a clean one ready. Buy any two and save 20%."
+    },
+    {
+      "category": "choosing",
+      "q": "What is in a Teething Starter Set?",
+      "a": "A full-size Ludo Lion or Gigi Giraffe teether, a mini teether for the pram or nappy bag, and a case to keep them clean. It is the easy gift option at $34.95."
+    },
+    {
+      "category": "dental",
+      "q": "When should I start brushing my baby's teeth?",
+      "a": "As soon as the first tooth appears, usually around 6 months. Brush twice a day for about two minutes with a smear of low-fluoride toothpaste. The Baby Sonic Toothbrush has ultra-soft bristles and gentle vibrations to make it easy."
+    },
+    {
+      "category": "dental",
+      "q": "How often do I change the toothbrush head?",
+      "a": "Every 3 months, sooner if the bristles splay. Replacement heads are $9.99 and fit every Baby Sonic Toothbrush."
+    },
+    {
+      "category": "dental",
+      "q": "Does the toothbrush need batteries?",
+      "a": "Yes, one AAA battery, and it comes included."
+    },
+    {
+      "category": "bath",
+      "q": "Do the bath toys go mouldy inside?",
+      "a": "They are designed not to. There are no squeeze holes or hidden chambers to trap water. Rinse after each bath and let them drain and dry fully."
+    },
+    {
+      "category": "bath",
+      "q": "How does the hair rinser work?",
+      "a": "Fill it, rest the soft silicone lip against your child's forehead, and tip: choose a gentle rainfall or a free-flow pour. The lip keeps soapy water out of the eyes, which makes hair washing calmer."
+    },
+    {
+      "category": "shipping",
+      "q": "Do you ship across Australia and how much is it?",
+      "a": "Yes, from our Melbourne warehouse, tracked Australia-wide. Standard shipping is free on orders over $50, otherwise a flat $12.95."
+    },
+    {
+      "category": "shipping",
+      "q": "Do you ship overseas?",
+      "a": "Not at the moment. Matchstick Monkey has local distributors in over 60 countries, so check the brand's site for yours."
+    },
+    {
+      "category": "offers",
+      "q": "How does the buy 2 save 20% deal work?",
+      "a": "Add any two Original or Animal teethers to your cart and 20% comes off automatically at checkout. No code needed, and it combines with free shipping over $50."
+    },
+    {
+      "category": "returns",
+      "q": "What if I change my mind?",
+      "a": "Exchange or store credit within 30 days, as long as the item is unopened in its original packaging with proof of purchase. See the returns policy for the details."
+    },
+    {
+      "category": "returns",
+      "q": "My item arrived faulty or wrong, what do I do?",
+      "a": "Contact customer service within 48 hours of receiving it with your order number. You will get a return authority, a replacement is sent as soon as the item is back, and return postage is refunded."
+    },
+    {
+      "category": "orders",
+      "q": "Where is my order?",
+      "a": "Check the tracking link in your shipping email first. If it has not arrived in the expected time, contact the Coolkidz Australia team with your order number and they will chase it."
+    },
+    {
+      "category": "stockists",
+      "q": "Where else can I buy Matchstick Monkey in Australia?",
+      "a": "Matchstick Monkey is stocked by major baby retailers and department stores across Australia. Buying here on the official site gets you the full colour range, the buy 2 save 20% deal and local Melbourne dispatch."
+    },
+    {
+      "category": "brand",
+      "q": "Who is behind Matchstick Monkey in Australia?",
+      "a": "Coolkidz Australia, a Melbourne family business finding innovative baby products since 1998. They are the exclusive Australian distributor, so stock, shipping and support are all local."
+    }
+  ]
+}
