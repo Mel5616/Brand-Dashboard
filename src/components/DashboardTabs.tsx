@@ -90,6 +90,7 @@ import { SocialStudio } from "./SocialStudio";
 import { LifecycleFlowGrid } from "./LifecycleFlowGrid";
 import { FlowPerformance } from "./FlowPerformance";
 import { EmailHealthOverview } from "./EmailHealthOverview";
+import { EmailSendTimeline } from "./EmailSendTimeline";
 import { SendCalendar } from "./SendCalendar";
 import { DatabaseSizeCard } from "./DatabaseSizeCard";
 import { StaffCalendar } from "./StaffCalendar";
@@ -2362,6 +2363,7 @@ export function DashboardTabs({
           {active === "email" && (
             <>
               <SectionBar title="Email Performance · Klaviyo" />
+              <EmailSendTimeline />
               <div className="flex items-center justify-between gap-2 mb-2 no-print">
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}
