@@ -283,13 +283,16 @@ export function CampaignBriefSheet({ c }: { c: any }) {
           </div>
         )}
 
-        {/* 7b · Team requirements — what each discipline owns, straight from the brief drawer */}
+        {/* 7b · Team requirements — what each discipline owns, straight from the brief drawer.
+            Each block carries id="req-<key>" so a link like #req-designBrief opens the page
+            scrolled straight to one person's own section, with everyone else's dimmed — send
+            that link to just them instead of the plain share URL (Mel, 26 Sep 2026). */}
         {disciplines.length > 0 && (
           <section>
             <Heading icon={TealDot}>Team requirements</Heading>
-            <div className="grid sm:grid-cols-2 gap-4 print:grid-cols-2">
+            <div id="req-grid" className="grid sm:grid-cols-2 gap-4 print:grid-cols-2">
               {disciplines.map(d => (
-                <div key={d.key} className="break-inside-avoid rounded-xl px-5 py-4" style={{ background: TINT[d.tint].bg }}>
+                <div key={d.key} id={`req-${d.key}`} data-req className="break-inside-avoid rounded-xl px-5 py-4 transition-opacity duration-300" style={{ background: TINT[d.tint].bg }}>
                   <div className="flex items-baseline justify-between gap-2 mb-2">
                     <h3 className="text-[15px] font-medium" style={{ color: TINT[d.tint].strong }}>{d.label}</h3>
                     {d.owner && <span className="text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color: TINT[d.tint].text }}>{d.owner}</span>}
@@ -300,6 +303,30 @@ export function CampaignBriefSheet({ c }: { c: any }) {
                 </div>
               ))}
             </div>
+            <script
+              // Vanilla JS, not React state: this is a server-rendered presentational
+              // component and a hash-triggered scroll/dim doesn't need a re-render.
+              dangerouslySetInnerHTML={{
+                __html: `(function(){
+                  function apply(){
+                    var hash = (location.hash || "").slice(1);
+                    var all = document.querySelectorAll('#req-grid [data-req]');
+                    if (!hash || !document.getElementById(hash)) {
+                      all.forEach(function(el){ el.style.opacity = ""; el.style.outline = ""; });
+                      return;
+                    }
+                    all.forEach(function(el){
+                      if (el.id === hash) { el.style.opacity = "1"; el.style.outline = "3px solid rgba(15,23,42,0.35)"; el.style.outlineOffset = "3px"; }
+                      else { el.style.opacity = "0.35"; el.style.outline = ""; }
+                    });
+                    var target = document.getElementById(hash);
+                    if (target) target.scrollIntoView({ behavior: "smooth", block: "center" });
+                  }
+                  window.addEventListener("hashchange", apply);
+                  if (document.readyState === "complete") apply(); else window.addEventListener("load", apply);
+                })();`,
+              }}
+            />
           </section>
         )}
 
