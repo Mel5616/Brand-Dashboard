@@ -31,6 +31,7 @@
         </div>
       {%- endform -%}
       {%- render 'ck-registry-button', product: product -%}
+      {%- if settings.ck_free_ship > 0 -%}<p class="ck-shipline">Free delivery Australia-wide on orders over {{ settings.ck_free_ship | times: 100 | money_without_trailing_zeros }}. Mix brands in one order and save up to {{ settings.ck_mix_4 }}%.</p>{%- endif -%}
       {%- if settings.ck_mix_enabled -%}<div class="ck-mixnote">Mix brands and save: <b>{{ settings.ck_mix_2 }}%</b> off two brands, <b>{{ settings.ck_mix_3 }}%</b> off three, <b>{{ settings.ck_mix_4 }}%</b> off four or more.</div>{%- endif -%}
       <ul class="ck-perks">{%- assign lines = s.perks | newline_to_br | split: '<br />' -%}{%- for l in lines -%}{%- assign t = l | strip -%}{%- if t != '' -%}<li>{{ t }}</li>{%- endif -%}{%- endfor -%}</ul>
       <div class="ck-stickybar" data-ck-stickybar aria-hidden="true"><div><b>{{ product.title | remove_first: product.vendor | strip | truncate: 34 }}</b><span class="num" data-ck-price>{{ v.price | money }}</span></div><button class="ck-btn small" type="button" data-ck-sticky-add{% unless v.available %} disabled{% endunless %}>{% if v.available %}Add to bag{% else %}Sold out{% endif %}</button></div>

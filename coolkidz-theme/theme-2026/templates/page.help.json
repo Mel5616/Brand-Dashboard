@@ -39,7 +39,7 @@
           "type": "qa",
           "settings": {
             "q": "How much is delivery?",
-            "a": "<p>Standard delivery is free on every order Australia-wide. Everything ships from the Coolkidz warehouse, and large items may arrive separately. <a href=\"/pages/delivery\">Delivery details</a>.</p>"
+            "a": "<p>Standard delivery is free Australia-wide on orders over $100, and $12.95 for orders under $100. Everything ships from the Coolkidz warehouse, and large items may arrive separately. <a href=\"/pages/delivery\">Delivery details</a>.</p>"
           }
         },
         "b3": {

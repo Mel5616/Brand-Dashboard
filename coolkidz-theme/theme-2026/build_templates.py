@@ -22,16 +22,16 @@ def tpl(name, sections, layout="ck"):
 
 # ---------- shared content ----------
 BRANDS = [
-  ("UPPAbaby", "uppababy", "Prams, capsules and nursery", "Designed in the USA", "Prams, capsules and nursery pieces designed around how families actually live. Distributed, warranted and serviced in Australia by Coolkidz.", "https://uppababy.com.au", "ck-m-out.jpg", "sky"),
+  ("UPPAbaby", "uppababy", "Prams, capsules and nursery", "Designed in the USA", "Prams, capsules and nursery pieces designed around how families actually live. Distributed, warranted and serviced in Australia by Coolkidz.", "https://uppababy.com.au", "ck-ub-card.jpg", "sky"),
   ("Nanit", "nanit", "Smart baby monitors", "Designed in the USA", "Overhead HD baby monitors with sleep tracking, plus breathing motion monitoring through the night, all in the Nanit app.", "https://nanit.com.au", "ck-t2.jpg", "sky"),
-  ("Gaia Baby", "gaia baby", "Nursery furniture", "Nursery furniture", "Cots, dressers and nursing chairs like the Eos range, made to grow with your child from the first night.", "https://www.gaia-baby.com.au", "ck-rocker.jpg", "mint"),
+  ("Gaia Baby", "gaia baby", "Nursery furniture", "Nursery furniture", "Cots, dressers and nursing chairs like the Eos range, made to grow with your child from the first night.", "https://www.gaia-baby.com.au", "ck-gaia-card.jpg", "mint"),
   ("WonderFold", "wonderfold", "Stroller wagons", "Designed in California", "Stroller wagons that seat two to six children, from the W2 to the W6, with room for everything else too.", "https://wonderfold.com.au", "ck-wf.jpg", "sky"),
   ("Magic", "magic", "Nappy bins", "Designed in the Netherlands", "Odour-free nappy bins with a twist-and-seal system and no refill cartridges.", "https://magicbabyproducts.com.au", "ck-magic-life.jpg", "mint"),
   ("Frida", "frida", "Baby and postpartum care", "Frida Baby and Frida Mom", "Practical care for babies and new mums, from the NoseFrida to the hospital birth kit.", "https://fridaaustralia.com.au", "ck-t3.jpg", "blush"),
   ("ZAZU", "zazu", "Sleep helpers", "Designed in the Netherlands", "Sleep trainer clocks, nightlights, projectors and white noise for babies and toddlers.", "https://zazu-kids.com.au", "ck-zazu.jpg", "coral"),
   ("MiaMily", "miamily", "Family luggage", "Designed in Switzerland", "Carry-on and check-in suitcases with a built-in seat, so little ones can ride through the airport.", "https://miamily.com.au", "ck-m-travel.jpg", "sky"),
   ("smarTrike", "smartrike", "Stroller-trikes and scooters", "Designed smart since 2006", "The Wonder range of folding stroller-trikes, plus scooters that grow with your child.", "https://smartrike.com.au", "ck-t1.jpg", "coral"),
-  ("Mamave", "mamave", "Skincare for mum and baby", "Skincare", "Gentle skincare for mum and baby, from Mumma's Oil to Bubba's Wash.", "https://mamave.com.au", "ck-mamave.jpg", "blush"),
+  ("Mamave", "mamave", "Skincare for mum and baby", "Australian made skincare", "Gentle skincare for mum and baby, from Mumma's Oil to Bubba's Wash.", "https://mamave.com.au", "ck-mamave.jpg", "blush"),
   ("Matchstick Monkey", "matchstick monkey", "Teething and first brushes", "Trusted in over 60 countries", "Teething toys and first toothbrushes shaped for small hands and sore gums.", "https://www.matchstickmonkey.com.au", "ck-mm-life.jpg", "mint"),
   ("Hannie", "hannie", "Portable high chairs", "Eating out, made easy", "A portable high chair that packs down to go wherever you eat.", "https://hannie.com.au", "ck-hannie.jpg", "coral"),
 ]
@@ -76,7 +76,7 @@ REVIEWS = [
   ("Love the cover it makes it so much easier to travel with and compact especially inside the back of the tray as we don\u2019t have a boot", "Chloe M.", "WonderFold", "W2 travel cover"),
 ]
 REV_BLOCKS = [blk("review", quote=q, name=n, brand=b, product=p) for q, n, b, p in REVIEWS]
-TRUST = [blk("item", title="Official Australian stock", text="Every brand, straight from the distributor"),
+TRUST = [blk("item", title="Free delivery over $100", text="Australia-wide, from our warehouse"),
          blk("item", title="Full Australian warranty", text="One help desk for every brand"),
          blk("item", title="Same price as the brand sites", text="On every single product"),
          blk("item", title="Mix brands, save up to 15%", text="Two or more brands in one order")]
@@ -129,7 +129,7 @@ tpl("page.help.json", [
   sec("ck-faq", {"heading": "Shopping with Coolkidz", "anchor": "faq"}, [
     blk("qa", q="How does mix-and-save work?", a="<p>The discount depends on how many different brands are in your order: 5% for two brands, 10% for three and 15% for four or more. It's applied at checkout.</p>"),
     blk("qa", q="Are the prices the same as the brand websites?", a="<p>Yes. Single products are the same price here as on each brand's own Australian site. The mixed-brand saving only happens here.</p>"),
-    blk("qa", q="How much is delivery?", a="<p>Standard delivery is free on every order Australia-wide. Everything ships from the Coolkidz warehouse, and large items may arrive separately. <a href=\"/pages/delivery\">Delivery details</a>.</p>"),
+    blk("qa", q="How much is delivery?", a="<p>Standard delivery is free Australia-wide on orders over $100, and $12.95 for orders under $100. Everything ships from the Coolkidz warehouse, and large items may arrive separately. <a href=\"/pages/delivery\">Delivery details</a>.</p>"),
     blk("qa", q="How do returns and refunds work?", a="<p>See our <a href=\"/policies/refund-policy\">refund policy</a>. For a faulty product, open a ticket at <a href=\"https://help.coolkidz.com.au\">help.coolkidz.com.au</a> and our team will sort it out.</p>"),
     blk("qa", q="Do products come with an Australian warranty?", a="<p>Yes. Everything is official Australian stock, and warranty claims for every brand go through <a href=\"https://help.coolkidz.com.au\">help.coolkidz.com.au</a>.</p>"),
     blk("qa", q="How does the gift registry work?", a="<p>Create a registry, add products from any of our brands, and share one link. Bought gifts come off the list on their own. <a href=\"/pages/gift-registry\">Start a registry</a>.</p>"),

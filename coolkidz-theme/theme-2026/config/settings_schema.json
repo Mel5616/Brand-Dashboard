@@ -1571,6 +1571,12 @@
     "name": "Coolkidz 2026",
     "settings": [
       {
+        "type": "number",
+        "id": "ck_free_ship",
+        "label": "Free delivery from ($, 0 turns the messages off)",
+        "default": 100
+      },
+      {
         "type": "header",
         "content": "Mix and save"
       },

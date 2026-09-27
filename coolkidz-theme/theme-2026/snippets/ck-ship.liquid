@@ -1,0 +1,13 @@
+{%- comment -%}
+  Free delivery progress. Rendered in the menu drawer and the cart; ck-base.js
+  repaints every [data-ck-ship] after the bag changes.
+{%- endcomment -%}
+{%- assign fs = settings.ck_free_ship | default: 100 | times: 100 -%}
+{%- if fs > 0 -%}
+  {%- assign left = fs | minus: cart.total_price -%}
+  {%- assign w = cart.total_price | times: 100 | divided_by: fs -%}{%- if w > 100 -%}{%- assign w = 100 -%}{%- endif -%}
+  <div class="ck-ship{% if left <= 0 %} done{% endif %}" data-ck-ship>
+    <p data-ck-ship-msg>{%- if cart.item_count == 0 -%}Free delivery Australia-wide on orders over {{ fs | money_without_trailing_zeros }}{%- elsif left > 0 -%}You're <b>{{ left | money }}</b> away from free delivery{%- else -%}<b>You've got free delivery</b>{%- endif -%}</p>
+    <span class="bar"><i data-ck-ship-bar style="width:{{ w }}%"></i></span>
+  </div>
+{%- endif -%}

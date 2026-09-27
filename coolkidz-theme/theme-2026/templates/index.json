@@ -52,8 +52,8 @@
         "b0": {
           "type": "item",
           "settings": {
-            "title": "Official Australian stock",
-            "text": "Every brand, straight from the distributor"
+            "title": "Free delivery over $100",
+            "text": "Australia-wide, from our warehouse"
           }
         },
         "b1": {
@@ -409,7 +409,7 @@
             "origin": "Designed in the USA",
             "story": "Prams, capsules and nursery pieces designed around how families actually live. Distributed, warranted and serviced in Australia by Coolkidz.",
             "site": "https://uppababy.com.au",
-            "asset": "ck-m-out.jpg"
+            "asset": "ck-ub-card.jpg"
           }
         },
         "b1": {
@@ -433,7 +433,7 @@
             "origin": "Nursery furniture",
             "story": "Cots, dressers and nursing chairs like the Eos range, made to grow with your child from the first night.",
             "site": "https://www.gaia-baby.com.au",
-            "asset": "ck-rocker.jpg"
+            "asset": "ck-gaia-card.jpg"
           }
         },
         "b3": {
@@ -514,7 +514,7 @@
             "name": "Mamave",
             "vendor": "mamave",
             "category": "Skincare for mum and baby",
-            "origin": "Skincare",
+            "origin": "Australian made skincare",
             "story": "Gentle skincare for mum and baby, from Mumma's Oil to Bubba's Wash.",
             "site": "https://mamave.com.au",
             "asset": "ck-mamave.jpg"

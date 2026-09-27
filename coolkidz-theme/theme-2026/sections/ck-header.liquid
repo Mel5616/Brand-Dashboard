@@ -98,6 +98,7 @@
       <button class="ck-drawer-x" type="button" data-ck-menu aria-label="Close menu">Close</button>
     </div>
     <form action="{{ routes.search_url }}" method="get" role="search" class="ck-drawer-search"><input class="ck-input" type="search" name="q" placeholder="Search" aria-label="Search"><input type="hidden" name="type" value="product"></form>
+    {%- unless is_biz -%}{%- render 'ck-ship' -%}{%- endunless -%}
     {%- if is_biz -%}
       <nav class="ck-drawer-links">{%- render 'ck-links', text: s.business_links -%}</nav>
     {%- else -%}
@@ -156,7 +157,7 @@
     { "type": "text", "id": "business_url", "label": "Business home", "default": "/pages/business" },
     { "type": "text", "id": "business_handles", "label": "Pages that belong to the business side (handles, comma separated)",
       "default": "business,partner-with-us,for-retailers,become-a-stockist,about,catalogues,events,good-baby-expo,visitor-signin" },
-    { "type": "text", "id": "shop_message", "label": "Shop message", "default": "Mix two or more of our brands in one order and save up to 15%" },
+    { "type": "text", "id": "shop_message", "label": "Shop message", "default": "Free delivery over $100 · Mix two or more brands and save up to 15%" },
     { "type": "text", "id": "biz_message", "label": "Business message", "default": "Trade enquiries 1300 722 302" }
   ]
 }

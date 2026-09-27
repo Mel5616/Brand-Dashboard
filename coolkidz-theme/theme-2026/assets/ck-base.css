@@ -696,3 +696,13 @@ body.ck{font-size:15px}
 .ck-hero .pts{list-style:none;margin:0;padding:0;display:grid;gap:8px;font-size:15px;color:var(--ink)}
 .ck-hero .pts li{position:relative;padding-left:26px}
 .ck-hero .pts li:before{content:"";position:absolute;left:0;top:3px;width:16px;height:16px;border-radius:50%;background:var(--sky) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 8.2l2.2 2.2 4.8-4.8' fill='none' stroke='%230B6A93' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat}
+
+/* free delivery progress */
+.ck-ship{display:grid;gap:8px;padding:14px 16px;border-radius:14px;background:var(--sky);font-size:14px;color:var(--ink)}
+.ck-ship p{margin:0}
+.ck-ship .bar{display:block;height:6px;border-radius:6px;background:rgba(11,106,147,.15);overflow:hidden}
+.ck-ship .bar i{display:block;height:100%;background:var(--blue-ink);border-radius:6px;transition:width .4s ease}
+.ck-ship.done{background:var(--mint)} .ck-ship.done .bar i{background:#3E8E3A}
+.ck-drawer .ck-ship{margin:4px 0 8px}
+.ck-cart .sum .ck-ship{margin:6px 0 2px}
+.ck-shipline{margin:10px 0 0;font-size:13.5px;color:var(--muted)}

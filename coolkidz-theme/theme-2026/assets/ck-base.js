@@ -19,8 +19,21 @@
     if (n === 0) return '';
     return n + ' brand' + (n > 1 ? 's' : '') + ' in your bag' + (n > 1 ? ' (' + pct(n) + '% off)' : '') + '. Add another brand to save ' + pct(n + 1) + '%.';
   }
+  var ship = window.ckShip || 0;
+  function money(c) { return '$' + (c / 100).toFixed(2); }
+  function shipMsg(cart) {
+    if (!ship) return '';
+    var left = ship - cart.total_price;
+    if (!cart.item_count) return 'Free delivery Australia-wide on orders over $' + ship / 100;
+    return left > 0 ? 'You\'re <b>' + money(left) + '</b> away from free delivery' : '<b>You\'ve got free delivery</b>';
+  }
   function paint(cart) {
     var n = brands(cart);
+    $$('[data-ck-ship]').forEach(function (el) {
+      el.classList.toggle('done', cart.total_price >= ship);
+      var m = $('[data-ck-ship-msg]', el); if (m) m.innerHTML = shipMsg(cart);
+      var b = $('[data-ck-ship-bar]', el); if (b) b.style.width = Math.min(100, cart.total_price / ship * 100) + '%';
+    });
     $$('[data-ck-count]').forEach(function (el) { el.textContent = cart.item_count; });
     $$('[data-ck-dots] i').forEach(function (i, k) { i.classList.toggle('on', k < n); });
     return n;
@@ -42,7 +55,7 @@
       .then(refresh)
       .then(function (cart) {
         var n = cart ? brands(cart) : 0;
-        toast('<span>' + (label || 'Added to your bag') + '. ' + nudge(n) + '</span><a href="/cart">View bag</a>');
+        toast('<span>' + (label || 'Added to your bag') + '. ' + nudge(n) + (cart && ship ? ' ' + shipMsg(cart) + '.' : '') + '</span><a href="/cart">View bag</a>');
       })
       .catch(function (e) { toast('<span>' + e.message + '</span>'); });
   }
