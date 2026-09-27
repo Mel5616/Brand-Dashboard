@@ -1,0 +1,55 @@
+{%- comment -%}
+  First-visit chooser on the home page: shop, or business. Asked once per
+  visitor (localStorage); the business choice goes to /pages/business. Not
+  shown on product/collection landings, so ad and search traffic lands
+  straight on what it clicked. Toggle in Theme settings > Coolkidz 2026.
+{%- endcomment -%}
+<div class="ck-welcome" id="ck-welcome" role="dialog" aria-modal="true" aria-labelledby="ck-welcome-h" hidden>
+  <div class="ck-welcome-card">
+    <button class="ck-welcome-x" type="button" data-ck-welcome="shop" aria-label="Close and shop">Close</button>
+    <img class="ck-welcome-logo" src="{{ 'ck-logo.png' | asset_url }}" alt="Coolkidz Australia" width="180" height="69">
+    <h2 id="ck-welcome-h">Welcome to Coolkidz</h2>
+    <p>How can we help today?</p>
+    <div class="ck-welcome-opts">
+      <button type="button" class="ck-welcome-opt shop" data-ck-welcome="shop">
+        <span class="ph"><img src="{{ 'ck-t1.jpg' | asset_img_url: '500x' }}" alt="" loading="lazy"></span>
+        <b>Shop our brands</b>
+        <small>UPPAbaby, Nanit, Gaia Baby and more in one order</small>
+      </button>
+      <a class="ck-welcome-opt biz" href="/pages/business" data-ck-welcome="business">
+        <span class="ph logos">{%- assign ls = 'uppababy,nanit,gaia-baby,wonderfold,frida,magic,zazu,miamily,smartrike' | split: ',' -%}{%- for l in ls -%}<img src="{{ 'ck-logo-' | append: l | append: '.png' | asset_url }}" alt="" loading="lazy">{%- endfor -%}</span>
+        <b>I'm a business</b>
+        <small>Retailers and global brands</small>
+      </a>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var el = document.getElementById('ck-welcome'); if (!el) return;
+  var K = 'ck_welcome_choice', seen;
+  try { seen = localStorage.getItem(K); } catch (e) { seen = '1'; }
+  if (seen || /bot|crawl|spider|lighthouse|slurp/i.test(navigator.userAgent) || /[?&](ck_skip|preview_theme_id)=/.test(location.search) && false) return;
+  var last = document.activeElement;
+  function done(choice) {
+    try { localStorage.setItem(K, choice); } catch (e) {}
+    el.classList.remove('in'); setTimeout(function () { el.hidden = true; document.body.classList.remove('ck-lock'); if (last && last.focus) last.focus(); }, 250);
+  }
+  setTimeout(function () {
+    el.hidden = false; document.body.classList.add('ck-lock');
+    requestAnimationFrame(function () { el.classList.add('in'); });
+    var first = el.querySelector('.ck-welcome-opt'); if (first) first.focus();
+  }, 600);
+  el.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-ck-welcome]');
+    if (b) { var c = b.getAttribute('data-ck-welcome'); if (c === 'business') { try { localStorage.setItem(K, c); } catch (x) {} return; } done(c); return; }
+    if (e.target === el) done('shop');
+  });
+  document.addEventListener('keydown', function (e) {
+    if (el.hidden) return;
+    if (e.key === 'Escape') done('shop');
+    if (e.key === 'Tab') { var f = el.querySelectorAll('button,a'); var a = f[0], z = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); } else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); } }
+  });
+})();
+</script>

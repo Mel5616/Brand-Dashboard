@@ -622,3 +622,31 @@ body.ck-lock{overflow:hidden}
 }
 
 .ck-foot .logo img{filter:none!important;background:none}
+
+/* ===== first-visit welcome chooser ===== */
+.ck-welcome{position:fixed;inset:0;z-index:90;display:grid;place-items:center;padding:16px;background:rgba(27,36,51,0);transition:background .25s}
+.ck-welcome[hidden]{display:none}
+.ck-welcome.in{background:rgba(27,36,51,.45);backdrop-filter:blur(3px)}
+.ck-welcome-card{position:relative;width:min(640px,100%);background:#fff;border-radius:28px;padding:30px clamp(20px,4vw,36px) 28px;text-align:center;box-shadow:0 40px 80px -30px rgba(27,36,51,.5);transform:translateY(16px);opacity:0;transition:transform .3s cubic-bezier(.2,.7,.2,1),opacity .25s}
+.ck-welcome.in .ck-welcome-card{transform:none;opacity:1}
+.ck-welcome .ck-welcome-logo{height:44px;width:auto;margin:0 auto 14px}
+.ck-welcome h2{font-size:clamp(28px,3.4vw,40px)}
+.ck-welcome-card>p{color:var(--soft);margin-top:6px!important}
+.ck-welcome-opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:22px}
+.ck-welcome-opt{display:flex;flex-direction:column;gap:6px;text-align:left;border:0;border-radius:20px;padding:10px 10px 16px;cursor:pointer;text-decoration:none;color:var(--ink);font:inherit;transition:transform .2s,box-shadow .2s}
+.ck-welcome-opt:hover,.ck-welcome-opt:focus-visible{transform:translateY(-3px);box-shadow:0 16px 30px -18px rgba(27,36,51,.5)}
+.ck-welcome-opt.shop{background:var(--sky)} .ck-welcome-opt.biz{background:var(--mint)}
+.ck-welcome-opt .ph{aspect-ratio:4/3;border-radius:14px;overflow:hidden;background:var(--tile)}
+.ck-welcome-opt .ph img{width:100%;height:100%;object-fit:cover}
+.ck-welcome-opt b{font-family:var(--display);font-size:20px;letter-spacing:-.02em;padding:4px 6px 0}
+.ck-welcome-opt small{font-size:13.5px;color:var(--soft);padding:0 6px}
+.ck-welcome-x{position:absolute;top:14px;right:16px;background:none;border:0;font-weight:600;font-size:14px;text-decoration:underline;color:var(--soft);cursor:pointer;min-height:40px}
+@media (max-width:560px){
+  .ck-welcome{place-items:end stretch;padding:0}
+  .ck-welcome-card{border-radius:24px 24px 0 0;padding:22px 16px calc(20px + env(safe-area-inset-bottom,0px));transform:translateY(40px)}
+  .ck-welcome-opt .ph{aspect-ratio:16/9}
+  .ck-welcome .ck-welcome-logo{height:34px}
+}
+@media (prefers-reduced-motion:reduce){.ck-welcome-card{transition:none}}
+.ck-welcome-opt .ph.logos{display:grid;grid-template-columns:repeat(3,1fr);align-items:center;justify-items:center;gap:10px 8px;padding:14px;background:#fff}
+.ck-welcome-opt .ph.logos img{width:auto;height:auto;max-width:80%;max-height:22px;object-fit:contain;filter:brightness(0);opacity:.7}

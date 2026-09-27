@@ -87,6 +87,7 @@
   </main>
   {% sections 'ck-footer-group' %}
   <div class="ck-toast" id="ck-toast" role="status" aria-live="polite" hidden></div>
+  {%- if template.name == 'index' and settings.ck_welcome_enabled -%}{%- render 'ck-welcome' -%}{%- endif -%}
   {%- if settings.ck_ask_enabled -%}{%- render 'ck-assistant' -%}{%- endif -%}
 </body>
 </html>

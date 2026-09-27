@@ -1647,6 +1647,16 @@
         "id": "ck_ask_enabled",
         "label": "Show the Ask Coolkidz assistant",
         "default": true
+      },
+      {
+        "type": "header",
+        "content": "Welcome chooser"
+      },
+      {
+        "type": "checkbox",
+        "id": "ck_welcome_enabled",
+        "label": "Ask first-time home page visitors: shop or business?",
+        "default": true
       }
     ]
   }
