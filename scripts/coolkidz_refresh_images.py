@@ -43,7 +43,7 @@ def pages(b, t, q, key, v=None):
 def stem(url):
     """File name without query, extension, Shopify's _<uuid> suffix or size suffix."""
     n = url.split("?")[0].rsplit("/", 1)[-1].rsplit(".", 1)[0].lower()
-    n = re.sub(r"_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", "", n)
+    n = re.sub(r"_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", "", n)  # Shopify's uniqueness suffix, wherever it sits
     return re.sub(r"_\d+x\d*$", "", n)
 
 
