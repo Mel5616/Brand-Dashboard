@@ -1,0 +1,40 @@
+{%- comment -%} Wholesale on Faire: small retailers, pharmacies, clinics and childcare can order some brands on Faire. One link per brand; blank links are hidden. {%- endcomment -%}
+{%- assign s = section.settings -%}
+{%- capture chips -%}
+  {%- for b in section.blocks -%}{%- if b.settings.url != blank -%}<a class="ck-faire-chip" href="{{ b.settings.url }}" target="_blank" rel="noopener" {{ b.shopify_attributes }}>{{ b.settings.brand }}<span aria-hidden="true">→</span></a>{%- endif -%}{%- endfor -%}
+{%- endcapture -%}
+{%- if chips != blank -%}
+<section class="ck-sec ck-faire{% if s.tint != blank %} ck-tint-{{ s.tint }}{% endif %}" id="{{ s.anchor | default: 'faire' }}"><div class="ck-wrap">
+  <div class="ck-faire-card">
+    <div class="tx">
+      <p class="lock"><b>Coolkidz</b><span>×</span><span class="fa">FAIRE</span></p>
+      <h2>{{ s.heading }}</h2>
+      {%- if s.text != blank -%}<p class="lede">{{ s.text }}</p>{%- endif -%}
+      {%- assign pts = s.points | newline_to_br | split: '<br />' -%}
+      <ul class="pts">{%- for pt in pts -%}{%- assign t = pt | strip -%}{%- if t != blank -%}<li>{{ t }}</li>{%- endif -%}{%- endfor -%}</ul>
+      <p class="pick">{{ s.pick_label }}</p>
+      <div class="chips">{{ chips }}</div>
+      {%- if s.footnote != blank -%}<p class="fine">{{ s.footnote }}</p>{%- endif -%}
+    </div>
+    <div class="ph">{%- render 'ck-img', image: s.image, asset: s.asset, alt: s.image_alt, width: 1000 -%}</div>
+  </div>
+</div></section>
+{%- endif -%}
+{% schema %}
+{ "name": "Wholesale on Faire",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Heading", "default": "Order our brands wholesale on Faire" },
+    { "type": "textarea", "id": "text", "label": "Text", "default": "Pharmacies, clinics, childcare centres, gift shops and boutiques can order these brands in small quantities through Faire, with no trade account needed." },
+    { "type": "textarea", "id": "points", "label": "Key points (one per line)", "default": "Low order minimums, so you can try a brand without a big commitment\nPayment terms for eligible retailers\nFree returns on your first order with each brand" },
+    { "type": "text", "id": "pick_label", "label": "Above the brand buttons", "default": "Choose a brand to open its Faire catalogue:" },
+    { "type": "text", "id": "footnote", "label": "Small print", "default": "Offers and payment terms are set by Faire and depend on eligibility. For larger orders or national accounts, apply to become a stockist." },
+    { "type": "image_picker", "id": "image", "label": "Photo" },
+    { "type": "text", "id": "asset", "label": "Fallback theme asset", "default": "ck-t2.jpg" },
+    { "type": "text", "id": "image_alt", "label": "Photo alt text", "default": "A mother holding her baby in a nursery" },
+    { "type": "select", "id": "tint", "label": "Background", "default": "", "options": [{ "value": "", "label": "White" }, { "value": "sky", "label": "Sky" }, { "value": "mint", "label": "Mint" }, { "value": "blush", "label": "Blush" }, { "value": "paper", "label": "Paper" }] },
+    { "type": "text", "id": "anchor", "label": "Anchor", "default": "faire" } ],
+  "blocks": [{ "type": "brand", "name": "Brand on Faire", "settings": [
+    { "type": "text", "id": "brand", "label": "Brand" },
+    { "type": "text", "id": "url", "label": "Faire link (a Faire Direct link unlocks the new-retailer offer)" } ] }],
+  "presets": [{ "name": "Wholesale on Faire" }] }
+{% endschema %}

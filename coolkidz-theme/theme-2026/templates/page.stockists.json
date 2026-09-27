@@ -1,0 +1,22 @@
+{
+  "layout": "ck",
+  "sections": {
+    "s0": {
+      "type": "ck-page-hero",
+      "settings": {
+        "eyebrow": "Find a stockist",
+        "heading": "<p>See our brands <em>in store</em></p>",
+        "text": "Over 100 Australian baby stores, pharmacies and national retailers stock our brands. Search your postcode to find the nearest one, or shop every brand here online.",
+        "tint": "sky"
+      }
+    },
+    "s1": {
+      "type": "ck-stockists",
+      "settings": {}
+    }
+  },
+  "order": [
+    "s0",
+    "s1"
+  ]
+}

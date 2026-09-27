@@ -291,6 +291,107 @@
       ]
     },
     "s5": {
+      "type": "ck-faire",
+      "settings": {
+        "tint": "paper"
+      },
+      "blocks": {
+        "b0": {
+          "type": "brand",
+          "settings": {
+            "brand": "Frida",
+            "url": ""
+          }
+        },
+        "b1": {
+          "type": "brand",
+          "settings": {
+            "brand": "Matchstick Monkey",
+            "url": ""
+          }
+        },
+        "b2": {
+          "type": "brand",
+          "settings": {
+            "brand": "Mamave",
+            "url": "https://www.faire.com/brand/b_9sre2jk5xw"
+          }
+        },
+        "b3": {
+          "type": "brand",
+          "settings": {
+            "brand": "Hannie",
+            "url": ""
+          }
+        },
+        "b4": {
+          "type": "brand",
+          "settings": {
+            "brand": "ZAZU",
+            "url": ""
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3",
+        "b4"
+      ]
+    },
+    "s6": {
+      "type": "ck-trade-links",
+      "settings": {
+        "heading": "Already a stockist?",
+        "text": "Everything you need to sell our brands, in one place."
+      },
+      "blocks": {
+        "b0": {
+          "type": "link",
+          "settings": {
+            "title": "Asset library",
+            "text": "Product images, logos, videos and point-of-sale files for every brand, on Filecamp.",
+            "cta": "Open Filecamp",
+            "url": "https://coolkidz.filecamp.com/l"
+          }
+        },
+        "b1": {
+          "type": "link",
+          "settings": {
+            "title": "Catalogues",
+            "text": "The latest catalogues and range guides for each brand.",
+            "cta": "View catalogues",
+            "url": "/pages/catalogues"
+          }
+        },
+        "b2": {
+          "type": "link",
+          "settings": {
+            "title": "Find a stockist",
+            "text": "The stockist map parents use to find you. Missing or wrong? Let us know.",
+            "cta": "See the map",
+            "url": "/pages/stockists"
+          }
+        },
+        "b3": {
+          "type": "link",
+          "settings": {
+            "title": "Talk to us",
+            "text": "Orders, range reviews, training and warranty questions.",
+            "cta": "Contact the team",
+            "url": "/pages/contact"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3"
+      ]
+    },
+    "s7": {
       "type": "ck-form",
       "settings": {
         "kind": "retailer",
@@ -308,6 +409,8 @@
     "s2",
     "s3",
     "s4",
-    "s5"
+    "s5",
+    "s6",
+    "s7"
   ]
 }

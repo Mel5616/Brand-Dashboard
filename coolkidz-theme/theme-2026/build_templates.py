@@ -210,6 +210,13 @@ tpl("page.partner-with-us.json", [
     blk("qa", q="How do we start?", a="<p>Send the form below with a little about your brand. We'll come back to you to set up a first conversation.</p>")]),
   sec("ck-form", {"kind": "brand", "eyebrow": "Partner with us", "heading": "Tell us about your brand", "text": "A few details and we'll set up a first conversation with the right people on our team.", "anchor": "enquire", "tint": "sky"}),
 ])
+TRADE_LINKS = sec("ck-trade-links", {"heading": "Already a stockist?", "text": "Everything you need to sell our brands, in one place."}, [
+  blk("link", title="Asset library", text="Product images, logos, videos and point-of-sale files for every brand, on Filecamp.", cta="Open Filecamp", url="https://coolkidz.filecamp.com/l"),
+  blk("link", title="Catalogues", text="The latest catalogues and range guides for each brand.", cta="View catalogues", url="/pages/catalogues"),
+  blk("link", title="Find a stockist", text="The stockist map parents use to find you. Missing or wrong? Let us know.", cta="See the map", url="/pages/stockists"),
+  blk("link", title="Talk to us", text="Orders, range reviews, training and warranty questions.", cta="Contact the team", url="/pages/contact")])
+FAIRE = sec("ck-faire", {"tint": "paper"}, [blk("brand", brand=b, url=u) for b, u in [
+  ("Frida", ""), ("Matchstick Monkey", ""), ("Mamave", "https://www.faire.com/brand/b_9sre2jk5xw"), ("Hannie", ""), ("ZAZU", "")]])
 tpl("page.for-retailers.json", [
   sec("ck-page-hero", {"eyebrow": "For retailers", "heading": "<p>Stock the brands <em>parents ask for</em></p>", "text": "Coolkidz supplies independent baby stores, national chains and online retailers across Australia, with the stock, training and marketing to help you sell.", "btn1_label": "Become a stockist", "btn1_url": "/pages/become-a-stockist", "btn2_label": "View catalogues", "btn2_url": "/pages/catalogues", "asset": "ck-m-nursery.jpg", "tint": "white"}),
   sec("ck-logos"),
@@ -226,11 +233,14 @@ tpl("page.for-retailers.json", [
     blk("step", title="We call", text="A member of our sales team gets in touch to talk range and terms."),
     blk("step", title="Account set up", text="We open your trade account and share catalogues and pricing."),
     blk("step", title="First order", text="Stock ships from our warehouse, with training and point of sale to follow.")]),
+  FAIRE,
+  TRADE_LINKS,
   sec("ck-form", {"kind": "retailer", "eyebrow": "Become a stockist", "heading": "Apply to stock our brands", "text": "Tell us about your store and a member of our sales team will be in touch.", "anchor": "apply", "tint": "mint"}),
 ])
 tpl("page.become-a-stockist.json", [
   sec("ck-page-hero", {"eyebrow": "Become a stockist", "heading": "<p>Bring our brands <em>into your store</em></p>", "text": "Apply below and a member of our sales team will be in touch to talk range, terms and training.", "tint": "mint"}),
   sec("ck-form", {"kind": "retailer", "eyebrow": "Stockist application", "heading": "Tell us about your store", "tint": "sky"}),
+  FAIRE,
   sec("ck-logos"),
 ])
 tpl("page.about-us.json", [
@@ -261,6 +271,9 @@ tpl("page.gift-registry.json", [sec("ck-gift-registry")])
 # ---------- section groups ----------
 open(os.path.join(S, "ck-header-group.json"), "w").write(json.dumps({"type": "header", "name": "Coolkidz header", "sections": {"header": {"type": "ck-header", "settings": {}}}, "order": ["header"]}, indent=2))
 open(os.path.join(S, "ck-footer-group.json"), "w").write(json.dumps({"type": "footer", "name": "Coolkidz footer", "sections": {"popular": {"type": "ck-popular", "settings": {}}, "footer": {"type": "ck-footer", "settings": {}}}, "order": ["popular", "footer"]}, indent=2))
+tpl("page.stockists.json", [
+  sec("ck-page-hero", {"eyebrow": "Find a stockist", "heading": "<p>See our brands <em>in store</em></p>", "text": "Over 100 Australian baby stores, pharmacies and national retailers stock our brands. Search your postcode to find the nearest one, or shop every brand here online.", "tint": "sky"}),
+  sec("ck-stockists")])
 tpl("page.saved.json", [
   sec("ck-page-hero", {"eyebrow": "Saved for later", "heading": "<p>Your <em>saved</em> products</p>", "text": "Everything you've hearted, in one place. Add to your bag when you're ready, and mix brands to save.", "tint": "blush"}),
   sec("ck-saved")])

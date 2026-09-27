@@ -752,3 +752,49 @@ body.ck{font-size:15px}
 .ck-bnpl{margin:6px 0 4px;font-size:14px;color:var(--soft)}
 .ck-bnpl .ap{display:inline-block;background:#B2FCE4;color:#000;font-weight:700;border-radius:999px;padding:1px 9px;font-size:12.5px;letter-spacing:-.01em}
 .ck-cart .sum .ck-bnpl{margin:-4px 0 6px;text-align:right}
+/* find a stockist */
+.ck-stk-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-bottom:10px}
+.ck-stk-bar .f{display:grid;gap:6px;font-size:13px;font-weight:600;color:var(--soft);flex:1 1 200px}
+.ck-stk-bar .ck-input{width:100%}
+.ck-stk-bar .ck-link{background:none;border:0;padding:12px 4px}
+.ck-stk-status{font-size:14px;color:var(--muted);margin:6px 0 16px}
+.ck-stk-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:24px;align-items:start}
+.ck-stk-list{list-style:none;margin:0;padding:0;max-height:620px;overflow:auto;display:grid;gap:10px;padding-right:4px}
+.ck-stk-list li{border:1.5px solid var(--line);border-radius:16px;padding:14px 16px;display:grid;gap:4px;cursor:pointer;background:#fff}
+.ck-stk-list li:hover{border-color:var(--blue)}
+.ck-stk-list .t{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ck-stk-list .tag{font-size:11px;font-weight:600;background:var(--mint);border-radius:999px;padding:2px 8px}
+.ck-stk-list .w{font-size:14px;color:var(--soft)} .ck-stk-list .b{font-size:12.5px;color:var(--muted)}
+.ck-stk-list .ck-link{justify-self:start;font-size:13.5px}
+.ck-stk-map{height:620px;border-radius:20px;overflow:hidden;background:var(--tile);position:sticky;top:90px;z-index:0}
+.ck-stk-more{display:grid;grid-template-columns:1fr 1fr;gap:36px;margin-top:48px}
+.ck-stk-more h2{font-size:clamp(22px,2vw,28px);margin-bottom:14px}
+.ck-stk-nat{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.ck-stk-nat a,.ck-stk-online li{display:grid;gap:4px;padding:14px 16px;border-radius:14px;background:var(--tile);text-decoration:none;color:var(--ink)}
+.ck-stk-online{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.ck-stk-online a{text-decoration:none;color:inherit}
+.ck-stk-nat small,.ck-stk-online small{font-size:12.5px;color:var(--muted)}
+.ck-stk-note{margin-top:30px;font-size:14px;color:var(--muted)}
+@media (max-width:900px){.ck-stk-grid,.ck-stk-more{grid-template-columns:1fr}.ck-stk-map{height:340px;position:static;order:-1}.ck-stk-list{max-height:none}}
+/* faire + trade links */
+.ck-faire-card{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);border-radius:24px;overflow:hidden;background:#fff;box-shadow:0 20px 50px -30px rgba(27,36,51,.35)}
+.ck-faire-card .tx{padding:clamp(28px,4vw,56px);display:flex;flex-direction:column;gap:16px}
+.ck-faire .lock{display:flex;gap:12px;align-items:center;font-size:18px;margin:0}
+.ck-faire .lock span{color:var(--muted)} .ck-faire .lock .fa{letter-spacing:.35em;font-family:Georgia,serif;color:var(--ink)}
+.ck-faire h2{font-size:clamp(28px,3vw,44px)}
+.ck-faire .lede{color:var(--soft);margin:0}
+.ck-faire .pts{list-style:none;margin:0;padding:0;display:grid;gap:10px;font-size:15.5px}
+.ck-faire .pts li{position:relative;padding-left:28px}
+.ck-faire .pts li:before{content:"✓";position:absolute;left:0;color:var(--blue-ink);font-weight:700}
+.ck-faire .pick{margin:6px 0 0;font-size:14px;font-weight:600}
+.ck-faire .chips{display:flex;flex-wrap:wrap;gap:10px}
+.ck-faire-chip{display:inline-flex;gap:8px;align-items:center;background:var(--ink);color:#fff!important;border-radius:999px;padding:12px 20px;font-weight:600;font-size:14.5px;text-decoration:none}
+.ck-faire-chip:hover{background:var(--blue)}
+.ck-faire .fine{font-size:12.5px;color:var(--muted);margin:0}
+.ck-faire-card .ph{position:relative;min-height:420px;min-width:0}
+.ck-faire-card .ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+@media (max-width:900px){.ck-faire-card{grid-template-columns:1fr}.ck-faire-card .ph{min-height:0;aspect-ratio:3/2;order:-1}}
+.ck-tradel-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.ck-tradel-card{display:grid;gap:8px;align-content:start;padding:22px;border-radius:18px;background:var(--tile);text-decoration:none;color:var(--ink)}
+.ck-tradel-card b{font-size:18px} .ck-tradel-card span{font-size:14.5px;color:var(--soft)} .ck-tradel-card em{font-style:normal;font-weight:600;color:var(--blue-ink);font-size:14px}
+.ck-tradel-card:hover{background:var(--sky)}

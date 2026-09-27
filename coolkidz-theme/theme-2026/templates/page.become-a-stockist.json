@@ -20,6 +20,56 @@
       }
     },
     "s2": {
+      "type": "ck-faire",
+      "settings": {
+        "tint": "paper"
+      },
+      "blocks": {
+        "b0": {
+          "type": "brand",
+          "settings": {
+            "brand": "Frida",
+            "url": ""
+          }
+        },
+        "b1": {
+          "type": "brand",
+          "settings": {
+            "brand": "Matchstick Monkey",
+            "url": ""
+          }
+        },
+        "b2": {
+          "type": "brand",
+          "settings": {
+            "brand": "Mamave",
+            "url": "https://www.faire.com/brand/b_9sre2jk5xw"
+          }
+        },
+        "b3": {
+          "type": "brand",
+          "settings": {
+            "brand": "Hannie",
+            "url": ""
+          }
+        },
+        "b4": {
+          "type": "brand",
+          "settings": {
+            "brand": "ZAZU",
+            "url": ""
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3",
+        "b4"
+      ]
+    },
+    "s3": {
       "type": "ck-logos",
       "settings": {}
     }
@@ -27,6 +77,7 @@
   "order": [
     "s0",
     "s1",
-    "s2"
+    "s2",
+    "s3"
   ]
 }
