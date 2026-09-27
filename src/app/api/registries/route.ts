@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
 import { STORES, type StoreKey } from "@/lib/registry";
+import { isStale, syncRegistryOrders } from "@/lib/registrySync";
 
 // Websites > Baby Registry. A read-only view of the registries created on
 // uppababy.com.au and coolkidz.com.au (the storefront writes them through /api/registry/*), so Mel
@@ -8,6 +9,7 @@ import { STORES, type StoreKey } from "@/lib/registry";
 // Owner emails are shown because the team needs to be able to help a parent who
 // has lost their manage link.
 export const revalidate = 0;
+export const maxDuration = 60;
 const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const h = () => ({ apikey: sbKey!, Authorization: `Bearer ${sbKey}`, "Content-Type": "application/json" });
@@ -18,6 +20,10 @@ type Purchase = { registry_id: string; quantity: number; created_at: string; ord
 
 export async function GET() {
   if (!(await getAccess()).role) return NextResponse.json({ ok: false }, { status: 401 });
+  // Pick up any gifts bought since the last look, on both stores (skipped when synced in the last few minutes).
+  await Promise.all((["uppababy", "coolkidz"] as StoreKey[]).map(async s => {
+    try { if (await isStale(s)) await syncRegistryOrders(s); } catch { /* a failed sync must never break the view */ }
+  }));
 
   const [regRes, itemRes, buyRes] = await Promise.all([
     fetch(`${sbUrl}/rest/v1/registries?select=*&order=created_at.desc&limit=500`, { headers: h(), cache: "no-store" }),
