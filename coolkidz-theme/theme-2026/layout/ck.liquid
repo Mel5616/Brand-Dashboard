@@ -58,7 +58,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Figtree:wght@400;500;600;700&display=swap">
   {{ 'ck-base.css' | asset_url | stylesheet_tag }}
-  <script>window.ckMix = { enabled: {{ settings.ck_mix_enabled | default: true | json }}, tiers: [0, 0, {{ settings.ck_mix_2 | default: 10 }}, {{ settings.ck_mix_3 | default: 15 }}, {{ settings.ck_mix_4 | default: 20 }}] };</script>
+  <script>window.ckMix = { enabled: {{ settings.ck_mix_enabled | default: true | json }}, tiers: [0, 0, {{ settings.ck_mix_2 | default: 5 }}, {{ settings.ck_mix_3 | default: 10 }}, {{ settings.ck_mix_4 | default: 15 }}] };</script>
   <script src="{{ 'ck-base.js' | asset_url }}" defer></script>
   {%- if template.name == 'index' -%}
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[

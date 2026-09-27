@@ -25,7 +25,7 @@
           "type": "qa",
           "settings": {
             "q": "How does mix-and-save work?",
-            "a": "<p>The discount depends on how many different brands are in your order: 10% for two brands, 15% for three and 20% for four or more. It's applied at checkout.</p>"
+            "a": "<p>The discount depends on how many different brands are in your order: 5% for two brands, 10% for three and 15% for four or more. It's applied at checkout.</p>"
           }
         },
         "b1": {
