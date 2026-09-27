@@ -3,7 +3,7 @@
 <article class="ck-card">
   <div class="im">
     <a href="{{ product.url }}" aria-label="{{ product.title | escape }}"></a>
-    {%- if product.featured_image -%}{{ product.featured_image | image_url: width: 600 | image_tag: loading: 'lazy', widths: '240,360,480,600', sizes: '(min-width: 1100px) 22vw, (min-width: 900px) 30vw, 45vw', alt: product.featured_image.alt | default: product.title, class: 'a' }}{%- endif -%}
+    {%- if product.featured_image -%}{%- assign ck_alt = product.featured_image.alt | default: product.title -%}{{ product.featured_image | image_url: width: 600 | image_tag: loading: 'lazy', widths: '240,360,480,600', sizes: '(min-width: 1100px) 22vw, (min-width: 900px) 30vw, 45vw', alt: ck_alt, class: 'a' }}{%- endif -%}
     {%- if product.images.size > 1 -%}{{ product.images[1] | image_url: width: 600 | image_tag: loading: 'lazy', widths: '240,360,480,600', sizes: '(min-width: 1100px) 22vw, (min-width: 900px) 30vw, 45vw', alt: '', class: 'b' }}{%- endif -%}
     {%- unless product.available -%}<span class="badge">Sold out</span>{%- else -%}{%- if product.variants.size > 1 -%}<span class="badge">{{ product.variants.size }} options</span>{%- endif -%}{%- endunless -%}
     {%- if product.available -%}
