@@ -1,0 +1,193 @@
+{
+  "layout": "ck",
+  "sections": {
+    "s0": {
+      "type": "ck-page-hero",
+      "settings": {
+        "eyebrow": "For childcare centres",
+        "heading": "<p>Kit for rest time, outings <em>and change rooms</em></p>",
+        "text": "WonderFold stroller wagons, ZAZU sleep aids, Magic nappy bins and Hannie highchairs, supplied by Coolkidz to early learning centres across Australia.",
+        "btn1_label": "Talk to us",
+        "btn1_url": "#apply",
+        "btn2_label": "Order on Faire",
+        "btn2_url": "#faire",
+        "asset": "ck-wf.jpg",
+        "tint": "sky"
+      }
+    },
+    "s1": {
+      "type": "ck-tiles",
+      "settings": {
+        "heading": "<p>What centres use</p>"
+      },
+      "blocks": {
+        "b0": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "WonderFold",
+            "title": "Stroller wagons for outings",
+            "text": "Wagons that seat two to six children, from the W2 to the W6, with room for bags and supplies."
+          }
+        },
+        "b1": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "ZAZU",
+            "title": "Rest time",
+            "text": "White noise machines, nightlights and sleep trainer clocks for sleep rooms."
+          }
+        },
+        "b2": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Magic",
+            "title": "Nappy bins",
+            "text": "Nappy bins that take standard bags, with no refill cartridges to buy."
+          }
+        },
+        "b3": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Hannie",
+            "title": "Portable highchair",
+            "text": "A compact highchair that packs away when you need the space."
+          }
+        },
+        "b4": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Multi-centre",
+            "title": "One supplier for every room",
+            "text": "One order, one invoice and one help desk across all your brands and centres."
+          }
+        },
+        "b5": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Support",
+            "title": "Warranty and parts",
+            "text": "Australian warranty support and spare parts through our help desk."
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5"
+      ]
+    },
+    "s2": {
+      "type": "ck-products",
+      "settings": {
+        "heading": "The childcare range",
+        "collection": "for-childcare",
+        "per_brand": 3,
+        "more_label": "See the full range",
+        "anchor": "range"
+      }
+    },
+    "s3": {
+      "type": "ck-faire",
+      "settings": {
+        "tint": "paper",
+        "text": "ZAZU, Magic and Hannie are also on Faire for small orders. WonderFold wagons are ordered through a Coolkidz trade account.",
+        "asset": "ck-zazu.jpg",
+        "heading": "Start small on Faire"
+      },
+      "blocks": {
+        "b0": {
+          "type": "brand",
+          "settings": {
+            "brand": "ZAZU",
+            "url": "https://www.faire.com/brand/b_d2cwz2ac3a"
+          }
+        },
+        "b1": {
+          "type": "brand",
+          "settings": {
+            "brand": "Magic",
+            "url": "https://www.faire.com/brand/b_sac4k63prj"
+          }
+        },
+        "b2": {
+          "type": "brand",
+          "settings": {
+            "brand": "Hannie",
+            "url": "https://www.faire.com/brand/b_mxerpjq58h"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2"
+      ]
+    },
+    "s4": {
+      "type": "ck-steps",
+      "settings": {
+        "heading": "<p>Two ways to order</p>",
+        "tint": "sky"
+      },
+      "blocks": {
+        "b0": {
+          "type": "step",
+          "settings": {
+            "title": "Try a small first order",
+            "text": "Order ZAZU, Magic or Hannie on Faire, or ask us about wagons."
+          }
+        },
+        "b1": {
+          "type": "step",
+          "settings": {
+            "title": "Open a trade account",
+            "text": "For larger or repeat orders, apply below. Our team will talk you through range and terms."
+          }
+        },
+        "b2": {
+          "type": "step",
+          "settings": {
+            "title": "Get set up to sell",
+            "text": "Product images and copy from our asset library, plus product training for your team."
+          }
+        },
+        "b3": {
+          "type": "step",
+          "settings": {
+            "title": "Ongoing support",
+            "text": "One Australian help desk for warranty and product questions, for you and your customers."
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3"
+      ]
+    },
+    "s5": {
+      "type": "ck-form",
+      "settings": {
+        "kind": "retailer",
+        "store_type": "Childcare or early learning centre",
+        "eyebrow": "Talk to us",
+        "heading": "Open a trade account",
+        "text": "For larger or repeat orders, tell us about your centre and our team will be in touch.",
+        "anchor": "apply",
+        "tint": "mint"
+      }
+    }
+  },
+  "order": [
+    "s0",
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5"
+  ]
+}

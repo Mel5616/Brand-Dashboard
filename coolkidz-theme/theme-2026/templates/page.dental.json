@@ -1,0 +1,185 @@
+{
+  "layout": "ck",
+  "sections": {
+    "s0": {
+      "type": "ck-page-hero",
+      "settings": {
+        "eyebrow": "For dental practices",
+        "heading": "<p>First brushes and teethers <em>for your families</em></p>",
+        "text": "Matchstick Monkey and Frida make baby toothbrushes and teethers parents love. Stock them at reception or add them to new-family take-home packs.",
+        "btn1_label": "Order on Faire",
+        "btn1_url": "#faire",
+        "btn2_label": "Talk to us",
+        "btn2_url": "#apply",
+        "asset": "ck-mm-life.jpg",
+        "tint": "mint"
+      }
+    },
+    "s1": {
+      "type": "ck-tiles",
+      "settings": {
+        "heading": "<p>Made for little mouths</p>"
+      },
+      "blocks": {
+        "b0": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Matchstick Monkey",
+            "title": "Baby Sonic Toothbrush",
+            "text": "A sonic toothbrush sized for babies and toddlers, with replacement heads."
+          }
+        },
+        "b1": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Matchstick Monkey",
+            "title": "Teethers",
+            "text": "Easy-grip teethers and the Teething Toy and Gel Applicator."
+          }
+        },
+        "b2": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Frida",
+            "title": "Fingerbrush and ToothHugger",
+            "text": "A silicone fingerbrush for gums and first teeth, and a toddler toothbrush."
+          }
+        },
+        "b3": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Reception retail",
+            "title": "Small, easy to stock",
+            "text": "Compact, giftable products that suit a front desk display."
+          }
+        },
+        "b4": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Take-home packs",
+            "title": "Bulk for your practice",
+            "text": "Ask us about quantities for new-family or first-visit packs."
+          }
+        },
+        "b5": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Start small",
+            "title": "Low minimums on Faire",
+            "text": "Order a first box through Faire with no trade account."
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5"
+      ]
+    },
+    "s2": {
+      "type": "ck-products",
+      "settings": {
+        "heading": "The dental range",
+        "collection": "for-dental",
+        "per_brand": 4,
+        "more_label": "See the full range",
+        "anchor": "range"
+      }
+    },
+    "s3": {
+      "type": "ck-faire",
+      "settings": {
+        "tint": "paper",
+        "text": "Order Matchstick Monkey or Frida through Faire in small quantities, with no trade account needed.",
+        "asset": "ck-mm-life.jpg",
+        "heading": "Start small on Faire"
+      },
+      "blocks": {
+        "b0": {
+          "type": "brand",
+          "settings": {
+            "brand": "Matchstick Monkey",
+            "url": "https://www.faire.com/brand/b_b28byvvrcg"
+          }
+        },
+        "b1": {
+          "type": "brand",
+          "settings": {
+            "brand": "Frida",
+            "url": "https://www.faire.com/brand/b_52hw6ftb47"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1"
+      ]
+    },
+    "s4": {
+      "type": "ck-steps",
+      "settings": {
+        "heading": "<p>Two ways to order</p>",
+        "tint": "sky"
+      },
+      "blocks": {
+        "b0": {
+          "type": "step",
+          "settings": {
+            "title": "Try a small first order",
+            "text": "Order a first box of toothbrushes and teethers on Faire."
+          }
+        },
+        "b1": {
+          "type": "step",
+          "settings": {
+            "title": "Open a trade account",
+            "text": "For larger or repeat orders, apply below. Our team will talk you through range and terms."
+          }
+        },
+        "b2": {
+          "type": "step",
+          "settings": {
+            "title": "Get set up to sell",
+            "text": "Product images and copy from our asset library, plus product training for your team."
+          }
+        },
+        "b3": {
+          "type": "step",
+          "settings": {
+            "title": "Ongoing support",
+            "text": "One Australian help desk for warranty and product questions, for you and your customers."
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3"
+      ]
+    },
+    "s5": {
+      "type": "ck-form",
+      "settings": {
+        "kind": "retailer",
+        "store_type": "Dental practice",
+        "eyebrow": "Talk to us",
+        "heading": "Open a trade account",
+        "text": "For larger or repeat orders, tell us about your practice and our team will be in touch.",
+        "anchor": "apply",
+        "tint": "mint"
+      }
+    }
+  },
+  "order": [
+    "s0",
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5"
+  ]
+}

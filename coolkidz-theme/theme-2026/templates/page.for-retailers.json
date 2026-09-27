@@ -291,6 +291,50 @@
       ]
     },
     "s5": {
+      "type": "ck-tiles",
+      "settings": {
+        "heading": "<p>Beyond baby stores</p>",
+        "text": "Our brands also suit pharmacies, dental practices and childcare centres."
+      },
+      "blocks": {
+        "b0": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Pharmacies",
+            "title": "Baby health, postpartum and skincare",
+            "text": "Frida, Mamave and Matchstick Monkey.",
+            "link_label": "For pharmacies",
+            "link_url": "/pages/pharmacies"
+          }
+        },
+        "b1": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Dental",
+            "title": "First brushes and teethers",
+            "text": "Matchstick Monkey and Frida.",
+            "link_label": "For dental practices",
+            "link_url": "/pages/dental"
+          }
+        },
+        "b2": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Childcare",
+            "title": "Rest time, outings and change rooms",
+            "text": "WonderFold, ZAZU, Magic and Hannie.",
+            "link_label": "For childcare centres",
+            "link_url": "/pages/childcare"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2"
+      ]
+    },
+    "s6": {
       "type": "ck-faire",
       "settings": {
         "tint": "paper"
@@ -356,7 +400,7 @@
         "b6"
       ]
     },
-    "s6": {
+    "s7": {
       "type": "ck-trade-links",
       "settings": {
         "heading": "Already a stockist?",
@@ -407,7 +451,7 @@
         "b3"
       ]
     },
-    "s7": {
+    "s8": {
       "type": "ck-form",
       "settings": {
         "kind": "retailer",
@@ -427,6 +471,7 @@
     "s4",
     "s5",
     "s6",
-    "s7"
+    "s7",
+    "s8"
   ]
 }

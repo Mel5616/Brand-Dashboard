@@ -1,0 +1,202 @@
+{
+  "layout": "ck",
+  "sections": {
+    "s0": {
+      "type": "ck-page-hero",
+      "settings": {
+        "eyebrow": "For pharmacies",
+        "heading": "<p>Baby and postpartum care <em>parents ask for</em></p>",
+        "text": "Coolkidz is the Australian distributor of Frida, Mamave and Matchstick Monkey. Stock the baby health, postpartum and skincare ranges parents are already searching for.",
+        "btn1_label": "Order on Faire",
+        "btn1_url": "#faire",
+        "btn2_label": "Open a trade account",
+        "btn2_url": "#apply",
+        "asset": "ck-frida.jpg",
+        "tint": "sky"
+      }
+    },
+    "s1": {
+      "type": "ck-tiles",
+      "settings": {
+        "heading": "<p>Why pharmacies stock our brands</p>"
+      },
+      "blocks": {
+        "b0": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Frida",
+            "title": "Baby care and postpartum",
+            "text": "NoseFrida, MediFrida, the Frida Mom recovery range and more: practical, well-known products for new parents."
+          }
+        },
+        "b1": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Mamave",
+            "title": "Australian made skincare",
+            "text": "Gentle skincare for mum and baby, from Mumma's Oil to Bubba's Wash."
+          }
+        },
+        "b2": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Matchstick Monkey",
+            "title": "Teething and first brushing",
+            "text": "Teethers, gel applicators and the Baby Sonic Toothbrush."
+          }
+        },
+        "b3": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Start small",
+            "title": "Low minimums on Faire",
+            "text": "Try a few lines through Faire before committing to a full range."
+          }
+        },
+        "b4": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Samples",
+            "title": "Clinic samples",
+            "text": "Health professionals can ask us about a NoseFrida clinic sample."
+          }
+        },
+        "b5": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Support",
+            "title": "Local stock and warranty",
+            "text": "Shipped from our Victorian warehouse, with one Australian help desk."
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5"
+      ]
+    },
+    "s2": {
+      "type": "ck-products",
+      "settings": {
+        "heading": "The pharmacy range",
+        "text": "A first look at what pharmacies stock. Prices shown are retail.",
+        "collection": "for-pharmacies",
+        "per_brand": 3,
+        "more_label": "See the full range",
+        "anchor": "range"
+      }
+    },
+    "s3": {
+      "type": "ck-faire",
+      "settings": {
+        "tint": "paper",
+        "text": "Order a small first range of Frida, Mamave, Matchstick Monkey or ZAZU through Faire, with no trade account needed.",
+        "asset": "ck-frida.jpg",
+        "heading": "Start small on Faire"
+      },
+      "blocks": {
+        "b0": {
+          "type": "brand",
+          "settings": {
+            "brand": "Frida",
+            "url": "https://www.faire.com/brand/b_52hw6ftb47"
+          }
+        },
+        "b1": {
+          "type": "brand",
+          "settings": {
+            "brand": "Mamave",
+            "url": "https://faire.com/direct/mamave"
+          }
+        },
+        "b2": {
+          "type": "brand",
+          "settings": {
+            "brand": "Matchstick Monkey",
+            "url": "https://www.faire.com/brand/b_b28byvvrcg"
+          }
+        },
+        "b3": {
+          "type": "brand",
+          "settings": {
+            "brand": "ZAZU",
+            "url": "https://www.faire.com/brand/b_d2cwz2ac3a"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3"
+      ]
+    },
+    "s4": {
+      "type": "ck-steps",
+      "settings": {
+        "heading": "<p>Two ways to order</p>",
+        "tint": "sky"
+      },
+      "blocks": {
+        "b0": {
+          "type": "step",
+          "settings": {
+            "title": "Try a small first order",
+            "text": "Order a few lines on Faire and see how they sell."
+          }
+        },
+        "b1": {
+          "type": "step",
+          "settings": {
+            "title": "Open a trade account",
+            "text": "For larger or repeat orders, apply below. Our team will talk you through range and terms."
+          }
+        },
+        "b2": {
+          "type": "step",
+          "settings": {
+            "title": "Get set up to sell",
+            "text": "Product images and copy from our asset library, plus product training for your team."
+          }
+        },
+        "b3": {
+          "type": "step",
+          "settings": {
+            "title": "Ongoing support",
+            "text": "One Australian help desk for warranty and product questions, for you and your customers."
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3"
+      ]
+    },
+    "s5": {
+      "type": "ck-form",
+      "settings": {
+        "kind": "retailer",
+        "store_type": "Pharmacy",
+        "eyebrow": "Talk to us",
+        "heading": "Open a trade account",
+        "text": "For larger or repeat orders, tell us about your pharmacy and our team will be in touch.",
+        "anchor": "apply",
+        "tint": "mint"
+      }
+    }
+  },
+  "order": [
+    "s0",
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5"
+  ]
+}

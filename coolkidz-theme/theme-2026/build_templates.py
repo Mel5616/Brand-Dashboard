@@ -235,6 +235,10 @@ tpl("page.for-retailers.json", [
     blk("step", title="We call", text="A member of our sales team gets in touch to talk range and terms."),
     blk("step", title="Account set up", text="We open your trade account and share catalogues and pricing."),
     blk("step", title="First order", text="Stock ships from our warehouse, with training and point of sale to follow.")]),
+  sec("ck-tiles", {"heading": "<p>Beyond baby stores</p>", "text": "Our brands also suit pharmacies, dental practices and childcare centres."}, [
+    blk("tile", eyebrow="Pharmacies", title="Baby health, postpartum and skincare", text="Frida, Mamave and Matchstick Monkey.", link_label="For pharmacies", link_url="/pages/pharmacies"),
+    blk("tile", eyebrow="Dental", title="First brushes and teethers", text="Matchstick Monkey and Frida.", link_label="For dental practices", link_url="/pages/dental"),
+    blk("tile", eyebrow="Childcare", title="Rest time, outings and change rooms", text="WonderFold, ZAZU, Magic and Hannie.", link_label="For childcare centres", link_url="/pages/childcare")]),
   FAIRE,
   TRADE_LINKS,
   sec("ck-form", {"kind": "retailer", "eyebrow": "Become a stockist", "heading": "Apply to stock our brands", "text": "Tell us about your store and a member of our sales team will be in touch.", "anchor": "apply", "tint": "mint"}),
@@ -276,6 +280,60 @@ open(os.path.join(S, "ck-footer-group.json"), "w").write(json.dumps({"type": "fo
 tpl("page.stockists.json", [
   sec("ck-page-hero", {"eyebrow": "Find a stockist", "heading": "<p>See our brands <em>in store</em></p>", "text": "Over 100 Australian baby stores, pharmacies and national retailers stock our brands. Search your postcode to find the nearest one, or shop every brand here online.", "tint": "sky"}),
   sec("ck-stockists")])
+FAIRE_URL = {"Frida": "https://www.faire.com/brand/b_52hw6ftb47", "Matchstick Monkey": "https://www.faire.com/brand/b_b28byvvrcg", "Mamave": "https://faire.com/direct/mamave",
+             "Hannie": "https://www.faire.com/brand/b_mxerpjq58h", "ZAZU": "https://www.faire.com/brand/b_d2cwz2ac3a", "Magic": "https://www.faire.com/brand/b_sac4k63prj", "MiaMily": "https://www.faire.com/brand/b_arjucws7rh"}
+def faire_for(brands, text, asset):
+    return sec("ck-faire", {"tint": "paper", "text": text, "asset": asset, "heading": "Start small on Faire"}, [blk("brand", brand=b, url=FAIRE_URL[b]) for b in brands])
+def sector_form(kind_label, store_type):
+    return sec("ck-form", {"kind": "retailer", "store_type": store_type, "eyebrow": "Talk to us", "heading": "Open a trade account", "text": f"For larger or repeat orders, tell us about your {kind_label} and our team will be in touch.", "anchor": "apply", "tint": "mint"})
+SECTOR_STEPS = lambda first: sec("ck-steps", {"heading": "<p>Two ways to order</p>", "tint": "sky"}, [
+    blk("step", title="Try a small first order", text=first),
+    blk("step", title="Open a trade account", text="For larger or repeat orders, apply below. Our team will talk you through range and terms."),
+    blk("step", title="Get set up to sell", text="Product images and copy from our asset library, plus product training for your team."),
+    blk("step", title="Ongoing support", text="One Australian help desk for warranty and product questions, for you and your customers.")])
+
+tpl("page.pharmacies.json", [
+  sec("ck-page-hero", {"eyebrow": "For pharmacies", "heading": "<p>Baby and postpartum care <em>parents ask for</em></p>", "text": "Coolkidz is the Australian distributor of Frida, Mamave and Matchstick Monkey. Stock the baby health, postpartum and skincare ranges parents are already searching for.", "btn1_label": "Order on Faire", "btn1_url": "#faire", "btn2_label": "Open a trade account", "btn2_url": "#apply", "asset": "ck-frida.jpg", "tint": "sky"}),
+  sec("ck-tiles", {"heading": "<p>Why pharmacies stock our brands</p>"}, [
+    blk("tile", eyebrow="Frida", title="Baby care and postpartum", text="NoseFrida, MediFrida, the Frida Mom recovery range and more: practical, well-known products for new parents."),
+    blk("tile", eyebrow="Mamave", title="Australian made skincare", text="Gentle skincare for mum and baby, from Mumma's Oil to Bubba's Wash."),
+    blk("tile", eyebrow="Matchstick Monkey", title="Teething and first brushing", text="Teethers, gel applicators and the Baby Sonic Toothbrush."),
+    blk("tile", eyebrow="Start small", title="Low minimums on Faire", text="Try a few lines through Faire before committing to a full range."),
+    blk("tile", eyebrow="Samples", title="Clinic samples", text="Health professionals can ask us about a NoseFrida clinic sample."),
+    blk("tile", eyebrow="Support", title="Local stock and warranty", text="Shipped from our Victorian warehouse, with one Australian help desk.")]),
+  sec("ck-products", {"heading": "The pharmacy range", "text": "A first look at what pharmacies stock. Prices shown are retail.", "collection": "for-pharmacies", "per_brand": 3, "more_label": "See the full range", "anchor": "range"}),
+  faire_for(["Frida", "Mamave", "Matchstick Monkey", "ZAZU"], "Order a small first range of Frida, Mamave, Matchstick Monkey or ZAZU through Faire, with no trade account needed.", "ck-frida.jpg"),
+  SECTOR_STEPS("Order a few lines on Faire and see how they sell."),
+  sector_form("pharmacy", "Pharmacy")])
+
+tpl("page.dental.json", [
+  sec("ck-page-hero", {"eyebrow": "For dental practices", "heading": "<p>First brushes and teethers <em>for your families</em></p>", "text": "Matchstick Monkey and Frida make baby toothbrushes and teethers parents love. Stock them at reception or add them to new-family take-home packs.", "btn1_label": "Order on Faire", "btn1_url": "#faire", "btn2_label": "Talk to us", "btn2_url": "#apply", "asset": "ck-mm-life.jpg", "tint": "mint"}),
+  sec("ck-tiles", {"heading": "<p>Made for little mouths</p>"}, [
+    blk("tile", eyebrow="Matchstick Monkey", title="Baby Sonic Toothbrush", text="A sonic toothbrush sized for babies and toddlers, with replacement heads."),
+    blk("tile", eyebrow="Matchstick Monkey", title="Teethers", text="Easy-grip teethers and the Teething Toy and Gel Applicator."),
+    blk("tile", eyebrow="Frida", title="Fingerbrush and ToothHugger", text="A silicone fingerbrush for gums and first teeth, and a toddler toothbrush."),
+    blk("tile", eyebrow="Reception retail", title="Small, easy to stock", text="Compact, giftable products that suit a front desk display."),
+    blk("tile", eyebrow="Take-home packs", title="Bulk for your practice", text="Ask us about quantities for new-family or first-visit packs."),
+    blk("tile", eyebrow="Start small", title="Low minimums on Faire", text="Order a first box through Faire with no trade account.")]),
+  sec("ck-products", {"heading": "The dental range", "collection": "for-dental", "per_brand": 4, "more_label": "See the full range", "anchor": "range"}),
+  faire_for(["Matchstick Monkey", "Frida"], "Order Matchstick Monkey or Frida through Faire in small quantities, with no trade account needed.", "ck-mm-life.jpg"),
+  SECTOR_STEPS("Order a first box of toothbrushes and teethers on Faire."),
+  sector_form("practice", "Dental practice")])
+
+tpl("page.childcare.json", [
+  sec("ck-page-hero", {"eyebrow": "For childcare centres", "heading": "<p>Kit for rest time, outings <em>and change rooms</em></p>", "text": "WonderFold stroller wagons, ZAZU sleep aids, Magic nappy bins and Hannie highchairs, supplied by Coolkidz to early learning centres across Australia.", "btn1_label": "Talk to us", "btn1_url": "#apply", "btn2_label": "Order on Faire", "btn2_url": "#faire", "asset": "ck-wf.jpg", "tint": "sky"}),
+  sec("ck-tiles", {"heading": "<p>What centres use</p>"}, [
+    blk("tile", eyebrow="WonderFold", title="Stroller wagons for outings", text="Wagons that seat two to six children, from the W2 to the W6, with room for bags and supplies."),
+    blk("tile", eyebrow="ZAZU", title="Rest time", text="White noise machines, nightlights and sleep trainer clocks for sleep rooms."),
+    blk("tile", eyebrow="Magic", title="Nappy bins", text="Nappy bins that take standard bags, with no refill cartridges to buy."),
+    blk("tile", eyebrow="Hannie", title="Portable highchair", text="A compact highchair that packs away when you need the space."),
+    blk("tile", eyebrow="Multi-centre", title="One supplier for every room", text="One order, one invoice and one help desk across all your brands and centres."),
+    blk("tile", eyebrow="Support", title="Warranty and parts", text="Australian warranty support and spare parts through our help desk.")]),
+  sec("ck-products", {"heading": "The childcare range", "collection": "for-childcare", "per_brand": 3, "more_label": "See the full range", "anchor": "range"}),
+  faire_for(["ZAZU", "Magic", "Hannie"], "ZAZU, Magic and Hannie are also on Faire for small orders. WonderFold wagons are ordered through a Coolkidz trade account.", "ck-zazu.jpg"),
+  SECTOR_STEPS("Order ZAZU, Magic or Hannie on Faire, or ask us about wagons."),
+  sector_form("centre", "Childcare or early learning centre")])
+
 tpl("page.saved.json", [
   sec("ck-page-hero", {"eyebrow": "Saved for later", "heading": "<p>Your <em>saved</em> products</p>", "text": "Everything you've hearted, in one place. Add to your bag when you're ready, and mix brands to save.", "tint": "blush"}),
   sec("ck-saved")])
