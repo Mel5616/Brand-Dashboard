@@ -2,12 +2,17 @@
   "type": "footer",
   "name": "Coolkidz footer",
   "sections": {
+    "popular": {
+      "type": "ck-popular",
+      "settings": {}
+    },
     "footer": {
       "type": "ck-footer",
       "settings": {}
     }
   },
   "order": [
+    "popular",
     "footer"
   ]
 }

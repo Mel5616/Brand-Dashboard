@@ -86,10 +86,108 @@
       ]
     },
     "s2": {
+      "type": "ck-categories",
+      "settings": {
+        "heading": "Shop by category"
+      },
+      "blocks": {
+        "b0": {
+          "type": "category",
+          "settings": {
+            "collection": "prams-and-strollers"
+          }
+        },
+        "b1": {
+          "type": "category",
+          "settings": {
+            "collection": "capsules-and-car-seats"
+          }
+        },
+        "b2": {
+          "type": "category",
+          "settings": {
+            "collection": "stroller-wagons"
+          }
+        },
+        "b3": {
+          "type": "category",
+          "settings": {
+            "collection": "cots-and-nursery-furniture"
+          }
+        },
+        "b4": {
+          "type": "category",
+          "settings": {
+            "collection": "baby-monitors"
+          }
+        },
+        "b5": {
+          "type": "category",
+          "settings": {
+            "collection": "sleep"
+          }
+        },
+        "b6": {
+          "type": "category",
+          "settings": {
+            "collection": "feeding-and-highchairs"
+          }
+        },
+        "b7": {
+          "type": "category",
+          "settings": {
+            "collection": "travel"
+          }
+        },
+        "b8": {
+          "type": "category",
+          "settings": {
+            "collection": "nappy-bins"
+          }
+        },
+        "b9": {
+          "type": "category",
+          "settings": {
+            "collection": "baby-and-mum-care"
+          }
+        },
+        "b10": {
+          "type": "category",
+          "settings": {
+            "collection": "teethers-and-toys"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7",
+        "b8",
+        "b9",
+        "b10"
+      ]
+    },
+    "s3": {
+      "type": "ck-products",
+      "settings": {
+        "heading": "Best sellers",
+        "text": "What parents are buying most across our brands right now.",
+        "collection": "best-sellers",
+        "per_brand": 3,
+        "more_label": "See all best sellers",
+        "anchor": "best-sellers"
+      }
+    },
+    "s4": {
       "type": "ck-mix",
       "settings": {}
     },
-    "s3": {
+    "s5": {
       "type": "ck-moments",
       "settings": {},
       "blocks": {
@@ -137,7 +235,7 @@
         "b3"
       ]
     },
-    "s4": {
+    "s6": {
       "type": "ck-products",
       "settings": {
         "heading": "The edit"
@@ -171,7 +269,7 @@
         "b2"
       ]
     },
-    "s5": {
+    "s7": {
       "type": "ck-feature-set",
       "settings": {
         "heading": "Baby number two",
@@ -183,7 +281,7 @@
         "product_4": "zazu-sleeptrainer-sam-camel"
       }
     },
-    "s6": {
+    "s8": {
       "type": "ck-sets",
       "settings": {
         "more_label": "See all sets",
@@ -231,7 +329,7 @@
         "b2"
       ]
     },
-    "s7": {
+    "s9": {
       "type": "ck-reviews",
       "settings": {},
       "blocks": {
@@ -319,7 +417,7 @@
         "b7"
       ]
     },
-    "s8": {
+    "s10": {
       "type": "ck-band",
       "settings": {
         "asset": "ck-reg.jpg",
@@ -351,7 +449,7 @@
         "b2"
       ]
     },
-    "s9": {
+    "s11": {
       "type": "ck-who",
       "settings": {
         "tint": "sky"
@@ -393,7 +491,7 @@
         "b3"
       ]
     },
-    "s10": {
+    "s12": {
       "type": "ck-brands",
       "settings": {
         "more_label": "Meet the brands",
@@ -560,7 +658,7 @@
         "b11"
       ]
     },
-    "s11": {
+    "s13": {
       "type": "ck-journal",
       "settings": {},
       "blocks": {
@@ -648,7 +746,7 @@
         "b7"
       ]
     },
-    "s12": {
+    "s14": {
       "type": "ck-tiles",
       "settings": {
         "tight": true
@@ -706,6 +804,8 @@
     "s9",
     "s10",
     "s11",
-    "s12"
+    "s12",
+    "s13",
+    "s14"
   ]
 }

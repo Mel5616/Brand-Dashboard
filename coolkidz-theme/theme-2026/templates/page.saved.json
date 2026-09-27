@@ -1,0 +1,22 @@
+{
+  "layout": "ck",
+  "sections": {
+    "s0": {
+      "type": "ck-page-hero",
+      "settings": {
+        "eyebrow": "Saved for later",
+        "heading": "<p>Your <em>saved</em> products</p>",
+        "text": "Everything you've hearted, in one place. Add to your bag when you're ready, and mix brands to save.",
+        "tint": "blush"
+      }
+    },
+    "s1": {
+      "type": "ck-saved",
+      "settings": {}
+    }
+  },
+  "order": [
+    "s0",
+    "s1"
+  ]
+}

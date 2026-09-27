@@ -178,4 +178,53 @@
   }
 
   refresh();
+
+  /* save for later (hearts, header count, /pages/saved) */
+  var SK = 'ck_saved';
+  function getSaved() { try { return JSON.parse(localStorage.getItem(SK) || '[]'); } catch (e) { return []; } }
+  function setSaved(a) { try { localStorage.setItem(SK, JSON.stringify(a)); } catch (e) {} paintSaved(); }
+  function paintSaved() {
+    var a = getSaved();
+    $$('[data-ck-save]').forEach(function (b) {
+      var on = a.indexOf(b.getAttribute('data-ck-save')) > -1;
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      var l = $('[data-ck-save-lbl]', b); if (l) l.textContent = on ? 'Saved' : 'Save for later';
+    });
+    $$('[data-ck-saved-count]').forEach(function (el) { el.textContent = a.length; el.hidden = !a.length; });
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-ck-save]'); if (!b) return;
+    e.preventDefault();
+    var h = b.getAttribute('data-ck-save'), a = getSaved(), i = a.indexOf(h);
+    if (i > -1) { a.splice(i, 1); } else { a.unshift(h); toast('<span>Saved for later.</span><a href="/pages/saved">View saved</a>'); }
+    setSaved(a.slice(0, 60));
+    if (i > -1 && b.closest('[data-ck-saved-grid]')) { var c = b.closest('.ck-card'); if (c) c.remove(); if (!getSaved().length) { var em = $('[data-ck-saved-empty]'); if (em) em.hidden = false; } }
+  });
+  paintSaved();
+  var grid = $('[data-ck-saved-grid]');
+  if (grid) {
+    var hs = getSaved(), empty = $('[data-ck-saved-empty]');
+    if (!hs.length && empty) empty.hidden = false;
+    var esc = function (t) { var d = document.createElement('div'); d.textContent = t == null ? '' : t; return d.innerHTML; };
+    Promise.all(hs.map(function (h) { return fetch('/products/' + encodeURIComponent(h) + '.js').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); }))
+      .then(function (ps) {
+        ps.forEach(function (p) {
+          if (!p) return;
+          var v = p.variants.filter(function (x) { return x.available; })[0] || p.variants[0];
+          var vendor = (p.vendor || '').replace(/( Wagons)? Australia$/, '');
+          var title = p.title.indexOf(p.vendor) === 0 ? p.title.slice(p.vendor.length).trim() : p.title;
+          var img = p.featured_image ? p.featured_image.replace(/(\.[a-z]+)(\?|$)/i, '_600x$1$2') : '';
+          var buy = !p.available ? '' : (p.variants.length === 1
+            ? '<form action="/cart/add" method="post" data-ck-add="' + esc(title) + ' added"><input type="hidden" name="id" value="' + v.id + '"><button class="ck-btn small" type="submit">Add to bag</button></form>'
+            : '<a class="ck-btn small" href="' + p.url + '">Choose options</a>');
+          var el = document.createElement('article'); el.className = 'ck-card';
+          el.innerHTML = '<div class="im"><a href="' + p.url + '" aria-label="' + esc(p.title) + '"></a>' + (img ? '<img class="a" src="' + img + '" alt="' + esc(title) + '" loading="lazy">' : '') +
+            (p.available ? '' : '<span class="badges"><span class="badge">Sold out</span></span>') +
+            '<button class="ck-save" type="button" data-ck-save="' + esc(p.handle) + '" aria-pressed="true" aria-label="Remove from saved"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.3s-7.6-4.6-9.2-9.3C1.6 7.4 4 4.2 7.4 4.2c2 0 3.5 1.1 4.6 2.6 1.1-1.5 2.6-2.6 4.6-2.6 3.4 0 5.8 3.2 4.6 6.8-1.6 4.7-9.2 9.3-9.2 9.3z"/></svg></button>' +
+            '<div class="quick">' + buy + '</div></div><div class="meta"><span class="br">' + esc(vendor) + '</span><h3><a href="' + p.url + '">' + esc(title) + '</a></h3><span class="pr num">' + (p.price_varies ? 'From ' : '') + money(p.price) + '</span></div>';
+          grid.appendChild(el);
+        });
+        if (!grid.children.length && empty) empty.hidden = false;
+      });
+  }
 })();

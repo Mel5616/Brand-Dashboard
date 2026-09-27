@@ -82,6 +82,9 @@ TRUST = [blk("item", title="Free delivery over $100", text="Australia-wide, from
          blk("item", title="Mix brands, save up to 15%", text="Two or more brands in one order")]
 
 
+CATEGORIES = ["prams-and-strollers", "capsules-and-car-seats", "stroller-wagons", "cots-and-nursery-furniture", "baby-monitors", "sleep",
+              "feeding-and-highchairs", "travel", "nappy-bins", "baby-and-mum-care", "teethers-and-toys"]
+
 # ---------- home ----------
 tpl("index.json", [
   sec("ck-hero", {}, [
@@ -89,6 +92,8 @@ tpl("index.json", [
     blk("photo", asset="ck-t2.jpg", alt="A mother holding her baby in a nursery with a Nanit monitor", brand="Nanit", product="Pro camera", moment="The nursery", url="/collections/nursery-and-sleep"),
     blk("photo", asset="ck-t3.jpg", alt="A baby resting on a parent's shoulder", brand="Frida", product="Baby care", moment="The first weeks", url="/collections/first-weeks")]),
   sec("ck-trust", {}, TRUST),
+  sec("ck-categories", {"heading": "Shop by category"}, [blk("category", collection=h) for h in CATEGORIES]),
+  sec("ck-products", {"heading": "Best sellers", "text": "What parents are buying most across our brands right now.", "collection": "best-sellers", "per_brand": 3, "more_label": "See all best sellers", "anchor": "best-sellers"}),
   sec("ck-mix"),
   sec("ck-moments", {}, [
     blk("moment", title="The nursery", brands="Gaia · Nanit · Magic", url="/collections/nursery-and-sleep", asset="ck-m-nursery.jpg"),
@@ -255,7 +260,10 @@ tpl("page.gift-registry.json", [sec("ck-gift-registry")])
 
 # ---------- section groups ----------
 open(os.path.join(S, "ck-header-group.json"), "w").write(json.dumps({"type": "header", "name": "Coolkidz header", "sections": {"header": {"type": "ck-header", "settings": {}}}, "order": ["header"]}, indent=2))
-open(os.path.join(S, "ck-footer-group.json"), "w").write(json.dumps({"type": "footer", "name": "Coolkidz footer", "sections": {"footer": {"type": "ck-footer", "settings": {}}}, "order": ["footer"]}, indent=2))
+open(os.path.join(S, "ck-footer-group.json"), "w").write(json.dumps({"type": "footer", "name": "Coolkidz footer", "sections": {"popular": {"type": "ck-popular", "settings": {}}, "footer": {"type": "ck-footer", "settings": {}}}, "order": ["popular", "footer"]}, indent=2))
+tpl("page.saved.json", [
+  sec("ck-page-hero", {"eyebrow": "Saved for later", "heading": "<p>Your <em>saved</em> products</p>", "text": "Everything you've hearted, in one place. Add to your bag when you're ready, and mix brands to save.", "tint": "blush"}),
+  sec("ck-saved")])
 print("events", len(EVENTS), "templates", len(os.listdir(T)))
 
 # ---------- legacy pages moved into the new design ----------

@@ -5,7 +5,14 @@
     <a href="{{ product.url }}" aria-label="{{ product.title | escape }}"></a>
     {%- if product.featured_image -%}{%- assign ck_alt = product.featured_image.alt | default: product.title -%}{{ product.featured_image | image_url: width: 600 | image_tag: loading: 'lazy', widths: '240,360,480,600', sizes: '(min-width: 1100px) 22vw, (min-width: 900px) 30vw, 45vw', alt: ck_alt, class: 'a' }}{%- endif -%}
     {%- if product.images.size > 1 -%}{{ product.images[1] | image_url: width: 600 | image_tag: loading: 'lazy', widths: '240,360,480,600', sizes: '(min-width: 1100px) 22vw, (min-width: 900px) 30vw, 45vw', alt: '', class: 'b' }}{%- endif -%}
-    {%- unless product.available -%}<span class="badge">Sold out</span>{%- else -%}{%- if product.variants.size > 1 -%}<span class="badge">{{ product.variants.size }} options</span>{%- endif -%}{%- endunless -%}
+    {%- assign ck_best = false -%}{%- for c in product.collections -%}{%- if c.handle == 'best-sellers' -%}{%- assign ck_best = true -%}{%- endif -%}{%- endfor -%}
+    <span class="badges">
+      {%- unless product.available -%}<span class="badge">Sold out</span>{%- else -%}
+        {%- if product.tags contains 'ck-new' -%}<span class="badge new">New</span>{%- elsif ck_best -%}<span class="badge best">Best seller</span>{%- endif -%}
+        {%- if product.variants.size > 1 -%}<span class="badge">{{ product.variants.size }} options</span>{%- endif -%}
+      {%- endunless -%}
+    </span>
+    {%- render 'ck-save', product: product -%}
     {%- if product.available -%}
       <div class="quick">
         {%- if product.has_only_default_variant -%}
@@ -23,5 +30,6 @@
     <span class="br">{{ product.vendor | remove: ' Wagons Australia' | remove: ' Australia' }}</span>
     <h3><a href="{{ product.url }}">{{ product.title | remove_first: product.vendor | strip }}</a></h3>
     <span class="pr num">{% if product.price_varies %}From {% endif %}{{ product.price | money }}</span>
+    {%- render 'ck-stars', product: product -%}
   </div>
 </article>

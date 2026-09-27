@@ -1,0 +1,7 @@
+{%- comment -%} Star rating from the standard reviews.rating / rating_count metafields (real brand reviews, set daily by scripts/coolkidz_merch.py). Renders nothing without reviews. {%- endcomment -%}
+{%- assign r = product.metafields.reviews.rating.value -%}
+{%- assign rc = product.metafields.reviews.rating_count.value -%}
+{%- if r and rc > 0 -%}
+  {%- assign pct = r.rating | divided_by: r.scale_max | times: 100 -%}
+  <span class="ck-stars{% if big %} big{% endif %}" aria-label="Rated {{ r.rating | round: 1 }} out of 5 from {{ rc }} review{% if rc != 1 %}s{% endif %}"><span class="s" aria-hidden="true"><i style="width:{{ pct }}%"></i></span><span class="n">{{ r.rating | round: 1 }} ({{ rc }})</span></span>
+{%- endif -%}

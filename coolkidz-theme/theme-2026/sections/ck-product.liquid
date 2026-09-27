@@ -15,6 +15,7 @@
     <div class="ck-buy">
       <a class="br" href="/collections/vendors?q={{ product.vendor | url_encode }}">{{ product.vendor | remove: ' Wagons Australia' | remove: ' Australia' }}</a>
       <h1>{{ product.title | remove_first: product.vendor | strip }}</h1>
+      {%- render 'ck-stars', product: product, big: true -%}
       <div class="price num" data-ck-price>{{ v.price | money }}</div>
       {%- form 'product', product, data-ck-add: 'Added to your bag' -%}
         <input type="hidden" name="id" value="{{ v.id }}">
@@ -30,7 +31,17 @@
           <button class="ck-btn" type="submit" data-ck-atc{% unless v.available %} disabled{% endunless %}>{% if v.available %}Add to bag{% else %}Sold out{% endif %}</button>
         </div>
       {%- endform -%}
-      {%- render 'ck-registry-button', product: product -%}
+      <div class="ck-buyrow2">{%- render 'ck-registry-button', product: product -%}{%- render 'ck-save', product: product, label: true -%}</div>
+      {%- comment -%} Click and collect: Shopify fills store_availabilities once local pickup is switched on for a location (Settings > Shipping and delivery > Local pickup). {%- endcomment -%}
+      {%- assign pick = v.store_availabilities | where: 'pick_up_enabled', true -%}
+      {%- if pick.size > 0 -%}
+        <div class="ck-pickup">
+          {%- for a in pick limit: 1 -%}
+            {%- if a.available -%}<p><b>Free click and collect</b> from {{ a.location.name }}. {{ a.pick_up_time }}.</p>{%- else -%}<p><b>Click and collect</b> isn't available for this item right now, but delivery is.</p>{%- endif -%}
+            {%- if a.location.address.city != blank -%}<small>{{ a.location.address.address1 }}, {{ a.location.address.city }}</small>{%- endif -%}
+          {%- endfor -%}
+        </div>
+      {%- endif -%}
       {%- if settings.ck_free_ship > 0 -%}<p class="ck-shipline">Free delivery Australia-wide on orders over {{ settings.ck_free_ship | times: 100 | money_without_trailing_zeros }}. Mix brands in one order and save up to {{ settings.ck_mix_4 }}%.</p>{%- endif -%}
       {%- if settings.ck_mix_enabled -%}<div class="ck-mixnote">Mix brands and save: <b>{{ settings.ck_mix_2 }}%</b> off two brands, <b>{{ settings.ck_mix_3 }}%</b> off three, <b>{{ settings.ck_mix_4 }}%</b> off four or more.</div>{%- endif -%}
       <ul class="ck-perks">{%- assign lines = s.perks | newline_to_br | split: '<br />' -%}{%- for l in lines -%}{%- assign t = l | strip -%}{%- if t != '' -%}<li>{{ t }}</li>{%- endif -%}{%- endfor -%}</ul>

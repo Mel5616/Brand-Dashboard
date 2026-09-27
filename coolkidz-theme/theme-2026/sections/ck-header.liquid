@@ -20,6 +20,7 @@
     {%- endif -%}
   {%- endfor -%}
 {%- endcapture -%}
+{%- capture cats_html -%}{%- render 'ck-links', text: s.category_links, wrap: 'li' -%}{%- endcapture -%}
 {%- capture brands_html -%}
   {%- for line in brand_lines -%}
     {%- assign p = line | strip | split: '|' -%}
@@ -49,6 +50,7 @@
           <div class="ck-mm-panel" role="region" aria-label="Shop menu">
             <div class="ck-wrap ck-mm-grid">
               <div class="col moments"><span class="ck-eyebrow">Shop by moment</span><div class="ck-mm-moments">{{ moments_html }}</div><a class="ck-link" href="/collections/all">Shop everything</a></div>
+              <div class="col"><span class="ck-eyebrow">Shop by category</span><ul class="ck-mm-list cats">{{ cats_html }}</ul><a class="ck-link" href="/collections/best-sellers">Best sellers</a></div>
               <div class="col"><span class="ck-eyebrow">Brands</span><div class="ck-mm-brands">{{ brands_html }}</div></div>
               <div class="col"><span class="ck-eyebrow">Sets and gifting</span>
                 <ul class="ck-mm-list">{%- render 'ck-links', text: s.gifting_links, wrap: 'li' -%}</ul>
@@ -79,6 +81,7 @@
     <div class="ck-tools">
       <a class="srch" href="{{ routes.search_url }}" data-ck-search>Search</a>
       <a class="acct" href="{{ routes.account_url }}">Account</a>
+      <a class="ck-savedlink" href="/pages/saved" aria-label="Saved for later"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.3s-7.6-4.6-9.2-9.3C1.6 7.4 4 4.2 7.4 4.2c2 0 3.5 1.1 4.6 2.6 1.1-1.5 2.6-2.6 4.6-2.6 3.4 0 5.8 3.2 4.6 6.8-1.6 4.7-9.2 9.3-9.2 9.3z"/></svg><span class="num" data-ck-saved-count hidden></span></a>
       <a class="ck-bag" href="{{ routes.cart_url }}">Bag (<span class="num" data-ck-count>{{ cart.item_count }}</span>) <span class="ck-dots" data-ck-dots aria-hidden="true"><i></i><i></i><i></i><i></i></span></a>
     </div>
   </div>
@@ -102,13 +105,15 @@
     {%- if is_biz -%}
       <nav class="ck-drawer-links">{%- render 'ck-links', text: s.business_links -%}</nav>
     {%- else -%}
-      <details class="ck-acc" open><summary>Shop by moment</summary><div class="ck-mm-moments">{{ moments_html }}</div><a class="ck-link" href="/collections/all">Shop everything</a></details>
+      <details class="ck-acc" open><summary>Shop by category</summary><ul class="ck-mm-list cats">{{ cats_html }}</ul><a class="ck-link" href="/collections/best-sellers">Best sellers</a></details>
+      <details class="ck-acc"><summary>Shop by moment</summary><div class="ck-mm-moments">{{ moments_html }}</div><a class="ck-link" href="/collections/all">Shop everything</a></details>
       <details class="ck-acc"><summary>Brands</summary><div class="ck-mm-brands">{{ brands_html }}</div></details>
       <details class="ck-acc"><summary>Sets and gifting</summary><ul class="ck-mm-list">{%- render 'ck-links', text: s.gifting_links, wrap: 'li' -%}</ul></details>
       <nav class="ck-drawer-links">{%- render 'ck-links', text: s.shop_links -%}</nav>
     {%- endif -%}
     <div class="ck-drawer-foot">
       <a href="{{ routes.account_url }}">Account</a>
+      <a href="/pages/saved">Saved for later</a>
       <a href="https://help.coolkidz.com.au">Help desk</a>
       <span>{{ s.biz_message }}</span>
     </div>
@@ -122,6 +127,7 @@
   "settings": [
     { "type": "image_picker", "id": "logo", "label": "Logo (defaults to the colour Coolkidz logo)" },
     { "type": "header", "content": "Shop menu" },
+    { "type": "textarea", "id": "category_links", "label": "Categories (Label | /url per line)", "default": "Prams and strollers | /collections/prams-and-strollers\nCapsules and car seats | /collections/capsules-and-car-seats\nStroller wagons | /collections/stroller-wagons\nCots and nursery furniture | /collections/cots-and-nursery-furniture\nBaby monitors | /collections/baby-monitors\nSleep | /collections/sleep\nFeeding and highchairs | /collections/feeding-and-highchairs\nTravel | /collections/travel\nNappy bins | /collections/nappy-bins\nBaby and mum care | /collections/baby-and-mum-care\nTeethers and toys | /collections/teethers-and-toys" },
     { "type": "textarea", "id": "shop_links", "label": "Links after Shop and Brands (Label | /url per line)", "default": "Sets | /pages/sets\nGift Registry | /pages/gift-registry\nJournal | /blogs/news" },
     { "type": "textarea", "id": "brands", "label": "Brands (Name | Shopify vendor | what they make)",
       "default": "UPPAbaby | UPPAbaby | Prams and capsules\nNanit | Nanit | Smart baby monitors\nGaia Baby | Gaia Baby | Nursery furniture\nWonderFold | WonderFold | Stroller wagons\nMagic | Magic | Nappy bins\nFrida | Frida | Baby and postpartum care\nZAZU | ZAZU | Sleep helpers\nMiaMily | MiaMily | Family luggage\nsmarTrike | smarTrike | Stroller-trikes\nMamave | Mamave | Mum and baby skincare\nMatchstick Monkey | Matchstick Monkey | Teething\nHannie | Hannie | Portable high chairs" },
