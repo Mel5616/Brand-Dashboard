@@ -1,5 +1,5 @@
 import { storeCreds, mintToken } from "@/lib/shopifyMint";
-import { rest, h } from "@/lib/registry";
+import { rest, h, STORES, type StoreKey } from "@/lib/registry";
 
 // Turns real Shopify orders into confirmed registry gifts.
 //
@@ -9,7 +9,6 @@ import { rest, h } from "@/lib/registry";
 // keyed on (order_id, line_item_id), so running the sync twice cannot count
 // the same gift twice.
 
-const UPPABABY_BRAND_ID = 5;
 const API = "2024-01";   // matches lib/tuneupShopify.ts
 export const STALE_MINUTES = 10;
 
@@ -19,15 +18,19 @@ type LineItem = {
   properties?: { name: string; value: string }[] | null;
 };
 
-export async function lastRunAt(): Promise<Date | null> {
-  const res = await rest("registry_sync?id=eq.1&select=last_run_at");
+// Each store keeps its own last-run time in registry_sync_stores, so a busy
+// Coolkidz list doesn't hold back UPPAbaby's sync or the other way round.
+const syncRow = (store: StoreKey) => `registry_sync_stores?store=eq.${store}`;
+
+export async function lastRunAt(store: StoreKey = "uppababy"): Promise<Date | null> {
+  const res = await rest(`${syncRow(store)}&select=last_run_at`);
   if (!res.ok) return null;
   const row = (await res.json().catch(() => []))?.[0];
   return row?.last_run_at ? new Date(row.last_run_at) : null;
 }
 
-export async function isStale(): Promise<boolean> {
-  const last = await lastRunAt();
+export async function isStale(store: StoreKey = "uppababy"): Promise<boolean> {
+  const last = await lastRunAt(store);
   if (!last) return true;
   return Date.now() - last.getTime() > STALE_MINUTES * 60 * 1000;
 }
@@ -35,16 +38,16 @@ export async function isStale(): Promise<boolean> {
 /** Scans recent orders and records any registry gifts found. Returns how many
  *  new gift lines were recorded. Safe to call concurrently: the unique
  *  constraint on the order line is what makes a double run harmless. */
-export async function syncRegistryOrders(): Promise<{ ok: boolean; recorded: number; error?: string }> {
-  const cred = storeCreds().find(s => s.id === UPPABABY_BRAND_ID);
-  if (!cred) return { ok: false, recorded: 0, error: "UPPAbaby store not configured" };
+export async function syncRegistryOrders(store: StoreKey = "uppababy"): Promise<{ ok: boolean; recorded: number; error?: string }> {
+  const cred = storeCreds().find(s => s.id === STORES[store].brandId);
+  if (!cred) return { ok: false, recorded: 0, error: `${STORES[store].brand} store not configured` };
 
   // Claim the run before doing any work. Two readers landing at once would
   // otherwise both decide the sync is stale and both scan the same orders.
   const claimed = new Date().toISOString();
-  await rest("registry_sync?id=eq.1", {
-    method: "PATCH", headers: h({ Prefer: "return=minimal" }),
-    body: JSON.stringify({ last_run_at: claimed }),
+  await rest("registry_sync_stores?on_conflict=store", {
+    method: "POST", headers: h({ Prefer: "resolution=merge-duplicates,return=minimal" }),
+    body: JSON.stringify({ store, last_run_at: claimed }),
   });
 
   const token = await mintToken(cred);
@@ -86,7 +89,7 @@ export async function syncRegistryOrders(): Promise<{ ok: boolean; recorded: num
   // Resolve share tokens to registry ids in one go.
   const tokens = [...new Set(rows.map(r => String(r._share)))];
   const inList = tokens.map(t => `"${t.replace(/"/g, "")}"`).join(",");
-  const regRes = await rest(`registries?share_token=in.(${encodeURIComponent(inList)})&select=id,share_token`);
+  const regRes = await rest(`registries?share_token=in.(${encodeURIComponent(inList)})&store=eq.${store}&select=id,share_token`);
   const regs: { id: string; share_token: string }[] = (await regRes.json().catch(() => [])) || [];
   const byToken = new Map(regs.map(r => [r.share_token, r.id]));
 
@@ -118,7 +121,7 @@ export async function syncRegistryOrders(): Promise<{ ok: boolean; recorded: num
     await rest(`registry_holds?registry_item_id=eq.${encodeURIComponent(itemId)}`, { method: "DELETE" });
   }
 
-  await rest("registry_sync?id=eq.1", {
+  await rest(syncRow(store), {
     method: "PATCH", headers: h({ Prefer: "return=minimal" }),
     body: JSON.stringify({ last_run_at: new Date().toISOString(), last_count: inserted }),
   });

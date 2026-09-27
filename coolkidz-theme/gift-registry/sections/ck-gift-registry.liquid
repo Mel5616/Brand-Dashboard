@@ -1,0 +1,97 @@
+{%- comment -%}
+  Coolkidz Gift Registry. One page, three states, decided by the URL:
+    /pages/gift-registry                 find a registry, or create one
+    /pages/gift-registry?r=TOKEN         what family and friends see
+    /pages/gift-registry?manage=TOKEN    what the parents see
+  Drawn by assets/ck-registry.js against the brand-dashboard registry API
+  (store "coolkidz"). Nothing about a registry is rendered in Liquid, so a
+  share or manage token can never end up in a Shopify page cache.
+{%- endcomment -%}
+{%- assign s = section.settings -%}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Figtree:wght@400;500;600;700&display=swap">
+{{ 'ck-registry.css' | asset_url | stylesheet_tag }}
+<script>
+(function(){try{if(/[?&](r|manage)=/.test(location.search))document.documentElement.classList.add('ckr-token');}catch(e){}})();
+</script>
+
+<div class="ckr" data-ck-registry data-api="{{ s.api_base | escape }}">
+  <div class="ckr-marketing">
+    <section class="ckr-hero">
+      <div class="ckr-wrap ckr-hero-in">
+        <div>
+          <span class="ckr-eyebrow">{{ s.eyebrow | escape }}</span>
+          <h1>{{ s.heading }}</h1>
+          <p class="ckr-lede">{{ s.body | escape }}</p>
+          <div class="ckr-ctas">
+            <a class="ckr-btn" href="#ckr-create">Create a registry</a>
+            <a class="ckr-btn ckr-line" href="#ckr-find">Find a registry</a>
+          </div>
+          <p class="ckr-mine" data-ckr-mine hidden>You have a registry on this device. <a href="#">Open your list</a></p>
+        </div>
+        <div class="ckr-perks">
+          <div class="ckr-perk ckr-sky"><b>Every brand</b><span>UPPAbaby, Nanit, Gaia Baby, WonderFold, Frida and more on one list.</span></div>
+          <div class="ckr-perk ckr-mint"><b>No doubling up</b><span>Bought gifts come off the list on their own.</span></div>
+          <div class="ckr-perk ckr-blush"><b>One link</b><span>Share it with family and friends. No accounts or passwords.</span></div>
+          <div class="ckr-perk ckr-coral"><b>Your way</b><span>Set how many of each, and leave a note on anything.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="ckr-wrap ckr-block" id="ckr-find">
+      <form class="ckr-find" data-ckr-find role="search">
+        <div><h2>Find a registry</h2><p>Search by the parents' first or last name.</p></div>
+        <div>
+          <label class="ckr-eyebrow" for="ckr-q">Parent's name</label>
+          <div class="ckr-sbox"><input id="ckr-q" name="q" autocomplete="off" placeholder="e.g. Priya"><button class="ckr-btn" type="submit">Search</button></div>
+          <div class="ckr-results" data-ckr-results aria-live="polite"></div>
+        </div>
+      </form>
+    </section>
+
+    <section class="ckr-wrap ckr-block" id="ckr-create">
+      <div class="ckr-create">
+        <div>
+          <span class="ckr-eyebrow">Create your registry</span>
+          <h2>Start your list in two minutes</h2>
+          <ol class="ckr-steps">
+            <li><b>1</b><span>Tell us your names and due date.</span></li>
+            <li><b>2</b><span>Shop any brand and press <em>Add to gift registry</em>.</span></li>
+            <li><b>3</b><span>Share your link with family and friends.</span></li>
+          </ol>
+        </div>
+        <form class="ckr-form" data-ckr-create novalidate>
+          <p class="ckr-pending" data-ckr-pending hidden>Create your registry and we'll add the product you picked straight away.</p>
+          <label>Your name<input name="ownerName" required autocomplete="name"></label>
+          <label>Partner's name (optional)<input name="partnerName"></label>
+          <label>Email<input name="ownerEmail" type="email" required autocomplete="email"></label>
+          <label>Due date or arrival (optional)<input name="dueDate" type="date"></label>
+          <label>Suburb (optional)<input name="shipSuburb" autocomplete="address-level2"></label>
+          <label>State (optional)
+            <select name="shipState"><option value=""></option><option>VIC</option><option>NSW</option><option>QLD</option><option>WA</option><option>SA</option><option>TAS</option><option>ACT</option><option>NT</option></select>
+          </label>
+          <label class="ckr-full">A note for your guests (optional)<textarea name="greeting" maxlength="600"></textarea></label>
+          <label class="ckr-full ckr-check"><input type="checkbox" name="listed" checked> Let guests find my registry by name</label>
+          <div class="ckr-full"><button class="ckr-btn" type="submit">Create my registry</button> <span class="ckr-error" data-ckr-error role="alert"></span></div>
+          <p class="ckr-full ckr-fine">We'll email you two links: one to manage your list, one to share. No account needed.</p>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <div class="ckr-wrap ckr-app" data-ckr-app></div>
+</div>
+<script src="{{ 'ck-registry.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "Gift registry",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Coolkidz Gift Registry" },
+    { "type": "richtext", "id": "heading", "label": "Heading", "default": "<p>One gift registry for every brand</p>" },
+    { "type": "textarea", "id": "body", "label": "Intro", "default": "Add the pram, the cot, the monitor and the little things from all of our brands to one list. Family and friends buy from one link, and bought gifts come off the list on their own." },
+    { "type": "text", "id": "api_base", "label": "Registry API", "default": "https://marketing.coolkidz.com.au/api/registry" }
+  ],
+  "presets": [{ "name": "Gift registry" }]
+}
+{% endschema %}

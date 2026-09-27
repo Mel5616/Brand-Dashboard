@@ -1,5 +1,5 @@
 import { NextResponse, after } from "next/server";
-import { configured, rest, cors, missingTable, publicItem, type ItemRow } from "@/lib/registry";
+import { configured, rest, cors, missingTable, publicItem, storeOf, type ItemRow } from "@/lib/registry";
 import { isStale, syncRegistryOrders } from "@/lib/registrySync";
 
 // Public, CORS-open. One token in, one registry out.
@@ -33,7 +33,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
     );
   }
   const reg = (JSON.parse(text) || [])[0];
-  if (!reg || reg.status === "archived") {
+  // A registry opens only on the site it was made on.
+  const store = storeOf(req, new URL(req.url).searchParams.get("store"));
+  if (!reg || reg.status === "archived" || (reg.store || "uppababy") !== store) {
     return NextResponse.json({ ok: false, error: "That registry link isn't valid" }, { status: 404, headers: co });
   }
   const owned = token === reg.manage_token;
@@ -54,7 +56,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
   // the response, and only when the last run has gone stale, so the reader
   // waits for nothing and a busy list does not scan orders on every refresh.
   after(async () => {
-    try { if (await isStale()) await syncRegistryOrders(); } catch { /* a failed sync must never break a view */ }
+    try { if (await isStale(store)) await syncRegistryOrders(store); } catch { /* a failed sync must never break a view */ }
   });
 
   const shaped = items.map(i => publicItem(i, heldBy.get(i.id) || 0));
@@ -72,7 +74,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
       greeting: reg.greeting,
       shipSuburb: reg.ship_suburb,
       shipState: reg.ship_state,
-      ...(owned ? { ownerEmail: reg.owner_email, manageToken: reg.manage_token } : {}),
+      ...(owned ? { ownerEmail: reg.owner_email, manageToken: reg.manage_token, listed: Boolean(reg.listed) } : {}),
     },
     progress: { wanted, purchased },
     items: shaped,

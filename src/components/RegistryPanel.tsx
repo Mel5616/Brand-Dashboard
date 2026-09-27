@@ -2,10 +2,10 @@
 import React from "react";
 
 // Websites > Baby Registry. Read only: the registries themselves are created
-// and edited on uppababy.com.au, this is the window onto them.
+// and edited on uppababy.com.au and coolkidz.com.au, this is the window onto them.
 type Row = {
   id: string; ownerName: string; partnerName: string | null; ownerEmail: string;
-  dueDate: string | null; status: string; createdAt: string; shareUrl: string;
+  dueDate: string | null; status: string; createdAt: string; shareUrl: string; store?: string;
   items: number; wanted: number; bought: number; listValue: number; boughtValue: number;
   topItem: string | null; lastPurchase: string | null; orders: string[];
 };
@@ -101,7 +101,12 @@ export function RegistryPanel() {
                 <tr key={r.id} className="border-b border-gray-50 align-top">
                   <td className="py-2 pr-3 whitespace-nowrap text-gray-500">{day(r.createdAt)}</td>
                   <td className="py-2 pr-3">
-                    <div className="text-slate-700">{[r.ownerName, r.partnerName].filter(Boolean).join(" and ")}</div>
+                    <div className="text-slate-700">
+                      {[r.ownerName, r.partnerName].filter(Boolean).join(" and ")}
+                      <span className={`ml-2 rounded px-1.5 py-0.5 text-[10.5px] font-medium ${r.store === "coolkidz" ? "bg-sky-50 text-sky-700" : "bg-slate-100 text-slate-600"}`}>
+                        {r.store === "coolkidz" ? "Coolkidz" : "UPPAbaby"}
+                      </span>
+                    </div>
                     <div className="text-gray-400 text-[11.5px]">{r.ownerEmail}</div>
                   </td>
                   <td className="py-2 pr-3 whitespace-nowrap text-gray-500">

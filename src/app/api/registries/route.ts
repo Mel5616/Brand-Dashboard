@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
+import { STORES, type StoreKey } from "@/lib/registry";
 
 // Websites > Baby Registry. A read-only view of the registries created on
-// uppababy.com.au (the storefront writes them through /api/registry/*), so Mel
+// uppababy.com.au and coolkidz.com.au (the storefront writes them through /api/registry/*), so Mel
 // can see whether the thing is getting used without querying Supabase by hand.
 // Owner emails are shown because the team needs to be able to help a parent who
 // has lost their manage link.
@@ -48,7 +49,8 @@ export async function GET() {
     return {
       id: r.id, ownerName: r.owner_name, partnerName: r.partner_name, ownerEmail: r.owner_email,
       dueDate: r.due_date, status: r.status, createdAt: r.created_at,
-      shareUrl: `https://uppababy.com.au/pages/registry?r=${r.share_token}`,
+      store: (r.store as string) || "uppababy",
+      shareUrl: `${STORES[((r.store as StoreKey) || "uppababy")]?.site ?? STORES.uppababy.site}${STORES[((r.store as StoreKey) || "uppababy")]?.page ?? STORES.uppababy.page}?r=${r.share_token}`,
       items: mine.length, wanted, bought, listValue, boughtValue,
       topItem: mine.slice().sort((a, b) => (b.price_cents || 0) - (a.price_cents || 0))[0]?.title ?? null,
       lastPurchase: buys.map(b => b.created_at).sort().at(-1) ?? null,

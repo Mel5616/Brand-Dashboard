@@ -37,6 +37,17 @@ export async function POST(req: Request) {
 
   const action = clean(b.action, 20) || "add";
 
+  // The parent's own settings: the note guests see, and (Coolkidz) whether
+  // guests can find the list by name.
+  if (action === "settings") {
+    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (b.greeting !== undefined) patch.greeting = clean(b.greeting, 600);
+    if (b.listed !== undefined) patch.listed = b.listed === true;
+    const up = await rest(`registries?id=eq.${owner.id}`, { method: "PATCH", body: JSON.stringify(patch) });
+    if (!up.ok) return NextResponse.json({ ok: false, error: "Couldn't save that" }, { status: 500, headers: co });
+    return NextResponse.json({ ok: true }, { headers: co });
+  }
+
   if (action === "remove") {
     const id = clean(b.itemId, 60);
     if (!id) return NextResponse.json({ ok: false, error: "Which item?" }, { status: 400, headers: co });

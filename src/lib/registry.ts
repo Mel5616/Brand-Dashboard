@@ -28,13 +28,41 @@ export const rest = (p: string, init?: RequestInit) =>
  *  handing the storefront a generic 500 nobody can act on. */
 export const missingTable = (text: string) => /PGRST205|does not exist/i.test(text);
 
-const ORIGINS = new Set([
-  "https://uppababy.com.au",
-  "https://www.uppababy.com.au",
-  "https://6d6483.myshopify.com",
-  "http://localhost:3000",
-  "http://127.0.0.1:3000",
-]);
+/* ---- stores ----
+   One registry engine, one store per registry. UPPAbaby's was first; the
+   Coolkidz Gift Registry (every brand in one list) shares the same tables,
+   told apart by `registries.store`. A registry only ever opens on the site it
+   was made on, so a Coolkidz share link can't be read through uppababy.com.au. */
+export type StoreKey = "uppababy" | "coolkidz";
+
+export const STORES: Record<StoreKey, {
+  brandId: number; brand: string; site: string; page: string; from: string; origins: string[];
+}> = {
+  uppababy: {
+    brandId: 5, brand: "UPPAbaby", site: "https://uppababy.com.au", page: "/pages/registry",
+    from: "UPPAbaby Australia <registry@uppababy.com.au>",
+    origins: ["https://uppababy.com.au", "https://www.uppababy.com.au", "https://6d6483.myshopify.com"],
+  },
+  coolkidz: {
+    brandId: 9, brand: "Coolkidz", site: "https://coolkidz.com.au", page: "/pages/gift-registry",
+    from: "Coolkidz Gift Registry <registry@coolkidz.com.au>",
+    origins: ["https://coolkidz.com.au", "https://www.coolkidz.com.au", "https://ee807f-3c.myshopify.com"],
+  },
+};
+
+const DEV_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"];
+const ORIGINS = new Set([...Object.values(STORES).flatMap(s => s.origins), ...DEV_ORIGINS]);
+
+/** Which store a storefront call belongs to. The browser's Origin decides when
+ *  it names a known site; otherwise an explicit `store` hint (query or body),
+ *  and UPPAbaby by default so its existing theme needs no change. */
+export function storeOf(req: Request, hint?: unknown): StoreKey {
+  const origin = req.headers.get("origin");
+  for (const [k, s] of Object.entries(STORES) as [StoreKey, (typeof STORES)[StoreKey]][]) {
+    if (origin && s.origins.includes(origin)) return k;
+  }
+  return hint === "coolkidz" ? "coolkidz" : "uppababy";
+}
 
 export const cors = (origin: string | null, methods = "GET, POST, OPTIONS") => ({
   "Access-Control-Allow-Origin": origin && ORIGINS.has(origin) ? origin : "https://uppababy.com.au",
