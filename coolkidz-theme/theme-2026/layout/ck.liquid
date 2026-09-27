@@ -37,7 +37,7 @@
         assign ck_desc = 'Shop the ' | append: collection.title | append: ' range at Coolkidz, the official Australian distributor. Full Australian warranty, one help desk, and mix brands in one order to save.'
       endif
     elsif template.name == 'collection' and collection.handle == 'all'
-      assign ck_title = 'Shop all baby brands: UPPAbaby, Nanit, Gaia Baby & more'
+      assign ck_title = 'Shop all baby brands: UPPAbaby, Nanit & more'
       if ck_desc == blank
         assign ck_desc = 'Every product from the Coolkidz family of baby brands in one place: prams, nursery furniture, monitors, sleep, travel and care. Mix brands in one order and save.'
       endif
@@ -52,8 +52,12 @@
     endif
   -%}
   <title>{{ ck_title }}{% if current_page != 1 %} &ndash; Page {{ current_page }}{% endif %}{% unless ck_title contains 'Coolkidz' %} &ndash; {{ shop.name }}{% endunless %}</title>
-  {%- if ck_desc != blank -%}<meta name="description" content="{{ ck_desc | strip_html | escape | truncate: 300 }}">{%- endif -%}
+  {%- if ck_desc != blank -%}<meta name="description" content="{{ ck_desc | strip_html | strip_newlines | escape | truncate: 160 }}">{%- endif -%}
   {%- render 'meta-tags' -%}
+  {%- if page.handle == 'saved' -%}<meta name="robots" content="noindex">{%- endif -%}
+  {%- unless page_image -%}{%- comment -%} pages with no image of their own share the Coolkidz image {%- endcomment -%}
+  <meta property="og:image" content="https:{{ 'ck-share.jpg' | asset_url }}"><meta property="og:image:secure_url" content="https:{{ 'ck-share.jpg' | asset_url }}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:image" content="https:{{ 'ck-share.jpg' | asset_url }}">
+  {%- endunless -%}
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Figtree:wght@400;500;600;700&display=swap">
