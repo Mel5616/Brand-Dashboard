@@ -144,6 +144,8 @@
       if (!v) { btn.disabled = true; btn.textContent = 'Unavailable'; return; }
       idInput.value = v.id; if (reg) reg.setAttribute('data-variant', v.id);
       price.textContent = money(v.price);
+      var bn = $('[data-ck-bnpl]', root);
+      if (bn) { bn.hidden = v.price < +bn.getAttribute('data-min') || v.price > +bn.getAttribute('data-max'); var ba = $('[data-ck-bnpl-amt]', bn); if (ba) ba.textContent = money(Math.ceil(v.price / 4)); }
       btn.disabled = !v.available; btn.textContent = v.available ? 'Add to bag' : 'Sold out';
       if (history.replaceState) history.replaceState(null, '', '?variant=' + v.id);
       if (v.featured_image) { var g = $('.ck-gallery .g img', root); if (g) g.src = v.featured_image.src + (v.featured_image.src.indexOf('?') > -1 ? '&' : '?') + 'width=1200'; }

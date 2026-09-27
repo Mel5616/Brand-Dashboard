@@ -1,0 +1,7 @@
+{%- comment -%} "or 4 interest-free payments of $X with Afterpay". Off until settings.ck_afterpay is ticked; ck-base.js keeps it in step with the variant price. {%- endcomment -%}
+{%- if settings.ck_afterpay -%}
+  {%- assign lo = settings.ck_afterpay_min | default: 1 | times: 100 -%}
+  {%- assign hi = settings.ck_afterpay_max | default: 2000 | times: 100 -%}
+  {%- assign q = amount | divided_by: 4.0 | ceil -%}
+  <p class="ck-bnpl" data-ck-bnpl data-min="{{ lo }}" data-max="{{ hi }}"{% if amount < lo or amount > hi %} hidden{% endif %}>or 4 interest-free payments of <b data-ck-bnpl-amt>{{ q | money }}</b> with <span class="ap">Afterpay</span></p>
+{%- endif -%}

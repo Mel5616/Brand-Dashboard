@@ -748,3 +748,7 @@ body.ck{font-size:15px}
 .ck-popular-links a:hover{background:var(--sky)}
 #best-sellers .badge.best{display:none}
 .ck .ck-ask-btn,.ck .ck-ask-btn span{color:#fff}
+
+.ck-bnpl{margin:6px 0 4px;font-size:14px;color:var(--soft)}
+.ck-bnpl .ap{display:inline-block;background:#B2FCE4;color:#000;font-weight:700;border-radius:999px;padding:1px 9px;font-size:12.5px;letter-spacing:-.01em}
+.ck-cart .sum .ck-bnpl{margin:-4px 0 6px;text-align:right}

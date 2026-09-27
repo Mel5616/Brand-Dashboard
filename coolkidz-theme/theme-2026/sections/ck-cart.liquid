@@ -48,6 +48,7 @@
       <div class="rowt"><span>Subtotal</span><span class="num">{{ cart.items_subtotal_price | money }}</span></div>
       {%- for d in cart.cart_level_discount_applications -%}<div class="rowt" style="color:var(--green)"><span>{{ d.title }}</span><span class="num">−{{ d.total_allocated_amount | money }}</span></div>{%- endfor -%}
       <div class="rowt"><span class="big">Total</span><span class="big num">{{ cart.total_price | money }}</span></div>
+      {%- render 'ck-bnpl', amount: cart.total_price -%}
       {%- render 'ck-ship' -%}
       <p style="font-size:13.5px;color:var(--muted)">Standard delivery is $12.95 under {{ settings.ck_free_ship | default: 100 | times: 100 | money_without_trailing_zeros }} and free from there. Delivery and any remaining savings are worked out at checkout.</p>
       <label style="font-size:13px;font-weight:600;color:var(--soft)">Order note<textarea name="note" style="width:100%;margin-top:6px;border:1.5px solid var(--line);border-radius:12px;padding:10px;font:14px var(--body)">{{ cart.note }}</textarea></label>

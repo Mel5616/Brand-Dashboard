@@ -1577,6 +1577,24 @@
         "default": 100
       },
       {
+        "type": "checkbox",
+        "id": "ck_afterpay",
+        "label": "Show Afterpay instalments (only once Afterpay is on in Shopify Payments)",
+        "default": false
+      },
+      {
+        "type": "number",
+        "id": "ck_afterpay_min",
+        "label": "Afterpay minimum order ($)",
+        "default": 1
+      },
+      {
+        "type": "number",
+        "id": "ck_afterpay_max",
+        "label": "Afterpay maximum order ($)",
+        "default": 2000
+      },
+      {
         "type": "header",
         "content": "Mix and save"
       },

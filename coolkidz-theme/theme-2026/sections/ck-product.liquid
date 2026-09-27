@@ -17,6 +17,7 @@
       <h1>{{ product.title | remove_first: product.vendor | strip }}</h1>
       {%- render 'ck-stars', product: product, big: true -%}
       <div class="price num" data-ck-price>{{ v.price | money }}</div>
+      {%- render 'ck-bnpl', amount: v.price -%}
       {%- form 'product', product, data-ck-add: 'Added to your bag' -%}
         <input type="hidden" name="id" value="{{ v.id }}">
         {%- unless product.has_only_default_variant -%}
