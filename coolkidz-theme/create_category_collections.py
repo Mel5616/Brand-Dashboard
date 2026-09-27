@@ -1,4 +1,3 @@
-import sys; sys.path.insert(0, "../scripts")  # run from coolkidz-theme with a ckgql helper
 import ckgql,json,urllib.request
 T=lambda v:{'column':'type','relation':'equals','condition':v}
 V=lambda v:{'column':'vendor','relation':'equals','condition':v}
@@ -7,7 +6,7 @@ CATS=[
  ('prams-and-strollers','Prams and strollers','Prams, strollers and stroller-trikes from UPPAbaby, smarTrike and more.',[T('Pram'),T('Stroller'),T('Rumbleseat'),T('Trike'),TI('Pram With'),TI('smarTrike Wonder')]),
  ('capsules-and-car-seats','Capsules and car seats','Infant capsules, bases and adapters.',[TI('Car Seat Capsule'),T('Car Seat Base'),T('Car Seat Adapter'),T('Car Seat Protector')]),
  ('stroller-wagons','Stroller wagons','WonderFold stroller wagons for two to six children, plus covers and add-ons.',[T('Stroller Wagon'),T('Wagon Accessories'),V('WonderFold')]),
- ('cots-and-nursery-furniture','Cots and nursery furniture','Cots, dressers, change stations, wardrobes and nursing chairs.',[T('Cot Bed'),T('Dresser'),T('Wardrobe'),T('Changing Station'),T('Rocking & Nursing Chair'),V('Gaia Baby'),T('Bassinet')]),
+ ('cots-and-nursery-furniture','Cots and nursery furniture','Cots, dressers, change stations, wardrobes and nursing chairs.',[T('Cot Bed'),T('Dresser'),T('Wardrobe'),T('Changing Station'),T('Rocking & Nursing Chair'),V('Gaia Baby')]),
  ('baby-monitors','Baby monitors','Nanit smart baby monitors, stands and breathing wear.',[V('Nanit')]),
  ('sleep','Sleep','Sleep trainer clocks, white noise, nightlights and projectors.',[V('ZAZU'),T('Sleep Pod'),T('Portable Blackout Curtain'),T('Portacot'),T('White Noise Machine')]),
  ('feeding-and-highchairs','Feeding and highchairs','Highchairs, snack trays and teethers.',[T('Highchair'),T('Snack Tray'),V('Hannie'),T('Teething Toy')]),
