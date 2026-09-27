@@ -1,0 +1,24 @@
+name: Coolkidz photo refresh
+
+# Weekly: replace coolkidz.com.au product photos with the brand sites' current
+# photos where they differ (matched by SKU), re-linking colour photos.
+on:
+  schedule:
+    - cron: "0 21 * * 0"   # Monday 7am AEST
+  workflow_dispatch: {}
+
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Write stores.config.json from secret
+        env:
+          STORES_CONFIG_JSON: ${{ secrets.STORES_CONFIG_JSON }}
+        run: printf '%s' "$STORES_CONFIG_JSON" > stores.config.json
+      - name: Refresh photos from the brand sites
+        run: python3 scripts/coolkidz_refresh_images.py
