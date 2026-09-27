@@ -130,7 +130,7 @@
       var v = data.variants.filter(function (x) { return x.options.every(function (o, i) { return o === chosen[i]; }); })[0];
       if (!v) { btn.disabled = true; btn.textContent = 'Unavailable'; return; }
       idInput.value = v.id; if (reg) reg.setAttribute('data-variant', v.id);
-      price.innerHTML = money(v.price) + (v.compare_at_price > v.price ? '<s>' + money(v.compare_at_price) + '</s>' : '');
+      price.textContent = money(v.price);
       btn.disabled = !v.available; btn.textContent = v.available ? 'Add to bag' : 'Sold out';
       if (history.replaceState) history.replaceState(null, '', '?variant=' + v.id);
       if (v.featured_image) { var g = $('.ck-gallery .g img', root); if (g) g.src = v.featured_image.src + (v.featured_image.src.indexOf('?') > -1 ? '&' : '?') + 'width=1200'; }

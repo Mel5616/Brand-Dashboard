@@ -79,8 +79,8 @@ body.ck{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);f
 .ck-foot .fh{font-family:var(--body);letter-spacing:.16em;margin:0 0 12px;line-height:1.4;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#F2F4F7}
 .ck-foot ul{list-style:none;margin:0;padding:0;display:grid;gap:7px}
 .ck-foot a{text-decoration:none} .ck-foot a:hover{color:#fff}
-.ck-foot .logo{display:inline-block;background:#fff;border-radius:12px;padding:7px 11px;line-height:0}
-.ck-foot .logo img{height:28px;width:auto}
+.ck-foot .logo{display:inline-block;line-height:0;align-self:flex-start}
+.ck-foot .logo img{height:auto;width:min(240px,100%)}
 .ck-foot .brands{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:44px;padding-top:24px;border-top:1px solid #2E394B;font-size:13.5px}
 .ck-foot .legal{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:22px;font-size:12.5px}
 .ck-foot .nl{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
@@ -620,3 +620,5 @@ body.ck-lock{overflow:hidden}
   .ck-ask.is-open{left:0;right:0;bottom:0}
   .ck-ask-panel{position:fixed;inset:auto 0 0 0;width:100%;height:min(88vh,640px);border-radius:24px 24px 0 0}
 }
+
+.ck-foot .logo img{filter:none!important;background:none}

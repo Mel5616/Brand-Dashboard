@@ -40,7 +40,7 @@
       <h3>{{ b.settings.title }}</h3>
       <p>{{ b.settings.text }}</p>
       {%- if count > 0 -%}
-      <div class="row"><span><span class="now num">{{ now | money }}</span>{% if saving > 0 %}<s class="num">{{ total | money }}</s>{% endif %}</span>{% if saving > 0 %}<span class="ck-save">Save {{ saving | money }}</span>{% endif %}</div>
+      <div class="row"><span class="now num">{{ now | money }}</span>{% if saving > 0 %}<span class="ck-save">Save {{ saving | money }} with mix and save</span>{% endif %}</div>
       <button class="ck-btn line" type="button" data-ck-set="{{ ids }}">Add the set to bag</button>
       {%- else -%}<div class="row"><span class="ck-save" style="color:var(--muted)">Coming soon</span></div>{%- endif -%}
     </div>
@@ -48,7 +48,7 @@
 {%- else -%}
   {%- if count == 0 -%}<p><span class="ck-save" style="color:var(--muted)">Coming soon</span></p>{%- else -%}
   <ul class="ck-lines">{{ lines }}</ul>
-  <div class="ck-tot"><span class="now num">{{ now | money }}</span>{% if saving > 0 %}<s class="num">{{ total | money }}</s><span class="ck-save">Save {{ saving | money }}</span>{% endif %}</div>
+  <div class="ck-tot"><span class="now num">{{ now | money }}</span>{% if saving > 0 %}<span class="ck-save">Save {{ saving | money }} with mix and save</span>{% endif %}</div>
   <div><button class="ck-btn" type="button" data-ck-set="{{ ids }}">Add the set to bag</button></div>
   {%- endif -%}
 {%- endif -%}

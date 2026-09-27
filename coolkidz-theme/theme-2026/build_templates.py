@@ -26,13 +26,13 @@ BRANDS = [
   ("Nanit", "nanit", "Smart baby monitors", "Designed in the USA", "Overhead HD baby monitors with sleep tracking, plus breathing motion monitoring through the night, all in the Nanit app.", "https://nanit.com.au", "ck-t2.jpg", "sky"),
   ("Gaia Baby", "gaia baby", "Nursery furniture", "Nursery furniture", "Cots, dressers and nursing chairs like the Eos range, made to grow with your child from the first night.", "https://www.gaia-baby.com.au", "ck-rocker.jpg", "mint"),
   ("WonderFold", "wonderfold", "Stroller wagons", "Designed in California", "Stroller wagons that seat two to six children, from the W2 to the W6, with room for everything else too.", "https://wonderfold.com.au", "ck-wf.jpg", "sky"),
-  ("Magic", "magic", "Nappy bins", "Designed in the Netherlands", "Odour-free nappy bins with a twist-and-seal system and no refill cartridges.", "https://magicbabyproducts.com.au", "ck-p-heka.jpg", "mint"),
+  ("Magic", "magic", "Nappy bins", "Designed in the Netherlands", "Odour-free nappy bins with a twist-and-seal system and no refill cartridges.", "https://magicbabyproducts.com.au", "ck-magic-life.jpg", "mint"),
   ("Frida", "frida", "Baby and postpartum care", "Frida Baby and Frida Mom", "Practical care for babies and new mums, from the NoseFrida to the hospital birth kit.", "https://fridaaustralia.com.au", "ck-t3.jpg", "blush"),
   ("ZAZU", "zazu", "Sleep helpers", "Designed in the Netherlands", "Sleep trainer clocks, nightlights, projectors and white noise for babies and toddlers.", "https://zazu-kids.com.au", "ck-zazu.jpg", "coral"),
   ("MiaMily", "miamily", "Family luggage", "Designed in Switzerland", "Carry-on and check-in suitcases with a built-in seat, so little ones can ride through the airport.", "https://miamily.com.au", "ck-m-travel.jpg", "sky"),
   ("smarTrike", "smartrike", "Stroller-trikes and scooters", "Designed smart since 2006", "The Wonder range of folding stroller-trikes, plus scooters that grow with your child.", "https://smartrike.com.au", "ck-t1.jpg", "coral"),
   ("Mamave", "mamave", "Skincare for mum and baby", "Skincare", "Gentle skincare for mum and baby, from Mumma's Oil to Bubba's Wash.", "https://mamave.com.au", "ck-mamave.jpg", "blush"),
-  ("Matchstick Monkey", "matchstick monkey", "Teething and first brushes", "Trusted in over 60 countries", "Teething toys and first toothbrushes shaped for small hands and sore gums.", "https://www.matchstickmonkey.com.au", "ck-p-mm.jpg", "mint"),
+  ("Matchstick Monkey", "matchstick monkey", "Teething and first brushes", "Trusted in over 60 countries", "Teething toys and first toothbrushes shaped for small hands and sore gums.", "https://www.matchstickmonkey.com.au", "ck-mm-life.jpg", "mint"),
   ("Hannie", "hannie", "Portable high chairs", "Eating out, made easy", "A portable high chair that packs down to go wherever you eat.", "https://hannie.com.au", "ck-hannie.jpg", "coral"),
 ]
 def brand_blocks(style="list"):
@@ -170,7 +170,7 @@ tpl("page.business.json", [
   sec("ck-form", {"kind": "general", "eyebrow": "Get in touch", "heading": "Let's talk", "tint": "mint"}),
 ])
 tpl("page.partner-with-us.json", [
-  sec("ck-page-hero", {"eyebrow": "For global brands", "heading": "<p>Launch and grow <em>in Australia</em></p>", "text": "Coolkidz takes international baby brands from first shipment to national presence: distribution, retail, marketing and your own Australian website, under one roof, for over 25 years.", "btn1_label": "Start a conversation", "btn1_url": "#enquire", "btn2_label": "How a launch works", "btn2_url": "#launch", "asset": "ck-m-out.jpg", "tint": "white"}),
+  sec("ck-page-hero", {"eyebrow": "For global brands", "heading": "<p>Launch and grow <em>in Australia</em></p>", "text": "Coolkidz takes international baby brands from first shipment to national presence: distribution, retail, marketing and your own Australian website, under one roof, for over 25 years.", "btn1_label": "Start a conversation", "btn1_url": "#enquire", "asset": "ck-m-out.jpg", "tint": "white"}),
   sec("ck-logos"),
   sec("ck-stats", {"heading": "The family you'd be joining"}, STATS),
   sec("ck-tiles", {"heading": "<p>Why brands <em>choose Coolkidz</em></p>", "text": "Everything a baby brand needs to win in Australia, run by one team that already does it for twelve brands."}, [
@@ -233,7 +233,7 @@ tpl("page.about-us.json", [
   sec("ck-who", {"eyebrow": "Our story", "heading": "<p>Over 25 years of bringing <em>great baby brands</em> to Australia</p>", "text": "<p>We focus on long-term partnerships that combine strategic insight with reliable execution, so every brand reaches Australian families with impact and consistency. Today that means national distribution, a 12-person marketing team, a website for each of our brands, and a shop where parents can buy them together.</p>", "link_label": "Coolkidz for business", "link_url": "/pages/business", "tint": "sky"}, STATS),
   sec("ck-tiles", {"heading": "<p>What we do</p>"}, WHAT_WE_DO),
   sec("ck-logos"),
-  sec("ck-band", {"eyebrow": "Say hello", "heading": "<p>Come and see us</p>", "text": "Our showroom is at 1 Beyer Road, Braeside VIC 3195. Please call ahead on 1300 722 302.", "btn_label": "Contact us", "btn_url": "/pages/contact", "asset": "ck-m-nursery.jpg", "anchor": "visit", "tint": "mint"}),
+  sec("ck-band", {"eyebrow": "Say hello", "heading": "<p>Come and see us</p>", "text": "Our showroom is at 1 Beyer Road, Braeside VIC 3195. Please call ahead on 1300 722 302.", "btn_label": "Contact us", "btn_url": "/pages/contact", "asset": "ck-ub-life.jpg", "anchor": "visit", "tint": "mint"}),
 ])
 tpl("page.events.json", [
   sec("ck-page-hero", {"eyebrow": "Events", "heading": "<p>Try before <em>you buy</em></p>", "text": "Find Coolkidz and our brands at baby expos around Australia. Push the prams, fold the wagons and talk to people who know every product.", "tint": "coral"}),
