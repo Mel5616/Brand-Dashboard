@@ -11,3 +11,11 @@ include_config_on_deploy = false
 
 [access_scopes]
 use_legacy_install_flow = false
+
+# Required by the CLI's validation. Not sent to Shopify: include_config_on_deploy
+# is false above, so the app's real webhooks and auth settings are untouched.
+[webhooks]
+api_version = "2025-07"
+
+[auth]
+redirect_urls = ["https://marketing.coolkidz.com.au/api/auth/callback"]
