@@ -11,6 +11,16 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#ffffff">
+  {%- comment -%} Old pages redirect to their new homes (Theme settings > Coolkidz 2026 > Redirects). {%- endcomment -%}
+  {%- assign ck_to = '' -%}
+  {%- assign ck_lines = settings.ck_redirects | newline_to_br | split: '<br />' -%}
+  {%- for l in ck_lines -%}{%- assign ck_p = l | strip | split: '|' -%}{%- if ck_p.size > 1 -%}{%- assign ck_from = ck_p[0] | strip -%}{%- if request.path == ck_from -%}{%- assign ck_to = ck_p[1] | strip -%}{%- break -%}{%- endif -%}{%- endif -%}{%- endfor -%}
+  {%- if ck_to != '' and request.design_mode == false -%}
+    <meta http-equiv="refresh" content="0; url={{ ck_to }}"><meta name="robots" content="noindex"><script>location.replace({{ ck_to | json }});</script>
+  {%- endif -%}
+  {%- if template.name == '404' -%}
+    <script>(function(){var m={};{%- for l in ck_lines -%}{%- assign ck_p = l | strip | split: '|' -%}{%- if ck_p.size > 1 -%}m[{{ ck_p[0] | strip | json }}]={{ ck_p[1] | strip | json }};{%- endif -%}{%- endfor -%}var t=m[location.pathname.replace(/\/$/,'')];if(t)location.replace(t);})();</script>
+  {%- endif -%}
   <link rel="canonical" href="{{ canonical_url }}">
   {%- if settings.favicon != blank -%}
     <link rel="icon" type="image/png" href="{{ settings.favicon | image_url: width: 32, height: 32 }}">

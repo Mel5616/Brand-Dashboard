@@ -297,3 +297,9 @@ tpl("list-collections.json", [
   sec("ck-brands", {"heading": "The brands", "style": "cards"}, brand_blocks()),
 ])
 print("legacy templates written")
+
+# ---------- retired pages: new layout so the theme's redirect list catches them ----------
+for f in ["page.giveaway.json", "page.offer.json", "page.mothers-day-gift-guide.json", "page.warehouse-sale.json", "page.good-baby-expo.json", "page.click-frenzy-travel.json"]:
+    tpl(f, [sec("ck-main-page")])
+tpl("collection.starlight-donations.json", [sec("ck-collection", {}, brand_story_blocks())])
+print("retired templates written")
