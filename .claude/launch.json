@@ -4,8 +4,29 @@
     {
       "name": "bd-next-dev",
       "runtimeExecutable": "/bin/bash",
-      "runtimeArgs": ["-c", "npm run dev -- -p 3001"],
+      "runtimeArgs": [
+        "-c",
+        "npm run dev -- -p 3001"
+      ],
       "port": 3001
+    },
+    {
+      "name": "feed-lab",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": [
+        "-c",
+        "cd /Users/melaniekingsford/feed-lab && FEEDLAB_DEV_NOAUTH=1 npm run dev"
+      ],
+      "port": 3100
+    },
+    {
+      "name": "ck-concept",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m", "http.server", "4455",
+        "--directory", "/private/tmp/claude-501/-Users-melaniekingsford-brand-dashboard/2658e5a0-4cc5-47c9-94ee-d3b6d31bc8be/scratchpad/ck"
+      ],
+      "port": 4455
     }
   ]
 }
