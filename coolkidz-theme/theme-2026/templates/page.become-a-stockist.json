@@ -1,0 +1,32 @@
+{
+  "layout": "ck",
+  "sections": {
+    "s0": {
+      "type": "ck-page-hero",
+      "settings": {
+        "eyebrow": "Become a stockist",
+        "heading": "<p>Bring our brands <em>into your store</em></p>",
+        "text": "Apply below and a member of our sales team will be in touch to talk range, terms and training.",
+        "tint": "mint"
+      }
+    },
+    "s1": {
+      "type": "ck-form",
+      "settings": {
+        "kind": "retailer",
+        "eyebrow": "Stockist application",
+        "heading": "Tell us about your store",
+        "tint": "sky"
+      }
+    },
+    "s2": {
+      "type": "ck-logos",
+      "settings": {}
+    }
+  },
+  "order": [
+    "s0",
+    "s1",
+    "s2"
+  ]
+}

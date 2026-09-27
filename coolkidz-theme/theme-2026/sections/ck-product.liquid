@@ -1,0 +1,39 @@
+{%- assign s = section.settings -%}
+{%- assign v = product.selected_or_first_available_variant -%}
+<section class="ck-wrap" data-ck-product>
+  <script type="application/json">{{ product | json }}</script>
+  <div class="ck-pdp">
+    <div class="ck-gallery">
+      {%- for m in product.media limit: 7 -%}
+        {%- if m.media_type == 'image' -%}<div class="g">{{ m | image_url: width: 1200 | image_tag: loading: 'lazy', alt: m.alt | default: product.title, sizes: '(min-width: 900px) 55vw, 100vw' }}</div>{%- endif -%}
+      {%- endfor -%}
+    </div>
+    <div class="ck-buy">
+      <a class="br" href="/collections/vendors?q={{ product.vendor | url_encode }}">{{ product.vendor | remove: ' Wagons Australia' | remove: ' Australia' }}</a>
+      <h1>{{ product.title | remove_first: product.vendor | strip }}</h1>
+      <div class="price num" data-ck-price>{{ v.price | money }}{% if v.compare_at_price > v.price %}<s>{{ v.compare_at_price | money }}</s>{% endif %}</div>
+      {%- form 'product', product, data-ck-add: 'Added to your bag' -%}
+        <input type="hidden" name="id" value="{{ v.id }}">
+        {%- unless product.has_only_default_variant -%}
+          {%- for option in product.options_with_values -%}
+            <fieldset class="ck-opt" style="margin-bottom:14px"><legend>{{ option.name }}</legend><div class="vals">
+              {%- for val in option.values -%}<label><input type="radio" name="opt-{{ forloop.parentloop.index }}" value="{{ val | escape }}"{% if option.selected_value == val %} checked{% endif %}><span>{{ val }}</span></label>{%- endfor -%}
+            </div></fieldset>
+          {%- endfor -%}
+        {%- endunless -%}
+        <div class="row" style="margin-top:6px">
+          <div class="ck-qty"><button type="button" data-ck-step="-1" aria-label="One fewer">−</button><input name="quantity" value="1" inputmode="numeric" aria-label="Quantity"><button type="button" data-ck-step="1" aria-label="One more">+</button></div>
+          <button class="ck-btn" type="submit" data-ck-atc{% unless v.available %} disabled{% endunless %}>{% if v.available %}Add to bag{% else %}Sold out{% endif %}</button>
+        </div>
+      {%- endform -%}
+      {%- render 'ck-registry-button', product: product -%}
+      {%- if settings.ck_mix_enabled -%}<div class="ck-mixnote">Mix brands and save: <b>{{ settings.ck_mix_2 }}%</b> off two brands, <b>{{ settings.ck_mix_3 }}%</b> off three, <b>{{ settings.ck_mix_4 }}%</b> off four or more.</div>{%- endif -%}
+      <ul class="ck-perks">{%- assign lines = s.perks | newline_to_br | split: '<br />' -%}{%- for l in lines -%}{%- assign t = l | strip -%}{%- if t != '' -%}<li>{{ t }}</li>{%- endif -%}{%- endfor -%}</ul>
+      <details class="ck-desc" open><summary>About this product</summary><div class="ck-rte">{{ product.description }}</div></details>
+    </div>
+  </div>
+</section>
+{% schema %}
+{ "name": "Product",
+  "settings": [{ "type": "textarea", "id": "perks", "label": "Reassurance points (one per line)", "default": "Official Australian stock, distributed by Coolkidz for over 25 years\nFull Australian warranty, supported at help.coolkidz.com.au\nSame price as the brand's own website" }] }
+{% endschema %}

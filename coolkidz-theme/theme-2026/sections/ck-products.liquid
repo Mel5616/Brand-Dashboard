@@ -1,0 +1,35 @@
+{%- comment -%} A product grid with tabs, one tab per collection block. Tabs link through; the first collection shows here. {%- endcomment -%}
+{%- assign s = section.settings -%}
+{%- assign first = s.collection -%}
+<section class="ck-sec" id="{{ s.anchor | default: 'edit' }}"><div class="ck-wrap">
+  <div class="ck-shead"><h2>{{ s.heading | remove: '<p>' | remove: '</p>' }}</h2><p>{{ s.text }}</p></div>
+  {%- if section.blocks.size > 0 -%}
+    <nav class="ck-chips" aria-label="Collections">
+      <a class="ck-chip" href="{{ first.url | default: '/collections/all' }}" aria-current="true">{{ s.first_label }}</a>
+      {%- for b in section.blocks -%}<a class="ck-chip" href="{{ b.settings.collection.url }}" {{ b.shopify_attributes }}>{{ b.settings.label | default: b.settings.collection.title }}</a>{%- endfor -%}
+    </nav>
+  {%- endif -%}
+  <div class="ck-grid">
+    {%- if first != blank -%}
+      {%- for product in first.products limit: s.limit -%}{%- render 'ck-card', product: product -%}{%- endfor -%}
+    {%- else -%}
+      {%- for product in collections.all.products limit: s.limit -%}{%- render 'ck-card', product: product -%}{%- endfor -%}
+    {%- endif -%}
+  </div>
+  {%- if s.more_label != blank -%}<div class="ck-center"><a class="ck-btn line" href="{{ first.url | default: '/collections/all' }}">{{ s.more_label }}</a></div>{%- endif -%}
+</div></section>
+{% schema %}
+{ "name": "Product grid",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Heading", "default": "The edit" },
+    { "type": "textarea", "id": "text", "label": "Text", "default": "A first look across the range. Every product is also sold on its brand's own Australian website, at the same price." },
+    { "type": "collection", "id": "collection", "label": "Collection shown (blank for everything)" },
+    { "type": "text", "id": "first_label", "label": "First chip label", "default": "Everything" },
+    { "type": "range", "id": "limit", "min": 4, "max": 24, "step": 4, "label": "Products", "default": 8 },
+    { "type": "text", "id": "more_label", "label": "Button", "default": "Shop everything" },
+    { "type": "text", "id": "anchor", "label": "Anchor", "default": "edit" } ],
+  "blocks": [{ "type": "tab", "name": "Collection link", "settings": [
+    { "type": "collection", "id": "collection", "label": "Collection" },
+    { "type": "text", "id": "label", "label": "Tab label" } ] }],
+  "presets": [{ "name": "Product grid" }] }
+{% endschema %}

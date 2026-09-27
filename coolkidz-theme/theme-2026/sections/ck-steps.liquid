@@ -1,0 +1,11 @@
+{%- assign s = section.settings -%}
+<section class="ck-sec ck-tint-{{ s.tint }}"><div class="ck-wrap">
+  <div class="ck-shead"><h2>{{ s.heading | remove: '<p>' | remove: '</p>' }}</h2><p>{{ s.text }}</p></div>
+  <ol class="ck-steps">{%- for b in section.blocks -%}<li {{ b.shopify_attributes }}>{%- if b.settings.when != blank -%}<span class="when">{{ b.settings.when }}</span>{%- endif -%}<b>{{ b.settings.title }}</b><p>{{ b.settings.text }}</p></li>{%- endfor -%}</ol>
+</div></section>
+{% schema %}
+{ "name": "Steps",
+  "settings": [{ "type": "richtext", "id": "heading", "label": "Heading" },{ "type": "textarea", "id": "text", "label": "Text" }, { "type": "select", "id": "tint", "label": "Background", "options": [{"value":"white","label":"White"},{"value":"sky","label":"Sky"},{"value":"mint","label":"Mint"},{"value":"blush","label":"Blush"},{"value":"coral","label":"Coral"},{"value":"paper","label":"Grey"},{"value":"navy","label":"Navy"}], "default": "white" }],
+  "blocks": [{ "type": "step", "name": "Step", "settings": [{ "type": "text", "id": "when", "label": "Timing" },{ "type": "text", "id": "title", "label": "Title" },{ "type": "textarea", "id": "text", "label": "Text" }] }],
+  "presets": [{ "name": "Steps" }] }
+{% endschema %}

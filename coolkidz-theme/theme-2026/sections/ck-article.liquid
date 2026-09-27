@@ -1,0 +1,23 @@
+<article>
+  <section class="ck-phero ck-tint-sky"><div class="ck-wrap" style="max-width:980px">
+    <span class="ck-eyebrow"><a href="{{ blog.url }}" style="text-decoration:none">Journal</a> · {{ article.published_at | date: '%-d %B %Y' }}</span>
+    <h1 style="font-size:clamp(36px,5vw,72px)">{{ article.title }}</h1>
+  </div></section>
+  {%- if article.image -%}<div class="ck-wrap" style="max-width:1180px;margin-top:clamp(20px,3vw,40px)"><div style="border-radius:var(--r);overflow:hidden;aspect-ratio:16/8">{{ article.image | image_url: width: 1800 | image_tag: alt: article.title, style: 'width:100%;height:100%;object-fit:cover' }}</div></div>{%- endif -%}
+  <section class="ck-sec" style="padding-top:clamp(28px,4vw,56px)"><div class="ck-page"><div class="ck-rte">{{ article.content }}</div>
+    <aside style="margin-top:40px;background:var(--sky);border-radius:18px;padding:20px 22px">
+      <b style="font-family:var(--display)">{{ section.settings.cta_heading }}</b>
+      <p style="color:var(--soft);margin-top:6px">{{ section.settings.cta_text }}</p>
+      <div class="ck-ctas" style="margin-top:14px"><a class="ck-btn small" href="{{ section.settings.cta_url }}">{{ section.settings.cta_label }}</a><a class="ck-btn small line" href="/pages/gift-registry">Start a gift registry</a></div>
+    </aside>
+  </div></section>
+</article>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":{{ article.title | json }},"datePublished":{{ article.published_at | date: '%Y-%m-%d' | json }},"author":{"@type":"Organization","name":"Coolkidz Australia"}{% if article.image %},"image":{{ article.image | image_url: width: 1200 | prepend: 'https:' | json }}{% endif %}}</script>
+{% schema %}
+{ "name": "Article",
+  "settings": [
+    { "type": "text", "id": "cta_heading", "label": "Box heading", "default": "Shop the brands in this guide" },
+    { "type": "textarea", "id": "cta_text", "label": "Box text", "default": "Mix two or more of our brands in one order and save." },
+    { "type": "text", "id": "cta_label", "label": "Button", "default": "Shop everything" },
+    { "type": "text", "id": "cta_url", "label": "Button link", "default": "/collections/all" } ] }
+{% endschema %}

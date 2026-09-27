@@ -1,0 +1,17 @@
+{%- assign s = section.settings -%}
+<section class="ck-sec" id="mix"><div class="ck-wrap">
+  <div class="ck-shead"><h2>{{ s.heading | remove: '<p>' | remove: '</p>' }}</h2><p>{{ s.text }}</p></div>
+  <div class="ck-mix">
+    <div><span class="n">Full price</span><span class="l">{%- render 'ck-dots', n: 1 -%} One brand</span></div>
+    <div><span class="n num">{{ settings.ck_mix_2 }}<sup>%</sup></span><span class="l">{%- render 'ck-dots', n: 2 -%} Two brands</span></div>
+    <div><span class="n num">{{ settings.ck_mix_3 }}<sup>%</sup></span><span class="l">{%- render 'ck-dots', n: 3 -%} Three brands</span></div>
+    <div><span class="n num">{{ settings.ck_mix_4 }}<sup>%</sup></span><span class="l">{%- render 'ck-dots', n: 4 -%} Four or more brands</span></div>
+  </div>
+</div></section>
+{% schema %}
+{ "name": "Mix and save",
+  "settings": [
+    { "type": "richtext", "id": "heading", "label": "Heading", "default": "<p>The more brands you mix, <em>the less you pay</em></p>" },
+    { "type": "textarea", "id": "text", "label": "Text", "default": "The saving is set by how many of our brands are in your order, not by how much you spend. It only happens here, because each brand's own site sells one brand." } ],
+  "presets": [{ "name": "Mix and save" }] }
+{% endschema %}

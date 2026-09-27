@@ -1,8 +1,9 @@
 import { NextResponse, after } from "next/server";
-import { configured, rest, h, cors, missingTable, shareToken, manageToken, limited, ipOf, clean, looksLikeEmail } from "@/lib/registry";
+import { configured, rest, h, cors, missingTable, shareToken, manageToken, limited, ipOf, clean, looksLikeEmail, storeOf } from "@/lib/registry";
 import { sendRegistryEmail } from "@/lib/registryMail";
 
 // Public, CORS-open. Creates a baby registry for a parent on uppababy.com.au
+// or coolkidz.com.au (the store comes from the calling site, see storeOf)
 // and hands back both tokens. The theme keeps the manage token in the
 // browser and emails it to the parent, because it is the only way back in:
 // there are no registry accounts and no passwords.
@@ -35,7 +36,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "The due date needs to be a real date" }, { status: 400, headers: co });
   }
 
+  const store = storeOf(req, b.store);
   const row = {
+    store,
+    // Coolkidz lets guests find a list by name, but only if the parent says so.
+    listed: store === "coolkidz" && b.listed === true,
     share_token: shareToken(),
     manage_token: manageToken(),
     owner_name: ownerName,
@@ -66,7 +71,7 @@ export async function POST(req: Request) {
   // getting to the registry they just made, and the browser has both tokens
   // already.
   after(async () => {
-    try { await sendRegistryEmail({ to: reg.owner_email, ownerName: reg.owner_name, manageToken: reg.manage_token, shareToken: reg.share_token }); }
+    try { await sendRegistryEmail({ to: reg.owner_email, ownerName: reg.owner_name, manageToken: reg.manage_token, shareToken: reg.share_token, store }); }
     catch { /* the registry exists either way */ }
   });
 

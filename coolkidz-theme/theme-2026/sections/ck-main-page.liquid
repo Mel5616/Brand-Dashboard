@@ -1,0 +1,8 @@
+{%- assign s = section.settings -%}
+{%- if s.show_title -%}<section class="ck-phero"><div class="ck-wrap"><span class="ck-eyebrow">{{ s.eyebrow }}</span><h1>{{ page.title }}</h1></div></section>{%- endif -%}
+{%- if page.content != blank -%}<section class="ck-sec" style="padding-top:{% if s.show_title %}0{% else %}clamp(40px,5vw,72px){% endif %}"><div class="ck-page"><div class="ck-rte">{{ page.content }}</div></div></section>{%- endif -%}
+{% schema %}
+{ "name": "Page content",
+  "settings": [{ "type": "checkbox", "id": "show_title", "label": "Show page title", "default": true },{ "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Coolkidz" }],
+  "presets": [{ "name": "Page content" }] }
+{% endschema %}

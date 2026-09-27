@@ -1,0 +1,41 @@
+{%- assign s = section.settings -%}
+<section class="ck-hero"><div class="ck-wrap">
+  <div class="top">
+    <h1>{{ s.heading | remove: '<p>' | remove: '</p>' }}</h1>
+    <div class="side">
+      <p>{{ s.text }}</p>
+      <div class="ck-ctas">
+        {%- if s.btn1_label != blank -%}<a class="ck-btn" href="{{ s.btn1_url }}">{{ s.btn1_label }}</a>{%- endif -%}
+        {%- if s.btn2_label != blank -%}<a class="ck-link" href="{{ s.btn2_url }}">{{ s.btn2_label }}</a>{%- endif -%}
+      </div>
+    </div>
+  </div>
+  <div class="ck-trip">
+    {%- for b in section.blocks -%}
+      <figure {{ b.shopify_attributes }}>
+        <a class="ph" href="{{ b.settings.url | default: '#' }}">{%- render 'ck-img', image: b.settings.image, asset: b.settings.asset, alt: b.settings.alt, width: 1000 -%}</a>
+        <figcaption><span><b>{{ b.settings.brand }}</b>{% if b.settings.product != blank %} · {{ b.settings.product }}{% endif %}</span><span>{{ b.settings.moment }}</span></figcaption>
+      </figure>
+    {%- endfor -%}
+  </div>
+</div></section>
+{% schema %}
+{ "name": "Hero with three photos", "max_blocks": 3,
+  "settings": [
+    { "type": "richtext", "id": "heading", "label": "Heading", "default": "<p>Twelve brands, <em>one order.</em></p>" },
+    { "type": "textarea", "id": "text", "label": "Text", "default": "UPPAbaby, Nanit, Gaia Baby, WonderFold, Frida and more, brought to Australia by Coolkidz for over 25 years. Buy them together here, and the more brands you mix, the less you pay." },
+    { "type": "text", "id": "btn1_label", "label": "Button", "default": "Shop the edit" },
+    { "type": "text", "id": "btn1_url", "label": "Button link", "default": "/collections/all" },
+    { "type": "text", "id": "btn2_label", "label": "Second link", "default": "Curated sets" },
+    { "type": "text", "id": "btn2_url", "label": "Second link URL", "default": "/collections/all" }
+  ],
+  "blocks": [{ "type": "photo", "name": "Photo", "settings": [
+    { "type": "image_picker", "id": "image", "label": "Image" },
+    { "type": "text", "id": "asset", "label": "Fallback theme asset", "default": "ck-t1.jpg" },
+    { "type": "text", "id": "alt", "label": "Alt text" },
+    { "type": "text", "id": "brand", "label": "Brand" },
+    { "type": "text", "id": "product", "label": "Product" },
+    { "type": "text", "id": "moment", "label": "Moment" },
+    { "type": "text", "id": "url", "label": "Link" } ] }],
+  "presets": [{ "name": "Hero with three photos" }] }
+{% endschema %}

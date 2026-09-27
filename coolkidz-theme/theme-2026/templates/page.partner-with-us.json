@@ -1,0 +1,346 @@
+{
+  "layout": "ck",
+  "sections": {
+    "s0": {
+      "type": "ck-page-hero",
+      "settings": {
+        "eyebrow": "For global brands",
+        "heading": "<p>Launch and grow <em>in Australia</em></p>",
+        "text": "Coolkidz takes international baby brands from first shipment to national presence: distribution, retail, marketing and your own Australian website, under one roof, for over 25 years.",
+        "btn1_label": "Start a conversation",
+        "btn1_url": "#enquire",
+        "btn2_label": "How a launch works",
+        "btn2_url": "#launch",
+        "asset": "ck-m-out.jpg",
+        "tint": "white"
+      }
+    },
+    "s1": {
+      "type": "ck-logos",
+      "settings": {}
+    },
+    "s2": {
+      "type": "ck-stats",
+      "settings": {
+        "heading": "The family you'd be joining"
+      },
+      "blocks": {
+        "b0": {
+          "type": "stat",
+          "settings": {
+            "number": "25+",
+            "label": "years distributing premium baby brands"
+          }
+        },
+        "b1": {
+          "type": "stat",
+          "settings": {
+            "number": "12",
+            "label": "brands in the Coolkidz family"
+          }
+        },
+        "b2": {
+          "type": "stat",
+          "settings": {
+            "number": "7,000 m\u00b2",
+            "label": "warehouse and fulfilment centre"
+          }
+        },
+        "b3": {
+          "type": "stat",
+          "settings": {
+            "number": "12",
+            "label": "in-house marketing specialists"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3"
+      ]
+    },
+    "s3": {
+      "type": "ck-tiles",
+      "settings": {
+        "heading": "<p>Why brands <em>choose Coolkidz</em></p>",
+        "text": "Everything a baby brand needs to win in Australia, run by one team that already does it for twelve brands."
+      },
+      "blocks": {
+        "b0": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Logistics",
+            "title": "National distribution",
+            "text": "A 7,000 sqm warehouse with stock management and fast dispatch to retailers and parents."
+          }
+        },
+        "b1": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Retail",
+            "title": "An established retail network",
+            "text": "Independent baby stores, national chains and online retailers across Australia, with a sales team to support them."
+          }
+        },
+        "b2": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Direct",
+            "title": "Your own Australian website",
+            "text": "We build and run a Shopify website for your brand, with Australian pricing, warranty registration and local support."
+          }
+        },
+        "b3": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Marketing",
+            "title": "A 12-person marketing team",
+            "text": "Launch campaigns, paid social and search, email, content, influencers and retail activations, localised for Australian families."
+          }
+        },
+        "b4": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Care",
+            "title": "Customer service and warranty",
+            "text": "Product questions, warranty claims and returns handled by our team, through one help desk for every brand."
+          }
+        },
+        "b5": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Events",
+            "title": "Face to face with parents",
+            "text": "Stands at baby expos in Brisbane, Sydney, Melbourne, Perth and Adelaide, where parents try before they buy."
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5"
+      ]
+    },
+    "s4": {
+      "type": "ck-steps",
+      "settings": {
+        "heading": "<p>How a launch <em>works</em></p>",
+        "text": "Every brand is different, but most launches follow the same five steps.",
+        "tint": "paper"
+      },
+      "blocks": {
+        "b0": {
+          "type": "step",
+          "settings": {
+            "title": "Conversation",
+            "text": "Tell us about your brand, range and plans. We'll share how we'd position it in Australia."
+          }
+        },
+        "b1": {
+          "type": "step",
+          "settings": {
+            "title": "Range and pricing",
+            "text": "We agree the launch range and Australian pricing across retail, online and direct."
+          }
+        },
+        "b2": {
+          "type": "step",
+          "settings": {
+            "title": "Ready to land",
+            "text": "Product data, local labelling, warranty terms and support content, ready before stock arrives."
+          }
+        },
+        "b3": {
+          "type": "step",
+          "settings": {
+            "title": "Launch",
+            "text": "Your Australian website, retailer sell-in and launch campaign go live together."
+          }
+        },
+        "b4": {
+          "type": "step",
+          "settings": {
+            "title": "Grow",
+            "text": "Weekly reporting, new channels, events and range expansion as the brand builds."
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3",
+        "b4"
+      ]
+    },
+    "s5": {
+      "type": "ck-tiles",
+      "settings": {
+        "heading": "<p>Where your brand sells</p>",
+        "text": "One partner, every channel that matters in Australia.",
+        "anchor": "channels"
+      },
+      "blocks": {
+        "b0": {
+          "type": "tile",
+          "settings": {
+            "title": "Your brand website",
+            "text": "An Australian Shopify site for your brand, run by our team."
+          }
+        },
+        "b1": {
+          "type": "tile",
+          "settings": {
+            "title": "Retail partners",
+            "text": "Independent baby stores and national chains, in store and online."
+          }
+        },
+        "b2": {
+          "type": "tile",
+          "settings": {
+            "title": "The Coolkidz shop",
+            "text": "Mix-and-save, curated sets and a gift registry across the family."
+          }
+        },
+        "b3": {
+          "type": "tile",
+          "settings": {
+            "title": "Baby expos",
+            "text": "Our stands at the major baby expos around the country."
+          }
+        },
+        "b4": {
+          "type": "tile",
+          "settings": {
+            "title": "Online marketplaces",
+            "text": "Selected online retailers and marketplaces, managed for you."
+          }
+        },
+        "b5": {
+          "type": "tile",
+          "settings": {
+            "title": "Sale events",
+            "text": "Click Frenzy and seasonal promotions, planned with you."
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5"
+      ]
+    },
+    "s6": {
+      "type": "ck-report",
+      "settings": {}
+    },
+    "s7": {
+      "type": "ck-band",
+      "settings": {
+        "eyebrow": "The Coolkidz shop",
+        "heading": "<p>Your brand, <em>in more baskets</em></p>",
+        "text": "Parents who come for one brand find the rest of the family here, with a saving for mixing brands. It's an extra direct channel for every partner, and it never undercuts your own site on price.",
+        "btn_label": "See the shop",
+        "btn_url": "/",
+        "asset": "ck-t2.jpg",
+        "anchor": "dtc",
+        "tint": "blush"
+      }
+    },
+    "s8": {
+      "type": "ck-quotes",
+      "settings": {}
+    },
+    "s9": {
+      "type": "ck-faq",
+      "settings": {
+        "heading": "Questions from brands",
+        "text": "Anything else, just ask."
+      },
+      "blocks": {
+        "b0": {
+          "type": "qa",
+          "settings": {
+            "q": "Do you distribute exclusively?",
+            "a": "<p>Many of our brands are exclusively distributed in Australia by Coolkidz. We'll talk through the right model for yours.</p>"
+          }
+        },
+        "b1": {
+          "type": "qa",
+          "settings": {
+            "q": "Do you sell direct to parents?",
+            "a": "<p>Yes: through each brand's own Australian website and the Coolkidz shop, alongside our retail partners.</p>"
+          }
+        },
+        "b2": {
+          "type": "qa",
+          "settings": {
+            "q": "What reporting do partners get?",
+            "a": "<p>A regular view of sales across channels, stock, marketing performance and reviews, from our own reporting platform.</p>"
+          }
+        },
+        "b3": {
+          "type": "qa",
+          "settings": {
+            "q": "Who handles warranty and after-sales?",
+            "a": "<p>We do. Our customer service team handles product questions, warranty claims and returns for every brand through one help desk.</p>"
+          }
+        },
+        "b4": {
+          "type": "qa",
+          "settings": {
+            "q": "Which categories do you work in?",
+            "a": "<p>Prams and travel, nursery and furniture, sleep and monitors, feeding, health and care, and toys and play.</p>"
+          }
+        },
+        "b5": {
+          "type": "qa",
+          "settings": {
+            "q": "How do we start?",
+            "a": "<p>Send the form below with a little about your brand. We'll come back to you to set up a first conversation.</p>"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5"
+      ]
+    },
+    "s10": {
+      "type": "ck-form",
+      "settings": {
+        "kind": "brand",
+        "eyebrow": "Partner with us",
+        "heading": "Tell us about your brand",
+        "text": "A few details and we'll set up a first conversation with the right people on our team.",
+        "anchor": "enquire",
+        "tint": "sky"
+      }
+    }
+  },
+  "order": [
+    "s0",
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10"
+  ]
+}

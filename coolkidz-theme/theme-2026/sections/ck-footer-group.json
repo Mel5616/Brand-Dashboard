@@ -1,0 +1,13 @@
+{
+  "type": "footer",
+  "name": "Coolkidz footer",
+  "sections": {
+    "footer": {
+      "type": "ck-footer",
+      "settings": {}
+    }
+  },
+  "order": [
+    "footer"
+  ]
+}

@@ -1,0 +1,41 @@
+{%- assign s = section.settings -%}
+<footer class="ck-foot">
+  <div class="ck-wrap">
+    <a class="big" href="{{ s.big_url }}">{{ s.big_line }}</a>
+    <div class="cols">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <a class="logo" href="{{ routes.root_url }}"><img src="{{ 'ck-logo.png' | asset_url }}" alt="{{ shop.name }}" width="210" height="81"></a>
+        <p>{{ s.address }}</p>
+        <p>Phone {{ s.phone }}<br>Email <a href="mailto:{{ s.email }}">{{ s.email }}</a></p>
+        {%- form 'customer', class: 'nl' -%}
+          <input type="hidden" name="contact[tags]" value="newsletter,coolkidz-shop">
+          <input type="email" name="contact[email]" required placeholder="Your email for offers and guides" aria-label="Email">
+          <button class="ck-btn light small" type="submit">Sign up</button>
+          {%- if form.posted_successfully? -%}<p style="flex-basis:100%;color:#7FD0F2">Thanks, you're on the list.</p>{%- endif -%}
+        {%- endform -%}
+      </div>
+      <div><h4>Shop</h4><ul>{%- render 'ck-links', text: s.col_shop, wrap: 'li' -%}</ul></div>
+      <div><h4>Help</h4><ul>{%- render 'ck-links', text: s.col_help, wrap: 'li' -%}</ul></div>
+      <div><h4>For business</h4><ul>{%- render 'ck-links', text: s.col_biz, wrap: 'li' -%}</ul></div>
+      <div><h4>Our brand sites</h4><ul>{%- render 'ck-links', text: s.col_brands, wrap: 'li' -%}</ul></div>
+    </div>
+    <div class="legal"><span>&copy; {{ 'now' | date: '%Y' }} Coolkidz Australia Pty Ltd</span><span>{%- for p in shop.policies -%}<a href="{{ p.url }}">{{ p.title }}</a>{% unless forloop.last %} · {% endunless %}{%- endfor -%}</span></div>
+  </div>
+</footer>
+
+{% schema %}
+{
+  "name": "Coolkidz footer",
+  "settings": [
+    { "type": "text", "id": "big_line", "label": "Big line", "default": "Retailers and global brands, this way." },
+    { "type": "text", "id": "big_url", "label": "Big line link", "default": "/pages/business" },
+    { "type": "text", "id": "address", "label": "Address", "default": "Showroom: 1 Beyer Road, Braeside VIC 3195" },
+    { "type": "text", "id": "phone", "label": "Phone", "default": "1300 722 302" },
+    { "type": "text", "id": "email", "label": "Email", "default": "info@coolkidz.com.au" },
+    { "type": "textarea", "id": "col_shop", "label": "Shop links", "default": "Shop all | /collections/all\nThe nursery | /collections/nursery-and-sleep\nOut and about | /collections/out-and-about\nThe first weeks | /collections/first-weeks\nCurated sets | /pages/sets\nGift Registry | /pages/gift-registry\nJournal | /blogs/news" },
+    { "type": "textarea", "id": "col_help", "label": "Help links", "default": "Help and FAQs | /pages/help\nWarranty and support | https://help.coolkidz.com.au\nRefunds and recalls | /pages/refunds-recalls\nContact us | /pages/contact" },
+    { "type": "textarea", "id": "col_biz", "label": "Business links", "default": "Coolkidz for business | /pages/business\nFor retailers | /pages/for-retailers\nBecome a stockist | /pages/become-a-stockist\nPartner with us | /pages/partner-with-us\nEvents | /pages/events\nCatalogues | /pages/catalogues\nAbout Coolkidz | /pages/about" },
+    { "type": "textarea", "id": "col_brands", "label": "Brand site links", "default": "UPPAbaby | https://uppababy.com.au\nNanit | https://nanit.com.au\nGaia Baby | https://www.gaia-baby.com.au\nWonderFold | https://wonderfold.com.au\nMagic | https://magicbabyproducts.com.au\nFrida | https://fridaaustralia.com.au\nZAZU | https://zazu-kids.com.au\nMiaMily | https://miamily.com.au\nsmarTrike | https://smartrike.com.au\nMamave | https://mamave.com.au\nMatchstick Monkey | https://www.matchstickmonkey.com.au\nHannie | https://hannie.com.au" }
+  ]
+}
+{% endschema %}

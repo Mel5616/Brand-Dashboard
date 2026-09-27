@@ -1,0 +1,65 @@
+{%- comment -%}
+  Coolkidz header. A switch at the top splits the site for its two audiences,
+  parents (Shop) and the trade (Coolkidz for business); the menu below follows
+  whichever side the current page belongs to.
+{%- endcomment -%}
+{%- assign s = section.settings -%}
+{%- assign biz_list = s.business_handles | split: ',' -%}
+{%- assign is_biz = false -%}
+{%- for h in biz_list -%}{%- assign hh = h | strip -%}{%- if page.handle == hh -%}{%- assign is_biz = true -%}{%- endif -%}{%- endfor -%}
+<div class="ck-aud">
+  <div class="ck-wrap">
+    <nav aria-label="Audience">
+      <a href="{{ routes.root_url }}"{% unless is_biz %} aria-current="true"{% endunless %}>Shop</a>
+      <a href="{{ s.business_url }}"{% if is_biz %} aria-current="true"{% endif %}>Coolkidz for business</a>
+    </nav>
+    <span class="msg">{% if is_biz %}{{ s.biz_message }}{% else %}{{ s.shop_message }}{% endif %}</span>
+  </div>
+</div>
+<header class="ck-head">
+  <div class="ck-wrap ck-bar">
+    <nav class="ck-nav" aria-label="Main">
+      {%- if is_biz -%}{%- render 'ck-links', text: s.business_links -%}{%- else -%}{%- render 'ck-links', text: s.shop_links -%}{%- endif -%}
+    </nav>
+    <button class="ck-burger" type="button" data-ck-menu aria-expanded="false" aria-controls="ck-drawer">Menu</button>
+    <a class="ck-logo" href="{{ routes.root_url }}" aria-label="{{ shop.name }}">
+      {%- if s.logo != blank -%}{{ s.logo | image_url: width: 400 | image_tag: alt: shop.name }}{%- else -%}<img src="{{ 'ck-logo.png' | asset_url }}" alt="{{ shop.name }}" width="210" height="81">{%- endif -%}
+    </a>
+    <div class="ck-tools">
+      <a class="srch" href="{{ routes.search_url }}" data-ck-search>Search</a>
+      <a class="acct" href="{{ routes.account_url }}">Account</a>
+      <a class="ck-bag" href="{{ routes.cart_url }}">Bag (<span class="num" data-ck-count>{{ cart.item_count }}</span>) <span class="ck-dots" data-ck-dots aria-hidden="true"><i></i><i></i><i></i><i></i></span></a>
+    </div>
+  </div>
+  <div class="ck-search-bar" id="ck-search" hidden>
+    <form class="ck-wrap" action="{{ routes.search_url }}" method="get" role="search">
+      <input class="ck-input" type="search" name="q" placeholder="Search prams, cots, monitors, brands…" aria-label="Search">
+      <input type="hidden" name="type" value="product">
+      <button class="ck-btn" type="submit">Search</button>
+    </form>
+  </div>
+  <nav class="ck-drawer ck-wrap" id="ck-drawer" aria-label="Menu">
+    {%- if is_biz -%}{%- render 'ck-links', text: s.business_links -%}{%- else -%}{%- render 'ck-links', text: s.shop_links -%}{%- endif -%}
+    <a href="{{ routes.search_url }}">Search</a>
+    <a href="{{ routes.account_url }}">Account</a>
+  </nav>
+</header>
+
+{% schema %}
+{
+  "name": "Coolkidz header",
+  "class": "ck-header-section",
+  "settings": [
+    { "type": "image_picker", "id": "logo", "label": "Logo (defaults to the colour Coolkidz logo)" },
+    { "type": "textarea", "id": "shop_links", "label": "Shop menu (Label | /url per line)",
+      "default": "Shop all | /collections/all\nBrands | /pages/our-brands\nSets | /pages/sets\nGift Registry | /pages/gift-registry\nJournal | /blogs/news" },
+    { "type": "textarea", "id": "business_links", "label": "Business menu (Label | /url per line)",
+      "default": "For business | /pages/business\nRetailers | /pages/for-retailers\nGlobal brands | /pages/partner-with-us\nEvents | /pages/events\nAbout | /pages/about\nContact | /pages/contact" },
+    { "type": "text", "id": "business_url", "label": "Business home", "default": "/pages/business" },
+    { "type": "text", "id": "business_handles", "label": "Pages that belong to the business side (handles, comma separated)",
+      "default": "business,partner-with-us,for-retailers,become-a-stockist,about,catalogues,events,contact,good-baby-expo,visitor-signin" },
+    { "type": "text", "id": "shop_message", "label": "Shop message", "default": "Mix two or more of our brands in one order and save up to 20%" },
+    { "type": "text", "id": "biz_message", "label": "Business message", "default": "Trade enquiries 1300 722 302" }
+  ]
+}
+{% endschema %}

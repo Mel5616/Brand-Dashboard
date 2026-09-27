@@ -1,0 +1,20 @@
+{%- assign s = section.settings -%}
+<section class="ck-sec{% if s.tinted %} ck-tint-paper{% endif %}" id="sets"><div class="ck-wrap">
+  <div class="ck-shead"><h2>{{ s.heading | remove: '<p>' | remove: '</p>' }}</h2><p>{{ s.text }}</p></div>
+  <div class="ck-sets">{%- for b in section.blocks -%}{%- render 'ck-set-math', b: b, style: 'card' -%}{%- endfor -%}</div>
+  {%- if s.more_label != blank -%}<div class="ck-center"><a class="ck-btn line" href="{{ s.more_url }}">{{ s.more_label }}</a></div>{%- endif -%}
+</div></section>
+{% schema %}
+{ "name": "Curated sets",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Heading", "default": "Curated sets" },
+    { "type": "textarea", "id": "text", "label": "Text", "default": "Put together by the Coolkidz team from things parents usually buy in the same few weeks. Add a set, then change anything you like." },
+    { "type": "checkbox", "id": "tinted", "label": "Tinted background", "default": false },
+    { "type": "text", "id": "more_label", "label": "Button" },
+    { "type": "text", "id": "more_url", "label": "Button link" } ],
+  "blocks": [{ "type": "set", "name": "Set", "settings": [
+    { "type": "text", "id": "title", "label": "Title" },
+    { "type": "textarea", "id": "text", "label": "Text" },
+    { "type": "product", "id": "product_1", "label": "Product 1" },{ "type": "product", "id": "product_2", "label": "Product 2" },{ "type": "product", "id": "product_3", "label": "Product 3" },{ "type": "product", "id": "product_4", "label": "Product 4" },{ "type": "product", "id": "product_5", "label": "Product 5" } ] }],
+  "presets": [{ "name": "Curated sets" }] }
+{% endschema %}

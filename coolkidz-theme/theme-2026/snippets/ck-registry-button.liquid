@@ -1,0 +1,12 @@
+{%- comment -%}
+  "Add to gift registry" on product pages. Works on any brand's product: the
+  Coolkidz Gift Registry holds every brand in one list. Logic lives in
+  assets/ck-registry.js; without a registry on this device it sends the parent
+  to create one and adds this product straight after.
+{%- endcomment -%}
+{{ 'ck-registry.css' | asset_url | stylesheet_tag }}
+<div class="ckr-add" data-ck-registry-api="https://marketing.coolkidz.com.au/api/registry">
+  <button type="button" class="ckr-btn" data-ck-add-registry data-handle="{{ product.handle }}" data-variant="{{ product.selected_or_first_available_variant.id }}">Add to gift registry</button>
+  <div class="ckr-add-msg" data-ck-add-msg aria-live="polite"></div>
+</div>
+<script src="{{ 'ck-registry.js' | asset_url }}" defer></script>

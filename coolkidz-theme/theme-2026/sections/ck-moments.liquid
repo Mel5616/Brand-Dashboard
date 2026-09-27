@@ -1,0 +1,26 @@
+{%- assign s = section.settings -%}
+<section class="ck-sec{% if s.tight %} tight{% endif %}"><div class="ck-wrap">
+  {%- if s.heading != blank -%}<div class="ck-shead"><h2>{{ s.heading | remove: '<p>' | remove: '</p>' }}</h2><p>{{ s.text }}</p></div>{%- endif -%}
+  <div class="ck-moments">
+    {%- for b in section.blocks -%}
+      <a class="ck-moment" href="{{ b.settings.url }}" {{ b.shopify_attributes }}>
+        {%- render 'ck-img', image: b.settings.image, asset: b.settings.asset, alt: b.settings.title, width: 800 -%}
+        <div class="t"><span>{{ b.settings.brands }}</span><h3>{{ b.settings.title }}</h3></div>
+      </a>
+    {%- endfor -%}
+  </div>
+</div></section>
+{% schema %}
+{ "name": "Shop by moment",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Heading", "default": "Shop by moment" },
+    { "type": "textarea", "id": "text", "label": "Text", "default": "Four chapters of the first years, each pulling from several brands at once." },
+    { "type": "checkbox", "id": "tight", "label": "Less space", "default": false } ],
+  "blocks": [{ "type": "moment", "name": "Moment", "settings": [
+    { "type": "text", "id": "title", "label": "Title" },
+    { "type": "text", "id": "brands", "label": "Brands line" },
+    { "type": "text", "id": "url", "label": "Link" },
+    { "type": "image_picker", "id": "image", "label": "Image" },
+    { "type": "text", "id": "asset", "label": "Fallback theme asset", "default": "ck-m-nursery.jpg" } ] }],
+  "presets": [{ "name": "Shop by moment" }] }
+{% endschema %}

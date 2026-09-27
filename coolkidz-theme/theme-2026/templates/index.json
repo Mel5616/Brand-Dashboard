@@ -1,0 +1,581 @@
+{
+  "layout": "ck",
+  "sections": {
+    "s0": {
+      "type": "ck-hero",
+      "settings": {},
+      "blocks": {
+        "b0": {
+          "type": "photo",
+          "settings": {
+            "asset": "ck-t1.jpg",
+            "alt": "A parent walking with a child in a smarTrike Wonder max",
+            "brand": "smarTrike",
+            "product": "Wonder max",
+            "moment": "Out and about",
+            "url": "/collections/out-and-about"
+          }
+        },
+        "b1": {
+          "type": "photo",
+          "settings": {
+            "asset": "ck-t2.jpg",
+            "alt": "A mother holding her baby in a nursery with a Nanit monitor",
+            "brand": "Nanit",
+            "product": "Pro camera",
+            "moment": "The nursery",
+            "url": "/collections/nursery-and-sleep"
+          }
+        },
+        "b2": {
+          "type": "photo",
+          "settings": {
+            "asset": "ck-t3.jpg",
+            "alt": "A baby resting on a parent's shoulder",
+            "brand": "Frida",
+            "product": "Baby care",
+            "moment": "The first weeks",
+            "url": "/collections/first-weeks"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2"
+      ]
+    },
+    "s1": {
+      "type": "ck-mix",
+      "settings": {}
+    },
+    "s2": {
+      "type": "ck-moments",
+      "settings": {},
+      "blocks": {
+        "b0": {
+          "type": "moment",
+          "settings": {
+            "title": "The nursery",
+            "brands": "Gaia \u00b7 Nanit \u00b7 Magic",
+            "url": "/collections/nursery-and-sleep",
+            "asset": "ck-m-nursery.jpg"
+          }
+        },
+        "b1": {
+          "type": "moment",
+          "settings": {
+            "title": "Out and about",
+            "brands": "UPPAbaby \u00b7 WonderFold",
+            "url": "/collections/out-and-about",
+            "asset": "ck-m-out.jpg"
+          }
+        },
+        "b2": {
+          "type": "moment",
+          "settings": {
+            "title": "Travel",
+            "brands": "MiaMily \u00b7 smarTrike",
+            "url": "/collections/out-and-about",
+            "asset": "ck-m-travel.jpg"
+          }
+        },
+        "b3": {
+          "type": "moment",
+          "settings": {
+            "title": "The first weeks",
+            "brands": "Frida \u00b7 Mamave \u00b7 ZAZU",
+            "url": "/collections/first-weeks",
+            "asset": "ck-m-sleep.jpg"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3"
+      ]
+    },
+    "s3": {
+      "type": "ck-products",
+      "settings": {
+        "heading": "The edit"
+      },
+      "blocks": {
+        "b0": {
+          "type": "tab",
+          "settings": {
+            "collection": "nursery-and-sleep",
+            "label": "Nursery and sleep"
+          }
+        },
+        "b1": {
+          "type": "tab",
+          "settings": {
+            "collection": "out-and-about",
+            "label": "Out and about"
+          }
+        },
+        "b2": {
+          "type": "tab",
+          "settings": {
+            "collection": "first-weeks",
+            "label": "The first weeks"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2"
+      ]
+    },
+    "s4": {
+      "type": "ck-feature-set",
+      "settings": {
+        "heading": "Baby number two",
+        "asset": "ck-wf.jpg",
+        "tint": "sky",
+        "product_1": "w2-luxe-stroller-wagon-charcoal-grey",
+        "product_2": "smartrike-wonder-max-stone-beige",
+        "product_3": "hannie-portable-high-chair-sage-green",
+        "product_4": "zazu-sleeptrainer-sam-camel"
+      }
+    },
+    "s5": {
+      "type": "ck-sets",
+      "settings": {
+        "more_label": "See all sets",
+        "more_url": "/pages/sets"
+      },
+      "blocks": {
+        "b0": {
+          "type": "set",
+          "settings": {
+            "title": "The nursery",
+            "text": "Cot, mattress, monitor and nappy bin for the first room.",
+            "product_1": "eos-cot-bed-natural-ash-natural",
+            "product_2": "gaia-eos-cot-mattress-140x70x10",
+            "product_3": "pro-camera-floor-stand",
+            "product_4": "heka-xl-telescopic-nappy-bin-lichen"
+          }
+        },
+        "b1": {
+          "type": "set",
+          "settings": {
+            "title": "Hospital bag and home",
+            "text": "The capsule for the drive home and the first-weeks kit for mum and baby.",
+            "product_1": "uppababy-mesa-car-seat-capsule-charcoal-melange-greyson-1",
+            "product_2": "frida-mom-hospital-labor-delivery-kit",
+            "product_3": "frida-baby-nosefrida",
+            "product_4": "bubbas-wash",
+            "product_5": "mummas-oil"
+          }
+        },
+        "b2": {
+          "type": "set",
+          "settings": {
+            "title": "Sleep, sorted",
+            "text": "A monitor you can trust, a sleep clock for later, and the sound and light to wind down.",
+            "product_1": "pro-camera-floor-stand",
+            "product_2": "sound-light-machine",
+            "product_3": "zazu-sleeptrainer-sam-camel",
+            "product_4": "zazu-rest-nest-privacy-sleep-pod"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2"
+      ]
+    },
+    "s6": {
+      "type": "ck-band",
+      "settings": {
+        "asset": "ck-reg.jpg",
+        "tint": "blush"
+      },
+      "blocks": {
+        "b0": {
+          "type": "step",
+          "settings": {
+            "text": "Add anything from all twelve brands to one list."
+          }
+        },
+        "b1": {
+          "type": "step",
+          "settings": {
+            "text": "Share one link. Bought gifts come off the list on their own."
+          }
+        },
+        "b2": {
+          "type": "step",
+          "settings": {
+            "text": "Finish the list yourself, mixing brands to save."
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2"
+      ]
+    },
+    "s7": {
+      "type": "ck-who",
+      "settings": {
+        "tint": "sky"
+      },
+      "blocks": {
+        "b0": {
+          "type": "stat",
+          "settings": {
+            "number": "25+",
+            "label": "years distributing premium baby brands"
+          }
+        },
+        "b1": {
+          "type": "stat",
+          "settings": {
+            "number": "12",
+            "label": "brands in the Coolkidz family"
+          }
+        },
+        "b2": {
+          "type": "stat",
+          "settings": {
+            "number": "7,000 m\u00b2",
+            "label": "warehouse and fulfilment centre"
+          }
+        },
+        "b3": {
+          "type": "stat",
+          "settings": {
+            "number": "12",
+            "label": "in-house marketing specialists"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3"
+      ]
+    },
+    "s8": {
+      "type": "ck-brands",
+      "settings": {
+        "more_label": "Meet the brands",
+        "more_url": "/pages/our-brands"
+      },
+      "blocks": {
+        "b0": {
+          "type": "brand",
+          "settings": {
+            "name": "UPPAbaby",
+            "vendor": "uppababy",
+            "category": "Prams, capsules and nursery",
+            "origin": "Designed in the USA",
+            "story": "Prams, capsules and nursery pieces designed around how families actually live. Distributed, warranted and serviced in Australia by Coolkidz.",
+            "site": "https://uppababy.com.au",
+            "asset": "ck-m-out.jpg"
+          }
+        },
+        "b1": {
+          "type": "brand",
+          "settings": {
+            "name": "Nanit",
+            "vendor": "nanit",
+            "category": "Smart baby monitors",
+            "origin": "Designed in the USA",
+            "story": "Overhead HD baby monitors with sleep tracking, plus breathing motion monitoring through the night, all in the Nanit app.",
+            "site": "https://nanit.com.au",
+            "asset": "ck-t2.jpg"
+          }
+        },
+        "b2": {
+          "type": "brand",
+          "settings": {
+            "name": "Gaia Baby",
+            "vendor": "gaia baby",
+            "category": "Nursery furniture",
+            "origin": "Nursery furniture",
+            "story": "Cots, dressers and nursing chairs like the Eos range, made to grow with your child from the first night.",
+            "site": "https://www.gaia-baby.com.au",
+            "asset": "ck-rocker.jpg"
+          }
+        },
+        "b3": {
+          "type": "brand",
+          "settings": {
+            "name": "WonderFold",
+            "vendor": "wonderfold",
+            "category": "Stroller wagons",
+            "origin": "Designed in California",
+            "story": "Stroller wagons that seat two to six children, from the W2 to the W6, with room for everything else too.",
+            "site": "https://wonderfold.com.au",
+            "asset": "ck-wf.jpg"
+          }
+        },
+        "b4": {
+          "type": "brand",
+          "settings": {
+            "name": "Magic",
+            "vendor": "magic",
+            "category": "Nappy bins",
+            "origin": "Designed in the Netherlands",
+            "story": "Odour-free nappy bins with a twist-and-seal system and no refill cartridges.",
+            "site": "https://magicbabyproducts.com.au",
+            "asset": "ck-p-heka.jpg"
+          }
+        },
+        "b5": {
+          "type": "brand",
+          "settings": {
+            "name": "Frida",
+            "vendor": "frida",
+            "category": "Baby and postpartum care",
+            "origin": "Frida Baby and Frida Mom",
+            "story": "Practical care for babies and new mums, from the NoseFrida to the hospital birth kit.",
+            "site": "https://fridaaustralia.com.au",
+            "asset": "ck-t3.jpg"
+          }
+        },
+        "b6": {
+          "type": "brand",
+          "settings": {
+            "name": "ZAZU",
+            "vendor": "zazu",
+            "category": "Sleep helpers",
+            "origin": "Designed in the Netherlands",
+            "story": "Sleep trainer clocks, nightlights, projectors and white noise for babies and toddlers.",
+            "site": "https://zazu-kids.com.au",
+            "asset": "ck-zazu.jpg"
+          }
+        },
+        "b7": {
+          "type": "brand",
+          "settings": {
+            "name": "MiaMily",
+            "vendor": "miamily",
+            "category": "Family luggage",
+            "origin": "Designed in Switzerland",
+            "story": "Carry-on and check-in suitcases with a built-in seat, so little ones can ride through the airport.",
+            "site": "https://miamily.com.au",
+            "asset": "ck-m-travel.jpg"
+          }
+        },
+        "b8": {
+          "type": "brand",
+          "settings": {
+            "name": "smarTrike",
+            "vendor": "smartrike",
+            "category": "Stroller-trikes and scooters",
+            "origin": "Designed smart since 2006",
+            "story": "The Wonder range of folding stroller-trikes, plus scooters that grow with your child.",
+            "site": "https://smartrike.com.au",
+            "asset": "ck-t1.jpg"
+          }
+        },
+        "b9": {
+          "type": "brand",
+          "settings": {
+            "name": "Mamave",
+            "vendor": "mamave",
+            "category": "Skincare for mum and baby",
+            "origin": "Skincare",
+            "story": "Gentle skincare for mum and baby, from Mumma's Oil to Bubba's Wash.",
+            "site": "https://mamave.com.au",
+            "asset": "ck-mamave.jpg"
+          }
+        },
+        "b10": {
+          "type": "brand",
+          "settings": {
+            "name": "Matchstick Monkey",
+            "vendor": "matchstick monkey",
+            "category": "Teething and first brushes",
+            "origin": "Trusted in over 60 countries",
+            "story": "Teething toys and first toothbrushes shaped for small hands and sore gums.",
+            "site": "https://www.matchstickmonkey.com.au",
+            "asset": "ck-p-mm.jpg"
+          }
+        },
+        "b11": {
+          "type": "brand",
+          "settings": {
+            "name": "Hannie",
+            "vendor": "hannie",
+            "category": "Portable high chairs",
+            "origin": "Eating out, made easy",
+            "story": "A portable high chair that packs down to go wherever you eat.",
+            "site": "https://hannie.com.au",
+            "asset": "ck-hannie.jpg"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7",
+        "b8",
+        "b9",
+        "b10",
+        "b11"
+      ]
+    },
+    "s9": {
+      "type": "ck-journal",
+      "settings": {},
+      "blocks": {
+        "b0": {
+          "type": "external",
+          "settings": {
+            "brand": "UPPAbaby",
+            "title": "Baby Registries in Australia: How They Work, and What to Put on One",
+            "url": "https://uppababy.com.au/blogs/news/baby-registry-australia-how-it-works",
+            "image_url": "https://uppababy.com.au/cdn/shop/articles/DSC06039_f360e749-dc22-414c-a793-5058531dd447.jpg?v=1790294494&width=1200"
+          }
+        },
+        "b1": {
+          "type": "external",
+          "settings": {
+            "brand": "Frida",
+            "title": "Postpartum Care: What Your Body Needs in the First 12 Weeks",
+            "url": "https://fridaaustralia.com.au/blogs/postpartum-guides/postpartum-care-tips-fourth-trimester",
+            "image_url": "https://fridaaustralia.com.au/cdn/shop/articles/1789944802401.jpg?v=1789944837&width=1200"
+          }
+        },
+        "b2": {
+          "type": "external",
+          "settings": {
+            "brand": "Gaia Baby",
+            "title": "Nursery Furniture Checklist: What New Parents Actually Need",
+            "url": "https://gaia-baby.com.au/blogs/news/nursery-furniture-checklist",
+            "image_url": "http://www.gaia-baby.com.au/cdn/shop/articles/Gaia_Baby_Hera_Nursery_Cot_Bed_Furniture_Natural_Ash_Walnut_23_EDIT_0ad77422-d678-4ae3-8962-def5894c74f3.jpg?v=1789547607&width=600"
+          }
+        },
+        "b3": {
+          "type": "external",
+          "settings": {
+            "brand": "Nanit",
+            "title": "Overtired or Undertired? How to Tell the Difference in a Few Small Clues",
+            "url": "https://nanit.com.au/blogs/news/overtired-or-undertired-baby-how-to-tell-the-difference",
+            "image_url": "http://nanit.com.au/cdn/shop/articles/BreathingMotion.webp?v=1789093047&width=600"
+          }
+        },
+        "b4": {
+          "type": "external",
+          "settings": {
+            "brand": "MiaMily",
+            "title": "Setting the TSA lock, and looking after a MiaMily",
+            "url": "https://miamily.com.au/blogs/news/tsa-lock-and-care",
+            "image_url": "https://miamily.com.au/cdn/shop/articles/black-lock-macro.jpg?v=1788760201&width=1600"
+          }
+        },
+        "b5": {
+          "type": "external",
+          "settings": {
+            "brand": "ZAZU",
+            "title": "Daylight saving without the meltdown",
+            "url": "https://9d6zji-bd.myshopify.com/blogs/news/daylight-saving-without-the-meltdown",
+            "image_url": "http://zazu-kids.com.au/cdn/shop/articles/DAVY_Taupe_GREEN_Product-shot-AWARD-2400x1875-1.jpg?v=1788648767&width=600"
+          }
+        },
+        "b6": {
+          "type": "external",
+          "settings": {
+            "brand": "Hannie",
+            "title": "Eating out with a baby: the 2 kg trick that changes everything",
+            "url": "https://9jvc9y-cp.myshopify.com/blogs/news/learn-eating-out",
+            "image_url": "https://cdn.shopify.com/s/files/1/0772/6930/3550/articles/Mahogany_lifestyle_Carro_1_1.jpg?v=1788269051&width=600"
+          }
+        },
+        "b7": {
+          "type": "external",
+          "settings": {
+            "brand": "Mamave",
+            "title": "Refill & Save: the case for never running out",
+            "url": "https://mamave-baby.myshopify.com/blogs/journal/journal-refill-and-save",
+            "image_url": "https://cdn.shopify.com/s/files/1/0603/2569/1599/articles/Mumma_Moisturiser.jpg?v=1788254919&width=600"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ]
+    },
+    "s10": {
+      "type": "ck-tiles",
+      "settings": {
+        "tight": true
+      },
+      "blocks": {
+        "b0": {
+          "type": "tile",
+          "settings": {
+            "title": "25 years",
+            "text": "The Australian distributor for these brands, supplying baby stores nationwide."
+          }
+        },
+        "b1": {
+          "type": "tile",
+          "settings": {
+            "title": "One warehouse",
+            "text": "Every brand ships from our 7,000 sqm warehouse, so a mixed order is packed by one team."
+          }
+        },
+        "b2": {
+          "type": "tile",
+          "settings": {
+            "title": "One help desk",
+            "text": "Warranty, returns and product questions for every brand, in one place.",
+            "link_label": "help.coolkidz.com.au",
+            "link_url": "https://help.coolkidz.com.au"
+          }
+        },
+        "b3": {
+          "type": "tile",
+          "settings": {
+            "title": "Same price",
+            "text": "Single products match the brand's own site. The mixed-brand saving is only here."
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3"
+      ]
+    }
+  },
+  "order": [
+    "s0",
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10"
+  ]
+}

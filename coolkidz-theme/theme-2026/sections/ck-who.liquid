@@ -1,0 +1,22 @@
+{%- assign s = section.settings -%}
+<section class="ck-sec ck-who ck-tint-{{ s.tint }}"><div class="ck-wrap">
+  <div>
+    <span class="ck-eyebrow">{{ s.eyebrow }}</span>
+    <h2 style="margin-top:16px">{{ s.heading | remove: '<p>' | remove: '</p>' }}</h2>
+    <div class="ck-rte" style="margin-top:22px">{{ s.text }}</div>
+    {%- if s.link_label != blank -%}<p style="margin-top:26px"><a class="ck-link" href="{{ s.link_url }}">{{ s.link_label }}</a></p>{%- endif -%}
+  </div>
+  <div class="ck-stats2">{%- for b in section.blocks -%}<div {{ b.shopify_attributes }}><b>{{ b.settings.number }}</b><span>{{ b.settings.label }}</span></div>{%- endfor -%}</div>
+</div></section>
+{% schema %}
+{ "name": "Story with stats",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Who we are" },
+    { "type": "richtext", "id": "heading", "label": "Heading", "default": "<p>The Australian home of <em>the brands you know</em></p>" },
+    { "type": "richtext", "id": "text", "label": "Text", "default": "<p>Coolkidz is the distributor that brings these brands to Australia. We choose them, stock them in our own warehouse and supply baby stores across the country. This shop is the one place to buy them together.</p>" },
+    { "type": "text", "id": "link_label", "label": "Link", "default": "Coolkidz for business" },
+    { "type": "text", "id": "link_url", "label": "Link URL", "default": "/pages/business" },
+    { "type": "select", "id": "tint", "label": "Background", "options": [{"value":"white","label":"White"},{"value":"sky","label":"Sky"},{"value":"mint","label":"Mint"},{"value":"blush","label":"Blush"},{"value":"coral","label":"Coral"},{"value":"paper","label":"Grey"},{"value":"navy","label":"Navy"}], "default": "white" } ],
+  "blocks": [{ "type": "stat", "name": "Stat", "settings": [{ "type": "text", "id": "number", "label": "Number" },{ "type": "text", "id": "label", "label": "Label" }] }],
+  "presets": [{ "name": "Story with stats" }] }
+{% endschema %}

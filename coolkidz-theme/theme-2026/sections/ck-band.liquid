@@ -1,0 +1,26 @@
+{%- assign s = section.settings -%}
+<section class="ck-sec tight" id="{{ s.anchor }}"><div class="ck-band ck-tint-{{ s.tint }}">
+  <div class="ph">{%- render 'ck-img', image: s.image, asset: s.asset, alt: s.heading, width: 1400 -%}</div>
+  <div class="tx">
+    <span class="ck-eyebrow">{{ s.eyebrow }}</span>
+    <h2>{{ s.heading | remove: '<p>' | remove: '</p>' }}</h2>
+    <p>{{ s.text }}</p>
+    {%- if section.blocks.size > 0 -%}<ol>{%- for b in section.blocks -%}<li {{ b.shopify_attributes }}><b>{{ forloop.index }}</b><span>{{ b.settings.text }}</span></li>{%- endfor -%}</ol>{%- endif -%}
+    {%- if s.btn_label != blank -%}<div><a class="ck-btn" href="{{ s.btn_url }}">{{ s.btn_label }}</a></div>{%- endif -%}
+  </div>
+</div></section>
+{% schema %}
+{ "name": "Photo band",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Coolkidz Gift Registry" },
+    { "type": "richtext", "id": "heading", "label": "Heading", "default": "<p>One registry, <em>every brand</em></p>" },
+    { "type": "textarea", "id": "text", "label": "Text", "default": "Put the pram, the cot and the monitor on one list. Family and friends buy from one link, and bought gifts come off the list on their own." },
+    { "type": "text", "id": "btn_label", "label": "Button", "default": "Start a registry" },
+    { "type": "text", "id": "btn_url", "label": "Button link", "default": "/pages/gift-registry" },
+    { "type": "image_picker", "id": "image", "label": "Image" },
+    { "type": "text", "id": "asset", "label": "Fallback theme asset", "default": "ck-reg.jpg" },
+    { "type": "text", "id": "anchor", "label": "Anchor", "default": "registry" },
+    { "type": "select", "id": "tint", "label": "Background", "options": [{"value":"white","label":"White"},{"value":"sky","label":"Sky"},{"value":"mint","label":"Mint"},{"value":"blush","label":"Blush"},{"value":"coral","label":"Coral"},{"value":"paper","label":"Grey"},{"value":"navy","label":"Navy"}], "default": "white" } ],
+  "blocks": [{ "type": "step", "name": "Step", "settings": [{ "type": "text", "id": "text", "label": "Text" }] }],
+  "presets": [{ "name": "Photo band" }] }
+{% endschema %}

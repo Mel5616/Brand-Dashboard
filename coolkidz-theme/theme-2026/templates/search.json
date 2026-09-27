@@ -1,0 +1,12 @@
+{
+  "layout": "ck",
+  "sections": {
+    "s0": {
+      "type": "ck-search",
+      "settings": {}
+    }
+  },
+  "order": [
+    "s0"
+  ]
+}

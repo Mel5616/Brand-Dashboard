@@ -1,0 +1,22 @@
+<section class="ck-colhero ck-tint-sky"><div class="ck-wrap in">
+  <div><span class="ck-eyebrow">Coolkidz</span><h1>{{ blog.title | replace: 'News', 'Journal' }}</h1></div>
+  <p>{{ section.settings.text }}</p>
+</div></section>
+<section class="ck-sec" style="padding-top:clamp(28px,3vw,44px)"><div class="ck-wrap">
+  {%- paginate blog.articles by 12 -%}
+    <div class="ck-journal">
+      {%- for a in blog.articles -%}
+        <a class="ck-post" href="{{ a.url }}">
+          <div class="ph">{%- if a.image -%}{{ a.image | image_url: width: 900 | image_tag: loading: 'lazy', alt: a.title }}{%- endif -%}</div>
+          <span class="ck-eyebrow">{{ a.published_at | date: '%-d %B %Y' }}</span>
+          <h3>{{ a.title }}</h3>
+          <p>{{ a.excerpt_or_content | strip_html | truncatewords: 24 }}</p>
+        </a>
+      {%- endfor -%}
+    </div>
+    {%- if paginate.pages > 1 -%}<nav class="ck-pag">{%- if paginate.previous -%}<a href="{{ paginate.previous.url }}">←</a>{%- endif -%}<span class="current">{{ paginate.current_page }}</span>{%- if paginate.next -%}<a href="{{ paginate.next.url }}">→</a>{%- endif -%}</nav>{%- endif -%}
+  {%- endpaginate -%}
+</div></section>
+{% schema %}
+{ "name": "Blog", "settings": [{ "type": "textarea", "id": "text", "label": "Intro", "default": "Guides for the first years: prams and travel, sleep, nursery set-up, and caring for you and your baby." }] }
+{% endschema %}

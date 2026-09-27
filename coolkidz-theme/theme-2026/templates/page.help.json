@@ -1,0 +1,136 @@
+{
+  "layout": "ck",
+  "sections": {
+    "s0": {
+      "type": "ck-page-hero",
+      "settings": {
+        "eyebrow": "Help",
+        "heading": "<p>How can we <em>help?</em></p>",
+        "text": "Answers to the questions we hear most. For anything about a product, warranty or return, our help desk covers every brand.",
+        "btn1_label": "Open the help desk",
+        "btn1_url": "https://help.coolkidz.com.au",
+        "btn2_label": "Contact us",
+        "btn2_url": "/pages/contact",
+        "tint": "sky"
+      }
+    },
+    "s1": {
+      "type": "ck-faq",
+      "settings": {
+        "heading": "Shopping with Coolkidz",
+        "anchor": "faq"
+      },
+      "blocks": {
+        "b0": {
+          "type": "qa",
+          "settings": {
+            "q": "How does mix-and-save work?",
+            "a": "<p>The discount depends on how many different brands are in your order: 10% for two brands, 15% for three and 20% for four or more. It's applied at checkout.</p>"
+          }
+        },
+        "b1": {
+          "type": "qa",
+          "settings": {
+            "q": "Are the prices the same as the brand websites?",
+            "a": "<p>Yes. Single products are the same price here as on each brand's own Australian site. The mixed-brand saving only happens here.</p>"
+          }
+        },
+        "b2": {
+          "type": "qa",
+          "settings": {
+            "q": "Where do orders ship from?",
+            "a": "<p>Orders ship from the Coolkidz warehouse. Delivery options and costs are shown at checkout.</p>"
+          }
+        },
+        "b3": {
+          "type": "qa",
+          "settings": {
+            "q": "How do returns and refunds work?",
+            "a": "<p>See our <a href=\"/policies/refund-policy\">refund policy</a>. For a faulty product, open a ticket at <a href=\"https://help.coolkidz.com.au\">help.coolkidz.com.au</a> and our team will sort it out.</p>"
+          }
+        },
+        "b4": {
+          "type": "qa",
+          "settings": {
+            "q": "Do products come with an Australian warranty?",
+            "a": "<p>Yes. Everything is official Australian stock, and warranty claims for every brand go through <a href=\"https://help.coolkidz.com.au\">help.coolkidz.com.au</a>.</p>"
+          }
+        },
+        "b5": {
+          "type": "qa",
+          "settings": {
+            "q": "How does the gift registry work?",
+            "a": "<p>Create a registry, add products from any of our brands, and share one link. Bought gifts come off the list on their own. <a href=\"/pages/gift-registry\">Start a registry</a>.</p>"
+          }
+        },
+        "b6": {
+          "type": "qa",
+          "settings": {
+            "q": "Is there a product recall I should know about?",
+            "a": "<p>Current notices are on our <a href=\"/pages/refunds-recalls\">refunds and recalls page</a>.</p>"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6"
+      ]
+    },
+    "s2": {
+      "type": "ck-tiles",
+      "settings": {
+        "tight": true
+      },
+      "blocks": {
+        "b0": {
+          "type": "tile",
+          "settings": {
+            "title": "Help desk",
+            "text": "Warranty, returns and product questions for every brand.",
+            "link_label": "help.coolkidz.com.au",
+            "link_url": "https://help.coolkidz.com.au"
+          }
+        },
+        "b1": {
+          "type": "tile",
+          "settings": {
+            "title": "Call us",
+            "text": "1300 722 302, Monday to Friday."
+          }
+        },
+        "b2": {
+          "type": "tile",
+          "settings": {
+            "title": "Showroom",
+            "text": "1 Beyer Road, Braeside VIC 3195. Please call ahead."
+          }
+        },
+        "b3": {
+          "type": "tile",
+          "settings": {
+            "title": "Refunds and recalls",
+            "text": "Our refund policy and current product notices.",
+            "link_label": "Read more",
+            "link_url": "/pages/refunds-recalls"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3"
+      ]
+    }
+  },
+  "order": [
+    "s0",
+    "s1",
+    "s2"
+  ]
+}

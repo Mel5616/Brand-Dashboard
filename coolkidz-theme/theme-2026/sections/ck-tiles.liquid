@@ -1,0 +1,30 @@
+{%- assign s = section.settings -%}
+<section class="ck-sec{% if s.tight %} tight{% endif %} ck-tint-{{ s.tint }}" id="{{ s.anchor }}"><div class="ck-wrap">
+  {%- if s.heading != blank -%}<div class="ck-shead"><h2>{{ s.heading | remove: '<p>' | remove: '</p>' }}</h2><p>{{ s.text }}</p></div>{%- endif -%}
+  <div class="ck-tiles{% if section.blocks.size == 3 or section.blocks.size == 6 %} cols-3{% endif %}">
+    {%- for b in section.blocks -%}
+      <div {{ b.shopify_attributes }}>
+        {%- if b.settings.eyebrow != blank -%}<span class="ck-eyebrow">{{ b.settings.eyebrow }}</span>{%- endif -%}
+        <b>{{ b.settings.title }}</b>
+        <p>{{ b.settings.text }}</p>
+        {%- if b.settings.link_label != blank -%}<a class="ck-link" href="{{ b.settings.link_url }}" style="align-self:flex-start;margin-top:6px;font-size:14px">{{ b.settings.link_label }}</a>{%- endif -%}
+      </div>
+    {%- endfor -%}
+  </div>
+</div></section>
+{% schema %}
+{ "name": "Tiles",
+  "settings": [
+    { "type": "richtext", "id": "heading", "label": "Heading" },
+    { "type": "textarea", "id": "text", "label": "Text" },
+    { "type": "checkbox", "id": "tight", "label": "Less space", "default": false },
+    { "type": "text", "id": "anchor", "label": "Anchor" },
+    { "type": "select", "id": "tint", "label": "Background", "options": [{"value":"white","label":"White"},{"value":"sky","label":"Sky"},{"value":"mint","label":"Mint"},{"value":"blush","label":"Blush"},{"value":"coral","label":"Coral"},{"value":"paper","label":"Grey"},{"value":"navy","label":"Navy"}], "default": "white" } ],
+  "blocks": [{ "type": "tile", "name": "Tile", "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow" },
+    { "type": "text", "id": "title", "label": "Title" },
+    { "type": "textarea", "id": "text", "label": "Text" },
+    { "type": "text", "id": "link_label", "label": "Link" },
+    { "type": "text", "id": "link_url", "label": "Link URL" } ] }],
+  "presets": [{ "name": "Tiles" }] }
+{% endschema %}

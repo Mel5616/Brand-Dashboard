@@ -1,0 +1,9 @@
+<section class="ck-sec tight"><div class="ck-wrap">
+  {%- if section.settings.heading != blank -%}<div class="ck-shead solo"><h2 style="font-size:clamp(28px,3.2vw,44px)">{{ section.settings.heading | remove: '<p>' | remove: '</p>' }}</h2></div>{%- endif -%}
+  <div class="ck-stats">{%- for b in section.blocks -%}<div {{ b.shopify_attributes }}><b>{{ b.settings.number }}</b><span>{{ b.settings.label }}</span></div>{%- endfor -%}</div>
+</div></section>
+{% schema %}
+{ "name": "Stats", "settings": [{ "type": "text", "id": "heading", "label": "Heading" }],
+  "blocks": [{ "type": "stat", "name": "Stat", "settings": [{ "type": "text", "id": "number", "label": "Number" },{ "type": "text", "id": "label", "label": "Label" }] }],
+  "presets": [{ "name": "Stats" }] }
+{% endschema %}

@@ -1,0 +1,25 @@
+<section class="ck-sec tight"><div class="ck-wrap"><div class="ck-doors">
+  {%- for b in section.blocks -%}
+    <article class="ck-door ck-tint-{{ b.settings.tint }}" id="{{ b.settings.anchor }}" {{ b.shopify_attributes }}>
+      <span class="ck-eyebrow">{{ b.settings.eyebrow }}</span>
+      <h3>{{ b.settings.title }}</h3>
+      <p>{{ b.settings.text }}</p>
+      {%- assign lines = b.settings.list | newline_to_br | split: '<br />' -%}
+      <ul>{%- for l in lines -%}{%- assign t = l | strip -%}{%- if t != '' -%}<li>{{ t }}</li>{%- endif -%}{%- endfor -%}</ul>
+      {%- if b.settings.btn_label != blank -%}<a class="ck-btn" href="{{ b.settings.btn_url }}">{{ b.settings.btn_label }}</a>{%- endif -%}
+    </article>
+  {%- endfor -%}
+</div></div></section>
+{% schema %}
+{ "name": "Two doors", "max_blocks": 2,
+  "blocks": [{ "type": "door", "name": "Door", "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow" },
+    { "type": "text", "id": "title", "label": "Title" },
+    { "type": "textarea", "id": "text", "label": "Text" },
+    { "type": "textarea", "id": "list", "label": "List (one per line)" },
+    { "type": "text", "id": "btn_label", "label": "Button" },
+    { "type": "text", "id": "btn_url", "label": "Button link" },
+    { "type": "text", "id": "anchor", "label": "Anchor" },
+    { "type": "select", "id": "tint", "label": "Background", "options": [{"value":"sky","label":"Sky"},{"value":"mint","label":"Mint"},{"value":"blush","label":"Blush"},{"value":"coral","label":"Coral"},{"value":"paper","label":"Grey"}], "default": "mint" } ] }],
+  "presets": [{ "name": "Two doors" }] }
+{% endschema %}

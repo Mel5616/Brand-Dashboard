@@ -1,0 +1,9 @@
+{
+  "sections": {
+    "registry": {
+      "type": "ck-gift-registry",
+      "settings": {}
+    }
+  },
+  "order": ["registry"]
+}

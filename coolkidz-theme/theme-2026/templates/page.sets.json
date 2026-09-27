@@ -1,0 +1,111 @@
+{
+  "layout": "ck",
+  "sections": {
+    "s0": {
+      "type": "ck-page-hero",
+      "settings": {
+        "eyebrow": "Curated sets",
+        "heading": "<p>Sets that <em>just work together</em></p>",
+        "text": "Put together by the Coolkidz team from things parents usually buy in the same few weeks. Every set mixes brands, so the saving is built in.",
+        "tint": "mint"
+      }
+    },
+    "s1": {
+      "type": "ck-feature-set",
+      "settings": {
+        "heading": "Baby number two",
+        "asset": "ck-wf.jpg",
+        "tint": "sky",
+        "product_1": "w2-luxe-stroller-wagon-charcoal-grey",
+        "product_2": "smartrike-wonder-max-stone-beige",
+        "product_3": "hannie-portable-high-chair-sage-green",
+        "product_4": "zazu-sleeptrainer-sam-camel"
+      }
+    },
+    "s2": {
+      "type": "ck-sets",
+      "settings": {
+        "heading": "All sets",
+        "text": "Add a set to your bag, then swap or remove anything you like."
+      },
+      "blocks": {
+        "b0": {
+          "type": "set",
+          "settings": {
+            "title": "The nursery",
+            "text": "Cot, mattress, monitor and nappy bin for the first room.",
+            "product_1": "eos-cot-bed-natural-ash-natural",
+            "product_2": "gaia-eos-cot-mattress-140x70x10",
+            "product_3": "pro-camera-floor-stand",
+            "product_4": "heka-xl-telescopic-nappy-bin-lichen"
+          }
+        },
+        "b1": {
+          "type": "set",
+          "settings": {
+            "title": "Hospital bag and home",
+            "text": "The capsule for the drive home and the first-weeks kit for mum and baby.",
+            "product_1": "uppababy-mesa-car-seat-capsule-charcoal-melange-greyson-1",
+            "product_2": "frida-mom-hospital-labor-delivery-kit",
+            "product_3": "frida-baby-nosefrida",
+            "product_4": "bubbas-wash",
+            "product_5": "mummas-oil"
+          }
+        },
+        "b2": {
+          "type": "set",
+          "settings": {
+            "title": "Sleep, sorted",
+            "text": "A monitor you can trust, a sleep clock for later, and the sound and light to wind down.",
+            "product_1": "pro-camera-floor-stand",
+            "product_2": "sound-light-machine",
+            "product_3": "zazu-sleeptrainer-sam-camel",
+            "product_4": "zazu-rest-nest-privacy-sleep-pod"
+          }
+        },
+        "b3": {
+          "type": "set",
+          "settings": {
+            "title": "Bath and care",
+            "text": "The small things you'll use every day: clear noses, soft skin, sore gums.",
+            "product_1": "frida-baby-nosefrida",
+            "product_2": "bubbas-wash",
+            "product_3": "mummas-oil",
+            "product_4": "matchstick-monkey-giraffe-teether-gigi-starter-set"
+          }
+        },
+        "b4": {
+          "type": "set",
+          "settings": {
+            "title": "Out the door",
+            "text": "A light stroller, the capsule, and a high chair that packs down for caf\u00e9s.",
+            "product_1": "uppababy-minu-v3-stroller-evelyn-meadow-green",
+            "product_2": "uppababy-mesa-car-seat-capsule-charcoal-melange-greyson-1",
+            "product_3": "hannie-portable-high-chair-sage-green",
+            "product_4": "miamily-carry-on-mist-grey"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3",
+        "b4"
+      ]
+    },
+    "s3": {
+      "type": "ck-band",
+      "settings": {
+        "asset": "ck-reg.jpg",
+        "tint": "blush"
+      }
+    }
+  },
+  "order": [
+    "s0",
+    "s1",
+    "s2",
+    "s3"
+  ]
+}

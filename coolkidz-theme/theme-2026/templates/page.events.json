@@ -1,0 +1,113 @@
+{
+  "layout": "ck",
+  "sections": {
+    "s0": {
+      "type": "ck-page-hero",
+      "settings": {
+        "eyebrow": "Events",
+        "heading": "<p>Try before <em>you buy</em></p>",
+        "text": "Find Coolkidz and our brands at baby expos around Australia. Push the prams, fold the wagons and talk to people who know every product.",
+        "tint": "coral"
+      }
+    },
+    "s1": {
+      "type": "ck-events",
+      "settings": {
+        "heading": "Upcoming expos",
+        "text": "Dates and venues for the shows we're at.",
+        "limit": 20
+      },
+      "blocks": {
+        "b0": {
+          "type": "event",
+          "settings": {
+            "name": "PBC Melbourne",
+            "start": "2026-10-03",
+            "end": "2026-10-04",
+            "location": "Melbourne Convention & Exhibition Centre",
+            "state": "Victoria"
+          }
+        },
+        "b1": {
+          "type": "event",
+          "settings": {
+            "name": "PBC Adelaide",
+            "start": "2026-10-17",
+            "end": "2026-10-18",
+            "location": "Adelaide Showground",
+            "state": "South Australia"
+          }
+        },
+        "b2": {
+          "type": "event",
+          "settings": {
+            "name": "PBC Sydney",
+            "start": "2026-11-14",
+            "end": "2026-11-15",
+            "location": "Sydney Showground, Sydney Olympic Park, Halls 3 and 4",
+            "state": "New South Wales"
+          }
+        },
+        "b3": {
+          "type": "event",
+          "settings": {
+            "name": "PBC Brisbane",
+            "start": "2026-11-28",
+            "end": "2026-11-29",
+            "location": "Brisbane Convention & Exhibition Centre",
+            "state": "Queensland"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3"
+      ]
+    },
+    "s2": {
+      "type": "ck-tiles",
+      "settings": {
+        "tight": true
+      },
+      "blocks": {
+        "b0": {
+          "type": "tile",
+          "settings": {
+            "title": "For parents",
+            "text": "See the range in person, and ask anything."
+          }
+        },
+        "b1": {
+          "type": "tile",
+          "settings": {
+            "title": "For retailers",
+            "text": "Meet our sales team at the show.",
+            "link_label": "For retailers",
+            "link_url": "/pages/for-retailers"
+          }
+        },
+        "b2": {
+          "type": "tile",
+          "settings": {
+            "title": "For brands",
+            "text": "See how we present our partners' ranges.",
+            "link_label": "Partner with us",
+            "link_url": "/pages/partner-with-us"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2"
+      ]
+    }
+  },
+  "order": [
+    "s0",
+    "s1",
+    "s2"
+  ]
+}
