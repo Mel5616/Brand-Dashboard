@@ -7,7 +7,7 @@
 <div class="ck-welcome" id="ck-welcome" role="dialog" aria-modal="true" aria-labelledby="ck-welcome-h" hidden>
   <div class="ck-welcome-card">
     <button class="ck-welcome-x" type="button" data-ck-welcome="shop" aria-label="Close and shop">Close</button>
-    <img class="ck-welcome-logo" src="{{ 'ck-logo.png' | asset_url }}" alt="Coolkidz Australia" width="180" height="69">
+    <img class="ck-welcome-logo" src="{{ 'ck-logo.png' | asset_img_url: '240x' }}" alt="Coolkidz Australia" width="96" height="37" style="height:34px;width:auto;max-width:120px;display:block;margin:0 auto 12px">
     <h2 id="ck-welcome-h">Welcome to Coolkidz</h2>
     <p>How can we help today?</p>
     <div class="ck-welcome-opts">
@@ -18,8 +18,8 @@
       </button>
       <a class="ck-welcome-opt biz" href="/pages/business" data-ck-welcome="business">
         <span class="ph logos">{%- assign ls = 'uppababy,nanit,gaia-baby,wonderfold,frida,magic,zazu,miamily,smartrike' | split: ',' -%}{%- for l in ls -%}<img src="{{ 'ck-logo-' | append: l | append: '.png' | asset_url }}" alt="" loading="lazy">{%- endfor -%}</span>
-        <b>I'm a business</b>
-        <small>Retailers and global brands</small>
+        <b>Corporate</b>
+        <small>Retailers and distribution</small>
       </a>
     </div>
   </div>
