@@ -53,6 +53,7 @@ export async function PATCH(req: Request) {
   for (const k of ["price", "note", "approved_by"] as const)
     if (b[k] !== undefined) fields[k] = b[k] ? String(b[k]).slice(0, k === "note" ? 300 : 60) : null;
   if (b.paused !== undefined) fields.paused = !!b.paused;
+  if (b.offer_confirmed !== undefined) fields.offer_confirmed = !!b.offer_confirmed;
   const res = await fetch(`${sbUrl}/rest/v1/site_deals?id=eq.${id}`, { method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify(fields) });
   return NextResponse.json({ ok: res.ok });
 }

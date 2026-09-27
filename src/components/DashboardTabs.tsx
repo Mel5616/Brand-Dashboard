@@ -25,6 +25,7 @@ import { SocialReport } from "./SocialReport";
 import { GoogleCampaignTable, MetaPlatformBreakdown } from "./ChannelBrandDetail";
 import { CampaignCalendar } from "./CampaignCalendar";
 import { PromotionalCalendar } from "./PromotionalCalendar";
+import { BlackFridayReadiness } from "./BlackFridayReadiness";
 import { SyncStatus } from "./SyncStatus";
 import { PartnershipsBudget } from "./PartnershipsBudget";
 import { PartnershipsTracker } from "./PartnershipsTracker";
@@ -51,6 +52,7 @@ import { BrandPage } from "./BrandPage";
 import { MarketingBudgetTab } from "./MarketingBudgetTab";
 import { ExpensesPanel } from "./ExpensesPanel";
 import { TeamHub } from "./TeamHub";
+import { TeamWorkload } from "./TeamWorkload";
 import { CreativePanel } from "./CreativePanel";
 import { NanitTracker } from "./NanitTracker";
 import { DesignBoard } from "./DesignBoard";
@@ -1655,6 +1657,7 @@ export function DashboardTabs({
           {active === "promotions" && (
             <>
               <SectionBar title="Promotional Calendar" />
+              <BlackFridayReadiness />
               <PromotionalCalendar canEdit={role === "admin"} brands={brands} fy={fy} month={monthSel} />
             </>
           )}
@@ -2827,7 +2830,12 @@ export function DashboardTabs({
           )}
 
           {/* ── Team hub ── */}
-          {active === "team-hub" && <TeamHub admin={role === "admin"} />}
+          {active === "team-hub" && (
+            <>
+              <TeamWorkload />
+              <TeamHub admin={role === "admin"} />
+            </>
+          )}
 
           {/* ── Creative production ── */}
           {active === "creative" && <CreativePanel brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} admin={role === "admin"} />}

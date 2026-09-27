@@ -2,6 +2,7 @@ import { createHash } from "crypto";
 import { rest } from "@/lib/registry";
 import { REWARD_BRANDS } from "@/lib/reviewRewards";
 import { jobHealth, type JobRun } from "@/lib/jobs";
+import { ownerOf } from "@/lib/socialOwners";
 
 // The "Today" queue: every needs-attention signal the dashboard already
 // computes, gathered into one list. Built live from Supabase on each request
@@ -38,7 +39,7 @@ export async function buildToday(): Promise<Today> {
   const now = Date.now();
   const d1 = new Date(now - 864e5).toISOString(), d7 = new Date(now - 7 * 864e5).toISOString(), d30 = new Date(now - 30 * 864e5).toISOString();
   const thisMonth = monthKey(new Date()), lastMonth = monthKey(new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1));
-  const [reviews, flows, metrics, campaigns, blogs, edms, requests, rewards, dismissals, jobs] = await Promise.all([
+  const [reviews, flows, metrics, campaigns, blogs, edms, requests, rewards, dismissals, jobs, socialPosted] = await Promise.all([
     q<{ id: string; brand_id: number; brand_name: string; rating: number | null; author: string | null; email: string | null; product_name: string | null; product_url: string | null; content: string | null; status: string | null; review_type: string | null; created: string | null; public_reply: string | null }>(`klaviyo_reviews?select=id,brand_id,brand_name,rating,author,email,product_name,product_url,content,status,review_type,created,public_reply&or=(status.eq.pending,created.gte.${d7})&order=created.desc`),
     q<{ brand_id: number; flow_id: string; name: string; status: string | null }>("klaviyo_flows?select=brand_id,flow_id,name,status&status=eq.draft"),
     q<{ brand_id: number; month_key: string; emails_sent: number; revenue: number; bounces: number; spam_complaints: number; unsubscribes: number }>(`klaviyo_metrics?select=brand_id,month_key,emails_sent,revenue,bounces,spam_complaints,unsubscribes&month_key=in.(${thisMonth},${lastMonth})`),
@@ -49,6 +50,7 @@ export async function buildToday(): Promise<Today> {
     q<{ id: string; source_brand_name: string; customer_email: string; status: string; error: string | null; issued_at: string }>(`review_rewards?select=id,source_brand_name,customer_email,status,error,issued_at&status=eq.failed&issued_at=gte.${d30}`),
     q<{ key: string; until: string }>(`today_dismissals?select=key,until&until=gte.${new Date(now).toISOString()}`).catch(() => [] as { key: string; until: string }[]),
     jobHealth(),
+    q<{ brand_id: number; posted_at: string }>("social_drafts?select=brand_id,posted_at&status=eq.posted&order=posted_at.desc"),
   ]);
   const items: TodayItem[] = [];
   const push = (i: Omit<TodayItem, "colour"> & { colour?: string | null }) => items.push({ colour: i.brandId != null ? brand(i.brandId)?.colour ?? null : null, ...i });
@@ -116,6 +118,22 @@ export async function buildToday(): Promise<Today> {
     const age = (now - Date.parse(r.created_at)) / 864e5;
     if (r.status === "in_progress" && age < 7) continue;
     push({ key: `webreq:${r.id}:${r.status}`, severity: r.priority === "urgent" || (r.status === "new" && age > 3) ? "attention" : "info", area: "Website", brand: r.brand, brandId: byName(r.brand)?.id ?? null, title: `${r.status === "new" ? "New" : "Open for a week"}: ${r.change_type || "website change"}${r.page_url ? ` on ${r.page_url.replace(/^https?:\/\//, "")}` : ""}`, detail: `${r.requester_name || "someone"} · ${(r.description || "").slice(0, 120)}`, tab: "website-requests", href: null, at: r.created_at });
+  }
+
+  // Social cadence — brands with no posted content in 30 days (or ever).
+  // Info-level, not urgent/attention: this is a known, structural gap (the
+  // social pipeline is barely used yet), not a new problem each brand hits.
+  const lastPostedByBrand = socialPosted.reduce<Record<number, string>>((m, s) => { if (!m[s.brand_id]) m[s.brand_id] = s.posted_at; return m; }, {});
+  for (const b of REWARD_BRANDS) {
+    const owner = ownerOf(b.id);
+    if (!owner) continue;
+    const last = lastPostedByBrand[b.id];
+    if (last && last >= d30) continue;
+    const days = last ? Math.floor((now - Date.parse(last)) / 864e5) : null;
+    push({ key: `social-stale:${b.id}:${days ?? "never"}`, severity: "info", area: "Social", brand: b.name, brandId: b.id,
+      title: days == null ? "No social post ever recorded" : `No social post in ${days} days`,
+      detail: `${owner} owns this brand's social. Nothing's been marked posted through Social Writing recently — draft and schedule there to get it off this list.`,
+      tab: "social-writing", href: null, at: last || null });
   }
 
   // Jobs
