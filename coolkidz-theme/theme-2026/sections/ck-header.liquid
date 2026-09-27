@@ -33,8 +33,8 @@
 <div class="ck-aud">
   <div class="ck-wrap">
     <nav aria-label="Audience">
-      <a href="{{ routes.root_url }}"{% unless is_biz %} aria-current="true"{% endunless %}>Consumer</a>
-      <a href="{{ s.business_url }}"{% if is_biz %} aria-current="true"{% endif %}>Corporate</a>
+      <a href="{{ routes.root_url }}"{% unless is_biz %} aria-current="true"{% endunless %}>Consumer site</a>
+      <a href="{{ s.business_url }}"{% if is_biz %} aria-current="true"{% endif %}>Corporate site</a>
     </nav>
     <span class="msg">{% if is_biz %}{{ s.biz_message }}{% else %}{{ s.shop_message }}{% endif %}</span>
   </div>
@@ -97,7 +97,7 @@
 <div class="ck-drawer" id="ck-drawer" hidden>
   <div class="ck-drawer-in">
     <div class="ck-drawer-top">
-      <nav class="ck-drawer-aud" aria-label="Audience"><a href="{{ routes.root_url }}"{% unless is_biz %} aria-current="true"{% endunless %}>Consumer</a><a href="{{ s.business_url }}"{% if is_biz %} aria-current="true"{% endif %}>Corporate</a></nav>
+      <nav class="ck-drawer-aud" aria-label="Audience"><a href="{{ routes.root_url }}"{% unless is_biz %} aria-current="true"{% endunless %}>Consumer site</a><a href="{{ s.business_url }}"{% if is_biz %} aria-current="true"{% endif %}>Corporate site</a></nav>
       <button class="ck-drawer-x" type="button" data-ck-menu aria-label="Close menu">Close</button>
     </div>
     <form action="{{ routes.search_url }}" method="get" role="search" class="ck-drawer-search"><input class="ck-input" type="search" name="q" placeholder="Search" aria-label="Search"><input type="hidden" name="type" value="product"></form>
