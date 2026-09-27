@@ -1,6 +1,6 @@
 {%- assign s = section.settings -%}
 <section class="ck-sec tight" id="{{ s.anchor }}"><div class="ck-band ck-tint-{{ s.tint }}">
-  <div class="ph">{%- render 'ck-img', image: s.image, asset: s.asset, alt: s.heading, width: 1400 -%}</div>
+  <div class="ph">{%- render 'ck-img', image: s.image, asset: s.asset, alt: s.heading, width: 1400, sizes: '(min-width: 900px) 50vw, 100vw' -%}</div>
   <div class="tx">
     <span class="ck-eyebrow">{{ s.eyebrow }}</span>
     <h2>{{ s.heading | remove: '<p>' | remove: '</p>' }}</h2>
