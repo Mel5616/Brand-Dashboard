@@ -806,3 +806,5 @@ body.ck{font-size:15px}
 /* the two-line Matchstick Monkey wordmark reads larger than the one-line logos */
 .ck-logos img[src*="matchstick-monkey"]{height:19px}
 .ck-welcome img[src*="matchstick-monkey"]{transform:scale(.7)}
+/* welcome chooser: all twelve brand logos, 4 across so the card keeps its height */
+@media (min-width:560px){.ck-welcome-opt .ph.logos{grid-template-columns:repeat(4,1fr);gap:14px 6px}.ck-welcome-opt .ph.logos img{max-height:19px}}
