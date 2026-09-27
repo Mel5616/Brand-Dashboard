@@ -109,11 +109,23 @@ def geocode(cache, postcode, city, state):
     return pt
 
 
+RETIRED = re.compile(r"head ?office|don'?t use|dont use|closed|- old\b", re.I)
+
+
+def family(name):
+    """One key per retail group: "Sydney's Baby Kingdom Pty Ltd - Head Office" and
+    "Sydney's Baby Kingdom - Alexandria" -> sydneysbabykingdom."""
+    n = re.sub(r"\([^)]*(use|old|closed)[^)]*\)", "", name, flags=re.I)
+    n = re.sub(r"^\s*(don'?t use|dont use)\s*", "", n, flags=re.I)
+    n = clean_name(n).split(" - ")[0]
+    return re.sub(r"[^a-z0-9]", "", n.lower())
+
+
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--theme", action="append", default=[]); ap.add_argument("--dry-run", action="store_true"); a = ap.parse_args()
     env_local()
     since = (datetime.now(timezone.utc) - timedelta(days=DAYS)).strftime("%Y-%m-%dT00:00:00Z")
-    orders = [o for o in cin7_all("SalesOrders", {"fields": "id,memberId,createdDate,isVoid,lineItems",
+    orders = [o for o in cin7_all("SalesOrders", {"fields": "id,memberId,createdDate,isVoid,lineItems,deliveryCompany,deliveryCity,deliveryState,deliveryPostalCode",
                                                   "where": f"createdDate>'{since}' AND (source='Backend' OR source='API')"}) if not o.get("isVoid")]
     code_brand = {}
     for p in cin7_all("Products", {"fields": "id,brand,productOptions"}):
@@ -131,6 +143,7 @@ def main():
     hide = set()
     if os.path.exists(HIDE): hide = {l.strip().lower() for l in open(HIDE) if l.strip() and not l.startswith("#")}
     acc, national = {}, {n: set() for n, _, _ in NATIONAL}
+    fam_brands, fam_drops = {}, {}  # a group's brands, and head-office deliveries to its own shops
     for o in orders:
         c = contacts.get(o["memberId"])
         if not c or not (c.get("company") or "").strip(): continue
@@ -139,8 +152,16 @@ def main():
         name = c["company"].strip()
         for n, rx, _ in NATIONAL:
             if rx.search(name): national[n] |= brands
-        if c.get("group") in ("Website Sales", "Marketplace", "Amazon") or EXCLUDE.search(name) or re.search(r"head ?office|harvey norman|jb hi-?fi|freedom furniture|costco|amazon", name, re.I):
+        if c.get("group") in ("Website Sales", "Marketplace", "Amazon") or re.search(r"harvey norman|jb hi-?fi|freedom furniture|costco|amazon|baby.?bunting.*head ?office", name, re.I):
             continue
+        if RETIRED.search(name):  # head office / old accounts: their brands count for the whole group
+            f = family(name); fam_brands.setdefault(f, set()).update(brands)
+            dc = o.get("deliveryCompany") or ""
+            if dc and family(dc) == f and re.fullmatch(r"\d{4}", (o.get("deliveryPostalCode") or "").strip()):
+                k = ((o.get("deliveryCity") or "").strip().title(), (o.get("deliveryState") or "").strip(), o["deliveryPostalCode"].strip())
+                fam_drops.setdefault(f, {}).setdefault(k, [clean_name(re.sub(r"\([^)]*(use|old|closed)[^)]*\)", "", dc, flags=re.I)).split(" - ")[0], 0])[1] += 1
+            continue
+        if EXCLUDE.search(name): continue
         nm = clean_name(name)
         if nm.lower() in hide: continue
         pc = (c.get("postCode") or "").strip()
@@ -148,6 +169,24 @@ def main():
         s = acc.setdefault(k, {"name": nm, "city": (c.get("city") or "").strip().title().split(",")[0], "state": STATES.get((c.get("state") or "").strip().lower().rstrip(","), (c.get("state") or "").strip().upper()),
                                "postcode": pc, "group": c.get("group") or "", "web": (c.get("website") or "").strip(), "brands": set()})
         s["brands"] |= brands
+        fam_brands.setdefault(family(name), set()).update(brands)
+
+    # shops a group's head office has stock delivered to (2+ times), when that shop has no account of its own
+    for f, drops in fam_drops.items():
+        have = {k[1] for k in acc if family(acc[k]["name"]) == f}
+        for (city, st, pc), (nm, n) in drops.items():
+            if n >= 2 and pc not in have and nm.lower() not in hide:
+                acc[(f, pc)] = {"name": nm, "city": city.split(",")[0], "state": STATES.get(st.lower(), st.upper()), "postcode": pc, "group": "Wholesale", "web": "", "brands": set()}
+    for s in acc.values():
+        if not NATIONAL[0][1].search(s["name"]):  # Baby Bunting ranges vary by store: keep each store's own brands
+            s["brands"] |= fam_brands.get(family(s["name"]), set())
+    # one entry per shop: "Kiddie Country" and "Kiddie Country Armadale" at the same postcode
+    for k in sorted(acc, key=lambda k: -len(acc[k]["name"])):
+        if k not in acc: continue
+        for k2 in [x for x in acc if x != k and acc[x]["postcode"] == acc[k]["postcode"]]:
+            f1, f2 = family(acc[k]["name"]), family(acc[k2]["name"])
+            if f1.startswith(f2) or f2.startswith(f1):
+                acc[k]["brands"] |= acc.pop(k2)["brands"]
 
     cache = json.load(open(GEOCACHE)) if os.path.exists(GEOCACHE) else {}
     stores, online = [], []
@@ -159,7 +198,7 @@ def main():
         if s["state"] not in ("NSW", "VIC", "QLD", "SA", "WA", "TAS", "ACT", "NT") or not re.fullmatch(r"\d{4}", s["postcode"]): continue
         pt = geocode(cache, s["postcode"], s["city"], s["state"])
         if not pt: print("  no location:", s["name"], s["city"], s["postcode"]); continue
-        stores.append({"name": s["name"], "city": s["city"], "state": s["state"], "postcode": s["postcode"], "brands": s["brands"], "ll": pt,
+        stores.append({"wide": len(s["brands"]) >= 6, "name": s["name"], "city": s["city"], "state": s["state"], "postcode": s["postcode"], "brands": s["brands"], "ll": pt,
                        "pharmacy": bool(re.search(r"chemist|pharmac", s["name"], re.I) or s["group"] == "Pharmacy")})
     os.makedirs(os.path.dirname(GEOCACHE), exist_ok=True)
     json.dump(cache, open(GEOCACHE, "w"), indent=0, sort_keys=True)
