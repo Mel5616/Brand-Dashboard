@@ -10,11 +10,25 @@
     </nav>
   {%- endif -%}
   <div class="ck-grid">
-    {%- if first != blank -%}
-      {%- for product in first.products limit: s.limit -%}{%- render 'ck-card', product: product -%}{%- endfor -%}
-    {%- else -%}
-      {%- for product in collections.all.products limit: s.limit -%}{%- render 'ck-card', product: product -%}{%- endfor -%}
-    {%- endif -%}
+    {%- comment -%} In stock only, and at most per_brand from any one brand, so the grid reads as a mix. {%- endcomment -%}
+    {%- if first != blank -%}{%- assign src = first -%}{%- else -%}{%- assign src = collections.all -%}{%- endif -%}
+    {%- paginate src.products by 250 -%}{%- assign pool = src.products -%}
+    {%- assign cap = s.per_brand | default: 1 -%}
+    {%- assign shown = 0 -%}{%- assign seen = '|' -%}
+    {%- for pass in (1..cap) -%}
+      {%- for product in pool -%}
+        {%- if shown >= s.limit -%}{%- break -%}{%- endif -%}
+        {%- unless product.available and product.featured_media -%}{%- continue -%}{%- endunless -%}
+        {%- assign key = '|' | append: product.id | append: '|' -%}
+        {%- if seen contains key -%}{%- continue -%}{%- endif -%}
+        {%- assign vcount = 0 -%}{%- for i in (1..pass) -%}{%- assign k = '|v' | append: i | append: ':' | append: product.vendor | append: '|' -%}{%- if seen contains k -%}{%- assign vcount = vcount | plus: 1 -%}{%- endif -%}{%- endfor -%}
+        {%- if vcount >= pass -%}{%- continue -%}{%- endif -%}
+        {%- assign seen = seen | append: product.id | append: '|v' | append: pass | append: ':' | append: product.vendor | append: '|' -%}
+        {%- assign shown = shown | plus: 1 -%}
+        {%- render 'ck-card', product: product -%}
+      {%- endfor -%}
+    {%- endfor -%}
+    {%- endpaginate -%}
   </div>
   {%- if s.more_label != blank -%}<div class="ck-center"><a class="ck-btn line" href="{{ first.url | default: '/collections/all' }}">{{ s.more_label }}</a></div>{%- endif -%}
 </div></section>
@@ -26,6 +40,7 @@
     { "type": "collection", "id": "collection", "label": "Collection shown (blank for everything)" },
     { "type": "text", "id": "first_label", "label": "First chip label", "default": "Everything" },
     { "type": "range", "id": "limit", "min": 4, "max": 24, "step": 4, "label": "Products", "default": 8 },
+    { "type": "range", "id": "per_brand", "min": 1, "max": 4, "step": 1, "label": "Most from one brand", "default": 1 },
     { "type": "text", "id": "more_label", "label": "Button", "default": "Shop everything" },
     { "type": "text", "id": "anchor", "label": "Anchor", "default": "edit" } ],
   "blocks": [{ "type": "tab", "name": "Collection link", "settings": [
