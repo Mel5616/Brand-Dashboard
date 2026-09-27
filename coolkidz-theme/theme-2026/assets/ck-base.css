@@ -3,7 +3,7 @@
    Coolkidz logo colours, Sora for display and Figtree for reading. Every class
    is prefixed ck- so nothing collides with apps or the old theme. */
 :root{
-  --ink:#1B2433; --soft:#3F4A5C; --muted:#6B7586; --line:#E4E8EC;
+  --ink:#1B2433; --soft:#3F4A5C; --muted:#56606F; --blue-ink:#0B6A93; --line:#E4E8EC;
   --bg:#FFFFFF; --paper:#F5F7F9; --tile:#F1F4F6;
   --red:#E23D2C; --blue:#1496CC; --green:#5FA22B; --pink:#DB3E86;
   --sky:#E2F3FB; --mint:#EAF6E1; --blush:#FCE9F2; --coral:#FDEBE7; --navy:#1B2433;
@@ -29,7 +29,7 @@ body.ck{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);f
 .ck-eyebrow{display:block;font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .ck-hl{background:linear-gradient(transparent 58%,var(--hl) 58%,var(--hl) 92%,transparent 92%);padding:0 .06em}
 .ck-hl.pink{--hl:var(--hl2)} .ck-hl.green{--hl:var(--hl3)}
-.ck-rte p+p{margin-top:1em} .ck-rte a{color:var(--blue);font-weight:600}
+.ck-rte p+p{margin-top:1em} .ck-rte a{color:var(--blue-ink);font-weight:600}
 .ck-rte h2{font-size:clamp(26px,2.6vw,36px);margin:1.4em 0 .5em} .ck-rte h3{font-size:22px;margin:1.2em 0 .4em}
 .ck-rte ul,.ck-rte ol{padding-left:1.2em;margin:.8em 0} .ck-rte li+li{margin-top:.35em}
 .num{font-variant-numeric:tabular-nums}
@@ -76,7 +76,7 @@ body.ck{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);f
 .ck-foot .big{display:block;font-family:var(--display);font-weight:600;font-size:clamp(36px,6.4vw,100px);line-height:.95;letter-spacing:-.05em;text-decoration:none;margin-bottom:clamp(40px,5vw,72px)}
 .ck-foot .big em{font-style:normal;color:#7FD0F2}
 .ck-foot .cols{display:grid;grid-template-columns:1.3fr repeat(4,1fr);gap:28px;font-size:14px;color:#A8B1BE}
-.ck-foot h4{margin:0 0 12px;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#F2F4F7}
+.ck-foot .fh{font-family:var(--body);letter-spacing:.16em;margin:0 0 12px;line-height:1.4;font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#F2F4F7}
 .ck-foot ul{list-style:none;margin:0;padding:0;display:grid;gap:7px}
 .ck-foot a{text-decoration:none} .ck-foot a:hover{color:#fff}
 .ck-foot .logo{display:inline-block;background:#fff;border-radius:12px;padding:7px 11px;line-height:0}
@@ -125,7 +125,7 @@ body.ck{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);f
 .ck-mix .n{font-family:var(--display);font-weight:600;font-size:clamp(56px,7vw,112px);line-height:.85;letter-spacing:-.06em}
 .ck-mix .n sup{font-size:.36em;vertical-align:.95em;margin-left:.04em;letter-spacing:0}
 .ck-mix>div:nth-child(1) .n{font-size:clamp(28px,2.8vw,44px);color:var(--red);line-height:1.1;padding-top:.2em}
-.ck-mix>div:nth-child(2) .n{color:var(--blue)} .ck-mix>div:nth-child(3) .n{color:var(--green)} .ck-mix>div:nth-child(4) .n{color:var(--pink)}
+.ck-mix>div:nth-child(2) .n{color:#0F7FB0} .ck-mix>div:nth-child(3) .n{color:var(--green)} .ck-mix>div:nth-child(4) .n{color:var(--pink)}
 .ck-mix .l{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--soft)}
 .ck-mix .l .ck-dots i{background:rgba(27,36,51,.15)}
 .ck-mix .l .ck-dots i.c1{background:var(--red)}.ck-mix .l .ck-dots i.c2{background:var(--blue)}.ck-mix .l .ck-dots i.c3{background:var(--green)}.ck-mix .l .ck-dots i.c4{background:var(--pink)}
@@ -375,7 +375,7 @@ body.ck{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);f
 .ck-buy .row{display:flex;gap:10px;align-items:center}
 .ck-buy .row .ck-btn{flex:1}
 .ck-mixnote{background:var(--sky);border-radius:16px;padding:14px 16px;font-size:14.5px}
-.ck-mixnote b{color:var(--blue)}
+.ck-mixnote b{color:var(--blue-ink)}
 .ck-perks{list-style:none;margin:0;padding:0;display:grid;gap:8px;font-size:14.5px;color:var(--soft)}
 .ck-perks li{display:flex;gap:10px}
 .ck-perks li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--green);margin-top:8px;flex:none}
@@ -487,7 +487,7 @@ body.ck{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);f
 .ck-mm-brand b{font-size:15px}
 .ck-mm-list{list-style:none;margin:0;padding:0;display:grid;gap:2px}
 .ck-mm-list a{display:block;padding:7px 0;text-decoration:none;font-weight:600}
-.ck-mm-list a:hover{color:var(--blue)}
+.ck-mm-list a:hover{color:var(--blue-ink)}
 .ck-mm-promo{display:flex;flex-direction:column;gap:6px;text-decoration:none;background:var(--blush);border-radius:18px;padding:10px 10px 14px;margin-top:6px}
 .ck-mm-promo .ph{aspect-ratio:16/9;border-radius:12px;overflow:hidden}
 .ck-mm-promo .ph img{width:100%;height:100%;object-fit:cover}
@@ -570,8 +570,8 @@ body.ck-lock{overflow:hidden}
   .ck-gdots{display:flex;justify-content:center;gap:6px;margin-top:10px}
   .ck-gdots i{width:7px;height:7px;border-radius:50%;background:var(--line);transition:background .2s,width .2s}
   .ck-gdots i.on{background:var(--ink);width:18px;border-radius:4px}
-  .ck-stickybar{position:fixed;left:0;right:0;bottom:0;z-index:55;display:flex;align-items:center;justify-content:space-between;gap:12px;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));transform:translateY(110%);transition:transform .3s}
-  .ck-stickybar.show{transform:none}
+  .ck-stickybar{visibility:hidden;position:fixed;left:0;right:0;bottom:0;z-index:55;display:flex;align-items:center;justify-content:space-between;gap:12px;background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));transform:translateY(110%);transition:transform .3s}
+  .ck-stickybar.show{transform:none;visibility:visible}
   .ck-stickybar b{display:block;font-size:14px;line-height:1.2}
   .ck-stickybar span{font-size:14px;color:var(--soft)}
   .ck-bag,.ck-tools a,.ck-burger{min-height:44px;display:inline-flex;align-items:center}
@@ -601,7 +601,7 @@ body.ck-lock{overflow:hidden}
 .ck-ask-log .bot.human{background:var(--mint)}
 .ck-ask-log .bot small{display:block;font-size:11.5px;font-weight:600;color:var(--green);margin-bottom:4px}
 .ck-ask-log .me{background:var(--ink);color:#fff;align-self:flex-end;border-bottom-right-radius:6px}
-.ck-ask-log a{color:var(--blue);font-weight:600}
+.ck-ask-log a{color:var(--blue-ink);font-weight:600}
 .ck-ask-log .typing{display:flex;gap:4px;padding:14px}
 .ck-ask-log .typing i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:ck-blink 1s infinite}
 .ck-ask-log .typing i:nth-child(2){animation-delay:.15s}.ck-ask-log .typing i:nth-child(3){animation-delay:.3s}

@@ -1589,7 +1589,7 @@
         "step": 1,
         "unit": "%",
         "label": "Two brands",
-        "default": 10
+        "default": 5
       },
       {
         "type": "range",
@@ -1599,7 +1599,7 @@
         "step": 1,
         "unit": "%",
         "label": "Three brands",
-        "default": 15
+        "default": 10
       },
       {
         "type": "range",
@@ -1609,7 +1609,7 @@
         "step": 1,
         "unit": "%",
         "label": "Four or more brands",
-        "default": 20
+        "default": 15
       },
       {
         "type": "header",
@@ -1636,7 +1636,7 @@
         "type": "textarea",
         "id": "ck_home_desc",
         "label": "Home page description",
-        "default": "Shop UPPAbaby, Nanit, Gaia Baby, WonderFold, Frida and 7 more baby brands in one order from Coolkidz, their Australian distributor for 25+ years. Mix brands and save up to 20%."
+        "default": "Shop UPPAbaby, Nanit, Gaia Baby, WonderFold, Frida and 7 more baby brands in one order from Coolkidz, their Australian distributor for 25+ years. Mix brands and save up to 15%."
       },
       {
         "type": "header",

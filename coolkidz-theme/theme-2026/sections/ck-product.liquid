@@ -8,7 +8,7 @@
     <div class="ck-gallery" data-ck-gallery>
       {%- assign n = 0 -%}
       {%- for m in product.media limit: 8 -%}
-        {%- if m.media_type == 'image' -%}{%- assign n = n | plus: 1 -%}<div class="g">{%- if forloop.first -%}{{ m | image_url: width: 1200 | image_tag: loading: 'eager', fetchpriority: 'high', alt: m.alt | default: product.title, sizes: '(min-width: 900px) 55vw, 100vw' }}{%- else -%}{{ m | image_url: width: 1200 | image_tag: loading: 'lazy', alt: m.alt | default: product.title, sizes: '(min-width: 900px) 55vw, 100vw' }}{%- endif -%}</div>{%- endif -%}
+        {%- if m.media_type == 'image' -%}{%- assign n = n | plus: 1 -%}<div class="g">{%- if forloop.first -%}{{ m | image_url: width: 1200 | image_tag: loading: 'eager', fetchpriority: 'high', alt: m.alt | default: product.title, widths: '400,600,800,1000,1200', sizes: '(min-width: 900px) 55vw, 88vw' }}{%- else -%}{{ m | image_url: width: 1200 | image_tag: loading: 'lazy', alt: m.alt | default: product.title, widths: '400,600,800,1000,1200', sizes: '(min-width: 900px) 55vw, 88vw' }}{%- endif -%}</div>{%- endif -%}
       {%- endfor -%}
     </div>
     {%- if n > 1 -%}<div class="ck-gdots" data-ck-gdots aria-hidden="true">{%- for i in (1..n) -%}<i{% if forloop.first %} class="on"{% endif %}></i>{%- endfor -%}</div>{%- endif -%}

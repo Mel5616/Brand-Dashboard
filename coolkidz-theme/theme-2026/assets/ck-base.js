@@ -3,7 +3,7 @@
    - add to cart without leaving the page, with a nudge towards the next saving
    - "add the set" buttons, brand directory hover, variant picker, mobile menu */
 (function () {
-  var mix = window.ckMix || { enabled: true, tiers: [0, 0, 10, 15, 20] };
+  var mix = window.ckMix || { enabled: true, tiers: [0, 0, 5, 10, 15] };
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return [].slice.call((r || document).querySelectorAll(s)); };
 

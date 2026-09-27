@@ -79,7 +79,7 @@ REV_BLOCKS = [blk("review", quote=q, name=n, brand=b, product=p) for q, n, b, p 
 TRUST = [blk("item", title="Official Australian stock", text="Every brand, straight from the distributor"),
          blk("item", title="Full Australian warranty", text="One help desk for every brand"),
          blk("item", title="Same price as the brand sites", text="On every single product"),
-         blk("item", title="Mix brands, save up to 20%", text="Two or more brands in one order")]
+         blk("item", title="Mix brands, save up to 15%", text="Two or more brands in one order")]
 
 
 # ---------- home ----------
@@ -127,9 +127,9 @@ tpl("page.sets.json", [
 tpl("page.help.json", [
   sec("ck-page-hero", {"eyebrow": "Help", "heading": "<p>How can we <em>help?</em></p>", "text": "Answers to the questions we hear most. For anything about a product, warranty or return, our help desk covers every brand.", "btn1_label": "Open the help desk", "btn1_url": "https://help.coolkidz.com.au", "btn2_label": "Contact us", "btn2_url": "/pages/contact", "tint": "sky"}),
   sec("ck-faq", {"heading": "Shopping with Coolkidz", "anchor": "faq"}, [
-    blk("qa", q="How does mix-and-save work?", a="<p>The discount depends on how many different brands are in your order: 10% for two brands, 15% for three and 20% for four or more. It's applied at checkout.</p>"),
+    blk("qa", q="How does mix-and-save work?", a="<p>The discount depends on how many different brands are in your order: 5% for two brands, 10% for three and 15% for four or more. It's applied at checkout.</p>"),
     blk("qa", q="Are the prices the same as the brand websites?", a="<p>Yes. Single products are the same price here as on each brand's own Australian site. The mixed-brand saving only happens here.</p>"),
-    blk("qa", q="Where do orders ship from?", a="<p>Orders ship from the Coolkidz warehouse. Delivery options and costs are shown at checkout.</p>"),
+    blk("qa", q="How much is delivery?", a="<p>Standard delivery is free on every order Australia-wide. Everything ships from the Coolkidz warehouse, and large items may arrive separately. <a href=\"/pages/delivery\">Delivery details</a>.</p>"),
     blk("qa", q="How do returns and refunds work?", a="<p>See our <a href=\"/policies/refund-policy\">refund policy</a>. For a faulty product, open a ticket at <a href=\"https://help.coolkidz.com.au\">help.coolkidz.com.au</a> and our team will sort it out.</p>"),
     blk("qa", q="Do products come with an Australian warranty?", a="<p>Yes. Everything is official Australian stock, and warranty claims for every brand go through <a href=\"https://help.coolkidz.com.au\">help.coolkidz.com.au</a>.</p>"),
     blk("qa", q="How does the gift registry work?", a="<p>Create a registry, add products from any of our brands, and share one link. Bought gifts come off the list on their own. <a href=\"/pages/gift-registry\">Start a registry</a>.</p>"),

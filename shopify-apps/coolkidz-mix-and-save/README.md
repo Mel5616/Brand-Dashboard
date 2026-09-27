@@ -3,17 +3,19 @@
 A Shopify discount function for coolkidz.com.au: 5% off the order for two
 different brands in the cart, 10% for three, 15% for four or more.
 
-## Deploy (one time, about 2 minutes)
+## Deploy (one time, about 5 minutes)
 
 ```bash
 cd shopify-apps/coolkidz-mix-and-save
+npx @shopify/cli@latest app config link
 npx @shopify/cli@latest app deploy
 ```
 
-The CLI opens a browser to log in with the Shopify account that owns the
-"Brand Dashboard" app for the Coolkidz store. Only the extension is deployed
-(`include_config_on_deploy = false`), so the app's scopes and settings are
-untouched.
+1. `config link` opens a browser to log in, then asks which app. Choose the
+   Coolkidz store's **Brand Dashboard** app and say yes to overwriting
+   `shopify.app.toml`. This pulls the app's CURRENT settings (scopes, URLs), so the
+   deploy can't strip the access the dashboard relies on.
+2. `app deploy` builds and releases the "Mix and save" function.
 
 Then switch it on:
 

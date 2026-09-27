@@ -7,5 +7,5 @@
 {%- if image != blank -%}
   {{ image | image_url: width: w | image_tag: loading: ld, alt: alt, class: class, sizes: '(min-width: 900px) 50vw, 100vw' }}
 {%- elsif asset != blank -%}
-  <img src="{{ asset | asset_url }}" alt="{{ alt | escape }}" loading="{{ ld }}"{% if eager %} fetchpriority="high"{% endif %} class="{{ class }}">
+  <img src="{{ asset | asset_img_url: '900x' }}" srcset="{{ asset | asset_img_url: '450x' }} 450w, {{ asset | asset_img_url: '700x' }} 700w, {{ asset | asset_img_url: '900x' }} 900w" sizes="{{ sizes | default: '(min-width: 900px) 33vw, 50vw' }}" alt="{{ alt | escape }}" loading="{{ ld }}"{% if eager %} fetchpriority="high"{% endif %} class="{{ class }}">
 {%- endif -%}
