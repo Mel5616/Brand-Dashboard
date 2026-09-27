@@ -747,3 +747,4 @@ body.ck{font-size:15px}
 .ck-popular-links a{padding:8px 14px;border-radius:999px;background:var(--tile);font-size:14px;text-decoration:none;color:var(--ink)}
 .ck-popular-links a:hover{background:var(--sky)}
 #best-sellers .badge.best{display:none}
+.ck .ck-ask-btn,.ck .ck-ask-btn span{color:#fff}
