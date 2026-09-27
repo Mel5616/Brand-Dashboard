@@ -20,7 +20,6 @@
     <div><h2>{{ s.national_heading }}</h2><div class="ck-stk-nat" data-stk-national></div></div>
     <div><h2>{{ s.online_heading }}</h2><ul class="ck-stk-online" data-stk-online></ul></div>
   </div>
-  <p class="ck-stk-note">{{ s.note }} <a href="{{ s.retailer_url }}">{{ s.retailer_label }}</a></p>
 </div></section>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
@@ -35,15 +34,16 @@ document.addEventListener('DOMContentLoaded', function () {
   function render() {
     var rows = data.stores.filter(brandOk).map(function (x) { return { x: x, d: here ? km(here, x.ll) : null }; });
     if (here) rows.sort(function (a, b) { return a.d - b.d; });
+    else rows.sort(function (a, b) { return (b.x.wide ? 1 : 0) - (a.x.wide ? 1 : 0) || b.x.brands.length - a.x.brands.length; });
     var shown = here ? rows.slice(0, 30) : rows;
     list.innerHTML = shown.map(function (r, i) {
       var x = r.x, q = encodeURIComponent(x.name + ' ' + x.city + ' ' + x.state);
-      return '<li data-i="' + i + '"><div class="t"><b>' + esc(x.name) + '</b>' + (x.pharmacy ? '<span class="tag">Pharmacy</span>' : '') + '</div>' +
+      return '<li data-i="' + i + '"><div class="t"><b>' + esc(x.name) + '</b>' + (x.pharmacy ? '<span class="tag">Pharmacy</span>' : '') + (x.wide ? '<span class="tag wide">Wide range</span>' : '') + '</div>' +
         '<div class="w">' + esc(x.city) + ' ' + esc(x.state) + ' ' + esc(x.postcode) + (r.d != null ? ' · ' + (r.d < 10 ? r.d.toFixed(1) : Math.round(r.d)) + ' km' : '') + '</div>' +
         '<div class="b">' + x.brands.map(esc).join(' · ') + '</div>' +
         '<a class="ck-link" href="https://www.google.com/maps/search/?api=1&query=' + q + '" target="_blank" rel="noopener">Directions</a></li>';
     }).join('') || '<li class="empty">No stores for that brand yet. Try the national and online retailers below, or <a href="/collections/all">buy it here</a>.</li>';
-    status.textContent = (here ? 'Nearest ' + shown.length + ' of ' : '') + rows.length + ' store' + (rows.length === 1 ? '' : 's') + (form.brand.value ? ' stocking ' + form.brand.value : '') + '. Call ahead to check stock.';
+    status.textContent = (here ? 'Nearest ' + shown.length + ' of ' : '') + rows.length + ' store' + (rows.length === 1 ? '' : 's') + (form.brand.value ? ' stocking ' + form.brand.value : '') + '. Ranges vary, so call ahead.';
     var nat = data.national.filter(brandOk), onl = data.online.filter(brandOk);
     $('[data-stk-national]').innerHTML = nat.map(function (n) { return '<a href="' + esc(n.url) + '" target="_blank" rel="noopener"><b>' + esc(n.name) + '</b><small>' + n.brands.map(esc).join(' · ') + '</small></a>'; }).join('') || '<p>None for this brand.</p>';
     $('[data-stk-online]').innerHTML = onl.map(function (n) { var nm = '<b>' + esc(n.name) + '</b>'; return '<li>' + (n.web ? '<a href="' + esc(/^http/.test(n.web) ? n.web : 'https://' + n.web) + '" target="_blank" rel="noopener">' + nm + '</a>' : nm) + '<small>' + n.brands.map(esc).join(' · ') + '</small></li>'; }).join('') || '<li>None for this brand.</li>';
@@ -87,9 +87,6 @@ document.addEventListener('DOMContentLoaded', function () {
 { "name": "Find a stockist",
   "settings": [
     { "type": "text", "id": "national_heading", "label": "National retailers heading", "default": "National retailers" },
-    { "type": "text", "id": "online_heading", "label": "Online retailers heading", "default": "Online retailers" },
-    { "type": "textarea", "id": "note", "label": "Note", "default": "This list comes from stores that have ordered from Coolkidz in the last 12 months, updated regularly. Ranges vary by store, so call ahead. Are you a retailer?" },
-    { "type": "text", "id": "retailer_label", "label": "Retailer link label", "default": "Become a stockist" },
-    { "type": "text", "id": "retailer_url", "label": "Retailer link", "default": "/pages/become-a-stockist" } ],
+    { "type": "text", "id": "online_heading", "label": "Online retailers heading", "default": "Online retailers" } ],
   "presets": [{ "name": "Find a stockist" }] }
 {% endschema %}
