@@ -16,7 +16,7 @@ def gql(q, v=None):
 
 # Safety: never write to the live theme.
 role = gql('query($id:ID!){theme(id:$id){role name}}', {"id": THEME})["data"]["theme"]
-assert role["role"] != "MAIN", "Refusing to push to the live theme"
+assert role["role"] != "MAIN" or "--allow-live" in sys.argv, "This theme is LIVE (published 27 Sep 2026): pass --allow-live to push to it"
 print("pushing to", role["name"], role["role"])
 
 def files_in(sub, exts):
@@ -26,7 +26,7 @@ def files_in(sub, exts):
 order = (files_in("assets", (".jpg", ".png")) + files_in("assets", (".css", ".js")) + files_in("snippets", (".liquid",)) +
          files_in("layout", (".liquid",)) + files_in("sections", (".liquid",)) + ["config/settings_schema.json"] +
          files_in("sections", (".json",)) + files_in("templates", (".json",)))
-only = sys.argv[1:]
+only = [a for a in sys.argv[1:] if a != "--allow-live"]
 if only: order = [f for f in order if any(o in f for o in only)]
 
 M = """mutation($id:ID!,$f:[OnlineStoreThemeFilesUpsertFileInput!]!){themeFilesUpsert(themeId:$id,files:$f){upsertedThemeFiles{filename} userErrors{filename message}}}"""
