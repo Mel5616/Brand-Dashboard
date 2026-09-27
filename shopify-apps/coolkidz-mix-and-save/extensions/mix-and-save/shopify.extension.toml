@@ -1,0 +1,16 @@
+api_version = "2025-07"
+
+[[extensions]]
+name = "Mix and save"
+handle = "mix-and-save"
+type = "function"
+description = "Coolkidz mix-and-save: a percentage off the order that grows with the number of different brands in the cart."
+
+  [[extensions.targeting]]
+  target = "cart.lines.discounts.generate.run"
+  input_query = "src/cart_lines_discounts_generate_run.graphql"
+  export = "cart-lines-discounts-generate-run"
+
+  [extensions.build]
+  command = ""
+  path = "dist/function.wasm"

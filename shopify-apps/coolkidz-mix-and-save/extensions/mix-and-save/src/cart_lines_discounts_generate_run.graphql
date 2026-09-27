@@ -1,0 +1,23 @@
+query CartInput {
+  cart {
+    lines {
+      id
+      quantity
+      merchandise {
+        __typename
+        ... on ProductVariant {
+          product {
+            vendor
+            isGiftCard
+          }
+        }
+      }
+    }
+  }
+  discount {
+    discountClasses
+    metafield(namespace: "$app:mix-and-save", key: "tiers") {
+      jsonValue
+    }
+  }
+}

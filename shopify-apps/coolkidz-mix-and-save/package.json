@@ -1,0 +1,13 @@
+{
+  "name": "coolkidz-mix-and-save",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "deploy": "shopify app deploy",
+    "test": "node extensions/mix-and-save/test.mjs"
+  },
+  "devDependencies": {
+    "@shopify/cli": "latest"
+  },
+  "workspaces": ["extensions/*"]
+}

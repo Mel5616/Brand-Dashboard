@@ -1,0 +1,13 @@
+# Coolkidz mix-and-save: a Shopify discount function on the Coolkidz store's
+# "Brand Dashboard" app. Only the extension is deployed; the app's own
+# configuration (scopes, URLs) is left exactly as it is in the Dev Dashboard.
+client_id = "ea4efb8ebc1601ef6ee695cf83aa32eb"
+name = "Brand Dashboard"
+application_url = "https://marketing.coolkidz.com.au"
+embedded = false
+
+[build]
+include_config_on_deploy = false
+
+[access_scopes]
+use_legacy_install_flow = false
