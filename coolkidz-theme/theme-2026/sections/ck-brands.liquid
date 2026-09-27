@@ -1,0 +1,58 @@
+{%- comment -%}
+  The brand directory. Every brand links to its range here AND out to its own
+  Australian website, so Coolkidz passes visitors (and search value) to the
+  brand sites as much as it takes them.
+{%- endcomment -%}
+{%- assign s = section.settings -%}
+<section class="ck-sec" id="brands"><div class="ck-wrap">
+  <div class="ck-shead"><h2>{{ s.heading | remove: '<p>' | remove: '</p>' }}</h2><p>{{ s.text }}</p></div>
+  {%- if s.style == 'cards' -%}
+    <div class="ck-bcards">
+      {%- for b in section.blocks -%}
+        {%- assign q = b.settings.vendor | default: b.settings.name -%}
+        <article class="ck-bcard" {{ b.shopify_attributes }}>
+          <a class="ph" href="/collections/vendors?q={{ q | url_encode }}">{%- render 'ck-img', image: b.settings.image, asset: b.settings.asset, alt: b.settings.name, width: 900 -%}</a>
+          <div class="bd">
+            <span class="ck-eyebrow">{{ b.settings.origin }}</span>
+            <h3>{{ b.settings.name }}</h3>
+            <p>{{ b.settings.story }}</p>
+            <div class="acts"><a class="ck-btn small" href="/collections/vendors?q={{ q | url_encode }}">Shop {{ b.settings.name }}</a>{%- if b.settings.site != blank -%}<a class="ck-btn small line" href="{{ b.settings.site }}" rel="noopener">Visit {{ b.settings.site | remove: 'https://' | remove: 'www.' }}</a>{%- endif -%}</div>
+          </div>
+        </article>
+      {%- endfor -%}
+    </div>
+  {%- else -%}
+    <div class="ck-dir" data-ck-dir>
+      <ul>
+        {%- for b in section.blocks -%}
+          {%- assign q = b.settings.vendor | default: b.settings.name -%}
+          <li {{ b.shopify_attributes }}><a class="nmrow" data-k="{{ forloop.index }}" href="/collections/vendors?q={{ q | url_encode }}"><span class="nm">{{ b.settings.name }}</span><span class="ct">{{ b.settings.category }}</span></a></li>
+        {%- endfor -%}
+      </ul>
+      <div class="view" aria-hidden="true">
+        {%- for b in section.blocks -%}<img data-k="{{ forloop.index }}" src="{% if b.settings.image != blank %}{{ b.settings.image | image_url: width: 900 }}{% else %}{{ b.settings.asset | asset_url }}{% endif %}" alt="" loading="lazy">{%- endfor -%}
+        <span class="cap"></span>
+      </div>
+    </div>
+  {%- endif -%}
+  {%- if s.more_label != blank -%}<div class="ck-center"><a class="ck-btn line" href="{{ s.more_url }}">{{ s.more_label }}</a></div>{%- endif -%}
+</div></section>
+{% schema %}
+{ "name": "Brand directory",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Heading", "default": "Our brands" },
+    { "type": "textarea", "id": "text", "label": "Text", "default": "Each brand also has its own Australian website. Shop there for one brand, or here to mix them." },
+    { "type": "select", "id": "style", "label": "Style", "options": [{"value":"list","label":"List with hover photo"},{"value":"cards","label":"Cards"}], "default": "list" },
+    { "type": "text", "id": "more_label", "label": "Button" },
+    { "type": "text", "id": "more_url", "label": "Button link" } ],
+  "blocks": [{ "type": "brand", "name": "Brand", "settings": [
+    { "type": "text", "id": "name", "label": "Name" },
+    { "type": "text", "id": "vendor", "label": "Vendor name in Shopify (if different)" },
+    { "type": "text", "id": "category", "label": "What they make" },
+    { "type": "text", "id": "origin", "label": "Origin line" },
+    { "type": "textarea", "id": "story", "label": "Short story" },
+    { "type": "text", "id": "site", "label": "Brand website" },
+    { "type": "image_picker", "id": "image", "label": "Image" },
+    { "type": "text", "id": "asset", "label": "Fallback theme asset", "default": "ck-t1.jpg" } ] }],
+  "presets": [{ "name": "Brand directory" }] }
+{% endschema %}

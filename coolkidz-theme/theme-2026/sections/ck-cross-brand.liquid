@@ -1,0 +1,28 @@
+{%- comment -%}
+  "Goes well with": products from OTHER brands in the same moment collection.
+  This is where the Coolkidz shop links the brands together.
+{%- endcomment -%}
+{%- assign s = section.settings -%}
+{%- assign moment = nil -%}
+{%- for c in product.collections -%}{%- assign tag = ',' | append: c.handle | append: ',' -%}{%- assign list = ',' | append: s.moment_handles | append: ',' -%}{%- if list contains tag -%}{%- assign moment = c -%}{%- break -%}{%- endif -%}{%- endfor -%}
+{%- if moment == nil -%}{%- assign moment = collections[s.fallback] -%}{%- endif -%}
+{%- assign shown = 0 -%}
+{%- capture cards -%}
+  {%- for p in moment.products -%}
+    {%- if p.vendor != product.vendor and p.available and shown < 4 -%}{%- assign shown = shown | plus: 1 -%}{%- render 'ck-card', product: p -%}{%- endif -%}
+  {%- endfor -%}
+{%- endcapture -%}
+{%- if shown > 0 -%}
+<section class="ck-sec ck-tint-paper" style="margin-top:clamp(32px,4vw,64px)"><div class="ck-wrap">
+  <div class="ck-shead"><h2>{{ s.heading | remove: '<p>' | remove: '</p>' }}</h2><p>{{ s.text }}</p></div>
+  <div class="ck-grid">{{ cards }}</div>
+</div></section>
+{%- endif -%}
+{% schema %}
+{ "name": "Goes well with",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Heading", "default": "Goes well with, from our other brands" },
+    { "type": "textarea", "id": "text", "label": "Text", "default": "Add one from another brand and save on both." },
+    { "type": "text", "id": "moment_handles", "label": "Moment collections (handles)", "default": "nursery-and-sleep,out-and-about,first-weeks" },
+    { "type": "text", "id": "fallback", "label": "Fallback collection handle", "default": "all" } ] }
+{% endschema %}

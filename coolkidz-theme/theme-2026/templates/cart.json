@@ -1,0 +1,12 @@
+{
+  "layout": "ck",
+  "sections": {
+    "s0": {
+      "type": "ck-cart",
+      "settings": {}
+    }
+  },
+  "order": [
+    "s0"
+  ]
+}

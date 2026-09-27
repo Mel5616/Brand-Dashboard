@@ -1,0 +1,32 @@
+{%- assign s = section.settings -%}
+<section class="ck-phero ck-tint-{{ s.tint }}{% if s.image != blank or s.asset != blank %} has-img{% endif %}"><div class="ck-wrap in">
+  <div>
+    <span class="ck-eyebrow">{{ s.eyebrow }}</span>
+    <h1>{% if s.heading != blank %}{{ s.heading | remove: '<p>' | remove: '</p>' }}{% else %}{{ page.title }}{% endif %}</h1>
+    {%- if s.image != blank or s.asset != blank -%}<p class="lede" style="margin-top:20px">{{ s.text }}</p>{%- endif -%}
+    <div class="ck-ctas">
+      {%- if s.btn1_label != blank -%}<a class="ck-btn" href="{{ s.btn1_url }}">{{ s.btn1_label }}</a>{%- endif -%}
+      {%- if s.btn2_label != blank -%}<a class="ck-btn line" href="{{ s.btn2_url }}">{{ s.btn2_label }}</a>{%- endif -%}
+    </div>
+  </div>
+  {%- if s.image != blank or s.asset != blank -%}
+    <div class="img">{%- render 'ck-img', image: s.image, asset: s.asset, alt: page.title, width: 1200 -%}</div>
+  {%- else -%}
+    <p class="lede">{{ s.text }}</p>
+  {%- endif -%}
+</div></section>
+{% schema %}
+{ "name": "Page hero",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow" },
+    { "type": "richtext", "id": "heading", "label": "Heading (defaults to the page title)" },
+    { "type": "textarea", "id": "text", "label": "Text" },
+    { "type": "text", "id": "btn1_label", "label": "Button" },
+    { "type": "text", "id": "btn1_url", "label": "Button link" },
+    { "type": "text", "id": "btn2_label", "label": "Second button" },
+    { "type": "text", "id": "btn2_url", "label": "Second button link" },
+    { "type": "image_picker", "id": "image", "label": "Image" },
+    { "type": "text", "id": "asset", "label": "Fallback theme asset (blank for none)" },
+    { "type": "select", "id": "tint", "label": "Background", "options": [{"value":"white","label":"White"},{"value":"sky","label":"Sky"},{"value":"mint","label":"Mint"},{"value":"blush","label":"Blush"},{"value":"coral","label":"Coral"},{"value":"paper","label":"Grey"},{"value":"navy","label":"Navy"}], "default": "white" } ],
+  "presets": [{ "name": "Page hero" }] }
+{% endschema %}

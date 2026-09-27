@@ -1,0 +1,13 @@
+{
+  "type": "header",
+  "name": "Coolkidz header",
+  "sections": {
+    "header": {
+      "type": "ck-header",
+      "settings": {}
+    }
+  },
+  "order": [
+    "header"
+  ]
+}

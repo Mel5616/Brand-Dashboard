@@ -1,0 +1,17 @@
+{
+  "layout": "ck",
+  "sections": {
+    "s0": {
+      "type": "ck-product",
+      "settings": {}
+    },
+    "s1": {
+      "type": "ck-cross-brand",
+      "settings": {}
+    }
+  },
+  "order": [
+    "s0",
+    "s1"
+  ]
+}

@@ -1,0 +1,44 @@
+<!doctype html>
+{%- comment -%}
+  Coolkidz 2026 layout. Bright, modern, inviting: white ground, pastel tints
+  from the Coolkidz logo colours, Sora + Figtree. Used by every shop and
+  business template; customer-account, gift-card and password pages keep the
+  original theme layout. Nothing from the old theme's CSS loads here.
+{%- endcomment -%}
+<html lang="{{ request.locale.iso_code }}">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="canonical" href="{{ canonical_url }}">
+  {%- if settings.favicon != blank -%}
+    <link rel="icon" type="image/png" href="{{ settings.favicon | image_url: width: 32, height: 32 }}">
+  {%- endif -%}
+  <title>{{ page_title }}{% if current_page != 1 %} &ndash; Page {{ current_page }}{% endif %}{% unless page_title contains shop.name %} &ndash; {{ shop.name }}{% endunless %}</title>
+  {%- if page_description -%}<meta name="description" content="{{ page_description | escape }}">{%- endif -%}
+  {%- render 'meta-tags' -%}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Figtree:wght@400;500;600;700&display=swap">
+  {{ 'ck-base.css' | asset_url | stylesheet_tag }}
+  <script>window.ckMix = { enabled: {{ settings.ck_mix_enabled | default: true | json }}, tiers: [0, 0, {{ settings.ck_mix_2 | default: 10 }}, {{ settings.ck_mix_3 | default: 15 }}, {{ settings.ck_mix_4 | default: 20 }}] };</script>
+  <script src="{{ 'ck-base.js' | asset_url }}" defer></script>
+  {{ content_for_header }}
+  {{ shop.metafields.foxtheme.code_head.value }}
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17013900607"></script>
+  <script>window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'AW-17013900607');</script>
+  {%- if template.suffix == 'visitor-signin' -%}<meta name="robots" content="noindex">{%- endif -%}
+</head>
+<body class="ck t-{{ template.name }}{% if template.suffix %} s-{{ template.suffix }}{% endif %}">
+  {{ shop.metafields.foxtheme.code_body.value }}
+  <a class="ck-skip" href="#main">Skip to content</a>
+  {% sections 'ck-header-group' %}
+  <main id="main" tabindex="-1">
+    {{ content_for_layout }}
+  </main>
+  {% sections 'ck-footer-group' %}
+  <div class="ck-toast" id="ck-toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{%- comment -%}
+  An image from an image_picker setting, falling back to a bundled theme asset
+  so every section looks finished before anyone uploads photos.
+  Usage: render 'ck-img', image: block.settings.image, asset: block.settings.asset, alt: 'x', width: 1200, class: ''
+{%- endcomment -%}
+{%- assign w = width | default: 1200 -%}
+{%- if image != blank -%}
+  {{ image | image_url: width: w | image_tag: loading: 'lazy', alt: alt, class: class, sizes: '(min-width: 900px) 50vw, 100vw' }}
+{%- elsif asset != blank -%}
+  <img src="{{ asset | asset_url }}" alt="{{ alt | escape }}" loading="lazy" class="{{ class }}">
+{%- endif -%}

@@ -1,0 +1,132 @@
+{
+  "layout": "ck",
+  "sections": {
+    "s0": {
+      "type": "ck-page-hero",
+      "settings": {
+        "eyebrow": "About Coolkidz",
+        "heading": "<p>More than distribution. <em>We build brands.</em></p>",
+        "text": "Coolkidz Australia partners with global baby brands to deliver growth in Australia through established retail networks, strong logistics and a deep understanding of the local market.",
+        "asset": "ck-t2.jpg",
+        "tint": "white"
+      }
+    },
+    "s1": {
+      "type": "ck-who",
+      "settings": {
+        "eyebrow": "Our story",
+        "heading": "<p>Over 25 years of bringing <em>great baby brands</em> to Australia</p>",
+        "text": "<p>We focus on long-term partnerships that combine strategic insight with reliable execution, so every brand reaches Australian families with impact and consistency. Today that means national distribution, a 12-person marketing team, a website for each of our brands, and a shop where parents can buy them together.</p>",
+        "link_label": "Coolkidz for business",
+        "link_url": "/pages/business",
+        "tint": "sky"
+      },
+      "blocks": {
+        "b0": {
+          "type": "stat",
+          "settings": {
+            "number": "25+",
+            "label": "years distributing premium baby brands"
+          }
+        },
+        "b1": {
+          "type": "stat",
+          "settings": {
+            "number": "12",
+            "label": "brands in the Coolkidz family"
+          }
+        },
+        "b2": {
+          "type": "stat",
+          "settings": {
+            "number": "7,000 m\u00b2",
+            "label": "warehouse and fulfilment centre"
+          }
+        },
+        "b3": {
+          "type": "stat",
+          "settings": {
+            "number": "12",
+            "label": "in-house marketing specialists"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3"
+      ]
+    },
+    "s2": {
+      "type": "ck-tiles",
+      "settings": {
+        "heading": "<p>What we do</p>"
+      },
+      "blocks": {
+        "b0": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Logistics",
+            "title": "Distribution and warehousing",
+            "text": "A 7,000 sqm warehouse built for stock management, fast order processing and reliable delivery to retailers and parents nationwide."
+          }
+        },
+        "b1": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Growth",
+            "title": "Marketing and go-to-market",
+            "text": "A 12-person in-house team for launches, paid social and search, email, content, partnerships and retail activations."
+          }
+        },
+        "b2": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Retail",
+            "title": "Sales and training",
+            "text": "A national sales team that supports every stockist with product education, training and merchandising."
+          }
+        },
+        "b3": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Care",
+            "title": "Customer service",
+            "text": "Product help, orders, warranty and returns for every brand, by phone, email and our online help desk."
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3"
+      ]
+    },
+    "s3": {
+      "type": "ck-logos",
+      "settings": {}
+    },
+    "s4": {
+      "type": "ck-band",
+      "settings": {
+        "eyebrow": "Say hello",
+        "heading": "<p>Come and see us</p>",
+        "text": "Our showroom is at 1 Beyer Road, Braeside VIC 3195. Please call ahead on 1300 722 302.",
+        "btn_label": "Contact us",
+        "btn_url": "/pages/contact",
+        "asset": "ck-m-nursery.jpg",
+        "anchor": "visit",
+        "tint": "mint"
+      }
+    }
+  },
+  "order": [
+    "s0",
+    "s1",
+    "s2",
+    "s3",
+    "s4"
+  ]
+}

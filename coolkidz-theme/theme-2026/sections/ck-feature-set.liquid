@@ -1,0 +1,23 @@
+{%- assign s = section.settings -%}
+{%- assign b = section -%}
+<section class="ck-sec tight"><div class="ck-split ck-tint-{{ s.tint }}">
+  <div class="ph">{%- render 'ck-img', image: s.image, asset: s.asset, alt: s.heading, width: 1600 -%}</div>
+  <div class="tx">
+    <span class="ck-eyebrow">{{ s.eyebrow }}</span>
+    <h2>{{ s.heading | remove: '<p>' | remove: '</p>' }}</h2>
+    <p>{{ s.text }}</p>
+    {%- render 'ck-set-math', b: section, style: 'list' -%}
+  </div>
+</div></section>
+{% schema %}
+{ "name": "Featured set",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Curated set" },
+    { "type": "text", "id": "heading", "label": "Heading", "default": "Baby number two" },
+    { "type": "textarea", "id": "text", "label": "Text", "default": "Room for both kids, a trike for the older one, a high chair that travels, and a sleep clock for the new routine." },
+    { "type": "select", "id": "tint", "label": "Background", "options": [{"value":"sky","label":"Sky"},{"value":"mint","label":"Mint"},{"value":"blush","label":"Blush"},{"value":"coral","label":"Coral"},{"value":"paper","label":"Grey"}], "default": "sky" },
+    { "type": "image_picker", "id": "image", "label": "Image" },
+    { "type": "text", "id": "asset", "label": "Fallback theme asset", "default": "ck-wf.jpg" },
+    { "type": "product", "id": "product_1", "label": "Product 1" },{ "type": "product", "id": "product_2", "label": "Product 2" },{ "type": "product", "id": "product_3", "label": "Product 3" },{ "type": "product", "id": "product_4", "label": "Product 4" },{ "type": "product", "id": "product_5", "label": "Product 5" } ],
+  "presets": [{ "name": "Featured set" }] }
+{% endschema %}

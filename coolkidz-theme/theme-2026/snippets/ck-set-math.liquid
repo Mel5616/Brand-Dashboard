@@ -1,0 +1,54 @@
+{%- comment -%}
+  Works out a set's total, brand count and mix-and-save price from up to five
+  product settings on block `b`. Renders the set in one of two layouts:
+  style 'card' (Curated sets grid) or 'list' (feature split).
+{%- endcomment -%}
+{%- assign total = 0 -%}{%- assign vendors = '' -%}{%- assign ids = '' -%}{%- assign count = 0 -%}
+{%- capture lines -%}
+  {%- for i in (1..5) -%}
+    {%- assign key = 'product_' | append: i -%}
+    {%- assign p = b.settings[key] -%}
+    {%- if p != blank and p.available -%}
+      {%- assign v = p.selected_or_first_available_variant -%}
+      {%- assign total = total | plus: v.price -%}
+      {%- assign count = count | plus: 1 -%}
+      {%- assign vn = p.vendor | remove: ' Wagons Australia' | remove: ' Australia' | downcase -%}
+      {%- assign tag = '|' | append: vn | append: '|' -%}
+      {%- unless vendors contains tag -%}{%- assign vendors = vendors | append: tag -%}{%- endunless -%}
+      {%- assign ids = ids | append: v.id | append: ',' -%}
+      <li><span><small>{{ p.vendor | remove: ' Wagons Australia' | remove: ' Australia' }}</small>{{ p.title | remove_first: p.vendor | strip }}</span><span class="num">{{ v.price | money }}</span></li>
+    {%- endif -%}
+  {%- endfor -%}
+{%- endcapture -%}
+{%- assign nb = vendors | split: '||' | size -%}
+{%- if vendors == '' -%}{%- assign nb = 0 -%}{%- endif -%}
+{%- assign pc = 0 -%}
+{%- if settings.ck_mix_enabled -%}
+  {%- if nb >= 4 -%}{%- assign pc = settings.ck_mix_4 -%}{%- elsif nb == 3 -%}{%- assign pc = settings.ck_mix_3 -%}{%- elsif nb == 2 -%}{%- assign pc = settings.ck_mix_2 -%}{%- endif -%}
+{%- endif -%}
+{%- assign saving = total | times: pc | divided_by: 100 -%}
+{%- assign now = total | minus: saving -%}
+{%- if style == 'card' -%}
+  <article class="ck-set" {{ b.shopify_attributes }}>
+    <div class="ims">
+      {%- for i in (1..4) -%}{%- assign key = 'product_' | append: i -%}{%- assign p = b.settings[key] -%}
+        <div>{%- if p != blank and p.featured_image -%}{{ p.featured_image | image_url: width: 400 | image_tag: loading: 'lazy', alt: p.title }}{%- endif -%}</div>
+      {%- endfor -%}
+    </div>
+    <div class="bd">
+      <span class="ck-eyebrow">{{ nb }} brands · {{ count }} pieces</span>
+      <h3>{{ b.settings.title }}</h3>
+      <p>{{ b.settings.text }}</p>
+      {%- if count > 0 -%}
+      <div class="row"><span><span class="now num">{{ now | money }}</span>{% if saving > 0 %}<s class="num">{{ total | money }}</s>{% endif %}</span>{% if saving > 0 %}<span class="ck-save">Save {{ saving | money }}</span>{% endif %}</div>
+      <button class="ck-btn line" type="button" data-ck-set="{{ ids }}">Add the set to bag</button>
+      {%- else -%}<div class="row"><span class="ck-save" style="color:var(--muted)">Coming soon</span></div>{%- endif -%}
+    </div>
+  </article>
+{%- else -%}
+  {%- if count == 0 -%}<p><span class="ck-save" style="color:var(--muted)">Coming soon</span></p>{%- else -%}
+  <ul class="ck-lines">{{ lines }}</ul>
+  <div class="ck-tot"><span class="now num">{{ now | money }}</span>{% if saving > 0 %}<s class="num">{{ total | money }}</s><span class="ck-save">Save {{ saving | money }}</span>{% endif %}</div>
+  <div><button class="ck-btn" type="button" data-ck-set="{{ ids }}">Add the set to bag</button></div>
+  {%- endif -%}
+{%- endif -%}

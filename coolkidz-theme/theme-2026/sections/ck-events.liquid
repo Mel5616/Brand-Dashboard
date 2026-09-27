@@ -1,0 +1,38 @@
+{%- comment -%} Upcoming shows. Past dates drop off on their own. {%- endcomment -%}
+{%- assign s = section.settings -%}
+{%- assign today = 'now' | date: '%Y%m%d' | plus: 0 -%}
+<section class="ck-sec ck-tint-{{ s.tint }}" id="events"><div class="ck-wrap">
+  <div class="ck-shead"><h2>{{ s.heading | remove: '<p>' | remove: '</p>' }}</h2><p>{{ s.text }}</p></div>
+  <div class="ck-events">
+    {%- assign shown = 0 -%}
+    {%- for b in section.blocks -%}
+      {%- assign endn = b.settings.end | remove: '-' | plus: 0 -%}
+      {%- if endn >= today and shown < s.limit -%}
+        {%- assign shown = shown | plus: 1 -%}
+        <div class="ck-event" {{ b.shopify_attributes }}>
+          <div class="d">{{ b.settings.start | date: '%-d' }}{% if b.settings.end != b.settings.start %}–{{ b.settings.end | date: '%-d' }}{% endif %}<span>{{ b.settings.start | date: '%b %Y' }}</span></div>
+          <div><b>{{ b.settings.name }}</b><p>{{ b.settings.location }}</p></div>
+          <span class="st">{{ b.settings.state }}</span>
+        </div>
+      {%- endif -%}
+    {%- endfor -%}
+    {%- if shown == 0 -%}<p style="color:var(--soft)">New dates coming soon.</p>{%- endif -%}
+  </div>
+  {%- if s.btn_label != blank -%}<div class="ck-center"><a class="ck-btn line" href="{{ s.btn_url }}">{{ s.btn_label }}</a></div>{%- endif -%}
+</div></section>
+{% schema %}
+{ "name": "Events",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Heading", "default": "Where to find us" },
+    { "type": "textarea", "id": "text", "label": "Text", "default": "Try our brands in person at baby expos around Australia." },
+    { "type": "range", "id": "limit", "min": 2, "max": 20, "step": 1, "label": "How many", "default": 8 },
+    { "type": "text", "id": "btn_label", "label": "Button" },
+    { "type": "text", "id": "btn_url", "label": "Button link" }, { "type": "select", "id": "tint", "label": "Background", "options": [{"value":"white","label":"White"},{"value":"sky","label":"Sky"},{"value":"mint","label":"Mint"},{"value":"blush","label":"Blush"},{"value":"coral","label":"Coral"},{"value":"paper","label":"Grey"}], "default": "white" } ],
+  "blocks": [{ "type": "event", "name": "Event", "settings": [
+    { "type": "text", "id": "name", "label": "Name" },
+    { "type": "text", "id": "start", "label": "Start (YYYY-MM-DD)" },
+    { "type": "text", "id": "end", "label": "End (YYYY-MM-DD)" },
+    { "type": "text", "id": "location", "label": "Venue" },
+    { "type": "text", "id": "state", "label": "State" } ] }],
+  "presets": [{ "name": "Events" }] }
+{% endschema %}

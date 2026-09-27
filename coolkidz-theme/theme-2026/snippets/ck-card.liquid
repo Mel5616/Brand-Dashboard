@@ -1,0 +1,26 @@
+{%- comment -%} Product card with a quick "Add to bag" for single-variant products. {%- endcomment -%}
+{%- assign v = product.selected_or_first_available_variant -%}
+<article class="ck-card">
+  <div class="im">
+    <a href="{{ product.url }}" aria-label="{{ product.title | escape }}"></a>
+    {%- if product.featured_image -%}{{ product.featured_image | image_url: width: 600 | image_tag: loading: 'lazy', alt: product.featured_image.alt | default: product.title }}{%- endif -%}
+    {%- unless product.available -%}<span class="badge">Sold out</span>{%- endunless -%}
+    {%- if product.available -%}
+      <div class="quick">
+        {%- if product.has_only_default_variant -%}
+          <form action="{{ routes.cart_add_url }}" method="post" data-ck-add="{{ product.title | escape }} added">
+            <input type="hidden" name="id" value="{{ v.id }}">
+            <button class="ck-btn small" type="submit">Add to bag</button>
+          </form>
+        {%- else -%}
+          <a class="ck-btn small" href="{{ product.url }}">Choose options</a>
+        {%- endif -%}
+      </div>
+    {%- endif -%}
+  </div>
+  <div class="meta">
+    <span class="br">{{ product.vendor | remove: ' Wagons Australia' | remove: ' Australia' }}</span>
+    <h3><a href="{{ product.url }}">{{ product.title | remove_first: product.vendor | strip }}</a></h3>
+    <span class="pr num">{% if product.compare_at_price > product.price %}<s>{{ product.compare_at_price | money }}</s>{% endif %}{% if product.price_varies %}From {% endif %}{{ product.price | money }}</span>
+  </div>
+</article>

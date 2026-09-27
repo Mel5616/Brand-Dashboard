@@ -1,0 +1,10 @@
+{%- comment -%} Renders "Label | /url" lines from a textarea setting as links. {%- endcomment -%}
+{%- assign lines = text | newline_to_br | split: '<br />' -%}
+{%- for line in lines -%}
+  {%- assign parts = line | strip | split: '|' -%}
+  {%- if parts.size > 1 -%}
+    {%- assign url = parts[1] | strip -%}
+    {%- capture here -%}{% if request.path == url %} aria-current="page"{% endif %}{%- endcapture -%}
+    {%- if wrap == 'li' -%}<li><a href="{{ url }}"{{ here }}>{{ parts[0] | strip }}</a></li>{%- else -%}<a href="{{ url }}"{{ here }}>{{ parts[0] | strip }}</a>{%- endif -%}
+  {%- endif -%}
+{%- endfor -%}

@@ -1,0 +1,233 @@
+{
+  "layout": "ck",
+  "sections": {
+    "s0": {
+      "type": "ck-page-hero",
+      "settings": {
+        "eyebrow": "Coolkidz for business",
+        "heading": "<p>We bring the world's best baby brands <em>to Australia</em></p>",
+        "text": "For over 25 years Coolkidz has partnered with international baby brands to build their retail presence, distribute them nationwide and grow their name with Australian families.",
+        "btn1_label": "Stock our brands",
+        "btn1_url": "/pages/for-retailers",
+        "btn2_label": "Launch your brand",
+        "btn2_url": "/pages/partner-with-us",
+        "tint": "sky"
+      }
+    },
+    "s1": {
+      "type": "ck-logos",
+      "settings": {}
+    },
+    "s2": {
+      "type": "ck-stats",
+      "settings": {},
+      "blocks": {
+        "b0": {
+          "type": "stat",
+          "settings": {
+            "number": "25+",
+            "label": "years distributing premium baby brands"
+          }
+        },
+        "b1": {
+          "type": "stat",
+          "settings": {
+            "number": "12",
+            "label": "brands in the Coolkidz family"
+          }
+        },
+        "b2": {
+          "type": "stat",
+          "settings": {
+            "number": "7,000 m\u00b2",
+            "label": "warehouse and fulfilment centre"
+          }
+        },
+        "b3": {
+          "type": "stat",
+          "settings": {
+            "number": "12",
+            "label": "in-house marketing specialists"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3"
+      ]
+    },
+    "s3": {
+      "type": "ck-doors",
+      "settings": {},
+      "blocks": {
+        "b0": {
+          "type": "door",
+          "settings": {
+            "eyebrow": "For retailers",
+            "title": "Stock the brands parents ask for",
+            "text": "Independent baby stores, national chains and online retailers stock our brands across Australia. We keep shelves full and help your team sell with confidence.",
+            "list": "Dedicated sales team and account management\nIn-store product training and merchandising advice\nReliable stock and fast national delivery\nMarketing that sends parents to your store\nWarranty and after-sales support for your customers",
+            "btn_label": "Become a stockist",
+            "btn_url": "/pages/become-a-stockist",
+            "tint": "mint"
+          }
+        },
+        "b1": {
+          "type": "door",
+          "settings": {
+            "eyebrow": "For global brands",
+            "title": "Launch and grow in Australia",
+            "text": "We take international brands from first shipment to national presence, with distribution, retail relationships and local marketing under one roof.",
+            "list": "National distribution and warehousing\nAn established retail network, independent to national\nGo-to-market strategy and brand launches\nYour own Australian brand website, run by us\nDirect-to-parent sales through the Coolkidz shop",
+            "btn_label": "Partner with Coolkidz",
+            "btn_url": "/pages/partner-with-us",
+            "tint": "sky"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1"
+      ]
+    },
+    "s4": {
+      "type": "ck-tiles",
+      "settings": {
+        "heading": "<p>What we do</p>",
+        "text": "Everything a baby brand needs in a new market, from the warehouse floor to the parent's front door."
+      },
+      "blocks": {
+        "b0": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Logistics",
+            "title": "Distribution and warehousing",
+            "text": "A 7,000 sqm warehouse built for stock management, fast order processing and reliable delivery to retailers and parents nationwide."
+          }
+        },
+        "b1": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Growth",
+            "title": "Marketing and go-to-market",
+            "text": "A 12-person in-house team for launches, paid social and search, email, content, partnerships and retail activations."
+          }
+        },
+        "b2": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Retail",
+            "title": "Sales and training",
+            "text": "A national sales team that supports every stockist with product education, training and merchandising."
+          }
+        },
+        "b3": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Care",
+            "title": "Customer service",
+            "text": "Product help, orders, warranty and returns for every brand, by phone, email and our online help desk."
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3"
+      ]
+    },
+    "s5": {
+      "type": "ck-band",
+      "settings": {
+        "eyebrow": "New for brand partners",
+        "heading": "<p>Your brand, <em>in more baskets</em></p>",
+        "text": "The Coolkidz shop sells every brand we distribute in one cart, with a saving for parents who mix brands. Partners get another direct channel that reaches parents already buying from the family, plus curated sets and a gift registry.",
+        "btn_label": "See the shop",
+        "btn_url": "/",
+        "asset": "ck-t2.jpg",
+        "anchor": "dtc",
+        "tint": "blush"
+      }
+    },
+    "s6": {
+      "type": "ck-events",
+      "settings": {
+        "heading": "Meet us at the expos",
+        "limit": 4,
+        "btn_label": "All events",
+        "btn_url": "/pages/events",
+        "tint": "white"
+      },
+      "blocks": {
+        "b0": {
+          "type": "event",
+          "settings": {
+            "name": "PBC Melbourne",
+            "start": "2026-10-03",
+            "end": "2026-10-04",
+            "location": "Melbourne Convention & Exhibition Centre",
+            "state": "Victoria"
+          }
+        },
+        "b1": {
+          "type": "event",
+          "settings": {
+            "name": "PBC Adelaide",
+            "start": "2026-10-17",
+            "end": "2026-10-18",
+            "location": "Adelaide Showground",
+            "state": "South Australia"
+          }
+        },
+        "b2": {
+          "type": "event",
+          "settings": {
+            "name": "PBC Sydney",
+            "start": "2026-11-14",
+            "end": "2026-11-15",
+            "location": "Sydney Showground, Sydney Olympic Park, Halls 3 and 4",
+            "state": "New South Wales"
+          }
+        },
+        "b3": {
+          "type": "event",
+          "settings": {
+            "name": "PBC Brisbane",
+            "start": "2026-11-28",
+            "end": "2026-11-29",
+            "location": "Brisbane Convention & Exhibition Centre",
+            "state": "Queensland"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3"
+      ]
+    },
+    "s7": {
+      "type": "ck-form",
+      "settings": {
+        "kind": "general",
+        "eyebrow": "Get in touch",
+        "heading": "Let's talk",
+        "tint": "mint"
+      }
+    }
+  },
+  "order": [
+    "s0",
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7"
+  ]
+}

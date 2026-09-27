@@ -1,0 +1,313 @@
+{
+  "layout": "ck",
+  "sections": {
+    "s0": {
+      "type": "ck-page-hero",
+      "settings": {
+        "eyebrow": "For retailers",
+        "heading": "<p>Stock the brands <em>parents ask for</em></p>",
+        "text": "Coolkidz supplies independent baby stores, national chains and online retailers across Australia, with the stock, training and marketing to help you sell.",
+        "btn1_label": "Become a stockist",
+        "btn1_url": "/pages/become-a-stockist",
+        "btn2_label": "View catalogues",
+        "btn2_url": "/pages/catalogues",
+        "asset": "ck-m-nursery.jpg",
+        "tint": "white"
+      }
+    },
+    "s1": {
+      "type": "ck-logos",
+      "settings": {}
+    },
+    "s2": {
+      "type": "ck-tiles",
+      "settings": {
+        "heading": "<p>What retailers can expect</p>",
+        "text": "A partner that helps you sell, not just a supplier."
+      },
+      "blocks": {
+        "b0": {
+          "type": "tile",
+          "settings": {
+            "title": "A dedicated sales team",
+            "text": "Account management from people who know the brands and your store."
+          }
+        },
+        "b1": {
+          "type": "tile",
+          "settings": {
+            "title": "Product training",
+            "text": "In-store training and product education, so your team sells with confidence."
+          }
+        },
+        "b2": {
+          "type": "tile",
+          "settings": {
+            "title": "Merchandising advice",
+            "text": "Help getting the range and the floor right for your customers."
+          }
+        },
+        "b3": {
+          "type": "tile",
+          "settings": {
+            "title": "Reliable stock",
+            "text": "A 7,000 sqm warehouse and national logistics to keep shelves full."
+          }
+        },
+        "b4": {
+          "type": "tile",
+          "settings": {
+            "title": "Marketing support",
+            "text": "Campaigns, social and events that send parents looking for our brands."
+          }
+        },
+        "b5": {
+          "type": "tile",
+          "settings": {
+            "title": "After-sales care",
+            "text": "Warranty and product support for your customers through our help desk."
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5"
+      ]
+    },
+    "s3": {
+      "type": "ck-brands",
+      "settings": {
+        "heading": "The range",
+        "text": "Twelve brands across prams, nursery, sleep, feeding and care.",
+        "style": "cards"
+      },
+      "blocks": {
+        "b0": {
+          "type": "brand",
+          "settings": {
+            "name": "UPPAbaby",
+            "vendor": "uppababy",
+            "category": "Prams, capsules and nursery",
+            "origin": "Designed in the USA",
+            "story": "Prams, capsules and nursery pieces designed around how families actually live. Distributed, warranted and serviced in Australia by Coolkidz.",
+            "site": "https://uppababy.com.au",
+            "asset": "ck-m-out.jpg"
+          }
+        },
+        "b1": {
+          "type": "brand",
+          "settings": {
+            "name": "Nanit",
+            "vendor": "nanit",
+            "category": "Smart baby monitors",
+            "origin": "Designed in the USA",
+            "story": "Overhead HD baby monitors with sleep tracking, plus breathing motion monitoring through the night, all in the Nanit app.",
+            "site": "https://nanit.com.au",
+            "asset": "ck-t2.jpg"
+          }
+        },
+        "b2": {
+          "type": "brand",
+          "settings": {
+            "name": "Gaia Baby",
+            "vendor": "gaia baby",
+            "category": "Nursery furniture",
+            "origin": "Nursery furniture",
+            "story": "Cots, dressers and nursing chairs like the Eos range, made to grow with your child from the first night.",
+            "site": "https://www.gaia-baby.com.au",
+            "asset": "ck-rocker.jpg"
+          }
+        },
+        "b3": {
+          "type": "brand",
+          "settings": {
+            "name": "WonderFold",
+            "vendor": "wonderfold",
+            "category": "Stroller wagons",
+            "origin": "Designed in California",
+            "story": "Stroller wagons that seat two to six children, from the W2 to the W6, with room for everything else too.",
+            "site": "https://wonderfold.com.au",
+            "asset": "ck-wf.jpg"
+          }
+        },
+        "b4": {
+          "type": "brand",
+          "settings": {
+            "name": "Magic",
+            "vendor": "magic",
+            "category": "Nappy bins",
+            "origin": "Designed in the Netherlands",
+            "story": "Odour-free nappy bins with a twist-and-seal system and no refill cartridges.",
+            "site": "https://magicbabyproducts.com.au",
+            "asset": "ck-p-heka.jpg"
+          }
+        },
+        "b5": {
+          "type": "brand",
+          "settings": {
+            "name": "Frida",
+            "vendor": "frida",
+            "category": "Baby and postpartum care",
+            "origin": "Frida Baby and Frida Mom",
+            "story": "Practical care for babies and new mums, from the NoseFrida to the hospital birth kit.",
+            "site": "https://fridaaustralia.com.au",
+            "asset": "ck-t3.jpg"
+          }
+        },
+        "b6": {
+          "type": "brand",
+          "settings": {
+            "name": "ZAZU",
+            "vendor": "zazu",
+            "category": "Sleep helpers",
+            "origin": "Designed in the Netherlands",
+            "story": "Sleep trainer clocks, nightlights, projectors and white noise for babies and toddlers.",
+            "site": "https://zazu-kids.com.au",
+            "asset": "ck-zazu.jpg"
+          }
+        },
+        "b7": {
+          "type": "brand",
+          "settings": {
+            "name": "MiaMily",
+            "vendor": "miamily",
+            "category": "Family luggage",
+            "origin": "Designed in Switzerland",
+            "story": "Carry-on and check-in suitcases with a built-in seat, so little ones can ride through the airport.",
+            "site": "https://miamily.com.au",
+            "asset": "ck-m-travel.jpg"
+          }
+        },
+        "b8": {
+          "type": "brand",
+          "settings": {
+            "name": "smarTrike",
+            "vendor": "smartrike",
+            "category": "Stroller-trikes and scooters",
+            "origin": "Designed smart since 2006",
+            "story": "The Wonder range of folding stroller-trikes, plus scooters that grow with your child.",
+            "site": "https://smartrike.com.au",
+            "asset": "ck-t1.jpg"
+          }
+        },
+        "b9": {
+          "type": "brand",
+          "settings": {
+            "name": "Mamave",
+            "vendor": "mamave",
+            "category": "Skincare for mum and baby",
+            "origin": "Skincare",
+            "story": "Gentle skincare for mum and baby, from Mumma's Oil to Bubba's Wash.",
+            "site": "https://mamave.com.au",
+            "asset": "ck-mamave.jpg"
+          }
+        },
+        "b10": {
+          "type": "brand",
+          "settings": {
+            "name": "Matchstick Monkey",
+            "vendor": "matchstick monkey",
+            "category": "Teething and first brushes",
+            "origin": "Trusted in over 60 countries",
+            "story": "Teething toys and first toothbrushes shaped for small hands and sore gums.",
+            "site": "https://www.matchstickmonkey.com.au",
+            "asset": "ck-p-mm.jpg"
+          }
+        },
+        "b11": {
+          "type": "brand",
+          "settings": {
+            "name": "Hannie",
+            "vendor": "hannie",
+            "category": "Portable high chairs",
+            "origin": "Eating out, made easy",
+            "story": "A portable high chair that packs down to go wherever you eat.",
+            "site": "https://hannie.com.au",
+            "asset": "ck-hannie.jpg"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7",
+        "b8",
+        "b9",
+        "b10",
+        "b11"
+      ]
+    },
+    "s4": {
+      "type": "ck-steps",
+      "settings": {
+        "heading": "<p>How to open an account</p>",
+        "text": "Four steps from enquiry to first order.",
+        "tint": "paper"
+      },
+      "blocks": {
+        "b0": {
+          "type": "step",
+          "settings": {
+            "title": "Apply",
+            "text": "Tell us about your store with the stockist form."
+          }
+        },
+        "b1": {
+          "type": "step",
+          "settings": {
+            "title": "We call",
+            "text": "A member of our sales team gets in touch to talk range and terms."
+          }
+        },
+        "b2": {
+          "type": "step",
+          "settings": {
+            "title": "Account set up",
+            "text": "We open your trade account and share catalogues and pricing."
+          }
+        },
+        "b3": {
+          "type": "step",
+          "settings": {
+            "title": "First order",
+            "text": "Stock ships from our warehouse, with training and point of sale to follow."
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3"
+      ]
+    },
+    "s5": {
+      "type": "ck-form",
+      "settings": {
+        "kind": "retailer",
+        "eyebrow": "Become a stockist",
+        "heading": "Apply to stock our brands",
+        "text": "Tell us about your store and a member of our sales team will be in touch.",
+        "anchor": "apply",
+        "tint": "mint"
+      }
+    }
+  },
+  "order": [
+    "s0",
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5"
+  ]
+}

@@ -1,0 +1,18 @@
+<section class="ck-colhero ck-tint-paper"><div class="ck-wrap">
+  <span class="ck-eyebrow">Search</span>
+  <h1>{% if search.performed %}“{{ search.terms | escape }}”{% else %}Search{% endif %}</h1>
+  <form action="{{ routes.search_url }}" method="get" role="search" style="display:flex;gap:10px;margin-top:22px;max-width:640px">
+    <input class="ck-input" type="search" name="q" value="{{ search.terms | escape }}" placeholder="Search prams, cots, monitors, brands…" aria-label="Search">
+    <input type="hidden" name="type" value="product"><button class="ck-btn" type="submit">Search</button>
+  </form>
+</div></section>
+<section class="ck-sec" style="padding-top:clamp(24px,3vw,40px)"><div class="ck-wrap">
+  {%- if search.performed -%}
+    {%- paginate search.results by 24 -%}
+      <p style="color:var(--soft);margin-bottom:24px">{{ search.results_count }} result{% if search.results_count != 1 %}s{% endif %}</p>
+      <div class="ck-grid">{%- for r in search.results -%}{%- if r.object_type == 'product' -%}{%- render 'ck-card', product: r -%}{%- endif -%}{%- endfor -%}</div>
+      {%- if paginate.pages > 1 -%}<nav class="ck-pag">{%- if paginate.previous -%}<a href="{{ paginate.previous.url }}">←</a>{%- endif -%}<span class="current">{{ paginate.current_page }}</span>{%- if paginate.next -%}<a href="{{ paginate.next.url }}">→</a>{%- endif -%}</nav>{%- endif -%}
+    {%- endpaginate -%}
+  {%- endif -%}
+</div></section>
+{% schema %}{ "name": "Search" }{% endschema %}

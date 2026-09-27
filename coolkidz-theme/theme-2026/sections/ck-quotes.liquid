@@ -1,0 +1,12 @@
+{%- comment -%} Partner and retailer quotes. Shows nothing until quotes are added. {%- endcomment -%}
+{%- if section.blocks.size > 0 -%}
+<section class="ck-sec"><div class="ck-wrap">
+  <div class="ck-shead solo"><h2>{{ section.settings.heading | remove: '<p>' | remove: '</p>' }}</h2></div>
+  <div class="ck-quotes">{%- for b in section.blocks -%}<figure class="ck-quote" {{ b.shopify_attributes }} style="margin:0"><q>{{ b.settings.quote }}</q><span>{{ b.settings.who }}</span></figure>{%- endfor -%}</div>
+</div></section>
+{%- endif -%}
+{% schema %}
+{ "name": "Quotes", "settings": [{ "type": "text", "id": "heading", "label": "Heading", "default": "What our partners say" }],
+  "blocks": [{ "type": "quote", "name": "Quote", "settings": [{ "type": "textarea", "id": "quote", "label": "Quote" },{ "type": "text", "id": "who", "label": "Name and role" }] }],
+  "presets": [{ "name": "Quotes" }] }
+{% endschema %}

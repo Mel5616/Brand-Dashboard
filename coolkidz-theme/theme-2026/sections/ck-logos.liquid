@@ -1,0 +1,9 @@
+{%- assign names = section.settings.logos | split: ',' -%}
+<section class="ck-sec tight" aria-label="Our brands"><div class="ck-logos" aria-hidden="true"><div class="row">
+  {%- for r in (1..2) -%}{%- for n in names -%}{%- assign f = n | strip | append: '.png' | prepend: 'ck-logo-' -%}<img src="{{ f | asset_url }}" alt="" loading="lazy">{%- endfor -%}{%- endfor -%}
+</div></div></section>
+{% schema %}
+{ "name": "Brand logo strip",
+  "settings": [{ "type": "text", "id": "logos", "label": "Logos (asset names)", "default": "uppababy,nanit,gaia-baby,wonderfold,magic,frida,zazu,miamily,smartrike,mamave,matchstick-monkey,hannie" }],
+  "presets": [{ "name": "Brand logo strip" }] }
+{% endschema %}

@@ -1,0 +1,69 @@
+{%- comment -%}
+  Collections, brand pages and moment pages. /collections/vendors?q=Brand is
+  Shopify's built-in brand page: when a brand block matches, the hero tells
+  that brand's story and links out to its own Australian website.
+{%- endcomment -%}
+{%- assign s = section.settings -%}
+{%- assign brand = nil -%}
+{%- if collection.handle == 'vendors' or collection.handle == 'types' -%}
+  {%- for b in section.blocks -%}
+    {%- assign v = b.settings.vendor | default: b.settings.name | downcase -%}
+    {%- assign t = collection.title | downcase -%}
+    {%- if t == v or t contains v -%}{%- assign brand = b -%}{%- endif -%}
+  {%- endfor -%}
+{%- endif -%}
+{%- paginate collection.products by s.per_page -%}
+<section class="ck-colhero {% if brand %}ck-tint-{{ brand.settings.tint | default: 'sky' }}{% else %}ck-tint-paper{% endif %}"><div class="ck-wrap in">
+  <div>
+    <span class="ck-eyebrow">{% if brand %}{{ brand.settings.origin | default: 'Our brands' }}{% elsif collection.handle == 'vendors' %}Brand{% else %}Shop{% endif %}</span>
+    <h1>{% if brand %}{{ brand.settings.name }}{% else %}{{ collection.title }}{% endif %}</h1>
+  </div>
+  <div>
+    {%- if brand -%}<p>{{ brand.settings.story }}</p>
+    {%- elsif collection.description != blank -%}<div class="ck-rte" style="color:var(--soft)">{{ collection.description }}</div>
+    {%- else -%}<p>{{ s.fallback_text }}</p>{%- endif -%}
+    <div class="acts">
+      {%- if brand and brand.settings.site != blank -%}<a class="ck-btn small line" href="{{ brand.settings.site }}" rel="noopener">Visit {{ brand.settings.site | remove: 'https://' | remove: 'www.' }}</a>{%- endif -%}
+      <a class="ck-btn small line" href="/pages/sets">See curated sets</a>
+    </div>
+  </div>
+</div></section>
+<section class="ck-sec" style="padding-top:clamp(24px,3vw,40px)"><div class="ck-wrap">
+  <div class="ck-toolbar">
+    <nav class="ck-chips" style="margin:0" aria-label="Moments">
+      {%- assign moment_list = s.moments | split: ',' -%}{%- for m in moment_list -%}{%- assign parts = m | split: ':' -%}{%- assign h = parts[0] | strip -%}
+        <a class="ck-chip" href="/collections/{{ h }}"{% if collection.handle == h %} aria-current="true"{% endif %}>{{ parts[1] | strip }}</a>
+      {%- endfor -%}
+    </nav>
+    <select aria-label="Sort" onchange="var u=new URL(location.href);u.searchParams.set('sort_by',this.value);location.href=u">
+      {%- for o in collection.sort_options -%}<option value="{{ o.value }}"{% if o.value == collection.sort_by %} selected{% endif %}>{{ o.name }}</option>{%- endfor -%}
+    </select>
+  </div>
+  {%- if collection.products.size > 0 -%}
+    <div class="ck-grid">{%- for product in collection.products -%}{%- render 'ck-card', product: product -%}{%- endfor -%}</div>
+  {%- else -%}
+    <div class="ck-empty"><h2>Nothing here yet</h2><p style="color:var(--soft)">New products are on the way.</p><a class="ck-btn" href="/collections/all">Shop everything</a></div>
+  {%- endif -%}
+  {%- if paginate.pages > 1 -%}
+    <nav class="ck-pag" aria-label="Pages">
+      {%- if paginate.previous -%}<a href="{{ paginate.previous.url }}" aria-label="Previous">←</a>{%- endif -%}
+      {%- for part in paginate.parts -%}{%- if part.is_link -%}<a href="{{ part.url }}">{{ part.title }}</a>{%- elsif part.title == paginate.current_page -%}<span class="current">{{ part.title }}</span>{%- else -%}<span>{{ part.title }}</span>{%- endif -%}{%- endfor -%}
+      {%- if paginate.next -%}<a href="{{ paginate.next.url }}" aria-label="Next">→</a>{%- endif -%}
+    </nav>
+  {%- endif -%}
+</div></section>
+{%- endpaginate -%}
+{% schema %}
+{ "name": "Collection",
+  "settings": [
+    { "type": "range", "id": "per_page", "min": 12, "max": 48, "step": 4, "label": "Products per page", "default": 24 },
+    { "type": "text", "id": "moments", "label": "Moment chips (handle:Label, comma separated)", "default": "all:Everything,nursery-and-sleep:Nursery and sleep,out-and-about:Out and about,first-weeks:The first weeks" },
+    { "type": "textarea", "id": "fallback_text", "label": "Text when a collection has no description", "default": "Every product is sold at the same price as its brand's own site. Mix two or more brands in one order to save." } ],
+  "blocks": [{ "type": "brand", "name": "Brand story", "settings": [
+    { "type": "text", "id": "name", "label": "Name" },
+    { "type": "text", "id": "vendor", "label": "Vendor name in Shopify (lower case)" },
+    { "type": "text", "id": "origin", "label": "Origin line" },
+    { "type": "textarea", "id": "story", "label": "Story" },
+    { "type": "text", "id": "site", "label": "Brand website" },
+    { "type": "select", "id": "tint", "label": "Background", "options": [{"value":"sky","label":"Sky"},{"value":"mint","label":"Mint"},{"value":"blush","label":"Blush"},{"value":"coral","label":"Coral"}], "default": "sky" } ] }] }
+{% endschema %}

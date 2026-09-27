@@ -1,0 +1,58 @@
+{%- comment -%}
+  Bag page with the mix-and-save meter. The meter counts different brands in
+  the bag; the saving itself is applied at checkout by the mix-and-save
+  discount (a Shopify discount function, set up separately).
+{%- endcomment -%}
+{%- assign vendors = '' -%}
+{%- for item in cart.items -%}{%- assign vn = item.vendor | remove: ' Wagons Australia' | remove: ' Australia' | downcase -%}{%- assign tag = '|' | append: vn | append: '|' -%}{%- unless vendors contains tag -%}{%- assign vendors = vendors | append: tag -%}{%- endunless -%}{%- endfor -%}
+{%- assign nb = vendors | split: '||' | size -%}{%- if vendors == '' -%}{%- assign nb = 0 -%}{%- endif -%}
+{%- assign pc = 0 -%}{%- assign next = settings.ck_mix_2 -%}
+{%- if nb >= 4 -%}{%- assign pc = settings.ck_mix_4 -%}{%- elsif nb == 3 -%}{%- assign pc = settings.ck_mix_3 -%}{%- assign next = settings.ck_mix_4 -%}{%- elsif nb == 2 -%}{%- assign pc = settings.ck_mix_2 -%}{%- assign next = settings.ck_mix_3 -%}{%- endif -%}
+<section class="ck-wrap">
+  {%- if cart.item_count == 0 -%}
+    <div class="ck-empty" style="padding-block:clamp(64px,8vw,120px)">
+      <h1 style="font-size:clamp(38px,5vw,64px)">Your bag is empty</h1>
+      <p style="color:var(--soft)">Mix two or more of our brands in one order to save.</p>
+      <div class="ck-ctas" style="justify-content:center"><a class="ck-btn" href="/collections/all">Shop everything</a><a class="ck-btn line" href="/pages/sets">Curated sets</a></div>
+    </div>
+  {%- else -%}
+  <form action="{{ routes.cart_url }}" method="post" class="ck-cart">
+    <div>
+      <h1>Your bag</h1>
+      {%- for item in cart.items -%}
+        <div class="line">
+          <a class="th" href="{{ item.url }}">{%- if item.image -%}{{ item.image | image_url: width: 240 | image_tag: alt: item.title }}{%- endif -%}</a>
+          <div>
+            <small>{{ item.vendor | remove: ' Wagons Australia' | remove: ' Australia' }}</small>
+            <a class="t" href="{{ item.url }}">{{ item.product.title | remove_first: item.vendor | strip }}</a>
+            {%- unless item.product.has_only_default_variant -%}<div class="v">{{ item.variant.title }}</div>{%- endunless -%}
+            {%- for p in item.properties -%}{%- unless p.first contains '_' or p.last == blank -%}<div class="prop">{{ p.first }}: {{ p.last }}</div>{%- endunless -%}{%- endfor -%}
+            <div class="row" style="display:flex;gap:12px;align-items:center;margin-top:8px">
+              <div class="ck-qty"><button type="button" data-ck-step="-1" aria-label="One fewer">−</button><input name="updates[]" value="{{ item.quantity }}" inputmode="numeric" aria-label="Quantity"><button type="button" data-ck-step="1" aria-label="One more">+</button></div>
+              <a class="rm" href="{{ item.url_to_remove }}">Remove</a>
+            </div>
+          </div>
+          <b class="num">{{ item.final_line_price | money }}</b>
+        </div>
+      {%- endfor -%}
+      <div style="margin-top:16px"><button class="ck-btn line small" type="submit" name="update">Update bag</button></div>
+    </div>
+    <aside class="sum">
+      {%- if settings.ck_mix_enabled -%}
+        <div class="ck-meter">
+          <div class="bars"><i{% if nb > 0 %} class="on"{% endif %}></i><i{% if nb > 1 %} class="on"{% endif %}></i><i{% if nb > 2 %} class="on"{% endif %}></i><i{% if nb > 3 %} class="on"{% endif %}></i></div>
+          <div class="lbl"><span>1 brand</span><span>2 · {{ settings.ck_mix_2 }}%</span><span>3 · {{ settings.ck_mix_3 }}%</span><span>4+ · {{ settings.ck_mix_4 }}%</span></div>
+          <p>{%- if nb >= 4 -%}Four brands: you save {{ pc }}% at checkout.{%- elsif nb >= 2 -%}{{ nb }} brands: {{ pc }}% off at checkout. Add another brand to save {{ next }}%.{%- else -%}Add something from another brand to save {{ next }}%.{%- endif -%}</p>
+        </div>
+      {%- endif -%}
+      <div class="rowt"><span>Subtotal</span><span class="num">{{ cart.items_subtotal_price | money }}</span></div>
+      {%- for d in cart.cart_level_discount_applications -%}<div class="rowt" style="color:var(--green)"><span>{{ d.title }}</span><span class="num">−{{ d.total_allocated_amount | money }}</span></div>{%- endfor -%}
+      <div class="rowt"><span class="big">Total</span><span class="big num">{{ cart.total_price | money }}</span></div>
+      <p style="font-size:13.5px;color:var(--muted)">Delivery and any remaining savings are worked out at checkout.</p>
+      <label style="font-size:13px;font-weight:600;color:var(--soft)">Order note<textarea name="note" style="width:100%;margin-top:6px;border:1.5px solid var(--line);border-radius:12px;padding:10px;font:14px var(--body)">{{ cart.note }}</textarea></label>
+      <button class="ck-btn full" type="submit" name="checkout">Checkout</button>
+    </aside>
+  </form>
+  {%- endif -%}
+</section>
+{% schema %}{ "name": "Cart" }{% endschema %}

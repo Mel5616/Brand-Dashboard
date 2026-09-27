@@ -1,0 +1,75 @@
+{
+  "layout": "ck",
+  "sections": {
+    "s0": {
+      "type": "ck-page-hero",
+      "settings": {
+        "eyebrow": "Contact",
+        "heading": "<p>Say <em>hello</em></p>",
+        "text": "Parents, retailers and global brands: one form, and it reaches the right person on our team.",
+        "tint": "sky"
+      }
+    },
+    "s1": {
+      "type": "ck-form",
+      "settings": {
+        "kind": "general",
+        "heading": "Send us a message",
+        "tint": "mint"
+      }
+    },
+    "s2": {
+      "type": "ck-tiles",
+      "settings": {
+        "tight": true
+      },
+      "blocks": {
+        "b0": {
+          "type": "tile",
+          "settings": {
+            "title": "Product help and warranty",
+            "text": "The quickest way to get help with any product.",
+            "link_label": "help.coolkidz.com.au",
+            "link_url": "https://help.coolkidz.com.au"
+          }
+        },
+        "b1": {
+          "type": "tile",
+          "settings": {
+            "title": "Retailers",
+            "text": "Stock our brands in your store.",
+            "link_label": "For retailers",
+            "link_url": "/pages/for-retailers"
+          }
+        },
+        "b2": {
+          "type": "tile",
+          "settings": {
+            "title": "Global brands",
+            "text": "Launch and grow in Australia with us.",
+            "link_label": "Partner with us",
+            "link_url": "/pages/partner-with-us"
+          }
+        },
+        "b3": {
+          "type": "tile",
+          "settings": {
+            "title": "Showroom",
+            "text": "1 Beyer Road, Braeside VIC 3195. Please call ahead on 1300 722 302."
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3"
+      ]
+    }
+  },
+  "order": [
+    "s0",
+    "s1",
+    "s2"
+  ]
+}

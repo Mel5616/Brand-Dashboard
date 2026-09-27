@@ -1,0 +1,193 @@
+{
+  "layout": "ck",
+  "sections": {
+    "s0": {
+      "type": "ck-page-hero",
+      "settings": {
+        "eyebrow": "The Coolkidz family",
+        "heading": "<p>Twelve brands <em>we'd give our own kids</em></p>",
+        "text": "Every brand here is distributed in Australia by Coolkidz, with local stock, Australian warranty and one support team. Shop them together here, or visit each brand's own site.",
+        "tint": "sky"
+      }
+    },
+    "s1": {
+      "type": "ck-brands",
+      "settings": {
+        "heading": "Meet the brands",
+        "text": "Shop a brand's range here, or head to its own Australian website.",
+        "style": "cards"
+      },
+      "blocks": {
+        "b0": {
+          "type": "brand",
+          "settings": {
+            "name": "UPPAbaby",
+            "vendor": "uppababy",
+            "category": "Prams, capsules and nursery",
+            "origin": "Designed in the USA",
+            "story": "Prams, capsules and nursery pieces designed around how families actually live. Distributed, warranted and serviced in Australia by Coolkidz.",
+            "site": "https://uppababy.com.au",
+            "asset": "ck-m-out.jpg"
+          }
+        },
+        "b1": {
+          "type": "brand",
+          "settings": {
+            "name": "Nanit",
+            "vendor": "nanit",
+            "category": "Smart baby monitors",
+            "origin": "Designed in the USA",
+            "story": "Overhead HD baby monitors with sleep tracking, plus breathing motion monitoring through the night, all in the Nanit app.",
+            "site": "https://nanit.com.au",
+            "asset": "ck-t2.jpg"
+          }
+        },
+        "b2": {
+          "type": "brand",
+          "settings": {
+            "name": "Gaia Baby",
+            "vendor": "gaia baby",
+            "category": "Nursery furniture",
+            "origin": "Nursery furniture",
+            "story": "Cots, dressers and nursing chairs like the Eos range, made to grow with your child from the first night.",
+            "site": "https://www.gaia-baby.com.au",
+            "asset": "ck-rocker.jpg"
+          }
+        },
+        "b3": {
+          "type": "brand",
+          "settings": {
+            "name": "WonderFold",
+            "vendor": "wonderfold",
+            "category": "Stroller wagons",
+            "origin": "Designed in California",
+            "story": "Stroller wagons that seat two to six children, from the W2 to the W6, with room for everything else too.",
+            "site": "https://wonderfold.com.au",
+            "asset": "ck-wf.jpg"
+          }
+        },
+        "b4": {
+          "type": "brand",
+          "settings": {
+            "name": "Magic",
+            "vendor": "magic",
+            "category": "Nappy bins",
+            "origin": "Designed in the Netherlands",
+            "story": "Odour-free nappy bins with a twist-and-seal system and no refill cartridges.",
+            "site": "https://magicbabyproducts.com.au",
+            "asset": "ck-p-heka.jpg"
+          }
+        },
+        "b5": {
+          "type": "brand",
+          "settings": {
+            "name": "Frida",
+            "vendor": "frida",
+            "category": "Baby and postpartum care",
+            "origin": "Frida Baby and Frida Mom",
+            "story": "Practical care for babies and new mums, from the NoseFrida to the hospital birth kit.",
+            "site": "https://fridaaustralia.com.au",
+            "asset": "ck-t3.jpg"
+          }
+        },
+        "b6": {
+          "type": "brand",
+          "settings": {
+            "name": "ZAZU",
+            "vendor": "zazu",
+            "category": "Sleep helpers",
+            "origin": "Designed in the Netherlands",
+            "story": "Sleep trainer clocks, nightlights, projectors and white noise for babies and toddlers.",
+            "site": "https://zazu-kids.com.au",
+            "asset": "ck-zazu.jpg"
+          }
+        },
+        "b7": {
+          "type": "brand",
+          "settings": {
+            "name": "MiaMily",
+            "vendor": "miamily",
+            "category": "Family luggage",
+            "origin": "Designed in Switzerland",
+            "story": "Carry-on and check-in suitcases with a built-in seat, so little ones can ride through the airport.",
+            "site": "https://miamily.com.au",
+            "asset": "ck-m-travel.jpg"
+          }
+        },
+        "b8": {
+          "type": "brand",
+          "settings": {
+            "name": "smarTrike",
+            "vendor": "smartrike",
+            "category": "Stroller-trikes and scooters",
+            "origin": "Designed smart since 2006",
+            "story": "The Wonder range of folding stroller-trikes, plus scooters that grow with your child.",
+            "site": "https://smartrike.com.au",
+            "asset": "ck-t1.jpg"
+          }
+        },
+        "b9": {
+          "type": "brand",
+          "settings": {
+            "name": "Mamave",
+            "vendor": "mamave",
+            "category": "Skincare for mum and baby",
+            "origin": "Skincare",
+            "story": "Gentle skincare for mum and baby, from Mumma's Oil to Bubba's Wash.",
+            "site": "https://mamave.com.au",
+            "asset": "ck-mamave.jpg"
+          }
+        },
+        "b10": {
+          "type": "brand",
+          "settings": {
+            "name": "Matchstick Monkey",
+            "vendor": "matchstick monkey",
+            "category": "Teething and first brushes",
+            "origin": "Trusted in over 60 countries",
+            "story": "Teething toys and first toothbrushes shaped for small hands and sore gums.",
+            "site": "https://www.matchstickmonkey.com.au",
+            "asset": "ck-p-mm.jpg"
+          }
+        },
+        "b11": {
+          "type": "brand",
+          "settings": {
+            "name": "Hannie",
+            "vendor": "hannie",
+            "category": "Portable high chairs",
+            "origin": "Eating out, made easy",
+            "story": "A portable high chair that packs down to go wherever you eat.",
+            "site": "https://hannie.com.au",
+            "asset": "ck-hannie.jpg"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7",
+        "b8",
+        "b9",
+        "b10",
+        "b11"
+      ]
+    },
+    "s2": {
+      "type": "ck-mix",
+      "settings": {
+        "heading": "<p>Mix brands, <em>save more</em></p>"
+      }
+    }
+  },
+  "order": [
+    "s0",
+    "s1",
+    "s2"
+  ]
+}

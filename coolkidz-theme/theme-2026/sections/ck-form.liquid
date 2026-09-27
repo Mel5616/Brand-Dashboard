@@ -1,0 +1,63 @@
+{%- comment -%}
+  Enquiry form on Shopify's contact form, so submissions land in the store's
+  contact inbox with every field labelled. `kind` sets which fields show and
+  tags the enquiry so the team can route it.
+{%- endcomment -%}
+{%- assign s = section.settings -%}
+<section class="ck-sec" id="{{ s.anchor | default: 'enquire' }}"><div class="ck-wrap">
+  <div class="ck-formwrap ck-tint-{{ s.tint }}">
+    <div class="side">
+      <span class="ck-eyebrow">{{ s.eyebrow }}</span>
+      <h2 style="margin-top:12px">{{ s.heading | remove: '<p>' | remove: '</p>' }}</h2>
+      <p>{{ s.text }}</p>
+      <div class="contact"><span>Phone {{ s.phone }}</span><span>Email <a href="mailto:{{ s.email }}">{{ s.email }}</a></span><span>{{ s.address }}</span></div>
+    </div>
+    {%- form 'contact', class: 'ck-form' -%}
+      {%- if form.posted_successfully? -%}<p class="ok">{{ s.thanks }}</p>{%- endif -%}
+      {%- if form.errors -%}<p class="err">{{ form.errors | default_errors }}</p>{%- endif -%}
+      <input type="hidden" name="contact[Form]" value="{{ s.kind }}">
+      {%- if s.kind == 'general' -%}
+        <div class="full types" role="radiogroup" aria-label="I'm a">
+          <label><input type="radio" name="contact[I am a]" value="Parent or customer" checked> Parent or customer</label>
+          <label><input type="radio" name="contact[I am a]" value="Retailer"> Retailer</label>
+          <label><input type="radio" name="contact[I am a]" value="Global brand"> Global brand</label>
+          <label><input type="radio" name="contact[I am a]" value="Media or partner"> Media or partner</label>
+        </div>
+      {%- endif -%}
+      <label>Name<input name="contact[name]" required autocomplete="name"></label>
+      <label>Email<input type="email" name="contact[email]" required autocomplete="email"></label>
+      <label>Phone<input type="tel" name="contact[phone]" autocomplete="tel"></label>
+      {%- if s.kind != 'general' -%}<label>{% if s.kind == 'brand' %}Brand{% else %}Store name{% endif %}<input name="contact[Business]" required autocomplete="organization"></label>{%- endif -%}
+      {%- if s.kind == 'retailer' -%}
+        <label>ABN<input name="contact[ABN]" inputmode="numeric"></label>
+        <label>State<select name="contact[State]"><option></option><option>VIC</option><option>NSW</option><option>QLD</option><option>WA</option><option>SA</option><option>TAS</option><option>ACT</option><option>NT</option></select></label>
+        <label>Store type<select name="contact[Store type]"><option>Independent baby store</option><option>Online store</option><option>Multi-store group</option><option>Gift or lifestyle store</option><option>Other</option></select></label>
+        <label>Website or Instagram<input name="contact[Website]"></label>
+        <label class="full">Brands you're interested in<input name="contact[Brands of interest]" placeholder="e.g. UPPAbaby, Nanit, Gaia Baby"></label>
+      {%- elsif s.kind == 'brand' -%}
+        <label>Website<input name="contact[Website]" required></label>
+        <label>Where you're based<input name="contact[Country]"></label>
+        <label>Category<select name="contact[Category]"><option>Prams and travel</option><option>Nursery and furniture</option><option>Sleep and monitors</option><option>Feeding</option><option>Health and care</option><option>Toys and play</option><option>Other</option></select></label>
+        <label>Selling in Australia today?<select name="contact[Selling in AU]"><option>No, not yet</option><option>Online only</option><option>Yes, through another partner</option></select></label>
+      {%- endif -%}
+      <label class="full">Message<textarea name="contact[body]"></textarea></label>
+      <div class="full"><button class="ck-btn" type="submit">{{ s.button }}</button></div>
+    {%- endform -%}
+  </div>
+</div></section>
+{% schema %}
+{ "name": "Enquiry form",
+  "settings": [
+    { "type": "select", "id": "kind", "label": "Form type", "options": [{"value":"general","label":"General contact"},{"value":"retailer","label":"Retailer / stockist"},{"value":"brand","label":"Global brand"}], "default": "general" },
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Contact" },
+    { "type": "text", "id": "heading", "label": "Heading", "default": "Let's talk" },
+    { "type": "textarea", "id": "text", "label": "Text", "default": "Tell us a little about yourself and the right person on our team will be in touch." },
+    { "type": "text", "id": "button", "label": "Button", "default": "Send enquiry" },
+    { "type": "text", "id": "thanks", "label": "Thank-you message", "default": "Thanks, we've got it. Someone from the team will be in touch within two business days." },
+    { "type": "text", "id": "phone", "label": "Phone", "default": "1300 722 302" },
+    { "type": "text", "id": "email", "label": "Email", "default": "info@coolkidz.com.au" },
+    { "type": "text", "id": "address", "label": "Address", "default": "Showroom: 1 Beyer Road, Braeside VIC 3195" },
+    { "type": "text", "id": "anchor", "label": "Anchor" },
+    { "type": "select", "id": "tint", "label": "Background", "options": [{"value":"sky","label":"Sky"},{"value":"mint","label":"Mint"},{"value":"blush","label":"Blush"},{"value":"coral","label":"Coral"},{"value":"paper","label":"Grey"}], "default": "mint" } ],
+  "presets": [{ "name": "Enquiry form" }] }
+{% endschema %}
