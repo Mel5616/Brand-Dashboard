@@ -1,0 +1,73 @@
+{
+  "layout": "ck",
+  "sections": {
+    "s0": {
+      "type": "ck-page-hero",
+      "settings": {
+        "eyebrow": "404",
+        "heading": "<p>We can't find <em>that page</em></p>",
+        "text": "It may have moved when we refreshed the site. Try one of these instead.",
+        "btn1_label": "Shop everything",
+        "btn1_url": "/collections/all",
+        "btn2_label": "Meet the brands",
+        "btn2_url": "/pages/our-brands",
+        "tint": "coral"
+      }
+    },
+    "s1": {
+      "type": "ck-moments",
+      "settings": {
+        "heading": "",
+        "tight": true
+      },
+      "blocks": {
+        "b0": {
+          "type": "moment",
+          "settings": {
+            "title": "The nursery",
+            "brands": "Gaia \u00b7 Nanit \u00b7 Magic",
+            "url": "/collections/nursery-and-sleep",
+            "asset": "ck-m-nursery.jpg"
+          }
+        },
+        "b1": {
+          "type": "moment",
+          "settings": {
+            "title": "Out and about",
+            "brands": "UPPAbaby \u00b7 WonderFold",
+            "url": "/collections/out-and-about",
+            "asset": "ck-m-out.jpg"
+          }
+        },
+        "b2": {
+          "type": "moment",
+          "settings": {
+            "title": "Travel",
+            "brands": "MiaMily \u00b7 smarTrike",
+            "url": "/collections/vendors?q=MiaMily",
+            "asset": "ck-m-travel.jpg"
+          }
+        },
+        "b3": {
+          "type": "moment",
+          "settings": {
+            "title": "The first weeks",
+            "brands": "Frida \u00b7 Mamave",
+            "url": "/collections/first-weeks",
+            "asset": "ck-m-sleep.jpg"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3"
+      ]
+    }
+  },
+  "order": [
+    "s0",
+    "s1"
+  ]
+}

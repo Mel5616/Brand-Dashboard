@@ -1610,6 +1610,43 @@
         "unit": "%",
         "label": "Four or more brands",
         "default": 20
+      },
+      {
+        "type": "header",
+        "content": "Redirects"
+      },
+      {
+        "type": "textarea",
+        "id": "ck_redirects",
+        "label": "Old pages to redirect (from | to, one per line)",
+        "info": "Used while this theme is live. For permanent 301s, also import coolkidz-redirects.csv under Online Store > Navigation > URL redirects.",
+        "default": "/pages/giveaway | /\n/pages/offer | /pages/sets\n/pages/mothers-day-gift-guide | /pages/sets\n/pages/warehouse-sale | /collections/all\n/pages/good-baby-expo | /pages/events\n/pages/about-us | /pages/about\n/collections/frontpage | /\n/collections/coolkidz | /collections/all\n/collections/babocush | /collections/all\n/collections/slumberpod | /collections/all\n/collections/brand-hannie | /collections/vendors?q=Hannie\n/collections/brand-magic | /collections/vendors?q=Magic\n/collections/brand-mamave | /collections/vendors?q=Mamave\n/collections/brand-nanit | /collections/vendors?q=Nanit\n/collections/matchstick-monkey | /collections/vendors?q=Matchstick+Monkey\n/collections/zazu | /collections/vendors?q=ZAZU\n/collections/nanit-free-items | /collections/vendors?q=Nanit\n/collections/nanit-home-and-travel-bundle-floor | /collections/vendors?q=Nanit\n/collections/nanit-home-and-travel-bundle-floor-copy | /collections/vendors?q=Nanit\n/collections/nanit-home-and-travel-bundle-floor-copy-copy-1 | /collections/vendors?q=Nanit\n/collections/nanit-nursery-bundle-floor | /collections/vendors?q=Nanit\n/collections/nanit-nursery-bundle-wall | /collections/vendors?q=Nanit\n/collections/big-expo-deals | /collections/vendors?q=Nanit\n/collections/nanit-clearance-deals | /collections/vendors?q=Nanit\n/collections/starlight-donation | /collections/vendors?q=WonderFold\n/collections/click-frenzy-uppa | /collections/vendors?q=UPPAbaby\n/collections/click-frenzy-miamily | /collections/vendors?q=MiaMily\n/collections/click-frenzy-zazu | /collections/vendors?q=ZAZU\n/collections/warehouse-sale-uppa | /collections/vendors?q=UPPAbaby\n/collections/warehouse-sale-miamily | /collections/vendors?q=MiaMily\n/collections/warehouse-sale-zazu | /collections/vendors?q=ZAZU\n/collections/warehouse-sale-gaia | /collections/vendors?q=Gaia+Baby\n/collections/expo-sale-brand_mamave | /collections/vendors?q=Mamave\n/collections/expo-sale-brand_hannie | /collections/vendors?q=Hannie\n/collections/expo-sale-brand_frida | /collections/vendors?q=Frida\n/collections/expo-sale-brand_nanit | /collections/vendors?q=Nanit\n/collections/expo-sale-brand_magic | /collections/vendors?q=Magic"
+      },
+      {
+        "type": "header",
+        "content": "Search"
+      },
+      {
+        "type": "text",
+        "id": "ck_home_title",
+        "label": "Home page title",
+        "default": "Coolkidz Australia | UPPAbaby, Nanit, Gaia Baby & more in one order"
+      },
+      {
+        "type": "textarea",
+        "id": "ck_home_desc",
+        "label": "Home page description",
+        "default": "Shop UPPAbaby, Nanit, Gaia Baby, WonderFold, Frida and 7 more baby brands in one order from Coolkidz, their Australian distributor for 25+ years. Mix brands and save up to 20%."
+      },
+      {
+        "type": "header",
+        "content": "Ask Coolkidz"
+      },
+      {
+        "type": "checkbox",
+        "id": "ck_ask_enabled",
+        "label": "Show the Ask Coolkidz assistant",
+        "default": true
       }
     ]
   }

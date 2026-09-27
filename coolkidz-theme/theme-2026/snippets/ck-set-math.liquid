@@ -36,7 +36,7 @@
       {%- endfor -%}
     </div>
     <div class="bd">
-      <span class="ck-eyebrow">{{ nb }} brands · {{ count }} pieces</span>
+      <span class="ck-eyebrow">{{ nb }} brand{% if nb != 1 %}s{% endif %} · {{ count }} piece{% if count != 1 %}s{% endif %}</span>
       <h3>{{ b.settings.title }}</h3>
       <p>{{ b.settings.text }}</p>
       {%- if count > 0 -%}

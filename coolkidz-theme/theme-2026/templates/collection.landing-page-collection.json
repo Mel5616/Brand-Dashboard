@@ -1,0 +1,160 @@
+{
+  "layout": "ck",
+  "sections": {
+    "s0": {
+      "type": "ck-collection",
+      "settings": {},
+      "blocks": {
+        "b0": {
+          "type": "brand",
+          "settings": {
+            "name": "UPPAbaby",
+            "vendor": "uppababy",
+            "origin": "Designed in the USA",
+            "story": "Prams, capsules and nursery pieces designed around how families actually live. Distributed, warranted and serviced in Australia by Coolkidz.",
+            "site": "https://uppababy.com.au",
+            "tint": "sky"
+          }
+        },
+        "b1": {
+          "type": "brand",
+          "settings": {
+            "name": "Nanit",
+            "vendor": "nanit",
+            "origin": "Designed in the USA",
+            "story": "Overhead HD baby monitors with sleep tracking, plus breathing motion monitoring through the night, all in the Nanit app.",
+            "site": "https://nanit.com.au",
+            "tint": "sky"
+          }
+        },
+        "b2": {
+          "type": "brand",
+          "settings": {
+            "name": "Gaia Baby",
+            "vendor": "gaia baby",
+            "origin": "Nursery furniture",
+            "story": "Cots, dressers and nursing chairs like the Eos range, made to grow with your child from the first night.",
+            "site": "https://www.gaia-baby.com.au",
+            "tint": "mint"
+          }
+        },
+        "b3": {
+          "type": "brand",
+          "settings": {
+            "name": "WonderFold",
+            "vendor": "wonderfold",
+            "origin": "Designed in California",
+            "story": "Stroller wagons that seat two to six children, from the W2 to the W6, with room for everything else too.",
+            "site": "https://wonderfold.com.au",
+            "tint": "sky"
+          }
+        },
+        "b4": {
+          "type": "brand",
+          "settings": {
+            "name": "Magic",
+            "vendor": "magic",
+            "origin": "Designed in the Netherlands",
+            "story": "Odour-free nappy bins with a twist-and-seal system and no refill cartridges.",
+            "site": "https://magicbabyproducts.com.au",
+            "tint": "mint"
+          }
+        },
+        "b5": {
+          "type": "brand",
+          "settings": {
+            "name": "Frida",
+            "vendor": "frida",
+            "origin": "Frida Baby and Frida Mom",
+            "story": "Practical care for babies and new mums, from the NoseFrida to the hospital birth kit.",
+            "site": "https://fridaaustralia.com.au",
+            "tint": "blush"
+          }
+        },
+        "b6": {
+          "type": "brand",
+          "settings": {
+            "name": "ZAZU",
+            "vendor": "zazu",
+            "origin": "Designed in the Netherlands",
+            "story": "Sleep trainer clocks, nightlights, projectors and white noise for babies and toddlers.",
+            "site": "https://zazu-kids.com.au",
+            "tint": "coral"
+          }
+        },
+        "b7": {
+          "type": "brand",
+          "settings": {
+            "name": "MiaMily",
+            "vendor": "miamily",
+            "origin": "Designed in Switzerland",
+            "story": "Carry-on and check-in suitcases with a built-in seat, so little ones can ride through the airport.",
+            "site": "https://miamily.com.au",
+            "tint": "sky"
+          }
+        },
+        "b8": {
+          "type": "brand",
+          "settings": {
+            "name": "smarTrike",
+            "vendor": "smartrike",
+            "origin": "Designed smart since 2006",
+            "story": "The Wonder range of folding stroller-trikes, plus scooters that grow with your child.",
+            "site": "https://smartrike.com.au",
+            "tint": "coral"
+          }
+        },
+        "b9": {
+          "type": "brand",
+          "settings": {
+            "name": "Mamave",
+            "vendor": "mamave",
+            "origin": "Skincare",
+            "story": "Gentle skincare for mum and baby, from Mumma's Oil to Bubba's Wash.",
+            "site": "https://mamave.com.au",
+            "tint": "blush"
+          }
+        },
+        "b10": {
+          "type": "brand",
+          "settings": {
+            "name": "Matchstick Monkey",
+            "vendor": "matchstick monkey",
+            "origin": "Trusted in over 60 countries",
+            "story": "Teething toys and first toothbrushes shaped for small hands and sore gums.",
+            "site": "https://www.matchstickmonkey.com.au",
+            "tint": "mint"
+          }
+        },
+        "b11": {
+          "type": "brand",
+          "settings": {
+            "name": "Hannie",
+            "vendor": "hannie",
+            "origin": "Eating out, made easy",
+            "story": "A portable high chair that packs down to go wherever you eat.",
+            "site": "https://hannie.com.au",
+            "tint": "coral"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7",
+        "b8",
+        "b9",
+        "b10",
+        "b11"
+      ]
+    }
+  },
+  "order": [
+    "s0"
+  ]
+}

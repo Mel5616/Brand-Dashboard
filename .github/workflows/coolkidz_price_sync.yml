@@ -1,0 +1,25 @@
+name: Coolkidz price sync
+
+# Brand websites are the source of truth for price. Every hour, any product on
+# the coolkidz.com.au online store whose price or "was" price differs from the
+# brand's own store (matched by SKU) is updated to match.
+on:
+  schedule:
+    - cron: "41 * * * *"   # hourly
+  workflow_dispatch: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Write stores.config.json from secret
+        env:
+          STORES_CONFIG_JSON: ${{ secrets.STORES_CONFIG_JSON }}
+        run: printf '%s' "$STORES_CONFIG_JSON" > stores.config.json
+      - name: Match Coolkidz prices to the brand sites
+        run: python3 scripts/sync_coolkidz_prices.py

@@ -1,0 +1,34 @@
+{%- comment -%}
+  "Ask Coolkidz": the site assistant, answering across all twelve brands.
+  Answers come from brand-dashboard /api/coolkidz-chat. Suggested questions
+  follow the page type.
+{%- endcomment -%}
+{%- liquid
+  assign biz = false
+  assign biz_list = 'business,partner-with-us,for-retailers,become-a-stockist,catalogues,events,about' | split: ','
+  if biz_list contains page.handle
+    assign biz = true
+  endif
+-%}
+<div class="ck-ask" data-ck-ask data-api="https://marketing.coolkidz.com.au/api/coolkidz-chat"
+     data-chips="{%- if template.name == 'product' -%}What goes well with this?|Is this in stock?|How does mix and save work?{%- elsif biz -%}How do I become a stockist?|We're a brand looking for an Australian distributor|Where can I see your catalogues?{%- else -%}What do we need for the nursery?|Help me choose a pram|How does the gift registry work?|How does mix and save work?{%- endif -%}">
+  <button class="ck-ask-btn" type="button" data-ck-ask-open aria-expanded="false" aria-controls="ck-ask-panel">
+    <span class="ck-dots" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span>
+    <span>Ask Coolkidz</span>
+  </button>
+  <section class="ck-ask-panel" id="ck-ask-panel" role="dialog" aria-label="Ask Coolkidz" hidden>
+    <header>
+      <div><b>Ask Coolkidz</b><small>Answers about all twelve of our brands</small></div>
+      <button type="button" data-ck-ask-close aria-label="Close chat">Close</button>
+    </header>
+    <div class="ck-ask-log" data-ck-ask-log aria-live="polite"></div>
+    <div class="ck-ask-chips" data-ck-ask-chips></div>
+    <form data-ck-ask-form>
+      <label class="ck-skip" for="ck-ask-input">Your question</label>
+      <input id="ck-ask-input" autocomplete="off" maxlength="600" placeholder="Ask about any product or brand">
+      <button class="ck-btn small" type="submit">Send</button>
+    </form>
+    <p class="ck-ask-fine">AI assistant. It can make mistakes, so check key details. Need a person? 1300 722 302.</p>
+  </section>
+</div>
+<script src="{{ 'ck-assistant.js' | asset_url }}" defer></script>

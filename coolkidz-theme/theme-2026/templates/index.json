@@ -46,10 +46,50 @@
       ]
     },
     "s1": {
+      "type": "ck-trust",
+      "settings": {},
+      "blocks": {
+        "b0": {
+          "type": "item",
+          "settings": {
+            "title": "Official Australian stock",
+            "text": "Every brand, straight from the distributor"
+          }
+        },
+        "b1": {
+          "type": "item",
+          "settings": {
+            "title": "Full Australian warranty",
+            "text": "One help desk for every brand"
+          }
+        },
+        "b2": {
+          "type": "item",
+          "settings": {
+            "title": "Same price as the brand sites",
+            "text": "On every single product"
+          }
+        },
+        "b3": {
+          "type": "item",
+          "settings": {
+            "title": "Mix brands, save up to 20%",
+            "text": "Two or more brands in one order"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3"
+      ]
+    },
+    "s2": {
       "type": "ck-mix",
       "settings": {}
     },
-    "s2": {
+    "s3": {
       "type": "ck-moments",
       "settings": {},
       "blocks": {
@@ -97,7 +137,7 @@
         "b3"
       ]
     },
-    "s3": {
+    "s4": {
       "type": "ck-products",
       "settings": {
         "heading": "The edit"
@@ -131,7 +171,7 @@
         "b2"
       ]
     },
-    "s4": {
+    "s5": {
       "type": "ck-feature-set",
       "settings": {
         "heading": "Baby number two",
@@ -143,7 +183,7 @@
         "product_4": "zazu-sleeptrainer-sam-camel"
       }
     },
-    "s5": {
+    "s6": {
       "type": "ck-sets",
       "settings": {
         "more_label": "See all sets",
@@ -191,7 +231,95 @@
         "b2"
       ]
     },
-    "s6": {
+    "s7": {
+      "type": "ck-reviews",
+      "settings": {},
+      "blocks": {
+        "b0": {
+          "type": "review",
+          "settings": {
+            "quote": "Have had my pram for 6yrs and used for all 3 of my children. I have many accessories that have made my life so much easier on many occasions. This is the only pram anybody needs!!",
+            "name": "Eva J.",
+            "brand": "UPPAbaby",
+            "product": "Vista"
+          }
+        },
+        "b1": {
+          "type": "review",
+          "settings": {
+            "quote": "Great bin, no smell and love that you can use it one handed unlike other brands we\u2019ve tried",
+            "name": "Hayley B.",
+            "brand": "Magic",
+            "product": "Heka L nappy bin"
+          }
+        },
+        "b2": {
+          "type": "review",
+          "settings": {
+            "quote": "Second Gaia mattress I\u2019ve purchased and am pleased with how it fits the bed, and the low-toxin materials.",
+            "name": "Alyssa H.",
+            "brand": "Gaia Baby",
+            "product": "Eos cot mattress"
+          }
+        },
+        "b3": {
+          "type": "review",
+          "settings": {
+            "quote": "Best investment for travel. Everyone we saw waiting in the huge airport line asked me where I got the suitcases from.",
+            "name": "EC",
+            "brand": "MiaMily",
+            "product": "Check In"
+          }
+        },
+        "b4": {
+          "type": "review",
+          "settings": {
+            "quote": "Love this high chair, the way it compacts is ideal to take everywhere with you. If we go on holidays it fits in our carry on luggage and it\u2019s perfect for growing bubs!",
+            "name": "Bree",
+            "brand": "Hannie",
+            "product": "Portable high chair"
+          }
+        },
+        "b5": {
+          "type": "review",
+          "settings": {
+            "quote": "Our son used to get distracted when room sharing. Now it's like his own little tent. He sleeps so much better!",
+            "name": "Benjamin",
+            "brand": "ZAZU",
+            "product": "Rest Nest sleep pod"
+          }
+        },
+        "b6": {
+          "type": "review",
+          "settings": {
+            "quote": "Great capsule. Easy to use, reasonably light weight. Clips on easy to the vista and minu (minu needs adaptors). Baby enjoys riding in it.",
+            "name": "Luca",
+            "brand": "UPPAbaby",
+            "product": "Mesa capsule"
+          }
+        },
+        "b7": {
+          "type": "review",
+          "settings": {
+            "quote": "Love the cover it makes it so much easier to travel with and compact especially inside the back of the tray as we don\u2019t have a boot",
+            "name": "Chloe M.",
+            "brand": "WonderFold",
+            "product": "W2 travel cover"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7"
+      ]
+    },
+    "s8": {
       "type": "ck-band",
       "settings": {
         "asset": "ck-reg.jpg",
@@ -223,7 +351,7 @@
         "b2"
       ]
     },
-    "s7": {
+    "s9": {
       "type": "ck-who",
       "settings": {
         "tint": "sky"
@@ -265,7 +393,7 @@
         "b3"
       ]
     },
-    "s8": {
+    "s10": {
       "type": "ck-brands",
       "settings": {
         "more_label": "Meet the brands",
@@ -432,7 +560,7 @@
         "b11"
       ]
     },
-    "s9": {
+    "s11": {
       "type": "ck-journal",
       "settings": {},
       "blocks": {
@@ -520,7 +648,7 @@
         "b7"
       ]
     },
-    "s10": {
+    "s12": {
       "type": "ck-tiles",
       "settings": {
         "tight": true
@@ -576,6 +704,8 @@
     "s7",
     "s8",
     "s9",
-    "s10"
+    "s10",
+    "s11",
+    "s12"
   ]
 }

@@ -11,12 +11,48 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#ffffff">
+  {%- comment -%} Old pages redirect to their new homes (Theme settings > Coolkidz 2026 > Redirects). {%- endcomment -%}
+  {%- assign ck_to = '' -%}
+  {%- assign ck_lines = settings.ck_redirects | newline_to_br | split: '<br />' -%}
+  {%- for l in ck_lines -%}{%- assign ck_p = l | strip | split: '|' -%}{%- if ck_p.size > 1 -%}{%- assign ck_from = ck_p[0] | strip -%}{%- if request.path == ck_from -%}{%- assign ck_to = ck_p[1] | strip -%}{%- break -%}{%- endif -%}{%- endif -%}{%- endfor -%}
+  {%- if ck_to != '' and request.design_mode == false -%}
+    <meta http-equiv="refresh" content="0; url={{ ck_to }}"><meta name="robots" content="noindex"><script>location.replace({{ ck_to | json }});</script>
+  {%- endif -%}
+  {%- if template.name == '404' -%}
+    <script>(function(){var m={};{%- for l in ck_lines -%}{%- assign ck_p = l | strip | split: '|' -%}{%- if ck_p.size > 1 -%}m[{{ ck_p[0] | strip | json }}]={{ ck_p[1] | strip | json }};{%- endif -%}{%- endfor -%}var t=m[location.pathname.replace(/\/$/,'')];if(t)location.replace(t);})();</script>
+  {%- endif -%}
   <link rel="canonical" href="{{ canonical_url }}">
   {%- if settings.favicon != blank -%}
     <link rel="icon" type="image/png" href="{{ settings.favicon | image_url: width: 32, height: 32 }}">
   {%- endif -%}
-  <title>{{ page_title }}{% if current_page != 1 %} &ndash; Page {{ current_page }}{% endif %}{% unless page_title contains shop.name %} &ndash; {{ shop.name }}{% endunless %}</title>
-  {%- if page_description -%}<meta name="description" content="{{ page_description | escape }}">{%- endif -%}
+  {%- liquid
+    assign ck_title = page_title
+    assign ck_desc = page_description
+    if template.name == 'index'
+      assign ck_title = settings.ck_home_title | default: page_title
+      assign ck_desc = settings.ck_home_desc | default: page_description
+    elsif template.name == 'collection' and collection.handle == 'vendors'
+      assign ck_title = 'Shop ' | append: collection.title | append: ' in Australia | Official stockist'
+      if ck_desc == blank
+        assign ck_desc = 'Shop the ' | append: collection.title | append: ' range at Coolkidz, the official Australian distributor. Full Australian warranty, one help desk, and mix brands in one order to save.'
+      endif
+    elsif template.name == 'collection' and collection.handle == 'all'
+      assign ck_title = 'Shop all baby brands: UPPAbaby, Nanit, Gaia Baby & more'
+      if ck_desc == blank
+        assign ck_desc = 'Every product from the Coolkidz family of baby brands in one place: prams, nursery furniture, monitors, sleep, travel and care. Mix brands in one order and save.'
+      endif
+    elsif template.name == 'blog'
+      assign ck_title = 'Journal: guides for the first years'
+      if ck_desc == blank
+        assign ck_desc = 'Guides from Coolkidz on prams, sleep, nursery set-up, travel and caring for you and your baby.'
+      endif
+    endif
+    if ck_desc == blank
+      assign ck_desc = settings.ck_home_desc
+    endif
+  -%}
+  <title>{{ ck_title }}{% if current_page != 1 %} &ndash; Page {{ current_page }}{% endif %}{% unless ck_title contains 'Coolkidz' %} &ndash; {{ shop.name }}{% endunless %}</title>
+  {%- if ck_desc != blank -%}<meta name="description" content="{{ ck_desc | strip_html | escape | truncate: 300 }}">{%- endif -%}
   {%- render 'meta-tags' -%}
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,6 +60,15 @@
   {{ 'ck-base.css' | asset_url | stylesheet_tag }}
   <script>window.ckMix = { enabled: {{ settings.ck_mix_enabled | default: true | json }}, tiers: [0, 0, {{ settings.ck_mix_2 | default: 10 }}, {{ settings.ck_mix_3 | default: 15 }}, {{ settings.ck_mix_4 | default: 20 }}] };</script>
   <script src="{{ 'ck-base.js' | asset_url }}" defer></script>
+  {%- if template.name == 'index' -%}
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[
+    {"@type":"Organization","@id":{{ shop.url | append: '/#org' | json }},"name":"Coolkidz Australia","legalName":"Coolkidz Australia Pty Ltd","url":{{ shop.url | json }},"logo":{{ 'ck-logo.png' | asset_url | prepend: 'https:' | json }},
+     "telephone":"+61 1300 722 302","email":"info@coolkidz.com.au",
+     "address":{"@type":"PostalAddress","streetAddress":"1 Beyer Road","addressLocality":"Braeside","addressRegion":"VIC","postalCode":"3195","addressCountry":"AU"},
+     "sameAs":["https://www.facebook.com/Coolkidz.Aus","https://www.instagram.com/coolkidz_australia"]},
+    {"@type":"WebSite","@id":{{ shop.url | append: '/#site' | json }},"url":{{ shop.url | json }},"name":"Coolkidz Australia","publisher":{"@id":{{ shop.url | append: '/#org' | json }}},
+     "potentialAction":{"@type":"SearchAction","target":"{{ shop.url }}/search?type=product&q={q}","query-input":"required name=q"}}]}</script>
+  {%- endif -%}
   {{ content_for_header }}
   {{ shop.metafields.foxtheme.code_head.value }}
   <!-- Google tag (gtag.js) -->
@@ -40,5 +85,6 @@
   </main>
   {% sections 'ck-footer-group' %}
   <div class="ck-toast" id="ck-toast" role="status" aria-live="polite" hidden></div>
+  {%- if settings.ck_ask_enabled -%}{%- render 'ck-assistant' -%}{%- endif -%}
 </body>
 </html>

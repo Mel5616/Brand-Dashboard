@@ -1,0 +1,161 @@
+{
+  "layout": "ck",
+  "sections": {
+    "s0": {
+      "type": "ck-page-hero",
+      "settings": {
+        "eyebrow": "For retailers",
+        "heading": "<p>Brand <em>catalogues</em></p>",
+        "text": "The current catalogue for every brand in the Coolkidz family. Open any catalogue to browse the full range, specs and colours.",
+        "btn1_label": "Become a stockist",
+        "btn1_url": "/pages/become-a-stockist",
+        "tint": "sky"
+      }
+    },
+    "s1": {
+      "type": "ck-tiles",
+      "settings": {
+        "tight": true
+      },
+      "blocks": {
+        "b0": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Prams catalogue 2026",
+            "title": "UPPAbaby Australia",
+            "text": "",
+            "link_label": "View catalogue",
+            "link_url": "https://coolkidz.aflip.in/13dc0ed4ef.html"
+          }
+        },
+        "b1": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "In-home catalogue 2025",
+            "title": "UPPAbaby Australia",
+            "text": "",
+            "link_label": "View catalogue",
+            "link_url": "https://heyzine.com/flip-book/6f2c666c37.html"
+          }
+        },
+        "b2": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Catalogue 2026",
+            "title": "Frida Australia",
+            "text": "",
+            "link_label": "View catalogue",
+            "link_url": "https://coolkidz.aflip.in/b0a1a11b46.html"
+          }
+        },
+        "b3": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Catalogue 2026",
+            "title": "WonderFold Australia",
+            "text": "",
+            "link_label": "View catalogue",
+            "link_url": "https://coolkidz.aflip.in/f03eb0cddd.html"
+          }
+        },
+        "b4": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Catalogue 2026",
+            "title": "Nanit Australia",
+            "text": "",
+            "link_label": "View catalogue",
+            "link_url": "https://coolkidz.aflip.in/1f7cff9a8b.html"
+          }
+        },
+        "b5": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Catalogue 2026 (flipbook)",
+            "title": "Nanit Australia",
+            "text": "",
+            "link_label": "View catalogue",
+            "link_url": "https://heyzine.com/flip-book/156318b8dd.html"
+          }
+        },
+        "b6": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Catalogue 2026",
+            "title": "Magic",
+            "text": "",
+            "link_label": "View catalogue",
+            "link_url": "https://coolkidz.aflip.in/f433d4df95.html"
+          }
+        },
+        "b7": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Catalogue 2026",
+            "title": "Matchstick Monkey",
+            "text": "",
+            "link_label": "View catalogue",
+            "link_url": "https://coolkidz.aflip.in/ae6269453f.html"
+          }
+        },
+        "b8": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Catalogue 2026",
+            "title": "MiaMily Australia",
+            "text": "",
+            "link_label": "View catalogue",
+            "link_url": "https://coolkidz.aflip.in/f33c8ed8b1.html"
+          }
+        },
+        "b9": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Catalogue 2026",
+            "title": "Gaia Baby Australia",
+            "text": "",
+            "link_label": "View catalogue",
+            "link_url": "https://coolkidz.aflip.in/57854200e2.html"
+          }
+        },
+        "b10": {
+          "type": "tile",
+          "settings": {
+            "eyebrow": "Catalogue 2026",
+            "title": "Mamave",
+            "text": "",
+            "link_label": "View catalogue",
+            "link_url": "https://coolkidz.aflip.in/e39a910d48.html"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3",
+        "b4",
+        "b5",
+        "b6",
+        "b7",
+        "b8",
+        "b9",
+        "b10"
+      ]
+    },
+    "s2": {
+      "type": "ck-form",
+      "settings": {
+        "kind": "retailer",
+        "eyebrow": "Trade enquiries",
+        "heading": "Want to stock these brands?",
+        "tint": "mint"
+      }
+    }
+  },
+  "order": [
+    "s0",
+    "s1",
+    "s2"
+  ]
+}
