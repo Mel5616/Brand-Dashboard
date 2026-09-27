@@ -91,6 +91,7 @@ import { LifecycleFlowGrid } from "./LifecycleFlowGrid";
 import { FlowPerformance } from "./FlowPerformance";
 import { EmailHealthOverview } from "./EmailHealthOverview";
 import { EmailSendTimeline } from "./EmailSendTimeline";
+import { SocialSendTimeline } from "./SocialSendTimeline";
 import { SendCalendar } from "./SendCalendar";
 import { DatabaseSizeCard } from "./DatabaseSizeCard";
 import { StaffCalendar } from "./StaffCalendar";
@@ -2572,6 +2573,7 @@ export function DashboardTabs({
           {active === "social" && (
             <>
               <SectionBar title="Social · Instagram" />
+              <SocialSendTimeline />
               <div className="flex items-center gap-2 mb-3">
                 <select
                   value={brandFilter === "all" ? "all" : String(brandFilter)}
