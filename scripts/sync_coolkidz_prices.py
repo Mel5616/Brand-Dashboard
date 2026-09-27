@@ -3,7 +3,8 @@
 
 The brand's own Australian store is the source of truth. For every product on
 the Coolkidz online store, each variant is matched by SKU to the brand stores,
-and its price and compare-at ("was") price are updated when they differ. Runs
+and its price is set to the brand's current selling price. Coolkidz shows one
+price only, so any compare-at ("was") price is cleared (Mel, 27 Sep 2026). Runs
 hourly from .github/workflows/coolkidz_price_sync.yml.
 
 Only products published on the Coolkidz online store are touched, so expo-till
@@ -59,9 +60,7 @@ def main():
                 pr = money(v["price"])
                 if not v["sku"] or not pr or float(pr) == 0:
                     continue  # $0 free-gift listings share SKUs with the real product
-                cmp_ = money(v["compareAtPrice"])
-                if cmp_ and float(cmp_) <= float(pr):
-                    cmp_ = None  # a "was" price that isn't higher isn't a sale
+                cmp_ = None  # coolkidz.com.au shows one price only: no crossed-out "was" prices
                 brand_price.setdefault(v["sku"].strip().lower(), set()).add((pr, cmp_, b["name"]))
             if not d["pageInfo"]["hasNextPage"]: break
             cur = d["pageInfo"]["endCursor"]
@@ -75,8 +74,25 @@ def main():
     ambiguous = ambiguous
     while True:
         d = gql(ck, ckt, """query($c:String){products(first:100,after:$c,query:"published_status:published"){pageInfo{hasNextPage endCursor}
-            nodes{id title variants(first:100){nodes{id sku price compareAtPrice}}}}}""", {"c": cur})["products"]
+            nodes{id title source: metafield(namespace:"coolkidz", key:"source"){value} variants(first:100){nodes{id sku title price compareAtPrice}}}}}""", {"c": cur})["products"]
         for p in d["nodes"]:
+            # Variants without a SKU: match through the brand product this was copied from.
+            nosku = [v for v in p["variants"]["nodes"] if not v["sku"]]
+            if nosku and p.get("source") and ":" in p["source"]["value"]:
+                bname, bhandle = p["source"]["value"].split(":", 1)
+                bstore = next((x for x in cfg["brands"] if x["name"] == bname), None)
+                if bstore:
+                    bp = gql(bstore, store_token(bstore), 'query($h:String!){productByHandle(handle:$h){status variants(first:100){nodes{title price}}}}', {"h": bhandle})["productByHandle"]
+                    if bp and bp["status"] == "ACTIVE":
+                        by_title = {x["title"]: money(x["price"]) for x in bp["variants"]["nodes"] if money(x["price"]) and float(x["price"]) > 0}
+                        for v in nosku:
+                            bp_price = by_title.get(v["title"])
+                            checked += 1
+                            if bp_price and (money(v["price"]) != bp_price or money(v["compareAtPrice"])):
+                                todo[p["id"]].append({"id": v["id"], "price": bp_price, "compareAtPrice": None,
+                                                      "_log": f"{bname}: {p['title'][:55]} {money(v['price'])} -> {bp_price} (no SKU, matched by product)"})
+                    elif not bp or bp["status"] != "ACTIVE":
+                        gone.append(p["title"])
             for v in p["variants"]["nodes"]:
                 if not v["sku"]: continue
                 k = v["sku"].strip().lower(); checked += 1
