@@ -237,3 +237,63 @@ tpl("page.gift-registry.json", [sec("ck-gift-registry")])
 open(os.path.join(S, "ck-header-group.json"), "w").write(json.dumps({"type": "header", "name": "Coolkidz header", "sections": {"header": {"type": "ck-header", "settings": {}}}, "order": ["header"]}, indent=2))
 open(os.path.join(S, "ck-footer-group.json"), "w").write(json.dumps({"type": "footer", "name": "Coolkidz footer", "sections": {"footer": {"type": "ck-footer", "settings": {}}}, "order": ["footer"]}, indent=2))
 print("events", len(EVENTS), "templates", len(os.listdir(T)))
+
+# ---------- legacy pages moved into the new design ----------
+CATS = [("UPPAbaby Australia","Prams catalogue 2026","https://coolkidz.aflip.in/13dc0ed4ef.html"),("UPPAbaby Australia","In-home catalogue 2025","https://heyzine.com/flip-book/6f2c666c37.html"),
+        ("Frida Australia","Catalogue 2026","https://coolkidz.aflip.in/b0a1a11b46.html"),("WonderFold Australia","Catalogue 2026","https://coolkidz.aflip.in/f03eb0cddd.html"),
+        ("Nanit Australia","Catalogue 2026","https://coolkidz.aflip.in/1f7cff9a8b.html"),("Nanit Australia","Catalogue 2026 (flipbook)","https://heyzine.com/flip-book/156318b8dd.html"),
+        ("Magic","Catalogue 2026","https://coolkidz.aflip.in/f433d4df95.html"),("Matchstick Monkey","Catalogue 2026","https://coolkidz.aflip.in/ae6269453f.html"),
+        ("MiaMily Australia","Catalogue 2026","https://coolkidz.aflip.in/f33c8ed8b1.html"),("Gaia Baby Australia","Catalogue 2026","https://coolkidz.aflip.in/57854200e2.html"),
+        ("Mamave","Catalogue 2026","https://coolkidz.aflip.in/e39a910d48.html")]
+tpl("page.lookbook.json", [
+  sec("ck-page-hero", {"eyebrow": "For retailers", "heading": "<p>Brand <em>catalogues</em></p>", "text": "The current catalogue for every brand in the Coolkidz family. Open any catalogue to browse the full range, specs and colours.", "btn1_label": "Become a stockist", "btn1_url": "/pages/become-a-stockist", "tint": "sky"}),
+  sec("ck-tiles", {"tight": True}, [blk("tile", eyebrow=d, title=n, text="", link_label="View catalogue", link_url=u) for n, d, u in CATS]),
+  sec("ck-form", {"kind": "retailer", "eyebrow": "Trade enquiries", "heading": "Want to stock these brands?", "tint": "mint"}),
+])
+BLOGS = [("UPPAbaby","Pram buying guides, comparisons and practical parenting advice","https://uppababy.com.au/blogs/news"),("Nanit","Smart nursery advice, sleep guidance and set-up tips","https://nanit.com.au/blogs/news"),
+         ("Gaia Baby","Nursery furniture guides, inspiration and expert advice","https://www.gaia-baby.com.au/blogs/news"),("WonderFold","Stroller wagon guides, comparisons and family adventure tips","https://wonderfold.com.au/blogs/news"),
+         ("Magic","Nappy bin advice, comparisons and nursery tips","https://magicbabyproducts.com.au/blogs/news"),("ZAZU","Baby sleep guidance, routines and product advice","https://zazu-kids.com.au/blogs/news"),
+         ("MiaMily","Family travel tips, luggage guides and product advice","https://miamily.com.au/blogs/news"),("Frida Baby","Baby care guidance","https://fridaaustralia.com.au/blogs/baby-care-guides"),
+         ("Frida Mom","Pregnancy and postpartum guides for mums","https://fridaaustralia.com.au/blogs/postpartum-guides"),("Mamave","Pregnancy, postpartum and baby skincare guidance","https://mamave.com.au/blogs/blog"),
+         ("Matchstick Monkey","Teething tips, oral care guidance and product advice","https://www.matchstickmonkey.com.au/blogs/news"),("Hannie","High chair guidance, mealtime tips and family advice","https://hannie.com.au/blogs/news")]
+tpl("page.learning-hub.json", [
+  sec("ck-page-hero", {"eyebrow": "Coolkidz Australia", "heading": "<p>Learning <em>hub</em></p>", "text": "Expert insights, parenting advice and practical guides from across the Coolkidz family of brands.", "btn1_label": "Read the journal", "btn1_url": "/blogs/news", "tint": "mint"}),
+  sec("ck-journal", {"heading": "Latest from Coolkidz", "text": "Guides for the first years from the Coolkidz team."}, feed_blocks),
+  sec("ck-tiles", {"heading": "<p>Explore by <em>brand</em></p>", "text": "Every brand's own Australian journal, full of guides and advice.", "tint": "paper"}, [blk("tile", title=n, text=t, link_label="Explore articles", link_url=u) for n, t, u in BLOGS]),
+])
+SD = json.load(open(os.path.join(D, "_sameday.json")))
+sd_blocks = []
+for k, items in SD.items():
+    d = dict(items)
+    if "content" in d:
+        sd_blocks.append(blk("text", heading=d.get("heading", ""), text=d["content"], chips=True))
+    else:
+        sd_blocks.append(blk("text", text=d["text"]))
+tpl("page.same-day-delivery.json", [
+  sec("ck-page-hero", {"eyebrow": "Delivery", "heading": "<p>Same-day delivery <em>terms</em></p>", "text": "How same-day delivery works in Melbourne, and the postcodes it covers.", "tint": "sky"}),
+  sec("ck-main-page", {"show_title": False}),
+  sec("ck-richtext", {}, [sd_blocks[0], sd_blocks[1], sd_blocks[2]] if len(sd_blocks) == 3 else sd_blocks),
+])
+art = [sec("ck-article")]
+for f in os.listdir("/private/tmp/claude-501/-Users-melaniekingsford-brand-dashboard/2658e5a0-4cc5-47c9-94ee-d3b6d31bc8be/scratchpad/ck/cktheme/templates"):
+    if f.startswith("article.") and f != "article.json":
+        tpl(f, art)
+tpl("collection.landing-page-collection.json", [sec("ck-collection", {}, brand_story_blocks())])
+tpl("404.json", [
+  sec("ck-page-hero", {"eyebrow": "404", "heading": "<p>We can't find <em>that page</em></p>", "text": "It may have moved when we refreshed the site. Try one of these instead.", "btn1_label": "Shop everything", "btn1_url": "/collections/all", "btn2_label": "Meet the brands", "btn2_url": "/pages/our-brands", "tint": "coral"}),
+  sec("ck-moments", {"heading": "", "tight": True}, [
+    blk("moment", title="The nursery", brands="Gaia · Nanit · Magic", url="/collections/nursery-and-sleep", asset="ck-m-nursery.jpg"),
+    blk("moment", title="Out and about", brands="UPPAbaby · WonderFold", url="/collections/out-and-about", asset="ck-m-out.jpg"),
+    blk("moment", title="Travel", brands="MiaMily · smarTrike", url="/collections/vendors?q=MiaMily", asset="ck-m-travel.jpg"),
+    blk("moment", title="The first weeks", brands="Frida · Mamave", url="/collections/first-weeks", asset="ck-m-sleep.jpg")]),
+])
+tpl("list-collections.json", [
+  sec("ck-page-hero", {"eyebrow": "Shop", "heading": "<p>Shop by moment <em>or by brand</em></p>", "text": "Every product from the Coolkidz family, in one place.", "tint": "sky"}),
+  sec("ck-moments", {"heading": "", "tight": True}, [
+    blk("moment", title="The nursery", brands="Gaia · Nanit · Magic", url="/collections/nursery-and-sleep", asset="ck-m-nursery.jpg"),
+    blk("moment", title="Out and about", brands="UPPAbaby · WonderFold", url="/collections/out-and-about", asset="ck-m-out.jpg"),
+    blk("moment", title="Travel", brands="MiaMily · smarTrike", url="/collections/vendors?q=MiaMily", asset="ck-m-travel.jpg"),
+    blk("moment", title="The first weeks", brands="Frida · Mamave", url="/collections/first-weeks", asset="ck-m-sleep.jpg")]),
+  sec("ck-brands", {"heading": "The brands", "style": "cards"}, brand_blocks()),
+])
+print("legacy templates written")

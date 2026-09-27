@@ -1,0 +1,56 @@
+{
+  "layout": "ck",
+  "sections": {
+    "s0": {
+      "type": "ck-page-hero",
+      "settings": {
+        "eyebrow": "Delivery",
+        "heading": "<p>Same-day delivery <em>terms</em></p>",
+        "text": "How same-day delivery works in Melbourne, and the postcodes it covers.",
+        "tint": "sky"
+      }
+    },
+    "s1": {
+      "type": "ck-main-page",
+      "settings": {
+        "show_title": false
+      }
+    },
+    "s2": {
+      "type": "ck-richtext",
+      "settings": {},
+      "blocks": {
+        "b0": {
+          "type": "text",
+          "settings": {
+            "text": "<p><strong>Delivery and Risk</strong></p><p>\u2022 Risk and ownership of the Goods transfer to you once delivery has been made to the address specified in your order.</p><p>\u2022 Make sure to verify your delivery address before placing your order, as redirection is not possible once the order has been submitted and further costs will apply.</p><p><strong>Service Eligibility</strong></p><p>\u2022 Same Day Delivery only applies to Melbourne customers with eligible locations allowable by the 3rd party courier.</p>"
+          }
+        },
+        "b1": {
+          "type": "text",
+          "settings": {
+            "heading": "Same Day eligible locations",
+            "text": "<ul><li>3000</li><li>3003</li><li>3006</li><li>3008</li><li>3011</li><li>3012</li><li>3013</li><li>3018</li><li>3019</li><li>3020</li><li>3023</li><li>3025</li><li>3026</li><li>3028</li><li>3029</li><li>3030</li><li>3031</li><li>3032</li><li>3033</li><li>3039</li><li>3041</li><li>3042</li><li>3043</li><li>3047</li><li>3051</li><li>3052</li><li>3053</li><li>3056</li><li>3058</li><li>3061</li><li>3062</li><li>3064</li><li>3065</li><li>3066</li><li>3067</li><li>3071</li><li>3072</li><li>3073</li><li>3074</li><li>3076</li><li>3078</li><li>3081</li><li>3083</li><li>3084</li><li>3088</li><li>3089</li><li>3095</li><li>3101</li><li>3108</li><li>3116</li><li>3121</li><li>3122</li><li>3123</li><li>3124</li><li>3125</li><li>3128</li><li>3130</li><li>3131</li><li>3132</li><li>3133</li><li>3134</li><li>3136</li><li>3137</li><li>3140</li><li>3141</li><li>3144</li><li>3149</li><li>3150</li><li>3151</li><li>3152</li><li>3153</li><li>3155</li><li>3156</li><li>3162</li><li>3165</li><li>3166</li><li>3167</li><li>3168</li><li>3169</li><li>3170</li><li>3171</li><li>3172</li><li>3173</li><li>3174</li><li>3175</li><li>3178</li><li>3179</li><li>3180</li><li>3181</li><li>3182</li><li>3186</li><li>3189</li><li>3190</li><li>3192</li><li>3194</li><li>3195</li><li>3196</li><li>3198</li><li>3199</li><li>3201</li><li>3205</li><li>3337</li><li>3429</li><li>3803</li><li>3805</li><li>3806</li><li>3810</li><li>3915</li><li>3931</li><li>3975</li><li>3977</li><li>3978</li></ul>",
+            "chips": true
+          }
+        },
+        "b2": {
+          "type": "text",
+          "settings": {
+            "text": "<p>\u2022 Unexpected circumstances, including natural disasters, unavailable delivery time slots, and workforce or driver shortages, may delay the dispatch or delivery of your Goods.</p><p>\u2022 Same Day Delivery is not available to PO Boxes, locked bags or parcel lockers.</p><p><strong>Order Cut-Offs and Dispatch</strong></p><p>\u2022 For Same Day Delivery, orders must be placed before 12pm local time.</p><p>\u2022 Orders placed after 12:00 PM local time will be dispatched the next business day.</p><p>\u2022 Orders placed on Friday after the cutoff time will be sent the next business day.</p><p>\u2022 The Same day delivery service operates Monday to Friday, during normal business hours, excluding Victorian public holidays and company closure periods</p><p>\u00a0<strong>Minimum Spend</strong></p><p>\u2022 There is a minimum spend of $50 to be eligible for same day delivery excluding delivery costs</p><p><strong>Delivery Conditions</strong></p><p>\u2022 Delivery times are estimates and may vary depending on traffic conditions and other factors outside of the delivery driver's control.</p><p>\u2022 ATL (Authority to Leave) is automatically applied to orders under $250 that use a Same Day Delivery service.</p><p>\u2022 Orders with a value of over $250 require a signature.</p><p>\u2022 If your premises are unattended or there is no safe place for delivery, the driver will return the Goods back to the Coolkidz Australia. Delivery updates will be sent via email or SMS. Additional fees will apply for re-delivery.</p><p>\u2022 Drivers will not place Goods inside your address, or carry items upstairs please always respect the 3rd Party Courier\u2019s OHS policies.</p><p>\u2022 For Standard same day delivery orders will be delivered within 4-5hrs upon courier booking.</p><p>\u2022 For Express same day delivery orders will be delivered within 2-3hrs upon courier booking.</p>"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2"
+      ]
+    }
+  },
+  "order": [
+    "s0",
+    "s1",
+    "s2"
+  ]
+}

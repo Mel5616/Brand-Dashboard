@@ -31,7 +31,7 @@ API = "2025-01"
 CONFIG = os.path.join(os.path.dirname(__file__), "..", "stores.config.json")
 TARGET = "Coolkidz Australia"
 VENDOR = {"SmarTrike": "smarTrike"}
-SKIP_TITLE = re.compile(r"damaged|gift card|\btest\b", re.I)
+SKIP_TITLE = re.compile(r"damaged|gift card|\btest\b|donation|voucher|\bbox \d+ of \d+\b|\bbundle\b", re.I)
 
 
 def gql(brand, token, query, variables=None, tries=4):
@@ -170,9 +170,10 @@ def main():
         todo = []
         for p in prods:
             psk = {v["sku"].strip().lower() for v in p["variants"]["nodes"] if v["sku"]}
-            if p["isGiftCard"] or SKIP_TITLE.search(p["title"]):
+            zero = all(float(v["price"] or 0) == 0 for v in p["variants"]["nodes"])
+            if p["isGiftCard"] or SKIP_TITLE.search(p["title"]) or zero:
                 skipped += 1
-                log.append((brand["name"], p["title"], "skip: gift card/damaged/test"))
+                log.append((brand["name"], p["title"], "skip: gift card/damaged/donation/box part/$0"))
             elif psk & skus:
                 skipped += 1
                 log.append((brand["name"], p["title"], "skip: SKU already in Coolkidz"))

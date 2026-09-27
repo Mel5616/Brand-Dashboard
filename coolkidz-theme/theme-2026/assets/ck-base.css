@@ -527,3 +527,5 @@ body.ck-lock{overflow:hidden}
 @media (max-width:900px){.ck-burger{display:inline-flex}.ck-mm-panel{display:none}}
 .ck-mm-grid .col .ck-link,.ck-acc .ck-link{align-self:flex-start;display:inline-block;margin-top:4px}
 @media (max-width:560px){.ck-trip figcaption span:last-child{display:none}}
+.ck-chiplist ul{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.ck-chiplist li{margin:0!important;background:var(--paper);border-radius:999px;padding:4px 10px;font-size:13.5px;font-variant-numeric:tabular-nums}
