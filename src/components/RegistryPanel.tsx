@@ -27,6 +27,7 @@ export function RegistryPanel() {
   // Captured when the rows land rather than read during render, so the numbers
   // cannot shift on a re-render (and the linter is right to insist).
   const [now, setNow] = React.useState(0);
+  const [store, setStore] = React.useState<"all" | "uppababy" | "coolkidz">("all");
 
   React.useEffect(() => {
     fetch("/api/registries").then(r => r.json()).then(d => {
@@ -35,7 +36,9 @@ export function RegistryPanel() {
     }).catch(() => {});
   }, []);
 
-  const all = rows ?? [];
+  const every = rows ?? [];
+  const all = store === "all" ? every : every.filter(r => (r.store || "uppababy") === store);
+  const count = (k: string) => every.filter(r => (r.store || "uppababy") === k).length;
   const withItems = all.filter(r => r.items > 0);
   const withPurchase = all.filter(r => r.bought > 0);
   const listValue = all.reduce((s, r) => s + r.listValue, 0);
@@ -55,11 +58,24 @@ export function RegistryPanel() {
         <div>
           <h2 className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-600">Baby registry</h2>
           <p className="text-xs text-gray-400 mt-0.5">
-            Registries created on uppababy.com.au. Parents save with the heart, send one link, and anything bought drops off the list. Created and edited on the site, read only here.
+            Registries created on uppababy.com.au and coolkidz.com.au (every brand on one list). Parents send one link, and anything bought drops off the list. Created and edited on the sites, read only here.
           </p>
         </div>
-        <a href="https://uppababy.com.au/pages/registry" target="_blank" rel="noreferrer"
-           className="text-[12px] font-semibold text-slate-600 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50">Open the registry page</a>
+        <div className="flex flex-wrap gap-2">
+          <a href="https://uppababy.com.au/pages/registry" target="_blank" rel="noreferrer"
+             className="text-[12px] font-semibold text-slate-600 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50">UPPAbaby registry</a>
+          <a href="https://coolkidz.com.au/pages/gift-registry" target="_blank" rel="noreferrer"
+             className="text-[12px] font-semibold text-slate-600 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50">Coolkidz registry</a>
+        </div>
+      </div>
+
+      <div className="flex gap-1 mt-4 border-b border-gray-100">
+        {([["all", "All", every.length], ["uppababy", "UPPAbaby", count("uppababy")], ["coolkidz", "Coolkidz", count("coolkidz")]] as const).map(([k, label, n]) => (
+          <button key={k} onClick={() => setStore(k)}
+            className={`px-3 py-2 text-[12.5px] font-semibold -mb-px border-b-2 ${store === k ? "border-slate-800 text-slate-800" : "border-transparent text-gray-400 hover:text-slate-600"}`}>
+            {label} <span className="tabular-nums text-gray-400 font-medium">{n}</span>
+          </button>
+        ))}
       </div>
 
       {needsSetup && (
@@ -81,7 +97,7 @@ export function RegistryPanel() {
       {rows === null ? (
         <p className="text-[12.5px] text-gray-400 mt-4">Loading…</p>
       ) : all.length === 0 ? (
-        <p className="text-[12.5px] text-gray-400 mt-4">No registries yet.</p>
+        <p className="text-[12.5px] text-gray-400 mt-4">{store === "coolkidz" ? "No Coolkidz registries yet. The registry goes live with the new coolkidz.com.au theme." : "No registries yet."}</p>
       ) : (
         <div className="overflow-x-auto mt-4">
           <table className="w-full text-[12.5px]">
