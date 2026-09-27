@@ -1,0 +1,12 @@
+{
+  "layout": "ck",
+  "sections": {
+    "s0": {
+      "type": "ck-main-page",
+      "settings": {}
+    }
+  },
+  "order": [
+    "s0"
+  ]
+}

@@ -71,7 +71,7 @@
             "product_1": "frida-baby-nosefrida",
             "product_2": "bubbas-wash",
             "product_3": "mummas-oil",
-            "product_4": "matchstick-monkey-giraffe-teether-gigi-starter-set"
+            "product_4": "matchstick-monkey-matchstick-monkey-giraffe-teether-gigi-starter-set"
           }
         },
         "b4": {
@@ -95,6 +95,54 @@
       ]
     },
     "s3": {
+      "type": "ck-reviews",
+      "settings": {},
+      "blocks": {
+        "b0": {
+          "type": "review",
+          "settings": {
+            "quote": "Have had my pram for 6yrs and used for all 3 of my children. I have many accessories that have made my life so much easier on many occasions. This is the only pram anybody needs!!",
+            "name": "Eva J.",
+            "brand": "UPPAbaby",
+            "product": "Vista"
+          }
+        },
+        "b1": {
+          "type": "review",
+          "settings": {
+            "quote": "Great bin, no smell and love that you can use it one handed unlike other brands we\u2019ve tried",
+            "name": "Hayley B.",
+            "brand": "Magic",
+            "product": "Heka L nappy bin"
+          }
+        },
+        "b2": {
+          "type": "review",
+          "settings": {
+            "quote": "Second Gaia mattress I\u2019ve purchased and am pleased with how it fits the bed, and the low-toxin materials.",
+            "name": "Alyssa H.",
+            "brand": "Gaia Baby",
+            "product": "Eos cot mattress"
+          }
+        },
+        "b3": {
+          "type": "review",
+          "settings": {
+            "quote": "Best investment for travel. Everyone we saw waiting in the huge airport line asked me where I got the suitcases from.",
+            "name": "EC",
+            "brand": "MiaMily",
+            "product": "Check In"
+          }
+        }
+      },
+      "block_order": [
+        "b0",
+        "b1",
+        "b2",
+        "b3"
+      ]
+    },
+    "s4": {
       "type": "ck-band",
       "settings": {
         "asset": "ck-reg.jpg",
@@ -106,6 +154,7 @@
     "s0",
     "s1",
     "s2",
-    "s3"
+    "s3",
+    "s4"
   ]
 }

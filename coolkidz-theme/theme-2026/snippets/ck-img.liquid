@@ -3,9 +3,9 @@
   so every section looks finished before anyone uploads photos.
   Usage: render 'ck-img', image: block.settings.image, asset: block.settings.asset, alt: 'x', width: 1200, class: ''
 {%- endcomment -%}
-{%- assign w = width | default: 1200 -%}
+{%- assign w = width | default: 1200 -%}{%- assign ld = 'lazy' -%}{%- if eager -%}{%- assign ld = 'eager' -%}{%- endif -%}
 {%- if image != blank -%}
-  {{ image | image_url: width: w | image_tag: loading: 'lazy', alt: alt, class: class, sizes: '(min-width: 900px) 50vw, 100vw' }}
+  {{ image | image_url: width: w | image_tag: loading: ld, alt: alt, class: class, sizes: '(min-width: 900px) 50vw, 100vw' }}
 {%- elsif asset != blank -%}
-  <img src="{{ asset | asset_url }}" alt="{{ alt | escape }}" loading="lazy" class="{{ class }}">
+  <img src="{{ asset | asset_url }}" alt="{{ alt | escape }}" loading="{{ ld }}"{% if eager %} fetchpriority="high"{% endif %} class="{{ class }}">
 {%- endif -%}

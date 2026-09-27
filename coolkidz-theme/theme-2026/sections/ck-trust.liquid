@@ -1,0 +1,8 @@
+<section class="ck-trust"><div class="ck-wrap"><ul>
+  {%- for b in section.blocks -%}<li {{ b.shopify_attributes }}><i class="c{{ forloop.index | modulo: 4 | plus: 1 }}"></i><span><b>{{ b.settings.title }}</b>{{ b.settings.text }}</span></li>{%- endfor -%}
+</ul></div></section>
+{% schema %}
+{ "name": "Trust strip",
+  "blocks": [{ "type": "item", "name": "Item", "settings": [{ "type": "text", "id": "title", "label": "Title" },{ "type": "text", "id": "text", "label": "Text" }] }],
+  "presets": [{ "name": "Trust strip" }] }
+{% endschema %}

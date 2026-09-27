@@ -1,0 +1,35 @@
+{%- comment -%}
+  Real customer reviews, copied as written from the brands' Klaviyo reviews
+  (5 stars, published). Keep them real: never edit a quote or add one that
+  wasn't written by a customer.
+{%- endcomment -%}
+{%- assign s = section.settings -%}
+{%- if section.blocks.size > 0 -%}
+<section class="ck-sec ck-tint-{{ s.tint }}" id="reviews"><div class="ck-wrap">
+  <div class="ck-shead"><h2>{{ s.heading | remove: '<p>' | remove: '</p>' }}</h2><p>{{ s.text }}</p></div>
+  <div class="ck-reviews" data-ck-reviews>
+    {%- for b in section.blocks -%}
+      <figure class="ck-review" {{ b.shopify_attributes }}>
+        <div class="stars" aria-label="5 out of 5 stars">★★★★★</div>
+        <blockquote>{{ b.settings.quote }}</blockquote>
+        <figcaption><b>{{ b.settings.name }}</b><span>{{ b.settings.brand }}{% if b.settings.product != blank %} · {{ b.settings.product }}{% endif %}</span></figcaption>
+      </figure>
+    {%- endfor -%}
+  </div>
+  {%- if s.note != blank -%}<p class="ck-review-note">{{ s.note }}</p>{%- endif -%}
+</div></section>
+{%- endif -%}
+{% schema %}
+{ "name": "Customer reviews",
+  "settings": [
+    { "type": "richtext", "id": "heading", "label": "Heading", "default": "<p>What <em>parents</em> say</p>" },
+    { "type": "textarea", "id": "text", "label": "Text", "default": "Five-star reviews from families who bought from our brands." },
+    { "type": "text", "id": "note", "label": "Note", "default": "Verified reviews from our brands' Australian websites." },
+    { "type": "select", "id": "tint", "label": "Background", "options": [{"value":"white","label":"White"},{"value":"sky","label":"Sky"},{"value":"mint","label":"Mint"},{"value":"blush","label":"Blush"},{"value":"coral","label":"Coral"},{"value":"paper","label":"Grey"}], "default": "white" } ],
+  "blocks": [{ "type": "review", "name": "Review", "settings": [
+    { "type": "textarea", "id": "quote", "label": "Quote (exactly as written)" },
+    { "type": "text", "id": "name", "label": "Name as shown" },
+    { "type": "text", "id": "brand", "label": "Brand" },
+    { "type": "text", "id": "product", "label": "Product" } ] }],
+  "presets": [{ "name": "Customer reviews" }] }
+{% endschema %}

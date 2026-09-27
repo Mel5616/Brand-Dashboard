@@ -13,7 +13,7 @@
   <div class="ck-trip">
     {%- for b in section.blocks -%}
       <figure {{ b.shopify_attributes }}>
-        <a class="ph" href="{{ b.settings.url | default: '#' }}">{%- render 'ck-img', image: b.settings.image, asset: b.settings.asset, alt: b.settings.alt, width: 1000 -%}</a>
+        <a class="ph" href="{{ b.settings.url | default: '#' }}">{%- if forloop.first -%}{%- render 'ck-img', image: b.settings.image, asset: b.settings.asset, alt: b.settings.alt, width: 1000, eager: true -%}{%- else -%}{%- render 'ck-img', image: b.settings.image, asset: b.settings.asset, alt: b.settings.alt, width: 1000 -%}{%- endif -%}</a>
         <figcaption><span><b>{{ b.settings.brand }}</b>{% if b.settings.product != blank %} · {{ b.settings.product }}{% endif %}</span><span>{{ b.settings.moment }}</span></figcaption>
       </figure>
     {%- endfor -%}
