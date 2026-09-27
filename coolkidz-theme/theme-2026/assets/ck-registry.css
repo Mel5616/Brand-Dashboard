@@ -138,3 +138,11 @@ html.ckr-token .ckr-marketing, .ckr.ckr-has-list .ckr-marketing { display:none }
 }
 
 .ckr-settings .ckr-btn{justify-self:start}
+
+/* smaller type to match the site */
+.ckr{font-size:15px}
+.ckr-hero h1{font-size:clamp(34px,4.8vw,72px)}
+.ckr-find h2,.ckr-create h2{font-size:clamp(26px,2.8vw,40px)}
+.ckr-head h1{font-size:clamp(30px,3.6vw,52px)}
+.ckr-perk b{font-size:clamp(19px,1.7vw,24px)}
+.ckr-lede{font-size:16px}

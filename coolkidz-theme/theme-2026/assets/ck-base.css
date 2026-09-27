@@ -654,3 +654,37 @@ body.ck-lock{overflow:hidden}
 
 @media (max-width:900px){.ck-split .ph{min-height:0;aspect-ratio:3/2}}
 .ck-band .ph,.ck-split .tx,.ck-band .tx{min-width:0}
+
+/* ===== type scale, a touch smaller (Mel, 27 Sep) ===== */
+body.ck{font-size:15px}
+.ck-hero h1{font-size:clamp(38px,6vw,92px)}
+.ck-hero .side p,.ck-phero .lede{font-size:16px}
+.ck-phero h1{font-size:clamp(34px,4.8vw,74px)}
+.ck-colhero h1{font-size:clamp(32px,4.4vw,66px)}
+.ck-shead h2{font-size:clamp(28px,3.4vw,50px)}
+.ck-who h2,.ck-band h2{font-size:clamp(30px,3.4vw,52px)}
+.ck-split h2,.ck-formwrap h2{font-size:clamp(28px,3vw,46px)}
+.ck-door h3{font-size:clamp(26px,2.7vw,40px)}
+.ck-set h3{font-size:clamp(22px,1.8vw,28px)}
+.ck-moment h3{font-size:clamp(20px,1.7vw,26px)}
+.ck-mix .n{font-size:clamp(46px,5.4vw,86px)}
+.ck-mix>div:nth-child(1) .n{font-size:clamp(24px,2.3vw,36px)}
+.ck-stats b{font-size:clamp(30px,3.2vw,50px)}
+.ck-stats2 b{font-size:clamp(26px,2.6vw,40px)}
+.ck-tiles b{font-size:21px}
+.ck-dir .nm{font-size:clamp(20px,1.9vw,28px)}
+.ck-bcard h3{font-size:24px}
+.ck-post h3{font-size:clamp(18px,1.6vw,23px)}
+.ck-steps b{font-size:18px}
+.ck-review blockquote{font-size:16px}
+.ck-buy h1{font-size:clamp(26px,2.6vw,38px)}
+.ck-buy .price{font-size:24px}
+.ck-cart h1{font-size:clamp(32px,4vw,56px)}
+.ck-tot .now{font-size:28px}
+.ck-set .row .now{font-size:24px}
+.ck-card h3,.ck-card .pr{font-size:14px}
+.ck-nav,.ck-tools{font-size:14px}
+.ck-btn{font-size:14px;padding:13px 24px}
+.ck-welcome h2{font-size:clamp(24px,2.8vw,34px)}
+.ck-faq summary{font-size:clamp(16px,1.3vw,18px)}
+.ck-foot .big{font-size:clamp(24px,3vw,44px)}
