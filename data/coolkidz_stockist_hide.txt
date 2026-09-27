@@ -1,0 +1,3 @@
+# Stockist names to leave off coolkidz.com.au/pages/stockists (one per line, as shown on the page)
+GB eCommerce c/o eStore Logistics
+The Nile Group
