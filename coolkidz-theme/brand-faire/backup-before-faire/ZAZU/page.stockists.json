@@ -1,0 +1,88 @@
+{
+  "sections": {
+    "hero": {
+      "type": "zazu-page-hero",
+      "settings": {
+        "eyebrow": "Where to buy",
+        "heading": "In store, or from us.",
+        "lede": "Zazu is stocked by Australia's major baby and department retailers. Buying direct gets you the full range, a 12-month local warranty and fast dispatch from Melbourne.",
+        "asset": "zazu-davy-awake.jpg",
+        "caption": "Davy the Dog"
+      }
+    },
+    "logos": {
+      "type": "zazu-rich-text",
+      "settings": {
+        "layout": "logos"
+      },
+      "blocks": {
+        "a": {
+          "type": "item",
+          "settings": {
+            "title": "Big W",
+            "text": "Nationwide"
+          }
+        },
+        "b": {
+          "type": "item",
+          "settings": {
+            "title": "Myer",
+            "text": "Selected stores"
+          }
+        },
+        "c": {
+          "type": "item",
+          "settings": {
+            "title": "Harvey Norman",
+            "text": "Nationwide"
+          }
+        },
+        "d": {
+          "type": "item",
+          "settings": {
+            "title": "Kmart",
+            "text": "Selected lines"
+          }
+        },
+        "e": {
+          "type": "item",
+          "settings": {
+            "title": "Kogan",
+            "text": "Online"
+          }
+        },
+        "f": {
+          "type": "item",
+          "settings": {
+            "title": "eBay",
+            "text": "Official store"
+          }
+        }
+      },
+      "block_order": [
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f"
+      ]
+    },
+    "trade": {
+      "type": "zazu-rich-text",
+      "settings": {
+        "layout": "text",
+        "eyebrow": "Retailers",
+        "heading": "Stock Zazu.",
+        "text": "<p>Wholesale pricing, sell sheets and imagery for every character are ready to go.<\/p>",
+        "link_label": "Become a stockist",
+        "link": "\/pages\/become-a-stockist"
+      }
+    }
+  },
+  "order": [
+    "hero",
+    "logos",
+    "trade"
+  ]
+}

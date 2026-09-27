@@ -11,15 +11,6 @@
       }
     },
     "s1": {
-      "type": "ck-form",
-      "settings": {
-        "kind": "retailer",
-        "eyebrow": "Stockist application",
-        "heading": "Tell us about your store",
-        "tint": "sky"
-      }
-    },
-    "s2": {
       "type": "ck-faire",
       "settings": {
         "tint": "paper"
@@ -29,35 +20,49 @@
           "type": "brand",
           "settings": {
             "brand": "Frida",
-            "url": ""
+            "url": "https://www.faire.com/brand/b_52hw6ftb47"
           }
         },
         "b1": {
           "type": "brand",
           "settings": {
             "brand": "Matchstick Monkey",
-            "url": ""
+            "url": "https://www.faire.com/brand/b_b28byvvrcg"
           }
         },
         "b2": {
           "type": "brand",
           "settings": {
             "brand": "Mamave",
-            "url": "https://www.faire.com/brand/b_9sre2jk5xw"
+            "url": "https://faire.com/direct/mamave"
           }
         },
         "b3": {
           "type": "brand",
           "settings": {
             "brand": "Hannie",
-            "url": ""
+            "url": "https://www.faire.com/brand/b_mxerpjq58h"
           }
         },
         "b4": {
           "type": "brand",
           "settings": {
             "brand": "ZAZU",
-            "url": ""
+            "url": "https://www.faire.com/brand/b_d2cwz2ac3a"
+          }
+        },
+        "b5": {
+          "type": "brand",
+          "settings": {
+            "brand": "Magic",
+            "url": "https://www.faire.com/brand/b_sac4k63prj"
+          }
+        },
+        "b6": {
+          "type": "brand",
+          "settings": {
+            "brand": "MiaMily",
+            "url": "https://www.faire.com/brand/b_arjucws7rh"
           }
         }
       },
@@ -66,8 +71,19 @@
         "b1",
         "b2",
         "b3",
-        "b4"
+        "b4",
+        "b5",
+        "b6"
       ]
+    },
+    "s2": {
+      "type": "ck-form",
+      "settings": {
+        "kind": "retailer",
+        "eyebrow": "Stockist application",
+        "heading": "Tell us about your store",
+        "tint": "sky"
+      }
     },
     "s3": {
       "type": "ck-logos",

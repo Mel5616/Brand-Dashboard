@@ -1,0 +1,72 @@
+{
+  "sections": {
+    "hero": {
+      "type": "zazu-page-hero",
+      "settings": {
+        "eyebrow": "Trade",
+        "heading": "Stock the cast.",
+        "answer_label": "In one sentence",
+        "answer": "Zazu sells because a toddler picks a face. We supply the range, the imagery and the sell sheets; you put Sam on the shelf.",
+        "asset": "zazu-sam-morning.jpg",
+        "caption": "Sam the Lamb"
+      }
+    },
+    "steps": {
+      "type": "zazu-steps",
+      "settings": {},
+      "blocks": {
+        "a": {
+          "type": "step",
+          "settings": {
+            "n": "Why Zazu",
+            "title": "A category that keeps growing.",
+            "text": "Sleep trainer clocks, white noise and nightlights are the products parents ask for by name at 5am. Zazu has been the European leader since 2013 and sells in 45+ countries."
+          }
+        },
+        "b": {
+          "type": "step",
+          "settings": {
+            "n": "What you get",
+            "title": "Everything but the shelf.",
+            "text": "Product detail sheets for every character, lifestyle and cut-out imagery, POS, trade pricing on application, and a Coolkidz rep in your state."
+          }
+        },
+        "c": {
+          "type": "step",
+          "settings": {
+            "n": "Already stocked by",
+            "title": "The majors.",
+            "text": "Big W, Myer, Harvey Norman, Kmart, Kogan and eBay carry Zazu. Independent baby stores are the fastest-growing part of the range."
+          }
+        }
+      },
+      "block_order": [
+        "a",
+        "b",
+        "c"
+      ]
+    },
+    "form": {
+      "type": "zazu-form",
+      "settings": {
+        "eyebrow": "Apply",
+        "heading": "Tell us about your store.",
+        "text": "A Coolkidz rep will be in touch within two working days with trade pricing and the range guide.",
+        "show_details": false,
+        "show_phone": true,
+        "show_company": true,
+        "company_label": "Store name",
+        "topic_label": "Store type",
+        "topics": "Independent baby store, Pharmacy, Online only, Gift or homewares, Chain or group",
+        "message_label": "Anything else",
+        "button": "Apply to stock Zazu",
+        "success": "Sent. A rep will be in touch."
+      }
+    }
+  },
+  "order": [
+    "hero",
+    "steps",
+    "form"
+  ]
+}

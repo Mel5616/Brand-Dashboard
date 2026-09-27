@@ -216,7 +216,9 @@ TRADE_LINKS = sec("ck-trade-links", {"heading": "Already a stockist?", "text": "
   blk("link", title="Find a stockist", text="The stockist map parents use to find you. Missing or wrong? Let us know.", cta="See the map", url="/pages/stockists"),
   blk("link", title="Talk to us", text="Orders, range reviews, training and warranty questions.", cta="Contact the team", url="/pages/contact")])
 FAIRE = sec("ck-faire", {"tint": "paper"}, [blk("brand", brand=b, url=u) for b, u in [
-  ("Frida", ""), ("Matchstick Monkey", ""), ("Mamave", "https://www.faire.com/brand/b_9sre2jk5xw"), ("Hannie", ""), ("ZAZU", "")]])
+  ("Frida", "https://www.faire.com/brand/b_52hw6ftb47"), ("Matchstick Monkey", "https://www.faire.com/brand/b_b28byvvrcg"),
+  ("Mamave", "https://faire.com/direct/mamave"), ("Hannie", "https://www.faire.com/brand/b_mxerpjq58h"), ("ZAZU", "https://www.faire.com/brand/b_d2cwz2ac3a"),
+  ("Magic", "https://www.faire.com/brand/b_sac4k63prj"), ("MiaMily", "https://www.faire.com/brand/b_arjucws7rh")]])
 tpl("page.for-retailers.json", [
   sec("ck-page-hero", {"eyebrow": "For retailers", "heading": "<p>Stock the brands <em>parents ask for</em></p>", "text": "Coolkidz supplies independent baby stores, national chains and online retailers across Australia, with the stock, training and marketing to help you sell.", "btn1_label": "Become a stockist", "btn1_url": "/pages/become-a-stockist", "btn2_label": "View catalogues", "btn2_url": "/pages/catalogues", "asset": "ck-m-nursery.jpg", "tint": "white"}),
   sec("ck-logos"),
@@ -239,8 +241,8 @@ tpl("page.for-retailers.json", [
 ])
 tpl("page.become-a-stockist.json", [
   sec("ck-page-hero", {"eyebrow": "Become a stockist", "heading": "<p>Bring our brands <em>into your store</em></p>", "text": "Apply below and a member of our sales team will be in touch to talk range, terms and training.", "tint": "mint"}),
-  sec("ck-form", {"kind": "retailer", "eyebrow": "Stockist application", "heading": "Tell us about your store", "tint": "sky"}),
   FAIRE,
+  sec("ck-form", {"kind": "retailer", "eyebrow": "Stockist application", "heading": "Tell us about your store", "tint": "sky"}),
   sec("ck-logos"),
 ])
 tpl("page.about-us.json", [

@@ -1,0 +1,36 @@
+
+<section class="page-hero ph-botanical">
+  <div class="ph-bg"><img src="https://mamave.com.au/cdn/shop/files/Mamave_bubba_s_bundle-2.jpg?width=2200" alt="" style="object-position:center 50%"></div>
+  <div class="wrap">
+    <div class="crumbs"><a href="/">Home</a><span>/</span>Become a Stockist</div>
+    <h1>Stock Mamave <em>in store</em></h1>
+    <p>Bring Australian-made, pregnancy-safe skincare to your customers. Wholesale enquiries welcome.</p>
+  </div>
+</section>
+<div class="wrap" style="max-width:680px;padding-top:48px;padding-bottom:90px">
+  <span class="eyebrow" style="display:block;margin-bottom:10px">For retailers, pharmacies &amp; baby stores</span>
+  <h2 style="font-size:clamp(24px,3vw,34px);margin-bottom:14px">Tell us about your <em>store</em></h2>
+  <p style="color:var(--ink-soft);margin-bottom:28px">Mamave is chemist-formulated, small-batch and Australian made: a natural fit for pharmacies, baby boutiques and gift stores. Tell us where you are and who you serve, and our team will come back with wholesale details.</p>
+  {% form 'contact' %}
+    {% if form.posted_successfully? %}
+      <div style="background:var(--blush-tint);border-radius:16px;padding:22px 26px;margin-bottom:26px">
+        <b style="font-family:var(--serif);font-size:19px">Thank you, we've got it.</b>
+        <p style="color:var(--ink-soft);font-size:14.5px;margin-top:6px">Your application is on its way to the Mamave team. We'll be in touch soon.</p>
+      </div>
+    {% endif %}
+    {% if form.errors %}
+      <div style="background:var(--blush-tint);border-radius:16px;padding:18px 24px;margin-bottom:22px;color:var(--terracotta);font-weight:600;font-size:14px">
+        Please check your details: {{ form.errors | default_errors }}
+      </div>
+    {% endif %}
+    <input type="hidden" name="contact[Application type]" value="Stockist application">
+    <p style="margin-bottom:14px"><input type="text" name="contact[Name]" placeholder="Your name" required class="faq-search" style="width:100%;padding:14px 20px"></p>
+    <p style="margin-bottom:14px"><input type="email" name="contact[email]" placeholder="Email address" required class="faq-search" style="width:100%;padding:14px 20px"></p>
+    <p style="margin-bottom:14px"><input type="tel" name="contact[Phone]" placeholder="Phone (optional)" class="faq-search" style="width:100%;padding:14px 20px"></p>
+    <p style="margin-bottom:14px"><input type="text" name="contact[Business name and location]" placeholder="Business name & location" class="faq-search" style="width:100%;padding:14px 20px"></p>
+    <p style="margin-bottom:20px"><textarea name="contact[body]" rows="5" placeholder="Tell us about your store and customers…" class="faq-search" style="width:100%;padding:14px 20px;border-radius:18px;font-family:var(--sans);resize:vertical"></textarea></p>
+    <button type="submit" class="pill pill-terra" style="border:0;width:100%">Apply to become a stockist</button>
+    <p style="text-align:center;font-size:12px;color:var(--ink-soft);margin-top:12px">Applications go straight to the Mamave team.</p>
+  {% endform %}
+</div>
+

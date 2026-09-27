@@ -1,0 +1,8 @@
+{%- render 'faire-wholesale', brand: section.settings.brand, url: section.settings.url -%}
+{% schema %}
+{ "name": "Wholesale on Faire",
+  "settings": [
+    { "type": "text", "id": "brand", "label": "Brand" },
+    { "type": "text", "id": "url", "label": "Faire link" } ],
+  "presets": [{ "name": "Wholesale on Faire" }] }
+{% endschema %}

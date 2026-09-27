@@ -1,0 +1,328 @@
+{
+  "sections": {
+    "hero": {
+      "type": "page-hero",
+      "settings": {
+        "eyebrow": "Stockists",
+        "heading": "Find Magic near you",
+        "subheading": "Buy direct here, or find Magic at these real, verified Australian retailers.",
+        "background_image": "magic-range-group.jpg"
+      }
+    },
+    "grid": {
+      "type": "stockist-grid",
+      "blocks": {
+        "g1": {
+          "type": "group",
+          "settings": {
+            "title": "Major retailers",
+            "text": "Australia-wide, online and in-store."
+          }
+        },
+        "s1": {
+          "type": "stockist",
+          "settings": {
+            "name": "Magic — official site",
+            "note": "",
+            "link": "\/"
+          }
+        },
+        "s2": {
+          "type": "stockist",
+          "settings": {
+            "name": "Baby Bunting",
+            "note": "",
+            "link": "https:\/\/www.babybunting.com.au\/changing\/nappy-bins-liners"
+          }
+        },
+        "s3": {
+          "type": "stockist",
+          "settings": {
+            "name": "Kmart Australia",
+            "note": "",
+            "link": "https:\/\/www.kmart.com.au\/product\/magic-heka-l-telescopic-nappy-bin-graphite-110154529\/"
+          }
+        },
+        "s4": {
+          "type": "stockist",
+          "settings": {
+            "name": "Amazon Australia",
+            "note": "",
+            "link": "https:\/\/www.amazon.com.au\/Magic-HEKA-Nappy-Bin-Odourless\/dp\/B0F2HYPBKT"
+          }
+        },
+        "gnsw": {
+          "type": "group",
+          "settings": {
+            "title": "New South Wales",
+            "text": ""
+          }
+        },
+        "nsw1": {
+          "type": "stockist",
+          "settings": {
+            "name": "Baby Kingdom",
+            "note": "",
+            "link": "https:\/\/www.babykingdom.com.au"
+          }
+        },
+        "nsw2": {
+          "type": "stockist",
+          "settings": {
+            "name": "Baby Village",
+            "note": "",
+            "link": "https:\/\/www.babyvillage.com.au"
+          }
+        },
+        "nsw3": {
+          "type": "stockist",
+          "settings": {
+            "name": "Baby Barn Boutique",
+            "note": "",
+            "link": "https:\/\/babybarnboutique.com.au"
+          }
+        },
+        "gvic": {
+          "type": "group",
+          "settings": {
+            "title": "Victoria",
+            "text": ""
+          }
+        },
+        "vic1": {
+          "type": "stockist",
+          "settings": {
+            "name": "Baby Little Planet",
+            "note": "",
+            "link": "https:\/\/www.babylittleplanet.com.au"
+          }
+        },
+        "vic2": {
+          "type": "stockist",
+          "settings": {
+            "name": "Baby Goods Warehouse",
+            "note": "",
+            "link": "https:\/\/babygoodswarehouse.com.au"
+          }
+        },
+        "vic3": {
+          "type": "stockist",
+          "settings": {
+            "name": "Baby Hi5",
+            "note": "",
+            "link": "https:\/\/babyhi5.com.au"
+          }
+        },
+        "vic4": {
+          "type": "stockist",
+          "settings": {
+            "name": "Baby Train",
+            "note": "",
+            "link": "https:\/\/babytrain.com.au"
+          }
+        },
+        "vic5": {
+          "type": "stockist",
+          "settings": {
+            "name": "Just Juniors",
+            "note": "",
+            "link": "https:\/\/justjuniors.com.au"
+          }
+        },
+        "vic6": {
+          "type": "stockist",
+          "settings": {
+            "name": "Metro Baby",
+            "note": "",
+            "link": "https:\/\/metro-baby.com.au"
+          }
+        },
+        "vic7": {
+          "type": "stockist",
+          "settings": {
+            "name": "Serenity Kids",
+            "note": "",
+            "link": "https:\/\/serenitykids.com.au"
+          }
+        },
+        "vic8": {
+          "type": "stockist",
+          "settings": {
+            "name": "The Memo",
+            "note": "",
+            "link": "https:\/\/thememo.com.au"
+          }
+        },
+        "vic9": {
+          "type": "stockist",
+          "settings": {
+            "name": "TTN Baby Warehouse",
+            "note": "",
+            "link": "https:\/\/onlinebabystore.com.au"
+          }
+        },
+        "gqld": {
+          "type": "group",
+          "settings": {
+            "title": "Queensland",
+            "text": ""
+          }
+        },
+        "qld1": {
+          "type": "stockist",
+          "settings": {
+            "name": "Whole Bubs",
+            "note": "",
+            "link": "https:\/\/www.wholebubs.com.au"
+          }
+        },
+        "qld2": {
+          "type": "stockist",
+          "settings": {
+            "name": "Bubs n Grubs",
+            "note": "",
+            "link": "https:\/\/www.bubsngrubs.com.au"
+          }
+        },
+        "qld3": {
+          "type": "stockist",
+          "settings": {
+            "name": "Baby Today",
+            "note": "",
+            "link": "https:\/\/www.babytoday.com.au"
+          }
+        },
+        "gwa": {
+          "type": "group",
+          "settings": {
+            "title": "Western Australia",
+            "text": ""
+          }
+        },
+        "wa1": {
+          "type": "stockist",
+          "settings": {
+            "name": "Arlows Closet",
+            "note": "",
+            "link": "https:\/\/arlowscloset.com"
+          }
+        },
+        "wa2": {
+          "type": "stockist",
+          "settings": {
+            "name": "BabyRoad",
+            "note": "",
+            "link": "https:\/\/babyroad.com.au"
+          }
+        },
+        "wa3": {
+          "type": "stockist",
+          "settings": {
+            "name": "Babyland WA",
+            "note": "",
+            "link": "https:\/\/babyland.com.au"
+          }
+        },
+        "gsa": {
+          "type": "group",
+          "settings": {
+            "title": "South Australia",
+            "text": ""
+          }
+        },
+        "sa1": {
+          "type": "stockist",
+          "settings": {
+            "name": "Toyworld Berri",
+            "note": "",
+            "link": "https:\/\/toyworld.com.au\/pages\/toyworld-berri"
+          }
+        },
+        "gtas": {
+          "type": "group",
+          "settings": {
+            "title": "Tasmania",
+            "text": ""
+          }
+        },
+        "tas1": {
+          "type": "stockist",
+          "settings": {
+            "name": "Stork Talk",
+            "note": "",
+            "link": "https:\/\/www.adoreubaby.com.au"
+          }
+        }
+      },
+      "block_order": [
+        "g1",
+        "s1",
+        "s2",
+        "s3",
+        "s4",
+        "gnsw",
+        "nsw1",
+        "nsw2",
+        "nsw3",
+        "gvic",
+        "vic1",
+        "vic2",
+        "vic3",
+        "vic4",
+        "vic5",
+        "vic6",
+        "vic7",
+        "vic8",
+        "vic9",
+        "gqld",
+        "qld1",
+        "qld2",
+        "qld3",
+        "gwa",
+        "wa1",
+        "wa2",
+        "wa3",
+        "gsa",
+        "sa1",
+        "gtas",
+        "tas1"
+      ],
+      "settings": {}
+    },
+    "content": {
+      "type": "rich-content",
+      "blocks": {
+        "b1": {
+          "type": "banner",
+          "settings": {
+            "label": "Stock varies by retailer",
+            "text": "Colourway and size availability differs between stockists — the widest real-time range is always on magicbabyproducts.com.au. Prices at third-party retailers may differ from ours."
+          }
+        },
+        "h1": {
+          "type": "heading",
+          "settings": {
+            "text": "Are you a retailer?"
+          }
+        },
+        "p1": {
+          "type": "paragraph",
+          "settings": {
+            "text": "<p>Magic is distributed in Australia exclusively by Coolkidz Australia, 1 Beyer Road, Braeside VIC 3195. For stockist and wholesale enquiries, get in touch through our <a href=\"\/pages\/contact\">contact page<\/a> or call 1300 722 302, Mon–Fri 8am–5pm.<\/p>"
+          }
+        }
+      },
+      "block_order": [
+        "b1",
+        "h1",
+        "p1"
+      ],
+      "settings": {}
+    }
+  },
+  "order": [
+    "hero",
+    "grid",
+    "content"
+  ]
+}
