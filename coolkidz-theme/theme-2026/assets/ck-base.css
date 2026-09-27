@@ -803,3 +803,6 @@ body.ck{font-size:15px}
 .ck .ck-ask-btn:hover{background:#2B3649;transform:translateY(-2px)}
 .ck .ck-ask-btn{box-shadow:0 14px 34px -12px rgba(27,36,51,.55),0 0 0 1.5px rgba(255,255,255,.18)}
 .ck-foot{padding-bottom:calc(36px + 76px)}
+/* the two-line Matchstick Monkey wordmark reads larger than the one-line logos */
+.ck-logos img[src*="matchstick-monkey"]{height:19px}
+.ck-welcome img[src*="matchstick-monkey"]{transform:scale(.7)}
