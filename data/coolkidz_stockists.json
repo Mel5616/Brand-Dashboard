@@ -2,6 +2,7 @@
  "updated": "2026-09-27",
  "stores": [
   {
+   "wide": false,
    "name": "Baby Bunting - Fyshwick",
    "city": "Fyshwick",
    "state": "ACT",
@@ -16,6 +17,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Alexandria",
    "city": "Alexandria",
    "state": "NSW",
@@ -30,12 +32,21 @@
    "pharmacy": false
   },
   {
+   "wide": true,
    "name": "Sydney's Baby Kingdom - Alexandria",
    "city": "Alexandria",
    "state": "NSW",
    "postcode": "2015",
    "brands": [
-    "UPPAbaby"
+    "Frida",
+    "Hannie",
+    "Magic",
+    "Matchstick Monkey",
+    "MiaMily",
+    "Nanit",
+    "UPPAbaby",
+    "WonderFold",
+    "ZAZU"
    ],
    "ll": [
     -33.9092,
@@ -44,6 +55,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Auburn",
    "city": "Auburn",
    "state": "NSW",
@@ -58,6 +70,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Wattlebee Baby",
    "city": "Ballina",
    "state": "NSW",
@@ -74,6 +87,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Castle Towers",
    "city": "Castle Hill",
    "state": "NSW",
@@ -88,6 +102,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Casula",
    "city": "Casula",
    "state": "NSW",
@@ -102,6 +117,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Chatswood",
    "city": "Chatswood",
    "state": "NSW",
@@ -117,13 +133,20 @@
    "pharmacy": false
   },
   {
+   "wide": true,
    "name": "Sydney's Baby Kingdom - Chullora",
    "city": "Chullora",
    "state": "NSW",
    "postcode": "2190",
    "brands": [
+    "Frida",
+    "Hannie",
+    "Magic",
+    "Matchstick Monkey",
+    "MiaMily",
     "Nanit",
     "UPPAbaby",
+    "WonderFold",
     "ZAZU"
    ],
    "ll": [
@@ -133,6 +156,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Coffs Harbour",
    "city": "Coffs Harbour",
    "state": "NSW",
@@ -147,6 +171,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby-Bunting Dubbo",
    "city": "Dubbo",
    "state": "NSW",
@@ -161,6 +186,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Royal Bubs n Tots",
    "city": "Dubbo",
    "state": "NSW",
@@ -179,6 +205,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Moore Park",
    "city": "Kensington",
    "state": "NSW",
@@ -193,6 +220,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby and Car",
    "city": "Liberty Grove",
    "state": "NSW",
@@ -207,6 +235,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting Orange",
    "city": "Orange",
    "state": "NSW",
@@ -221,6 +250,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Penrith",
    "city": "Penrith",
    "state": "NSW",
@@ -235,6 +265,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "LUV BABY",
    "city": "Port Macquarie",
    "state": "NSW",
@@ -250,6 +281,7 @@
    "pharmacy": false
   },
   {
+   "wide": true,
    "name": "Baby Village",
    "city": "Punchbowl",
    "state": "NSW",
@@ -273,6 +305,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Rutherford",
    "city": "Rutherford",
    "state": "NSW",
@@ -287,6 +320,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Matty's Toys & Baby",
    "city": "South Nowra",
    "state": "NSW",
@@ -304,6 +338,7 @@
    "pharmacy": false
   },
   {
+   "wide": true,
    "name": "Buzz Baby",
    "city": "Tamworth",
    "state": "NSW",
@@ -323,6 +358,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Taren Point",
    "city": "Taren Point",
    "state": "NSW",
@@ -337,6 +373,7 @@
    "pharmacy": false
   },
   {
+   "wide": true,
    "name": "Baby Barn Boutique",
    "city": "Tweed Heads South",
    "state": "NSW",
@@ -357,6 +394,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting Wagga Wagga",
    "city": "Wagga Wagga",
    "state": "NSW",
@@ -371,6 +409,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Cotmakers - Wagga Wagga",
    "city": "Wagga Wagga",
    "state": "NSW",
@@ -387,6 +426,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Warners Bay",
    "city": "Warners Bay",
    "state": "NSW",
@@ -401,6 +441,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - West Gosford",
    "city": "West Gosford",
    "state": "NSW",
@@ -416,6 +457,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Wetherill Park",
    "city": "Wetherill Park",
    "state": "NSW",
@@ -430,6 +472,7 @@
    "pharmacy": false
   },
   {
+   "wide": true,
    "name": "SH Partners",
    "city": "Eaton",
    "state": "NT",
@@ -452,6 +495,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Booval",
    "city": "Booval",
    "state": "QLD",
@@ -466,6 +510,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Burleigh Waters",
    "city": "Burleigh Waters",
    "state": "QLD",
@@ -480,6 +525,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Babi Collective",
    "city": "Emerald",
    "state": "QLD",
@@ -497,6 +543,7 @@
    "pharmacy": false
   },
   {
+   "wide": true,
    "name": "Whole Bubs - Jindalee",
    "city": "Jindalee",
    "state": "QLD",
@@ -520,6 +567,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Macgregor",
    "city": "Macgregor",
    "state": "QLD",
@@ -534,6 +582,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Today",
    "city": "Mackay",
    "state": "QLD",
@@ -552,6 +601,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Maroochydore",
    "city": "Maroochydore",
    "state": "QLD",
@@ -566,6 +616,7 @@
    "pharmacy": false
   },
   {
+   "wide": true,
    "name": "Bubs n Grubs",
    "city": "Morningside",
    "state": "QLD",
@@ -587,6 +638,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - North Lakes",
    "city": "North Lakes",
    "state": "QLD",
@@ -602,6 +654,7 @@
    "pharmacy": false
   },
   {
+   "wide": true,
    "name": "Busy Kids",
    "city": "Pialba",
    "state": "QLD",
@@ -621,6 +674,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Cherrie baby",
    "city": "Proserpine",
    "state": "QLD",
@@ -636,6 +690,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting Loganholme",
    "city": "Shailer Park",
    "state": "QLD",
@@ -650,6 +705,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Kidsafe Queensland Inc",
    "city": "Stafford",
    "state": "QLD",
@@ -664,6 +720,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Toowoomba",
    "city": "Toowoomba",
    "state": "QLD",
@@ -678,6 +735,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bay SA",
    "city": "Adelaide",
    "state": "SA",
@@ -694,6 +752,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Toyworld - Berri",
    "city": "Berri",
    "state": "SA",
@@ -712,6 +771,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Gepps Cross",
    "city": "Gepps Cross",
    "state": "SA",
@@ -726,6 +786,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Hectorville",
    "city": "Hectorville",
    "state": "SA",
@@ -740,6 +801,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Kidsafe SA",
    "city": "Hilton",
    "state": "SA",
@@ -755,6 +817,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting Marleston",
    "city": "Marleston",
    "state": "SA",
@@ -769,6 +832,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Melrose Park",
    "city": "Melrose Park",
    "state": "SA",
@@ -783,6 +847,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Homegrown Collective",
    "city": "Mount Gambier",
    "state": "SA",
@@ -801,6 +866,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Junction",
    "city": "St Marys",
    "state": "SA",
@@ -818,6 +884,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Adoreu Tasmania - Stork Talk",
    "city": "Devonport",
    "state": "TAS",
@@ -836,6 +903,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Adoreu Tasmania - Babyland",
    "city": "Kings Meadows",
    "state": "TAS",
@@ -843,6 +911,7 @@
    "brands": [
     "Frida",
     "Gaia Baby",
+    "Magic",
     "UPPAbaby",
     "ZAZU"
    ],
@@ -853,6 +922,7 @@
    "pharmacy": false
   },
   {
+   "wide": true,
    "name": "Mother Goose",
    "city": "Kingston",
    "state": "TAS",
@@ -872,6 +942,7 @@
    "pharmacy": false
   },
   {
+   "wide": true,
    "name": "Kiddie Country Armadale",
    "city": "Armadale",
    "state": "VIC",
@@ -894,6 +965,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Country Kids",
    "city": "Ballarat",
    "state": "VIC",
@@ -912,6 +984,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Hi5 - Bentleigh",
    "city": "Bentleigh",
    "state": "VIC",
@@ -929,6 +1002,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Chempharm II",
    "city": "Bentleigh East",
    "state": "VIC",
@@ -943,6 +1017,7 @@
    "pharmacy": true
   },
   {
+   "wide": false,
    "name": "Kidsafe VIC",
    "city": "Berwick",
    "state": "VIC",
@@ -957,6 +1032,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Chadstone",
    "city": "Chadstone",
    "state": "VIC",
@@ -971,6 +1047,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Cranbourne",
    "city": "Cranbourne",
    "state": "VIC",
@@ -985,6 +1062,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Train",
    "city": "Dingley Village",
    "state": "VIC",
@@ -1002,6 +1080,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "AO Miffy Toys",
    "city": "Doncaster",
    "state": "VIC",
@@ -1016,6 +1095,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Doncaster",
    "city": "Doncaster",
    "state": "VIC",
@@ -1030,6 +1110,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Frankston",
    "city": "Frankston",
    "state": "VIC",
@@ -1044,6 +1125,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Hawthorn",
    "city": "Hawthorn East",
    "state": "VIC",
@@ -1058,6 +1140,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Hoppers Crossing",
    "city": "Hoppers Crossing",
    "state": "VIC",
@@ -1072,6 +1155,7 @@
    "pharmacy": false
   },
   {
+   "wide": true,
    "name": "Baby Little Planet",
    "city": "Hoppers Crossing",
    "state": "VIC",
@@ -1096,6 +1180,7 @@
    "pharmacy": false
   },
   {
+   "wide": true,
    "name": "Just Juniors",
    "city": "Horsham",
    "state": "VIC",
@@ -1118,6 +1203,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Shepparton",
    "city": "Kialla",
    "state": "VIC",
@@ -1133,6 +1219,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Maribyrnong",
    "city": "Maidstone",
    "state": "VIC",
@@ -1147,6 +1234,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting Mentone",
    "city": "Mentone",
    "state": "VIC",
@@ -1161,6 +1249,7 @@
    "pharmacy": false
   },
   {
+   "wide": true,
    "name": "TTN Baby Warehouse",
    "city": "Mildura",
    "state": "VIC",
@@ -1183,6 +1272,7 @@
    "pharmacy": false
   },
   {
+   "wide": true,
    "name": "Baby Goods Warehouse",
    "city": "Mornington",
    "state": "VIC",
@@ -1205,6 +1295,7 @@
    "pharmacy": false
   },
   {
+   "wide": true,
    "name": "Serenity Kids",
    "city": "Newport",
    "state": "VIC",
@@ -1229,6 +1320,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Safe Kids In Car Seats",
    "city": "Pascoe Vale",
    "state": "VIC",
@@ -1243,6 +1335,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Preston",
    "city": "Preston",
    "state": "VIC",
@@ -1258,6 +1351,7 @@
    "pharmacy": false
   },
   {
+   "wide": true,
    "name": "Metro Baby",
    "city": "Richmond",
    "state": "VIC",
@@ -1279,6 +1373,7 @@
    "pharmacy": false
   },
   {
+   "wide": true,
    "name": "The Baby Gallery",
    "city": "Springvale",
    "state": "VIC",
@@ -1299,6 +1394,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Thomastown",
    "city": "Thomastown",
    "state": "VIC",
@@ -1313,6 +1409,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Sweet Lullabies",
    "city": "Traralgon",
    "state": "VIC",
@@ -1330,6 +1427,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Knox",
    "city": "Wantirna South",
    "state": "VIC",
@@ -1344,6 +1442,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Geelong",
    "city": "Waurn Ponds",
    "state": "VIC",
@@ -1358,6 +1457,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Ballarat",
    "city": "Wendouree",
    "state": "VIC",
@@ -1372,6 +1472,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Dog Rock Chemist",
    "city": "Albany",
    "state": "WA",
@@ -1388,6 +1489,7 @@
    "pharmacy": true
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Baldivis",
    "city": "Baldivis",
    "state": "WA",
@@ -1402,6 +1504,7 @@
    "pharmacy": false
   },
   {
+   "wide": true,
    "name": "BabyRoad",
    "city": "Booragoon",
    "state": "WA",
@@ -1409,9 +1512,14 @@
    "brands": [
     "Frida",
     "Gaia Baby",
+    "Hannie",
     "Magic",
+    "Mamave",
     "Matchstick Monkey",
+    "MiaMily",
+    "Nanit",
     "UPPAbaby",
+    "WonderFold",
     "ZAZU",
     "smarTrike"
    ],
@@ -1422,6 +1530,7 @@
    "pharmacy": false
   },
   {
+   "wide": true,
    "name": "Arlows Closet",
    "city": "Bunbury",
    "state": "WA",
@@ -1444,6 +1553,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Joondalup",
    "city": "Joondalup",
    "state": "WA",
@@ -1459,6 +1569,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "House of babes",
    "city": "Kalgoorlie",
    "state": "WA",
@@ -1476,6 +1587,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Blossoming Bump Boutique",
    "city": "Mandurah",
    "state": "WA",
@@ -1492,6 +1604,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Midland",
    "city": "Midland",
    "state": "WA",
@@ -1506,6 +1619,7 @@
    "pharmacy": false
   },
   {
+   "wide": true,
    "name": "Baby Zone - Midland",
    "city": "Midland",
    "state": "WA",
@@ -1529,6 +1643,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Myaree",
    "city": "Myaree",
    "state": "WA",
@@ -1543,6 +1658,7 @@
    "pharmacy": false
   },
   {
+   "wide": false,
    "name": "Baby Bunting - Osborne Park",
    "city": "Osborne Park",
    "state": "WA",
@@ -1557,6 +1673,7 @@
    "pharmacy": false
   },
   {
+   "wide": true,
    "name": "Babyland WA",
    "city": "Osborne Park",
    "state": "WA",
