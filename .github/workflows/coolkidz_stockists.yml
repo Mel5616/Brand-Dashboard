@@ -1,0 +1,28 @@
+name: Coolkidz stockists
+
+# Weekly: rebuild coolkidz.com.au/pages/stockists from the last 12 months of
+# Cin7 wholesale orders. Theme 189044785441 is "Coolkidz 2026" (it keeps its id
+# once published).
+on:
+  schedule:
+    - cron: "30 20 * * 0"   # Monday 6:30am AEST
+  workflow_dispatch: {}
+
+jobs:
+  stockists:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Write stores.config.json from secret
+        env:
+          STORES_CONFIG_JSON: ${{ secrets.STORES_CONFIG_JSON }}
+        run: printf '%s' "$STORES_CONFIG_JSON" > stores.config.json
+      - name: Build and upload stockists
+        env:
+          CIN7_USERNAME: ${{ secrets.CIN7_USERNAME }}
+          CIN7_API_KEY: ${{ secrets.CIN7_API_KEY }}
+        run: python3 scripts/coolkidz_stockists.py --theme 189044785441
