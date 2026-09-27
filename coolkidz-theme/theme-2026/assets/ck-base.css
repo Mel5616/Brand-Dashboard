@@ -799,3 +799,7 @@ body.ck{font-size:15px}
 .ck-tradel-card b{font-size:18px} .ck-tradel-card span{font-size:14.5px;color:var(--soft)} .ck-tradel-card em{font-style:normal;font-weight:600;color:var(--blue-ink);font-size:14px}
 .ck-tradel-card:hover{background:var(--sky)}
 .ck-stk-list .tag.wide{background:var(--sky)}
+/* Ask Coolkidz: stay navy on hover (blue hid the blue dot); a light ring so it reads on the navy footer; room under the footer */
+.ck .ck-ask-btn:hover{background:#2B3649;transform:translateY(-2px)}
+.ck .ck-ask-btn{box-shadow:0 14px 34px -12px rgba(27,36,51,.55),0 0 0 1.5px rgba(255,255,255,.18)}
+.ck-foot{padding-bottom:calc(36px + 76px)}
