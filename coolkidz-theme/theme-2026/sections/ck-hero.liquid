@@ -1,9 +1,14 @@
 {%- assign s = section.settings -%}
 <section class="ck-hero"><div class="ck-wrap">
   <div class="top">
-    <h1>{{ s.heading | remove: '<p>' | remove: '</p>' }}</h1>
+    <div class="hl">
+      {%- if s.eyebrow != blank -%}<span class="ck-eyebrow">{{ s.eyebrow }}</span>{%- endif -%}
+      <h1>{{ s.heading | remove: '<p>' | remove: '</p>' }}</h1>
+    </div>
     <div class="side">
       <p>{{ s.text }}</p>
+      {%- assign pts = s.points | newline_to_br | split: '<br />' -%}
+      {%- if s.points != blank -%}<ul class="pts">{%- for pt in pts -%}{%- assign t = pt | strip -%}{%- if t != blank -%}<li>{{ t }}</li>{%- endif -%}{%- endfor -%}</ul>{%- endif -%}
       <div class="ck-ctas">
         {%- if s.btn1_label != blank -%}<a class="ck-btn" href="{{ s.btn1_url }}">{{ s.btn1_label }}</a>{%- endif -%}
         {%- if s.btn2_label != blank -%}<a class="ck-link" href="{{ s.btn2_url }}">{{ s.btn2_label }}</a>{%- endif -%}
@@ -22,12 +27,14 @@
 {% schema %}
 { "name": "Hero with three photos", "max_blocks": 3,
   "settings": [
-    { "type": "richtext", "id": "heading", "label": "Heading", "default": "<p>Twelve brands, <em>one order.</em></p>" },
-    { "type": "textarea", "id": "text", "label": "Text", "default": "UPPAbaby, Nanit, Gaia Baby, WonderFold, Frida and more, brought to Australia by Coolkidz for over 25 years. Buy them together here, and the more brands you mix, the less you pay." },
-    { "type": "text", "id": "btn1_label", "label": "Button", "default": "Shop the edit" },
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "The Australian home of 12 premium baby brands" },
+    { "type": "richtext", "id": "heading", "label": "Heading", "default": "<p>Shop UPPAbaby, Nanit, Gaia Baby and more, <em>all in one cart.</em></p>" },
+    { "type": "textarea", "id": "text", "label": "Text", "default": "Coolkidz is the official Australian distributor behind UPPAbaby, Nanit, Gaia Baby, WonderFold, Frida, smarTrike and more, and has been for over 25 years. Now you can buy them all in one place, at the same price as each brand's own website." },
+    { "type": "textarea", "id": "points", "label": "Key points (one per line)", "default": "Save 5% on two brands, 10% on three, 15% on four or more\nFree delivery Australia-wide\nGenuine Australian stock and full local warranty" },
+    { "type": "text", "id": "btn1_label", "label": "Button", "default": "Shop all products" },
     { "type": "text", "id": "btn1_url", "label": "Button link", "default": "/collections/all" },
-    { "type": "text", "id": "btn2_label", "label": "Second link", "default": "Curated sets" },
-    { "type": "text", "id": "btn2_url", "label": "Second link URL", "default": "/collections/all" }
+    { "type": "text", "id": "btn2_label", "label": "Second link", "default": "Meet the brands" },
+    { "type": "text", "id": "btn2_url", "label": "Second link URL", "default": "/pages/our-brands" }
   ],
   "blocks": [{ "type": "photo", "name": "Photo", "settings": [
     { "type": "image_picker", "id": "image", "label": "Image" },
