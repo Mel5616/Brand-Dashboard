@@ -1,8 +1,9 @@
-api_version = "2025-07"
+api_version = "2026-07"
 
 [[extensions]]
 name = "Mix and save"
 handle = "mix-and-save"
+uid = "398c650d-7132-e322-06e3-1acbc9d3211a334767f1"
 type = "function"
 description = "Coolkidz mix-and-save: a percentage off the order that grows with the number of different brands in the cart."
 
