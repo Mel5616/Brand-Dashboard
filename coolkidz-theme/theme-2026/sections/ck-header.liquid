@@ -1,12 +1,34 @@
 {%- comment -%}
-  Coolkidz header. A switch at the top splits the site for its two audiences,
-  parents (Shop) and the trade (Coolkidz for business); the menu below follows
-  whichever side the current page belongs to.
+  Coolkidz header. Sticky as a whole (the section wrapper sticks, see
+  .ck-header-section in ck-base.css); the audience strip folds away once the
+  page scrolls so only the menu bar stays. Desktop has full-width mega panels
+  for Shop and Brands; mobile has a full-screen menu with collapsible groups.
 {%- endcomment -%}
 {%- assign s = section.settings -%}
 {%- assign biz_list = s.business_handles | split: ',' -%}
 {%- assign is_biz = false -%}
 {%- for h in biz_list -%}{%- assign hh = h | strip -%}{%- if page.handle == hh -%}{%- assign is_biz = true -%}{%- endif -%}{%- endfor -%}
+{%- assign brand_lines = s.brands | newline_to_br | split: '<br />' -%}
+{%- capture moments_html -%}
+  {%- for i in (1..4) -%}
+    {%- assign t = 'm' | append: i | append: '_title' -%}{%- assign u = 'm' | append: i | append: '_url' -%}{%- assign a = 'm' | append: i | append: '_asset' -%}{%- assign im = 'm' | append: i | append: '_image' -%}{%- assign sb = 'm' | append: i | append: '_sub' -%}
+    {%- if s[t] != blank -%}
+      <a class="ck-mm-moment" href="{{ s[u] }}">
+        <span class="ph">{%- render 'ck-img', image: s[im], asset: s[a], alt: s[t], width: 400 -%}</span>
+        <span><b>{{ s[t] }}</b><small>{{ s[sb] }}</small></span>
+      </a>
+    {%- endif -%}
+  {%- endfor -%}
+{%- endcapture -%}
+{%- capture brands_html -%}
+  {%- for line in brand_lines -%}
+    {%- assign p = line | strip | split: '|' -%}
+    {%- if p.size > 1 -%}
+      <a class="ck-mm-brand" href="/collections/vendors?q={{ p[1] | strip | url_encode }}"><b>{{ p[0] | strip }}</b><small>{{ p[2] | strip }}</small></a>
+    {%- endif -%}
+  {%- endfor -%}
+{%- endcapture -%}
+
 <div class="ck-aud">
   <div class="ck-wrap">
     <nav aria-label="Audience">
@@ -19,9 +41,38 @@
 <header class="ck-head">
   <div class="ck-wrap ck-bar">
     <nav class="ck-nav" aria-label="Main">
-      {%- if is_biz -%}{%- render 'ck-links', text: s.business_links -%}{%- else -%}{%- render 'ck-links', text: s.shop_links -%}{%- endif -%}
+      {%- if is_biz -%}
+        {%- render 'ck-links', text: s.business_links -%}
+      {%- else -%}
+        <div class="ck-mm-item" data-ck-mm>
+          <a href="/collections/all" aria-haspopup="true" aria-expanded="false">Shop</a>
+          <div class="ck-mm-panel" role="region" aria-label="Shop menu">
+            <div class="ck-wrap ck-mm-grid">
+              <div class="col moments"><span class="ck-eyebrow">Shop by moment</span><div class="ck-mm-moments">{{ moments_html }}</div><a class="ck-link" href="/collections/all">Shop everything</a></div>
+              <div class="col"><span class="ck-eyebrow">Brands</span><div class="ck-mm-brands">{{ brands_html }}</div></div>
+              <div class="col"><span class="ck-eyebrow">Sets and gifting</span>
+                <ul class="ck-mm-list">{%- render 'ck-links', text: s.gifting_links, wrap: 'li' -%}</ul>
+                <a class="ck-mm-promo" href="{{ s.promo_url }}">
+                  <span class="ph">{%- render 'ck-img', image: s.promo_image, asset: s.promo_asset, alt: s.promo_title, width: 600 -%}</span>
+                  <b>{{ s.promo_title }}</b><small>{{ s.promo_text }}</small>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ck-mm-item" data-ck-mm>
+          <a href="/pages/our-brands" aria-haspopup="true" aria-expanded="false">Brands</a>
+          <div class="ck-mm-panel" role="region" aria-label="Brands menu">
+            <div class="ck-wrap">
+              <div class="ck-mm-brandgrid">{{ brands_html }}</div>
+              <div class="ck-mm-foot"><span>Every brand also has its own Australian website.</span><a class="ck-link" href="/pages/our-brands">Meet all the brands</a></div>
+            </div>
+          </div>
+        </div>
+        {%- render 'ck-links', text: s.shop_links -%}
+      {%- endif -%}
     </nav>
-    <button class="ck-burger" type="button" data-ck-menu aria-expanded="false" aria-controls="ck-drawer">Menu</button>
+    <button class="ck-burger" type="button" data-ck-menu aria-expanded="false" aria-controls="ck-drawer"><span></span><span></span><span></span><em>Menu</em></button>
     <a class="ck-logo" href="{{ routes.root_url }}" aria-label="{{ shop.name }}">
       {%- if s.logo != blank -%}{{ s.logo | image_url: width: 400 | image_tag: alt: shop.name }}{%- else -%}<img src="{{ 'ck-logo.png' | asset_url }}" alt="{{ shop.name }}" width="210" height="81">{%- endif -%}
     </a>
@@ -38,12 +89,30 @@
       <button class="ck-btn" type="submit">Search</button>
     </form>
   </div>
-  <nav class="ck-drawer ck-wrap" id="ck-drawer" aria-label="Menu">
-    {%- if is_biz -%}{%- render 'ck-links', text: s.business_links -%}{%- else -%}{%- render 'ck-links', text: s.shop_links -%}{%- endif -%}
-    <a href="{{ routes.search_url }}">Search</a>
-    <a href="{{ routes.account_url }}">Account</a>
-  </nav>
 </header>
+
+<div class="ck-drawer" id="ck-drawer" hidden>
+  <div class="ck-drawer-in">
+    <div class="ck-drawer-top">
+      <nav class="ck-drawer-aud" aria-label="Audience"><a href="{{ routes.root_url }}"{% unless is_biz %} aria-current="true"{% endunless %}>Shop</a><a href="{{ s.business_url }}"{% if is_biz %} aria-current="true"{% endif %}>For business</a></nav>
+      <button class="ck-drawer-x" type="button" data-ck-menu aria-label="Close menu">Close</button>
+    </div>
+    <form action="{{ routes.search_url }}" method="get" role="search" class="ck-drawer-search"><input class="ck-input" type="search" name="q" placeholder="Search" aria-label="Search"><input type="hidden" name="type" value="product"></form>
+    {%- if is_biz -%}
+      <nav class="ck-drawer-links">{%- render 'ck-links', text: s.business_links -%}</nav>
+    {%- else -%}
+      <details class="ck-acc" open><summary>Shop by moment</summary><div class="ck-mm-moments">{{ moments_html }}</div><a class="ck-link" href="/collections/all">Shop everything</a></details>
+      <details class="ck-acc"><summary>Brands</summary><div class="ck-mm-brands">{{ brands_html }}</div></details>
+      <details class="ck-acc"><summary>Sets and gifting</summary><ul class="ck-mm-list">{%- render 'ck-links', text: s.gifting_links, wrap: 'li' -%}</ul></details>
+      <nav class="ck-drawer-links">{%- render 'ck-links', text: s.shop_links -%}</nav>
+    {%- endif -%}
+    <div class="ck-drawer-foot">
+      <a href="{{ routes.account_url }}">Account</a>
+      <a href="https://help.coolkidz.com.au">Help desk</a>
+      <span>{{ s.biz_message }}</span>
+    </div>
+  </div>
+</div>
 
 {% schema %}
 {
@@ -51,13 +120,42 @@
   "class": "ck-header-section",
   "settings": [
     { "type": "image_picker", "id": "logo", "label": "Logo (defaults to the colour Coolkidz logo)" },
-    { "type": "textarea", "id": "shop_links", "label": "Shop menu (Label | /url per line)",
-      "default": "Shop all | /collections/all\nBrands | /pages/our-brands\nSets | /pages/sets\nGift Registry | /pages/gift-registry\nJournal | /blogs/news" },
+    { "type": "header", "content": "Shop menu" },
+    { "type": "textarea", "id": "shop_links", "label": "Links after Shop and Brands (Label | /url per line)", "default": "Sets | /pages/sets\nGift Registry | /pages/gift-registry\nJournal | /blogs/news" },
+    { "type": "textarea", "id": "brands", "label": "Brands (Name | Shopify vendor | what they make)",
+      "default": "UPPAbaby | UPPAbaby | Prams and capsules\nNanit | Nanit | Smart baby monitors\nGaia Baby | Gaia Baby | Nursery furniture\nWonderFold | WonderFold | Stroller wagons\nMagic | Magic | Nappy bins\nFrida | Frida | Baby and postpartum care\nZAZU | ZAZU | Sleep helpers\nMiaMily | MiaMily | Family luggage\nsmarTrike | smarTrike | Stroller-trikes\nMamave | Mamave | Mum and baby skincare\nMatchstick Monkey | Matchstick Monkey | Teething\nHannie | Hannie | Portable high chairs" },
+    { "type": "textarea", "id": "gifting_links", "label": "Sets and gifting links", "default": "Curated sets | /pages/sets\nGift Registry | /pages/gift-registry\nFind a registry | /pages/gift-registry#ckr-find\nMix and save | /#mix\nHelp and FAQs | /pages/help" },
+    { "type": "text", "id": "m1_title", "label": "Moment 1", "default": "The nursery" },
+    { "type": "text", "id": "m1_sub", "label": "Moment 1 brands", "default": "Gaia · Nanit · Magic" },
+    { "type": "text", "id": "m1_url", "label": "Moment 1 link", "default": "/collections/nursery-and-sleep" },
+    { "type": "image_picker", "id": "m1_image", "label": "Moment 1 image" },
+    { "type": "text", "id": "m1_asset", "label": "Moment 1 fallback asset", "default": "ck-m-nursery.jpg" },
+    { "type": "text", "id": "m2_title", "label": "Moment 2", "default": "Out and about" },
+    { "type": "text", "id": "m2_sub", "label": "Moment 2 brands", "default": "UPPAbaby · WonderFold · smarTrike" },
+    { "type": "text", "id": "m2_url", "label": "Moment 2 link", "default": "/collections/out-and-about" },
+    { "type": "image_picker", "id": "m2_image", "label": "Moment 2 image" },
+    { "type": "text", "id": "m2_asset", "label": "Moment 2 fallback asset", "default": "ck-m-out.jpg" },
+    { "type": "text", "id": "m3_title", "label": "Moment 3", "default": "The first weeks" },
+    { "type": "text", "id": "m3_sub", "label": "Moment 3 brands", "default": "Frida · Mamave · Matchstick Monkey" },
+    { "type": "text", "id": "m3_url", "label": "Moment 3 link", "default": "/collections/first-weeks" },
+    { "type": "image_picker", "id": "m3_image", "label": "Moment 3 image" },
+    { "type": "text", "id": "m3_asset", "label": "Moment 3 fallback asset", "default": "ck-m-sleep.jpg" },
+    { "type": "text", "id": "m4_title", "label": "Moment 4", "default": "Travel" },
+    { "type": "text", "id": "m4_sub", "label": "Moment 4 brands", "default": "MiaMily · smarTrike" },
+    { "type": "text", "id": "m4_url", "label": "Moment 4 link", "default": "/collections/vendors?q=MiaMily" },
+    { "type": "image_picker", "id": "m4_image", "label": "Moment 4 image" },
+    { "type": "text", "id": "m4_asset", "label": "Moment 4 fallback asset", "default": "ck-m-travel.jpg" },
+    { "type": "text", "id": "promo_title", "label": "Promo title", "default": "One gift registry, every brand" },
+    { "type": "text", "id": "promo_text", "label": "Promo text", "default": "Create a list and share one link." },
+    { "type": "text", "id": "promo_url", "label": "Promo link", "default": "/pages/gift-registry" },
+    { "type": "image_picker", "id": "promo_image", "label": "Promo image" },
+    { "type": "text", "id": "promo_asset", "label": "Promo fallback asset", "default": "ck-reg.jpg" },
+    { "type": "header", "content": "Business menu" },
     { "type": "textarea", "id": "business_links", "label": "Business menu (Label | /url per line)",
       "default": "For business | /pages/business\nRetailers | /pages/for-retailers\nGlobal brands | /pages/partner-with-us\nEvents | /pages/events\nAbout | /pages/about\nContact | /pages/contact" },
     { "type": "text", "id": "business_url", "label": "Business home", "default": "/pages/business" },
     { "type": "text", "id": "business_handles", "label": "Pages that belong to the business side (handles, comma separated)",
-      "default": "business,partner-with-us,for-retailers,become-a-stockist,about,catalogues,events,contact,good-baby-expo,visitor-signin" },
+      "default": "business,partner-with-us,for-retailers,become-a-stockist,about,catalogues,events,good-baby-expo,visitor-signin" },
     { "type": "text", "id": "shop_message", "label": "Shop message", "default": "Mix two or more of our brands in one order and save up to 20%" },
     { "type": "text", "id": "biz_message", "label": "Business message", "default": "Trade enquiries 1300 722 302" }
   ]

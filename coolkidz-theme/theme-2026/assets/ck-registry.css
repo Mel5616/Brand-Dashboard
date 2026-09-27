@@ -136,3 +136,5 @@ html.ckr-token .ckr-marketing, .ckr.ckr-has-list .ckr-marketing { display:none }
 @media (max-width:520px) {
   .ckr-perks, .ckr-form { grid-template-columns:1fr }
 }
+
+.ckr-settings .ckr-btn{justify-self:start}

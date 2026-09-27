@@ -45,7 +45,7 @@
       return post('/items', {
         manageToken: manageToken, action: 'add',
         variantId: String(v.id), productId: String(p.id), handle: p.handle,
-        title: (p.vendor ? p.vendor + ' ' : '') + p.title,
+        title: (p.vendor && p.title.toLowerCase().indexOf(p.vendor.toLowerCase().replace(/( wagons)? australia$/, '')) !== 0 ? p.vendor.replace(/( Wagons)? Australia$/, '') + ' ' : '') + p.title,
         variantTitle: v.title === 'Default Title' ? null : v.title,
         image: (v.featured_image && v.featured_image.src) || p.featured_image,
         priceCents: v.price

@@ -75,11 +75,33 @@
 
   /* mobile menu */
   document.addEventListener('click', function (e) {
-    var m = e.target.closest('[data-ck-menu]'); if (!m) return;
-    var d = $('#ck-drawer'); var open = !d.hasAttribute('open');
-    open ? d.setAttribute('open', '') : d.removeAttribute('open');
-    m.setAttribute('aria-expanded', open);
+    var m = e.target.closest('[data-ck-menu]'); if (!m) { if (e.target.id === 'ck-drawer') close(); return; }
+    var d = $('#ck-drawer'); d.hidden ? open() : close();
   });
+  function open() { var d = $('#ck-drawer'); d.hidden = false; document.body.classList.add('ck-lock'); $$('.ck-burger').forEach(function (b) { b.setAttribute('aria-expanded', 'true'); }); }
+  function close() { var d = $('#ck-drawer'); if (!d) return; d.hidden = true; document.body.classList.remove('ck-lock'); $$('.ck-burger').forEach(function (b) { b.setAttribute('aria-expanded', 'false'); }); }
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { close(); shut(); } });
+
+  /* mega menu: hover on desktop, click/tap and keyboard too */
+  var mmTimer;
+  function shut(except) { $$('[data-ck-mm]').forEach(function (it) { if (it !== except) { it.classList.remove('open'); it.firstElementChild.setAttribute('aria-expanded', 'false'); } }); }
+  $$('[data-ck-mm]').forEach(function (it) {
+    var a = it.firstElementChild;
+    it.addEventListener('mouseenter', function () { clearTimeout(mmTimer); shut(it); it.classList.add('open'); a.setAttribute('aria-expanded', 'true'); });
+    it.addEventListener('mouseleave', function () { mmTimer = setTimeout(function () { it.classList.remove('open'); a.setAttribute('aria-expanded', 'false'); }, 160); });
+    a.addEventListener('click', function (e) { if (!it.classList.contains('open') && matchMedia('(hover: none)').matches) { e.preventDefault(); shut(it); it.classList.add('open'); a.setAttribute('aria-expanded', 'true'); } });
+    a.addEventListener('keydown', function (e) { if (e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); shut(it); it.classList.add('open'); a.setAttribute('aria-expanded', 'true'); var f = it.querySelector('.ck-mm-panel a'); if (f) f.focus(); } });
+    it.addEventListener('focusout', function (e) { if (!it.contains(e.relatedTarget)) { it.classList.remove('open'); a.setAttribute('aria-expanded', 'false'); } });
+  });
+  document.addEventListener('click', function (e) { if (!e.target.closest('[data-ck-mm]')) shut(); });
+
+  /* fold the audience strip away once scrolling */
+  var ticking = false;
+  addEventListener('scroll', function () {
+    if (ticking) return; ticking = true;
+    requestAnimationFrame(function () { document.body.classList.toggle('ck-scrolled', scrollY > 40); ticking = false; });
+  }, { passive: true });
+
   document.addEventListener('click', function (e) {
     var s = e.target.closest('[data-ck-search]'); if (!s) return;
     e.preventDefault(); var bar = $('#ck-search'); bar.hidden = !bar.hidden; if (!bar.hidden) bar.querySelector('input').focus();
