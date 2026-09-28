@@ -118,11 +118,17 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false, currentE
   // product field autocomplete with a real RRP instead of being typed blind.
   useEffect(() => { fetch("/api/influencer/products").then(r => r.json()).then(d => setCatalog(d?.products ?? [])).catch(() => {}); }, []);
   const catalogMatches = (q: string, brandName?: string) => {
-    const s = q.trim().toLowerCase();
-    if (s.length < 2) return [];
+    // Word-by-word AND match, not one big substring — a full product name
+    // typed in slightly differently (extra word, different punctuation,
+    // different order) still has every word findable when its real SKU is
+    // genuinely in the catalogue, so it shouldn't come up empty.
+    const words = q.trim().toLowerCase().split(/\s+/).filter(w => w.length >= 2);
+    if (!words.length) return [];
     const inBrand = brandName ? catalog.filter(p => p.brand?.toLowerCase() === brandName.toLowerCase()) : catalog;
     const pool = inBrand.length ? inBrand : catalog; // fall back to the full catalogue if this brand has no matches
-    return pool.filter(p => p.product_name.toLowerCase().includes(s) || p.style_code.toLowerCase().includes(s)).slice(0, 8);
+    return pool
+      .filter(p => { const hay = `${p.product_name} ${p.style_code}`.toLowerCase(); return words.every(w => hay.includes(w)); })
+      .slice(0, 8);
   };
 
   const selectedBrand = brands.find(b => String(b.id) === form.brand_id);

@@ -24,11 +24,16 @@ export function GiftCatalogPicker({ items, onChange, brandName, endpoint = "/api
   useEffect(() => { fetch(endpoint).then(r => r.json()).then(d => setCatalog(d?.products ?? [])).catch(() => {}); }, [endpoint]);
 
   const matches = (q: string) => {
-    const s = q.trim().toLowerCase();
-    if (s.length < 2) return [];
+    // Word-by-word AND match (not one big substring) — see InfluencerAgreements.tsx's
+    // catalogMatches for why: a slightly different word order or extra word
+    // shouldn't hide a SKU that's genuinely in the catalogue.
+    const words = q.trim().toLowerCase().split(/\s+/).filter(w => w.length >= 2);
+    if (!words.length) return [];
     const inBrand = brandName ? catalog.filter(p => p.brand?.toLowerCase() === brandName.toLowerCase()) : catalog;
     const pool = inBrand.length ? inBrand : catalog;
-    return pool.filter(p => p.product_name.toLowerCase().includes(s) || p.style_code.toLowerCase().includes(s)).slice(0, 8);
+    return pool
+      .filter(p => { const hay = `${p.product_name} ${p.style_code}`.toLowerCase(); return words.every(w => hay.includes(w)); })
+      .slice(0, 8);
   };
 
   const rows = items.length ? items : [{ ...emptyGiftItem }];
