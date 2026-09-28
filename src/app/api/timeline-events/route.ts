@@ -42,7 +42,7 @@ async function sb(path: string) {
 // Pull in read-only entries from Tradeshows, Campaign Calendar and New
 // Products, so the timeline doesn't need everything re-typed by hand.
 async function pulledEvents() {
-  const [shows, showBrands, campaigns, products, brands, blogDrafts, edmDrafts, siteDeals, socialDrafts] = await Promise.all([
+  const [shows, showBrands, campaigns, products, brands, blogDrafts, edmDrafts, siteDeals, socialDrafts, giveaways] = await Promise.all([
     sb("tradeshows?select=id,name,date_start,date_end,state,location"),
     sb("tradeshow_brands?select=tradeshow_id,brand_id"),
     sb("campaigns?select=id,campaign,brand,key_date,end_date,note,image_url,confirmed"),
@@ -52,6 +52,7 @@ async function pulledEvents() {
     sb("edm_drafts?select=id,brand_id,subject,status,scheduled_for,created_at,image_url&status=in.(planned,draft,sent)"),
     sb("site_deals?select=id,brand,title,period_start,period_end,note,paused,campaign_name"),
     sb("social_drafts?select=id,brand_id,platform,format,caption,status,scheduled_for,created_at,campaign_name&status=in.(draft,approved,posted)"),
+    sb("giveaways?select=id,brand_id,title,items,start_date,end_date,status,platform&status=in.(approved,running,completed)"),
   ]);
 
   const out: any[] = [];
@@ -108,6 +109,20 @@ async function pulledEvents() {
       product_name: null, quantity: null, status: d.status === "posted" ? "locked" : "working",
       note: [`${d.platform} · ${d.format} · ${stage}`, d.campaign_name ? `Campaign: ${d.campaign_name}` : null].filter(Boolean).join(" — "),
       image_url: null,
+    });
+  }
+
+  // Giveaways — only approved/running/completed show (proposed/rejected
+  // stay inside the Giveaways tab until Mel decides). Dated by the
+  // giveaway's own start/end; undated ones fall back to today so a
+  // just-approved giveaway with no date yet still surfaces.
+  const GIVEAWAY_STAGE: Record<string, string> = { approved: "Approved", running: "Running", completed: "Completed" };
+  for (const g of giveaways) {
+    out.push({
+      id: `giveaway-${g.id}`, source: "giveaways", brand_id: g.brand_id,
+      event_type: "giveaway", title: g.title, date: g.start_date || new Date().toISOString().slice(0, 10), end_date: g.end_date || null,
+      product_name: null, quantity: null, status: g.status === "completed" ? "locked" : "working",
+      note: [GIVEAWAY_STAGE[g.status] || g.status, g.platform, g.items].filter(Boolean).join(" — "), image_url: null,
     });
   }
 

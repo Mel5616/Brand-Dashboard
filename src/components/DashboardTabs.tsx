@@ -53,6 +53,8 @@ import { MarketingBudgetTab } from "./MarketingBudgetTab";
 import { ExpensesPanel } from "./ExpensesPanel";
 import { TeamHub } from "./TeamHub";
 import { TeamWorkload } from "./TeamWorkload";
+import { GiveawaysPanel } from "./GiveawaysPanel";
+import { ProductRequestsPanel } from "./ProductRequestsPanel";
 import { CreativePanel } from "./CreativePanel";
 import { NanitTracker } from "./NanitTracker";
 import { DesignBoard } from "./DesignBoard";
@@ -132,7 +134,7 @@ import { StockReport } from "./StockReport";
 import { fmt, fmtFull } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "today" | "assistants" | "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "cross-site-discounts" | "create-codes" | "abandoned" | "registry" | "zazu-wheel" | "reviews" | "website-requests" | "utm-tracking" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "edm-planner" | "seo" | "social" | "social-writing" | "youtube" | "tradeshows" | "show-insights" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "credentials" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "campaign-briefs" | "nanit" | "affiliates" | "commission-factory" | "email-writing" | "lifecycle-flows" | "pa-budget" | "pa-tracker" | "pa-revenue" | "documents" | "team" | "brand-packs" | "price-lists" | "hub-fact-sheets" | "brand-overview" | "stock-availability" | "order-forms" | "customers" | "customer-forms" | "blog-pipeline" | "staff";
+type TabId = "today" | "assistants" | "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "cross-site-discounts" | "create-codes" | "abandoned" | "registry" | "zazu-wheel" | "reviews" | "website-requests" | "utm-tracking" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "edm-planner" | "seo" | "social" | "social-writing" | "youtube" | "tradeshows" | "show-insights" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "credentials" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "campaign-briefs" | "nanit" | "affiliates" | "commission-factory" | "email-writing" | "lifecycle-flows" | "pa-budget" | "pa-tracker" | "pa-revenue" | "documents" | "team" | "brand-packs" | "price-lists" | "hub-fact-sheets" | "brand-overview" | "stock-availability" | "order-forms" | "customers" | "customer-forms" | "blog-pipeline" | "staff" | "giveaways" | "product-requests";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -194,6 +196,14 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
     id: "website-requests", label: "Website Requests",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>,
+  },
+  {
+    id: "giveaways", label: "Giveaways",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12v10H4V12M2 7h20v5H2V7zm10 0v15m0-15L7.5 4.5a2.5 2.5 0 110-5C11 -0.5 12 3.5 12 7zm0 0l4.5-2.5a2.5 2.5 0 100-5C13 -0.5 12 3.5 12 7z" /></svg>,
+  },
+  {
+    id: "product-requests", label: "Product Requests",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
   },
   {
     id: "utm-tracking", label: "UTM Tracking",
@@ -478,7 +488,7 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Overview", ids: ["today", "brands", "summary", "insights", "team-hub", "weekly-brief", "timeline"] },
   { label: "Reports", ids: ["report", "snapshot", "social-report", "d2c-weekly", "uppababy"] },
   { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows", "show-insights"] },
-  { label: "Plan", ids: ["promotions", "calendar", "content", "events", "show-deals", "activations"] },
+  { label: "Plan", ids: ["promotions", "calendar", "content", "events", "show-deals", "activations", "giveaways", "product-requests"] },
   { label: "Websites", ids: ["assistants", "discount-codes", "cross-site-discounts", "create-codes", "website-requests", "utm-tracking", "reviews", "abandoned", "registry", "zazu-wheel", "seo"] },
   { label: "Creative", ids: ["campaign-calendar", "design-requests", "creative", "event-concepts", "decks"] },
   { label: "Blogging", ids: ["tasks", "blog-pipeline"] },
@@ -1659,6 +1669,22 @@ export function DashboardTabs({
               <SectionBar title="Promotional Calendar" />
               <BlackFridayReadiness />
               <PromotionalCalendar canEdit={role === "admin"} brands={brands} fy={fy} month={monthSel} />
+            </>
+          )}
+
+          {/* ── Giveaways (free-product commitments, submitted for approval) ── */}
+          {active === "giveaways" && (
+            <>
+              <SectionBar title="Giveaways" />
+              <GiveawaysPanel admin={role === "admin"} brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} />
+            </>
+          )}
+
+          {/* ── Product Requests (free samples, submitted for approval) ── */}
+          {active === "product-requests" && (
+            <>
+              <SectionBar title="Product Requests" />
+              <ProductRequestsPanel admin={role === "admin"} brands={brands.map((b: any) => ({ id: b.id, name: b.name }))} />
             </>
           )}
 

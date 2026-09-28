@@ -14,9 +14,9 @@ import { RetailWeekBadge } from "./RetailWeekBadge";
 
 type Brand = { id: number; name: string; live?: boolean; color?: string };
 type EventType = "stock" | "launch" | "coming" | "retail" | "event" | "trade" | "campaign" | "blog" | "edm"
-  | "key_date" | "tentpole" | "dtc_promo" | "retailer_promo" | "trade_deadline" | "social" | "influencer" | "paid_media" | "pr";
+  | "key_date" | "tentpole" | "dtc_promo" | "retailer_promo" | "trade_deadline" | "social" | "influencer" | "paid_media" | "pr" | "giveaway";
 type Status = "locked" | "working";
-type Source = "tradeshows" | "campaigns" | "new_products" | "blog_drafts" | "edm_drafts" | "site_deals" | "social_drafts";
+type Source = "tradeshows" | "campaigns" | "new_products" | "blog_drafts" | "edm_drafts" | "site_deals" | "social_drafts" | "giveaways";
 type TimelineEvent = {
   id: number | string; brand_id: number; event_type: EventType; title: string; date: string | null; end_date: string | null;
   product_name: string | null; quantity: number | null; status: string | null; note: string | null; image_url: string | null;
@@ -48,6 +48,7 @@ const TYPE_META: Record<EventType, { label: string; short: string; color: string
   influencer:    { label: "Influencer",            short: "Influencer",color: "#db2777", bg: "#fdf2f8", key: false },
   paid_media:    { label: "Paid media",            short: "Paid",      color: "#4338ca", bg: "#eef2ff", key: false },
   pr:            { label: "PR",                    short: "PR",        color: "#4d7c0f", bg: "#f7fee7", key: false },
+  giveaway:      { label: "Giveaway",              short: "Giveaway",  color: "#ca8a04", bg: "#fefce8", key: false },
 };
 const TYPES = Object.keys(TYPE_META) as EventType[];
 const KEY_TYPES = TYPES.filter(t => TYPE_META[t].key);
@@ -55,6 +56,7 @@ const OTHER_TYPES = TYPES.filter(t => !TYPE_META[t].key);
 const SOURCE_META: Record<Source, string> = {
   tradeshows: "Synced from Tradeshows", campaigns: "Synced from Campaign Calendar", new_products: "Synced from New Products",
   blog_drafts: "Synced from Blog Writing", edm_drafts: "Synced from Email Writing", site_deals: "Synced from D2C Promotions", social_drafts: "Synced from Social Writing",
+  giveaways: "Synced from Giveaways",
 };
 
 // Tradeshows and the Australian retail calendar are portfolio-wide, not
