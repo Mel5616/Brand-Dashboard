@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { RetailWeekBadge } from "./RetailWeekBadge";
 
 // Portfolio-wide, highly visual timeline of what's physically landing:
 // stock arrivals, product launches, coming-soon teasers, plus events, trade
@@ -397,6 +398,7 @@ export function Timeline({ brands, admin = false }: { brands: Brand[]; admin?: b
               </button>
             ))}
           </div>
+          <div className="h-fit self-center"><RetailWeekBadge /></div>
         </div>
 
         {/* primary filter: what matters most, given the loudest visual weight */}

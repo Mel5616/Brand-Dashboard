@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { CalendarEvent } from "@/lib/db";
+import { RetailWeekBadge } from "./RetailWeekBadge";
 
 interface Props {
   events: CalendarEvent[];
@@ -180,7 +181,10 @@ export function MarketingCalendar({ events, brands }: Props) {
       {/* Header / toggle */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h2 className="font-semibold text-gray-800">Marketing Calendar</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold text-gray-800">Marketing Calendar</h2>
+            <RetailWeekBadge />
+          </div>
           <p className="text-xs text-gray-400 mt-0.5">Apple Calendar + dated campaigns · {allEvents.length} events</p>
         </div>
         <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
