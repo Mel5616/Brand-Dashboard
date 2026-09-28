@@ -387,6 +387,20 @@ export async function PATCH(req: Request) {
     await fetch(`${sbUrl}/rest/v1/influencer_agreements?id=eq.${id}`, { method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify({ status: "terminated" }) });
     return NextResponse.json({ ok: true });
   }
+  if (b.action === "set_product_sku") {
+    // Backfills a Cin7 SKU onto a product line that predates the catalogue
+    // picker (or was typed free-text) so it can be pushed to Cin7 — this is
+    // a fulfillment-only field, not contract text, so it's safe to correct
+    // on a signed agreement without reopening the agreement itself.
+    if (acc.role !== "admin") return NextResponse.json({ ok: false, error: "Admin only" }, { status: 403 });
+    const productId = String(b.product_id || "");
+    if (!productId) return NextResponse.json({ ok: false, error: "product_id required" }, { status: 400 });
+    const styleCode = b.style_code ? String(b.style_code).slice(0, 60) : null;
+    await fetch(`${sbUrl}/rest/v1/influencer_agreement_products?id=eq.${productId}&agreement_id=eq.${id}`, {
+      method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify({ style_code: styleCode }),
+    });
+    return NextResponse.json({ ok: true });
+  }
   if (b.action === "push_cin7") {
     // Mel pushing straight to Cin7 IS the approval — no separate email to
     // Accounts anymore, the Cin7 sales order is the record they need.

@@ -84,6 +84,8 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false, currentE
   const [showForm, setShowForm] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
+  const [msgErr, setMsgErr] = useState(false);
+  function flash(text: string, err = false) { setMsg(text); setMsgErr(err); }
   const [resultsOpenId, setResultsOpenId] = useState<string | null>(null);
   const [resultsDraft, setResultsDraft] = useState<{ reach: string; engagement: string; shares: string; saves: string; new_followers: string }>({ reach: "", engagement: "", shares: "", saves: "", new_followers: "" });
   const [brandF, setBrandF] = useState("");
@@ -101,6 +103,8 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false, currentE
   const [openProductRow, setOpenProductRow] = useState<number | null>(null);
   const [contactEditId, setContactEditId] = useState<string | null>(null);
   const [contactForm, setContactForm] = useState(emptyInfluencer);
+  const [skuFixKey, setSkuFixKey] = useState<string | null>(null);
+  const [skuFixQuery, setSkuFixQuery] = useState("");
   const [contactBusy, setContactBusy] = useState(false);
 
   function load() {
@@ -170,28 +174,28 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false, currentE
   }
 
   async function saveEdit() {
-    setMsg("");
-    if (!form.brand_id) return setMsg("Pick a brand.");
-    if (!infl.full_name.trim() || !infl.email.trim()) return setMsg("Influencer name and email are required.");
+    flash("");
+    if (!form.brand_id) return flash("Pick a brand.", true);
+    if (!infl.full_name.trim() || !infl.email.trim()) return flash("Influencer name and email are required.", true);
     const body = { id: editId, action: "update", influencer: infl, ...form, products, deliverables: deliverables.map(d => ({ ...d, due_date: d.due_date || null })) };
     const d = await fetch("/api/influencer-agreements", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()).catch(() => null);
-    if (d?.ok) { setShowForm(false); resetForm(); load(); setMsg("Draft updated."); }
-    else setMsg(d?.error || "Couldn't save changes.");
+    if (d?.ok) { setShowForm(false); resetForm(); load(); flash("Draft updated."); }
+    else flash(d?.error || "Couldn't save changes.", true);
   }
 
   async function create(draft: boolean) {
-    setMsg("");
-    if (!form.brand_id) return setMsg("Pick a brand.");
-    if (!infl.full_name.trim() || !infl.email.trim()) return setMsg("Influencer name and email are required.");
+    flash("");
+    if (!form.brand_id) return flash("Pick a brand.", true);
+    if (!infl.full_name.trim() || !infl.email.trim()) return flash("Influencer name and email are required.", true);
     if (!draft && form.agreement_type !== "ugc_only" && form.exclusivity_applies && !form.exclusivity_category.trim())
-      return setMsg("Exclusivity category is required before sending (or turn exclusivity off for this agreement).");
+      return flash("Exclusivity category is required before sending (or turn exclusivity off for this agreement).", true);
     const body = { draft, influencer: infl, ...form, products, deliverables: deliverables.map(d => ({ ...d, due_date: d.due_date || null })) };
     const d = await fetch("/api/influencer-agreements", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()).catch(() => null);
     if (d?.ok) {
       setShowForm(false); resetForm(); load();
-      if (draft) setMsg("Saved as draft — nothing sent yet. Open it and hit Send when you're happy.");
-      else setMsg(d.emailed ? `Signing link emailed to ${infl.email}.` : `Created, but the email failed (${d.emailError || "check RESEND_API_KEY"}) — use Resend on the row.`);
-    } else setMsg(d?.error || "Couldn't create the agreement.");
+      if (draft) flash("Saved as draft — nothing sent yet. Open it and hit Send when you're happy.");
+      else flash(d.emailed ? `Signing link emailed to ${infl.email}.` : `Created, but the email failed (${d.emailError || "check RESEND_API_KEY"}) — use Resend on the row.`, !d.emailed);
+    } else flash(d?.error || "Couldn't create the agreement.", true);
   }
   function startContactEdit(a: Agreement) {
     const i = a.influencers;
@@ -199,12 +203,12 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false, currentE
     setContactEditId(a.id);
   }
   async function saveContact() {
-    if (!contactForm.full_name.trim() || !contactForm.email.trim()) return setMsg("Name and email are required.");
+    if (!contactForm.full_name.trim() || !contactForm.email.trim()) return flash("Name and email are required.", true);
     setContactBusy(true);
     const d = await fetch("/api/influencer-agreements", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: contactEditId, action: "update_contact", influencer: contactForm }) }).then(r => r.json()).catch(() => null);
     setContactBusy(false);
-    if (d?.ok) { setContactEditId(null); load(); setMsg("Contact details updated."); }
-    else setMsg(d?.error || "Couldn't save changes.");
+    if (d?.ok) { setContactEditId(null); load(); flash("Contact details updated."); }
+    else flash(d?.error || "Couldn't save changes.", true);
   }
   async function act(id: string, action: string) {
     setBusyId(id);
@@ -212,14 +216,22 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false, currentE
     setBusyId(null);
     if (d?.ok) {
       load();
-      if (action === "send" || action === "resend") setMsg(d.emailed ? "Signing link emailed." : `Email failed (${d.emailError || "check RESEND_API_KEY"}).`);
-      else if (action === "push_cin7") setMsg(d.skipped?.length ? `Pushed to Cin7 (${d.reference}) — no catalogue SKU on file for: ${d.skipped.join(", ")}, add those manually.` : `Pushed to Cin7 (${d.reference}).`);
+      if (action === "send" || action === "resend") flash(d.emailed ? "Signing link emailed." : `Email failed (${d.emailError || "check RESEND_API_KEY"}).`, !d.emailed);
+      else if (action === "push_cin7") flash(d.skipped?.length ? `Pushed to Cin7 (${d.reference}) — no catalogue SKU on file for: ${d.skipped.join(", ")}, add those manually.` : `Pushed to Cin7 (${d.reference}).`, !!d.skipped?.length);
     }
-    else setMsg(d?.error || "Action failed.");
+    else flash(d?.error || "Action failed.", true);
   }
   async function updateDeliverable(agreementId: string, deliverableId: string, fields: Record<string, any>) {
     await fetch("/api/influencer-agreements", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: agreementId, action: "deliverable", deliverable_id: deliverableId, ...fields }) });
     load();
+  }
+  // Backfills the Cin7 SKU on a product line that predates the catalogue
+  // picker — needed before that line can be pushed to Cin7 (see push_cin7's
+  // "skipped" list).
+  async function setProductSku(agreementId: string, productId: string, styleCode: string) {
+    const d = await fetch("/api/influencer-agreements", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: agreementId, action: "set_product_sku", product_id: productId, style_code: styleCode }) }).then(r => r.json()).catch(() => null);
+    setSkuFixKey(null); setSkuFixQuery("");
+    if (d?.ok) { load(); flash("SKU added."); } else flash(d?.error || "Couldn't add the SKU.", true);
   }
 
   const list = useMemo(() => agreements.filter(a => (!brandF || String(a.brand_id) === brandF) && (!statusF || a.status === statusF)), [agreements, brandF, statusF]);
@@ -252,7 +264,9 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false, currentE
           </button>
         ))}
       </div>
-      {msg && <p className="text-[13px] text-slate-500 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2">{msg}</p>}
+      {msg && (msgErr
+        ? <p className="text-[13px] font-semibold text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">⚠ {msg}</p>
+        : <p className="text-[13px] text-slate-500 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2">{msg}</p>)}
 
       {showForm && (
         <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-5 space-y-4">
@@ -479,7 +493,7 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false, currentE
                             {a.status === "draft" && <button onClick={() => startEdit(a)} className="text-[12px] font-semibold text-amber-600 hover:underline mr-2.5">Edit</button>}
                             {a.status === "sent" && <button disabled={busyId === a.id} onClick={() => act(a.id, "resend")} className="text-[12px] font-semibold text-sky-600 hover:underline mr-2.5 disabled:opacity-50">Resend</button>}
                             {(a.status === "draft" || a.status === "sent") && <a href={`/agreement/${a.token}`} target="_blank" rel="noreferrer" className="text-[12px] font-semibold text-violet-600 hover:underline mr-2.5">👁 View</a>}
-                            {a.status === "sent" && <button onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/agreement/${a.token}`); setMsg("Signing link copied."); }} className="text-[12px] font-semibold text-slate-500 hover:underline mr-2.5">⧉ Link</button>}
+                            {a.status === "sent" && <button onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/agreement/${a.token}`); flash("Signing link copied."); }} className="text-[12px] font-semibold text-slate-500 hover:underline mr-2.5">⧉ Link</button>}
                             {(a.status === "draft" || a.status === "sent") && <button disabled={busyId === a.id} onClick={() => act(a.id, "void")} className="text-[12px] font-semibold text-gray-400 hover:underline mr-2.5 disabled:opacity-50">Void</button>}
                             {a.status === "signed" && admin && <button disabled={busyId === a.id} onClick={() => { if (confirm(`Terminate ${a.reference}? The signed record is kept.`)) act(a.id, "terminate"); }} className="text-[12px] font-semibold text-rose-500 hover:underline disabled:opacity-50 mr-2.5">Terminate</button>}
                             {(a.status === "sent" || a.status === "signed") && admin && <button onClick={() => startContactEdit(a)} className="text-[12px] font-semibold text-amber-600 hover:underline mr-2.5" title="Fix name, email, phone or shipping address — doesn't touch the signed contract terms">Edit contact</button>}
@@ -497,9 +511,31 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false, currentE
                               <div className="grid sm:grid-cols-2 gap-4 text-[12.5px]">
                                 <div>
                                   <p className="font-bold text-slate-600 mb-1">Products</p>
-                                  {a.influencer_agreement_products?.length ? a.influencer_agreement_products.map((p, j) => (
-                                    <p key={j} className="text-slate-600">{p.quantity} x {p.product_name}{p.variant ? ` (${p.variant})` : ""} — RRP {fmtMoney(p.rrp)}{admin && p.cost_price != null ? ` · cost ${fmtMoney(p.cost_price)}` : ""}</p>
-                                  )) : <p className="text-gray-400">—</p>}
+                                  {a.influencer_agreement_products?.length ? a.influencer_agreement_products.map((p, j) => {
+                                    const fixKey = `${a.id}:${p.id}`;
+                                    return (
+                                      <div key={j} className="mb-1">
+                                        <p className="text-slate-600">{p.quantity} x {p.product_name}{p.variant ? ` (${p.variant})` : ""} — RRP {fmtMoney(p.rrp)}{admin && p.cost_price != null ? ` · cost ${fmtMoney(p.cost_price)}` : ""}</p>
+                                        {admin && a.status === "signed" && (p.style_code
+                                          ? <span className="text-[10.5px] text-gray-400">SKU {p.style_code}</span>
+                                          : skuFixKey === fixKey ? (
+                                            <span className="relative inline-block">
+                                              <input autoFocus value={skuFixQuery} onChange={e => setSkuFixQuery(e.target.value)} placeholder="Search catalogue for the real SKU…" className="text-[11px] border border-amber-300 rounded px-1.5 py-0.5 w-56" />
+                                              <button onClick={() => { setSkuFixKey(null); setSkuFixQuery(""); }} className="ml-1 text-[10px] text-gray-400 hover:underline">cancel</button>
+                                              {catalogMatches(skuFixQuery).length > 0 && (
+                                                <div className="absolute z-10 bg-white border border-gray-200 rounded shadow-sm mt-0.5 w-64 max-h-40 overflow-auto">
+                                                  {catalogMatches(skuFixQuery).map(m => (
+                                                    <div key={m.style_code} onMouseDown={() => p.id && setProductSku(a.id, p.id, m.style_code)} className="px-2 py-1 text-[11px] hover:bg-amber-50 cursor-pointer">{m.product_name} — {m.style_code}</div>
+                                                  ))}
+                                                </div>
+                                              )}
+                                            </span>
+                                          ) : (
+                                            <button onClick={() => { setSkuFixKey(fixKey); setSkuFixQuery(p.product_name); }} className="text-[10.5px] font-semibold text-amber-600 hover:underline" title="Needed before this line can be pushed to Cin7">⚠ No Cin7 SKU — add one</button>
+                                          ))}
+                                      </div>
+                                    );
+                                  }) : <p className="text-gray-400">—</p>}
                                   {a.exclusivity_applies && <p className="text-slate-600 mt-2"><strong>Exclusivity:</strong> {a.exclusivity_category} until {fmtD(a.exclusivity_end_date)}</p>}
                                   <p className="text-slate-600 mt-1"><strong>Usage rights:</strong> {a.usage_term_months}mo · {[a.usage_paid_media && "paid amplification", a.usage_retail_partners && "trade/retail", a.usage_print && "print", a.usage_original_files && "original files"].filter(Boolean).join(", ") || "organic only"}</p>
                                   {a.signed_name && <p className="text-slate-600 mt-1"><strong>Signed by:</strong> {a.signed_name}</p>}
