@@ -31,7 +31,7 @@ export default function ProductRequestPage() {
   const key = requestKey();
   const headers: Record<string, string> = { "Content-Type": "application/json", ...(key ? { "x-product-key": key } : {}) };
 
-  const empty = { brand_id: "", reason: "", ship_to_name: "", ship_to_address: "", requester_name: "", requester_email: "" };
+  const empty = { brand_id: "", reason: "", ship_to_name: "", ship_to_address: "", is_loan: false, requester_name: "", requester_email: "" };
   const [f, setF] = useState(empty);
   const [giftItems, setGiftItems] = useState<GiftItem[]>([{ ...emptyGiftItem }]);
   const selectedBrandName = brands.find(b => String(b.id) === f.brand_id)?.name;
@@ -112,6 +112,10 @@ export default function ProductRequestPage() {
                 <label className={lbl}>Ship to (address)</label>
                 <textarea value={f.ship_to_address} onChange={e => setF({ ...f, ship_to_address: e.target.value })} rows={2} className={inp} />
               </div>
+              <label className="flex items-center gap-2 text-sm text-slate-600">
+                <input type="checkbox" checked={f.is_loan} onChange={e => setF({ ...f, is_loan: e.target.checked })} className="rounded border-gray-300" />
+                This is a loan — it should come back to stock, not be gifted
+              </label>
               <div>
                 <label className={lbl}>Your name *</label>
                 <input value={f.requester_name} onChange={e => setF({ ...f, requester_name: e.target.value })} className={inp} />

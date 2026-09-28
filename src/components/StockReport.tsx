@@ -121,6 +121,19 @@ function buildStockReportHtml(
 </table>`;
 }
 
+// Real Cin7 ETA for a Code field that may list more than one SKU
+// ("GSC-WN2/GSC-WN1") — soonest date across every SKU on the line.
+function cin7EtaFor(code: string | null, etas: Record<string, { eta: string; poRef: string }>): { eta: string; poRef: string } | null {
+  if (!code) return null;
+  let best: { eta: string; poRef: string } | null = null;
+  for (const raw of code.split("/")) {
+    const hit = etas[raw.trim().toLowerCase()];
+    if (hit && (!best || hit.eta < best.eta)) best = hit;
+  }
+  return best;
+}
+const fmtEta = (iso: string) => new Date(iso).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
+
 export function StockReport({ brands = [], admin }: { brands?: BrandRef[]; admin: boolean }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -131,6 +144,7 @@ export function StockReport({ brands = [], admin }: { brands?: BrandRef[]; admin
   const [busy, setBusy] = useState(false);
   const [synced, setSynced] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [cin7Etas, setCin7Etas] = useState<Record<string, { eta: string; poRef: string }>>({});
 
   useEffect(() => {
     fetch("/api/content-todo?label=Stock%20Report").then(r => r.json()).then(d => {
@@ -143,6 +157,7 @@ export function StockReport({ brands = [], admin }: { brands?: BrandRef[]; admin
         setSynced(d.synced ?? (mods[mods.length - 1] ?? null));
       }
     }).catch(() => {}).finally(() => setLoading(false));
+    fetch("/api/cin7-restock-etas").then(r => r.json()).then(d => { if (d.ok) setCin7Etas(d.etas || {}); }).catch(() => {});
   }, []);
 
   const post = (body: any) => fetch("/api/design", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json());
@@ -247,6 +262,7 @@ export function StockReport({ brands = [], admin }: { brands?: BrandRef[]; admin
                     const code = field(t, [/code/i, /sku/i]);
                     const status = field(t, [/stock.*status/i, /^status$/i]);
                     const ordering = field(t, [/order/i, /eta/i, /arriv/i, /due/i]);
+                    const cin7 = cin7EtaFor(code, cin7Etas);
                     return (
                       <tr key={t.gid} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/40 transition-colors" style={i % 2 === 1 ? { background: `${col}06` } : undefined}>
                         <td className="px-6 py-3">
@@ -258,7 +274,10 @@ export function StockReport({ brands = [], admin }: { brands?: BrandRef[]; admin
                         </td>
                         <td className="px-3 py-3 font-mono text-[12px] text-slate-400">{code ?? "—"}</td>
                         <td className="px-3 py-3">{status ? <span className={`text-[11px] font-bold rounded-full px-2.5 py-1 ${statusCls(status)}`}>{status}</span> : <span className="text-slate-300">—</span>}</td>
-                        <td className="px-3 py-3 text-slate-500">{ordering ?? (t.due_on ? new Date(t.due_on + "T00:00:00").toLocaleDateString("en-AU", { month: "long" }) : "—")}</td>
+                        <td className="px-3 py-3 text-slate-500">
+                          <div>{ordering ?? (t.due_on ? new Date(t.due_on + "T00:00:00").toLocaleDateString("en-AU", { month: "long" }) : "—")}</div>
+                          {cin7 && <div className="mt-0.5 text-[11px] font-semibold text-emerald-600" title={`From Cin7 PO ${cin7.poRef}`}>Cin7 ETA: {fmtEta(cin7.eta)}</div>}
+                        </td>
                         <td className="px-3 py-3 text-slate-400 text-[13px] max-w-[280px] truncate" title={field(t, [/^notes$/i]) || t.notes || undefined}>{field(t, [/^notes$/i]) || t.notes?.trim() || "—"}</td>
                         <td className="px-3 py-3 text-right">
                           {t.permalink_url && <a href={t.permalink_url} target="_blank" rel="noreferrer" title="Open in Asana" className="text-gray-300 hover:text-emerald-500">↗</a>}

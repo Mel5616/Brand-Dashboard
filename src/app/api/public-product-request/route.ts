@@ -40,6 +40,7 @@ export async function POST(req: Request) {
     gift_items: Array.isArray(b.gift_items) ? b.gift_items.slice(0, 50) : [],
     ship_to_name: b.ship_to_name ? String(b.ship_to_name).trim().slice(0, 150) : null,
     ship_to_address: b.ship_to_address ? String(b.ship_to_address).trim().slice(0, 500) : null,
+    is_loan: !!b.is_loan,
     requester_name: requesterName, requester_email: requesterEmail,
   };
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ShopifyLineItemPicker, type LineItem } from "./ShopifyLineItemPicker";
 import { Cin7LineItemPicker, type Cin7LineItem } from "./Cin7LineItemPicker";
+import { GiftCatalogPicker, giftItemsSummary, emptyGiftItem, type GiftItem } from "./GiftCatalogPicker";
 
 // Admin queue for giveaway/competition commitments submitted via the public
 // /giveaway-request form. Approve/reject is admin-only (see api/giveaways) —
@@ -27,7 +28,7 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
 };
 const STATUS_LIST = ["proposed", "approved", "running", "completed", "rejected"];
 const fmtD = (s: string | null) => (s ? new Date(s + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "2-digit" }) : "—");
-const emptyForm = { brand_id: "", title: "", mechanic: "", items: "", retail_value: "", platform: "Instagram", entry_link: "", start_date: "", end_date: "" };
+const emptyForm = { brand_id: "", title: "", mechanic: "", retail_value: "", platform: "Instagram", entry_link: "", start_date: "", end_date: "" };
 
 export function GiveawaysPanel({ admin = false, brands = [] }: { admin?: boolean; brands?: { id: number; name: string }[] }) {
   const [items, setItems] = useState<Item[]>([]);
@@ -37,6 +38,7 @@ export function GiveawaysPanel({ admin = false, brands = [] }: { admin?: boolean
   const [editField, setEditField] = useState<{ id: string; key: string } | null>(null);
   const [adding, setAdding] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [addGiftItems, setAddGiftItems] = useState<GiftItem[]>([{ ...emptyGiftItem }]);
   const [saving, setSaving] = useState(false);
   const [addErr, setAddErr] = useState("");
   const [pushing, setPushing] = useState<string | null>(null);
@@ -83,11 +85,12 @@ export function GiveawaysPanel({ admin = false, brands = [] }: { admin?: boolean
   }
 
   async function addGiveaway() {
-    if (!form.brand_id || !form.title.trim() || !form.items.trim()) { setAddErr("Brand, campaign name and items are required."); return; }
+    const items = giftItemsSummary(addGiftItems);
+    if (!form.brand_id || !form.title.trim() || !items) { setAddErr("Brand, campaign name and at least one product are required."); return; }
     setSaving(true); setAddErr("");
-    const res = await fetch("/api/giveaways", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) }).then(r => r.json()).catch(() => null);
+    const res = await fetch("/api/giveaways", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, items, gift_items: addGiftItems }) }).then(r => r.json()).catch(() => null);
     setSaving(false);
-    if (res?.ok) { setItems(prev => [res.item, ...prev]); setForm(emptyForm); setAdding(false); }
+    if (res?.ok) { setItems(prev => [res.item, ...prev]); setForm(emptyForm); setAddGiftItems([{ ...emptyGiftItem }]); setAdding(false); }
     else setAddErr(res?.error || "Couldn't save that — try again.");
   }
 
@@ -170,14 +173,11 @@ export function GiveawaysPanel({ admin = false, brands = [] }: { admin?: boolean
             <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Mechanic</label>
             <textarea value={form.mechanic} onChange={e => setForm(p => ({ ...p, mechanic: e.target.value }))} rows={2} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400 resize-none" />
           </div>
-          <div>
-            <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Giveaway items</label>
-            <textarea value={form.items} onChange={e => setForm(p => ({ ...p, items: e.target.value }))} rows={2} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400 resize-none" />
-          </div>
+          <GiftCatalogPicker items={addGiftItems} onChange={setAddGiftItems} brandName={brands.find(b => String(b.id) === form.brand_id)?.name} />
           {addErr && <p className="text-xs text-rose-500">{addErr}</p>}
           <div className="flex items-center gap-2">
             <button onClick={addGiveaway} disabled={saving} className="text-sm font-semibold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 rounded-lg px-4 py-2">{saving ? "Saving…" : "Add giveaway"}</button>
-            <button onClick={() => { setAdding(false); setForm(emptyForm); setAddErr(""); }} className="text-sm text-gray-400 hover:text-gray-600 px-2">Cancel</button>
+            <button onClick={() => { setAdding(false); setForm(emptyForm); setAddGiftItems([{ ...emptyGiftItem }]); setAddErr(""); }} className="text-sm text-gray-400 hover:text-gray-600 px-2">Cancel</button>
           </div>
         </div>
       )}

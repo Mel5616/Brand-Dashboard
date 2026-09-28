@@ -34,8 +34,10 @@ export async function POST(req: Request) {
   if (!reason || !products || !brandId) return NextResponse.json({ ok: false, error: "Brand, reason and products are required" }, { status: 400 });
   const row = {
     brand_id: brandId, reason, products,
+    gift_items: Array.isArray(b.gift_items) ? b.gift_items.slice(0, 50) : [],
     ship_to_name: b.ship_to_name ? String(b.ship_to_name).trim().slice(0, 150) : null,
     ship_to_address: b.ship_to_address ? String(b.ship_to_address).trim().slice(0, 500) : null,
+    is_loan: !!b.is_loan,
     requester_name: b.requester_name ? String(b.requester_name).trim().slice(0, 100) : (acc.user?.email ?? "Team"),
     requester_email: b.requester_email ? String(b.requester_email).trim().toLowerCase() : (acc.user?.email ?? null),
   };
