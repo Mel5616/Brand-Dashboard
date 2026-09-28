@@ -11,7 +11,7 @@
   "10% off your first order when you join the newsletter (popup on site).",
   "Bundle & Save: pick any 3 or more full size products and 15% comes off automatically at checkout. Travel minis do not count toward or receive the bundle discount.",
   "Free standard shipping on orders over $75 within Australia.",
-  "Refill & Save subscriptions: save 15% with delivery every 4 weeks, 12% every 6 weeks, or 10% every 8 weeks, on every subscription order. The more often it arrives, the more you save. Skip, pause or cancel anytime from your account. Subscription savings do not stack with the bundle discount.",
+  "Subscribe & Save: save 15% with delivery every 4 weeks, 12% every 6 weeks, or 10% every 8 weeks, on every subscription order. The more often it arrives, the more you save. Skip, pause or cancel anytime from your account. Subscription savings do not stack with the bundle discount.",
   "30 day money back guarantee on every purchase."
  ],
  "pages": {
@@ -491,7 +491,7 @@
   },
   {
    "category": "orders",
-   "q": "How does Refill & Save work?",
+   "q": "How does Subscribe & Save work?",
    "a": "Choose your favourites, pick a delivery rhythm that suits you, and they arrive on repeat with a subscriber saving on every order, so the ritual never runs out mid-bump. Checkout is handled securely by Shopify, and you stay in control the whole time."
   },
   {
@@ -517,8 +517,8 @@
    "summary": "pH-balanced washing, after-bath hydration, baby massage and nappy-change protection: everything delicate new skin needs, without the ten-product shelf."
   },
   {
-   "title": "Refill & Save: the case for never running out",
-   "url": "/blogs/journal/journal-refill-and-save",
+   "title": "Subscribe & Save: the case for never running out",
+   "url": "/blogs/journal/journal-subscribe-and-save",
    "summary": "Skincare works as a rhythm, not a rescue. How subscriptions keep the ritual going, delivered on the schedule that suits you, with a saving on every order."
   }
  ],
