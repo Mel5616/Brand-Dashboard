@@ -3,6 +3,8 @@ import { getAccess } from "@/lib/access";
 import { renderAgreementHtml, validateForSend, ENTITY, TEMPLATE_VERSION, AGREEMENT_TYPES } from "@/lib/agreementTemplate";
 import { sendMail, shell } from "@/lib/agreementMail";
 import { buildGiftOrderSheet } from "@/lib/giftOrderSheet";
+import { createCin7SalesOrder, type Cin7LineItem } from "@/lib/cin7SalesOrder";
+import { resolveCin7Sku } from "@/lib/cin7SkuLookup";
 
 // Influencer Agreements — admin CRUD + send. Influencers sign via the public
 // /agreement/[token] page. Coolkidz Australia Pty Ltd is the contracting
@@ -163,6 +165,7 @@ export async function POST(req: Request) {
     product_name: String(p.product_name).slice(0, 160), variant: p.variant ? String(p.variant).slice(0, 100) : null,
     quantity: Number(p.quantity) || 1, rrp: p.rrp != null && p.rrp !== "" ? Number(p.rrp) : null,
     cost_price: p.cost_price != null && p.cost_price !== "" ? Number(p.cost_price) : null,
+    style_code: p.style_code ? String(p.style_code).slice(0, 60) : null,
   }));
   const deliverables = (Array.isArray(b.deliverables) ? b.deliverables : []).filter((d: any) => d?.deliverable_type).map((d: any) => ({
     deliverable_type: String(d.deliverable_type).slice(0, 80), platform: String(d.platform || "Instagram").slice(0, 40),
@@ -277,6 +280,7 @@ export async function PATCH(req: Request) {
       product_name: String(p.product_name).slice(0, 160), variant: p.variant ? String(p.variant).slice(0, 100) : null,
       quantity: Number(p.quantity) || 1, rrp: p.rrp != null && p.rrp !== "" ? Number(p.rrp) : null,
       cost_price: p.cost_price != null && p.cost_price !== "" ? Number(p.cost_price) : null,
+      style_code: p.style_code ? String(p.style_code).slice(0, 60) : null,
     }));
     const deliverables = (Array.isArray(b.deliverables) ? b.deliverables : []).filter((d: any) => d?.deliverable_type).map((d: any) => ({
       deliverable_type: String(d.deliverable_type).slice(0, 80), platform: String(d.platform || "Instagram").slice(0, 40),
@@ -408,6 +412,46 @@ export async function PATCH(req: Request) {
       body: JSON.stringify({ order_sheet_approved_at: approvedAt, order_sheet_approved_by: approvedBy, order_sheet_sent_at: approvedAt }),
     });
     return NextResponse.json({ ok: true });
+  }
+  if (b.action === "push_cin7") {
+    // Same trust boundary as the order sheet itself — this is the exact
+    // moment Mel currently keys the order into Cin7 by hand from the
+    // printed sheet, so gating on her having already approved that sheet
+    // (not a separate check) is the right line, not an extra one.
+    if (a.status !== "signed") return NextResponse.json({ ok: false, error: "Only a signed agreement can be pushed" }, { status: 400 });
+    if (!a.order_sheet_approved_at) return NextResponse.json({ ok: false, error: "Approve & send the order sheet first" }, { status: 400 });
+    const prodRes = await fetch(`${sbUrl}/rest/v1/influencer_agreement_products?agreement_id=eq.${id}`, { headers: h(), cache: "no-store" });
+    const products: any[] = await prodRes.json().catch(() => []);
+
+    const lineItems: Cin7LineItem[] = [];
+    const skipped: string[] = [];
+    for (const p of products) {
+      if (!p.style_code) { skipped.push(p.product_name); continue; }
+      const resolved = await resolveCin7Sku(p.style_code);
+      if (!resolved) { skipped.push(`${p.product_name} (${p.style_code} not found in Cin7)`); continue; }
+      lineItems.push({ ...resolved, name: p.product_name, quantity: p.quantity || 1 });
+    }
+    if (!lineItems.length) return NextResponse.json({ ok: false, error: "No products with a matching Cin7 SKU — add products from the catalogue search, not typed free text." }, { status: 400 });
+
+    const infl = a.influencers;
+    const shipToText = [
+      `Influencer agreement ${a.reference}${a.campaign_name ? ` — ${a.campaign_name}` : ""}`,
+      infl ? [infl.address_line1, infl.address_line2, [infl.suburb, infl.state, infl.postcode].filter(Boolean).join(" ")].filter(Boolean).join(", ") : null,
+      infl?.is_po_box ? "PO BOX — cannot ship courier, check before dispatching" : null,
+    ].filter(Boolean).join("\n");
+
+    const result = await createCin7SalesOrder({
+      lineItems, recipientName: infl?.full_name || "Influencer", shipToText,
+      customerOrderNo: `Influencer — ${a.reference} — ${infl?.full_name || ""}`,
+    });
+    if (!result.ok) return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
+
+    const pushedBy = (acc.user as any)?.email ?? null;
+    await fetch(`${sbUrl}/rest/v1/influencer_agreements?id=eq.${id}`, {
+      method: "PATCH", headers: h({ Prefer: "return=minimal" }),
+      body: JSON.stringify({ cin7_sales_order_id: String(result.id), cin7_sales_order_ref: result.reference, cin7_pushed_at: new Date().toISOString(), cin7_pushed_by: pushedBy }),
+    });
+    return NextResponse.json({ ok: true, reference: result.reference, skipped });
   }
   if (b.action === "deliverable") {
     const did = String(b.deliverable_id || "");

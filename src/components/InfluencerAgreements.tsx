@@ -18,7 +18,7 @@ const REPRESENTATIVES = [
 ];
 
 type Influencer = { id: string; full_name: string; email: string; phone: string | null; instagram_handle: string | null; tiktok_handle: string | null; address_line1: string | null; address_line2: string | null; suburb: string | null; state: string | null; postcode: string | null; is_po_box: boolean; abn: string | null };
-type Product = { id?: string; product_name: string; variant: string | null; quantity: number; rrp: number | null; cost_price: number | null };
+type Product = { id?: string; product_name: string; variant: string | null; quantity: number; rrp: number | null; cost_price: number | null; style_code?: string | null };
 type Deliverable = {
   id?: string; deliverable_type: string; platform: string; quantity: number; due_date: string | null; status: string; live_url: string | null;
   reach: number | null; engagement: number | null; shares: number | null; saves: number | null; new_followers: number | null;
@@ -31,6 +31,7 @@ type Agreement = {
   usage_term_months: number; usage_paid_media: boolean; usage_retail_partners: boolean; usage_print: boolean; usage_original_files: boolean;
   discount_code: string | null; sent_at: string | null; signed_at: string | null; signed_name: string | null;
   order_sheet_approved_at: string | null; order_sheet_approved_by: string | null; order_sheet_sent_at: string | null;
+  cin7_sales_order_ref: string | null;
   influencer_agreement_products: Product[]; influencer_agreement_deliverables: Deliverable[];
 };
 type ExclRow = { agreement_id: string; reference: string; influencer_id: string; full_name: string; instagram_handle: string | null; brand: string; exclusivity_category: string; exclusivity_end_date: string; days_remaining: number };
@@ -50,7 +51,7 @@ const inp = "text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 
 const fmtD = (s: string | null) => s ? new Date(s + (s.length === 10 ? "T00:00:00" : "")).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "2-digit" }) : "—";
 const fmtMoney = (n: number | null | undefined) => n == null ? "—" : `$${Number(n).toLocaleString("en-AU", { maximumFractionDigits: 0 })}`;
 
-const emptyProduct: Product = { product_name: "", variant: "", quantity: 1, rrp: null, cost_price: null };
+const emptyProduct: Product = { product_name: "", variant: "", quantity: 1, rrp: null, cost_price: null, style_code: null };
 const emptyDeliverable: Deliverable = { deliverable_type: "grid post", platform: "Instagram", quantity: 1, due_date: null, status: "pending", live_url: null, reach: null, engagement: null, shares: null, saves: null, new_followers: null };
 const emptyInfluencer = { full_name: "", email: "", phone: "", instagram_handle: "", tiktok_handle: "", address_line1: "", address_line2: "", suburb: "", state: "", postcode: "", is_po_box: false, abn: "" };
 const emptyForm = {
@@ -208,7 +209,11 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false, currentE
     setBusyId(id);
     const d = await fetch("/api/influencer-agreements", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, action }) }).then(r => r.json()).catch(() => null);
     setBusyId(null);
-    if (d?.ok) { load(); if (action === "send" || action === "resend") setMsg(d.emailed ? "Signing link emailed." : `Email failed (${d.emailError || "check RESEND_API_KEY"}).`); }
+    if (d?.ok) {
+      load();
+      if (action === "send" || action === "resend") setMsg(d.emailed ? "Signing link emailed." : `Email failed (${d.emailError || "check RESEND_API_KEY"}).`);
+      else if (action === "push_cin7") setMsg(d.skipped?.length ? `Pushed to Cin7 (${d.reference}) — no catalogue SKU on file for: ${d.skipped.join(", ")}, add those manually.` : `Pushed to Cin7 (${d.reference}).`);
+    }
     else setMsg(d?.error || "Action failed.");
   }
   async function updateDeliverable(agreementId: string, deliverableId: string, fields: Record<string, any>) {
@@ -354,7 +359,7 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false, currentE
                       <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
                         {matches.map(m => (
                           <button key={m.style_code} type="button"
-                            onMouseDown={() => { setProducts(ps => ps.map((x, j) => j === i ? { ...x, product_name: m.product_name, rrp: m.rrp } : x)); setOpenProductRow(null); }}
+                            onMouseDown={() => { setProducts(ps => ps.map((x, j) => j === i ? { ...x, product_name: m.product_name, rrp: m.rrp, style_code: m.style_code } : x)); setOpenProductRow(null); }}
                             className="w-full text-left px-3 py-2 text-[12.5px] hover:bg-emerald-50 border-b border-gray-50 last:border-0">
                             <div className="font-semibold text-slate-700">{m.product_name}</div>
                             <div className="text-gray-400 text-[11px]">{m.brand} · {m.style_code} · RRP {m.rrp != null ? `$${m.rrp}` : "—"}</div>
@@ -483,6 +488,9 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false, currentE
                               : canApprove
                                 ? <button disabled={busyId === a.id} onClick={() => { if (confirm(`You've reviewed the order sheet for ${a.reference} — approve it and email it to orders@coolkidz.com.au?`)) act(a.id, "approve_order_sheet"); }} className="text-[12px] font-semibold text-white bg-amber-500 hover:bg-amber-600 rounded-md px-2 py-1 disabled:opacity-50">Approve & send</button>
                                 : <span className="text-[11px] font-semibold text-amber-600">⏳ Awaiting Mel's approval</span>)}
+                            {a.order_sheet_approved_at && admin && (a.cin7_sales_order_ref
+                              ? <span className="ml-2.5 text-[11px] font-semibold text-emerald-600" title="Stage &quot;New&quot; in Cin7 — check it before dispatching">✓ Cin7 {a.cin7_sales_order_ref}</span>
+                              : <button disabled={busyId === a.id} onClick={() => act(a.id, "push_cin7")} className="ml-2.5 text-[12px] font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-md px-2 py-1 disabled:opacity-50">Push to Cin7</button>)}
                           </td>
                         </tr>
                         {isOpen && (
