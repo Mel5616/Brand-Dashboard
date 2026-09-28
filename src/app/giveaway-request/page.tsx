@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { GiftCatalogPicker, giftItemsSummary, emptyGiftItem, type GiftItem } from "@/components/GiftCatalogPicker";
 
 // Public, no-login form — share this link (optionally with
 // ?k=<GIVEAWAY_REQUEST_KEY>) with anyone committing free product to a
@@ -32,8 +33,10 @@ export default function GiveawayRequestPage() {
   const key = requestKey();
   const headers: Record<string, string> = { "Content-Type": "application/json", ...(key ? { "x-giveaway-key": key } : {}) };
 
-  const empty = { brand_id: "", title: "", mechanic: "", items: "", retail_value: "", platform: "Instagram", entry_link: "", start_date: "", end_date: "", submitter_name: "", submitter_email: "" };
+  const empty = { brand_id: "", title: "", mechanic: "", retail_value: "", platform: "Instagram", entry_link: "", start_date: "", end_date: "", submitter_name: "", submitter_email: "" };
   const [f, setF] = useState(empty);
+  const [giftItems, setGiftItems] = useState<GiftItem[]>([{ ...emptyGiftItem }]);
+  const selectedBrandName = brands.find(b => String(b.id) === f.brand_id)?.name;
 
   useEffect(() => {
     fetch("/api/public-giveaway-request", { headers: key ? { "x-giveaway-key": key } : {} }).then(r => {
@@ -45,11 +48,12 @@ export default function GiveawayRequestPage() {
 
   async function submit() {
     setErr("");
-    if (!f.brand_id || !f.title.trim() || !f.items.trim() || !f.submitter_name.trim() || !f.submitter_email.trim()) {
-      setErr("Brand, campaign name, giveaway items, your name and email are required."); return;
+    const items = giftItemsSummary(giftItems);
+    if (!f.brand_id || !f.title.trim() || !items || !f.submitter_name.trim() || !f.submitter_email.trim()) {
+      setErr("Brand, campaign name, at least one product, your name and email are required."); return;
     }
     setBusy(true);
-    const res = await fetch("/api/public-giveaway-request", { method: "POST", headers, body: JSON.stringify(f) }).then(r => r.json()).catch(() => null);
+    const res = await fetch("/api/public-giveaway-request", { method: "POST", headers, body: JSON.stringify({ ...f, items, gift_items: giftItems }) }).then(r => r.json()).catch(() => null);
     setBusy(false);
     if (res?.ok) setDone(true); else setErr(res?.error || "Something went wrong — try again.");
   }
@@ -81,7 +85,7 @@ export default function GiveawayRequestPage() {
           <div className="text-center">
             <p className="text-lg font-semibold text-slate-800 mb-2">Submitted for approval</p>
             <p className="text-sm text-slate-500 mb-6">Mel has been notified — don&apos;t commit any product or post it live until it&apos;s approved.</p>
-            <button onClick={() => { setF(empty); setDone(false); }} className="text-sm font-medium bg-emerald-600 text-white rounded-lg px-4 py-2.5 hover:bg-emerald-700">
+            <button onClick={() => { setF(empty); setGiftItems([{ ...emptyGiftItem }]); setDone(false); }} className="text-sm font-medium bg-emerald-600 text-white rounded-lg px-4 py-2.5 hover:bg-emerald-700">
               Submit another
             </button>
           </div>
@@ -121,10 +125,7 @@ export default function GiveawayRequestPage() {
                 <label className={lbl}>Mechanic — how does someone enter?</label>
                 <textarea value={f.mechanic} onChange={e => setF({ ...f, mechanic: e.target.value })} rows={2} placeholder="e.g. Follow + tag a friend, purchase required, comment to enter" className={inp} />
               </div>
-              <div>
-                <label className={lbl}>Giveaway items *</label>
-                <textarea value={f.items} onChange={e => setF({ ...f, items: e.target.value })} rows={2} placeholder="What's being given away?" className={inp} />
-              </div>
+              <GiftCatalogPicker items={giftItems} onChange={setGiftItems} brandName={selectedBrandName} endpoint="/api/public-gift-catalog" />
               <div>
                 <label className={lbl}>Retail value ($)</label>
                 <input type="number" inputMode="decimal" step="0.01" value={f.retail_value} onChange={e => setF({ ...f, retail_value: e.target.value })} placeholder="0.00" className={inp} />

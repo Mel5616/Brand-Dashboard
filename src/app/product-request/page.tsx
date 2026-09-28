@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { GiftCatalogPicker, giftItemsSummary, emptyGiftItem, type GiftItem } from "@/components/GiftCatalogPicker";
 
 // Public, no-login form — share this link (optionally with
 // ?k=<PRODUCT_REQUEST_KEY>) with anyone who needs free product/samples sent
@@ -30,8 +31,10 @@ export default function ProductRequestPage() {
   const key = requestKey();
   const headers: Record<string, string> = { "Content-Type": "application/json", ...(key ? { "x-product-key": key } : {}) };
 
-  const empty = { brand_id: "", reason: "", products: "", ship_to_name: "", ship_to_address: "", requester_name: "", requester_email: "" };
+  const empty = { brand_id: "", reason: "", ship_to_name: "", ship_to_address: "", requester_name: "", requester_email: "" };
   const [f, setF] = useState(empty);
+  const [giftItems, setGiftItems] = useState<GiftItem[]>([{ ...emptyGiftItem }]);
+  const selectedBrandName = brands.find(b => String(b.id) === f.brand_id)?.name;
 
   useEffect(() => {
     fetch("/api/public-product-request", { headers: key ? { "x-product-key": key } : {} }).then(r => {
@@ -43,11 +46,12 @@ export default function ProductRequestPage() {
 
   async function submit() {
     setErr("");
-    if (!f.brand_id || !f.reason.trim() || !f.products.trim() || !f.requester_name.trim() || !f.requester_email.trim()) {
-      setErr("Brand, reason, products, your name and email are required."); return;
+    const products = giftItemsSummary(giftItems);
+    if (!f.brand_id || !f.reason.trim() || !products || !f.requester_name.trim() || !f.requester_email.trim()) {
+      setErr("Brand, reason, at least one product, your name and email are required."); return;
     }
     setBusy(true);
-    const res = await fetch("/api/public-product-request", { method: "POST", headers, body: JSON.stringify(f) }).then(r => r.json()).catch(() => null);
+    const res = await fetch("/api/public-product-request", { method: "POST", headers, body: JSON.stringify({ ...f, products, gift_items: giftItems }) }).then(r => r.json()).catch(() => null);
     setBusy(false);
     if (res?.ok) setDone(true); else setErr(res?.error || "Something went wrong — try again.");
   }
@@ -79,7 +83,7 @@ export default function ProductRequestPage() {
           <div className="text-center">
             <p className="text-lg font-semibold text-slate-800 mb-2">Submitted for approval</p>
             <p className="text-sm text-slate-500 mb-6">Mel has been notified — don&apos;t pick or ship anything until it&apos;s approved.</p>
-            <button onClick={() => { setF(empty); setDone(false); }} className="text-sm font-medium bg-emerald-600 text-white rounded-lg px-4 py-2.5 hover:bg-emerald-700">
+            <button onClick={() => { setF(empty); setGiftItems([{ ...emptyGiftItem }]); setDone(false); }} className="text-sm font-medium bg-emerald-600 text-white rounded-lg px-4 py-2.5 hover:bg-emerald-700">
               Submit another
             </button>
           </div>
@@ -99,10 +103,7 @@ export default function ProductRequestPage() {
                 <label className={lbl}>Reason *</label>
                 <input value={f.reason} onChange={e => setF({ ...f, reason: e.target.value })} placeholder="e.g. Photoshoot sample, warranty replacement, team sample" className={inp} />
               </div>
-              <div>
-                <label className={lbl}>Products *</label>
-                <textarea value={f.products} onChange={e => setF({ ...f, products: e.target.value })} rows={3} placeholder="What's needed — item, variant, quantity" className={inp} />
-              </div>
+              <GiftCatalogPicker items={giftItems} onChange={setGiftItems} brandName={selectedBrandName} endpoint="/api/public-gift-catalog" />
               <div>
                 <label className={lbl}>Ship to (name)</label>
                 <input value={f.ship_to_name} onChange={e => setF({ ...f, ship_to_name: e.target.value })} placeholder="Leave blank if it's for the office/team" className={inp} />

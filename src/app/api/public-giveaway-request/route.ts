@@ -36,6 +36,7 @@ export async function POST(req: Request) {
 
   const row: Record<string, unknown> = {
     brand_id: brandId, title, items,
+    gift_items: Array.isArray(b.gift_items) ? b.gift_items.slice(0, 50) : [],
     mechanic: b.mechanic ? String(b.mechanic).trim().slice(0, 1000) : null,
     retail_value: b.retail_value === "" || b.retail_value == null ? null : Number(b.retail_value),
     platform: b.platform ? String(b.platform).trim().slice(0, 60) : null,
