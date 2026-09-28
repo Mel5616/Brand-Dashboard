@@ -69,6 +69,12 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
   const brandName = new Map(brands.map(b => [b.id, b.name]));
   const presentBrandIds = [...new Set(groups.map(g => g.members[0].brand_id).filter((x: any) => x != null))].sort((a, b) => (brandName.get(a) || "").localeCompare(brandName.get(b) || ""));
   const visibleGroups = brandFilter === "all" ? groups : groups.filter(g => g.members[0].brand_id === brandFilter);
+  // Not-yet-launched lines, soonest date first (coming soon -> stock arriving -> launch).
+  const comingGroups = visibleGroups.filter(g => g.members[0].status === "coming_soon" || g.members[0].status === "launching")
+    .sort((a, b) => {
+      const soonest = (g: any) => g.members[0].coming_soon_date || g.members[0].stock_arriving_date || g.members[0].launch_date || "9999";
+      return soonest(a).localeCompare(soonest(b));
+    });
 
   const open = groups.find(g => g.key === openKey) || null;
   const rep = open?.members[0];
@@ -135,6 +141,14 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
     finally { setBusy(""); if (fileRef.current) fileRef.current.value = ""; }
   }
 
+  // Date edits from the "New products coming" table — same shared-across-
+  // colours PATCH pattern as saveMeta, but usable outside the open drawer.
+  async function updateGroupDate(g: { members: any[] }, field: string, value: string) {
+    const payload = { [field]: value || null };
+    const res = await Promise.all(g.members.map((m: any) => fetch(`/api/new-products/${m.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }).then(r => r.json())));
+    setProducts(prev => prev.map(p => { const u = res.find(x => x.product?.id === p.id); return u?.product ?? p; }));
+  }
+
   async function delGroup() {
     if (!open || !confirm(`Delete this product and all ${open.members.length} colour(s)?`)) return;
     await Promise.all(open.members.map(m => fetch(`/api/new-products/${m.id}`, { method: "DELETE" })));
@@ -194,6 +208,39 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
           )}
         </div>
       </div>
+
+      {comingGroups.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">
+          <div className="px-4 pt-3 pb-1"><p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">New products coming</p></div>
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="border-b border-gray-100 text-left">
+                <th className="py-2 pl-4 pr-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Product name</th>
+                <th className="py-2 px-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Coming soon date</th>
+                <th className="py-2 px-3 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Stock arriving date</th>
+                <th className="py-2 pr-4 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Launch date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {comingGroups.map(g => {
+                const r = g.members[0];
+                return (
+                  <tr key={g.key} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/40">
+                    <td className="py-2 pl-4 pr-3 font-medium text-slate-700 cursor-pointer hover:text-emerald-600" onClick={() => setOpenKey(g.key)}>{g.title}</td>
+                    {(["coming_soon_date", "stock_arriving_date", "launch_date"] as const).map((f, i) => (
+                      <td key={f} className={i === 2 ? "py-2 pr-4" : "py-2 px-3"}>
+                        {canEdit
+                          ? <input type="date" defaultValue={r[f] ? String(r[f]).slice(0, 10) : ""} onBlur={e => updateGroupDate(g, f, e.target.value)} className="text-sm border border-gray-200 rounded-lg px-2 py-1" />
+                          : <span className="text-slate-600">{fmtDate(r[f]) || "—"}</span>}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {groups.length === 0 ? (
         <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-10 text-center text-sm text-gray-400">Upload your New Products Excel to get started.</div>

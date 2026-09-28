@@ -4,8 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 
 export const revalidate = 0;
 
-const FIELDS = ["name", "long_description", "short_description", "whats_in_box", "features", "status", "launch_date", "brand_id", "wholesale_price", "rrp"];
+const FIELDS = ["name", "long_description", "short_description", "whats_in_box", "features", "status", "launch_date", "coming_soon_date", "stock_arriving_date", "brand_id", "wholesale_price", "rrp"];
 const NUMERIC = new Set(["wholesale_price", "rrp"]);
+const DATE_FIELDS = new Set(["launch_date", "coming_soon_date", "stock_arriving_date"]);
 
 // Update a product's editable fields (admin). Delete a product (admin).
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -16,7 +17,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   for (const f of FIELDS) {
     if (body[f] === undefined) continue;
     let v: unknown = body[f];
-    if (v === "" && (f === "launch_date" || NUMERIC.has(f))) v = null;
+    if (v === "" && (DATE_FIELDS.has(f) || NUMERIC.has(f))) v = null;
     else if (NUMERIC.has(f) && v != null) v = Number(v);
     patch[f] = v;
   }
