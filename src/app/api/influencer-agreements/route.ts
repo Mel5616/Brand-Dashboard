@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
 import { renderAgreementHtml, validateForSend, ENTITY, TEMPLATE_VERSION, AGREEMENT_TYPES } from "@/lib/agreementTemplate";
 import { sendMail, shell } from "@/lib/agreementMail";
-import { buildGiftOrderSheet } from "@/lib/giftOrderSheet";
 import { createCin7SalesOrder, type Cin7LineItem } from "@/lib/cin7SalesOrder";
 import { resolveCin7Sku } from "@/lib/cin7SkuLookup";
 
@@ -16,8 +15,6 @@ const h = (extra: Record<string, string> = {}) => ({ apikey: sbKey!, Authorizati
 const BASE = "https://marketing.coolkidz.com.au";
 const missing = (status: number, body: string) => status === 404 || /PGRST205|does not exist|schema cache/i.test(body);
 const canUse = (acc: { role: string | null; allowedTabs: string[] }) => acc.role === "admin" || (!!acc.role && acc.allowedTabs.includes("influencer-agreements"));
-// Confirmed with Mel directly — where the approved gift order sheet is emailed.
-const ORDERS_EMAIL = "orders@coolkidz.com.au";
 // Sign-off is restricted to Mel personally, not any admin — she asked for
 // "approved by Me" specifically.
 const ORDER_SHEET_APPROVER = "mel@coolkidz.com.au";
@@ -390,36 +387,12 @@ export async function PATCH(req: Request) {
     await fetch(`${sbUrl}/rest/v1/influencer_agreements?id=eq.${id}`, { method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify({ status: "terminated" }) });
     return NextResponse.json({ ok: true });
   }
-  if (b.action === "approve_order_sheet") {
-    // Hard gate: the order sheet is watermarked "not yet approved" until this
-    // fires, and this is the only path that emails it to Accounts — approval
-    // and send happen as one action, per Mel's own confirmed workflow.
-    if ((acc.user?.email || "").toLowerCase() !== ORDER_SHEET_APPROVER) return NextResponse.json({ ok: false, error: "Only Mel can approve and send the gift order sheet" }, { status: 403 });
-    if (a.status !== "signed") return NextResponse.json({ ok: false, error: "Only a signed agreement can be approved" }, { status: 400 });
-    const approvedAt = new Date().toISOString();
-    const approvedBy = (acc.user as any)?.email ?? "unknown";
-    const prodRes = await fetch(`${sbUrl}/rest/v1/influencer_agreement_products?agreement_id=eq.${id}`, { headers: h(), cache: "no-store" });
-    const products = await prodRes.json().catch(() => []);
-    const html = buildGiftOrderSheet({
-      reference: a.reference, agreement_date: a.agreement_date, campaign_name: a.campaign_name, status: a.status,
-      brand_name: a.brands?.name ?? "—", influencer: a.influencers, products, representative_name: a.representative_name ?? null,
-      approved_at: approvedAt, approved_by: approvedBy, forEmail: true,
-    });
-    const mail = await sendMail({ to: [ORDERS_EMAIL], subject: `Gift order — ${a.reference} — ${a.influencers?.full_name ?? ""}`, html });
-    if (!mail.ok) return NextResponse.json({ ok: false, error: `Approved, but the email to Accounts failed to send: ${mail.error}` }, { status: 500 });
-    await fetch(`${sbUrl}/rest/v1/influencer_agreements?id=eq.${id}`, {
-      method: "PATCH", headers: h({ Prefer: "return=minimal" }),
-      body: JSON.stringify({ order_sheet_approved_at: approvedAt, order_sheet_approved_by: approvedBy, order_sheet_sent_at: approvedAt }),
-    });
-    return NextResponse.json({ ok: true });
-  }
   if (b.action === "push_cin7") {
-    // Same trust boundary as the order sheet itself — this is the exact
-    // moment Mel currently keys the order into Cin7 by hand from the
-    // printed sheet, so gating on her having already approved that sheet
-    // (not a separate check) is the right line, not an extra one.
+    // Mel pushing straight to Cin7 IS the approval — no separate email to
+    // Accounts anymore, the Cin7 sales order is the record they need.
+    // Still Mel-only, same trust boundary the order sheet approval used to be.
+    if ((acc.user?.email || "").toLowerCase() !== ORDER_SHEET_APPROVER) return NextResponse.json({ ok: false, error: "Only Mel can push this to Cin7" }, { status: 403 });
     if (a.status !== "signed") return NextResponse.json({ ok: false, error: "Only a signed agreement can be pushed" }, { status: 400 });
-    if (!a.order_sheet_approved_at) return NextResponse.json({ ok: false, error: "Approve & send the order sheet first" }, { status: 400 });
     const prodRes = await fetch(`${sbUrl}/rest/v1/influencer_agreement_products?agreement_id=eq.${id}`, { headers: h(), cache: "no-store" });
     const products: any[] = await prodRes.json().catch(() => []);
 
@@ -447,9 +420,13 @@ export async function PATCH(req: Request) {
     if (!result.ok) return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
 
     const pushedBy = (acc.user as any)?.email ?? null;
+    const now = new Date().toISOString();
     await fetch(`${sbUrl}/rest/v1/influencer_agreements?id=eq.${id}`, {
       method: "PATCH", headers: h({ Prefer: "return=minimal" }),
-      body: JSON.stringify({ cin7_sales_order_id: String(result.id), cin7_sales_order_ref: result.reference, cin7_pushed_at: new Date().toISOString(), cin7_pushed_by: pushedBy }),
+      body: JSON.stringify({
+        order_sheet_approved_at: a.order_sheet_approved_at ?? now, order_sheet_approved_by: a.order_sheet_approved_by ?? pushedBy,
+        cin7_sales_order_id: String(result.id), cin7_sales_order_ref: result.reference, cin7_pushed_at: now, cin7_pushed_by: pushedBy,
+      }),
     });
     return NextResponse.json({ ok: true, reference: result.reference, skipped });
   }

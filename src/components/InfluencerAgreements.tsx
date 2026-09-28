@@ -61,9 +61,10 @@ const emptyForm = {
   discount_code: "", discount_start: "", discount_end: "", representative_name: "Melanie Kingsford", representative_position: "Marketing Director",
 };
 
-// Approving a gift order sheet — and sending it to Accounts — is restricted to
-// Mel personally, not just any admin (she asked "can the approve and send only
-// be done by me"). Enforced again server-side in the approve_order_sheet action.
+// Pushing a signed agreement's order to Cin7 is restricted to Mel personally,
+// not just any admin (she asked "can the approve and send only be done by
+// me" — pushing to Cin7 is now that same approval moment). Enforced again
+// server-side in the push_cin7 action.
 const ORDER_SHEET_APPROVER = "mel@coolkidz.com.au";
 
 export function InfluencerAgreements({ brands: brandsIn, admin = false, currentEmail }: { brands: { id: number; name: string }[]; admin?: boolean; currentEmail?: string }) {
@@ -483,14 +484,11 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false, currentE
                             {a.status === "signed" && admin && <button disabled={busyId === a.id} onClick={() => { if (confirm(`Terminate ${a.reference}? The signed record is kept.`)) act(a.id, "terminate"); }} className="text-[12px] font-semibold text-rose-500 hover:underline disabled:opacity-50 mr-2.5">Terminate</button>}
                             {(a.status === "sent" || a.status === "signed") && admin && <button onClick={() => startContactEdit(a)} className="text-[12px] font-semibold text-amber-600 hover:underline mr-2.5" title="Fix name, email, phone or shipping address — doesn't touch the signed contract terms">Edit contact</button>}
                             <a href={`/api/influencer-agreements/order-sheet?id=${a.id}`} target="_blank" rel="noreferrer" className="text-[12px] font-semibold text-teal-600 hover:underline mr-2.5" title="Printable order sheet — name, delivery address, products, for invoicing or Shopify entry">🖨 Order sheet</a>
-                            {a.status === "signed" && (a.order_sheet_approved_at
-                              ? <span className="text-[11px] font-semibold text-emerald-600" title={`Approved by ${a.order_sheet_approved_by || "—"}`}>✓ Sent to Accounts {fmtD(a.order_sheet_sent_at)}</span>
+                            {a.status === "signed" && (a.cin7_sales_order_ref
+                              ? <span className="text-[11px] font-semibold text-emerald-600" title={`Pushed by ${a.order_sheet_approved_by || "—"} — stage "New" in Cin7, check it before dispatching`}>✓ Cin7 {a.cin7_sales_order_ref}</span>
                               : canApprove
-                                ? <button disabled={busyId === a.id} onClick={() => { if (confirm(`You've reviewed the order sheet for ${a.reference} — approve it and email it to orders@coolkidz.com.au?`)) act(a.id, "approve_order_sheet"); }} className="text-[12px] font-semibold text-white bg-amber-500 hover:bg-amber-600 rounded-md px-2 py-1 disabled:opacity-50">Approve & send</button>
-                                : <span className="text-[11px] font-semibold text-amber-600">⏳ Awaiting Mel's approval</span>)}
-                            {a.order_sheet_approved_at && admin && (a.cin7_sales_order_ref
-                              ? <span className="ml-2.5 text-[11px] font-semibold text-emerald-600" title="Stage &quot;New&quot; in Cin7 — check it before dispatching">✓ Cin7 {a.cin7_sales_order_ref}</span>
-                              : <button disabled={busyId === a.id} onClick={() => act(a.id, "push_cin7")} className="ml-2.5 text-[12px] font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-md px-2 py-1 disabled:opacity-50">Push to Cin7</button>)}
+                                ? <button disabled={busyId === a.id} onClick={() => { if (confirm(`Push ${a.reference} to Cin7 as a sales order?`)) act(a.id, "push_cin7"); }} className="text-[12px] font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-md px-2 py-1 disabled:opacity-50">Push to Cin7</button>
+                                : <span className="text-[11px] font-semibold text-amber-600">⏳ Awaiting Mel's push to Cin7</span>)}
                           </td>
                         </tr>
                         {isOpen && (
