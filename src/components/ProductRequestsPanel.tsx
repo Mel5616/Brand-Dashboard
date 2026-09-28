@@ -1,22 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ShopifyLineItemPicker, type LineItem } from "./ShopifyLineItemPicker";
 
 // Admin queue for free-product/sample requests submitted via the public
 // /product-request form. Approve/reject is admin-only (see
 // api/product-requests) — this is the visibility Mel didn't have before:
 // staff could ask for samples with no one but them tracking it.
 //
-// Fulfilment is a manual "Mark fulfilled" step, not a live push to Shopify
-// or Cin7. The existing gifting flow (src/lib/giftOrderSheet.ts) makes the
-// same call deliberately — a real Shopify/Cin7 order moves real stock and
-// can trigger shipping/payment side effects, so this stays a reviewed
-// handoff rather than an automatic write into either system.
+// "Push to Shopify" creates a DRAFT order (api/product-requests/[id]/push-
+// shopify + shopifyDraftOrder.ts) — never a completed/paid order. A draft
+// still needs a human to open it in Shopify, check the shipping address,
+// and complete it before anything ships. No Cin7 write exists (the
+// account's API key has only ever been used read-only in this codebase).
 type Item = {
   id: string; brand_id: number; reason: string; products: string;
   ship_to_name: string | null; ship_to_address: string | null;
   status: string; admin_note: string | null; approved_by: string | null;
   requester_name: string; requester_email: string; created_at: string;
+  line_items: LineItem[]; shopify_draft_order_url: string | null;
 };
 
 const STATUS_META: Record<string, { label: string; cls: string }> = {
@@ -39,6 +41,8 @@ export function ProductRequestsPanel({ admin = false, brands = [] }: { admin?: b
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [addErr, setAddErr] = useState("");
+  const [pushing, setPushing] = useState<string | null>(null);
+  const [pushErr, setPushErr] = useState<Record<string, string>>({});
 
   const brandName = new Map(brands.map(b => [b.id, b.name]));
 
@@ -54,6 +58,14 @@ export function ProductRequestsPanel({ admin = false, brands = [] }: { admin?: b
     const res = await fetch("/api/product-requests", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, ...fields }) }).then(r => r.json()).catch(() => null);
     if (res?.item) setItems(prev => prev.map(r => (r.id === id ? res.item : r)));
     setNoteEdit(null);
+  }
+
+  async function pushShopify(id: string) {
+    setPushing(id); setPushErr(p => ({ ...p, [id]: "" }));
+    const res = await fetch(`/api/product-requests/${id}/push-shopify`, { method: "POST" }).then(r => r.json()).catch(() => null);
+    setPushing(null);
+    if (res?.ok && res.item) setItems(prev => prev.map(r => (r.id === id ? res.item : r)));
+    else setPushErr(p => ({ ...p, [id]: res?.error || "Couldn't push to Shopify — try again." }));
   }
 
   async function remove(id: string) {
@@ -96,7 +108,7 @@ export function ProductRequestsPanel({ admin = false, brands = [] }: { admin?: b
       </div>
 
       <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5">
-        <p className="text-xs text-slate-500">Approving here does not create an order in Shopify or Cin7 — same as the influencer gifting flow, it's a reviewed handoff. Once approved, key the order in manually and mark it Fulfilled.</p>
+        <p className="text-xs text-slate-500">Approving doesn't ship anything by itself — once approved, add the real products below and push to Shopify as a draft order. A draft still needs to be opened in Shopify, address checked, and completed before it ships. No Cin7 push yet.</p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -177,6 +189,23 @@ export function ProductRequestsPanel({ admin = false, brands = [] }: { admin?: b
                 <p onClick={() => setNoteEdit(r.id)} className="text-xs text-slate-500 bg-slate-50 rounded-lg px-2.5 py-1.5 cursor-text">{r.admin_note}</p>
               ) : (
                 <button onClick={() => setNoteEdit(r.id)} className="text-xs text-gray-400 hover:text-slate-600">+ Add note</button>
+              )}
+
+              {admin && r.status === "approved" && (
+                <div className="space-y-2">
+                  <ShopifyLineItemPicker brandId={r.brand_id} items={r.line_items || []} onChange={li => patch(r.id, { line_items: li })} />
+                  {r.shopify_draft_order_url ? (
+                    <a href={r.shopify_draft_order_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 hover:underline">
+                      ✓ Draft order in Shopify — open to check the address and complete it →
+                    </a>
+                  ) : (
+                    <button onClick={() => pushShopify(r.id)} disabled={pushing === r.id || !(r.line_items?.length)}
+                      className="text-xs font-semibold text-white bg-slate-800 hover:bg-slate-900 disabled:opacity-40 rounded-lg px-3 py-1.5">
+                      {pushing === r.id ? "Pushing…" : "Push to Shopify (draft order)"}
+                    </button>
+                  )}
+                  {pushErr[r.id] && <p className="text-xs text-rose-500">{pushErr[r.id]}</p>}
+                </div>
               )}
 
               <div className="flex flex-wrap gap-2 pt-1">

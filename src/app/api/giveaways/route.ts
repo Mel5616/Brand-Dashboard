@@ -64,6 +64,7 @@ export async function PATCH(req: Request) {
   }
   if (b.admin_note !== undefined) fields.admin_note = b.admin_note ? String(b.admin_note).slice(0, 1000) : null;
   if (b.results !== undefined) fields.results = b.results ? String(b.results).slice(0, 2000) : null;
+  if (b.line_items !== undefined) fields.line_items = Array.isArray(b.line_items) ? b.line_items.slice(0, 50) : [];
   if (b.entry_link !== undefined) fields.entry_link = b.entry_link ? String(b.entry_link).slice(0, 500) : null;
   if (b.start_date !== undefined) fields.start_date = b.start_date || null;
   if (b.end_date !== undefined) fields.end_date = b.end_date || null;

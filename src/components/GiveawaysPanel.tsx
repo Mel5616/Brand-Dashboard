@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ShopifyLineItemPicker, type LineItem } from "./ShopifyLineItemPicker";
 
 // Admin queue for giveaway/competition commitments submitted via the public
 // /giveaway-request form. Approve/reject is admin-only (see api/giveaways) —
@@ -11,6 +12,7 @@ type Item = {
   start_date: string | null; end_date: string | null; results: string | null;
   status: string; admin_note: string | null; approved_by: string | null;
   submitter_name: string; submitter_email: string; created_at: string;
+  line_items: LineItem[]; shopify_draft_order_url: string | null;
 };
 
 const STATUS_META: Record<string, { label: string; cls: string }> = {
@@ -34,6 +36,8 @@ export function GiveawaysPanel({ admin = false, brands = [] }: { admin?: boolean
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [addErr, setAddErr] = useState("");
+  const [pushing, setPushing] = useState<string | null>(null);
+  const [pushErr, setPushErr] = useState<Record<string, string>>({});
 
   const brandName = new Map(brands.map(b => [b.id, b.name]));
 
@@ -49,6 +53,14 @@ export function GiveawaysPanel({ admin = false, brands = [] }: { admin?: boolean
     const res = await fetch("/api/giveaways", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, ...fields }) }).then(r => r.json()).catch(() => null);
     if (res?.item) setItems(prev => prev.map(r => (r.id === id ? res.item : r)));
     setEditField(null);
+  }
+
+  async function pushShopify(id: string) {
+    setPushing(id); setPushErr(p => ({ ...p, [id]: "" }));
+    const res = await fetch(`/api/giveaways/${id}/push-shopify`, { method: "POST" }).then(r => r.json()).catch(() => null);
+    setPushing(null);
+    if (res?.ok && res.item) setItems(prev => prev.map(r => (r.id === id ? res.item : r)));
+    else setPushErr(p => ({ ...p, [id]: res?.error || "Couldn't push to Shopify — try again." }));
   }
 
   async function remove(id: string) {
@@ -186,6 +198,23 @@ export function GiveawaysPanel({ admin = false, brands = [] }: { admin?: boolean
                 <p onClick={() => setEditField({ id: r.id, key: "results" })} className="text-xs text-slate-500 bg-slate-50 rounded-lg px-2.5 py-1.5 cursor-text">Results: {r.results}</p>
               ) : (
                 <button onClick={() => setEditField({ id: r.id, key: "results" })} className="text-xs text-gray-400 hover:text-slate-600">+ Add results</button>
+              )}
+
+              {admin && (r.status === "approved" || r.status === "running") && r.brand_id != null && (
+                <div className="space-y-2">
+                  <ShopifyLineItemPicker brandId={r.brand_id} items={r.line_items || []} onChange={li => patch(r.id, { line_items: li })} />
+                  {r.shopify_draft_order_url ? (
+                    <a href={r.shopify_draft_order_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 hover:underline">
+                      ✓ Draft order in Shopify — open to check the address and complete it →
+                    </a>
+                  ) : (
+                    <button onClick={() => pushShopify(r.id)} disabled={pushing === r.id || !(r.line_items?.length)}
+                      className="text-xs font-semibold text-white bg-slate-800 hover:bg-slate-900 disabled:opacity-40 rounded-lg px-3 py-1.5">
+                      {pushing === r.id ? "Pushing…" : "Push to Shopify (draft order)"}
+                    </button>
+                  )}
+                  {pushErr[r.id] && <p className="text-xs text-rose-500">{pushErr[r.id]}</p>}
+                </div>
               )}
 
               <div className="flex flex-wrap gap-2 pt-1">
