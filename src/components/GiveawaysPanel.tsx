@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ShopifyLineItemPicker, type LineItem } from "./ShopifyLineItemPicker";
+import { Cin7LineItemPicker, type Cin7LineItem } from "./Cin7LineItemPicker";
 
 // Admin queue for giveaway/competition commitments submitted via the public
 // /giveaway-request form. Approve/reject is admin-only (see api/giveaways) —
@@ -13,6 +14,8 @@ type Item = {
   status: string; admin_note: string | null; approved_by: string | null;
   submitter_name: string; submitter_email: string; created_at: string;
   line_items: LineItem[]; shopify_draft_order_url: string | null;
+  cin7_line_items: Cin7LineItem[]; cin7_sales_order_ref: string | null;
+  ship_to_name: string | null; ship_to_address: string | null;
 };
 
 const STATUS_META: Record<string, { label: string; cls: string }> = {
@@ -38,6 +41,8 @@ export function GiveawaysPanel({ admin = false, brands = [] }: { admin?: boolean
   const [addErr, setAddErr] = useState("");
   const [pushing, setPushing] = useState<string | null>(null);
   const [pushErr, setPushErr] = useState<Record<string, string>>({});
+  const [pushingCin7, setPushingCin7] = useState<string | null>(null);
+  const [pushCin7Err, setPushCin7Err] = useState<Record<string, string>>({});
 
   const brandName = new Map(brands.map(b => [b.id, b.name]));
 
@@ -61,6 +66,14 @@ export function GiveawaysPanel({ admin = false, brands = [] }: { admin?: boolean
     setPushing(null);
     if (res?.ok && res.item) setItems(prev => prev.map(r => (r.id === id ? res.item : r)));
     else setPushErr(p => ({ ...p, [id]: res?.error || "Couldn't push to Shopify — try again." }));
+  }
+
+  async function pushCin7(id: string) {
+    setPushingCin7(id); setPushCin7Err(p => ({ ...p, [id]: "" }));
+    const res = await fetch(`/api/giveaways/${id}/push-cin7`, { method: "POST" }).then(r => r.json()).catch(() => null);
+    setPushingCin7(null);
+    if (res?.ok && res.item) setItems(prev => prev.map(r => (r.id === id ? res.item : r)));
+    else setPushCin7Err(p => ({ ...p, [id]: res?.error || "Couldn't push to Cin7 — try again." }));
   }
 
   async function remove(id: string) {
@@ -214,6 +227,25 @@ export function GiveawaysPanel({ admin = false, brands = [] }: { admin?: boolean
                     </button>
                   )}
                   {pushErr[r.id] && <p className="text-xs text-rose-500">{pushErr[r.id]}</p>}
+                </div>
+              )}
+
+              {admin && (r.status === "approved" || r.status === "running") && (
+                <div className="space-y-2 pt-1 border-t border-gray-50">
+                  <div className="grid grid-cols-2 gap-2">
+                    <input defaultValue={r.ship_to_name || ""} placeholder="Winner's name (once drawn)" onBlur={e => patch(r.id, { ship_to_name: e.target.value })} className="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5" />
+                    <input defaultValue={r.ship_to_address || ""} placeholder="Winner's address" onBlur={e => patch(r.id, { ship_to_address: e.target.value })} className="text-xs border border-gray-200 rounded-lg px-2.5 py-1.5" />
+                  </div>
+                  <Cin7LineItemPicker items={r.cin7_line_items || []} onChange={li => patch(r.id, { cin7_line_items: li })} />
+                  {r.cin7_sales_order_ref ? (
+                    <p className="text-xs font-medium text-emerald-600">✓ Cin7 order {r.cin7_sales_order_ref} created — stage "New", check it in Cin7 before dispatching.</p>
+                  ) : (
+                    <button onClick={() => pushCin7(r.id)} disabled={pushingCin7 === r.id || !(r.cin7_line_items?.length)}
+                      className="text-xs font-semibold text-white bg-slate-800 hover:bg-slate-900 disabled:opacity-40 rounded-lg px-3 py-1.5">
+                      {pushingCin7 === r.id ? "Pushing…" : "Push to Cin7"}
+                    </button>
+                  )}
+                  {pushCin7Err[r.id] && <p className="text-xs text-rose-500">{pushCin7Err[r.id]}</p>}
                 </div>
               )}
 

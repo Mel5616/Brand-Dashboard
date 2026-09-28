@@ -62,6 +62,7 @@ export async function PATCH(req: Request) {
   }
   if (b.admin_note !== undefined) fields.admin_note = b.admin_note ? String(b.admin_note).slice(0, 1000) : null;
   if (b.line_items !== undefined) fields.line_items = Array.isArray(b.line_items) ? b.line_items.slice(0, 50) : [];
+  if (b.cin7_line_items !== undefined) fields.cin7_line_items = Array.isArray(b.cin7_line_items) ? b.cin7_line_items.slice(0, 50) : [];
   if (!Object.keys(fields).length) return NextResponse.json({ ok: false, error: "Nothing to update" }, { status: 400 });
 
   const res = await fetch(`${sbUrl}/rest/v1/product_requests?id=eq.${id}`, { method: "PATCH", headers: h({ Prefer: "return=representation" }), body: JSON.stringify(fields) });

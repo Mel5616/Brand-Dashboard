@@ -2,23 +2,23 @@
 
 import { useEffect, useState } from "react";
 import { ShopifyLineItemPicker, type LineItem } from "./ShopifyLineItemPicker";
+import { Cin7LineItemPicker, type Cin7LineItem } from "./Cin7LineItemPicker";
 
 // Admin queue for free-product/sample requests submitted via the public
 // /product-request form. Approve/reject is admin-only (see
 // api/product-requests) — this is the visibility Mel didn't have before:
 // staff could ask for samples with no one but them tracking it.
 //
-// "Push to Shopify" creates a DRAFT order (api/product-requests/[id]/push-
-// shopify + shopifyDraftOrder.ts) — never a completed/paid order. A draft
-// still needs a human to open it in Shopify, check the shipping address,
-// and complete it before anything ships. No Cin7 write exists (the
-// account's API key has only ever been used read-only in this codebase).
+// "Push to Shopify" creates a DRAFT order, "Push to Cin7" creates a
+// SalesOrder at stage "New" — neither ships or charges automatically. See
+// shopifyDraftOrder.ts / cin7SalesOrder.ts for why.
 type Item = {
   id: string; brand_id: number; reason: string; products: string;
   ship_to_name: string | null; ship_to_address: string | null;
   status: string; admin_note: string | null; approved_by: string | null;
   requester_name: string; requester_email: string; created_at: string;
   line_items: LineItem[]; shopify_draft_order_url: string | null;
+  cin7_line_items: Cin7LineItem[]; cin7_sales_order_ref: string | null;
 };
 
 const STATUS_META: Record<string, { label: string; cls: string }> = {
@@ -43,6 +43,8 @@ export function ProductRequestsPanel({ admin = false, brands = [] }: { admin?: b
   const [addErr, setAddErr] = useState("");
   const [pushing, setPushing] = useState<string | null>(null);
   const [pushErr, setPushErr] = useState<Record<string, string>>({});
+  const [pushingCin7, setPushingCin7] = useState<string | null>(null);
+  const [pushCin7Err, setPushCin7Err] = useState<Record<string, string>>({});
 
   const brandName = new Map(brands.map(b => [b.id, b.name]));
 
@@ -66,6 +68,14 @@ export function ProductRequestsPanel({ admin = false, brands = [] }: { admin?: b
     setPushing(null);
     if (res?.ok && res.item) setItems(prev => prev.map(r => (r.id === id ? res.item : r)));
     else setPushErr(p => ({ ...p, [id]: res?.error || "Couldn't push to Shopify — try again." }));
+  }
+
+  async function pushCin7(id: string) {
+    setPushingCin7(id); setPushCin7Err(p => ({ ...p, [id]: "" }));
+    const res = await fetch(`/api/product-requests/${id}/push-cin7`, { method: "POST" }).then(r => r.json()).catch(() => null);
+    setPushingCin7(null);
+    if (res?.ok && res.item) setItems(prev => prev.map(r => (r.id === id ? res.item : r)));
+    else setPushCin7Err(p => ({ ...p, [id]: res?.error || "Couldn't push to Cin7 — try again." }));
   }
 
   async function remove(id: string) {
@@ -205,6 +215,21 @@ export function ProductRequestsPanel({ admin = false, brands = [] }: { admin?: b
                     </button>
                   )}
                   {pushErr[r.id] && <p className="text-xs text-rose-500">{pushErr[r.id]}</p>}
+                </div>
+              )}
+
+              {admin && r.status === "approved" && (
+                <div className="space-y-2 pt-1 border-t border-gray-50">
+                  <Cin7LineItemPicker items={r.cin7_line_items || []} onChange={li => patch(r.id, { cin7_line_items: li })} />
+                  {r.cin7_sales_order_ref ? (
+                    <p className="text-xs font-medium text-emerald-600">✓ Cin7 order {r.cin7_sales_order_ref} created — stage "New", check it in Cin7 before dispatching.</p>
+                  ) : (
+                    <button onClick={() => pushCin7(r.id)} disabled={pushingCin7 === r.id || !(r.cin7_line_items?.length)}
+                      className="text-xs font-semibold text-white bg-slate-800 hover:bg-slate-900 disabled:opacity-40 rounded-lg px-3 py-1.5">
+                      {pushingCin7 === r.id ? "Pushing…" : "Push to Cin7"}
+                    </button>
+                  )}
+                  {pushCin7Err[r.id] && <p className="text-xs text-rose-500">{pushCin7Err[r.id]}</p>}
                 </div>
               )}
 
