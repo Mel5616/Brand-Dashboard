@@ -9,6 +9,7 @@ const STATUSES: { id: string; label: string; bg: string }[] = [
   { id: "archived", label: "Archived", bg: "#64748b" },
 ];
 const statusOf = (s: string) => STATUSES.find(x => x.id === s) ?? STATUSES[0];
+const variantLabel = (name: string, title: string) => name.replace(title, "").trim() || name;
 const fmtDate = (s?: string | null) => s ? new Date(s + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : null;
 
 // Variants of the same product line get grouped into one card. Prefer the
@@ -47,6 +48,7 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
   const [busy, setBusy] = useState("");
   const [msg, setMsg] = useState("");
   const [brandFilter, setBrandFilter] = useState<number | "all">("all");
+  const [groupByStatus, setGroupByStatus] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<HTMLInputElement>(null);
   const imgTarget = useRef<string | null>(null);        // which variant id an uploaded image is for
@@ -71,8 +73,6 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
   const open = groups.find(g => g.key === openKey) || null;
   const rep = open?.members[0];
   useEffect(() => { setEdit(rep ? { ...rep } : null); }, [openKey]); // eslint-disable-line react-hooks/exhaustive-deps
-  const variantLabel = (name: string, title: string) => name.replace(title, "").trim() || name;
-
   async function save() {
     if (!open || !edit) return;
     setBusy("save");
@@ -182,6 +182,9 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
               {presentBrandIds.map((id: any) => <option key={id} value={id}>{brandName.get(id) ?? `Brand ${id}`}</option>)}
             </select>
           )}
+          <button onClick={() => setGroupByStatus(v => !v)} className={`text-sm font-medium rounded-lg px-3 py-2 border ${groupByStatus ? "text-emerald-700 bg-emerald-50 border-emerald-200" : "text-gray-600 bg-white border-gray-200 hover:bg-gray-50"}`}>
+            {groupByStatus ? "Grouped by status" : "A–Z"}
+          </button>
           {canEdit && (
             <>
               <a href="/templates/new-products-import-template.xlsx" download className="text-sm font-medium text-emerald-700 bg-white border border-emerald-200 hover:bg-emerald-50 rounded-lg px-4 py-2">Download template</a>
@@ -194,35 +197,27 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
 
       {groups.length === 0 ? (
         <div className="bg-white rounded-2xl border border-dashed border-gray-200 p-10 text-center text-sm text-gray-400">Upload your New Products Excel to get started.</div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {visibleGroups.map(g => {
-            const r = g.members[0]; const st = statusOf(r.status);
-            const img = g.members.find(m => m.attrs?.image_url)?.attrs?.image_url;
-            const ready = g.members.every(m => m.long_description);
-            const colours = g.members.map(m => variantLabel(m.name, g.title)).filter(Boolean);
+      ) : groupByStatus ? (
+        <div className="space-y-6">
+          {STATUSES.map(st => {
+            const rows = visibleGroups.filter(g => (g.members[0].status || STATUSES[0].id) === st.id);
+            if (!rows.length) return null;
             return (
-              <div key={g.key} role="button" tabIndex={0} onClick={() => setOpenKey(g.key)} onKeyDown={e => { if (e.key === "Enter") setOpenKey(g.key); }} className="cursor-pointer text-left bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow hover:border-emerald-200 transition p-3">
-                <div className="flex items-center justify-between mb-1.5">
-                  {r.brand_id != null && BRAND_LOGOS[r.brand_id] ? <img src={BRAND_LOGOS[r.brand_id]} alt="" className="h-4 max-w-[64px] object-contain" /> : <span className="text-[10px] text-gray-400">—</span>}
-                  <span className="text-[9px] font-semibold text-white rounded-full px-1.5 py-0.5" style={{ background: st.bg }}>{st.label}</span>
+              <div key={st.id}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-2 h-2 rounded-full" style={{ background: st.bg }} />
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{st.label} · {rows.length}</p>
                 </div>
-                {img && <img src={img} alt="" className="w-full h-20 object-contain rounded-md bg-gray-50 mb-1.5" />}
-                <p className="text-sm font-medium text-slate-700 leading-snug line-clamp-2 min-h-[2.5rem]">{g.title}</p>
-                <div className="flex items-center justify-between mt-1.5">
-                  <span className="text-[10px] text-gray-400 truncate">{g.members.length > 1 ? `${g.members.length} colours` : r.sku}</span>
-                  <span className={`text-[10px] ${ready ? "text-emerald-500" : "text-amber-500"}`}>{ready ? "copy ready" : "needs copy"}</span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {rows.map(g => <ProductCard key={g.key} g={g} canEdit={canEdit} onOpen={() => setOpenKey(g.key)} onCopyLink={copyLink} />)}
                 </div>
-                {colours.length > 1 && <p className="text-[10px] text-gray-400 mt-0.5 truncate">{colours.join(", ")}</p>}
-                {canEdit && <div className="mt-2 pt-2 border-t border-gray-50 flex justify-end">
-                  <button onClick={e => { e.stopPropagation(); copyLink(r.share_token); }} className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 hover:text-emerald-600">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 11-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 115.656 5.656l-1.5 1.5" /></svg>
-                    Copy link
-                  </button>
-                </div>}
               </div>
             );
           })}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {visibleGroups.map(g => <ProductCard key={g.key} g={g} canEdit={canEdit} onOpen={() => setOpenKey(g.key)} onCopyLink={copyLink} />)}
         </div>
       )}
 
@@ -311,6 +306,34 @@ export function NewProducts({ brands, canEdit = false }: { brands: { id: number;
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ProductCard({ g, canEdit, onOpen, onCopyLink }: { g: { key: string; title: string; members: any[] }; canEdit: boolean; onOpen: () => void; onCopyLink: (token: string | null | undefined, ok?: string) => void }) {
+  const r = g.members[0]; const st = statusOf(r.status);
+  const img = g.members.find((m: any) => m.attrs?.image_url)?.attrs?.image_url;
+  const ready = g.members.every((m: any) => m.long_description);
+  const colours = g.members.map((m: any) => variantLabel(m.name, g.title)).filter(Boolean);
+  return (
+    <div role="button" tabIndex={0} onClick={onOpen} onKeyDown={e => { if (e.key === "Enter") onOpen(); }} className="cursor-pointer text-left bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow hover:border-emerald-200 transition p-3">
+      <div className="flex items-center justify-between mb-1.5">
+        {r.brand_id != null && BRAND_LOGOS[r.brand_id] ? <img src={BRAND_LOGOS[r.brand_id]} alt="" className="h-4 max-w-[64px] object-contain" /> : <span className="text-[10px] text-gray-400">—</span>}
+        <span className="text-[9px] font-semibold text-white rounded-full px-1.5 py-0.5" style={{ background: st.bg }}>{st.label}</span>
+      </div>
+      {img && <img src={img} alt="" className="w-full h-20 object-contain rounded-md bg-gray-50 mb-1.5" />}
+      <p className="text-sm font-medium text-slate-700 leading-snug line-clamp-2 min-h-[2.5rem]">{g.title}</p>
+      <div className="flex items-center justify-between mt-1.5">
+        <span className="text-[10px] text-gray-400 truncate">{g.members.length > 1 ? `${g.members.length} colours` : r.sku}</span>
+        <span className={`text-[10px] ${ready ? "text-emerald-500" : "text-amber-500"}`}>{ready ? "copy ready" : "needs copy"}</span>
+      </div>
+      {colours.length > 1 && <p className="text-[10px] text-gray-400 mt-0.5 truncate">{colours.join(", ")}</p>}
+      {canEdit && <div className="mt-2 pt-2 border-t border-gray-50 flex justify-end">
+        <button onClick={e => { e.stopPropagation(); onCopyLink(r.share_token); }} className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 hover:text-emerald-600">
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 11-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 115.656 5.656l-1.5 1.5" /></svg>
+          Copy link
+        </button>
+      </div>}
     </div>
   );
 }
