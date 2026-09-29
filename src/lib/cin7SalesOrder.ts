@@ -88,15 +88,32 @@ export async function createCin7SalesOrder(opts: {
     }),
   };
 
-  const res = await cin7Fetch("/v1/Quotes", { method: "POST", body: JSON.stringify(body) });
+  // Cin7's own API docs (POST api/v1/Quotes: "Create a list of Quotes") say
+  // this endpoint takes an ARRAY, and responds with an array of
+  // {index, success, id, code, errors} batch results — not a single Quote
+  // object either way round. A bare object body was the real cause of the
+  // "Missing or malformed JSON data" error every attempt hit.
+  const res = await cin7Fetch("/v1/Quotes", { method: "POST", body: JSON.stringify([body]) });
   if (!res) return { ok: false, error: "Cin7 isn't configured" };
   const text = await res.text();
   if (!res.ok) {
-    console.error(`[cin7SalesOrder] POST /v1/Quotes failed, status=${res.status}, body=${text.slice(0, 500)}, requestBody=${JSON.stringify(body).slice(0, 500)}`);
+    console.error(`[cin7SalesOrder] POST /v1/Quotes failed, status=${res.status}, body=${text.slice(0, 500)}, requestBody=${JSON.stringify([body]).slice(0, 500)}`);
     return { ok: false, error: text.slice(0, 300) || `Cin7 request failed (${res.status})` };
   }
-  const json = JSON.parse(text || "{}");
-  const order = Array.isArray(json) ? json[0] : json;
-  if (!order?.id) return { ok: false, error: "Cin7 returned no order id" };
-  return { ok: true, id: order.id, reference: order.reference || String(order.id) };
+  const json = JSON.parse(text || "[]");
+  const result = Array.isArray(json) ? json[0] : json;
+  if (!result?.success || !result?.id) {
+    const errText = Array.isArray(result?.errors) ? result.errors.join("; ") : "";
+    console.error(`[cin7SalesOrder] POST /v1/Quotes batch item failed: ${JSON.stringify(result).slice(0, 500)}`);
+    return { ok: false, error: errText || "Cin7 didn't confirm the Quote was created" };
+  }
+  // The batch result only carries id/code, not the human-readable reference
+  // — fetch it so the dashboard shows the same reference Cin7's own UI does.
+  let reference = String(result.id);
+  const getRes = await cin7Fetch(`/v1/Quotes/${result.id}`);
+  if (getRes?.ok) {
+    const quote = await getRes.json().catch(() => null);
+    if (quote?.reference) reference = quote.reference;
+  }
+  return { ok: true, id: result.id, reference };
 }
