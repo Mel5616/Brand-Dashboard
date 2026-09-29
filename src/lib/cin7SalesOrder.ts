@@ -67,6 +67,10 @@ export async function createCin7SalesOrder(opts: {
     taxRate: 10, // AU GST — required by Cin7 whenever taxStatus is set explicitly
     deliveryFirstName: firstName || "Recipient",
     deliveryLastName: lastName,
+    // Left blank on purpose — Cin7 otherwise defaults it to the top-level
+    // `company` (Coolkidz Marketing 26/27, the billing entity), which reads
+    // as if the recipient works there.
+    deliveryCompany: "",
     deliveryAddress1: opts.deliveryAddress?.address1 || CIN7_PLACEHOLDER_ADDRESS.address1,
     deliveryAddress2: opts.deliveryAddress?.address2 || undefined,
     deliveryCity: opts.deliveryAddress?.city || CIN7_PLACEHOLDER_ADDRESS.city,
