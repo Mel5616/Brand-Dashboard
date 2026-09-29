@@ -19,13 +19,15 @@ import { cin7Fetch, cin7Configured } from "./cin7";
 // go in the delivery fields and deliveryInstructions/customerOrderNo, not
 // the billing contact.
 //
-// The real delivery address is passed as free text inside
-// deliveryInstructions, not Cin7's structured delivery1/city/state/postcode
-// fields — the source data (site_deals.ship_to_address /
-// giveaways.ship_to_address) is one free-text blob, and parsing that into
-// structured fields reliably isn't safe to guess. Whoever advances the
-// order past "New" in Cin7 reads it from there and enters/verifies the
-// structured address themselves.
+// The delivery address goes into Cin7's structured delivery1/city/
+// state/postcode fields whenever the caller has genuine structured address
+// data (deliveryAddress opt) — Influencer Agreements' contact record does.
+// Callers without structured data (Giveaways/Product Requests — their
+// source is one free-text ship_to_address blob) fall back to the fixed
+// Coolkidz placeholder address for the structured fields, with the real
+// address only in deliveryInstructions free text; parsing a free-text blob
+// into structured fields isn't safe to guess. Either way the free-text
+// deliveryInstructions also always carries the real address as a backup.
 //
 // Line items carry the real retail unitPrice with a 100% discount (net $0)
 // — Mel's own instruction, matching how gifted stock is entered manually
@@ -38,11 +40,13 @@ const CIN7_BRANCH_ID = 3;
 const CIN7_PLACEHOLDER_ADDRESS = { address1: "1 Beyer Road", city: "Braeside", state: "Victoria", postalCode: "3195", country: "Australia" };
 
 export type Cin7LineItem = { product_id: number; product_option_id: number; code: string; name: string; quantity: number; retail_price?: number | null };
+export type Cin7DeliveryAddress = { address1: string; address2?: string | null; city: string; state: string; postcode: string; country?: string; isPoBox?: boolean };
 
 type Result = { ok: true; id: number; reference: string } | { ok: false; error: string };
 
 export async function createCin7SalesOrder(opts: {
-  lineItems: Cin7LineItem[]; recipientName: string; recipientEmail?: string | null; recipientPhone?: string | null; shipToText: string; customerOrderNo: string;
+  lineItems: Cin7LineItem[]; recipientName: string; recipientEmail?: string | null; recipientPhone?: string | null;
+  deliveryAddress?: Cin7DeliveryAddress | null; shipToText: string; customerOrderNo: string;
 }): Promise<Result> {
   if (!cin7Configured()) return { ok: false, error: "Cin7 isn't configured (CIN7_USERNAME/CIN7_API_KEY)" };
   if (!opts.lineItems.length) return { ok: false, error: "No products selected — search and add at least one before pushing." };
@@ -63,11 +67,12 @@ export async function createCin7SalesOrder(opts: {
     taxRate: 10, // AU GST — required by Cin7 whenever taxStatus is set explicitly
     deliveryFirstName: firstName || "Recipient",
     deliveryLastName: lastName,
-    deliveryAddress1: CIN7_PLACEHOLDER_ADDRESS.address1,
-    deliveryCity: CIN7_PLACEHOLDER_ADDRESS.city,
-    deliveryState: CIN7_PLACEHOLDER_ADDRESS.state,
-    deliveryPostalCode: CIN7_PLACEHOLDER_ADDRESS.postalCode,
-    deliveryCountry: CIN7_PLACEHOLDER_ADDRESS.country,
+    deliveryAddress1: opts.deliveryAddress?.address1 || CIN7_PLACEHOLDER_ADDRESS.address1,
+    deliveryAddress2: opts.deliveryAddress?.address2 || undefined,
+    deliveryCity: opts.deliveryAddress?.city || CIN7_PLACEHOLDER_ADDRESS.city,
+    deliveryState: opts.deliveryAddress?.state || CIN7_PLACEHOLDER_ADDRESS.state,
+    deliveryPostalCode: opts.deliveryAddress?.postcode || CIN7_PLACEHOLDER_ADDRESS.postalCode,
+    deliveryCountry: opts.deliveryAddress?.country || CIN7_PLACEHOLDER_ADDRESS.country,
     billingFirstName: firstName || "Recipient",
     billingLastName: lastName,
     billingAddress1: CIN7_PLACEHOLDER_ADDRESS.address1,
@@ -76,14 +81,22 @@ export async function createCin7SalesOrder(opts: {
     billingPostalCode: CIN7_PLACEHOLDER_ADDRESS.postalCode,
     billingCountry: CIN7_PLACEHOLDER_ADDRESS.country,
     customerOrderNo: opts.customerOrderNo.slice(0, 100),
-    deliveryInstructions: `${opts.shipToText}\n\nSHIPPING ADDRESS NOT VERIFIED — enter/confirm the real delivery address before dispatching.`.slice(0, 2000),
+    deliveryInstructions: [
+      opts.shipToText,
+      opts.deliveryAddress
+        ? `Delivery address entered above from the influencer's contact record — double-check it before dispatching (typos, PO Box/courier restrictions).${opts.deliveryAddress.isPoBox ? " ⚠ PO BOX on file — cannot ship courier." : ""}`
+        : "SHIPPING ADDRESS NOT VERIFIED — enter/confirm the real delivery address before dispatching.",
+    ].join("\n\n").slice(0, 2000),
     internalComments: `${giftNote}. ${opts.customerOrderNo}`.slice(0, 500),
     stage: "New",
+    // ProductId is read-only per Cin7's docs — ProductOptionId or Code is
+    // what actually links the product. Sending both since ProductOptionId
+    // alone silently failed to attach (stored as 0) on the first real push.
     lineItems: opts.lineItems.map(li => {
       const qty = Math.max(1, Math.floor(li.quantity) || 1);
       const unitPrice = li.retail_price ?? 0;
       return {
-        productId: li.product_id, productOptionId: li.product_option_id, qty,
+        productOptionId: li.product_option_id, code: li.code, qty,
         unitPrice, discount: Number((unitPrice * qty).toFixed(2)), lineComments: giftNote,
       };
     }),

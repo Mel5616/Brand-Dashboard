@@ -428,7 +428,12 @@ export async function PATCH(req: Request) {
     ].filter(Boolean).join("\n");
 
     const result = await createCin7SalesOrder({
-      lineItems, recipientName: infl?.full_name || "Influencer", recipientEmail: infl?.email, recipientPhone: infl?.phone, shipToText,
+      lineItems, recipientName: infl?.full_name || "Influencer", recipientEmail: infl?.email, recipientPhone: infl?.phone,
+      deliveryAddress: infl?.address_line1 && infl?.suburb && infl?.state && infl?.postcode ? {
+        address1: infl.address_line1, address2: infl.address_line2, city: infl.suburb, state: infl.state,
+        postcode: infl.postcode, country: "Australia", isPoBox: !!infl.is_po_box,
+      } : null,
+      shipToText,
       customerOrderNo: `Influencer — ${a.reference} — ${infl?.full_name || ""}`,
     });
     if (!result.ok) return NextResponse.json({ ok: false, error: result.error }, { status: 400 });
