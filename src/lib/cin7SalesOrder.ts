@@ -73,6 +73,11 @@ export async function createCin7SalesOrder(opts: {
     customerOrderNo: opts.customerOrderNo.slice(0, 100),
     deliveryInstructions: `${opts.shipToText}\n\nSHIPPING ADDRESS NOT VERIFIED — enter/confirm the real delivery address before dispatching.`.slice(0, 2000),
     internalComments: `${giftNote}. ${opts.customerOrderNo}`.slice(0, 500),
+    // Quote-only fields (SalesOrders don't have these) — a real Quote read
+    // back from Cin7 always carries them, so the create endpoint may
+    // require them explicitly even though they show as optional on read.
+    probability: 100,
+    expectedOrderDate: new Date(Date.now() + 7 * 86400000).toISOString(),
     lineItems: opts.lineItems.map(li => {
       const qty = Math.max(1, Math.floor(li.quantity) || 1);
       const unitPrice = li.retail_price ?? 0;
