@@ -1,9 +1,14 @@
 import { cin7Fetch, cin7Configured } from "./cin7";
 
-// Creates a Cin7 SalesOrder at stage "New" — the start of Cin7's own
-// pipeline (New -> Picking -> Packing -> Dispatched). Nothing is picked or
-// shipped until someone in Cin7 advances it, same "reviewed handoff"
-// principle as the Shopify draft-order push (shopifyDraftOrder.ts).
+// Creates a Cin7 Quote — genuinely uncommitted, unlike a SalesOrder (which
+// starts Cin7's real fulfilment pipeline New -> Picking -> Packing ->
+// Dispatched). A Quote sits on its own until someone in Cin7 deliberately
+// converts it to a SalesOrder, which is the right "reviewed handoff" shape
+// for a gifted/influencer product line — Mel asked for exactly this
+// ("can we save as a draft in cin?") after three straight SalesOrder
+// attempts (with a fully populated address/branch/email/currency body,
+// confirmed against ~20 real orders on the same endpoint) all came back
+// with the same content-free 500 from Cin7's side.
 //
 // Always billed to the fixed "Coolkidz Marketing 26/27" account (Cin7
 // contact id 67298, confirmed with Mel directly) — real recipient details
@@ -14,23 +19,21 @@ import { cin7Fetch, cin7Configured } from "./cin7";
 // deliveryInstructions, not Cin7's structured delivery1/city/state/postcode
 // fields — the source data (site_deals.ship_to_address /
 // giveaways.ship_to_address) is one free-text blob, and parsing that into
-// structured fields reliably isn't safe to guess. Whoever advances the
-// order past "New" in Cin7 reads it from there and enters/verifies the
-// structured address themselves.
+// structured fields reliably isn't safe to guess. Whoever converts the
+// Quote in Cin7 reads it from there and enters/verifies the structured
+// address themselves.
 //
-// Cin7 still requires *something* in the structured billing/delivery
-// address and a branchId to create the order at all (a bare 500 with no
-// detail otherwise) — confirmed against 3 real past orders on this exact
-// member (CMAR67298-1/2/3), which all used the member's own fixed address
-// and branchId 3. That's not a guess at the recipient's address, it's the
-// billing member's own known, fixed address — same placeholder every real
-// order for this account has used.
+// Line items carry the real retail unitPrice with a 100% discount (net $0)
+// — Mel's own instruction, matching how gifted stock is entered manually
+// elsewhere in Cin7: the product/quantity still shows for stock-accounting
+// purposes, but nothing is actually charged. lineComments and
+// internalComments both spell out why.
 const CIN7_MEMBER_ID = 67298;
 const CIN7_COMPANY = "Coolkidz Marketing 26/27";
 const CIN7_BRANCH_ID = 3;
 const CIN7_PLACEHOLDER_ADDRESS = { address1: "1 Beyer Road", city: "Braeside", state: "Victoria", postalCode: "3195", country: "Australia" };
 
-export type Cin7LineItem = { product_id: number; product_option_id: number; code: string; name: string; quantity: number };
+export type Cin7LineItem = { product_id: number; product_option_id: number; code: string; name: string; quantity: number; retail_price?: number | null };
 
 type Result = { ok: true; id: number; reference: string } | { ok: false; error: string };
 
@@ -42,17 +45,13 @@ export async function createCin7SalesOrder(opts: {
 
   const [firstName, ...rest] = (opts.recipientName || "Recipient").trim().split(/\s+/);
   const lastName = rest.join(" ") || "";
+  const giftNote = "Gifted product — 100% discount, no charge";
   const body = {
     memberId: CIN7_MEMBER_ID,
     company: CIN7_COMPANY,
     branchId: CIN7_BRANCH_ID,
     firstName: firstName || "Recipient",
     lastName,
-    // Every real order created via this same API endpoint (checked ~20
-    // recent ones across Myer/BigW/Amazon/Freedom integrations) has a
-    // non-empty email plus currencyCode/taxStatus set explicitly — ours had
-    // none of the three, which lines up with the generic 500 we were
-    // getting (Cin7's API error message gives no field-level detail).
     email: opts.recipientEmail || "orders@coolkidz.com.au",
     phone: opts.recipientPhone || undefined,
     currencyCode: "AUD",
@@ -73,15 +72,22 @@ export async function createCin7SalesOrder(opts: {
     billingCountry: CIN7_PLACEHOLDER_ADDRESS.country,
     customerOrderNo: opts.customerOrderNo.slice(0, 100),
     deliveryInstructions: `${opts.shipToText}\n\nSHIPPING ADDRESS NOT VERIFIED — enter/confirm the real delivery address before dispatching.`.slice(0, 2000),
-    stage: "New",
-    lineItems: opts.lineItems.map(li => ({ productId: li.product_id, productOptionId: li.product_option_id, qty: Math.max(1, Math.floor(li.quantity) || 1) })),
+    internalComments: `${giftNote}. ${opts.customerOrderNo}`.slice(0, 500),
+    lineItems: opts.lineItems.map(li => {
+      const qty = Math.max(1, Math.floor(li.quantity) || 1);
+      const unitPrice = li.retail_price ?? 0;
+      return {
+        productId: li.product_id, productOptionId: li.product_option_id, qty,
+        unitPrice, discount: Number((unitPrice * qty).toFixed(2)), lineComments: giftNote,
+      };
+    }),
   };
 
-  const res = await cin7Fetch("/v1/SalesOrders", { method: "POST", body: JSON.stringify(body) });
+  const res = await cin7Fetch("/v1/Quotes", { method: "POST", body: JSON.stringify(body) });
   if (!res) return { ok: false, error: "Cin7 isn't configured" };
   const text = await res.text();
   if (!res.ok) {
-    console.error(`[cin7SalesOrder] POST /v1/SalesOrders failed, status=${res.status}, body=${text.slice(0, 500)}, requestBody=${JSON.stringify(body).slice(0, 500)}`);
+    console.error(`[cin7SalesOrder] POST /v1/Quotes failed, status=${res.status}, body=${text.slice(0, 500)}, requestBody=${JSON.stringify(body).slice(0, 500)}`);
     return { ok: false, error: text.slice(0, 300) || `Cin7 request failed (${res.status})` };
   }
   const json = JSON.parse(text || "{}");
