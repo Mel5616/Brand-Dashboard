@@ -123,13 +123,13 @@ export function classifyBrand(desc: string): string {
 // Product line. Current model vs (legacy) — the V2/older generation.
 // Vista: legacy = UPV2, everything else current. Cruz/Minu: current = V3, else legacy.
 export const MODEL_ORDER = [
-  'Vista','Vista (legacy)','Cruz','Cruz (legacy)','Minu','Minu (legacy)',
+  'Vista','Vista (legacy)','Cruz','Cruz (legacy)','Minu','Minu (legacy)','Minu Duo',
   'Ridge','RumbleSeat','Bassinet','Accessory','Wagon',
 ] as const;
 
 // Pram lines = the highlighted supplier-code columns from the BB report.
 export const PRAM_MODELS = new Set<string>([
-  'Vista','Vista (legacy)','Cruz','Cruz (legacy)','Minu','Minu (legacy)','Ridge','RumbleSeat',
+  'Vista','Vista (legacy)','Cruz','Cruz (legacy)','Minu','Minu (legacy)','Minu Duo','Ridge','RumbleSeat',
 ]);
 
 // The current-generation key prams — used for the best-selling-colours breakdown.
@@ -153,6 +153,10 @@ export function classifyModel(desc: string, brand: string, code = ''): string {
     c ? (cur.test(c) ? current : legacy) : (descV2.test(d) ? legacy : current);
   if (d.includes('VISTA') || /^UPV[0-9]/.test(c)) return ver(/^UPV3/, 'Vista', 'Vista (legacy)', /VISTA V2|VISTA 201[0-9]/);
   if (d.includes('CRUZ')  || /^UPC[0-9]/.test(c)) return ver(/^UPC3/, 'Cruz',  'Cruz (legacy)',  /CRUZ (V2|201[0-9])/);
+  // Minu Duo is its own product line (double stroller), not a Minu variant —
+  // must be checked before the generic MINU match below or it silently
+  // merges into the single-seat Minu row.
+  if (d.includes('MINU') && d.includes('DUO')) return 'Minu Duo';
   if (d.includes('MINU')  || /^UPM[0-9]/.test(c)) return ver(/^UPM3/, 'Minu',  'Minu (legacy)',  /MINU V2|MINU 201[0-9]/);
   if (brand === 'WonderFold') return 'Wagon';
   return 'Accessory';
