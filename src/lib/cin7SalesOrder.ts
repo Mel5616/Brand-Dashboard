@@ -60,6 +60,7 @@ export async function createCin7SalesOrder(opts: {
     phone: opts.recipientPhone || undefined,
     currencyCode: "AUD",
     taxStatus: "Incl",
+    taxRate: 10, // AU GST — required by Cin7 whenever taxStatus is set explicitly
     deliveryFirstName: firstName || "Recipient",
     deliveryLastName: lastName,
     deliveryAddress1: CIN7_PLACEHOLDER_ADDRESS.address1,
