@@ -56,6 +56,19 @@ jobs:
     uses: ./.github/workflows/sync-one.yml
     with: { script: "scripts/sync_partnership_cin7_sales.py" }
     secrets: inherit
+  asana_restock_eta:
+    # Fallback for cin7_restock_eta above: most open Cin7 POs don't have an
+    # Estimated Arrival Date filled in, so staff track a month-level ETA by
+    # hand on the Asana Stock Report board ("Ordering For") instead. Mirrors
+    # that onto custom.restock_eta_month (text, e.g. "December 2026"), read
+    # by the storefront only when the day-precision custom.restock_eta is
+    # absent — Cin7's exact date always wins when it exists. Needs `asana`
+    # to have written fresh asana_tasks rows first.
+    needs: asana
+    if: ${{ always() }}
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/sync_asana_restock_eta.py" }
+    secrets: inherit
   promo_calendar:
     uses: ./.github/workflows/sync-one.yml
     with: { script: "scripts/load_promotions.py" }
@@ -150,9 +163,10 @@ jobs:
   #    this run, so it needs every other job to have finished first ──
   sync_failure_alerts:
     needs: [asana, connecteam, main, tradeshow_breakdown, cin7_costs, partnership_cin7_sales,
-            promo_calendar, shopify_sources, meta_ads, pinterest, youtube, commission_factory,
-            instagram, instagram_media, ga4, eventbrite, klaviyo, search_console, blog_hub,
-            shopify_extras, cost_sheet, influencer_sales, metric_alerts, ai_insights]
+            asana_restock_eta, promo_calendar, shopify_sources, meta_ads, pinterest, youtube,
+            commission_factory, instagram, instagram_media, ga4, eventbrite, klaviyo,
+            search_console, blog_hub, shopify_extras, cost_sheet, influencer_sales,
+            metric_alerts, ai_insights]
     if: ${{ always() }}
     uses: ./.github/workflows/sync-one.yml
     with: { script: "scripts/alert_sync.py" }
