@@ -1,14 +1,18 @@
 import { cin7Fetch, cin7Configured } from "./cin7";
 
-// Creates a Cin7 Quote — genuinely uncommitted, unlike a SalesOrder (which
-// starts Cin7's real fulfilment pipeline New -> Picking -> Packing ->
-// Dispatched). A Quote sits on its own until someone in Cin7 deliberately
-// converts it to a SalesOrder, which is the right "reviewed handoff" shape
-// for a gifted/influencer product line — Mel asked for exactly this
-// ("can we save as a draft in cin?") after three straight SalesOrder
-// attempts (with a fully populated address/branch/email/currency body,
-// confirmed against ~20 real orders on the same endpoint) all came back
-// with the same content-free 500 from Cin7's side.
+// Creates a Cin7 SalesOrder at stage "New" — the start of Cin7's own
+// fulfilment pipeline (New -> Picking -> Packing -> Dispatched). Nothing
+// ships until someone in Cin7 advances it past "New", same "reviewed
+// handoff" principle as the Shopify draft-order push (shopifyDraftOrder.ts).
+//
+// Went SalesOrders -> Quotes -> back to SalesOrders: the real bug the whole
+// time was that Cin7's own API docs (POST api/v1/SalesOrders /
+// api/v1/Quotes: "Create a list of ...") expect the request body wrapped in
+// an ARRAY, which nothing here was doing — that's what "Missing or
+// malformed JSON data" / the earlier content-free 500s actually meant.
+// SalesOrders' Create permission was confirmed enabled from the very start
+// (unlike Quotes, whose permission kept reverting/not saving cleanly), so
+// this is now the more reliable endpoint of the two.
 //
 // Always billed to the fixed "Coolkidz Marketing 26/27" account (Cin7
 // contact id 67298, confirmed with Mel directly) — real recipient details
@@ -19,9 +23,9 @@ import { cin7Fetch, cin7Configured } from "./cin7";
 // deliveryInstructions, not Cin7's structured delivery1/city/state/postcode
 // fields — the source data (site_deals.ship_to_address /
 // giveaways.ship_to_address) is one free-text blob, and parsing that into
-// structured fields reliably isn't safe to guess. Whoever converts the
-// Quote in Cin7 reads it from there and enters/verifies the structured
-// address themselves.
+// structured fields reliably isn't safe to guess. Whoever advances the
+// order past "New" in Cin7 reads it from there and enters/verifies the
+// structured address themselves.
 //
 // Line items carry the real retail unitPrice with a 100% discount (net $0)
 // — Mel's own instruction, matching how gifted stock is entered manually
@@ -73,11 +77,7 @@ export async function createCin7SalesOrder(opts: {
     customerOrderNo: opts.customerOrderNo.slice(0, 100),
     deliveryInstructions: `${opts.shipToText}\n\nSHIPPING ADDRESS NOT VERIFIED — enter/confirm the real delivery address before dispatching.`.slice(0, 2000),
     internalComments: `${giftNote}. ${opts.customerOrderNo}`.slice(0, 500),
-    // Quote-only fields (SalesOrders don't have these) — a real Quote read
-    // back from Cin7 always carries them, so the create endpoint may
-    // require them explicitly even though they show as optional on read.
-    probability: 100,
-    expectedOrderDate: new Date(Date.now() + 7 * 86400000).toISOString(),
+    stage: "New",
     lineItems: opts.lineItems.map(li => {
       const qty = Math.max(1, Math.floor(li.quantity) || 1);
       const unitPrice = li.retail_price ?? 0;
@@ -88,32 +88,31 @@ export async function createCin7SalesOrder(opts: {
     }),
   };
 
-  // Cin7's own API docs (POST api/v1/Quotes: "Create a list of Quotes") say
-  // this endpoint takes an ARRAY, and responds with an array of
-  // {index, success, id, code, errors} batch results — not a single Quote
-  // object either way round. A bare object body was the real cause of the
-  // "Missing or malformed JSON data" error every attempt hit.
-  const res = await cin7Fetch("/v1/Quotes", { method: "POST", body: JSON.stringify([body]) });
+  // Cin7's own API docs (POST api/v1/SalesOrders: "Create a list of Sales
+  // Orders") say this endpoint takes an ARRAY, and responds with an array
+  // of {index, success, id, code, errors} batch results — not a single
+  // order object either way round.
+  const res = await cin7Fetch("/v1/SalesOrders", { method: "POST", body: JSON.stringify([body]) });
   if (!res) return { ok: false, error: "Cin7 isn't configured" };
   const text = await res.text();
   if (!res.ok) {
-    console.error(`[cin7SalesOrder] POST /v1/Quotes failed, status=${res.status}, body=${text.slice(0, 500)}, requestBody=${JSON.stringify([body]).slice(0, 500)}`);
+    console.error(`[cin7SalesOrder] POST /v1/SalesOrders failed, status=${res.status}, body=${text.slice(0, 500)}, requestBody=${JSON.stringify([body]).slice(0, 500)}`);
     return { ok: false, error: text.slice(0, 300) || `Cin7 request failed (${res.status})` };
   }
   const json = JSON.parse(text || "[]");
   const result = Array.isArray(json) ? json[0] : json;
   if (!result?.success || !result?.id) {
     const errText = Array.isArray(result?.errors) ? result.errors.join("; ") : "";
-    console.error(`[cin7SalesOrder] POST /v1/Quotes batch item failed: ${JSON.stringify(result).slice(0, 500)}`);
-    return { ok: false, error: errText || "Cin7 didn't confirm the Quote was created" };
+    console.error(`[cin7SalesOrder] POST /v1/SalesOrders batch item failed: ${JSON.stringify(result).slice(0, 500)}`);
+    return { ok: false, error: errText || "Cin7 didn't confirm the order was created" };
   }
   // The batch result only carries id/code, not the human-readable reference
   // — fetch it so the dashboard shows the same reference Cin7's own UI does.
   let reference = String(result.id);
-  const getRes = await cin7Fetch(`/v1/Quotes/${result.id}`);
+  const getRes = await cin7Fetch(`/v1/SalesOrders/${result.id}`);
   if (getRes?.ok) {
-    const quote = await getRes.json().catch(() => null);
-    if (quote?.reference) reference = quote.reference;
+    const order = await getRes.json().catch(() => null);
+    if (order?.reference) reference = order.reference;
   }
   return { ok: true, id: result.id, reference };
 }
