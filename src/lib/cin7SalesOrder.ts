@@ -35,7 +35,7 @@ export type Cin7LineItem = { product_id: number; product_option_id: number; code
 type Result = { ok: true; id: number; reference: string } | { ok: false; error: string };
 
 export async function createCin7SalesOrder(opts: {
-  lineItems: Cin7LineItem[]; recipientName: string; shipToText: string; customerOrderNo: string;
+  lineItems: Cin7LineItem[]; recipientName: string; recipientEmail?: string | null; recipientPhone?: string | null; shipToText: string; customerOrderNo: string;
 }): Promise<Result> {
   if (!cin7Configured()) return { ok: false, error: "Cin7 isn't configured (CIN7_USERNAME/CIN7_API_KEY)" };
   if (!opts.lineItems.length) return { ok: false, error: "No products selected — search and add at least one before pushing." };
@@ -48,6 +48,15 @@ export async function createCin7SalesOrder(opts: {
     branchId: CIN7_BRANCH_ID,
     firstName: firstName || "Recipient",
     lastName,
+    // Every real order created via this same API endpoint (checked ~20
+    // recent ones across Myer/BigW/Amazon/Freedom integrations) has a
+    // non-empty email plus currencyCode/taxStatus set explicitly — ours had
+    // none of the three, which lines up with the generic 500 we were
+    // getting (Cin7's API error message gives no field-level detail).
+    email: opts.recipientEmail || "orders@coolkidz.com.au",
+    phone: opts.recipientPhone || undefined,
+    currencyCode: "AUD",
+    taxStatus: "Incl",
     deliveryFirstName: firstName || "Recipient",
     deliveryLastName: lastName,
     deliveryAddress1: CIN7_PLACEHOLDER_ADDRESS.address1,

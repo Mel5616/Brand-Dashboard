@@ -428,7 +428,7 @@ export async function PATCH(req: Request) {
     ].filter(Boolean).join("\n");
 
     const result = await createCin7SalesOrder({
-      lineItems, recipientName: infl?.full_name || "Influencer", shipToText,
+      lineItems, recipientName: infl?.full_name || "Influencer", recipientEmail: infl?.email, recipientPhone: infl?.phone, shipToText,
       customerOrderNo: `Influencer — ${a.reference} — ${infl?.full_name || ""}`,
     });
     if (!result.ok) return NextResponse.json({ ok: false, error: result.error }, { status: 400 });

@@ -25,6 +25,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const result = await createCin7SalesOrder({
     lineItems: row.cin7_line_items || [],
     recipientName: row.ship_to_name || row.requester_name,
+    recipientEmail: row.requester_email,
     shipToText: [`Product request: ${row.reason}`, row.ship_to_address ? `Ship to: ${row.ship_to_address}` : "No ship-to address given — check with the requester.", `Requested by ${row.requester_name} (${row.requester_email})`].join("\n"),
     customerOrderNo: `Product request — ${row.reason}`.slice(0, 100),
   });
