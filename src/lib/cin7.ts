@@ -23,6 +23,11 @@ export async function cin7Fetch(path: string, init?: RequestInit): Promise<Respo
   if (!a) return null;
   const url = `${CIN7_BASE}${path}`;
   const reqInit: RequestInit = { ...init, headers: { Authorization: a, "Content-Type": "application/json", ...(init?.headers || {}) }, cache: "no-store" };
+  // Only GET is safe to retry blindly — a write (POST/PUT/PATCH/DELETE)
+  // that appears to fail may have actually gone through on Cin7's side, and
+  // retrying it risks creating a duplicate real order. Writes get one shot.
+  const method = (reqInit.method || "GET").toUpperCase();
+  if (method !== "GET") return cin7FetchOnce(url, reqInit);
   let res: Response | null = null;
   for (let i = 0; i < 3; i++) {
     res = await cin7FetchOnce(url, reqInit);

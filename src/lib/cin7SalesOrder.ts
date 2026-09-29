@@ -46,7 +46,10 @@ export async function createCin7SalesOrder(opts: {
   const res = await cin7Fetch("/v1/SalesOrders", { method: "POST", body: JSON.stringify(body) });
   if (!res) return { ok: false, error: "Cin7 isn't configured" };
   const text = await res.text();
-  if (!res.ok) return { ok: false, error: text.slice(0, 300) || `Cin7 request failed (${res.status})` };
+  if (!res.ok) {
+    console.error(`[cin7SalesOrder] POST /v1/SalesOrders failed, status=${res.status}, body=${text.slice(0, 500)}, requestBody=${JSON.stringify(body).slice(0, 500)}`);
+    return { ok: false, error: text.slice(0, 300) || `Cin7 request failed (${res.status})` };
+  }
   const json = JSON.parse(text || "{}");
   const order = Array.isArray(json) ? json[0] : json;
   if (!order?.id) return { ok: false, error: "Cin7 returned no order id" };
