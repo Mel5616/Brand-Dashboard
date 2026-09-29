@@ -421,15 +421,21 @@ export async function PATCH(req: Request) {
     if (!lineItems.length) return NextResponse.json({ ok: false, error: "No products with a matching Cin7 SKU — add products from the catalogue search, not typed free text." }, { status: 400 });
 
     const infl = a.influencers;
+    const hasStructuredAddress = !!(infl?.address_line1 && infl?.suburb && infl?.state && infl?.postcode);
+    // The address itself goes into Cin7's structured delivery fields below
+    // when we have it — no need to repeat it here too. Only fall back to
+    // spelling it out in free text when we don't have a full structured
+    // address (PO Box flag is added separately, centrally, in
+    // createCin7SalesOrder based on deliveryAddress.isPoBox).
     const shipToText = [
       `Influencer agreement ${a.reference}${a.campaign_name ? ` — ${a.campaign_name}` : ""}`,
-      infl ? [infl.address_line1, infl.address_line2, [infl.suburb, infl.state, infl.postcode].filter(Boolean).join(" ")].filter(Boolean).join(", ") : null,
-      infl?.is_po_box ? "PO BOX — cannot ship courier, check before dispatching" : null,
+      !hasStructuredAddress && infl ? [infl.address_line1, infl.address_line2, [infl.suburb, infl.state, infl.postcode].filter(Boolean).join(" ")].filter(Boolean).join(", ") : null,
+      !hasStructuredAddress && infl?.is_po_box ? "PO BOX — cannot ship courier, check before dispatching" : null,
     ].filter(Boolean).join("\n");
 
     const result = await createCin7SalesOrder({
       lineItems, recipientName: infl?.full_name || "Influencer", recipientEmail: infl?.email, recipientPhone: infl?.phone,
-      deliveryAddress: infl?.address_line1 && infl?.suburb && infl?.state && infl?.postcode ? {
+      deliveryAddress: hasStructuredAddress ? {
         address1: infl.address_line1, address2: infl.address_line2, city: infl.suburb, state: infl.state,
         postcode: infl.postcode, country: "Australia", isPoBox: !!infl.is_po_box,
       } : null,

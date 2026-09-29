@@ -81,12 +81,16 @@ export async function createCin7SalesOrder(opts: {
     billingPostalCode: CIN7_PLACEHOLDER_ADDRESS.postalCode,
     billingCountry: CIN7_PLACEHOLDER_ADDRESS.country,
     customerOrderNo: opts.customerOrderNo.slice(0, 100),
+    // When we've filled a real structured delivery address, don't also
+    // repeat it here — it's already on the order. Only add a short PO Box
+    // flag (not represented in any structured field) and, when we had no
+    // structured address to work with, the full fallback free-text address.
     deliveryInstructions: [
       opts.shipToText,
       opts.deliveryAddress
-        ? `Delivery address entered above from the influencer's contact record — double-check it before dispatching (typos, PO Box/courier restrictions).${opts.deliveryAddress.isPoBox ? " ⚠ PO BOX on file — cannot ship courier." : ""}`
+        ? (opts.deliveryAddress.isPoBox ? "⚠ PO BOX on file — cannot ship courier." : null)
         : "SHIPPING ADDRESS NOT VERIFIED — enter/confirm the real delivery address before dispatching.",
-    ].join("\n\n").slice(0, 2000),
+    ].filter(Boolean).join("\n\n").slice(0, 2000),
     internalComments: `${giftNote}. ${opts.customerOrderNo}`.slice(0, 500),
     stage: "New",
     // ProductId is read-only per Cin7's docs — ProductOptionId or Code is
