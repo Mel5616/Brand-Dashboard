@@ -387,6 +387,15 @@ export async function PATCH(req: Request) {
     await fetch(`${sbUrl}/rest/v1/influencer_agreements?id=eq.${id}`, { method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify({ status: "terminated" }) });
     return NextResponse.json({ ok: true });
   }
+  if (b.action === "complete") {
+    // Collaboration fully wrapped up — deliverables posted, nothing more
+    // owed either way. Distinct from "terminate" (an early/unplanned end);
+    // "complete" is the normal, successful end of a signed agreement.
+    if (acc.role !== "admin") return NextResponse.json({ ok: false, error: "Admin only" }, { status: 403 });
+    if (a.status !== "signed") return NextResponse.json({ ok: false, error: "Only a signed agreement can be marked complete" }, { status: 400 });
+    await fetch(`${sbUrl}/rest/v1/influencer_agreements?id=eq.${id}`, { method: "PATCH", headers: h({ Prefer: "return=minimal" }), body: JSON.stringify({ status: "complete" }) });
+    return NextResponse.json({ ok: true });
+  }
   if (b.action === "set_product_sku") {
     // Backfills a Cin7 SKU onto a product line that predates the catalogue
     // picker (or was typed free-text) so it can be pushed to Cin7 — this is

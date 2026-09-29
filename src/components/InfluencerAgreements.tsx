@@ -45,6 +45,7 @@ const STATUS: Record<string, { label: string; cls: string }> = {
   draft: { label: "Draft", cls: "bg-slate-100 text-slate-500" },
   sent: { label: "Sent", cls: "bg-sky-100 text-sky-700" },
   signed: { label: "Signed", cls: "bg-emerald-100 text-emerald-700" },
+  complete: { label: "Complete", cls: "bg-indigo-100 text-indigo-700" },
   terminated: { label: "Terminated", cls: "bg-rose-100 text-rose-600" },
 };
 const inp = "text-sm border border-gray-200 rounded-lg px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400";
@@ -501,6 +502,7 @@ export function InfluencerAgreements({ brands: brandsIn, admin = false, currentE
                             {(a.status === "draft" || a.status === "sent") && <a href={`/agreement/${a.token}`} target="_blank" rel="noreferrer" className="text-[12px] font-semibold text-violet-600 hover:underline mr-2.5">👁 View</a>}
                             {a.status === "sent" && <button onClick={() => { navigator.clipboard?.writeText(`${window.location.origin}/agreement/${a.token}`); flash("Signing link copied."); }} className="text-[12px] font-semibold text-slate-500 hover:underline mr-2.5">⧉ Link</button>}
                             {(a.status === "draft" || a.status === "sent") && <button disabled={busyId === a.id} onClick={() => act(a.id, "void")} className="text-[12px] font-semibold text-gray-400 hover:underline mr-2.5 disabled:opacity-50">Void</button>}
+                            {a.status === "signed" && admin && <button disabled={busyId === a.id} onClick={() => act(a.id, "complete")} className="text-[12px] font-semibold text-indigo-600 hover:underline disabled:opacity-50 mr-2.5" title="Deliverables posted, collaboration fully wrapped up">Mark complete</button>}
                             {a.status === "signed" && admin && <button disabled={busyId === a.id} onClick={() => { if (confirm(`Terminate ${a.reference}? The signed record is kept.`)) act(a.id, "terminate"); }} className="text-[12px] font-semibold text-rose-500 hover:underline disabled:opacity-50 mr-2.5">Terminate</button>}
                             {(a.status === "sent" || a.status === "signed") && admin && <button onClick={() => startContactEdit(a)} className="text-[12px] font-semibold text-amber-600 hover:underline mr-2.5" title="Fix name, email, phone or shipping address — doesn't touch the signed contract terms">Edit contact</button>}
                             <a href={`/api/influencer-agreements/order-sheet?id=${a.id}`} target="_blank" rel="noreferrer" className="text-[12px] font-semibold text-teal-600 hover:underline mr-2.5" title="Printable order sheet — name, delivery address, products, for invoicing or Shopify entry">🖨 Order sheet</a>
