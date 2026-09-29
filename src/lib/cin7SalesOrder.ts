@@ -81,17 +81,21 @@ export async function createCin7SalesOrder(opts: {
     billingPostalCode: CIN7_PLACEHOLDER_ADDRESS.postalCode,
     billingCountry: CIN7_PLACEHOLDER_ADDRESS.country,
     customerOrderNo: opts.customerOrderNo.slice(0, 100),
-    // When we've filled a real structured delivery address, don't also
-    // repeat it here — it's already on the order. Only add a short PO Box
-    // flag (not represented in any structured field) and, when we had no
-    // structured address to work with, the full fallback free-text address.
+    // Delivery Instructions stays purely about delivery. When we have a
+    // real structured delivery address, opts.shipToText (agreement
+    // reference/campaign context, no address in it) belongs in Internal
+    // Comments instead — Delivery Instructions only gets a PO Box flag
+    // (nothing structured represents that). Callers with no structured
+    // address (Giveaways/Product Requests) have their whole context +
+    // address blob in shipToText, which is the only place that address
+    // lives, so it stays here for them.
     deliveryInstructions: [
-      opts.shipToText,
+      !opts.deliveryAddress ? opts.shipToText : null,
       opts.deliveryAddress
         ? (opts.deliveryAddress.isPoBox ? "⚠ PO BOX on file — cannot ship courier." : null)
         : "SHIPPING ADDRESS NOT VERIFIED — enter/confirm the real delivery address before dispatching.",
     ].filter(Boolean).join("\n\n").slice(0, 2000),
-    internalComments: `${giftNote}. ${opts.customerOrderNo}`.slice(0, 500),
+    internalComments: [giftNote, opts.customerOrderNo, opts.deliveryAddress ? opts.shipToText : null].filter(Boolean).join(". ").slice(0, 500),
     stage: "New",
     // ProductId is read-only per Cin7's docs — ProductOptionId or Code is
     // what actually links the product. Sending both since ProductOptionId
