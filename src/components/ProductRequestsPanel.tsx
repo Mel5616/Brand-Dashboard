@@ -16,6 +16,7 @@ import { GiftCatalogPicker, giftItemsSummary, emptyGiftItem, type GiftItem } fro
 type Item = {
   id: string; brand_id: number; reason: string; products: string;
   ship_to_name: string | null; ship_to_address: string | null;
+  customer_name: string | null; customer_email: string | null; customer_phone: string | null;
   status: string; admin_note: string | null; approved_by: string | null;
   requester_name: string; requester_email: string; created_at: string;
   line_items: LineItem[]; shopify_draft_order_url: string | null;
@@ -31,7 +32,7 @@ const STATUS_META: Record<string, { label: string; cls: string }> = {
 };
 const STATUS_LIST = ["proposed", "approved", "fulfilled", "rejected"];
 const fmtD = (s: string) => new Date(s).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "2-digit" });
-const emptyForm = { brand_id: "", reason: "", ship_to_name: "", ship_to_address: "", is_loan: false };
+const emptyForm = { brand_id: "", reason: "", ship_to_name: "", ship_to_address: "", customer_name: "", customer_email: "", customer_phone: "", is_loan: false };
 
 export function ProductRequestsPanel({ admin = false, brands = [] }: { admin?: boolean; brands?: { id: number; name: string }[] }) {
   const [items, setItems] = useState<Item[]>([]);
@@ -164,6 +165,20 @@ export function ProductRequestsPanel({ admin = false, brands = [] }: { admin?: b
               <input value={form.ship_to_address} onChange={e => setForm(p => ({ ...p, ship_to_address: e.target.value }))} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400" />
             </div>
           </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Customer name</label>
+              <input value={form.customer_name} onChange={e => setForm(p => ({ ...p, customer_name: e.target.value }))} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Customer email</label>
+              <input type="email" value={form.customer_email} onChange={e => setForm(p => ({ ...p, customer_email: e.target.value }))} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Customer phone</label>
+              <input type="tel" value={form.customer_phone} onChange={e => setForm(p => ({ ...p, customer_phone: e.target.value }))} className="mt-1 w-full text-sm border border-gray-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400" />
+            </div>
+          </div>
           <label className="flex items-center gap-2 text-sm text-slate-600">
             <input type="checkbox" checked={form.is_loan} onChange={e => setForm(p => ({ ...p, is_loan: e.target.checked }))} className="rounded border-gray-300" />
             Loan — to be returned to stock, not gifted
@@ -196,6 +211,9 @@ export function ProductRequestsPanel({ admin = false, brands = [] }: { admin?: b
               <p className="text-sm text-slate-700 whitespace-pre-wrap"><span className="text-gray-400">Products:</span> {r.products}</p>
               {(r.ship_to_name || r.ship_to_address) && (
                 <p className="text-sm text-slate-600"><span className="text-gray-400">Ship to:</span> {[r.ship_to_name, r.ship_to_address].filter(Boolean).join(" — ")}</p>
+              )}
+              {(r.customer_name || r.customer_email || r.customer_phone) && (
+                <p className="text-sm text-slate-600"><span className="text-gray-400">Customer:</span> {[r.customer_name, r.customer_email, r.customer_phone].filter(Boolean).join(" — ")}</p>
               )}
               <p className="text-xs text-gray-400">{r.requester_name} · {r.requester_email} · {fmtD(r.created_at)}{r.approved_by ? ` · approved by ${r.approved_by}` : ""}</p>
 

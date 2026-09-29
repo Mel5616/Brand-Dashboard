@@ -40,6 +40,9 @@ export async function POST(req: Request) {
     gift_items: Array.isArray(b.gift_items) ? b.gift_items.slice(0, 50) : [],
     ship_to_name: b.ship_to_name ? String(b.ship_to_name).trim().slice(0, 150) : null,
     ship_to_address: b.ship_to_address ? String(b.ship_to_address).trim().slice(0, 500) : null,
+    customer_name: b.customer_name ? String(b.customer_name).trim().slice(0, 150) : null,
+    customer_email: b.customer_email ? String(b.customer_email).trim().toLowerCase().slice(0, 150) : null,
+    customer_phone: b.customer_phone ? String(b.customer_phone).trim().slice(0, 40) : null,
     is_loan: !!b.is_loan,
     requester_name: requesterName, requester_email: requesterEmail,
   };
@@ -55,7 +58,8 @@ export async function POST(req: Request) {
       <p style="font-size:15px;margin:0 0 14px">New free-product request from <strong>${requesterName}</strong> (${requesterEmail}) — needs your approval before anything is picked or shipped.</p>
       <p style="font-size:14px;margin:0 0 6px"><strong>Reason:</strong> ${reason}</p>
       <p style="font-size:14px;line-height:1.6;margin:0 0 14px"><strong>Products:</strong> ${products.replace(/\n/g, "<br/>")}</p>
-      ${row.ship_to_name || row.ship_to_address ? `<p style="font-size:14px;margin:0"><strong>Ship to:</strong> ${[row.ship_to_name, row.ship_to_address].filter(Boolean).join(" — ")}</p>` : ""}
+      ${row.ship_to_name || row.ship_to_address ? `<p style="font-size:14px;margin:0 0 6px"><strong>Ship to:</strong> ${[row.ship_to_name, row.ship_to_address].filter(Boolean).join(" — ")}</p>` : ""}
+      ${row.customer_name || row.customer_email || row.customer_phone ? `<p style="font-size:14px;margin:0"><strong>Customer:</strong> ${[row.customer_name, row.customer_email, row.customer_phone].filter(Boolean).join(" — ")}</p>` : ""}
     `),
   }).catch(() => ({ ok: false }));
 
