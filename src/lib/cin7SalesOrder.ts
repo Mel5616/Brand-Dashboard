@@ -10,14 +10,25 @@ import { cin7Fetch, cin7Configured } from "./cin7";
 // go in the delivery fields and deliveryInstructions/customerOrderNo, not
 // the billing contact.
 //
-// Delivery address is passed as free text inside deliveryInstructions, not
-// Cin7's structured delivery1/city/state/postcode fields — the source data
-// (site_deals.ship_to_address / giveaways.ship_to_address) is one free-text
-// blob, and parsing that into structured fields reliably isn't safe to
-// guess. Whoever advances the order past "New" in Cin7 reads it from there
-// and enters/verifies the structured address themselves.
+// The real delivery address is passed as free text inside
+// deliveryInstructions, not Cin7's structured delivery1/city/state/postcode
+// fields — the source data (site_deals.ship_to_address /
+// giveaways.ship_to_address) is one free-text blob, and parsing that into
+// structured fields reliably isn't safe to guess. Whoever advances the
+// order past "New" in Cin7 reads it from there and enters/verifies the
+// structured address themselves.
+//
+// Cin7 still requires *something* in the structured billing/delivery
+// address and a branchId to create the order at all (a bare 500 with no
+// detail otherwise) — confirmed against 3 real past orders on this exact
+// member (CMAR67298-1/2/3), which all used the member's own fixed address
+// and branchId 3. That's not a guess at the recipient's address, it's the
+// billing member's own known, fixed address — same placeholder every real
+// order for this account has used.
 const CIN7_MEMBER_ID = 67298;
 const CIN7_COMPANY = "Coolkidz Marketing 26/27";
+const CIN7_BRANCH_ID = 3;
+const CIN7_PLACEHOLDER_ADDRESS = { address1: "1 Beyer Road", city: "Braeside", state: "Victoria", postalCode: "3195", country: "Australia" };
 
 export type Cin7LineItem = { product_id: number; product_option_id: number; code: string; name: string; quantity: number };
 
@@ -30,13 +41,27 @@ export async function createCin7SalesOrder(opts: {
   if (!opts.lineItems.length) return { ok: false, error: "No products selected — search and add at least one before pushing." };
 
   const [firstName, ...rest] = (opts.recipientName || "Recipient").trim().split(/\s+/);
+  const lastName = rest.join(" ") || "";
   const body = {
     memberId: CIN7_MEMBER_ID,
     company: CIN7_COMPANY,
+    branchId: CIN7_BRANCH_ID,
     firstName: firstName || "Recipient",
-    lastName: rest.join(" ") || "",
+    lastName,
     deliveryFirstName: firstName || "Recipient",
-    deliveryLastName: rest.join(" ") || "",
+    deliveryLastName: lastName,
+    deliveryAddress1: CIN7_PLACEHOLDER_ADDRESS.address1,
+    deliveryCity: CIN7_PLACEHOLDER_ADDRESS.city,
+    deliveryState: CIN7_PLACEHOLDER_ADDRESS.state,
+    deliveryPostalCode: CIN7_PLACEHOLDER_ADDRESS.postalCode,
+    deliveryCountry: CIN7_PLACEHOLDER_ADDRESS.country,
+    billingFirstName: firstName || "Recipient",
+    billingLastName: lastName,
+    billingAddress1: CIN7_PLACEHOLDER_ADDRESS.address1,
+    billingCity: CIN7_PLACEHOLDER_ADDRESS.city,
+    billingState: CIN7_PLACEHOLDER_ADDRESS.state,
+    billingPostalCode: CIN7_PLACEHOLDER_ADDRESS.postalCode,
+    billingCountry: CIN7_PLACEHOLDER_ADDRESS.country,
     customerOrderNo: opts.customerOrderNo.slice(0, 100),
     deliveryInstructions: `${opts.shipToText}\n\nSHIPPING ADDRESS NOT VERIFIED — enter/confirm the real delivery address before dispatching.`.slice(0, 2000),
     stage: "New",
