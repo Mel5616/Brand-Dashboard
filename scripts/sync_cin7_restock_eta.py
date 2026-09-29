@@ -4,10 +4,13 @@ from Cin7's own open Purchase Orders — same data the dashboard's Stock Report 
 (src/lib/cin7PurchaseOrders.ts), matched by SKU (Cin7 ProductOptions.code, same join used by
 scripts/coolkidz_track_stock.py and review_metafields.py).
 
-Sets custom.restock_eta (type: date) on any variant that is out of stock AND has a matching open PO
-with an estimated arrival date. Clears it (deletes the metafield) once the variant is back in stock or
-no longer has a matching open PO, so a stale date never lingers. Brand themes read the metafield to show
-something like "Back in stock ~13 Oct" instead of a bare sold-out state.
+Sets custom.restock_eta (type: date) on any variant with zero (or negative) inventory quantity AND a
+matching open PO with an estimated arrival date. Clears it once the variant is back in stock or no
+longer has a matching open PO, so a stale date never lingers. Physical stock, not availableForSale —
+some brands (e.g. UPPAbaby) keep selling on backorder past zero stock, so availableForSale alone would
+miss them. Brand themes read the metafield: MiaMily shows "Back in stock ~mid October" on a genuinely
+sold-out product; UPPAbaby shows "Ships from our next shipment, arriving ~mid October" on a still-
+purchasable backorder item — same metafield, different copy for a different real situation.
 
 Needs stores.config.json + CIN7_USERNAME/CIN7_API_KEY.
 
@@ -99,7 +102,7 @@ class Shop:
 VARIANTS_Q = """query($c:String){
   productVariants(first:100, after:$c) {
     pageInfo{hasNextPage endCursor}
-    nodes{ id sku availableForSale metafield(namespace:"custom", key:"restock_eta"){id value} }
+    nodes{ id sku inventoryQuantity metafield(namespace:"custom", key:"restock_eta"){id value} }
   }
 }"""
 
@@ -114,12 +117,18 @@ def sync_brand(name, c, etas, dry_run):
             break
         cur = d["pageInfo"]["endCursor"]
 
+    # Physical stock (inventoryQuantity), not availableForSale — some brands
+    # (e.g. UPPAbaby prams) keep selling on backorder once stock hits zero,
+    # so availableForSale stays true even when genuinely out of stock. Real
+    # inventory count is the one signal that means the same thing everywhere.
     set_batch, delete_ids = [], []
     for v in variants:
         sku = (v.get("sku") or "").strip().lower()
         match = etas.get(sku) if sku else None
         existing = v.get("metafield")
-        if not v.get("availableForSale") and match:
+        qty = v.get("inventoryQuantity")
+        out_of_stock = qty is not None and qty <= 0
+        if out_of_stock and match:
             if not existing or existing["value"] != match["eta"]:
                 set_batch.append({"ownerId": v["id"], "namespace": "custom", "key": "restock_eta", "type": "date", "value": match["eta"]})
         elif existing:

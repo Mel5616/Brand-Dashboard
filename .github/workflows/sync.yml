@@ -43,12 +43,14 @@ jobs:
     with: { script: "scripts/sync_cin7_costs.py" }
     secrets: inherit
   cin7_restock_eta:
-    # Writes custom.restock_eta on out-of-stock variants from open Cin7 POs —
-    # MiaMily's PDP reads it to show "Back in stock ~mid October" instead of
-    # a bare sold-out. MiaMily only for now (--brand); drop the flag once
-    # other brand themes get the same PDP treatment.
+    # Writes custom.restock_eta on out-of-stock (real inventory quantity, not
+    # availableForSale) variants from open Cin7 POs, across every brand store
+    # — harmless where the theme doesn't read it yet. MiaMily's PDP shows
+    # "Back in stock ~mid October" on a sold-out product; UPPAbaby's shows
+    # "Ships from our next shipment, arriving ~mid October" on a still-
+    # purchasable backorder item (their prams keep selling past zero stock).
     uses: ./.github/workflows/sync-one.yml
-    with: { script: "scripts/sync_cin7_restock_eta.py --brand \"MiaMily\"" }
+    with: { script: "scripts/sync_cin7_restock_eta.py" }
     secrets: inherit
   partnership_cin7_sales:
     uses: ./.github/workflows/sync-one.yml
