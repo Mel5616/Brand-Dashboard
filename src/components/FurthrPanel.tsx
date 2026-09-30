@@ -14,10 +14,11 @@ type FurthrTxn = {
   id: string; brand_id: number; transaction_id: string; transaction_date: string;
   amount: number; cashback: number; fee: number; bank: string | null;
   order_id: string | null; customer_id: string | null; status: string | null;
+  is_new_customer: boolean | null;
   overlap: { affiliate: string | null; status: string; sale_value: number; commission: number } | null;
 };
 type Campaign = { id: string; brand_id: number; bank: string; offer: string; status: string; starts_at: string | null; ends_at: string | null };
-type Kpi = { revenue: number; spend: number; transactions: number; customers: number; aov: number; overlapCount: number; overlapCost: number };
+type Kpi = { revenue: number; spend: number; transactions: number; customers: number; aov: number; overlapCount: number; overlapCost: number; newCustomerCount: number; newCustomerRate: number | null };
 
 const inp = "w-full text-sm border border-gray-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-400";
 const STATUS_CLS: Record<string, string> = { active: "bg-emerald-100 text-emerald-700", pending: "bg-amber-100 text-amber-700", ended: "bg-gray-100 text-gray-500" };
@@ -161,13 +162,14 @@ export function FurthrPanel({ brands, admin }: { brands: { id: number; name: str
       {progress && <p className={`text-xs ${progress.startsWith("✗") ? "text-rose-500" : "text-gray-400"}`}>{progress}</p>}
 
       {kpi && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
           {[
             { label: "Revenue", value: fmt(kpi.revenue), cls: "border-emerald-200 bg-emerald-50 text-emerald-700" },
             { label: "Campaign Spend", value: fmt(kpi.spend), cls: "border-rose-200 bg-rose-50 text-rose-700" },
             { label: "Transactions", value: kpi.transactions.toLocaleString(), cls: "border-sky-200 bg-sky-50 text-sky-700" },
             { label: "Customers", value: kpi.customers.toLocaleString(), cls: "border-purple-200 bg-purple-50 text-purple-700" },
             { label: "Avg Order Value", value: fmt(kpi.aov), cls: "border-amber-200 bg-amber-50 text-amber-700" },
+            { label: "New Customers", value: kpi.newCustomerRate != null ? `${kpi.newCustomerRate.toFixed(0)}%` : "—", sub: kpi.newCustomerRate != null ? `${kpi.newCustomerCount} of ${kpi.transactions}` : "resolving…", cls: "border-teal-200 bg-teal-50 text-teal-700" },
             { label: "Double-counted", value: kpi.overlapCount.toLocaleString(), sub: kpi.overlapCount ? `${fmt(kpi.overlapCost)} at risk` : "none found", cls: kpi.overlapCount ? "border-red-300 bg-red-50 text-red-700" : "border-gray-200 bg-gray-50 text-gray-500" },
           ].map(c => (
             <div key={c.label} className={`rounded-xl border p-3.5 ${c.cls}`}>
@@ -240,7 +242,7 @@ export function FurthrPanel({ brands, admin }: { brands: { id: number; name: str
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead><tr className="text-left text-[11px] uppercase tracking-wide text-gray-400 border-b border-gray-100">
-                <th className="pb-2 pr-3">Date</th><th className="pb-2 pr-3">Order</th><th className="pb-2 pr-3">Amount</th><th className="pb-2 pr-3">Cashback</th><th className="pb-2 pr-3">Status</th><th className="pb-2">Also in CF?</th>
+                <th className="pb-2 pr-3">Date</th><th className="pb-2 pr-3">Order</th><th className="pb-2 pr-3">Amount</th><th className="pb-2 pr-3">Cashback</th><th className="pb-2 pr-3">Status</th><th className="pb-2 pr-3">Customer</th><th className="pb-2">Also in CF?</th>
               </tr></thead>
               <tbody>
                 {displayRows.slice(0, 200).map(r => (
@@ -250,6 +252,11 @@ export function FurthrPanel({ brands, admin }: { brands: { id: number; name: str
                     <td className="py-2 pr-3">{fmtFull(r.amount)}</td>
                     <td className="py-2 pr-3">{fmtFull(r.cashback)}</td>
                     <td className="py-2 pr-3 text-xs text-gray-500">{r.status ?? "—"}</td>
+                    <td className="py-2 pr-3">
+                      {r.is_new_customer === true && <span className="text-[11px] font-semibold text-teal-700 bg-teal-100 rounded-full px-2 py-0.5">New</span>}
+                      {r.is_new_customer === false && <span className="text-[11px] font-semibold text-gray-500 bg-gray-100 rounded-full px-2 py-0.5">Returning</span>}
+                      {r.is_new_customer === null && <span className="text-gray-300 text-xs">…</span>}
+                    </td>
                     <td className="py-2">
                       {r.overlap ? (
                         <span className="text-[11px] font-semibold text-red-700 bg-red-100 rounded-full px-2 py-0.5" title={`${r.overlap.affiliate ?? "Unknown affiliate"} — ${r.overlap.status} — ${fmtFull(r.overlap.commission)} commission`}>
