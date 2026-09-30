@@ -95,6 +95,7 @@ test("customerDetailProblem catches emails, phones, addresses and order numbers"
   assert.match(customerDetailProblem("ring 13 22 11")!, /phone/);
   assert.match(customerDetailProblem("I live at 12 Smith Street")!, /address/);
   assert.match(customerDetailProblem("12 smith street")!, /address/);
+  assert.match(customerDetailProblem("12 Smith St, Braeside VIC 3195")!, /address/);
   assert.match(customerDetailProblem("PO Box 123")!, /address/);
   assert.match(customerDetailProblem("order #58213")!, /order/);
   assert.match(customerDetailProblem("SO-58213 was late")!, /order/);
@@ -105,4 +106,11 @@ test("customerDetailProblem catches emails, phones, addresses and order numbers"
   assert.equal(customerDetailProblem("The serial looks like 0000VISXXXXX123456789."), null);
   assert.equal(customerDetailProblem("The Vista V3 weighs 12.1 kg and folds to 86 x 64 x 36 cm."), null);
   assert.equal(customerDetailProblem("Up to 20 MB per upload."), null);
+  assert.equal(customerDetailProblem("Fold in 3 steps and place it on the ground."), null);
+  assert.equal(customerDetailProblem("It is a 10 minute drive to the store."), null);
+  assert.equal(customerDetailProblem("Allow a 2 hour drive, or a 15 min drive from the city."), null);
+  assert.equal(customerDetailProblem("Uses a CR-2032 battery."), null);
+  assert.equal(customerDetailProblem("Complies with EN-1888 and ISO-9001."), null);
+  assert.equal(customerDetailProblem("Ordered 13-10-2026 delivered."), null);
+  assert.equal(customerDetailProblem("Year 2026 model 1312345."), null);
 });

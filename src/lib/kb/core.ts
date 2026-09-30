@@ -55,10 +55,12 @@ export function chooseEntriesForChat(entries: KbEntry[]): KbEntry[] {
 export function customerDetailProblem(text: string): string | null {
   if (/[^\s@]+@[^\s@]+\.[a-z]{2,}/i.test(text)) return "It contains an email address.";
   // Phone: +61, 0[2-478], (0X), 1300, 1800, 13xx with flexible separators (space, dash, dot, parens)
-  if (/(\+?61[\s-]?\d|\b0[2-478])[\d\s.-]{7,11}\d\b|\(\s?0\d\)\s?\d{4}\s?\d{4}|\b1[38]00[\s-]?\d{3}[\s-]?\d{3}|\b13[\s-]?\d{2}[\s-]?\d{2}|\b0\d{3}\.\d{3}\.\d{3}\b/.test(text)) return "It contains a phone number.";
-  // Address: street names (case-insensitive), PO Box
-  if (/\b\d{1,5}\s+[a-zA-Z][a-zA-Z]+(\s[a-zA-Z][a-zA-Z]+)?\s(street|st|road|rd|avenue|ave|drive|dr|court|ct|lane|ln|place|pl|crescent|cres|parade|pde|way|boulevard|blvd)\b/i.test(text) || /\bPO\s*Box\s+\d+\b/i.test(text)) return "It contains a street address.";
-  // Order: #XXXX, order #XXXX, SO-XXXX, PO#XXXX, INV-XXXX, etc.
-  if (/\border\s*(number|no\.?|#)?\s*#?\s*\d{4,}/i.test(text) || /#\d{4,}\b/.test(text) || /\b[A-Z]{2,}[\-#]+\d{4,}\b/.test(text)) return "It contains an order number.";
+  // 13xx now has word boundary at end to avoid matching dates like "13-10-2026" or model numbers "1312345"
+  if (/(\+?61[\s-]?\d|\b0[2-478])[\d\s.-]{7,11}\d\b|\(\s?0\d\)\s?\d{4}\s?\d{4}|\b1[38]00[\s-]?\d{3}[\s-]?\d{3}|\b13[\s-]?\d{2}[\s-]?\d{2}\b|\b0\d{3}\.\d{3}\.\d{3}\b/.test(text)) return "It contains a phone number.";
+  // Address: street names (case-insensitive), PO Box. Exclude common words (minute, hour, step, and, the, a, km, kg, cm).
+  // Street type suffix must be followed by punctuation, end of text, or capitalized word/state/postcode.
+  if (/\b\d{1,5}\s+(?!minute|minutes?|min|hour|hours?|step|steps|and|the|a|km|kg|cm)\w+(\s(?!minute|minutes?|min|hour|hours?|step|steps|and|the|a|km|kg|cm)\w+)?\s(street|st|road|rd|avenue|ave|drive|dr|court|ct|lane|ln|place|pl|crescent|cres|parade|pde|way|boulevard|blvd)(?=[,.\s]|$|\b[A-Z]{2}\b|\b\d{4}\b)/i.test(text) || /\bPO\s*Box\s+\d+\b/i.test(text)) return "It contains a street address.";
+  // Order: known prefixes (SO, PO, INV, ORD, ORDER, RMA) followed by separator and 4+ digits; or #XXXX; or order keyword
+  if (/\border\s*(number|no\.?|#)?\s*#?\s*\d{4,}/i.test(text) || /#\d{4,}\b/.test(text) || /\b(SO|PO|INV|ORD|ORDER|RMA)[\s\-#]+\d{4,}\b/i.test(text)) return "It contains an order number.";
   return null;
 }
