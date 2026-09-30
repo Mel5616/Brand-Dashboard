@@ -11,7 +11,7 @@ import { logAssistant, humanReplies } from "@/lib/assistantLog";
 export const revalidate = 0;
 export const maxDuration = 30;
 
-const ORIGINS = new Set(["https://uppababy.com.au", "https://www.uppababy.com.au", "https://6d6483.myshopify.com", "http://localhost:3000", "http://127.0.0.1:3000"]);
+const ORIGINS = new Set(["https://uppababy.com.au", "https://www.uppababy.com.au", "https://6d6483.myshopify.com", "https://help.uppababy.com.au", "https://coolkidznetau.freshdesk.com", "http://localhost:3000", "http://127.0.0.1:3000"]);
 const cors = (origin: string | null) => ({
   "Access-Control-Allow-Origin": origin && ORIGINS.has(origin) ? origin : "https://uppababy.com.au",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
