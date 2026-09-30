@@ -31,6 +31,12 @@ const HORIZONS = [
   { id: "later", label: "Later", sub: monthName(2) },
 ];
 const HORIZON_RANGE = `${monthName(0)} to ${monthName(2)} ${new Date().getFullYear()}`;
+// Campaign.brand is free text (Asana imports, manual entry) so it can drift in
+// case from the brands table's canonical name (e.g. "smarTrike" vs "SmarTrike") —
+// match case-insensitively rather than failing "Couldn't match" on casing alone.
+const matchBrand = (brands: { id: number; name: string }[], brandText: string) =>
+  brands.find(b => b.name.toLowerCase() === brandText.toLowerCase())
+  ?? brands.find(b => brandText.toLowerCase().includes(b.name.toLowerCase()));
 // Which column a campaign belongs in, derived from its start date: this month → Now,
 // next → Next, the month after (or anything later) → Later; past dates clamp to Now.
 const horizonForDate = (s: string): string => {
@@ -369,7 +375,7 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
     return [b?.oneLiner, b?.objective].filter(Boolean).join(" — ") || item.note || item.campaign;
   }
   async function startBlog(item: Campaign) {
-    const brand = brands.find(b => b.name === item.brand) ?? brands.find(b => item.brand.includes(b.name));
+    const brand = matchBrand(brands, item.brand);
     if (!brand) { setLinkError(`Couldn't match "${item.brand}" to a single brand to start a blog draft.`); return; }
     setLinkBusy("blog"); setLinkError(null);
     const blogBrief = (item.brief as any)?.blogBrief as string | undefined;
@@ -379,7 +385,7 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
     else setLinkError(res?.error || "Couldn't start a blog draft for that brand.");
   }
   async function startEdm(item: Campaign) {
-    const brand = brands.find(b => b.name === item.brand) ?? brands.find(b => item.brand.includes(b.name));
+    const brand = matchBrand(brands, item.brand);
     if (!brand) { setLinkError(`Couldn't match "${item.brand}" to a single brand to send an EDM from.`); return; }
     setLinkBusy("edm"); setLinkError(null);
     const res = await fetch("/api/edm-drafts", { method: "POST", headers: jsonHeaders, body: JSON.stringify({ brand_id: brand.id, brand_name: brand.name, brief: campaignBrief(item), campaign_id: item.id, campaign_name: item.campaign }) }).then(r => r.json()).catch(() => null);
@@ -414,7 +420,7 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
   // to Social Writing to review it. One platform to start; more can be
   // generated for the same brief from Social Writing directly.
   async function startSocial(item: Campaign) {
-    const brand = brands.find(b => b.name === item.brand) ?? brands.find(b => item.brand.includes(b.name));
+    const brand = matchBrand(brands, item.brand);
     if (!brand) { setLinkError(`Couldn't match "${item.brand}" to a single brand to start a social draft.`); return; }
     setLinkBusy("social"); setLinkError(null);
     const socialsBrief = (item.brief as any)?.socialsBrief as string | undefined;
@@ -440,7 +446,7 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
   // imports it as-is (already has real subject/body, no need to regenerate)
   // into edm_drafts so it shows on the EDM Planner calendar at its send date.
   async function sendToPlanner(item: Campaign, em: EmailDraft) {
-    const brand = brands.find(b => b.name === item.brand) ?? brands.find(b => item.brand.includes(b.name));
+    const brand = matchBrand(brands, item.brand);
     if (!brand) { setLinkError(`Couldn't match "${item.brand}" to a single brand to send this email to.`); return; }
     setLinkBusy("edm"); setLinkError(null);
     const subject = (em.subject || "").split("\n").map(s => s.trim()).filter(Boolean)[0] || item.campaign;
@@ -505,7 +511,7 @@ export function CampaignCalendar({ canEdit = false, brands = [], onStartBlog, on
   }
 
   async function generateKit(item: Campaign) {
-    const brand = brands.find(b => b.name === item.brand) ?? brands.find(b => item.brand.includes(b.name));
+    const brand = matchBrand(brands, item.brand);
     if (!brand) { setKitResults([{ label: "Setup", ok: false, note: `Couldn't match "${item.brand}" to a single brand.` }]); return; }
     setKitBusy(true); setKitResults(null);
     const brief = campaignBrief(item);
