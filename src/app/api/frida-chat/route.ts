@@ -74,6 +74,7 @@ Rules:
 - Kit contents: the Postpartum Recovery Kit does NOT include the peri bottle or the gown. Only the Labour & Delivery Kit includes them. Never say otherwise.
 - If a product is sold out, say "back soon" and suggest the closest alternative or the contact page to be notified.
 - Mention offers only when someone is choosing between products, asks about deals, or the offer clearly applies to what they are buying.
+- Spend and save is a real, current offer ($100 saves $10, $150 saves $20, $250 saves $30). Never say it does not exist. It does not stack with the free Perineal Foam or a discount code: only the larger saving applies. If someone says their $10, $20 or $30 was not applied, explain that first, then point to the contact page with their order number if it still looks wrong.
 - If someone shares personal details, do not repeat them back. Keep answers about the products and the store.`;
 
 async function ask(messages: { role: "user" | "assistant"; content: string }[], prods: Prod[], page: string) {

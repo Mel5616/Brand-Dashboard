@@ -14,7 +14,10 @@
   "gift_cards": "Frida gift cards come in $25, $50, $100, $200 and $500, are delivered by email, never expire and can be used on any product at fridaaustralia.com.au (/products/frida-gift-card)."
  },
  "offers": [
-  "Free Perineal Foam when you spend $150 on Frida Mom, added automatically at checkout.",
+  "Spend and save, applied automatically in the bag and at checkout, no code needed: spend $100 and save $10, spend $150 and save $20, spend $250 and save $30. It works across the whole store (Frida Baby and Frida Mom together). A tier is reached from $99, $149 and $249, so the $149.99 Postpartum Recovery Kit on its own earns the $20.",
+  "Free Perineal Foam (worth $34.99) when you spend $150 on Frida Mom, added automatically to the bag.",
+  "Only one of these applies per order: spend and save does NOT stack with the free Perineal Foam or with a discount code. The store applies whichever is worth more. On a Frida Mom order of $150 or more that is usually the free foam ($34.99) rather than $20 off, so the $20 will not show. A customer who prefers the $20 off can tap Remove gift in the bag and the $20 applies instead.",
+  "If someone says their spend and save discount was not applied: check whether a free foam or a discount code is on the order (that replaces it), and whether the bag total before shipping reached the tier. Shipping does not count towards the tier. If it still looks wrong, send them to the contact page with their order number.",
   "Complete the kit: 10% off the Postpartum Recovery Kit when bought with the Labour & Delivery Kit, and 10% off NoseFrida filters when bought with the NoseFrida. Applied automatically in the cart.",
   "Free standard shipping over $60."
  ],
@@ -43,8 +46,9 @@
   "Saved items": "/pages/saved-items"
  },
  "kits": {
-  "Labour & Delivery Kit (Hospital Birth Kit, /products/frida-mom-hospital-labor-delivery-kit)": "Labour & Delivery Gown (one size XS to XL, snap shoulders for skin-to-skin), labour socks, toiletry carry bag, Upside Down Peri Bottle, disposable underwear, Instant Ice Maxi Pads, witch hazel cooling liners, Perineal Foam, bathroom caddy. Covers labour, delivery and the first week of postpartum care.",
-  "Postpartum Recovery Kit (/products/frida-mom-postpartum-recovery-kit)": "Disposable underwear, Instant Ice Maxi Pads, witch hazel cooling liners, Perineal Foam, bathroom caddy. It does NOT include the peri bottle or the gown; the peri bottle is sold separately, or choose the Labour & Delivery Kit which includes it. Suits recovery at home after any type of birth."
+  "Labour & Delivery Kit (Hospital Birth Kit, /products/frida-mom-hospital-labor-delivery-kit)": "Labour & Delivery Gown (one size XS to XL, snap shoulders for skin-to-skin), labour socks, toiletry carry bag, Upside Down Peri Bottle, 4 disposable underwear, 4 Instant Ice Maxi Pads, witch hazel cooling liners, Perineal Foam, bathroom caddy. Covers labour, delivery and the first week of postpartum care.",
+  "Postpartum Recovery Kit (/products/frida-mom-postpartum-recovery-kit)": "4 disposable underwear, 4 Instant Ice Maxi Pads, witch hazel cooling liners, Perineal Foam, bathroom caddy. It does NOT include the peri bottle or the gown; the peri bottle is sold separately, or choose the Labour & Delivery Kit which includes it. Suits recovery at home after any type of birth.",
+  "Quantities": "Both kits contain 4 disposable underwear and 4 Instant Ice Maxi Pads. You do not have the count of cooling liners or the foam size: if asked, say so plainly and point to the contact page rather than guessing."
  },
  "faq": [
   {
