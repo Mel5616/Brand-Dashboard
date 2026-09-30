@@ -215,10 +215,18 @@ export function buildSnapshot(d: SnapshotInput) {
     .map(k => ({ phrase: k.phrase, position: Math.round(k.position), volume: k.search_volume, cpc: k.cpc, url: k.url }));
   const smMetric = forBrand(d.semrushMetrics).find(m => m.month_key === smMonth)
     ?? [...forBrand(d.semrushMetrics)].sort((a, b) => b.month_key.localeCompare(a.month_key))[0];
+  // Previous month with real SEMrush data (not necessarily the report's own
+  // prevMonth — SEMrush syncs on its own cadence and can lag) — for a genuine
+  // organic-growth figure, not just a snapshot.
+  const smMonthsSorted = [...new Set(forBrand(d.semrushMetrics).map(x => x.month_key))].sort();
+  const smPrevMonth = smMonth ? smMonthsSorted.filter(mk => mk < smMonth).pop() ?? null : null;
+  const smPrevMetric = smPrevMonth ? forBrand(d.semrushMetrics).find(x => x.month_key === smPrevMonth) : null;
   const seo = {
     month: smMonth,
     keywords: smMetric?.organic_keywords ?? 0,
+    keywordsDelta: smPrevMetric ? delta(smMetric?.organic_keywords ?? 0, smPrevMetric.organic_keywords) : null,
     traffic: smMetric?.organic_traffic ?? 0,
+    trafficDelta: smPrevMetric ? delta(smMetric?.organic_traffic ?? 0, smPrevMetric.organic_traffic) : null,
     value: smMetric?.traffic_value ?? 0,
     opportunities,
   };

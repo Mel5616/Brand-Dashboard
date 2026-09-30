@@ -34,6 +34,18 @@ export function UppababyReport({ brands, canUpload, month, monthKeys, monthLabel
       .catch(() => setBbModelWeeks([]));
   }, []);
 
+  // Live returning-customer rate for the report's month — replaces the Shopify
+  // card's Revenue/D2C YTD rows, which never reconcile against the uploaded
+  // Direct Sales total (spare parts + off-Shopify invoicing aren't in Shopify).
+  const [repeatRate, setRepeatRate] = useState<{ returningCustomerRate: number | null; returningCustomers: number; customers: number } | null>(null);
+  useEffect(() => {
+    if (!rows.length) { setRepeatRate(null); return; }
+    const la = buildUppababy(rows).latestActual || 1;
+    const month = `2026-${String(la).padStart(2, "0")}`;
+    fetch(`/api/uppababy-repeat-rate?month=${month}`).then(r => r.json())
+      .then(d => setRepeatRate(d.ok ? d : null)).catch(() => setRepeatRate(null));
+  }, [rows]);
+
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]; if (!file) return;
     setBusy(true); setMsg("Reading spreadsheet…");
@@ -83,8 +95,8 @@ export function UppababyReport({ brands, canUpload, month, monthKeys, monthLabel
     const targetsCY = data.targets.filter((t: any) => rKeys.includes(t.month_key));
     const snap = buildSnapshot({ brand, month: rMonth, monthKeys: rKeys, monthLabels: rLabels, fyLabel: rFyLabel, note: "", ...data, monthly: monthlyCY, targets: targetsCY });
     const bb = bbModelWeeks && bbModelWeeks.length ? buildBbSummary(bbModelWeeks, ry) : null;
-    return uppababyHtml(u, snap, periodLabel, tradeshowShare, bb);
-  }, [brand, rows, fyLabel, data, bbModelWeeks]);
+    return uppababyHtml(u, snap, periodLabel, tradeshowShare, bb, repeatRate);
+  }, [brand, rows, fyLabel, data, bbModelWeeks, repeatRate]);
 
   const periodLabel = useMemo(() => {
     if (!rows.length) { const [y, mm] = month.split("-").map(Number); return new Date(y, (mm || 1) - 1, 1).toLocaleDateString("en-AU", { month: "long", year: "numeric" }); }

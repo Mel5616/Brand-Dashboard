@@ -185,7 +185,9 @@ export function uppababyEmailSummary(u: Uppa, shareUrl: string, periodLabel: str
 </table>`;
 }
 
-export function uppababyHtml(u: Uppa, snap: Snapshot, periodLabel: string, tradeshowShare: number | null = null, bb: BbSummary | null = null): string {
+type RepeatRate = { returningCustomerRate: number | null; returningCustomers: number; customers: number } | null;
+
+export function uppababyHtml(u: Uppa, snap: Snapshot, periodLabel: string, tradeshowShare: number | null = null, bb: BbSummary | null = null, repeatRate: RepeatRate = null): string {
   const ch = (c: typeof u.channels[number]) => `<tr><td class="cn">${titleCase(c.name)}</td><td>${fmtFull(c.ytd2025)}</td><td class="cy">${fmtFull(c.ytd2026)}</td><td class="${c.delta >= 0 ? "up" : "dn"}">${c.delta >= 0 ? "+" : "−"}${fmtFull(Math.abs(c.delta))}</td><td class="${(c.pct ?? 0) >= 0 ? "up" : "dn"}">${pctTag(c.pct)}</td></tr>`;
   const q = (x: typeof u.quarters[number]) => `<tr><td class="cn">${x.label}${x.partial ? "<span style='color:var(--grey);font-weight:600'> · to date</span>" : ""}</td><td>${fmtFull(x.t2025)}</td><td class="cy">${fmtFull(x.t2026)}</td><td class="${x.delta >= 0 ? "up" : "dn"}">${x.delta >= 0 ? "+" : "−"}${fmtFull(Math.abs(x.delta))}</td><td>${pctTag(x.pct)}</td></tr>`;
   const m = snap; // marketing numbers reused from the Snapshot computation
@@ -196,7 +198,13 @@ export function uppababyHtml(u: Uppa, snap: Snapshot, periodLabel: string, trade
   // the Shopify store, which the live pull can't see. Say so explicitly next
   // to the Shopify card so nobody reads the gap as a mistake.
   const directSalesYtd = u.channels.find(c => c.name === "DIRECT SALES")?.ytd2026 ?? 0;
-  const shopifyGap = directSalesYtd - m.ytdRev;
+  // Real win signal, not decorative: Direct Sales was the top channel this month.
+  // Drives both the "🎉 Direct led the month" flag below and the confetti burst on open.
+  const isDirectWin = u.bestChannel?.name === "DIRECT SALES";
+  // Percentage tag for values that are ALREADY a percentage (snapshot.ts's delta()
+  // returns e.g. 29.1 for +29.1%) — unlike pctTag() above, which expects a fraction
+  // (0.291) and multiplies by 100 itself. Mixing the two up doubles the digits.
+  const pctTagPct = (p: number | null) => p == null ? "" : `<span class="${p >= 0 ? "up" : "dn"}">${p >= 0 ? "▲" : "▼"} ${Math.abs(p).toFixed(1)}%</span>`;
 
   return `<!DOCTYPE html><html lang="en-AU"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>UPPAbaby · ${esc(periodLabel)} Sales Report</title>
@@ -270,7 +278,7 @@ table.cmp th.cy{box-shadow:inset 0 -1px 0 var(--line);}
 .dt-note strong{color:var(--ink);font-weight:700;}
 .foot{margin-top:24px;border-top:1px solid var(--line);padding-top:12px;font-size:10px;color:var(--grey);line-height:1.55;font-weight:500;}
 .foot strong{color:var(--ink);}
-@media print{body{background:#fff;padding:0;}.page{box-shadow:none;max-width:none;padding:30px 34px;}@page{size:A4;margin:12mm;}.sec{break-inside:avoid;}}
+@media print{body{background:#fff;padding:0;}.page{box-shadow:none;max-width:none;padding:30px 34px;}@page{size:A4;margin:12mm;}.sec{break-inside:avoid;}#confetti-canvas{display:none !important;}}
 @media(max-width:680px){.hero,.grid{grid-template-columns:1fr;}.mast{flex-direction:column;align-items:flex-start;gap:10px;}.stamp{text-align:left;}}
 </style></head>
 <body><div class="page">
@@ -357,13 +365,51 @@ table.cmp th.cy{box-shadow:inset 0 -1px 0 var(--line);}
   <div class="sec">
     <div class="h">Digital &amp; marketing · ${esc(m.monthLong)}</div>
     <div class="grid">
-      <div class="card"><div class="h">Direct to consumer · Shopify</div><div class="rows">${r("Revenue", fmtFull(m.monthRev))}${r("Orders", String(m.monthOrders))}${r("Average order value", fmtFull(m.aov))}${r("D2C revenue YTD", fmt(m.ytdRev))}</div>${directSalesYtd > 0 ? `<p style="font-size:9.5px;color:var(--grey);line-height:1.5;margin-top:8px;font-weight:500">Shopify orders only. The Direct Sales total above (${fmt(directSalesYtd)} YTD) additionally includes spare parts and Coolkidz-website UPPAbaby sales invoiced outside Shopify — a ${fmt(Math.abs(shopifyGap))} difference.</p>` : ""}</div>
-      <div class="card"><div class="h">Paid media</div><div class="rows">${r("Google ROAS", m.google.roas.toFixed(2) + "×")}${r("Meta ROAS", m.meta.roas.toFixed(2) + "×")}${r("Blended paid ROAS", m.blendedRoas.toFixed(2) + "×")}${r("Paid spend", fmtFull(m.google.spend + m.meta.spend))}</div></div>
-      <div class="card"><div class="h">Email · Klaviyo</div><div class="rows">${r("Attributed revenue", fmtFull(m.email.rev))}${r("Open rate", m.email.openRate.toFixed(1) + "%")}${r("Click rate", m.email.clickRate.toFixed(1) + "%")}${r("Emails delivered", m.email.sent.toLocaleString())}</div></div>
-      <div class="card"><div class="h">Social &amp; search</div><div class="rows">${r("Organic keywords", m.seo.keywords.toLocaleString())}${r("Est. organic visits/mo", Math.round(m.seo.traffic).toLocaleString())}${r("Traffic value", fmt(m.seo.value))}${r("Top IG post", m.igPosts[0] ? (m.igPosts[0].like_count + m.igPosts[0].comments_count).toLocaleString() + " eng." : "—")}</div></div>
+      <div class="card"><div class="h">Direct to consumer · Shopify</div><div class="rows">${r("Orders", String(m.monthOrders))}${r("Average order value", fmtFull(m.aov))}${repeatRate?.returningCustomerRate != null ? r("Returning customers", `${repeatRate.returningCustomerRate.toFixed(1)}% <span style="color:var(--grey);font-weight:500">(${repeatRate.returningCustomers.toLocaleString()} of ${repeatRate.customers.toLocaleString()})</span>`) : ""}</div><p style="font-size:9.5px;color:var(--grey);line-height:1.5;margin-top:8px;font-weight:500">Shopify web orders only (POS excluded). Revenue isn't shown here — see Direct Sales above, the reconciled total that also includes spare parts and off-Shopify invoicing.</p></div>
+      <div class="card"><div class="h">Paid media</div><div class="rows">${r("Google ROAS", m.google.roas.toFixed(2) + "× " + pctTagPct(m.google.roasDelta))}${r("Meta ROAS", m.meta.roas.toFixed(2) + "× " + pctTagPct(m.meta.roasDelta))}${r("Blended paid ROAS", m.blendedRoas.toFixed(2) + "× " + pctTagPct(m.blendedDelta))}${r("Paid spend", fmtFull(m.google.spend + m.meta.spend))}</div></div>
+      <div class="card"><div class="h">Email · Klaviyo</div><div class="rows">${r("Attributed revenue", fmtFull(m.email.rev) + " " + pctTagPct(m.email.revDelta))}${r("Open rate", m.email.openRate.toFixed(1) + "%")}${r("Click rate", m.email.clickRate.toFixed(1) + "%")}${r("Emails delivered", m.email.sent.toLocaleString())}</div></div>
+      <div class="card"><div class="h">Social &amp; search</div><div class="rows">${r("Organic keywords", m.seo.keywords.toLocaleString() + " " + pctTagPct(m.seo.keywordsDelta))}${r("Est. organic visits/mo", Math.round(m.seo.traffic).toLocaleString() + " " + pctTagPct(m.seo.trafficDelta))}${r("Traffic value", fmt(m.seo.value))}${r("Top IG post", m.igPosts[0] ? (m.igPosts[0].like_count + m.igPosts[0].comments_count).toLocaleString() + " eng." : "—")}</div></div>
     </div>
+    ${m.google.topCampaign || m.blendedRoas > 0 ? `<div class="card" style="margin-top:14px;border-color:var(--up)"><div class="h" style="color:var(--up)">Marketing wins this month</div><div class="rows">
+      ${m.google.topCampaign ? r("Top Google campaign", `${esc(m.google.topCampaign.name)} — ${m.google.topCampaign.roas.toFixed(1)}× ROAS`) : ""}
+      ${m.blendedDelta != null ? r("Blended ROAS vs last month", pctTagPct(m.blendedDelta)) : ""}
+      ${m.email.revDelta != null ? r("Email revenue vs last month", pctTagPct(m.email.revDelta)) : ""}
+      ${m.seo.keywordsDelta != null ? r("Organic keyword growth", pctTagPct(m.seo.keywordsDelta)) : ""}
+    </div></div>` : ""}
   </div>
 
-  <div class="foot"><strong>Private &amp; confidential.</strong> Prepared by Coolkidz Australia, official Australian distributor of UPPAbaby. Sell-through figures are calendar-year actuals by channel; "FORWARD" months are forecasts and excluded from year-to-date totals. Digital &amp; marketing data covers Coolkidz-run UPPAbaby channels; the Shopify D2C figure reflects Shopify store orders only and does not include spare parts sales or Coolkidz-website UPPAbaby sales invoiced outside Shopify, which are captured in the Direct Sales channel total above. Please do not distribute without prior written permission.</div>
-</div></body></html>`;
+  <div class="foot"><strong>Private &amp; confidential.</strong> Prepared by Coolkidz Australia, official Australian distributor of UPPAbaby. Sell-through figures are calendar-year actuals by channel; "FORWARD" months are forecasts and excluded from year-to-date totals. Digital &amp; marketing data covers Coolkidz-run UPPAbaby channels; the Shopify D2C card shows web orders only (POS excluded) — the reconciled Direct Sales total above additionally includes spare parts and Coolkidz-website UPPAbaby sales invoiced outside Shopify. Please do not distribute without prior written permission.</div>
+</div>
+${isDirectWin ? `<canvas id="confetti-canvas" style="position:fixed;inset:0;pointer-events:none;z-index:999"></canvas>
+<script>(function(){
+  var c=document.getElementById('confetti-canvas'),ctx=c.getContext('2d');
+  function resize(){c.width=window.innerWidth;c.height=window.innerHeight;}
+  resize(); window.addEventListener('resize',resize);
+  var colors=['#0891b2','#0e7490','#15803d','#facc15','#f97316'];
+  var pieces=[]; for(var i=0;i<140;i++){pieces.push({
+    x:Math.random()*c.width, y:-20-Math.random()*c.height*0.5,
+    r:4+Math.random()*5, c:colors[i%colors.length],
+    vy:2+Math.random()*3, vx:-1.5+Math.random()*3,
+    rot:Math.random()*360, vr:-6+Math.random()*12
+  });}
+  var start=Date.now();
+  function frame(){
+    ctx.clearRect(0,0,c.width,c.height);
+    var elapsed=Date.now()-start;
+    var alive=false;
+    for(var i=0;i<pieces.length;i++){
+      var p=pieces[i];
+      if(p.y>c.height+20) continue;
+      alive=true;
+      p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle=p.c; ctx.fillRect(-p.r/2,-p.r/2,p.r,p.r*0.6);
+      ctx.restore();
+    }
+    if(alive && elapsed<4500) requestAnimationFrame(frame);
+    else ctx.clearRect(0,0,c.width,c.height);
+  }
+  requestAnimationFrame(frame);
+})();</script>` : ""}
+</body></html>`;
 }
