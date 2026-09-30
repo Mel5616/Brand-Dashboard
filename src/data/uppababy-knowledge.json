@@ -48,7 +48,7 @@
    "model": "Minu V3",
    "job": "The one that lives in the boot.",
    "intro": "Minu V3 is UPPAbaby's compact stroller. It folds one-handed to about the size of a carry-on, stands on its own, and is ready from birth as sold with the included infant insert. It is the pram for families who move a lot, live with stairs or a small boot, and want one stroller that covers the newborn stage and the toddler years without being a full-size pram.",
-   "facts": "Minu V3 (stroller); 7.6 kg; folds to 25 x 45 x 55 cm; up to 1; works from birth; basket None kg"
+   "facts": "Minu V3 (stroller); 7.6 kg; folds to 25 x 45 x 55 cm; up to 1; works from birth; basket 9.1 kg"
   },
   {
    "model": "Kona",
@@ -60,7 +60,7 @@
    "model": "Cruz V3",
    "job": "The everyday single, without the bulk.",
    "intro": "Cruz V3 is the full-size single pram. It has the same seat quality, canopy and basket as Vista in a narrower, lighter frame, and it is suitable from birth with the included infant insert. Cruz is for one child at a time: it does not take a second seat. Choose it over Vista when you are confident one child is the plan, or when boot space matters more than the option to add a sibling later.",
-   "facts": "Cruz V3 (pram); up to 1; works from birth; basket None kg"
+   "facts": "Cruz V3 (pram); up to 1; works from birth; basket 13.6 kg"
   },
   {
    "model": "Minu Duo",
@@ -72,7 +72,7 @@
    "model": "Ridge V2",
    "job": "For the trails and the long runs.",
    "intro": "Ridge V2 is the all-terrain jogger. Never-flat tyres, a locking front wheel and a long wheelbase make it stable at running pace and on gravel, sand and grass. It is the largest pram in the range folded, so it suits families with boot space who want one pram that handles a run and a beach track as easily as a footpath.",
-   "facts": "Ridge V2 (pram); 13.7 kg; folds to 49.5 x 65 x 91.4 cm; up to 2; works from birth; basket None kg"
+   "facts": "Ridge V2 (pram); 13.7 kg; folds to 49.5 x 65 x 91.4 cm; up to 2; works from birth; basket 9.0 kg"
   },
   {
    "model": "Vista V3",
@@ -83,7 +83,7 @@
  ],
  "capsule": {
   "name": "Mesa",
-  "intro": "Mesa is the UPPAbaby infant car capsule. It clicks straight onto a Vista or Cruz frame with no adapters, and onto Minu, Minu Duo, Ridge and Kona with the matching adapter set. That means a sleeping baby moves from car to pram without being unbuckled.",
+  "intro": "Mesa is the UPPAbaby infant car capsule. It clicks straight onto a Vista, Cruz or Kona frame with no adapters, and onto Minu, Minu Duo and Ridge with the matching adapter set. That means a sleeping baby moves from car to pram without being unbuckled.",
   "direct_fit": [
    "vista",
    "cruz"
@@ -101,7 +101,9 @@
    "purpose": "Compatibility source of truth: what attaches to which frame, and which adapter it needs. Feeds tools/adapter-finder.html and the PDP capsule rows.",
    "source": "Coolkidz distributor fact sheets in ~/Desktop/Factsheets (adapter sheets + model sheets). Prices are fact-sheet RRP and are NOT yet confirmed against live Shopify.",
    "warning": "Several adapter fact sheets are written for LEGACY frames (Vista V2, Minu V2, Cruz V2). Where a V3 equivalent is not documented, the entry is marked confirmed:false rather than assumed. Do not publish an unconfirmed fit.",
-   "thirdPartyNote": "UPPAbaby car seat adapters fit SELECT models only. The supported list below is taken verbatim from the fact sheets and should be re-checked before launch, because third-party capsule ranges change often."
+   "thirdPartyNote": "UPPAbaby car seat adapters fit SELECT models only. The supported list below is taken verbatim from the fact sheets and should be re-checked before launch, because third-party capsule ranges change often.",
+   "positions": "Confirmed by Mel 8 September 2026. On a Vista the answer depends on where the thing sits, not only what it is: the top position takes a capsule or bassinet directly, the lower position needs the lower adapters, and carrying two at once needs the upper pair as well. RumbleSeat adapters ship inside the RumbleSeat box.",
+   "minuThirdParty": "Confirmed by Mel, 10 September 2026: no Minu frame supports a third-party capsule. Previously this answered 'check with us' and listed supported models."
   },
   "capsules": {
    "mesa": {
@@ -113,17 +115,11 @@
     "name": "Maxi-Cosi, Nuna, Joie or BeSafe",
     "type": "third-party",
     "models": [
-     "Maxi-Cosi Mico 6",
-     "Maxi-Cosi Mico 12 (post 20/04/2020)",
      "Maxi-Cosi Mico AP / Mico Plus",
      "Maxi-Cosi Citi",
+     "Maxi-Cosi Mico 12 and Mico 12LX (manufactured after 20 April 2022)",
      "Nuna PIPA",
      "Nuna KLIK Plus",
-     "BeSafe iZi Go",
-     "BeSafe iZi Go X1",
-     "BeSafe iZi Go Modular",
-     "BeSafe iZi Go Modular i-Size",
-     "BeSafe iZi Go Modular X1 i-Size",
      "Joie i-Gemm"
     ],
     "note": "Select models only. If your capsule is not on this list, it is not supported, even if it looks similar."
@@ -136,7 +132,11 @@
      "fit": "direct",
      "adapter": null,
      "confirmed": true,
-     "note": "Mesa clicks straight onto the frame. No adapters."
+     "note": "Direct onto the frame in the top position, no adapter. Carrying it in the lower position, under a toddler seat, needs the Vista lower adapters.",
+     "also": [
+      "On top: nothing to buy.",
+      "Underneath a toddler seat: Vista lower adapters."
+     ]
     },
     "thirdparty": {
      "fit": "adapter",
@@ -147,13 +147,22 @@
      "fit": "direct",
      "adapter": null,
      "confirmed": true,
-     "note": "The bassinet attaches directly. It is included in the box."
+     "note": "The bassinet is in the Vista box and attaches directly. A second bassinet, or a bassinet carried under a toddler seat, needs the upper and lower adapters.",
+     "also": [
+      "The one in the box, on its own: nothing to buy.",
+      "Bassinet and toddler seat together: Vista upper and lower adapters."
+     ]
     },
     "secondSeat": {
      "fit": "direct",
      "adapter": null,
      "confirmed": true,
-     "note": "RumbleSeat V3 or a second bassinet attaches to the same frame."
+     "note": "What you add decides whether you need anything. A RumbleSeat brings its own adapters in the box.",
+     "also": [
+      "RumbleSeat: the adapters are included with it. Nothing extra to buy.",
+      "A second bassinet above a toddler seat: Vista upper and lower adapters.",
+      "A Mesa capsule underneath: Vista lower adapters."
+     ]
     },
     "board": {
      "fit": "accessory",
@@ -201,10 +210,10 @@
      "confirmed": true
     },
     "thirdparty": {
-     "fit": "adapter",
-     "adapter": "minu-carseat",
-     "confirmed": false,
-     "note": "The Minu car seat adapter fact sheet is written for Minu and Minu V2. A V3 equivalent is not documented. Confirm before publishing."
+     "fit": "none",
+     "adapter": null,
+     "confirmed": true,
+     "note": "The Minu V3 takes the UPPAbaby Mesa only, with the Minu V3 Mesa adapter. No other brand of capsule fits any Minu."
     },
     "bassinet": {
      "fit": "adapter",
@@ -234,7 +243,8 @@
     "thirdparty": {
      "fit": "none",
      "adapter": null,
-     "confirmed": false
+     "confirmed": true,
+     "note": "No other brand of capsule fits any Minu. The Mesa is the only capsule, on the parent's left."
     },
     "bassinet": {
      "fit": "none",
@@ -257,9 +267,9 @@
     "name": "Ridge V2",
     "mesa": {
      "fit": "adapter",
-     "adapter": "ridge-carseat",
+     "adapter": "ridge-mesa-bassinet",
      "confirmed": true,
-     "note": "Needs the Ridge Mesa/Bassinet adapters. The capsule and any UPPAbaby bassinet from 2015 use the same pair, and the pram still folds with them fitted.",
+     "note": "The capsule and any UPPAbaby bassinet from 2015 use the same pair, and the pram still folds with them fitted.",
      "evidence": "Confirmed by Mel, 2 September 2026: the Ridge takes a capsule with the Ridge adapters. Matches the UPPAbaby Ridge Mesa/Bassinet Adapters product page, which lists the Mesa Car Capsule and all UPPAbaby bassinets 2015+. The Ridge car seat adapter fact sheet lists third-party capsules only and is the narrower of the two, so the product page is the one this page follows."
     },
     "thirdparty": {
@@ -269,7 +279,7 @@
     },
     "bassinet": {
      "fit": "adapter",
-     "adapter": "ridge-bassinet",
+     "adapter": "ridge-mesa-bassinet",
      "confirmed": true
     },
     "secondSeat": {
@@ -320,7 +330,7 @@
     "sku": "UPCSA",
     "barcode": "810030091806",
     "rrp": 76.95,
-    "for": "Maxi-Cosi, Nuna, Joie and BeSafe capsules",
+    "for": "A Maxi-Cosi, Nuna or Joie capsule in the upper position on a Vista",
     "confirmedPrice": false
    },
    "vista-lower-carseat": {
@@ -328,7 +338,7 @@
     "sku": "UPA0112LM",
     "barcode": "817609018738",
     "rrp": 64.95,
-    "for": "A capsule in the lower position on Vista",
+    "for": "A Maxi-Cosi, Nuna or Joie capsule in the lower position on a Vista",
     "confirmedPrice": false
    },
    "vista-adapters": {
@@ -416,6 +426,122 @@
     "rrp": 249,
     "for": "A second child standing at the back of a Ridge",
     "confirmedPrice": true
+   },
+   "ridge-mesa-bassinet": {
+    "name": "Ridge Mesa/Bassinet adapters",
+    "sku": "UPRBA",
+    "rrp": 44.95,
+    "for": "An UPPAbaby Mesa capsule or any UPPAbaby bassinet from 2015 on a Ridge",
+    "confirmedPrice": false
+   },
+   "vista-upper": {
+    "name": "Vista upper adapter",
+    "rrp": 59.95,
+    "for": "Whatever rides in the upper position on a Vista",
+    "confirmedPrice": false
+   },
+   "vista-lower": {
+    "name": "Vista lower adapter",
+    "rrp": 64.95,
+    "for": "Whatever rides in the lower position on a Vista",
+    "confirmedPrice": false
+   }
+  },
+  "positions": {
+   "_source": "UB-2026-VistaV3-MesaConfigurationChart.pdf, UPPAbaby's own double configuration chart, both pages (Mesa and third-party capsules). Supplied by Mel 9 Sep 2026.",
+   "_note": "Adapters are decided by POSITION, not by what the thing is. A Mesa on top needs Upper Adapters; the same Mesa underneath a toddler seat needs the Lower Adapter. That is why 'what are you attaching' could never answer it, and why no combination table is needed: ask what goes on top and what goes underneath, and the parts add up. RumbleSeat is lower-only and brings its own adapters.",
+   "vista": {
+    "upper": {
+     "mesa": {
+      "adapter": "vista-upper",
+      "label": "Mesa capsule"
+     },
+     "thirdparty": {
+      "adapter": "vista-upper-carseat",
+      "label": "Another brand of capsule"
+     },
+     "bassinet": {
+      "adapter": "vista-upper",
+      "label": "Bassinet"
+     },
+     "toddler": {
+      "adapter": "vista-upper",
+      "label": "Toddler seat"
+     }
+    },
+    "lower": {
+     "mesa": {
+      "adapter": "vista-lower",
+      "label": "Mesa capsule"
+     },
+     "thirdparty": {
+      "adapter": "vista-lower-carseat",
+      "label": "Another brand of capsule"
+     },
+     "bassinet": {
+      "adapter": "vista-lower",
+      "label": "Bassinet"
+     },
+     "rumbleseat": {
+      "adapter": null,
+      "label": "RumbleSeat",
+      "note": "Its adapters are in the box. Limited recline while forward-facing."
+     }
+    },
+    "single": {
+     "mesa": "A Mesa on its own clicks straight onto the frame. Upper adapters are optional.",
+     "bassinet": "The bassinet in the box attaches directly. Nothing to buy.",
+     "toddler": "The toddler seat attaches directly. Nothing to buy.",
+     "rumbleseat": "A RumbleSeat brings its own adapters in the box. Nothing extra to buy."
+    },
+    "board": {
+     "adapter": "vista-piggyback",
+     "note": "The PiggyBack board clips to the rear axle and works alongside any of these."
+    },
+    "_single_note": "Only things that need NOTHING on their own belong in `single`. Anything that needs a part even when carried alone must be absent so the position rules answer it.",
+    "doubles": [
+     {
+      "upper": "bassinet",
+      "lower": "bassinet",
+      "img": "two-bassinets"
+     },
+     {
+      "upper": "mesa",
+      "lower": "mesa",
+      "img": null
+     },
+     {
+      "upper": "mesa",
+      "lower": "bassinet",
+      "img": null
+     },
+     {
+      "upper": "mesa",
+      "lower": "rumbleseat",
+      "img": null
+     },
+     {
+      "upper": "toddler",
+      "lower": "bassinet",
+      "img": "bassinet-and-rumbleseat"
+     },
+     {
+      "upper": "toddler",
+      "lower": "mesa",
+      "img": null
+     },
+     {
+      "upper": "toddler",
+      "lower": "rumbleseat",
+      "img": "seat-and-rumbleseat"
+     }
+    ],
+    "triple": {
+     "upper": "toddler",
+     "lower": "rumbleseat",
+     "board": true,
+     "img": "seat-rumbleseat-and-board"
+    }
    }
   }
  },
@@ -561,13 +687,13 @@
   {
    "topic": "Vista V3",
    "q": "Will a Vista V3 fit in my boot?",
-   "a": "Folded with the toddler seat attached it is {vista.folded}. With the seat removed it drops to {vista.folded_no_seat}. Measure the shortest side of your boot opening, not the space inside it. The opening is what stops a pram going in.",
+   "a": "Folded with the toddler seat attached it is 41.4 x 65.3 x 85.9 cm. With the seat removed it drops to 28.7 x 65.3 x 82.9 cm. Measure the shortest side of your boot opening, not the space inside it. The opening is what stops a pram going in.",
    "link": "/products/uppababy-vista-v3-pram-with-bassinet-james-black"
   },
   {
    "topic": "Vista V3",
    "q": "How heavy is the Vista V3?",
-   "a": "{vista.weight} with the frame and toddler seat together. The frame alone is 9 kg, the seat 3.5 kg and the bassinet 4.2 kg, so it can be lifted in parts.",
+   "a": "12.5 kg with the frame and toddler seat together. The frame alone is 9 kg, the seat 3.5 kg and the bassinet 4.2 kg, so it can be lifted in parts.",
    "link": "/products/uppababy-vista-v3-pram-with-bassinet-james-black"
   },
   {
@@ -585,7 +711,7 @@
   {
    "topic": "Vista V3",
    "q": "How much can the basket hold?",
-   "a": "{vista.basket}, which is the largest in the range. It is reachable from either side, including when the seat faces you.",
+   "a": "13.6 kg, which is the largest in the range. It is reachable from either side, including when the seat faces you.",
    "link": "/products/uppababy-vista-v3-pram-with-bassinet-james-black"
   },
   {
@@ -597,7 +723,7 @@
   {
    "topic": "Vista V3",
    "q": "How many colourways are there?",
-   "a": "{vista.colours} for the Vista V3. Every one is the same pram underneath. What changes is the fabric, the frame finish and the leather.",
+   "a": "Nine for the Vista V3. Every one is the same pram underneath. What changes is the fabric, the frame finish and the leather.",
    "link": "/products/uppababy-vista-v3-pram-with-bassinet-james-black"
   },
   {
@@ -609,7 +735,31 @@
   {
    "topic": "Vista V3",
    "q": "How wide is the Vista V3 when it is open?",
-   "a": "{vista.width} across, which is the figure that matters for shop aisles and front doors. Opened out it is {vista.unfolded}.",
+   "a": "65.3 cm across, which is the figure that matters for shop aisles and front doors. Opened out it is 92.7 x 65.3 x 100.3 cm.",
+   "link": "/products/uppababy-vista-v3-pram-with-bassinet-james-black"
+  },
+  {
+   "topic": "Vista V3",
+   "q": "How long is the warranty in Australia?",
+   "a": "Three years from purchase against manufacturing defects, plus complimentary maintenance checks for up to ten years under Lifetime Service Support. Register your pram to activate it.",
+   "link": "/products/uppababy-vista-v3-pram-with-bassinet-james-black"
+  },
+  {
+   "topic": "Vista V3",
+   "q": "Is buying direct cheaper than a retailer?",
+   "a": "No, and deliberately so. Our prices match authorised retailers. Buying direct gets you genuine stock, the Australian warranty, four month lay-by and UPPside Rewards points.",
+   "link": "/products/uppababy-vista-v3-pram-with-bassinet-james-black"
+  },
+  {
+   "topic": "Vista V3",
+   "q": "Can I try one before I buy?",
+   "a": "Yes. Authorised retailers around Australia stock the range, and Meet the Experts days put our team on the shop floor with every model set up.",
+   "link": "/products/uppababy-vista-v3-pram-with-bassinet-james-black"
+  },
+  {
+   "topic": "Vista V3",
+   "q": "What happens if it is damaged by an airline?",
+   "a": "Airline damage is excluded from the standard warranty, as it is with every pram brand. Our TravelSafe Program covers it: buy an UPPAbaby travel bag, register before you fly, and you are covered for four years.",
    "link": "/products/uppababy-vista-v3-pram-with-bassinet-james-black"
   },
   {
@@ -627,13 +777,13 @@
   {
    "topic": "Cruz V3",
    "q": "Will a Cruz V3 fit in my boot?",
-   "a": "Folded with the seat attached it is {cruz.folded}. With the seat removed it drops to {cruz.folded_no_seat}. Measure the opening of your boot rather than the space inside it.",
+   "a": "Folded with the seat attached it is 43 x 57.2 x 82.3 cm. With the seat removed it drops to 34.3 x 57.2 x 76.9 cm. Measure the opening of your boot rather than the space inside it.",
    "link": "/products/uppababy-cruz-v3-pram-james-black"
   },
   {
    "topic": "Cruz V3",
    "q": "How heavy is the Cruz V3?",
-   "a": "{cruz.weight} with the frame and seat together. The frame alone is 7.7 kg and the seat 4.3 kg, so it lifts into a boot in two manageable pieces.",
+   "a": "12 kg with the frame and seat together. The frame alone is 7.7 kg and the seat 4.3 kg, so it lifts into a boot in two manageable pieces.",
    "link": "/products/uppababy-cruz-v3-pram-james-black"
   },
   {
@@ -663,19 +813,43 @@
   {
    "topic": "Cruz V3",
    "q": "How many colourways are there?",
-   "a": "{cruz.colours} for the Cruz V3, all the same pram underneath.",
+   "a": "Five for the Cruz V3, all the same pram underneath.",
    "link": "/products/uppababy-cruz-v3-pram-james-black"
   },
   {
    "topic": "Cruz V3",
    "q": "How wide is the Cruz V3?",
-   "a": "{cruz.width} across, opened out to {cruz.unfolded}. That width is what clears a shop aisle and a standard front door.",
+   "a": "57.2 cm across, opened out to 95.2 x 57.2 x 106.1 cm. That width is what clears a shop aisle and a standard front door.",
    "link": "/products/uppababy-cruz-v3-pram-james-black"
   },
   {
    "topic": "Cruz V3",
    "q": "Can I add a ride-along board for an older child?",
    "a": "Yes. The Cruz PiggyBack board clips to the rear axle for a child to stand on, and folds up when nobody is riding.",
+   "link": "/products/uppababy-cruz-v3-pram-james-black"
+  },
+  {
+   "topic": "Cruz V3",
+   "q": "How long is the warranty in Australia?",
+   "a": "Three years from purchase against manufacturing defects, plus complimentary maintenance checks for up to ten years under Lifetime Service Support. Register your pram to activate it.",
+   "link": "/products/uppababy-cruz-v3-pram-james-black"
+  },
+  {
+   "topic": "Cruz V3",
+   "q": "Is buying direct cheaper than a retailer?",
+   "a": "No, and deliberately so. Our prices match authorised retailers. Buying direct gets you genuine stock, the Australian warranty, four month lay-by and UPPside Rewards points.",
+   "link": "/products/uppababy-cruz-v3-pram-james-black"
+  },
+  {
+   "topic": "Cruz V3",
+   "q": "Can I try one before I buy?",
+   "a": "Yes. Authorised retailers around Australia stock the range, and Meet the Experts days put our team on the shop floor with every model set up.",
+   "link": "/products/uppababy-cruz-v3-pram-james-black"
+  },
+  {
+   "topic": "Cruz V3",
+   "q": "What happens if it is damaged by an airline?",
+   "a": "Airline damage is excluded from the standard warranty, as it is with every pram brand. Our TravelSafe Program covers it: buy an UPPAbaby travel bag, register before you fly, and you are covered for four years.",
    "link": "/products/uppababy-cruz-v3-pram-james-black"
   },
   {
@@ -687,13 +861,13 @@
   {
    "topic": "Minu V3",
    "q": "Will a Minu V3 fit in my boot?",
-   "a": "Almost certainly. Folded it is {minu.folded}, which is around carry-on size and the smallest fold in the UPPAbaby range.",
+   "a": "Almost certainly. Folded it is 25 x 45 x 55 cm, which is around carry-on size and the smallest fold in the UPPAbaby range.",
    "link": "/products/uppababy-minu-v3-stroller-greyson-charcoal-carbon-saddle-leather"
   },
   {
    "topic": "Minu V3",
    "q": "How heavy is the Minu V3?",
-   "a": "{minu.weight}, the lightest pram we sell. In its box it is 9.4 kg, which matters if you are checking it as luggage.",
+   "a": "7.6 kg, the lightest pram we sell. In its box it is 9.4 kg, which matters if you are checking it as luggage.",
    "link": "/products/uppababy-minu-v3-stroller-greyson-charcoal-carbon-saddle-leather"
   },
   {
@@ -723,13 +897,7 @@
   {
    "topic": "Minu V3",
    "q": "How wide is the Minu V3?",
-   "a": "{minu.width} across, opened out to {minu.unfolded}. It is the narrowest pram in the range.",
-   "link": "/products/uppababy-minu-v3-stroller-greyson-charcoal-carbon-saddle-leather"
-  },
-  {
-   "topic": "Minu V3",
-   "q": "How many colourways are there?",
-   "a": "{minu.colours} for the Minu V3.",
+   "a": "45 cm across, opened out to 88 x 45 x 104 cm. It is the narrowest pram in the range.",
    "link": "/products/uppababy-minu-v3-stroller-greyson-charcoal-carbon-saddle-leather"
   },
   {
@@ -739,9 +907,33 @@
    "link": "/products/uppababy-minu-v3-stroller-greyson-charcoal-carbon-saddle-leather"
   },
   {
+   "topic": "Minu V3",
+   "q": "How long is the warranty in Australia?",
+   "a": "Three years from purchase against manufacturing defects, plus complimentary maintenance checks for up to ten years under Lifetime Service Support. Register your pram to activate it.",
+   "link": "/products/uppababy-minu-v3-stroller-greyson-charcoal-carbon-saddle-leather"
+  },
+  {
+   "topic": "Minu V3",
+   "q": "Is buying direct cheaper than a retailer?",
+   "a": "No, and deliberately so. Our prices match authorised retailers. Buying direct gets you genuine stock, the Australian warranty, four month lay-by and UPPside Rewards points.",
+   "link": "/products/uppababy-minu-v3-stroller-greyson-charcoal-carbon-saddle-leather"
+  },
+  {
+   "topic": "Minu V3",
+   "q": "Can I try one before I buy?",
+   "a": "Yes. Authorised retailers around Australia stock the range, and Meet the Experts days put our team on the shop floor with every model set up.",
+   "link": "/products/uppababy-minu-v3-stroller-greyson-charcoal-carbon-saddle-leather"
+  },
+  {
+   "topic": "Minu V3",
+   "q": "What happens if it is damaged by an airline?",
+   "a": "Airline damage is excluded from the standard warranty, as it is with every pram brand. Our TravelSafe Program covers it: buy an UPPAbaby travel bag, register before you fly, and you are covered for four years.",
+   "link": "/products/uppababy-minu-v3-stroller-greyson-charcoal-carbon-saddle-leather"
+  },
+  {
    "topic": "Minu Duo",
    "q": "Will the Minu Duo fit through a standard doorway?",
-   "a": "Yes. The pram is {minuduo.width} wide and it is designed to clear a 73 cm doorway, which is the standard internal width in most Australian homes.",
+   "a": "Yes. The pram is 70.6 cm wide and it is designed to clear a 73 cm doorway, which is the standard internal width in most Australian homes.",
    "link": "/products/uppababy-minu-duo-stroller-jake-charcoal-carbon-black-leather"
   },
   {
@@ -759,25 +951,25 @@
   {
    "topic": "Minu Duo",
    "q": "Will a Minu Duo fit in my boot?",
-   "a": "Folded it is {minuduo.folded}. It is wide rather than long, so the number to check against your boot opening is the {minuduo.width_only} width.",
+   "a": "Folded it is 33 x 70.6 x 60.2 cm. It is wide rather than long, so the number to check against your boot opening is the 70.6 cm width.",
    "link": "/products/uppababy-minu-duo-stroller-jake-charcoal-carbon-black-leather"
   },
   {
    "topic": "Minu Duo",
    "q": "How heavy is the Minu Duo?",
-   "a": "{minuduo.weight}, which is around the weight of a single full-size pram for two seats.",
+   "a": "12.7 kg, which is around the weight of a single full-size pram for two seats.",
    "link": "/products/uppababy-minu-duo-stroller-jake-charcoal-carbon-black-leather"
   },
   {
    "topic": "Minu Duo",
    "q": "How much weight does each seat take?",
-   "a": "Up to {minuduo.to}, so it stays usable well into the toddler years for both children.",
+   "a": "Up to 22.7 kg per seat, so it stays usable well into the toddler years for both children.",
    "link": "/products/uppababy-minu-duo-stroller-jake-charcoal-carbon-black-leather"
   },
   {
    "topic": "Minu Duo",
    "q": "How much can the basket hold?",
-   "a": "{minuduo.basket} across the one basket underneath.",
+   "a": "11.3 kg across the one basket underneath.",
    "link": "/products/uppababy-minu-duo-stroller-jake-charcoal-carbon-black-leather"
   },
   {
@@ -794,8 +986,26 @@
   },
   {
    "topic": "Minu Duo",
-   "q": "How many colourways are there?",
-   "a": "{minuduo.colours} at the moment.",
+   "q": "How long is the warranty in Australia?",
+   "a": "Three years from purchase against manufacturing defects, plus complimentary maintenance checks for up to ten years under Lifetime Service Support. Register your pram to activate it.",
+   "link": "/products/uppababy-minu-duo-stroller-jake-charcoal-carbon-black-leather"
+  },
+  {
+   "topic": "Minu Duo",
+   "q": "Is buying direct cheaper than a retailer?",
+   "a": "No, and deliberately so. Our prices match authorised retailers. Buying direct gets you genuine stock, the Australian warranty, four month lay-by and UPPside Rewards points.",
+   "link": "/products/uppababy-minu-duo-stroller-jake-charcoal-carbon-black-leather"
+  },
+  {
+   "topic": "Minu Duo",
+   "q": "Can I try one before I buy?",
+   "a": "Yes. Authorised retailers around Australia stock the range, and Meet the Experts days put our team on the shop floor with every model set up.",
+   "link": "/products/uppababy-minu-duo-stroller-jake-charcoal-carbon-black-leather"
+  },
+  {
+   "topic": "Minu Duo",
+   "q": "What happens if it is damaged by an airline?",
+   "a": "Airline damage is excluded from the standard warranty, as it is with every pram brand. Our TravelSafe Program covers it: buy an UPPAbaby travel bag, register before you fly, and you are covered for four years.",
    "link": "/products/uppababy-minu-duo-stroller-jake-charcoal-carbon-black-leather"
   },
   {
@@ -813,25 +1023,25 @@
   {
    "topic": "Ridge V2",
    "q": "Will a Ridge V2 fit in my boot?",
-   "a": "Folded it is {ridge.folded}, which is the largest fold in the range. It is a pram for families with boot space. Worth measuring before you commit.",
+   "a": "Folded it is 49.5 x 65 x 91.4 cm, which is the largest fold in the range. It is a pram for families with boot space. Worth measuring before you commit.",
    "link": "/products/uppababy-ridge-v2-pram-jogger-james-black"
   },
   {
    "topic": "Ridge V2",
    "q": "How heavy is the Ridge V2?",
-   "a": "{ridge.weight}. In its box it is 18.9 kg.",
+   "a": "13.7 kg. In its box it is 18.9 kg.",
    "link": "/products/uppababy-ridge-v2-pram-jogger-james-black"
   },
   {
    "topic": "Ridge V2",
    "q": "Can the Ridge V2 carry two children?",
-   "a": "Yes, up to {ridge.children}, using a second seat or a ride-along board.",
+   "a": "Yes, up to 2, using a second seat or a ride-along board.",
    "link": "/products/uppababy-ridge-v2-pram-jogger-james-black"
   },
   {
    "topic": "Ridge V2",
    "q": "What weight does the Ridge V2 take?",
-   "a": "From {ridge.from} to {ridge.to}, the highest limit in the range.",
+   "a": "From 6 months to 25 kg, the highest limit in the range.",
    "link": "/products/uppababy-ridge-v2-pram-jogger-james-black"
   },
   {
@@ -855,13 +1065,37 @@
   {
    "topic": "Ridge V2",
    "q": "How wide is the Ridge V2?",
-   "a": "{ridge.width} across, opened out to {ridge.unfolded}.",
+   "a": "65 cm across, opened out to 117.6 x 65 x 109.2 cm.",
    "link": "/products/uppababy-ridge-v2-pram-jogger-james-black"
   },
   {
    "topic": "Ridge V2",
    "q": "Is the Ridge V2 only useful if I run?",
    "a": "No. The same tyres and wheelbase that suit running suit sand, grass, gravel and unsealed paths. If most of your walking is on footpaths, a Cruz or a Vista will be easier to store.",
+   "link": "/products/uppababy-ridge-v2-pram-jogger-james-black"
+  },
+  {
+   "topic": "Ridge V2",
+   "q": "How long is the warranty in Australia?",
+   "a": "Three years from purchase against manufacturing defects, plus complimentary maintenance checks for up to ten years under Lifetime Service Support. Register your pram to activate it.",
+   "link": "/products/uppababy-ridge-v2-pram-jogger-james-black"
+  },
+  {
+   "topic": "Ridge V2",
+   "q": "Is buying direct cheaper than a retailer?",
+   "a": "No, and deliberately so. Our prices match authorised retailers. Buying direct gets you genuine stock, the Australian warranty, four month lay-by and UPPside Rewards points.",
+   "link": "/products/uppababy-ridge-v2-pram-jogger-james-black"
+  },
+  {
+   "topic": "Ridge V2",
+   "q": "Can I try one before I buy?",
+   "a": "Yes. Authorised retailers around Australia stock the range, and Meet the Experts days put our team on the shop floor with every model set up.",
+   "link": "/products/uppababy-ridge-v2-pram-jogger-james-black"
+  },
+  {
+   "topic": "Ridge V2",
+   "q": "What happens if it is damaged by an airline?",
+   "a": "Airline damage is excluded from the standard warranty, as it is with every pram brand. Our TravelSafe Program covers it: buy an UPPAbaby travel bag, register before you fly, and you are covered for four years.",
    "link": "/products/uppababy-ridge-v2-pram-jogger-james-black"
   },
   {
@@ -873,19 +1107,19 @@
   {
    "topic": "Kona",
    "q": "Can I use the Kona from birth?",
-   "a": "Yes, with the bassinet or a Mesa capsule.",
+   "a": "Yes, as sold. The seat lies flat from birth, and the UPPAbaby bassinet or a Mesa capsule attach directly if you would rather.",
    "link": "/collections/prams-strollers"
   },
   {
    "topic": "Kona",
    "q": "How big is the Kona folded?",
-   "a": "{kona.folded}, which sits between the Minu V3 and the Cruz V3.",
+   "a": "34 x 53.3 x 65.5 cm, which sits between the Minu V3 and the Cruz V3.",
    "link": "/collections/prams-strollers"
   },
   {
    "topic": "Kona",
    "q": "How much can the Kona basket hold?",
-   "a": "{kona.basket}, which is full-size. The same as a Vista, on a much smaller frame.",
+   "a": "13.6 kg, which is full-size. The same as a Vista, on a much smaller frame.",
    "link": "/collections/prams-strollers"
   },
   {
@@ -903,13 +1137,31 @@
   {
    "topic": "Kona",
    "q": "How wide is the Kona?",
-   "a": "{kona.width} across, opened out to {kona.unfolded}.",
+   "a": "53.3 cm across, opened out to 85.3 x 53.3 x 96.5 cm.",
    "link": "/collections/prams-strollers"
   },
   {
    "topic": "Kona",
-   "q": "How many colourways will there be?",
-   "a": "{kona.colours} at launch.",
+   "q": "How long is the warranty in Australia?",
+   "a": "Three years from purchase against manufacturing defects, plus complimentary maintenance checks for up to ten years under Lifetime Service Support. Register your pram to activate it.",
+   "link": "/collections/prams-strollers"
+  },
+  {
+   "topic": "Kona",
+   "q": "Is buying direct cheaper than a retailer?",
+   "a": "No, and deliberately so. Our prices match authorised retailers. Buying direct gets you genuine stock, the Australian warranty, four month lay-by and UPPside Rewards points.",
+   "link": "/collections/prams-strollers"
+  },
+  {
+   "topic": "Kona",
+   "q": "Can I try one before I buy?",
+   "a": "Yes. Authorised retailers around Australia stock the range, and Meet the Experts days put our team on the shop floor with every model set up.",
+   "link": "/collections/prams-strollers"
+  },
+  {
+   "topic": "Kona",
+   "q": "What happens if it is damaged by an airline?",
+   "a": "Airline damage is excluded from the standard warranty, as it is with every pram brand. Our TravelSafe Program covers it: buy an UPPAbaby travel bag, register before you fly, and you are covered for four years.",
    "link": "/collections/prams-strollers"
   },
   {
@@ -937,52 +1189,400 @@
    "link": "/pages/faqs"
   },
   {
+   "topic": "About Coolkidz Australia",
+   "q": "What a distributor actually does",
+   "a": "Coolkidz Australia is the exclusive Australian distributor for the brands below. In practice that means the warranty on your pram is honoured by a company in Melbourne rather than an inbox overseas, the spare parts are held here, and the person who answers a service question has the product in front of them. It also means one account across twelve brands. The same team that replaces a wheel on a Vista sells the monitor in the nursery and the teether in the nappy bag.",
+   "link": "/pages/about-us-coolkidz#what-a-distributor-actually-does"
+  },
+  {
+   "topic": "About Coolkidz Australia",
+   "q": "UPPAbaby You are here",
+   "a": "Prams, strollers and the Mesa car capsule.",
+   "link": "/pages/about-us-coolkidz#uppababy-you-are-here"
+  },
+  {
+   "topic": "About Coolkidz Australia",
+   "q": "Frida",
+   "a": "Frida Baby and Frida Mom. The NoseFrida, postpartum recovery and hospital bag essentials. Visit Frida &rarr;",
+   "link": "/pages/about-us-coolkidz#frida"
+  },
+  {
+   "topic": "About Coolkidz Australia",
+   "q": "Nanit",
+   "a": "Baby monitors that watch breathing as well as sleep. Visit Nanit &rarr;",
+   "link": "/pages/about-us-coolkidz#nanit"
+  },
+  {
+   "topic": "About Coolkidz Australia",
+   "q": "Zazu",
+   "a": "Sleep trainer clocks, nightlights and white noise. Visit Zazu &rarr;",
+   "link": "/pages/about-us-coolkidz#zazu"
+  },
+  {
+   "topic": "About Coolkidz Australia",
+   "q": "SmarTrike",
+   "a": "Stroller trikes that grow with a toddler from six months. Visit SmarTrike &rarr;",
+   "link": "/pages/about-us-coolkidz#smartrike"
+  },
+  {
+   "topic": "About Coolkidz Australia",
+   "q": "WonderFold",
+   "a": "Stroller wagons, for the families who need to carry more. Visit WonderFold &rarr;",
+   "link": "/pages/about-us-coolkidz#wonderfold"
+  },
+  {
+   "topic": "About Coolkidz Australia",
+   "q": "Gaia Baby",
+   "a": "Nursery furniture built to outlast the nursery. Visit Gaia Baby &rarr;",
+   "link": "/pages/about-us-coolkidz#gaia-baby"
+  },
+  {
+   "topic": "About Coolkidz Australia",
+   "q": "Hannie",
+   "a": "One portable high chair that clamps to a dining chair and weighs 2 kg. Visit Hannie &rarr;",
+   "link": "/pages/about-us-coolkidz#hannie"
+  },
+  {
+   "topic": "About Coolkidz Australia",
+   "q": "MiaMily",
+   "a": "Luggage and carriers for travelling with small children. Visit MiaMily &rarr;",
+   "link": "/pages/about-us-coolkidz#miamily"
+  },
+  {
+   "topic": "About Coolkidz Australia",
+   "q": "Matchstick Monkey",
+   "a": "Teethers, sonic toothbrushes and bath toys in food-grade silicone. Visit Matchstick Monkey &rarr;",
+   "link": "/pages/about-us-coolkidz#matchstick-monkey"
+  },
+  {
+   "topic": "About Coolkidz Australia",
+   "q": "Magic",
+   "a": "Nappy bins that do the one job properly. Visit Magic &rarr;",
+   "link": "/pages/about-us-coolkidz#magic"
+  },
+  {
+   "topic": "About Coolkidz Australia",
+   "q": "Mamave",
+   "a": "Pregnancy-safe skincare for mothers and babies, made in Australia. Visit Mamave &rarr;",
+   "link": "/pages/about-us-coolkidz#mamave"
+  },
+  {
+   "topic": "About Coolkidz Australia",
+   "q": "Why it matters when something goes wrong",
+   "a": "Buying from a distributor's own store rather than a marketplace changes what happens on the day a part breaks. The purchase is on record, the warranty is three years and administered locally, servicing is available for up to ten years, and the spare parts are on a shelf in Braeside rather than on a boat. That is the whole argument for buying direct, and it is the same argument whichever of the twelve brands you are buying. The range",
+   "link": "/pages/about-us-coolkidz#why-it-matters-when-something-goes-wrong"
+  },
+  {
+   "topic": "About Coolkidz Australia",
+   "q": "See what UPPAbaby makes",
+   "a": "Six prams, the Mesa capsule and the at-home range, all warranted and serviced by the same team. See the prams Compare the range",
+   "link": "/pages/about-us-coolkidz#see-what-uppababy-makes"
+  },
+  {
+   "topic": "About Coolkidz Australia",
+   "q": "About Coolkidz Australia",
+   "a": "Coolkidz Australia distributes UPPAbaby and eleven other brands, and is who answers when you make a warranty claim here.",
+   "link": "/pages/about-us-coolkidz"
+  },
+  {
+   "topic": "Australian Car Seat Centre",
+   "q": "What the Australian standard means",
+   "a": "Australia has its own child restraint standard, AS/NZS 1754, and a restraint must be approved to it to be sold or used here. That is why the Mesa sold in Australia is a distinct Australian version, and why a capsule bought overseas cannot legally be used in an Australian car, however similar it looks. The Australian Mesa is approved as a Type A2 rearward-facing infant restraint . It is low birthweight tested and approved, with a custom-fit insert for premature and small babies, and it is CASA approved for use on aircraft. Rearward facing, for as long as the seat allows The road rules set the minimum: rearward facing until at least six months. Every Australian safety body recommends going well beyond the minimum, because a rearward-facing seat supports the head, neck and spine in a frontal crash in a way a forward-facing seat cannot. With the Mesa the question never arises: it is rearward",
+   "link": "/pages/car-seat-centre#what-the-australian-standard-means"
+  },
+  {
+   "topic": "Australian Car Seat Centre",
+   "q": "Which capsule",
+   "a": "Mesa is the UPPAbaby infant car capsule. It clicks straight onto a Vista, Cruz or Kona frame with no adapters, and onto Minu, Minu Duo and Ridge with the matching adapter set. That means a sleeping baby moves from car to pram without being unbuckled. Suits Birth (2.0 kg) to 15 kg, approximately birth to 12 months Carrier weight 4.7 kg without canopy and insert Base weight 4.1 kg Installation Base with ISOFIX, or base with the vehicle seatbelt and built-in lock-off. Load leg to the floor either way. Approval Type A2/0. Low birthweight tested and approved. CASA approved for aircraft use. Shop the Mesa Mesa how-to videos",
+   "link": "/pages/car-seat-centre#which-capsule"
+  },
+  {
+   "topic": "Australian Car Seat Centre",
+   "q": "Fitting it, properly",
+   "a": "Six short films, made for the Australian Mesa. Press play and the video loads here. Play: How to fit a child with the infant inlay Newborn",
+   "link": "/pages/car-seat-centre#fitting-it-properly"
+  },
+  {
+   "topic": "Australian Car Seat Centre",
+   "q": "How to fit a child with the infant inlay",
+   "a": "The inlay is for the smallest babies. Getting the harness height right with it in place is the step most people get wrong the first time. Play: How to fit a child without the infant inlay Growing",
+   "link": "/pages/car-seat-centre#how-to-fit-a-child-with-the-infant-inlay"
+  },
+  {
+   "topic": "Australian Car Seat Centre",
+   "q": "How to fit a child without the infant inlay",
+   "a": "When to take the inlay out, and where the harness should sit once it is gone. Play: How to fit a premature baby From 2.0 kg",
+   "link": "/pages/car-seat-centre#how-to-fit-a-child-without-the-infant-inlay"
+  },
+  {
+   "topic": "Australian Car Seat Centre",
+   "q": "How to fit a premature baby",
+   "a": "Mesa is low birthweight tested and approved from 2.0 kg, with a custom-fit infant insert. This is how that insert is used. Play: Base installation with ISOFIX Install",
+   "link": "/pages/car-seat-centre#how-to-fit-a-premature-baby"
+  },
+  {
+   "topic": "Australian Car Seat Centre",
+   "q": "Base installation with ISOFIX",
+   "a": "The quicker of the two installs. Watch for the indicators turning green on both connectors, and for the load leg angle. Play: Base installation with a vehicle seatbelt Install",
+   "link": "/pages/car-seat-centre#base-installation-with-isofix"
+  },
+  {
+   "topic": "Australian Car Seat Centre",
+   "q": "Base installation with a vehicle seatbelt",
+   "a": "For cars without ISOFIX points. The built-in lock-off is the part that makes this secure, and the part people skip. Play: Car to pram, and pram to car Every day",
+   "link": "/pages/car-seat-centre#base-installation-with-a-vehicle-seatbelt"
+  },
+  {
+   "topic": "Australian Car Seat Centre",
+   "q": "Car to pram, and pram to car",
+   "a": "The whole point of a travel system: lifting the capsule out and clicking it onto the frame without waking anyone. Three things worth checking every time Harness height. For a rearward-facing capsule the straps come from at or just below the shoulders. Too high is the most common error, and the inlay changes where the shoulders sit. The pinch test. Once buckled you should not be able to pinch a horizontal fold of webbing at the collarbone. If you can, tighten it. No bulky clothing. A padded jacket or a blanket under the harness leaves slack in a crash. Buckle in, then put the blanket over the top. If you would rather have it checked, an authorised child restraint fitter in your state can fit and check any approved seat, usually for a small fee, and many councils and hospitals run free checking days. Bring the capsule, the base and the car.",
+   "link": "/pages/car-seat-centre#car-to-pram-and-pram-to-car"
+  },
+  {
+   "topic": "Australian Car Seat Centre",
+   "q": "On the pram",
+   "a": "Which frames the Mesa attaches to, and what each one needs. Vista V3 Fits directly, nothing to buy. Cruz V3 Fits directly, nothing to buy. Kona Fits directly, nothing to buy. Minu V3 Needs the Minu V3 Mesa adapter ($49.95). Minu Duo Needs the Minu Duo Mesa adapters ($64.95). Holds ONE capsule, on the parent's left. The canopy must come off, and the adapters must be removed before folding. Ridge V2 Needs the Ridge Mesa/Bassinet adapters ($44.95). The capsule and any UPPAbaby bassinet from 2015 use the same pair, and the pram still folds with them fitted. Third-party capsules (Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (manufactured after 20 April 2022), Nuna PIPA and the others on the adapters page ) fit some frames with the car seat adapter. Vista V3 Needs the Vista / Alta / Cruz car seat upper adapter ($76.95). Cruz V3 Needs the Vista / Alta / Cruz ca",
+   "link": "/pages/car-seat-centre#on-the-pram"
+  },
+  {
+   "topic": "Australian Car Seat Centre",
+   "q": "When to move up",
+   "a": "Babies outgrow a capsule by height before weight. Move to the next seat when the top of the head is level with the top of the shell, or at the weight limit, whichever comes first. Do not wait for the first birthday if the head is already there, and do not turn a baby forward facing early because they seem to want the view. The next seat is usually a convertible restraint that starts rearward facing and later turns forward, sold by the car seat specialists rather than by us. Choose one with the longest rearward-facing limit you can, for the same reason the Mesa only faces backwards. The pram carries on regardless: the toddler seat on a Vista, Cruz or Kona takes over from the capsule, and the Minu, Minu Duo and Ridge seats run to the same limits.",
+   "link": "/pages/car-seat-centre#when-to-move-up"
+  },
+  {
+   "topic": "Australian Car Seat Centre",
+   "q": "Accidents, travel and the things a warranty does not cover",
+   "a": "Crash Exchange Program Capsule or base in a vehicle during an accident? Lodge within 30 days and it is replaced. TravelSafe Register before you fly and airline damage is covered, which no warranty does. Register the Mesa Two minutes. Makes any claim, exchange or recall notice quicker. Warranty Three years on defects, on top of your consumer guarantees.",
+   "link": "/pages/car-seat-centre#accidents-travel-and-the-things-a-warranty-does-not-cover"
+  },
+  {
+   "topic": "Australian Car Seat Centre",
+   "q": "Is the Mesa approved for use in Australia?",
+   "a": "Yes. Every child restraint sold in Australia must meet AS/NZS 1754, the Australian and New Zealand standard, and the Mesa sold here is the Australian version, approved as a Type A2 rearward-facing infant restraint. It is not the US or European Mesa; those are not legal to use in Australia.",
+   "link": "/pages/car-seat-centre#is-the-mesa-approved-for-use-in-australia"
+  },
+  {
+   "topic": "Australian Car Seat Centre",
+   "q": "How long can my baby stay in the Mesa?",
+   "a": "From Birth (2.0 kg) to 15 kg, which is approximately birth to 12 months. Move up when your baby reaches the weight limit, or when the top of their head is level with the top of the shell, whichever comes first. Height matters more than birthdays.",
+   "link": "/pages/car-seat-centre#how-long-can-my-baby-stay-in-the-mesa"
+  },
+  {
+   "topic": "Australian Car Seat Centre",
+   "q": "Does my baby have to face backwards?",
+   "a": "Under the Australian road rules a child under six months must travel in an approved rearward-facing restraint, and from six months to four years may stay rearward facing or move to a forward-facing seat with an inbuilt harness. Rearward facing protects the head and neck best, so the advice from every Australian safety body is to keep a baby rearward facing for as long as the seat allows, not to turn them at six months. The Mesa is rearward facing only.",
+   "link": "/pages/car-seat-centre#does-my-baby-have-to-face-backwards"
+  },
+  {
+   "topic": "Australian Car Seat Centre",
+   "q": "ISOFIX or the seatbelt, which is safer?",
+   "a": "Neither is safer when fitted correctly; both are tested to the same standard. ISOFIX is quicker and harder to get wrong, and the base shows green indicators when both connectors are locked. The seatbelt install works in any car and relies on the built-in lock-off, which is the step people skip. Whichever you use, the load leg must sit firmly on the floor.",
+   "link": "/pages/car-seat-centre#isofix-or-the-seatbelt-which-is-safer"
+  },
+  {
+   "topic": "Australian Car Seat Centre",
+   "q": "Can I use the Mesa without the base?",
+   "a": "The Australian Mesa is designed to be used with its base, which is what carries the ISOFIX connectors and the load leg. Check the Australian manual for the approved installation methods before you fit it any other way.",
+   "link": "/pages/car-seat-centre#can-i-use-the-mesa-without-the-base"
+  },
+  {
+   "topic": "Australian Car Seat Centre",
+   "q": "Can the Mesa go on a plane?",
+   "a": "Yes. CASA approved for aircraft use, so it can be used in an aircraft seat on airlines that permit child restraints. Check with the airline when you book, and register the capsule under TravelSafe before you fly.",
+   "link": "/pages/car-seat-centre#can-the-mesa-go-on-a-plane"
+  },
+  {
+   "topic": "Australian Car Seat Centre",
+   "q": "My car was in an accident. Is the capsule still safe?",
+   "a": "Treat it as not safe. A restraint that was in a vehicle during a collision may have damage you cannot see. UPPAbaby Australia runs a Crash Exchange Program for exactly this: lodge the details within 30 days and the capsule or base is replaced. Do not sell or pass on a capsule that has been in an accident.",
+   "link": "/pages/car-seat-centre#my-car-was-in-an-accident-is-the-capsule-still-safe"
+  },
+  {
+   "topic": "Australian Car Seat Centre",
+   "q": "Do I need adapters for the pram?",
+   "a": "On a Vista, Cruz or Kona the Mesa clicks straight onto the frame. Minu V3, Minu Duo and Ridge each have a matching adapter set. Third-party capsules from Maxi-Cosi, Nuna and Joie fit some frames with the car seat adapter, and never fit a Minu.",
+   "link": "/pages/car-seat-centre#do-i-need-adapters-for-the-pram"
+  },
+  {
+   "topic": "Australian Car Seat Centre",
+   "q": "What is the difference between a capsule and a convertible car seat?",
+   "a": "A capsule is a rearward-facing carrier that lifts out of the car and onto the pram, made for roughly the first year. A convertible seat stays in the car and grows with the child, rearward then forward facing, often to four years or beyond. Most Australian families use a capsule first, for the travel-system convenience in the newborn months, then move to a convertible seat. Not sure about a fitting?",
+   "link": "/pages/car-seat-centre#what-is-the-difference-between-a-capsule-and-a-convertible-c"
+  },
+  {
+   "topic": "Australian Car Seat Centre",
+   "q": "Ask before you drive",
+   "a": "Send a photograph of the base in the car and we will tell you if something looks wrong. For a hands-on check, use an authorised fitter in your state. Open a support ticket Mesa how-to videos",
+   "link": "/pages/car-seat-centre#ask-before-you-drive"
+  },
+  {
+   "topic": "Australian Car Seat Centre",
+   "q": "Australian Car Seat Centre",
+   "a": "The Australian Car Seat Centre from UPPAbaby: what AS/NZS 1754 means, rearward facing and for how long, ISOFIX or seatbelt, fitting the Mesa properly, which prams it attaches to, and when to move up.",
+   "link": "/pages/car-seat-centre"
+  },
+  {
    "topic": "Crash Exchange Program",
    "q": "Why this programme exists",
-   "a": "A pram frame and a capsule shell are engineered to absorb energy. Absorbing energy changes them. After a vehicle accident, a frame can be bent within its tolerance, a weld can be stressed, or the energy-absorbing foam in a capsule can be compressed, with nothing visible from the outside. You cannot inspect your way to confidence on this, and neither can we from a photograph. So the programme does not ask you to prove damage. It asks you to tell us there was an accident. Do not keep using it If your pram or capsule was in the vehicle during an accident, stop using it now, even if it looks perfect and even while your claim is being assessed. This is the one place where we would rather you were inconvenienced.",
+   "a": "A capsule shell and its base are engineered to absorb energy. Absorbing energy changes them. After a vehicle accident the energy-absorbing foam can be compressed, a shell can be stressed, or a load leg or belt path can be loaded past its design, with nothing visible from the outside. You cannot inspect your way to confidence on this, and neither can we from a photograph. So the programme does not ask you to prove damage. It asks you to tell us there was an accident. Do not keep using it If your Mesa capsule or base was in the vehicle during an accident, stop using it now, even if it looks perfect and even while your claim is being assessed. This is the one place where we would rather you were inconvenienced.",
    "link": "/pages/crash-exchange-program#why-this-programme-exists"
   },
   {
    "topic": "Crash Exchange Program",
    "q": "What is covered",
-   "a": "Products UPPAbaby prams and strollers, and the Mesa car capsule and base Trigger The product was in a vehicle involved in an accident Visible damage required No Who can claim The original purchaser, product bought from an authorised Australian retailer Replacement TBC . Like-for-like, current equivalent model, or a discount on a replacement Cost to you TBC Time limit from the accident TBC The programme covers accidents. It does not cover a pram that has been dropped, knocked over, run into a doorframe or damaged in transit. Those are warranty or service questions.",
+   "a": "Products The Mesa car capsule and the Mesa base. Prams and strollers are not covered by this programme Trigger The product was in a vehicle involved in an accident Visible damage required No Who can claim The original purchaser, product bought from an authorised Australian retailer Replacement Like-for-like, or the current equivalent model if yours is no longer made Time limit from the accident 30 days The programme covers accidents, and it covers the Mesa capsule and its base only. A pram or stroller that was in the vehicle is not part of this programme, and neither is a capsule that has been dropped, knocked over or damaged in transit. Those are warranty or service questions.",
    "link": "/pages/crash-exchange-program#what-is-covered"
   },
   {
    "topic": "Crash Exchange Program",
    "q": "How to claim",
-   "a": "Stop using the product Immediately, and before you contact us. Gather what you have Your proof of purchase, the serial number from the frame or the label on the capsule shell, and your insurance claim number or a police report number if there is one. Lodge a claim within 30 days Thirty days from the date of the accident. Tell us that date and where the pram or capsule was in the vehicle, and upload your proof of purchase. We assess and replace We confirm what you are entitled to and arrange the replacement. We will also tell you how to dispose of the old product so that it cannot be resold or passed on.",
+   "a": "Stop using the product Immediately, and before you contact us. Gather what you have Your proof of purchase, the serial number moulded into the capsule shell or printed on the base, and your insurance claim number or a police report number if there is one. Lodge a claim within 30 days Use the form at the foot of this page. Thirty days from the date of the accident. Tell us that date and where the capsule was in the vehicle, and upload your proof of purchase. We assess and replace We confirm what you are entitled to and arrange the replacement. We will also tell you how to dispose of the old product so that it cannot be resold or passed on.",
    "link": "/pages/crash-exchange-program#how-to-claim"
   },
   {
    "topic": "Crash Exchange Program",
    "q": "You have 30 days",
-   "a": "A claim has to be lodged within 30 days of the date of the accident . That is the window, and it is worth starting the claim before the insurance is settled rather than after, because the two are not connected. Stop using the pram or capsule the moment the accident happens. Nothing about the 30 days changes that: the product should be out of use immediately, whether or not you have lodged anything yet.",
+   "a": "A claim has to be lodged within 30 days of the date of the accident . That is the window, and it is worth starting the claim before the insurance is settled rather than after, because the two are not connected. Stop using the capsule the moment the accident happens. Nothing about the 30 days changes that: the product should be out of use immediately, whether or not you have lodged anything yet.",
    "link": "/pages/crash-exchange-program#you-have-30-days"
   },
   {
    "topic": "Crash Exchange Program",
    "q": "Disposing of the old product",
-   "a": "A pram or capsule that has been in an accident must not be sold, given away or handed down. Its history is invisible to the next person, and they will have no way of knowing. When we replace a product under this programme we will tell you how to render it unusable before disposal, usually by cutting the harness webbing. If you would rather we handled it, say so when you lodge the claim.",
+   "a": "A capsule or base that has been in an accident must not be sold, given away or handed down. Its history is invisible to the next person, and they will have no way of knowing. When we replace a product under this programme we will tell you how to render it unusable before disposal, usually by cutting the harness webbing. If you would rather we handled it, say so when you lodge the claim.",
    "link": "/pages/crash-exchange-program#disposing-of-the-old-product"
   },
   {
    "topic": "Crash Exchange Program",
    "q": "Insurance",
-   "a": "Many comprehensive car insurance policies cover child restraints and prams that were in the vehicle at the time of an accident, and some cover them automatically without affecting your excess. It is worth asking your insurer before you claim with us. Whether this programme applies alongside an insurance payout: TBC Act now",
+   "a": "Many comprehensive car insurance policies cover child restraints that were in the vehicle at the time of an accident, and some cover them automatically without affecting your excess. It is worth asking your insurer before you claim with us. Act now",
    "link": "/pages/crash-exchange-program#insurance"
   },
   {
    "topic": "Crash Exchange Program",
    "q": "Lodge a Crash Exchange claim",
-   "a": "Stop using the pram or capsule first, then open a ticket. Have your proof of purchase and the serial number ready. Open a support ticket Find your serial number",
+   "a": "Stop using the capsule first, then fill in the form on this page. Have your proof of purchase and the serial number ready. Go to the claim form Find your serial number",
    "link": "/pages/crash-exchange-program#lodge-a-crash-exchange-claim"
   },
   {
    "topic": "Crash Exchange Program",
    "q": "Crash Exchange Program",
-   "a": "If your UPPAbaby pram or Mesa capsule was in a vehicle accident, we replace it. Structural damage is not always visible, so we do not ask you to prove it.",
+   "a": "If your UPPAbaby Mesa capsule or base was in a vehicle accident, we replace it. Structural damage is not always visible, so we do not ask you to prove it.",
    "link": "/pages/crash-exchange-program"
+  },
+  {
+   "topic": "Cruz V3 support",
+   "q": "Can I use the Cruz V3 from birth?",
+   "a": "Yes. It is suitable from birth as sold, using the included infant insert. A bassinet attaches directly to the frame if you would rather have a newborn lying flat, and it is sold separately.",
+   "link": "/pages/cruz-v3-support#can-i-use-the-cruz-v3-from-birth"
+  },
+  {
+   "topic": "Cruz V3 support",
+   "q": "Can the Cruz V3 carry two children?",
+   "a": "No. The Cruz takes one child and no accessory changes that. If a second child is likely, the Vista V3 is the frame that absorbs one without being replaced.",
+   "link": "/pages/cruz-v3-support#can-the-cruz-v3-carry-two-children"
+  },
+  {
+   "topic": "Cruz V3 support",
+   "q": "Will a Cruz V3 fit in my boot?",
+   "a": "Folded with the seat attached it is 43 x 57.2 x 82.3 cm. With the seat removed it drops to 34.3 x 57.2 x 76.9 cm. Measure the opening of your boot rather than the space inside it.",
+   "link": "/pages/cruz-v3-support#will-a-cruz-v3-fit-in-my-boot"
+  },
+  {
+   "topic": "Cruz V3 support",
+   "q": "How heavy is the Cruz V3?",
+   "a": "12 kg with the frame and seat together. The frame alone is 7.7 kg and the seat 4.3 kg, so it lifts into a boot in two manageable pieces.",
+   "link": "/pages/cruz-v3-support#how-heavy-is-the-cruz-v3"
+  },
+  {
+   "topic": "Cruz V3 support",
+   "q": "Does the Mesa capsule fit the Cruz V3?",
+   "a": "Yes, directly, with no adapters. Other brands, including Maxi-Cosi, Nuna, Joie and BeSafe, fit using the same upper car seat adapter that covers Vista and Alta.",
+   "link": "/pages/cruz-v3-support#does-the-mesa-capsule-fit-the-cruz-v3"
+  },
+  {
+   "topic": "Cruz V3 support",
+   "q": "How is the Cruz V3 different from the Vista V3?",
+   "a": "Same seat quality, canopy and basket, in a narrower and lighter frame that costs less. The trade is that the Cruz carries one child and the bassinet is not included.",
+   "link": "/pages/cruz-v3-support#how-is-the-cruz-v3-different-from-the-vista-v3"
+  },
+  {
+   "topic": "Cruz V3 support",
+   "q": "Does the seat face me or face out?",
+   "a": "Both. The seat is reversible and reclines flat enough for a newborn with the insert fitted.",
+   "link": "/pages/cruz-v3-support#does-the-seat-face-me-or-face-out"
+  },
+  {
+   "topic": "Cruz V3 support",
+   "q": "How much can the basket hold?",
+   "a": "The same generous basket as the Vista, reachable from either side including with the seat parent-facing.",
+   "link": "/pages/cruz-v3-support#how-much-can-the-basket-hold"
+  },
+  {
+   "topic": "Cruz V3 support",
+   "q": "Manual",
+   "a": "The current manual, and the previous version for anyone with an older frame. The version is on the white label near the rear axle. Cruz V3 manual PDF \u00b7 Current Cruz V2 manual PDF \u00b7 Previous version",
+   "link": "/pages/cruz-v3-support#manual"
+  },
+  {
+   "topic": "Cruz V3 support",
+   "q": "Videos",
+   "a": "Press play and the video loads here. Nothing loads until you do. Play: Explore UPPAbaby Cruz V3 Meet the pram",
+   "link": "/pages/cruz-v3-support#videos"
+  },
+  {
+   "topic": "Cruz V3 support",
+   "q": "Explore UPPAbaby Cruz V3",
+   "a": "Play: Install the UPPAbaby Cruz infant cover in minutes Setting up",
+   "link": "/pages/cruz-v3-support#explore-uppababy-cruz-v3"
+  },
+  {
+   "topic": "Cruz V3 support",
+   "q": "Install the UPPAbaby Cruz infant cover in minutes",
+   "a": "Play: How to replace a locking latch on a Cruz V3 Repairs and parts",
+   "link": "/pages/cruz-v3-support#install-the-uppababy-cruz-infant-cover-in-minutes"
+  },
+  {
+   "topic": "Cruz V3 support",
+   "q": "How-to guides",
+   "a": "UPPAbaby Cruz V3 vs Vista V3 Same seat, same capsule, same fold. What separates the Cruz from the Vista is one question: one child, or a family. The numbers, side by side. How to Pack the UPPAbaby Vista or Cruz in the Travel Bag, and How TravelSafe Covers It The order that gets a Vista, bassinet and RumbleSeat into one travel bag, the bag for each model, and the TravelSafe program that covers airline damage. How to Clean and Care for an UPPAbaby Pram What can go in the washing machine, what can only be wiped, how to get sunscreen off, why the wheels never need oil, and how to store a pram so it lasts to the second child. Buying a Second-Hand UPPAbaby A used Vista or Cruz can be a very good buy. The ten checks to make before you pay, what the warranty does and does not do for a second owner, and the free service that still does.",
+   "link": "/pages/cruz-v3-support#how-to-guides"
+  },
+  {
+   "topic": "Cruz V3 support",
+   "q": "What fits",
+   "a": "What attaches to the Cruz V3, and which adapter it needs, straight from UPPAbaby's own configuration chart. The adapters page covers positions and second-child setups in full. UPPAbaby Mesa capsule Fits directly, nothing to buy. Maxi-Cosi, Nuna, Joie or BeSafe capsule Needs the Vista / Alta / Cruz car seat upper adapter ($76.95). The same upper adapter covers Vista, Alta and Cruz. Bassinet Fits directly, nothing to buy. Second seat (RumbleSeat) Not compatible. Cruz does not take a second seat. No accessory changes this. PiggyBack ride-along board Yes, the Cruz PiggyBack ride-along board ($249.00), sold separately.",
+   "link": "/pages/cruz-v3-support#what-fits"
+  },
+  {
+   "topic": "Cruz V3 support",
+   "q": "Spare parts and repairs",
+   "a": "Wheels, canopies, harnesses, bumper bars, baskets and fabrics are stocked for the Cruz V3. Parts are version specific, so photograph the label near the rear axle before you order. Wear is a part you buy; a part that failed is a warranty claim . Browse spare parts How parts work",
+   "link": "/pages/cruz-v3-support#spare-parts-and-repairs"
+  },
+  {
+   "topic": "Cruz V3 support",
+   "q": "Register, warranty and service",
+   "a": "Register your Cruz V3 Two minutes. Makes any claim quicker. Three year warranty Defects in materials and workmanship, on top of your consumer guarantees. Tune-Up Days A free check, clean and adjust, for ten years from purchase. TravelSafe Airline damage, which a warranty never covers. Register the bag before you fly.",
+   "link": "/pages/cruz-v3-support#register-warranty-and-service"
+  },
+  {
+   "topic": "Cruz V3 support",
+   "q": "Specifications",
+   "a": "Suits Birth to 22.7 kg, 1 child Weight 12 kg (frame 7.7 kg, seat 4.3 kg) Unfolded 95.2 \u00d7 57.2 \u00d7 106.1 cm Folded 43 \u00d7 57.2 \u00d7 82.3 cm Folded, seat off 34.3 \u00d7 57.2 \u00d7 76.9 cm Basket 13.6 kg Reversible seat Yes From birth As sold. Includes the infant insert. Bassinet attaches directly, sold separately. Still stuck?",
+   "link": "/pages/cruz-v3-support#specifications"
+  },
+  {
+   "topic": "Cruz V3 support",
+   "q": "Talk to a person",
+   "a": "Tickets arrive with your order attached, which is why they are faster than the phone for anything about a specific purchase. Phone 1300 722 302 for everything else. Open a support ticket All support pages",
+   "link": "/pages/cruz-v3-support#talk-to-a-person"
+  },
+  {
+   "topic": "Cruz V3 support",
+   "q": "Cruz V3 support",
+   "a": "Cruz V3 support in one place: manual, how-to videos and guides, what fits, spare parts, registration, warranty, Tune-Up Days and specifications.",
+   "link": "/pages/cruz-v3-support"
   },
   {
    "topic": "Answers",
@@ -993,7 +1593,7 @@
   {
    "topic": "Answers",
    "q": "Which UPPAbaby pram can I use from birth?",
-   "a": "Vista V3, Cruz V3, Minu V3 and Minu Duo are all suitable from birth as sold. Vista includes the bassinet in the box. Cruz and Minu include an infant insert and a from-birth recline. Minu Duo is from birth on both seats. Ridge V2 is the exception. It is a jogger, and it needs a bassinet or a Mesa capsule to be used before about six months. Kona is from birth with the bassinet or a Mesa capsule.",
+   "a": "Vista V3, Cruz V3, Minu V3 and Minu Duo are all suitable from birth as sold. Vista includes the bassinet in the box. Cruz and Minu include an infant insert and a from-birth recline. Minu Duo is from birth on both seats. Ridge V2 is the exception. It is a jogger, and it needs a bassinet or a Mesa capsule to be used before about six months. Kona is from birth as sold: the seat lies flat. The UPPAbaby bassinet and the Mesa capsule attach directly as alternatives.",
    "link": "/pages/faqs#which-uppababy-pram-can-i-use-from-birth"
   },
   {
@@ -1065,7 +1665,7 @@
   {
    "topic": "Answers",
    "q": "Does the Mesa capsule fit my UPPAbaby pram?",
-   "a": "The Mesa clicks directly onto Vista and Cruz with no adapters. It fits Minu V3, Minu Duo, Ridge V2 and Kona with the matching adapter set, sold separately. That means a sleeping baby moves from the car to the pram without being unbuckled, which is the single most useful thing a capsule does.",
+   "a": "The Mesa clicks directly onto Vista, Cruz and Kona with no adapters. It fits Minu V3, Minu Duo and Ridge V2 with the matching adapter set, sold separately. That means a sleeping baby moves from the car to the pram without being unbuckled, which is the single most useful thing a capsule does.",
    "link": "/pages/faqs#does-the-mesa-capsule-fit-my-uppababy-pram"
   },
   {
@@ -1101,8 +1701,14 @@
   {
    "topic": "Answers",
    "q": "Do I need to register my pram?",
-   "a": "Registration does not extend your warranty, which is three years either way. It records your purchase against your name so a claim does not depend on you finding a receipt, and it lets us contact you directly if there is ever a safety notice on your product. It takes about two minutes. You need the serial number from the frame near the rear axle. Register here .",
+   "a": "Registration does not extend your warranty, which is three years either way. It records your purchase against your name so a claim does not depend on you finding a receipt, and it lets us contact you directly if there is ever a safety notice on your product. Register with your receipt attached. We have to sight proof of purchase before any warranty claim can be processed, so a registration with the receipt on it is the thing that makes a later claim quick. It takes about two minutes. You need the serial number from the frame near the rear axle. Register here .",
    "link": "/pages/faqs#do-i-need-to-register-my-pram"
+  },
+  {
+   "topic": "Answers",
+   "q": "Do I need my receipt to make a warranty claim?",
+   "a": "Yes, in every case. A warranty claim is assessed from the date of purchase, so we have to sight proof of purchase from an authorised Australian retailer showing the retailer and the date. Without it we cannot confirm whether the product is inside its warranty period. Registering your product and uploading the receipt at the time of purchase is the way to deal with this once: we hold the receipt on file and the claim starts straight away. A registration with no receipt attached is not proof of purchase, so we will still have to ask you for one.",
+   "link": "/pages/faqs#do-i-need-my-receipt-to-make-a-warranty-claim"
   },
   {
    "topic": "Answers",
@@ -1131,19 +1737,19 @@
   {
    "topic": "Answers",
    "q": "Where can I try an UPPAbaby pram in person?",
-   "a": "Authorised retailers around Australia stock the range. Use the store locator to find the closest. We also run Meet the Expert days, where the UPPAbaby team brings the full range into a store and shows you the folds, the conversions and the boot fit in person. Dates are on the Meet the Experts page .",
+   "a": "Authorised retailers around Australia stock the range. Use the store locator to find the closest. Our sales team are on the floor at retailers on weekends, and we take the full range to every major baby expo in the country, where you can fold one, lift it and check it against your own boot. The show dates are on the Meet the Experts page .",
    "link": "/pages/faqs#where-can-i-try-an-uppababy-pram-in-person"
   },
   {
    "topic": "Answers",
    "q": "Do you offer lay-by?",
-   "a": "Yes, four month lay-by on orders placed directly with UPPAbaby Australia. Lay-by is not available on some order types, including orders containing a gift card or a damaged box item. The terms are shown at checkout.",
+   "a": "Yes, four month lay-by on orders placed directly with UPPAbaby Australia. It is not available on clearance or discontinued models, damaged box sales, special orders or gift cards, or on any bundle that contains one of them. A lay-by holds stock for up to four months, and a runout line cannot be held that long. The full terms are here .",
    "link": "/pages/faqs#do-you-offer-lay-by"
   },
   {
    "topic": "Answers",
    "q": "Is delivery free?",
-   "a": "TBC The announcement bar currently reads \"Free express delivery\". Whether that is universal or a benefit of UPPside membership needs to be confirmed before this answer is published, because it is a claim that appears on every page of the site.",
+   "a": "Free on orders of $99 and over, anywhere in Australia. Under $99 it is a flat $15, whatever you have bought and wherever it is going. There is no bulky-item surcharge, so a pram ships on the same terms as a cup holder.",
    "link": "/pages/faqs#is-delivery-free"
   },
   {
@@ -1172,6 +1778,12 @@
   },
   {
    "topic": "Answers",
+   "q": "What are your support hours?",
+   "a": "Phone support is open 8am to 5pm on business days. Warranty claims and Crash Exchange claims are lodged online at any hour, and we respond within 24 hours. Still stuck?",
+   "link": "/pages/faqs#what-are-your-support-hours"
+  },
+  {
+   "topic": "Answers",
    "q": "Talk to a person",
    "a": "If your question is not here, the support team answers tickets with your order already in front of them. Open a support ticket Compare the range",
    "link": "/pages/faqs#talk-to-a-person"
@@ -1185,7 +1797,7 @@
   {
    "topic": "Which UPPAbaby pram?",
    "q": "How many children will it carry?",
-   "a": "Now, or within the life of this pram. One One child at a time. Two Two children of different ages. Twins Two the same age, from birth. Three Three, on one frame. 02",
+   "a": "Now, or within the life of this pram. 1 One One child at a time. 2 Two Two children of different ages. 2\u00d7 Twins Two the same age, from birth. 3 Three Three, on one frame. 02",
    "link": "/pages/find-your-perfect-pram#how-many-children-will-it-carry"
   },
   {
@@ -1203,13 +1815,13 @@
   {
    "topic": "Which UPPAbaby pram?",
    "q": "Might you have another child?",
-   "a": "This is the Vista question. It is the only reason to pay more for one. Possibly Not planned, not ruled out. One is the plan Confident about it. No idea Too early to say. Answer the questions above and we will tell you which pram fits, and why. No email, no budget question. How this decides It is not a black box. Each answer adds or removes points from each model, and the result lists the answers that actually drove it, so you can disagree with the reasoning rather than just the product. Some answers rule models out entirely rather than scoring them down: Cruz, Minu, Ridge and Kona carry one child, so they disappear the moment you say two. Those are listed too. Every figure comes from the current UPPAbaby specification sheets, the same source as the comparison table . Then",
+   "a": "This is the Vista question. It is the only reason to pay more for one. Possibly Not planned, not ruled out. One is the plan Confident about it. No idea Too early to say. How this decides It is not a black box. Each answer adds or removes points from each model, and the result lists the answers that actually drove it, so you can disagree with the reasoning rather than just the product. Some answers rule models out entirely rather than scoring them down: Cruz, Minu, Ridge and Kona carry one child, so they disappear the moment you say two. Those are listed too. Every figure comes from the current UPPAbaby specification sheets, the same source as the comparison table . Then",
    "link": "/pages/find-your-perfect-pram#might-you-have-another-child"
   },
   {
    "topic": "Which UPPAbaby pram?",
    "q": "Check it fits your boot",
-   "a": "Folded size is the thing most people get wrong. Measure your boot opening and the comparison tool will tell you which models go in. Boot fit tool Which adapters? (function(){ var MODELS={\"minu\":{\"name\":\"Minu V3\",\"job\":\"The one that lives in the boot.\",\"intro\":\"Minu V3 is UPPAbaby's compact stroller. It folds one-handed to about the size of a carry-on, stands on its own, and is ready from birth as sold with the included infant insert. It is the pram for families who move a lot, live with stairs or a small boot, and want one stroller that covers the newborn stage and the toddler years without being a full-size pram.\",\"price\":\"$749\",\"kg\":7.6,\"folded\":\"25 \u00d7 45 \u00d7 55 cm\",\"children\":1,\"fromBirth\":true,\"soon\":false,\"img\":\"https://cdn.shopify.com/s/files/1/0681/1877/4015/files/0803-MIN-AU-JMS_3QLeft_Hero.png?v=1784781358&width=800\",\"url\":\"/pdp/minu.html\"},\"kona\":{\"name\":\"Kona\",\"job\":\"Not a full s",
+   "a": "Folded size is the thing most people get wrong. Measure your boot opening and the comparison tool will tell you which models go in. Boot fit tool Which adapters? (function(){ var MODELS={\"minu\":{\"name\":\"Minu V3\",\"job\":\"The one that lives in the boot.\",\"intro\":\"Minu V3 is UPPAbaby's compact stroller. It folds one-handed to about the size of a carry-on, stands on its own, and is ready from birth as sold with the included infant insert. It is the pram for families who move a lot, live with stairs or a small boot, and want one stroller that covers the newborn stage and the toddler years without being a full-size pram.\",\"price\":\"$749\",\"kg\":7.6,\"folded\":\"25 \u00d7 45 \u00d7 55 cm\",\"children\":1,\"fromBirth\":true,\"soon\":false,\"img\":\"https://cdn.shopify.com/s/files/1/0681/1877/4015/files/0803-MIN-AU-JMS_3QLeft_Hero.png?v=1784781358&width=800\",\"url\":\"/collections/uppababy-minu-v3-travel-stroller\"},\"kona\":{\"n",
    "link": "/pages/find-your-perfect-pram#check-it-fits-your-boot"
   },
   {
@@ -1221,8 +1833,80 @@
   {
    "topic": "Which UPPAbaby pram?",
    "q": "Which UPPAbaby pram?",
-   "a": "Four questions and we will tell you which UPPAbaby pram fits, and why. How many children, from birth or not, where it will be used, and whether a second child is possible.",
+   "a": "Four questions and we will tell you which UPPAbaby pram fits, and why: how many children, whether you need it from birth, and where it will be used.",
    "link": "/pages/find-your-perfect-pram"
+  },
+  {
+   "topic": "How-to videos",
+   "q": "Vista V3 double pram setup",
+   "a": "Play: UPPAbaby Remi Portacot setup Setting up",
+   "link": "/pages/how-to-videos#vista-v3-double-pram-setup"
+  },
+  {
+   "topic": "How-to videos",
+   "q": "UPPAbaby Remi Portacot setup",
+   "a": "Play: Install the UPPAbaby Cruz infant cover in minutes Setting up",
+   "link": "/pages/how-to-videos#uppababy-remi-portacot-setup"
+  },
+  {
+   "topic": "How-to videos",
+   "q": "Install the UPPAbaby Cruz infant cover in minutes",
+   "a": "Packing and travel Play: How to pack the bassinet and RumbleSeat into the travel bag Packing and travel",
+   "link": "/pages/how-to-videos#install-the-uppababy-cruz-infant-cover-in-minutes"
+  },
+  {
+   "topic": "How-to videos",
+   "q": "How to pack the bassinet and RumbleSeat into the travel bag",
+   "a": "Play: How to pack your Minu into the TravelSafe bag Packing and travel",
+   "link": "/pages/how-to-videos#how-to-pack-the-bassinet-and-rumbleseat-into-the-travel-bag"
+  },
+  {
+   "topic": "How-to videos",
+   "q": "How to pack your Minu into the TravelSafe bag",
+   "a": "Play: How to pack a Remi playard into the travel bag Packing and travel",
+   "link": "/pages/how-to-videos#how-to-pack-your-minu-into-the-travelsafe-bag"
+  },
+  {
+   "topic": "How-to videos",
+   "q": "How to pack a Remi playard into the travel bag",
+   "a": "Repairs and parts Play: How to remove and reattach the toddler seat fabric Repairs and parts",
+   "link": "/pages/how-to-videos#how-to-pack-a-remi-playard-into-the-travel-bag"
+  },
+  {
+   "topic": "How-to videos",
+   "q": "How to remove and reattach the toddler seat fabric",
+   "a": "Play: How to replace a locking latch on a Vista V3 Repairs and parts",
+   "link": "/pages/how-to-videos#how-to-remove-and-reattach-the-toddler-seat-fabric"
+  },
+  {
+   "topic": "How-to videos",
+   "q": "How to replace a locking latch on a Vista V3",
+   "a": "Play: How to replace a locking latch on a Cruz V3 Repairs and parts",
+   "link": "/pages/how-to-videos#how-to-replace-a-locking-latch-on-a-vista-v3"
+  },
+  {
+   "topic": "How-to videos",
+   "q": "How to replace a locking latch on a Cruz V3",
+   "a": "Play: How to replace a locking latch on a Minu V2 Repairs and parts",
+   "link": "/pages/how-to-videos#how-to-replace-a-locking-latch-on-a-cruz-v3"
+  },
+  {
+   "topic": "How-to videos",
+   "q": "How to replace a locking latch on a Minu V2",
+   "a": "(function () { /* Swap the thumbnail for the player on click. The anchor is a real link to YouTube, so with this script off nothing is lost: the video still opens, just in a new tab. */ document.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('.how-frame[data-yt]'); if (!a) return; e.preventDefault(); var f = document.createElement('iframe'); f.src = 'https://www.youtube-nocookie.com/embed/' + a.dataset.yt + '?autoplay=1&rel=0'; f.title = a.dataset.title || 'Video'; f.allow = 'accelerometer; autoplay; encrypted-media; picture-in-picture'; f.allowFullscreen = true; a.replaceChildren(f); a.removeAttribute('href'); a.removeAttribute('data-yt'); }); })(); Fitting a capsule",
+   "link": "/pages/how-to-videos#how-to-replace-a-locking-latch-on-a-minu-v2"
+  },
+  {
+   "topic": "How-to videos",
+   "q": "The Mesa has its own course",
+   "a": "Six longer films on fitting a child with and without the inlay, fitting a premature baby, and installing the base. Mesa how-to videos All support",
+   "link": "/pages/how-to-videos#the-mesa-has-its-own-course"
+  },
+  {
+   "topic": "How-to videos",
+   "q": "How-to videos",
+   "a": "Short films for setting up, packing and repairing an UPPAbaby: double pram setup, packing a travel bag, and replacing a locking latch.",
+   "link": "/pages/how-to-videos"
   },
   {
    "topic": "Lay-by",
@@ -1233,13 +1917,13 @@
   {
    "topic": "Lay-by",
    "q": "What it looks like on a Vista V3",
-   "a": "Recommended retail $1,799. An illustration, not a schedule: after the deposit you choose when to pay. Day 0 Choose and ask Nothing We send the invoice. Nothing is due yet. Within 24 hours Deposit, minimum 20% $359.80 The one deadline that matters. Miss it and the order is cancelled. Weeks 1 to 16 The balance, at your pace $1,439.20 No fixed instalments. Spread evenly that is about $90 a week. Once it clears We dispatch Paid Goods leave the warehouse, or are ready to collect. Term 4 months Minimum deposit 20 % Deposit due within 24 hours Cancellation fee 20 % On this Vista V3, cancelling or running past four months costs $359.80. Worth knowing before you start rather than at month five.",
+   "a": "Based on $1,799. An illustration, not a schedule: after the deposit you choose when to pay. Day 0 Choose and ask Nothing We send the invoice. Nothing is due yet. Within 24 hours Deposit, minimum 20% $359.80 The one deadline that matters. Miss it and the order is cancelled. Weeks 1 to 16 The balance, at your pace $1,439.20 No fixed instalments. Spread evenly that is about $90 a week. Once it clears We dispatch Paid Goods leave the warehouse, or are ready to collect. Term 4 months Minimum deposit 20 % Deposit due within 24 hours Cancellation fee 20 % On this Vista V3, cancelling or running past four months costs $359.80. Worth knowing before you start rather than at month five.",
    "link": "/pages/uppababy-lay-by#what-it-looks-like-on-a-vista-v3"
   },
   {
    "topic": "Lay-by",
    "q": "The terms, in full",
-   "a": "Deposit Minimum 20%, within 24 hours of the invoice being sent Term Maximum four months (16 weeks) from the date of purchase Instalments No fixed schedule. Pay as suits, provided the balance clears in time Cancellation fee 20% of the order , if you cancel or do not finalise within four months Dispatch Only once the lay-by is paid in full Minimum order value TBC Read the cancellation fee before you start If you cancel, or simply run past four months, a 20% cancellation fee applies to the order. On a $1,799 Vista that is $359.80. We would rather you knew that in advance than discovered it at month five. If four months looks tight, it is worth waiting until it is not.",
+   "a": "Deposit Minimum 20%, within 24 hours of the invoice being sent Term Maximum four months (16 weeks) from the date of purchase Instalments No fixed schedule. Pay as suits, provided the balance clears in time Cancellation fee 20% of the order , if you cancel or do not finalise within four months Dispatch Only once the lay-by is paid in full Not available on Clearance and discontinued models, damaged box sales, special orders and gift cards, or any bundle that contains one of them. Lay-by holds stock for up to four months, which is not something a runout line can do Minimum order value $799 Read the cancellation fee before you start If you cancel, or simply run past four months, a 20% cancellation fee applies to the order. On a $1,799 Vista that is $359.80. We would rather you knew that in advance than discovered it at month five. If four months looks tight, it is worth waiting until it is n",
    "link": "/pages/uppababy-lay-by#the-terms-in-full"
   },
   {
@@ -1317,50 +2001,212 @@
   {
    "topic": "Mesa how-to videos",
    "q": "Mesa how-to videos",
-   "a": "Six short videos covering the Mesa car capsule: fitting a child with and without the infant inlay, fitting a premature baby, installing the base with ISOFIX or a seatbelt, and moving from car to pram.",
+   "a": "Six short videos for the Mesa car capsule: fitting a child, installing with ISOFIX or a seatbelt, the load leg, and moving it between cars.",
    "link": "/pages/mesa-how-to-videos"
   },
   {
-   "topic": "Modern Slavery Statement",
-   "q": "Statement",
-   "a": "This page needs legal review before it goes live The statement currently published on uppababy.com.au is UPPAbaby Inc's statement made under the United Kingdom Modern Slavery Act 2015, for the financial year ending 31 December 2022 . It is written in American English, and its final section refers to \"M&amp;S operations and supply chains\", which is another company's text. An Australian site should publish a statement under the Australian Modern Slavery Act 2018 (Cth), current, and issued by the entity that actually operates here. This page is the structure for that statement. The content must be written and signed off by Coolkidz Australia, not generated. This statement is made by Coolkidz Australia Pty Ltd (ABN 98 293 897 047), the exclusive Australian distributor of UPPAbaby, and covers the reporting period TBC . Modern slavery describes serious exploitation: forced labour, debt bondage",
-   "link": "/pages/modern-slavery-statement#statement"
+   "topic": "Minu Duo support",
+   "q": "Will the Minu Duo fit through a standard doorway?",
+   "a": "Yes. The pram is 70.6 cm wide and it is designed to clear a 73 cm doorway, which is the standard internal width in most Australian homes.",
+   "link": "/pages/minu-duo-support#will-the-minu-duo-fit-through-a-standard-doorway"
   },
   {
-   "topic": "Modern Slavery Statement",
-   "q": "Our structure, operations and supply chains",
-   "a": "Coolkidz Australia is a distributor. We import finished goods and distribute them to authorised retailers and directly to Australian consumers. We do not manufacture. Reporting entity Coolkidz Australia Pty Ltd, ABN 98 293 897 047 Registered address 1 Beyer Road, Braeside VIC 3195 Operations Import, warehousing and distribution of juvenile products in Australia Reporting period TBC Consolidated revenue TBC . Determines whether reporting is mandatory or voluntary Manufacturing countries TBC Whether Coolkidz Australia meets the A$100 million consolidated revenue threshold for mandatory reporting under the Act is a question for the business. A statement can be filed voluntarily below that threshold, and a voluntary statement carries the same expectation of accuracy.",
-   "link": "/pages/modern-slavery-statement#our-structure-operations-and-supply-chains"
+   "topic": "Minu Duo support",
+   "q": "Can I use the Minu Duo from birth?",
+   "a": "Yes, both seats, as sold. That is unusual in a double this compact. Most side-by-sides need one child to be sitting up before you can use both seats.",
+   "link": "/pages/minu-duo-support#can-i-use-the-minu-duo-from-birth"
   },
   {
-   "topic": "Modern Slavery Statement",
-   "q": "Risks of modern slavery practices",
-   "a": "TBC . To be written by Coolkidz Australia. A credible section here identifies where in the supply chain the risk actually sits, rather than asserting that there is none. For a distributor of juvenile products, that usually means tier two and tier three suppliers of textiles, plastics and componentry, and the recruitment practices of labour hire providers in manufacturing countries.",
-   "link": "/pages/modern-slavery-statement#risks-of-modern-slavery-practices"
+   "topic": "Minu Duo support",
+   "q": "Is the Minu Duo suitable for twins?",
+   "a": "Yes. Both seats are the same size, both recline, and both are usable from birth, so neither twin is in the lesser seat.",
+   "link": "/pages/minu-duo-support#is-the-minu-duo-suitable-for-twins"
   },
   {
-   "topic": "Modern Slavery Statement",
-   "q": "Actions taken to assess and address those risks",
-   "a": "TBC . To be written by Coolkidz Australia. This section should describe what was actually done in the reporting period: supplier codes of conduct issued, audits commissioned and their findings, contractual terms added, training delivered, and any grievance mechanism available to workers.",
-   "link": "/pages/modern-slavery-statement#actions-taken-to-assess-and-address-those-risks"
+   "topic": "Minu Duo support",
+   "q": "Will a Minu Duo fit in my boot?",
+   "a": "Folded it is 33 x 70.6 x 60.2 cm. It is wide rather than long, so the number to check against your boot opening is the 70.6 cm width.",
+   "link": "/pages/minu-duo-support#will-a-minu-duo-fit-in-my-boot"
   },
   {
-   "topic": "Modern Slavery Statement",
-   "q": "How we assess effectiveness",
-   "a": "TBC . To be written by Coolkidz Australia. The Act asks how the reporting entity knows its actions are working. Naming a measure, even a modest one, is stronger than describing intent.",
-   "link": "/pages/modern-slavery-statement#how-we-assess-effectiveness"
+   "topic": "Minu Duo support",
+   "q": "How heavy is the Minu Duo?",
+   "a": "12.7 kg, which is around the weight of a single full-size pram for two seats.",
+   "link": "/pages/minu-duo-support#how-heavy-is-the-minu-duo"
   },
   {
-   "topic": "Modern Slavery Statement",
-   "q": "Consultation and approval",
-   "a": "This statement was approved by the principal governing body of Coolkidz Australia Pty Ltd on TBC . Signed, TBC",
-   "link": "/pages/modern-slavery-statement#consultation-and-approval"
+   "topic": "Minu Duo support",
+   "q": "How much weight does each seat take?",
+   "a": "Up to 22.7 kg per seat, so it stays usable well into the toddler years for both children.",
+   "link": "/pages/minu-duo-support#how-much-weight-does-each-seat-take"
   },
   {
-   "topic": "Modern Slavery Statement",
-   "q": "Modern Slavery Statement",
-   "a": "Modern Slavery Statement of Coolkidz Australia Pty Ltd, exclusive Australian distributor of UPPAbaby.",
-   "link": "/pages/modern-slavery-statement"
+   "topic": "Minu Duo support",
+   "q": "How much can the basket hold?",
+   "a": "11.3 kg across the one basket underneath.",
+   "link": "/pages/minu-duo-support#how-much-can-the-basket-hold"
+  },
+  {
+   "topic": "Minu Duo support",
+   "q": "Are the Minu Duo seats reversible?",
+   "a": "No, both seats face forward. Side-by-side doubles are built this way so the frame stays narrow enough for a doorway.",
+   "link": "/pages/minu-duo-support#are-the-minu-duo-seats-reversible"
+  },
+  {
+   "topic": "Minu Duo support",
+   "q": "Manual",
+   "a": "The current manual, and the previous version for anyone with an older frame. The version is on the white label near the rear axle. Minu Duo manual PDF \u00b7 Current",
+   "link": "/pages/minu-duo-support#manual"
+  },
+  {
+   "topic": "Minu Duo support",
+   "q": "How-to guides",
+   "a": "How to Clean and Care for an UPPAbaby Pram What can go in the washing machine, what can only be wiped, how to get sunscreen off, why the wheels never need oil, and how to store a pram so it lasts to the second child. Buying a Second-Hand UPPAbaby A used Vista or Cruz can be a very good buy. The ten checks to make before you pay, what the warranty does and does not do for a second owner, and the free service that still does.",
+   "link": "/pages/minu-duo-support#how-to-guides"
+  },
+  {
+   "topic": "Minu Duo support",
+   "q": "What fits",
+   "a": "What attaches to the Minu Duo, and which adapter it needs, straight from UPPAbaby's own configuration chart. The adapters page covers positions and second-child setups in full. UPPAbaby Mesa capsule Needs the Minu Duo Mesa adapters ($64.95). Holds ONE capsule, on the parent's left. The canopy must come off, and the adapters must be removed before folding. Maxi-Cosi, Nuna, Joie or BeSafe capsule Not compatible. No other brand of capsule fits any Minu. The Mesa is the only capsule, on the parent's left. Bassinet Not offered. Second seat (RumbleSeat) Included. Two equal seats are included. Nothing to add. PiggyBack ride-along board Not offered.",
+   "link": "/pages/minu-duo-support#what-fits"
+  },
+  {
+   "topic": "Minu Duo support",
+   "q": "Spare parts and repairs",
+   "a": "Wheels, canopies, harnesses, bumper bars, baskets and fabrics are stocked for the Minu Duo. Parts are version specific, so photograph the label near the rear axle before you order. Wear is a part you buy; a part that failed is a warranty claim . Browse spare parts How parts work",
+   "link": "/pages/minu-duo-support#spare-parts-and-repairs"
+  },
+  {
+   "topic": "Minu Duo support",
+   "q": "Register, warranty and service",
+   "a": "Register your Minu Duo Two minutes. Makes any claim quicker. Three year warranty Defects in materials and workmanship, on top of your consumer guarantees. Tune-Up Days A free check, clean and adjust, for ten years from purchase. TravelSafe Airline damage, which a warranty never covers. Register the bag before you fly.",
+   "link": "/pages/minu-duo-support#register-warranty-and-service"
+  },
+  {
+   "topic": "Minu Duo support",
+   "q": "Specifications",
+   "a": "Suits Birth to 22.7 kg per seat, 2 children Weight 12.7 kg Unfolded 94.5 \u00d7 70.6 \u00d7 102.8 cm Folded 33 \u00d7 70.6 \u00d7 60.2 cm Basket 11.3 kg Reversible seat No From birth Both seats, as sold. Still stuck?",
+   "link": "/pages/minu-duo-support#specifications"
+  },
+  {
+   "topic": "Minu Duo support",
+   "q": "Talk to a person",
+   "a": "Tickets arrive with your order attached, which is why they are faster than the phone for anything about a specific purchase. Phone 1300 722 302 for everything else. Open a support ticket All support pages",
+   "link": "/pages/minu-duo-support#talk-to-a-person"
+  },
+  {
+   "topic": "Minu Duo support",
+   "q": "Minu Duo support",
+   "a": "Minu Duo support in one place: manual, how-to videos and guides, what fits, spare parts, registration, warranty, Tune-Up Days and specifications.",
+   "link": "/pages/minu-duo-support"
+  },
+  {
+   "topic": "Minu V3 support",
+   "q": "Can I use the Minu V3 from birth?",
+   "a": "Yes, as sold. The infant insert is included, so it is a from-birth stroller rather than a six-months-and-up one, which is unusual at this size.",
+   "link": "/pages/minu-v3-support#can-i-use-the-minu-v3-from-birth"
+  },
+  {
+   "topic": "Minu V3 support",
+   "q": "Will a Minu V3 fit in my boot?",
+   "a": "Almost certainly. Folded it is 25 x 45 x 55 cm, which is around carry-on size and the smallest fold in the UPPAbaby range.",
+   "link": "/pages/minu-v3-support#will-a-minu-v3-fit-in-my-boot"
+  },
+  {
+   "topic": "Minu V3 support",
+   "q": "How heavy is the Minu V3?",
+   "a": "7.6 kg, the lightest pram we sell. In its box it is 9.4 kg, which matters if you are checking it as luggage.",
+   "link": "/pages/minu-v3-support#how-heavy-is-the-minu-v3"
+  },
+  {
+   "topic": "Minu V3 support",
+   "q": "Does the Minu V3 fold one-handed?",
+   "a": "Yes, and it stands on its own once folded, so it does not need a wall to lean against on a train platform or in a hotel room.",
+   "link": "/pages/minu-v3-support#does-the-minu-v3-fold-one-handed"
+  },
+  {
+   "topic": "Minu V3 support",
+   "q": "Does the Mesa capsule fit the Minu V3?",
+   "a": "Yes, with the Minu V3 capsule adapter, which is sold separately. It does not click on directly the way it does on a Vista or a Cruz.",
+   "link": "/pages/minu-v3-support#does-the-mesa-capsule-fit-the-minu-v3"
+  },
+  {
+   "topic": "Minu V3 support",
+   "q": "Can the Minu V3 carry two children?",
+   "a": "No. It is a single. For two side by side in a stroller this compact, the Minu Duo is the one: same family, two seats, still through a standard doorway.",
+   "link": "/pages/minu-v3-support#can-the-minu-v3-carry-two-children"
+  },
+  {
+   "topic": "Minu V3 support",
+   "q": "Is the Minu V3 seat reversible?",
+   "a": "No, the seat faces forward only. That is part of how the fold gets this small. If you want a parent-facing seat, look at the Cruz V3 or the Vista V3.",
+   "link": "/pages/minu-v3-support#is-the-minu-v3-seat-reversible"
+  },
+  {
+   "topic": "Minu V3 support",
+   "q": "How wide is the Minu V3?",
+   "a": "45 cm across, opened out to 88 x 45 x 104 cm. It is the narrowest pram in the range.",
+   "link": "/pages/minu-v3-support#how-wide-is-the-minu-v3"
+  },
+  {
+   "topic": "Minu V3 support",
+   "q": "Manual",
+   "a": "The current manual, and the previous version for anyone with an older frame. The version is on the white label near the rear axle. Minu V3 manual PDF \u00b7 Current Minu V2 manual PDF \u00b7 Previous version",
+   "link": "/pages/minu-v3-support#manual"
+  },
+  {
+   "topic": "Minu V3 support",
+   "q": "Videos",
+   "a": "Press play and the video loads here. Nothing loads until you do. Play: How to pack your Minu into the TravelSafe bag Packing and travel",
+   "link": "/pages/minu-v3-support#videos"
+  },
+  {
+   "topic": "Minu V3 support",
+   "q": "How to pack your Minu into the TravelSafe bag",
+   "a": "Play: How to replace a locking latch on a Minu V2 Repairs and parts",
+   "link": "/pages/minu-v3-support#how-to-pack-your-minu-into-the-travelsafe-bag"
+  },
+  {
+   "topic": "Minu V3 support",
+   "q": "How-to guides",
+   "a": "How to Clean and Care for an UPPAbaby Pram What can go in the washing machine, what can only be wiped, how to get sunscreen off, why the wheels never need oil, and how to store a pram so it lasts to the second child. Buying a Second-Hand UPPAbaby A used Vista or Cruz can be a very good buy. The ten checks to make before you pay, what the warranty does and does not do for a second owner, and the free service that still does.",
+   "link": "/pages/minu-v3-support#how-to-guides"
+  },
+  {
+   "topic": "Minu V3 support",
+   "q": "What fits",
+   "a": "What attaches to the Minu V3, and which adapter it needs, straight from UPPAbaby's own configuration chart. The adapters page covers positions and second-child setups in full. UPPAbaby Mesa capsule Needs the Minu V3 Mesa adapter ($49.95). Maxi-Cosi, Nuna, Joie or BeSafe capsule Not compatible. The Minu V3 takes the UPPAbaby Mesa only, with the Minu V3 Mesa adapter. No other brand of capsule fits any Minu. Bassinet Needs the Minu bassinet adapters ($44.95). Check the version with us before you buy. Second seat (RumbleSeat) Not compatible. PiggyBack ride-along board Not offered.",
+   "link": "/pages/minu-v3-support#what-fits"
+  },
+  {
+   "topic": "Minu V3 support",
+   "q": "Spare parts and repairs",
+   "a": "Wheels, canopies, harnesses, bumper bars, baskets and fabrics are stocked for the Minu V3. Parts are version specific, so photograph the label near the rear axle before you order. Wear is a part you buy; a part that failed is a warranty claim . Browse spare parts How parts work",
+   "link": "/pages/minu-v3-support#spare-parts-and-repairs"
+  },
+  {
+   "topic": "Minu V3 support",
+   "q": "Register, warranty and service",
+   "a": "Register your Minu V3 Two minutes. Makes any claim quicker. Three year warranty Defects in materials and workmanship, on top of your consumer guarantees. Tune-Up Days A free check, clean and adjust, for ten years from purchase. TravelSafe Airline damage, which a warranty never covers. Register the bag before you fly.",
+   "link": "/pages/minu-v3-support#register-warranty-and-service"
+  },
+  {
+   "topic": "Minu V3 support",
+   "q": "Specifications",
+   "a": "Suits Birth to 22 kg, 1 child Weight kg Unfolded 88 \u00d7 45 \u00d7 104 cm Folded 25 \u00d7 45 \u00d7 55 cm Basket 9.1 kg Reversible seat No From birth As sold. Includes the infant insert. Still stuck?",
+   "link": "/pages/minu-v3-support#specifications"
+  },
+  {
+   "topic": "Minu V3 support",
+   "q": "Talk to a person",
+   "a": "Tickets arrive with your order attached, which is why they are faster than the phone for anything about a specific purchase. Phone 1300 722 302 for everything else. Open a support ticket All support pages",
+   "link": "/pages/minu-v3-support#talk-to-a-person"
+  },
+  {
+   "topic": "Minu V3 support",
+   "q": "Minu V3 support",
+   "a": "Minu V3 support in one place: manual, how-to videos and guides, what fits, spare parts, registration, warranty, Tune-Up Days and specifications.",
+   "link": "/pages/minu-v3-support"
   },
   {
    "topic": "Partnership enquiries",
@@ -1370,50 +2216,8 @@
   },
   {
    "topic": "Compare UPPAbaby prams and strollers",
-   "q": "Vista",
-   "a": "One pram, up to three children. Discover more &rarr; Cruz $1,299",
-   "link": "/pages/product-comparison#vista"
-  },
-  {
-   "topic": "Compare UPPAbaby prams and strollers",
-   "q": "Cruz",
-   "a": "The everyday single, without the bulk. Discover more &rarr; Kona $1,049",
-   "link": "/pages/product-comparison#cruz"
-  },
-  {
-   "topic": "Compare UPPAbaby prams and strollers",
-   "q": "Kona",
-   "a": "Full size comfort in a compact footprint. Discover more &rarr; Minu $749",
-   "link": "/pages/product-comparison#kona"
-  },
-  {
-   "topic": "Compare UPPAbaby prams and strollers",
-   "q": "Minu",
-   "a": "The one that lives in the boot. Discover more &rarr; Minu Duo $1,299",
-   "link": "/pages/product-comparison#minu"
-  },
-  {
-   "topic": "Compare UPPAbaby prams and strollers",
-   "q": "Minu Duo",
-   "a": "Two children, side by side, through a standard doorway. Discover more &rarr; Ridge $1,399",
-   "link": "/pages/product-comparison#minu-duo"
-  },
-  {
-   "topic": "Compare UPPAbaby prams and strollers",
-   "q": "Ridge",
-   "a": "For the trails and the long runs. Discover more &rarr; What actually decides it",
-   "link": "/pages/product-comparison#ridge"
-  },
-  {
-   "topic": "Compare UPPAbaby prams and strollers",
-   "q": "Four questions, in this order.",
-   "a": "01 How many children? One now, or one now and another later. Only the Vista frame takes a second seat. 02 From birth? Four of the six are ready from birth as sold. The Ridge needs a bassinet or a capsule. 03 Will it fit the boot? The thing most people get wrong. There is a tool for it further down this page. 04 What does it cost? A thousand dollars separates the smallest from the largest.",
-   "link": "/pages/product-comparison#four-questions-in-this-order"
-  },
-  {
-   "topic": "Compare UPPAbaby prams and strollers",
    "q": "The whole range, side by side",
-   "a": "Every figure on this page is read from the current UPPAbaby specification sheets. Prices are the recommended retail price and match our authorised retailers. Turn models off to compare just the two you are deciding between. Minu V3 Kona Cruz V3 Minu Duo Ridge V2 Vista V3 Minu V3 The one that lives in the boot. Kona Coming soon Not a full size pram. More than a travel pram. Cruz V3 The everyday single, without the bulk. Minu Duo Two children, side by side, through a standard doorway. Ridge V2 For the trails and the long runs. Vista V3 One pram, up to three children. Price $749 $1,049 TBC $1,299 $1,299 $1,399 $1,799 Children 1 1 1 2 2 3 From birth Yes As sold. Includes the infant insert. Yes With the bassinet, or a Mesa capsule. Yes As sold. Includes the infant insert. Bassinet attaches directly, sold separately. Yes Both seats, as sold. No No. From six months, or from birth with a bassine",
+   "a": "Every figure on this page is read from the current UPPAbaby specification sheets. Prices are the recommended retail price and match our authorised retailers. Turn models off to compare just the two you are deciding between. Minu V3 Kona Cruz V3 Minu Duo Ridge V2 Vista V3 Minu V3 The one that lives in the boot. Kona Coming soon Not a full size pram. More than a travel pram. Cruz V3 The everyday single, without the bulk. Minu Duo Two children, side by side, through a standard doorway. Ridge V2 For the trails and the long runs. Vista V3 One pram, up to three children. Price $749 Coming October $1,299 $1,299 $1,399 $1,799 Children 1 1 1 2 2 3 From birth Yes As sold. Includes the infant insert. Yes As sold. The seat lies flat from birth. The bassinet or a Mesa capsule attach directly as alternatives. Yes As sold. Includes the infant insert. Bassinet attaches directly, sold separately. Yes Bot",
    "link": "/pages/product-comparison#the-whole-range-side-by-side"
   },
   {
@@ -1437,7 +2241,7 @@
   {
    "topic": "Product manuals",
    "q": "Prams and strollers",
-   "a": "Vista V3 PDF Vista V2 PDF Cruz V3 PDF Cruz V2 PDF Minu V3 PDF Minu V2 TBC Minu Duo TBC Ridge PDF",
+   "a": "Vista V3 PDF Vista V2 PDF Cruz V3 PDF Cruz V2 PDF Minu V3 PDF Minu V2 PDF Minu Duo PDF Ridge PDF",
    "link": "/pages/product-manuals#prams-and-strollers"
   },
   {
@@ -1473,13 +2277,13 @@
   {
    "topic": "Product manuals",
    "q": "Product manuals",
-   "a": "Download the instruction manual for any UPPAbaby product sold in Australia: Vista, Cruz, Minu, Ridge, Mesa, RumbleSeat, bassinet, PiggyBack and the at-home range.",
+   "a": "Download the instruction manual for any UPPAbaby sold in Australia: Vista, Cruz, Minu, Ridge, Mesa, RumbleSeat, bassinet and the at-home range.",
    "link": "/pages/product-manuals"
   },
   {
    "topic": "Product registration",
    "q": "Why it is worth two minutes",
-   "a": "Time it takes 2 minutes Warranty either way 3 years You upload 1 receipt Registering does not extend your warranty. It is three years from purchase either way. What it does is remove the two things that slow a claim down. The first is proof of purchase. Our warranty requires it, and a receipt for a pram bought two and a half years ago is not always easy to produce. Registration puts that record on our side of the counter. The second is us being able to find you. If there is ever a safety notice or a recall affecting your product, a registered owner gets contacted directly instead of finding out from a news article.",
+   "a": "Time it takes 2 minutes Warranty either way 3 years You upload 1 receipt Registering does not extend your warranty. It is three years from purchase either way. What it does is remove the two things that slow a claim down. The first is proof of purchase. We have to sight a receipt to process any warranty claim , because the warranty runs from the date of purchase and the receipt is what proves that date. A receipt for a pram bought two and a half years ago is not always easy to produce. Registering with the receipt attached puts that record on our side of the counter, so the claim starts straight away instead of waiting on a search through old emails. Register with the receipt, not without it. A registration with no proof of purchase attached does not establish when the product was bought, so it cannot support a claim on its own and we will still have to ask you for the receipt. The secon",
    "link": "/pages/product-registration#why-it-is-worth-two-minutes"
   },
   {
@@ -1527,13 +2331,13 @@
   {
    "topic": "Product registration",
    "q": "Register now",
-   "a": "Have the serial number and your receipt to hand. Two minutes, once, and a claim years from now takes minutes instead of an afternoon. Open the registration form Read the warranty first",
+   "a": "Have the serial number and your receipt to hand. A receipt is required on every warranty claim, so two minutes now saves the search later. Open the registration form Read the warranty first",
    "link": "/pages/product-registration#register-now"
   },
   {
    "topic": "Product registration",
    "q": "Product registration",
-   "a": "Register your UPPAbaby pram, capsule or accessory. It takes two minutes, makes a warranty claim far quicker, and means we can reach you directly if there is ever a safety notice.",
+   "a": "Register your UPPAbaby pram, capsule or accessory. Two minutes, and it makes a warranty claim far quicker and lets us reach you if there is a safety notice.",
    "link": "/pages/product-registration"
   },
   {
@@ -1551,7 +2355,7 @@
   {
    "topic": "Returns",
    "q": "If you have changed your mind",
-   "a": "We accept change of mind returns on products that are unused, unassembled and in their original packaging with all the parts and paperwork. Window TBC days from delivery Condition Unused, unassembled, original packaging, all components present Return freight TBC Restocking fee TBC Refund method Back to the original payment method A pram that has been assembled and pushed is no longer new, so please do check the boot fit and the folded size before you build it. The comparison tool gives you the folded dimensions of every model in the range. What cannot be returned for change of mind Car capsules and car seat bases that have been removed from their packaging, for safety reasons, and any product bought from a retailer rather than from us. A product bought from a retailer is returned to that retailer under their policy.",
+   "a": "We accept change of mind returns on products that are unused, unassembled and in their original packaging with all the parts and paperwork. Window 30 days from delivery Condition Unused, unassembled, original packaging, all components present Return freight Paid by you Refund method Back to the original payment method A pram that has been assembled and pushed is no longer new, so please do check the boot fit and the folded size before you build it. The comparison tool gives you the folded dimensions of every model in the range. What cannot be returned for change of mind Car capsules and car seat bases that have been removed from their packaging, for safety reasons, and any product bought from a retailer rather than from us. A product bought from a retailer is returned to that retailer under their policy.",
    "link": "/pages/order-returns#if-you-have-changed-your-mind"
   },
   {
@@ -1563,7 +2367,7 @@
   {
    "topic": "Returns",
    "q": "Lay-by and finance orders",
-   "a": "UPPAbaby Australia offers four month lay-by. A lay-by that is cancelled before completion is handled under the lay-by terms rather than this returns policy. Cancellation terms and any fee: TBC Need a hand?",
+   "a": "UPPAbaby Australia offers four month lay-by. A lay-by that is cancelled before completion is handled under the lay-by terms rather than this returns policy. The lay-by cancellation fee is 20% of the order, the same figure whether you cancel or simply do not finalise within four months. The full lay-by terms are here . Need a hand?",
    "link": "/pages/order-returns#lay-by-and-finance-orders"
   },
   {
@@ -1577,6 +2381,114 @@
    "q": "Returns",
    "a": "How to return an UPPAbaby product, your rights under Australian Consumer Law, and what happens with a faulty product versus a change of mind.",
    "link": "/pages/order-returns"
+  },
+  {
+   "topic": "Ridge V2 support",
+   "q": "Can I use the Ridge V2 from birth?",
+   "a": "Not as sold: it starts from six months. From birth it needs a bassinet or a capsule with the Ridge Mesa/bassinet adapters, both sold separately.",
+   "link": "/pages/ridge-v2-support#can-i-use-the-ridge-v2-from-birth"
+  },
+  {
+   "topic": "Ridge V2 support",
+   "q": "Can I run with the Ridge V2?",
+   "a": "Yes, that is what it is built for. Never-flat tyres, a front wheel that locks straight for running and unlocks to swivel for walking, and the longest wheelbase we make, which is what keeps it stable at pace.",
+   "link": "/pages/ridge-v2-support#can-i-run-with-the-ridge-v2"
+  },
+  {
+   "topic": "Ridge V2 support",
+   "q": "Will a Ridge V2 fit in my boot?",
+   "a": "Folded it is 49.5 x 65 x 91.4 cm, which is the largest fold in the range. It is a pram for families with boot space. Worth measuring before you commit.",
+   "link": "/pages/ridge-v2-support#will-a-ridge-v2-fit-in-my-boot"
+  },
+  {
+   "topic": "Ridge V2 support",
+   "q": "How heavy is the Ridge V2?",
+   "a": "13.7 kg. In its box it is 18.9 kg.",
+   "link": "/pages/ridge-v2-support#how-heavy-is-the-ridge-v2"
+  },
+  {
+   "topic": "Ridge V2 support",
+   "q": "Can the Ridge V2 carry two children?",
+   "a": "Yes, up to 2, using a second seat or a ride-along board.",
+   "link": "/pages/ridge-v2-support#can-the-ridge-v2-carry-two-children"
+  },
+  {
+   "topic": "Ridge V2 support",
+   "q": "What weight does the Ridge V2 take?",
+   "a": "From 6 months to 25 kg, the highest limit in the range.",
+   "link": "/pages/ridge-v2-support#what-weight-does-the-ridge-v2-take"
+  },
+  {
+   "topic": "Ridge V2 support",
+   "q": "Do the tyres need pumping up?",
+   "a": "No. They are never-flat, so there is no pump, no valve and no puncture on a gravel track.",
+   "link": "/pages/ridge-v2-support#do-the-tyres-need-pumping-up"
+  },
+  {
+   "topic": "Ridge V2 support",
+   "q": "What is included with the Ridge V2?",
+   "a": "Never-flat tyres, the basket and basket cover, a bottle holder and the three year warranty.",
+   "link": "/pages/ridge-v2-support#what-is-included-with-the-ridge-v2"
+  },
+  {
+   "topic": "Ridge V2 support",
+   "q": "Manual",
+   "a": "The current manual, and the previous version for anyone with an older frame. The version is on the white label near the rear axle. Ridge manual PDF \u00b7 Current",
+   "link": "/pages/ridge-v2-support#manual"
+  },
+  {
+   "topic": "Ridge V2 support",
+   "q": "Videos",
+   "a": "Press play and the video loads here. Nothing loads until you do. Play: Experience the UPPAbaby Ridge Running Pram Meet the pram",
+   "link": "/pages/ridge-v2-support#videos"
+  },
+  {
+   "topic": "Ridge V2 support",
+   "q": "Experience the UPPAbaby Ridge Running Pram",
+   "a": "Play: UPPAbaby Ridge V2: Designed for the Journey Ahead Meet the pram",
+   "link": "/pages/ridge-v2-support#experience-the-uppababy-ridge-running-pram"
+  },
+  {
+   "topic": "Ridge V2 support",
+   "q": "How-to guides",
+   "a": "How to Clean and Care for an UPPAbaby Pram What can go in the washing machine, what can only be wiped, how to get sunscreen off, why the wheels never need oil, and how to store a pram so it lasts to the second child. Buying a Second-Hand UPPAbaby A used Vista or Cruz can be a very good buy. The ten checks to make before you pay, what the warranty does and does not do for a second owner, and the free service that still does.",
+   "link": "/pages/ridge-v2-support#how-to-guides"
+  },
+  {
+   "topic": "Ridge V2 support",
+   "q": "What fits",
+   "a": "What attaches to the Ridge V2, and which adapter it needs, straight from UPPAbaby's own configuration chart. The adapters page covers positions and second-child setups in full. UPPAbaby Mesa capsule Needs the Ridge Mesa/Bassinet adapters ($44.95). The capsule and any UPPAbaby bassinet from 2015 use the same pair, and the pram still folds with them fitted. Maxi-Cosi, Nuna, Joie or BeSafe capsule Needs the Ridge car seat adapter ($64.95). Bassinet Needs the Ridge Mesa/Bassinet adapters ($44.95). Second seat (RumbleSeat) Not compatible. PiggyBack ride-along board Yes, the Ridge PiggyBack ride-along board ($249.00), sold separately.",
+   "link": "/pages/ridge-v2-support#what-fits"
+  },
+  {
+   "topic": "Ridge V2 support",
+   "q": "Spare parts and repairs",
+   "a": "Wheels, canopies, harnesses, bumper bars, baskets and fabrics are stocked for the Ridge V2. Parts are version specific, so photograph the label near the rear axle before you order. Wear is a part you buy; a part that failed is a warranty claim . Browse spare parts How parts work",
+   "link": "/pages/ridge-v2-support#spare-parts-and-repairs"
+  },
+  {
+   "topic": "Ridge V2 support",
+   "q": "Register, warranty and service",
+   "a": "Register your Ridge V2 Two minutes. Makes any claim quicker. Three year warranty Defects in materials and workmanship, on top of your consumer guarantees. Tune-Up Days A free check, clean and adjust, for ten years from purchase. TravelSafe Airline damage, which a warranty never covers. Register the bag before you fly.",
+   "link": "/pages/ridge-v2-support#register-warranty-and-service"
+  },
+  {
+   "topic": "Ridge V2 support",
+   "q": "Specifications",
+   "a": "Suits 6 months to 25 kg, 2 children Weight kg Unfolded 117.6 \u00d7 65 \u00d7 109.2 cm Folded 49.5 \u00d7 65 \u00d7 91.4 cm Basket 9.0 kg Reversible seat No From birth No. From six months, or from birth with a bassinet or capsule. Still stuck?",
+   "link": "/pages/ridge-v2-support#specifications"
+  },
+  {
+   "topic": "Ridge V2 support",
+   "q": "Talk to a person",
+   "a": "Tickets arrive with your order attached, which is why they are faster than the phone for anything about a specific purchase. Phone 1300 722 302 for everything else. Open a support ticket All support pages",
+   "link": "/pages/ridge-v2-support#talk-to-a-person"
+  },
+  {
+   "topic": "Ridge V2 support",
+   "q": "Ridge V2 support",
+   "a": "Ridge V2 support in one place: manual, how-to videos and guides, what fits, spare parts, registration, warranty, Tune-Up Days and specifications.",
+   "link": "/pages/ridge-v2-support"
   },
   {
    "topic": "Shipping and delivery",
@@ -1593,13 +2505,13 @@
   {
    "topic": "Shipping and delivery",
    "q": "Then delivery, from Melbourne",
-   "a": "To Business days after dispatch Total from order Melbourne, Sydney, Adelaide 1&ndash;2 2&ndash;4 business days Brisbane 2&ndash;3 3&ndash;5 business days Hobart 3&ndash;4 4&ndash;6 business days Perth 4&ndash;7 5&ndash;9 business days Darwin, regional and remote TBC TBC These are the courier's working estimates, not guarantees, and they stretch during busy periods like Black Friday and the weeks before Christmas.",
+   "a": "To Business days after dispatch Total from order Melbourne, Sydney, Adelaide 1&ndash;2 2&ndash;4 business days Brisbane 2&ndash;3 3&ndash;5 business days Hobart 3&ndash;4 4&ndash;6 business days Perth 4&ndash;7 5&ndash;9 business days Darwin, regional and remote 4&ndash;10 5&ndash;12 business days These are the courier's working estimates, not guarantees, and they stretch during busy periods like Black Friday and the weeks before Christmas.",
    "link": "/pages/ub-shipping-delivery#then-delivery-from-melbourne"
   },
   {
    "topic": "Shipping and delivery",
    "q": "What it costs",
-   "a": "This needs confirming before the page goes live The announcement bar on every page of this site says \"Free express delivery\" . The current shipping page does not state a delivery cost, a free shipping threshold, or any condition attached to it. If free express delivery is universal, say so here in one sentence. If it is an UPPside member benefit, or has a minimum spend, the announcement bar is making a claim the site does not support, and that is a consumer law exposure rather than a copy problem. Cost Conditions Standard delivery TBC TBC Express delivery TBC TBC Free delivery threshold TBC TBC Bulky items TBC TBC",
+   "a": "Cost Conditions Orders $99 and over Free Anywhere in Australia, for everyone Orders under $99 $15 Flat rate, anywhere in Australia Express upgrade Free An UPPside Rewards benefit from the Toddler tier up Bulky items No surcharge A pram is not charged differently from a cup holder",
    "link": "/pages/ub-shipping-delivery#what-it-costs"
   },
   {
@@ -1653,13 +2565,13 @@
   {
    "topic": "Spare parts",
    "q": "Parts we will not sell you",
-   "a": "Some things are not user-replaceable, and we would rather say so than take your money. Structural frame components. If a frame is bent or cracked, the pram is replaced, not repaired. This is why the Crash Exchange Program exists. Car capsule shells and harnesses. A capsule that has been in an accident is replaced. Its energy-absorbing structure is single-use by design. Anything on a product that has been in a vehicle accident. Repairing it is not the answer, and we will not help you do it. Fitting a non-genuine part is also worth thinking twice about: repairs and modifications carried out by a third party void the warranty on the product.",
+   "a": "Some things are not user-replaceable, and we would rather say so than take your money. Structural frame components. If a frame is bent or cracked, the pram is replaced, not repaired. Car capsule shells and harnesses. A capsule that has been in an accident is replaced. Its energy-absorbing structure is single-use by design. Anything on a product that has been in a vehicle accident. Repairing it is not the answer, and we will not help you do it. Fitting a non-genuine part is also worth thinking twice about: repairs and modifications carried out by a third party void the warranty on the product.",
    "link": "/pages/spare-parts#parts-we-will-not-sell-you"
   },
   {
    "topic": "Spare parts",
    "q": "Or let us look at it",
-   "a": "If you are not sure whether a part needs replacing, bring the pram to a Tune-Up Day. Inspection and basic adjustment are complimentary for up to ten years from purchase under Lifetime Service Support , and quite often a pram that feels worn out needs adjusting rather than parts. Next Tune-Up Day dates: TBC Not sure which part?",
+   "a": "If you are not sure whether a part needs replacing, bring the pram to a Tune-Up Day. Inspection and basic adjustment are complimentary for up to ten years from purchase under Lifetime Service Support , and quite often a pram that feels worn out needs adjusting rather than parts. Tune-Up Days are free, take about fifteen minutes, and you do not have to have bought the pram from us. See the dates and book a spot . Not sure which part?",
    "link": "/pages/spare-parts#or-let-us-look-at-it"
   },
   {
@@ -1671,7 +2583,7 @@
   {
    "topic": "Spare parts",
    "q": "Spare parts",
-   "a": "Wheels, canopies, harnesses, bumper bars, baskets and replacement fabrics for UPPAbaby prams. Parts are version specific, so check the label on your frame first.",
+   "a": "Wheels, canopies, harnesses, bumper bars, baskets and fabrics for every UPPAbaby sold here. Wear is a part you buy; a defect is a warranty claim.",
    "link": "/pages/spare-parts"
   },
   {
@@ -2325,31 +3237,37 @@
   {
    "topic": "Where to buy UPPAbaby in Australia",
    "q": "Where to buy UPPAbaby in Australia",
-   "a": "Every authorised UPPAbaby stockist in Australia, with the address and phone number for each. Search by suburb or postcode, or sort by distance from where you are.",
+   "a": "Every authorised UPPAbaby stockist in Australia. Search by suburb or postcode, or sort by distance from where you are.",
    "link": "/pages/store-locator"
   },
   {
    "topic": "Support",
+   "q": "Support by pram",
+   "a": "Vista V3 Manual, videos, guides, what fits, parts and specs. Cruz V3 Manual, videos, guides, what fits, parts and specs. Minu V3 Manual, videos, guides, what fits, parts and specs. Minu Duo Manual, videos, guides, what fits, parts and specs. Ridge V2 Manual, videos, guides, what fits, parts and specs. Car Seat Centre The Australian standard, fitting the Mesa, what it clicks onto, when to move up.",
+   "link": "/pages/support#support-by-pram"
+  },
+  {
+   "topic": "Support",
    "q": "Before you buy",
-   "a": "Which pram? Four questions, no budget question. Shows its working. Compare the range Every model side by side, plus the boot fit tool. Which adapters do I need? Capsule and bassinet compatibility for every frame. Shipping and delivery Dispatch in 1&ndash;2 days. Delivery times by city. Lay-by Four months to pay. 20% deposit, 20% cancellation fee.",
+   "a": "Which pram? Four questions, no budget question. Shows its working. Compare the range Every model side by side, plus the boot fit tool. Which adapters do I need? Capsule and bassinet compatibility for every frame. Shipping and delivery Dispatch in 1&ndash;2 days. Delivery times by city. Lay-by Four months to pay. 20% deposit, 20% cancellation fee. Baby expos See the whole range at PBC, One Fine Baby and The Baby Expo.",
    "link": "/pages/support#before-you-buy"
   },
   {
    "topic": "Support",
    "q": "Setting up",
-   "a": "Register your product Two minutes. Makes a claim far quicker. Product manuals Every manual, as a PDF. Mesa how-to videos Fitting, installing, and car to pram.",
+   "a": "Register your product Two minutes. Makes a claim far quicker. Product manuals Every manual, as a PDF. Mesa how-to videos Fitting, installing, and car to pram. How-to videos Setting up, packing, and replacing parts. How-to guides The fold, the limits, the travel bag, cleaning, buying used.",
    "link": "/pages/support#setting-up"
   },
   {
    "topic": "Support",
    "q": "When something goes wrong",
-   "a": "Make a warranty claim What to gather, and how to photograph a fault. Warranty information Three years on defects, ten years of servicing. Returns Faults, change of mind, and your ACL rights. Spare parts Wheels, canopies, harnesses and fabrics. Crash Exchange Program If the pram was in a vehicle accident. TravelSafe Program Airline damage, which the warranty excludes.",
+   "a": "Tune-Up Days Free check, clean and adjust, for any UPPAbaby. Make a warranty claim What to gather, and how to photograph a fault. Warranty information Three years on defects, ten years of servicing. Returns Faults, change of mind, and your ACL rights. Spare parts Wheels, canopies, harnesses and fabrics. Crash Exchange Program If the Mesa capsule was in a vehicle accident. TravelSafe Program Airline damage, which the warranty excludes.",
    "link": "/pages/support#when-something-goes-wrong"
   },
   {
    "topic": "Support",
    "q": "Programmes and company",
-   "a": "UPPside Rewards Free to join. Give $10, get $30. Partnerships and affiliates Media, retail, creators and affiliates. Sustainability Longevity, servicing and repairability. Modern Slavery Statement Human rights in the supply chain. Still stuck?",
+   "a": "UPPside Rewards Free to join. Give $10, get $30. Partnerships and affiliates Media, retail, creators and affiliates. Sustainability Longevity, servicing and repairability. Still stuck?",
    "link": "/pages/support#programmes-and-company"
   },
   {
@@ -2361,43 +3279,43 @@
   {
    "topic": "Support",
    "q": "Support",
-   "a": "Everything you need after you buy an UPPAbaby: registration, manuals, warranty claims, spare parts, returns, shipping, lay-by, TravelSafe and the Crash Exchange Program.",
+   "a": "Everything you need after you buy an UPPAbaby: registration, manuals, warranty claims, spare parts, returns, shipping, lay-by and TravelSafe.",
    "link": "/pages/support"
   },
   {
    "topic": "Sustainability",
    "q": "Where we actually stand",
-   "a": "This page needs real content before it goes live Sustainability copy is the easiest place on a website to write something pleasant and unverifiable, and it is also the fastest way to attract an ACCC greenwashing complaint. Every claim below is marked TBC because it must be substantiated by Coolkidz Australia, not generated. The ACCC has published guidance on environmental claims. The short version: be specific, be able to prove it, and do not imply a whole-business benefit from a single initiative. The most defensible sustainability claim a pram brand can make is not about materials. It is about how long the product lasts, and whether it can be repaired and passed on. That claim we can already substantiate: Designed to be reconfigured One Vista frame carries a first child, a second and a third rather than being replaced Serviced for a decade Complimentary inspection and adjustment for up",
+   "a": "The most defensible sustainability claim a pram brand can make is not about materials. It is about how long the product lasts, and whether it can be repaired and passed on. That claim we can already substantiate: Designed to be reconfigured One Vista frame carries a first child, a second and a third rather than being replaced Serviced for a decade Complimentary inspection and adjustment for up to ten years from purchase Repairable Wheels, canopies, harnesses, baskets and fabrics are stocked as spare parts Built to be handed on A serviced pram with available parts has a second and third life What follows is UPPAbaby's own published environmental programme, at Our Planet . Every claim below is one UPPAbaby makes and names a certification you can check, rather than a sentiment.",
    "link": "/pages/sustainability#where-we-actually-stand"
   },
   {
    "topic": "Sustainability",
    "q": "Materials",
-   "a": "TBC . To be supplied by Coolkidz Australia with evidence. Specific and provable beats broad and warm. \"The Vista V3 canopy fabric is made from X% recycled content, certified by Y\" is a claim. \"We care about the planet\" is not, and under ACCC guidance the second one is the riskier of the two. Two things already stated on UPPAbaby fact sheets and worth verifying for use here: DualTech&trade; fire-retardant-free fabrics across all Mesa fashions, and full-grain REACH certified leather details.",
+   "a": "Flame retardants No added flame-retardant chemicals on any material in direct contact with a child, across the car seat range Chemical emissions GREENGUARD Gold certified: prams, the RumbleSeat, car seats and the at-home range. The standard tests the finished product for total VOC emissions, not the fabric on its own Leather Chrome-free, from LWG Gold certified tanneries, and REACH certified, which means the tanning process passes regular chemical compliance testing Suppliers Audited against ISO 9001 Named certifications rather than sentiment, on purpose. \"GREENGUARD Gold\" is a thing you can look up; \"we care about the planet\" is not, and under ACCC guidance the second is the riskier of the two to publish.",
    "link": "/pages/sustainability#materials"
   },
   {
    "topic": "Sustainability",
    "q": "Packaging",
-   "a": "TBC Worth stating if true, because it is checkable by the customer the moment the box arrives: what the carton is made from, whether it is recyclable kerbside, and whether any plastic in the box has been removed or reduced.",
+   "a": "Cardboard FSC certified, so it comes from responsibly managed forests Inks Soy based on all printed materials and boxes, rather than petroleum based Design Developed to limit packaging and plastic waste, using recyclable materials Whether a particular carton is kerbside recyclable depends on your council, so check the label on the box rather than taking a general claim for it.",
    "link": "/pages/sustainability#packaging"
   },
   {
    "topic": "Sustainability",
    "q": "End of life",
-   "a": "TBC The strongest possible section here is a genuine take-back or recycling pathway for prams that have reached the end of their life, including those retired under the Crash Exchange Program , which must not be resold or passed on. If no such pathway exists yet, say so plainly rather than implying one.",
+   "a": "The honest answer is that the work here is about keeping a pram out of landfill for as long as possible, rather than recycling it at the end. Kept in service Free Tune-Up Days , a three year warranty, servicing for up to ten years, and spare parts sold individually Passed on Excess inventory is donated through UPPAbaby Gives Back, which has given more than US$3 million of gear to children in need There is no take-back or recycling scheme for a pram at the end of its life, and we would rather say so than imply one. A capsule retired under the Crash Exchange Program must not be resold or passed on at all.",
    "link": "/pages/sustainability#end-of-life"
   },
   {
    "topic": "Sustainability",
    "q": "Supply chain",
-   "a": "Our Modern Slavery Statement covers human rights risk in the supply chain and is a separate document. See Modern Slavery Statement . That page currently needs rewriting for the Australian Act. It should be corrected before this page links to it as evidence of anything.",
+   "a": "UPPAbaby requires every supplier to maintain safe, slavery-free workplaces and audits them to check it, including workers' rights, contracts, working hours, overtime, leave, minimum wage and unions. Suppliers are audited against ISO 9001. This is UPPAbaby's own published position rather than a claim we make on their behalf. It is set out in UPPAbaby's Modern Slavery Statement , made under the United Kingdom's Modern Slavery Act.",
    "link": "/pages/sustainability#supply-chain"
   },
   {
    "topic": "Sustainability",
    "q": "Sustainability",
-   "a": "The most defensible environmental claim a pram brand can make is longevity: one frame reconfigured across three children, serviced for ten years and repairable with stocked parts.",
+   "a": "Longevity is the environmental claim a pram brand can stand behind: one frame across three children, serviced for ten years, repaired with stocked parts.",
    "link": "/pages/sustainability"
   },
   {
@@ -2409,13 +3327,13 @@
   {
    "topic": "TravelSafe Program",
    "q": "What is covered",
-   "a": "What Damage incurred during air travel, under the terms of your original warranty Which products Prams and strollers, playards, RumbleSeats and bassinets How long Four years from the purchase of your gear: three years of product warranty plus one additional year Condition An UPPAbaby travel bag, bought and registered before you travel Cost of the programme Nothing beyond the travel bag Claim window Within 14 days of travel Repair or replace TBC Specific exclusions TBC Travel bags start at $129.95 for the RumbleSeat or bassinet bag and $149.95 for the Minu bag. Prices are on the travel gear collection .",
+   "a": "What Damage incurred during air travel, under the terms of your original warranty Which products Prams and strollers, playards, RumbleSeats and bassinets How long Four years from the purchase of your gear: three years of product warranty plus one additional year Condition An UPPAbaby travel bag, bought and registered before you travel Cost of the programme Nothing beyond the travel bag Claim window Within 14 days of travel Repair or replace The bag is assessed together with the pram claim, so one assessment covers both Travel bags start at $129.95 for the RumbleSeat or bassinet bag and $149.95 for the Minu bag. Prices are on the travel gear collection .",
    "link": "/pages/travelsafe-program#what-is-covered"
   },
   {
    "topic": "TravelSafe Program",
    "q": "Register before you fly",
-   "a": "This is the step people miss, and it is the one that cannot be done retrospectively. Buy an UPPAbaby travel bag For the pram, the RumbleSeat or the bassinet, depending on what you are taking. Find the TravelSafe label inside the bag It carries a serial number. Photograph it. Register the gear and the bag online, before you depart Both the product and the bag, using that serial number. Registering after the flight does not work. Gate-check with the bag on Keep your boarding passes and baggage receipts. You will need proof of travel if you claim.",
+   "a": "This is the step people miss, and it is the one that cannot be done retrospectively. Buy an UPPAbaby travel bag For the pram, the RumbleSeat or the bassinet, depending on what you are taking. Find the TravelSafe label inside the bag It carries a serial number. Photograph it. Register the gear and the bag online, before you depart Both the product and the bag, using that serial number, on the TravelSafe registration form . Registering after the flight does not work. Gate-check with the bag on Keep your boarding passes and baggage receipts. You will need proof of travel if you claim.",
    "link": "/pages/travelsafe-program#register-before-you-fly"
   },
   {
@@ -2439,55 +3357,55 @@
   {
    "topic": "TravelSafe Program",
    "q": "TravelSafe Program",
-   "a": "Airline damage is excluded from the standard pram warranty. TravelSafe covers it: buy an UPPAbaby travel bag, register before you fly, and you are covered for four years.",
+   "a": "Airline damage is excluded from the standard pram warranty. TravelSafe covers it: buy a travel bag, register before you fly, covered for four years.",
    "link": "/pages/travelsafe-program"
   },
   {
    "topic": "UPPside Rewards",
    "q": "How it works",
-   "a": "Join, shop, earn points, spend them. There is no card, no annual fee and no minimum spend to stay a member. Join, free Create an account. Membership costs nothing and there is nothing to maintain. Earn points as you shop Points accrue on qualifying purchases. Points have been earned from 13 September 2025. Move up the tiers The more you spend across a membership year, the higher the tier and the faster points accrue. Spend points at checkout Points convert to a discount applied at checkout.",
+   "a": "Join, shop, earn points, spend them. There is no card, no annual fee and no minimum spend to stay a member. Join, free Create an account. Membership costs nothing and there is nothing to maintain. Earn as you shop Points accrue on every qualifying purchase, at your tier's rate. Move up the tiers Total spend across a membership year sets your tier, and the tier sets the rate. Spend them at checkout Points convert to a discount, applied to your order at checkout.",
    "link": "/pages/loyalty#how-it-works"
   },
   {
    "topic": "UPPside Rewards",
-   "q": "Tiers",
-   "a": "Every member starts at Newborn. Tiers recognise total spend across a membership year, and each one keeps everything the tier below it gives you. Tier one",
-   "link": "/pages/loyalty#tiers"
+   "q": "Three tiers",
+   "a": "Your tier is set by total spend across a membership year. You start at Newborn the moment you join, and everything below it stays yours as you move up.",
+   "link": "/pages/loyalty#three-tiers"
   },
   {
    "topic": "UPPside Rewards",
    "q": "Newborn",
-   "a": "Free to join 1 point per $1 spent A birthday reward Early access to sales and promotions Free shipping on orders Tier two",
+   "a": "Join No spend needed 1 point per $1 spent Birthday reward Early access to sales and promotions",
    "link": "/pages/loyalty#newborn"
   },
   {
    "topic": "UPPside Rewards",
    "q": "Toddler",
-   "a": "Spend $1,500 1 point per $1 spent $10 off when you reach the tier A birthday reward First access to offers and new launches Invitations to earn double points on selected products Free express shipping on orders Tier three",
+   "a": "$1,500 Total spend 1 point per $1 spent $10 off when you reach the tier Birthday reward First access to offers and new launches Invitations to earn double points on selected products Free express shipping Best rate",
    "link": "/pages/loyalty#toddler"
   },
   {
    "topic": "UPPside Rewards",
    "q": "Big Kid",
-   "a": "Spend $2,500 2 points per $1 spent $20 off when you reach the tier A birthday reward First access to offers and new launches Invitations to earn triple points on selected products Free express shipping on orders VIP previews of new products, with a gift on purchase Invitations to exclusive events Priority customer service Needs confirming before launch Newborn lists free shipping as a member benefit, but free delivery over $100 is offered to everyone on this site. Either the tier benefit means free delivery with no minimum, or it repeats what every shopper already gets. It needs one answer before launch.",
+   "a": "$2,500 Total spend 2 points per $1 spent $20 off when you reach the tier Birthday reward First access to offers and new launches Invitations to earn triple points on selected products Free express shipping VIP previews, with a gift on purchase Invitations to exclusive events Priority customer service",
    "link": "/pages/loyalty#big-kid"
   },
   {
    "topic": "UPPside Rewards",
-   "q": "Ways to earn beyond shopping",
-   "a": "Points accrue on qualifying purchases, and there are a handful of one-off ways to add to them. 1,000 points Add your child's birthday to your account. 200 points Review a product you have bought. 100 points Follow UPPAbaby Australia on Instagram. 100 points Like UPPAbaby Australia on Facebook. $30 credit Refer a friend who then makes their first purchase. Bonus points Levelling up a tier, and surprise campaigns through the year. Refer a friend Give $10. Get $30. Share your referral link from your account. The $10 applies to your friend's first order with UPPAbaby Australia, and your $30 lands once that order has completed and passed the returns window. Referral credit cannot be earned on your own orders or on orders to the same household address.",
-   "link": "/pages/loyalty#ways-to-earn-beyond-shopping"
+   "q": "Points without spending a cent",
+   "a": "Four ways to earn that have nothing to do with buying anything. 1,000 points Add your child&rsquo;s birthday 200 points Write a product review 100 points Follow on Instagram, or like on Facebook Bonus points Every time you move up a tier, and on surprise campaigns Refer a friend",
+   "link": "/pages/loyalty#points-without-spending-a-cent"
   },
   {
    "topic": "UPPside Rewards",
-   "q": "Spending your points",
-   "a": "100 points is worth $2. You can redeem from as little as 100 points, or save them for a larger discount. Online Log in to your account before you check out. If you have enough points, the option to redeem appears at checkout. At an expo Give the email address on your UPPside account to a staff member at the register.",
-   "link": "/pages/loyalty#spending-your-points"
+   "q": "They get $10. You get $30.",
+   "a": "Share your referral link from your account. The $10 applies to your friend's first order with UPPAbaby Australia, and your $30 lands once that order has completed and passed the returns window. Referral credit cannot be earned on your own orders, or on orders to the same household address. $10 off your friend's first order $30 to you, once their order completes",
+   "link": "/pages/loyalty#they-get-10-you-get-30"
   },
   {
    "topic": "UPPside Rewards",
    "q": "The fine print",
-   "a": "Points are earned on qualifying purchases made directly with UPPAbaby Australia. Purchases from retailers do not earn points. Points have no cash value and cannot be transferred or sold. Membership is open to Australian residents, one account per person. Businesses and organisations are not eligible without written approval. Purchases paid for with an UPPAbaby digital gift card do not earn points. A referral only counts when the friend is a first-time customer here. Points expiry: TBC . The current page states 12 months in one answer and 6 months in another, so it needs one answer before this goes live. Points on a returned order are reversed with the refund. Tier review period: TBC . Tiers are described as a membership year, but the date that year runs from is not stated. We may change or end the programme, with notice to members. Join",
+   "a": "Free delivery over $99 applies to every order, member or not. What membership adds from the Toddler tier is the free express upgrade. Points are earned on qualifying purchases made directly with UPPAbaby Australia. Purchases from retailers do not earn points. Points have no cash value and cannot be transferred or sold. Points on a returned order are reversed with the refund. We may change or end the programme, with notice to members. Join",
    "link": "/pages/loyalty#the-fine-print"
   },
   {
@@ -2503,27 +3421,159 @@
    "link": "/pages/loyalty"
   },
   {
+   "topic": "Vista V3 support",
+   "q": "Can I use the Vista V3 from birth?",
+   "a": "Yes, straight out of the box. The bassinet is included, not an accessory you add later, so a newborn can lie flat on day one. The toddler seat takes over at around six months.",
+   "link": "/pages/vista-v3-support#can-i-use-the-vista-v3-from-birth"
+  },
+  {
+   "topic": "Vista V3 support",
+   "q": "How many children can a Vista V3 carry?",
+   "a": "Up to three on the one frame. Two seated, using a RumbleSeat or a second bassinet, and a third standing on a PiggyBack board that clips to the rear axle.",
+   "link": "/pages/vista-v3-support#how-many-children-can-a-vista-v3-carry"
+  },
+  {
+   "topic": "Vista V3 support",
+   "q": "Will a Vista V3 fit in my boot?",
+   "a": "Folded with the toddler seat attached it is 41.4 x 65.3 x 85.9 cm. With the seat removed it drops to 28.7 x 65.3 x 82.9 cm. Measure the shortest side of your boot opening, not the space inside it. The opening is what stops a pram going in.",
+   "link": "/pages/vista-v3-support#will-a-vista-v3-fit-in-my-boot"
+  },
+  {
+   "topic": "Vista V3 support",
+   "q": "How heavy is the Vista V3?",
+   "a": "12.5 kg with the frame and toddler seat together. The frame alone is 9 kg, the seat 3.5 kg and the bassinet 4.2 kg, so it can be lifted in parts.",
+   "link": "/pages/vista-v3-support#how-heavy-is-the-vista-v3"
+  },
+  {
+   "topic": "Vista V3 support",
+   "q": "Does the Mesa capsule fit the Vista V3?",
+   "a": "Yes, directly. The Mesa clicks onto the frame with no adapters, so a sleeping baby goes from the car to the pram without being unbuckled. Maxi-Cosi, Nuna, Joie and BeSafe capsules fit with the Vista upper car seat adapter.",
+   "link": "/pages/vista-v3-support#does-the-mesa-capsule-fit-the-vista-v3"
+  },
+  {
+   "topic": "Vista V3 support",
+   "q": "What is included in the box?",
+   "a": "Pram frame, toddler seat, bassinet, bumper bar, seasonal seat liner, toddler seat bug shield, toddler seat rain shield, bassinet bug shield, storage bag and the three year warranty. Nothing on that list is sold separately.",
+   "link": "/pages/vista-v3-support#what-is-included-in-the-box"
+  },
+  {
+   "topic": "Vista V3 support",
+   "q": "How much can the basket hold?",
+   "a": "13.6 kg, which is the largest in the range. It is reachable from either side, including when the seat faces you.",
+   "link": "/pages/vista-v3-support#how-much-can-the-basket-hold"
+  },
+  {
+   "topic": "Vista V3 support",
+   "q": "Does the seat face me or face out?",
+   "a": "Both. The toddler seat is reversible, so it can face you while they are small and face forward when they would rather watch the world.",
+   "link": "/pages/vista-v3-support#does-the-seat-face-me-or-face-out"
+  },
+  {
+   "topic": "Vista V3 support",
+   "q": "Manual",
+   "a": "The current manual, and the previous version for anyone with an older frame. The version is on the white label near the rear axle. Vista V3 manual PDF \u00b7 Current Vista V2 manual PDF \u00b7 Previous version",
+   "link": "/pages/vista-v3-support#manual"
+  },
+  {
+   "topic": "Vista V3 support",
+   "q": "Videos",
+   "a": "Press play and the video loads here. Nothing loads until you do. Play: Vista V3 double pram setup Setting up",
+   "link": "/pages/vista-v3-support#videos"
+  },
+  {
+   "topic": "Vista V3 support",
+   "q": "Vista V3 double pram setup",
+   "a": "Play: How to replace a locking latch on a Vista V3 Repairs and parts",
+   "link": "/pages/vista-v3-support#vista-v3-double-pram-setup"
+  },
+  {
+   "topic": "Vista V3 support",
+   "q": "How-to guides",
+   "a": "How to Fold the UPPAbaby Vista V3 The Vista V3 fold in five steps, with the seat on or off, what to remove before you start, and how big it is when it is done. UPPAbaby Vista V3 Age and Weight Limits Every limit on the Vista V3 in one place: when to move from bassinet to seat, what the RumbleSeat and PiggyBack carry, and how much the basket takes. UPPAbaby Cruz V3 vs Vista V3 Same seat, same capsule, same fold. What separates the Cruz from the Vista is one question: one child, or a family. The numbers, side by side. How to Pack the UPPAbaby Vista or Cruz in the Travel Bag, and How TravelSafe Covers It The order that gets a Vista, bassinet and RumbleSeat into one travel bag, the bag for each model, and the TravelSafe program that covers airline damage. How to Clean and Care for an UPPAbaby Pram What can go in the washing machine, what can only be wiped, how to get sunscreen off, why the w",
+   "link": "/pages/vista-v3-support#how-to-guides"
+  },
+  {
+   "topic": "Vista V3 support",
+   "q": "What fits",
+   "a": "What attaches to the Vista V3, and which adapter it needs, straight from UPPAbaby's own configuration chart. The adapters page covers positions and second-child setups in full. UPPAbaby Mesa capsule Fits directly, nothing to buy. Maxi-Cosi, Nuna, Joie or BeSafe capsule Needs the Vista / Alta / Cruz car seat upper adapter ($76.95). Bassinet Fits directly, nothing to buy. Second seat (RumbleSeat) Fits directly, nothing to buy. PiggyBack ride-along board Yes, the Vista PiggyBack ride-along board ($249.00), sold separately.",
+   "link": "/pages/vista-v3-support#what-fits"
+  },
+  {
+   "topic": "Vista V3 support",
+   "q": "Spare parts and repairs",
+   "a": "Wheels, canopies, harnesses, bumper bars, baskets and fabrics are stocked for the Vista V3. Parts are version specific, so photograph the label near the rear axle before you order. Wear is a part you buy; a part that failed is a warranty claim . Browse spare parts How parts work",
+   "link": "/pages/vista-v3-support#spare-parts-and-repairs"
+  },
+  {
+   "topic": "Vista V3 support",
+   "q": "Register, warranty and service",
+   "a": "Register your Vista V3 Two minutes. Makes any claim quicker. Three year warranty Defects in materials and workmanship, on top of your consumer guarantees. Tune-Up Days A free check, clean and adjust, for ten years from purchase. TravelSafe Airline damage, which a warranty never covers. Register the bag before you fly.",
+   "link": "/pages/vista-v3-support#register-warranty-and-service"
+  },
+  {
+   "topic": "Vista V3 support",
+   "q": "Specifications",
+   "a": "Suits Birth to 22.7 kg, 3 children Weight 12.5 kg (frame 9 kg, seat 3.5 kg) Unfolded 92.7 \u00d7 65.3 \u00d7 100.3 cm Folded 41.4 \u00d7 65.3 \u00d7 85.9 cm Folded, seat off 28.7 \u00d7 65.3 \u00d7 82.9 cm Basket 13.6 kg Reversible seat Yes From birth As sold. The bassinet is included in the box. Still stuck?",
+   "link": "/pages/vista-v3-support#specifications"
+  },
+  {
+   "topic": "Vista V3 support",
+   "q": "Talk to a person",
+   "a": "Tickets arrive with your order attached, which is why they are faster than the phone for anything about a specific purchase. Phone 1300 722 302 for everything else. Open a support ticket All support pages",
+   "link": "/pages/vista-v3-support#talk-to-a-person"
+  },
+  {
+   "topic": "Vista V3 support",
+   "q": "Vista V3 support",
+   "a": "Vista V3 support in one place: manual, how-to videos and guides, what fits, spare parts, registration, warranty, Tune-Up Days and specifications.",
+   "link": "/pages/vista-v3-support"
+  },
+  {
    "topic": "Make a warranty claim",
    "q": "Before you start",
-   "a": "A warranty claim is quick when three things are attached to it, and slow when they are not. Gather these first and most claims are assessed in one pass. What Where to find it Proof of purchase Your receipt or order confirmation, showing the retailer and the date. If you registered the product , we already hold this Serial number A white label on the frame near the rear axle. On a Mesa, on the underside of the shell Photographs The fault close up, and one of the whole product. Daylight, not a torch Is this actually a warranty claim? Three other programmes cover things the warranty does not, and picking the right one first saves a fortnight: The pram was in a vehicle accident &rarr; Crash Exchange Program . Stop using it now. It was damaged by an airline &rarr; TravelSafe , if you registered a travel bag. Airline damage is excluded from the warranty. It needs a service or an adjustment rat",
+   "a": "A warranty claim is quick when three things are attached to it, and slow when they are not. Gather these first and most claims are assessed in one pass. 1",
    "link": "/pages/register-warranty#before-you-start"
   },
   {
    "topic": "Make a warranty claim",
+   "q": "Proof of purchase",
+   "a": "Required on every claim. Your receipt or order confirmation, showing the retailer and the date, because the warranty runs from the date of purchase. If you registered the product and uploaded your receipt , we already hold it. A registration without a receipt is not proof of purchase. 2",
+   "link": "/pages/register-warranty#proof-of-purchase"
+  },
+  {
+   "topic": "Make a warranty claim",
+   "q": "Serial number",
+   "a": "A white label on the frame near the rear axle. Fold the pram and look at the underside. On a Mesa, it is on the underside of the shell. 3",
+   "link": "/pages/register-warranty#serial-number"
+  },
+  {
+   "topic": "Make a warranty claim",
+   "q": "Photographs",
+   "a": "The fault close up, and one of the whole product. Daylight, not a torch. A short video if it is a noise or a movement.",
+   "link": "/pages/register-warranty#photographs"
+  },
+  {
+   "topic": "Make a warranty claim",
+   "q": "Is this actually a warranty claim?",
+   "a": "Three other programmes cover things the warranty does not, and picking the right one first saves a fortnight. In a vehicle accident Crash Exchange Program Stop using it now. The capsule or pram is exchanged, not repaired. Crash Exchange &rarr; Damaged by an airline TravelSafe Airline damage is excluded from the warranty. If you registered a travel bag, this covers it. TravelSafe &rarr; Needs a service, not a repair Lifetime Service Support Stiff fold, squeak, brake adjustment: free servicing for up to ten years. Service support &rarr;",
+   "link": "/pages/register-warranty#is-this-actually-a-warranty-claim"
+  },
+  {
+   "topic": "Make a warranty claim",
    "q": "How to lodge it",
-   "a": "Open a ticket Go to help.uppababy.com.au and choose warranty. Attach the three things above. Describe when it started One or two sentences: when you first noticed it, and what you were doing. \"The fold started catching about a month ago, mostly when the seat is forward-facing\" tells us far more than \"it is broken\". We assess We may ask for one more photograph from a specific angle. Typical response time: TBC We repair, replace the part, or replace the product UPPAbaby supplies replacement parts or carries out repairs, whichever is appropriate. Some parts are replaced with newer model parts as products are improved.",
+   "a": "Open a ticket Go to help.uppababy.com.au and choose warranty. Attach the three things above. Describe when it started One or two sentences: when you first noticed it, and what you were doing. \"The fold started catching about a month ago, mostly when the seat is forward-facing\" tells us far more than \"it is broken\". We assess We may ask for one more photograph from a specific angle. We respond within 24 hours. We repair, replace the part, or replace the product UPPAbaby supplies replacement parts or carries out repairs, whichever is appropriate. Some parts are replaced with newer model parts as products are improved.",
    "link": "/pages/register-warranty#how-to-lodge-it"
   },
   {
    "topic": "Make a warranty claim",
    "q": "How to photograph a fault",
-   "a": "This sounds trivial and it is the single biggest cause of delay. Daylight, near a window. Flash flattens exactly the detail we need. One wide shot of the whole product , so we can see the model and configuration. One close shot of the fault , in focus, filling the frame. One shot with something for scale if it is a crack or a gap. A coin works. A short video if the fault is a movement or a noise. A squeak or a catch is much easier to show than to describe. The serial number label , readable.",
+   "a": "This sounds trivial and it is the single biggest cause of delay. Daylight, near a window. Flash flattens exactly the detail we need. One wide shot of the whole product, so we can see the model and configuration. One close shot of the fault, in focus, filling the frame. Something for scale if it is a crack or a gap. A coin works. A short video if the fault is a movement or a noise. A squeak is easier to show than describe. The serial number label, readable.",
    "link": "/pages/register-warranty#how-to-photograph-a-fault"
   },
   {
    "topic": "Make a warranty claim",
    "q": "What is and is not covered",
-   "a": "The warranty covers manufacturing defects for three years on prams and strollers, bouncers, high chairs, playards, swings, bassinets and selected accessories, and two years on other accessories. It does not cover misuse, poor maintenance, normal wear and tear, damage from sun, sweat, detergents or damp storage, third-party repairs, unauthorised retailers, second owners, airline handling, or products involved in an accident. The full exclusion list is on the warranty page . Your rights under Australian Consumer Law sit on top of all of this and cannot be excluded. If the product has a major failure you are entitled to a refund or replacement of your choosing, regardless of what the warranty says. Ready",
+   "a": "Covered Manufacturing defects for three years on prams and strollers, bouncers, high chairs, playards, swings, bassinets and selected accessories Two years on other accessories Repair, replacement of the part, or replacement of the product, whichever is appropriate Not covered Misuse, poor maintenance, normal wear and tear Damage from sun, sweat, detergents or damp storage Third-party repairs, unauthorised retailers, second owners Airline handling, and products involved in an accident The full exclusion list is on the warranty page . Your rights under Australian Consumer Law sit on top of all of this and cannot be excluded: if the product has a major failure you are entitled to a refund or replacement of your choosing, regardless of what the warranty says. Ready",
    "link": "/pages/register-warranty#what-is-and-is-not-covered"
   },
   {
@@ -2535,13 +3585,13 @@
   {
    "topic": "Make a warranty claim",
    "q": "Make a warranty claim",
-   "a": "How to lodge an UPPAbaby warranty claim in Australia: what to gather first, how to photograph the fault, and how to tell a warranty claim from a service, a crash exchange or an airline damage claim.",
+   "a": "How to lodge an UPPAbaby warranty claim in Australia: what to gather first, how to photograph the fault, and how a claim differs from a service.",
    "link": "/pages/register-warranty"
   },
   {
    "topic": "Warranty",
    "q": "What the three year warranty covers",
-   "a": "Your UPPAbaby product is warranted to be free from manufacturing defects for three years from the date of purchase , under normal use and in line with the operating instructions. Three years applies to prams and strollers, bouncers, high chairs, playards, swings and bassinets, and to selected accessories: the RumbleSeat, the Changing Station and the PiggyBack. All other accessories carry two years against manufacturing defects on the same terms. The practical difference A warranty covers something that was wrong when the product was made. Service covers everything that happens afterwards, from a wheel that has developed a squeak at year four to a harness that needs re-tensioning. Most of what actually goes wrong with a pram over its life is the second kind, which is why we run both.",
+   "a": "We always need to see your receipt Every claim is assessed from the date of purchase , so proof of purchase from an authorised Australian retailer is required in every case , registered or not. It has to show the retailer and the date. The quick way to deal with this once is to register your product and upload the receipt when you buy it. We hold it on file, and a claim three years later does not depend on you finding a receipt from three years ago. A registration on its own is not proof of purchase. If no receipt was uploaded with it, we cannot confirm when the product was bought, and we will have to ask you for the receipt before the claim can be assessed. Your UPPAbaby product is warranted to be free from manufacturing defects for three years from the date of purchase , under normal use and in line with the operating instructions. Three years applies to prams and strollers, bouncers, ",
    "link": "/pages/warranty#what-the-three-year-warranty-covers"
   },
   {
@@ -2559,13 +3609,13 @@
   {
    "topic": "Warranty",
    "q": "What the warranty does not cover",
-   "a": "The warranty does not cover: Defects caused by misuse or poor maintenance. The instruction booklet sets out how the product should be used and looked after. Damage caused by improper installation of UPPAbaby parts or accessories. Corrosion, mould or rust caused by poor maintenance, servicing or storage. Normal wear and tear. Damage or degradation caused by sun, sweat, detergents, damp storage or frequent washing. Repairs or modifications carried out by a third party. Products bought from an unauthorised retailer. Second owners, and users other than the registrant. Damage caused by airline shipping and handling. Products that have been involved in an accident. UPPAbaby reserves the right to determine whether the warranty terms and conditions have been met. If your pram has been in a car accident, the warranty is not the right programme. The Crash Exchange Program is.",
+   "a": "The warranty does not cover: Defects caused by misuse or poor maintenance. The instruction booklet sets out how the product should be used and looked after. Damage caused by improper installation of UPPAbaby parts or accessories. Corrosion, mould or rust caused by poor maintenance, servicing or storage. Normal wear and tear. Damage or degradation caused by sun, sweat, detergents, damp storage or frequent washing. Repairs or modifications carried out by a third party. Products bought from an unauthorised retailer. Second owners, and users other than the registrant. Damage caused by airline shipping and handling. Products that have been involved in an accident. UPPAbaby reserves the right to determine whether the warranty terms and conditions have been met. If your Mesa capsule has been in a car accident, the warranty is not the right programme. The Crash Exchange Program is.",
    "link": "/pages/warranty#what-the-warranty-does-not-cover"
   },
   {
    "topic": "Warranty",
    "q": "Conditions and limits",
-   "a": "The warranty is not transferable . It extends only to the original retail purchaser and is valid only when supported by proof of purchase from an authorised retailer. Keep your receipt. The warranty is valid only in the country of original purchase, and is subject to the conditions set by that country. Conditions vary between countries, and UPPAbaby will not ship replacement or repair parts outside the country of purchase. A pram bought overseas is not covered here. Registering your product records your purchase against your name, which is what makes a claim quick rather than a hunt for a two-year-old receipt.",
+   "a": "The warranty is not transferable . It extends only to the original retail purchaser and is valid only when supported by proof of purchase from an authorised retailer. Keep your receipt. Proof of purchase is not a formality we waive for good cases. The three years run from the date of purchase, so without a receipt showing that date there is no way to establish whether a product is inside its warranty period, and the claim cannot be assessed. This applies however the fault arose and however long you have owned the product. The warranty is valid only in the country of original purchase, and is subject to the conditions set by that country. Conditions vary between countries, and UPPAbaby will not ship replacement or repair parts outside the country of purchase. A pram bought overseas is not covered here. Registering your product records your purchase against your name, which is what makes a",
    "link": "/pages/warranty#conditions-and-limits"
   },
   {
@@ -2577,7 +3627,7 @@
   {
    "topic": "Warranty",
    "q": "How to make a claim",
-   "a": "Lodge a support ticket at help.uppababy.com.au . Our team will ask for proof of purchase, photographs of the fault, and the serial number from the frame. Have these ready and most claims are assessed without a second round of questions: Proof of purchase from an authorised retailer The serial number, found on the frame near the rear axle Photographs showing the fault, and one showing the whole pram A sentence on when you first noticed it and what you were doing Typical response time: TBC Next",
+   "a": "Lodge a support ticket at help.uppababy.com.au . Our team will ask for proof of purchase, photographs of the fault, and the serial number from the frame. Have these ready and most claims are assessed without a second round of questions: Proof of purchase from an authorised retailer, showing the date. Required on every claim. If you registered the product with your receipt, we already hold it The serial number, found on the frame near the rear axle Photographs showing the fault, and one showing the whole pram A sentence on when you first noticed it and what you were doing We respond within 24 hours. Next",
    "link": "/pages/warranty#how-to-make-a-claim"
   },
   {
