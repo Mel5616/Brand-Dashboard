@@ -1,0 +1,556 @@
+{
+  "entries": [
+    {
+      "ext_key": "article:9000107797",
+      "topic": "Product registration",
+      "models": [],
+      "question": "How do I register my UPPAbaby product?",
+      "answer": "Register on the [product registration page](/pages/product-registration). It takes about two minutes. Registering does not change your warranty: your pram has three years whether you register or not. What it does is hold your receipt on file, so a later claim does not wait on it, and it lets us contact you if there is ever a safety notice. Have your receipt and the serial number ready, and use one form per product. On a pram the serial number is on a white label under the frame, near the rear axle. Registration is for the original purchaser only.",
+      "link": "/pages/product-registration",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000107797",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000115783",
+      "topic": "Safety",
+      "models": [],
+      "question": "What safety standards do UPPAbaby prams meet?",
+      "answer": "Every UPPAbaby pram sold in Australia complies with the mandatory Australian standard, AS/NZS 2088:2000, and is also tested to the current edition, AS 2088:2022 including Amendment 1:2024. UPPAbaby prams are endorsed by INPAA, the Infant & Nursery Product Alliance Australia. Fabrics and leathers are tested free of lead, DEHP, azo dyes, formaldehyde and PFAS. The Mesa sold here is approved to AS/NZS 1754 as a Type A2 rearward-facing infant restraint. A capsule bought overseas cannot legally be used in an Australian car. More on the [safety page](/pages/safety).",
+      "link": "/pages/safety",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000115783",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000115788",
+      "topic": "Care and cleaning",
+      "models": [],
+      "question": "How do I look after my UPPAbaby pram?",
+      "answer": "Rinse grit out of the wheels and brake, store the pram dry and out of the sun, and give it a quick check once a season. After a beach or gravel path, hose the wheels, brush grit from the brake bar and let it dry. Rinse off salt water straight away, as salt corrodes the frame. Never fold or store it damp. Once a season, test the brake, the fold click, each harness strap, the wheels, the frame screws, the bumper bar release and the recline. Do not use oil or lubricant spray. A squeak that survives a rinse is a job for a free Tune-Up Day. Parts are on the [spare parts page](/pages/spare-parts).",
+      "link": "/pages/spare-parts",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000115788",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000115789",
+      "topic": "Care and cleaning",
+      "models": [],
+      "question": "How do I clean my UPPAbaby pram?",
+      "answer": "Spot clean or hand wash the fabrics in cold water with a mild detergent, and dry them flat in the shade. Do not machine wash them, and no bleach, fabric softener, ironing, dry cleaning or tumble drying. Let the fabric dry fully before it goes back on. The harness is wipe only, with a damp cloth and mild soap: it is a safety part and washing weakens it. Wipe the frame with warm water and mild soap, no scourers. Wipe leather with a damp cloth only, no conditioner. Treat sunscreen the same day with a damp cloth and a little dish soap. Rinse grit from the wheels, and never oil them.",
+      "link": null,
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000115789",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000115790",
+      "topic": "Warranty",
+      "models": [],
+      "question": "How long is the UPPAbaby warranty, and what does it cover?",
+      "answer": "Prams and strollers have a three year warranty against manufacturing defects from the date of purchase, whether you register or not. Bassinets, the RumbleSeat, PiggyBack and Changing Station also have three years, most other accessories two, and the Mesa capsule has a lifetime warranty for the original purchaser. Proof of purchase from an authorised retailer is needed for every claim. The warranty is not transferable and is valid only in the country of purchase. It does not cover wear and tear, misuse, airline damage or accidents. A Mesa capsule or base in a car accident goes through the [Crash Exchange Program](/pages/crash-exchange-program), which never covers prams. Full terms are on the [warranty page](/pages/warranty).",
+      "link": "/pages/warranty",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000115790",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000115792",
+      "topic": "About UPPAbaby",
+      "models": [],
+      "question": "Where are UPPAbaby prams designed and made?",
+      "answer": "UPPAbaby prams are designed at the company's headquarters in Massachusetts, in the United States, and made in China under strict quality control. UPPAbaby was founded in 2006. Every pram sold in Australia complies with the mandatory Australian standard, AS/NZS 2088:2000, and is tested to the current edition, AS 2088:2022. More on the [safety page](/pages/safety).",
+      "link": "/pages/safety",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000115792",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000116861",
+      "topic": "Vista V3",
+      "models": [
+        "Vista V3",
+        "Vista V2"
+      ],
+      "question": "Can I fold my Vista with the seat on?",
+      "answer": "Yes. The Vista V3 folds with the toddler seat attached, as long as the seat faces forward, away from you, reclined to the second most upright position with the canopy closed. If the seat faces you, turn it round first. Take off the bassinet, a RumbleSeat or a Mesa capsule before you fold. A PiggyBack board can stay on, folded up. In the UPPAbaby range, only the Kona folds with its seat facing either way. On a Vista V2 or earlier, fold with the seat facing forward too, with the handlebar raised and the front wheel locks off.",
+      "link": "/collections/uppababy-vista-v3-pram",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000116861",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000116862",
+      "topic": "Vista V3",
+      "models": [
+        "Vista V3",
+        "Bassinet V3",
+        "RumbleSeat V3",
+        "Mesa",
+        "PiggyBack"
+      ],
+      "question": "What are the age and weight limits on the Vista V3?",
+      "answer": "The bassinet, which is in the box, is from birth to 9 kg, or until your baby can push up on hands and knees. The toddler seat is from 6 months to 22.7 kg, so before 6 months use the bassinet or the Mesa capsule. The RumbleSeat V3 is from 6 months to 15.9 kg. The Mesa is from birth (2.0 kg) to 15 kg and clicks straight onto the frame. The PiggyBack board takes a standing child from about two years, up to 25 kg, and the basket holds 13.6 kg. The bassinet is for naps on the go, not overnight sleep.",
+      "link": "/collections/uppababy-vista-v3-pram",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000116862",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000116863",
+      "topic": "Bassinet",
+      "models": [
+        "Bassinet V3",
+        "Vista V3",
+        "Cruz V3",
+        "Ridge V2"
+      ],
+      "question": "Which prams does the UPPAbaby bassinet fit, and how long can I use it?",
+      "answer": "The bassinet is for your baby from birth to 9 kg, or until they can push up on hands and knees, whichever comes first. It comes in the box with the Vista V3 and attaches directly. It is sold separately for the Cruz V3, where it also attaches directly, and it fits the Ridge V2 with the Ridge Mesa/Bassinet adapters. It does not fit the Minu V3. Your baby lies completely flat under a UPF 50+ canopy. The liner and mattress cover come off for spot cleaning or a cold hand wash, and it folds flat into the Vista V3 storage bag. It is for naps on the go, not overnight sleep.",
+      "link": "/collections/uppababy-rumbleseats-bassinets",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000116863",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000116864",
+      "topic": "Vista V3",
+      "models": [
+        "Vista V3"
+      ],
+      "question": "How do I fold my Vista V3?",
+      "answer": "Take off the bassinet, a RumbleSeat or a Mesa first. Then: 1. Put the brake on, check the front wheel locks are off and keep the basket light. 2. Raise the handlebar to its highest position. 3. Turn the toddler seat to face forward, recline it to the second most upright position and close the canopy. 4. Squeeze both fold triggers under the handlebar. 5. Push the handlebar forward and down until the auto-lock clicks. It stands on its own when folded. To unfold, release the auto-lock latch and lift the handlebar until it clicks open. If the fold sticks, it is usually the seat position.",
+      "link": "/collections/uppababy-vista-v3-pram",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000116864",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000116865",
+      "topic": "Care and cleaning",
+      "models": [],
+      "question": "What are UPPAbaby pram fabrics made of?",
+      "answer": "UPPAbaby fabrics are water repellent, with a UPF 50+ canopy on every colourway, and are tested free of lead, DEHP, azo dyes, formaldehyde and PFAS. The handlebar and bumper bar are real leather, and the frame is aeronautical grade aluminium. For the fibre content of a particular piece, check the care label sewn into it. To wash the fabrics, spot clean or hand wash in cold water with a mild detergent and dry flat out of the sun. Do not machine wash them.",
+      "link": "/pages/safety",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000116865",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000116866",
+      "topic": "Travel",
+      "models": [
+        "Vista V3",
+        "Vista V2",
+        "Cruz V3",
+        "Cruz V2"
+      ],
+      "question": "How do I fly with my Vista or Cruz?",
+      "answer": "Pack it in the UPPAbaby Vista and Cruz travel bag, and register the bag and your pram under the [TravelSafe Program](/pages/travelsafe-program) before you fly. Without TravelSafe, airline damage is not covered by the warranty. One bag fits every Vista and Cruz, folded with the seat on, facing forward in the second most upright position. The bassinet and a RumbleSeat fit beside it. The TravelSafe label with its serial number is inside the bag. Registration cannot be done after the flight. If something is damaged, lodge a request marked TravelSafe within 14 days of travel.",
+      "link": "/pages/travelsafe-program",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000116866",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000116867",
+      "topic": "Vista (older models)",
+      "models": [
+        "Vista"
+      ],
+      "question": "How do I adjust the harness on an older Vista?",
+      "answer": "These steps are for Vista models before the Vista V2. To loosen the straps, pull up on the ladder lock and down on the webbing. To tighten, pull down on the slip ring. To change the shoulder height, detach the grey adjustment clip from the harness attachment loop and reattach it to the loop that best fits your child. The harness is a safety part: if it is worn, frayed or will not adjust, replace it. Harnesses are on the [spare parts page](/pages/spare-parts).",
+      "link": "/pages/spare-parts",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000116867",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000116868",
+      "topic": "Vista V3",
+      "models": [
+        "Vista V3",
+        "Vista V2",
+        "PiggyBack"
+      ],
+      "question": "How do I use the Vista PiggyBack board?",
+      "answer": "The PiggyBack clips to the rear axle of your Vista so a standing child, from about two years and up to 25 kg, can ride along. It fits the Vista from 2015 onwards and works with any seat setup, so a Vista can carry three children: two seated and one standing. When it is not in use, lift it up towards the basket, and the pram folds with it attached in that position. To lower it, gently squeeze the button. The Vista PiggyBack manual is on the [product manuals page](/pages/product-manuals).",
+      "link": "/pages/product-manuals",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000116868",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000116869",
+      "topic": "Vista V3",
+      "models": [
+        "Vista V3"
+      ],
+      "question": "How do I set up my Vista V3?",
+      "answer": "Start with the Vista V3 manual on the [product manuals page](/pages/product-manuals). In the box: the frame, toddler seat, bassinet, bumper bar, seasonal seat liner, toddler seat bug shield and rain shield, bassinet bug shield and a storage bag. Until your baby is 6 months old, use the bassinet or the Mesa capsule, as the toddler seat is from 6 months. When you no longer need the bassinet, it folds flat into the storage bag. The model and version are on the white label under the frame near the rear axle.",
+      "link": "/pages/product-manuals",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000116869",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000116871",
+      "topic": "Vista V3",
+      "models": [
+        "Vista V3",
+        "Vista V2"
+      ],
+      "question": "How do I set up my Vista for a baby and a toddler?",
+      "answer": "There are two ways. Toddler seat on top with the bassinet or a Mesa capsule underneath: a bassinet in the lower position needs the Vista upper and lower adapters, and a Mesa underneath needs the UPPAbaby Vista Lower Capsule Adapters. Or bassinet on top with your toddler in a RumbleSeat underneath: the RumbleSeat brings its own adapters and carries a child from 6 months to 15.9 kg. Never put the toddler seat on the lower adapters. The lower position is only for a bassinet, a capsule or a RumbleSeat.",
+      "link": "/collections/uppababy-rumbleseats-bassinets",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000116871",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000116873",
+      "topic": "Vista V3",
+      "models": [
+        "Vista V3",
+        "Vista V2",
+        "RumbleSeat V3"
+      ],
+      "question": "How do I set up my Vista for two toddlers?",
+      "answer": "Put the Vista toddler seat on top and a RumbleSeat underneath. The RumbleSeat brings its own adapters in the box. The main seat takes up to 22.7 kg and the RumbleSeat V3 is from 6 months to 15.9 kg, with limited recline while forward-facing, so put the bigger child in the main seat. For a third child, add the PiggyBack board, which takes a standing child up to 25 kg.",
+      "link": "/collections/uppababy-rumbleseats-bassinets",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000116873",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000116875",
+      "topic": "Cruz (older models)",
+      "models": [
+        "Cruz V2"
+      ],
+      "question": "How do I fold my Cruz V2?",
+      "answer": "On the Cruz V2: put the brake on, push the handlebar in completely, set the seat facing forward in its second most upright position, then pull up both release triggers and rotate the handlebar down to the ground. The Cruz V2 cannot be folded with the seat facing you. The Cruz V2 manual is on the [product manuals page](/pages/product-manuals). The Cruz V3 folds the same way as the Vista V3, with the seat facing forward in the second most upright position.",
+      "link": "/pages/product-manuals",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000116875",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000116880",
+      "topic": "Product registration",
+      "models": [],
+      "question": "Where do I find the serial number on my UPPAbaby?",
+      "answer": "On a pram, the serial number is on a white label on the underside of the frame, near the rear axle. Fold the pram to see it. It is the line under the barcode, with the model letters in the middle. On a Mesa capsule it is on the moulded shell underneath, the Mesa base has its own number underneath, and a bassinet or RumbleSeat has it on the sewn-in fabric label. A travel bag has it on the TravelSafe label inside. On the Cruz from 2015 and the Cruz V2 it includes the letters CRZ and sits on a sticker above the basket. It is never on the box.",
+      "link": "/pages/product-registration",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000116880",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000122611",
+      "topic": "Care and cleaning",
+      "models": [],
+      "question": "How do I look after the leather on my pram?",
+      "answer": "Wipe it with a clean, damp cloth when it needs it, and do not use leather conditioner, which makes the handlebar and bumper bar slippery. Clean it while it is on the pram so it keeps its shape, and do not dry it in the sun. Small scuffs often buff out if you rub them lightly with your fingers. Over time the real leather will age and develop a patina. Damage from sun, sweat, detergents or damp storage is not covered by the warranty, and a worn bumper bar cover is available as a [spare part](/pages/spare-parts).",
+      "link": "/pages/spare-parts",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000122611",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000152720",
+      "topic": "Travel",
+      "models": [],
+      "question": "How does the TravelSafe Program work?",
+      "answer": "Buy an UPPAbaby travel bag and register the bag and your gear before you fly. Airline damage is then covered for four years from the purchase of your gear, at no cost beyond the bag. It covers prams and strollers, playards, RumbleSeats and bassinets inside a registered bag. Register once, using the serial number on the TravelSafe label inside the bag. A bag registered after the flight is not covered. If something is damaged, lodge a request marked TravelSafe within 14 days with proof of travel, photographs, both serial numbers and your receipts. It is not travel insurance and does not cover loss or theft. Details are on the [TravelSafe Program](/pages/travelsafe-program) page.",
+      "link": "/pages/travelsafe-program",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000152720",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000152877",
+      "topic": "Vista V3",
+      "models": [
+        "Vista V3",
+        "Vista V2"
+      ],
+      "question": "Can I put a toddler seat on the Vista lower adapters?",
+      "answer": "No. A toddler seat, including a Cruz or Alta seat, must never go on the Vista lower adapters. It may fit, but the lower adapters were not designed for a toddler's weight and the setup has not been tested, so it is unsafe. The lower position is for a Mesa or an approved capsule with the UPPAbaby Vista Lower Capsule Adapters, a bassinet with the Vista lower adapters, or a RumbleSeat with its own adapters. For two seated children, use the toddler seat on top and a RumbleSeat underneath. The RumbleSeat V3 is from 6 months to 15.9 kg.",
+      "link": "/collections/uppababy-rumbleseats-bassinets",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000152877",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000153538",
+      "topic": "Every pram",
+      "models": [
+        "Vista V3",
+        "Cruz V3",
+        "Minu V3",
+        "Kona"
+      ],
+      "question": "How do I fold my UPPAbaby pram without damaging it?",
+      "answer": "Brake on, basket light, bassinet, RumbleSeat or capsule off, and the seat facing forward in its second most upright position. Then follow the steps for your model. A seat in the wrong position is the most common reason a fold sticks. The Kona is the exception: it folds with the seat facing either way. The Cruz V3 folds the same way as the Vista V3. The Minu V3 folds one-handed: brake on, then slide and squeeze the grey button on the handlebar and check the safety latch has caught. On a Vista, check the front wheel locks are off. Other models are in the [product manuals](/pages/product-manuals).",
+      "link": "/pages/product-manuals",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000153538",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000162791",
+      "topic": "Every pram",
+      "models": [],
+      "question": "How do I keep my pram serviced, and what are Tune-Up Days?",
+      "answer": "Give your pram a ten-minute check once a season, and bring it to a free Tune-Up Day for a check, clean and adjust. The team checks the brakes, wheels, harness, fold and canopy in about fifteen minutes, and anyone with an UPPAbaby pram can come. Spots are limited, so book ahead. Inspection and basic adjustment are included, but replacement parts and major repairs are not. Between visits, rinse grit from the wheels and brake, and never oil the pram. If anything does not lock, or the frame is cracked or bent, stop using the pram and lodge a request through our [support page](/pages/support).",
+      "link": "/pages/support",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000162791",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000188935",
+      "topic": "Warranty",
+      "models": [],
+      "question": "Is there a warranty on an ex-display pram?",
+      "answer": "Yes, and it depends where you bought it. A floor display pram bought from a retailer has a 12 month warranty against manufacturing defects, from the date of purchase. An ex-display pram bought from UPPAbaby Australia has the full three year warranty, the same as a new pram. As with every claim, keep your proof of purchase showing the retailer and the date, and [register your product](/pages/product-registration) with the receipt attached.",
+      "link": "/pages/warranty",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000188935",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000199417",
+      "topic": "Product manuals",
+      "models": [],
+      "question": "Where can I find the manual for my UPPAbaby?",
+      "answer": "Every UPPAbaby instruction manual is on the [product manuals page](/pages/product-manuals), as a PDF. That covers the prams (Vista V3 and V2, Cruz V3 and V2, Minu V3 and V2, Minu Duo and Ridge), the Mesa capsule, the RumbleSeat V3, Bassinet V3 and Infant SnugSeat, the PiggyBack boards, the Vista and Cruz travel bag and the at-home range. Your model and version are on the white label under the frame, near the rear axle. If yours is not there, lodge a request with the model and serial number through our [support page](/pages/support).",
+      "link": "/pages/product-manuals",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000199417",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000199418",
+      "topic": "Vista V3",
+      "models": [
+        "Vista V3"
+      ],
+      "question": "What do I need to carry a second or third child on my Vista?",
+      "answer": "A RumbleSeat or a second bassinet for a second child, and a PiggyBack board for a third. The RumbleSeat brings its own adapters in the box. A second bassinet needs the Vista upper and lower adapters. A Mesa capsule under the toddler seat needs the UPPAbaby Vista Lower Capsule Adapters, and an approved capsule from another brand needs a Vista car seat adapter. The PiggyBack clips to the rear axle and takes a standing child to 25 kg. The Cruz does not take a second seat or bassinet, but it does take the Cruz PiggyBack board.",
+      "link": "/collections/uppababy-vista-v3-pram",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000199418",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000199420",
+      "topic": "Minu V3",
+      "models": [
+        "Minu V3"
+      ],
+      "question": "What is the Minu V3?",
+      "answer": "The Minu V3 is UPPAbaby's compact stroller. It weighs 7.6 kg, folds one-handed to 25 x 45 x 55 cm, about carry-on size, and stands on its own. It suits one child from birth to 22.7 kg, ready from birth with the included infant insert. The seat faces forward only. It has front and independent rear suspension and a 9.1 kg basket. The Mesa fits with the Minu V3 Mesa adapter, and no other brand of capsule fits any Minu. The Minu travel bag is covered by [TravelSafe](/pages/travelsafe-program) once registered, and has a hidden pocket for a tracking device.",
+      "link": "/collections/uppababy-minu-v3-travel-stroller",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000199420",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000199422",
+      "topic": "Minu V3",
+      "models": [
+        "Minu V3"
+      ],
+      "question": "Can I take the Minu V3 on board the plane?",
+      "answer": "The Minu V3 folds to 25 x 45 x 55 cm, which meets the IATA overhead standard, and weighs 7.6 kg. Whether it can go in the cabin depends on your airline, so check before you book. Some airlines cap carry-on at 7 kg, which the Minu V3 is over, and some count the pram as your one bag. If it goes in the hold, use the Minu travel bag and register it under the [TravelSafe Program](/pages/travelsafe-program) before you fly, as airline damage is otherwise excluded from the warranty. The bag has a hidden pocket for a tracking device.",
+      "link": "/pages/travelsafe-program",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000199422",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000199423",
+      "topic": "Minu V3",
+      "models": [
+        "Minu V3",
+        "Minu Duo"
+      ],
+      "question": "What are the age and weight limits for the Minu?",
+      "answer": "The Minu V3 is suitable from birth to 22.7 kg. It is ready from birth as sold, with the included infant insert. The Minu Duo is suitable from birth on both seats, up to 22.7 kg per seat. Earlier Minu models have different limits, so check the manual for your version on the [product manuals page](/pages/product-manuals). The version is on the white label under the frame near the rear axle.",
+      "link": "/collections/uppababy-minu-v3-travel-stroller",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000199423",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000199424",
+      "topic": "Minu V3",
+      "models": [
+        "Minu V3",
+        "Minu"
+      ],
+      "question": "How do I fold my Minu?",
+      "answer": "The Minu V3 folds and unfolds with one hand, in one motion. Put the brake on. If a capsule is fitted, take it off and fold the capsule adapters down, as they can stay on. Slide and squeeze the grey button on the handlebar at the same time, then check the safety latch on the side of the frame has caught. The bumper bar and snack tray can stay on: press the button on each side and move them up first. To unfold, release the safety latch. It stands on its own when folded and has a carry strap. The steps are the same on the original Minu and Minu V2.",
+      "link": "/collections/uppababy-minu-v3-travel-stroller",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000199424",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000199427",
+      "topic": "Minu V3",
+      "models": [
+        "Minu V3",
+        "Minu Duo"
+      ],
+      "question": "Can I use the Minu V3 for my newborn?",
+      "answer": "Yes. The Minu V3 is suitable from birth as sold. The infant insert is included, and the seat has a from-birth recline. The bassinet does not fit the Minu V3, and it does not need one. The Mesa capsule fits with the Minu V3 Mesa adapter, and no other brand of capsule fits any Minu. The Minu Duo is also suitable from birth, on both seats.",
+      "link": "/collections/uppababy-minu-v3-travel-stroller",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000199427",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000199429",
+      "topic": "Mesa",
+      "models": [
+        "Vista V3",
+        "Cruz V3",
+        "Minu V3",
+        "Minu Duo",
+        "Ridge V2",
+        "Kona",
+        "Mesa"
+      ],
+      "question": "Which car capsules fit my UPPAbaby pram?",
+      "answer": "The Mesa clicks straight onto the Vista V3, Cruz V3 and Kona with no adapter. It fits the Minu V3 with the Minu V3 Mesa adapter, the Minu Duo with the Minu Duo Mesa adapters (one capsule, on the parent's left), and the Ridge V2 with the Ridge Mesa/Bassinet adapters. Only the Vista V3, Cruz V3, Ridge V2 and Kona take another brand's capsule, and only these: Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm, with the matching UPPAbaby adapter. No Minu takes another brand's capsule, and CYBEX is not supported.",
+      "link": "/collections/mesa-car-capsule",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000199429",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "article:9000219580",
+      "topic": "Mesa",
+      "models": [
+        "Vista V3",
+        "Cruz V3",
+        "Ridge V2",
+        "Kona",
+        "Minu V3",
+        "Minu Duo"
+      ],
+      "question": "Can I use a non-UPPAbaby adapter to fit a car capsule to my pram?",
+      "answer": "No. Only car capsule adapters made and tested by UPPAbaby are approved for UPPAbaby prams. Another maker's adapter may damage your pram and, in serious cases, injure your child, and third-party modifications void the warranty. The Mesa needs no adapter on the Vista V3, Cruz V3 or Kona, and uses the matching UPPAbaby adapter on the Minu V3, Minu Duo and Ridge V2. A short list of Maxi-Cosi, Nuna and Joie capsules fit the Vista V3, Cruz V3, Ridge V2 and Kona with the matching UPPAbaby adapter. No Minu takes another brand's capsule, and CYBEX capsules are not supported on any UPPAbaby frame.",
+      "link": "/collections/mesa-car-capsule",
+      "source": "help_centre",
+      "source_ref": "help.uppababy.com.au/support/solutions/articles/9000219580",
+      "corrects_question": null,
+      "status": "approved",
+      "decided_by": "claude",
+      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    }
+  ]
+}

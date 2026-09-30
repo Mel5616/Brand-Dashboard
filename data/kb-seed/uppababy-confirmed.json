@@ -1,0 +1,674 @@
+{
+  "entries": [
+    {
+      "ext_key": "fact:vista-mesa-other-capsules",
+      "topic": "Vista V3",
+      "models": [
+        "Vista V3",
+        "Mesa"
+      ],
+      "question": "Does the Mesa capsule fit the Vista V3?",
+      "answer": "Yes, directly. The Mesa clicks onto the frame with no adapters, so a sleeping baby goes from the car to the pram without being unbuckled. A short list of other capsules also fit, with the Vista / Alta / Cruz car seat upper adapter: Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm. If your capsule is not on that list, it is not supported, even if it looks similar.",
+      "link": "/collections/uppababy-vista-v3-pram",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": {
+        "topic": "Vista V3",
+        "q": "Does the Mesa capsule fit the Vista V3?"
+      },
+      "decided_reason": "Confirmed by David: BeSafe capsules are not sold in Australia; uppababy.com.au lists BeSafe as compatible"
+    },
+    {
+      "ext_key": "fact:vista-support-mesa-other-capsules",
+      "topic": "Vista V3 support",
+      "models": [
+        "Vista V3",
+        "Mesa"
+      ],
+      "question": "Does the Mesa capsule fit the Vista V3?",
+      "answer": "Yes, directly. The Mesa clicks onto the frame with no adapters, so a sleeping baby goes from the car to the pram without being unbuckled. A short list of other capsules also fit, with the Vista / Alta / Cruz car seat upper adapter: Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm. If your capsule is not on that list, it is not supported, even if it looks similar.",
+      "link": "/collections/uppababy-vista-v3-pram",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": {
+        "topic": "Vista V3 support",
+        "q": "Does the Mesa capsule fit the Vista V3?"
+      },
+      "decided_reason": "Confirmed by David: BeSafe capsules are not sold in Australia; uppababy.com.au lists BeSafe as compatible"
+    },
+    {
+      "ext_key": "fact:cruz-mesa-other-capsules",
+      "topic": "Cruz V3",
+      "models": [
+        "Cruz V3",
+        "Mesa"
+      ],
+      "question": "Does the Mesa capsule fit the Cruz V3?",
+      "answer": "Yes, directly, with no adapters. A short list of other capsules fit with the Vista / Alta / Cruz car seat upper adapter, the same one that covers the Vista: Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm. If your capsule is not on that list, it is not supported, even if it looks similar.",
+      "link": "/collections/uppababy-cruz-v3-pram",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": {
+        "topic": "Cruz V3",
+        "q": "Does the Mesa capsule fit the Cruz V3?"
+      },
+      "decided_reason": "Confirmed by David: BeSafe capsules are not sold in Australia; uppababy.com.au lists BeSafe as compatible"
+    },
+    {
+      "ext_key": "fact:cruz-support-mesa-other-capsules",
+      "topic": "Cruz V3 support",
+      "models": [
+        "Cruz V3",
+        "Mesa"
+      ],
+      "question": "Does the Mesa capsule fit the Cruz V3?",
+      "answer": "Yes, directly, with no adapters. A short list of other capsules fit with the Vista / Alta / Cruz car seat upper adapter, the same one that covers the Vista: Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm. If your capsule is not on that list, it is not supported, even if it looks similar.",
+      "link": "/collections/uppababy-cruz-v3-pram",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": {
+        "topic": "Cruz V3 support",
+        "q": "Does the Mesa capsule fit the Cruz V3?"
+      },
+      "decided_reason": "Confirmed by David: BeSafe capsules are not sold in Australia; uppababy.com.au lists BeSafe as compatible"
+    },
+    {
+      "ext_key": "fact:vista-what-fits",
+      "topic": "Vista V3 support",
+      "models": [
+        "Vista V3"
+      ],
+      "question": "What fits",
+      "answer": "Here is what attaches to the Vista V3. Mesa capsule: fits directly, nothing to buy. Other capsules: only Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm, with the Vista / Alta / Cruz car seat upper adapter ($76.95). Bassinet: included, fits directly. RumbleSeat: brings its own adapters in the box, from 6 months. PiggyBack: yes, the Vista PiggyBack ride-along board ($249.00), sold separately. A Mesa carried under the toddler seat needs the UPPAbaby Vista Lower Capsule Adapters.",
+      "link": "/collections/uppababy-vista-v3-pram",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": {
+        "topic": "Vista V3 support",
+        "q": "What fits"
+      },
+      "decided_reason": "Confirmed by David: BeSafe capsules are not sold in Australia; uppababy.com.au lists BeSafe as compatible"
+    },
+    {
+      "ext_key": "fact:cruz-what-fits",
+      "topic": "Cruz V3 support",
+      "models": [
+        "Cruz V3"
+      ],
+      "question": "What fits",
+      "answer": "Here is what attaches to the Cruz V3. Mesa capsule: fits directly, nothing to buy. Other capsules: only Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm, with the Vista / Alta / Cruz car seat upper adapter ($76.95). Bassinet: fits directly, sold separately. Second seat: the Cruz does not take a RumbleSeat or any second seat. PiggyBack: yes, the Cruz PiggyBack ride-along board ($249.00), sold separately.",
+      "link": "/collections/uppababy-cruz-v3-pram",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": {
+        "topic": "Cruz V3 support",
+        "q": "What fits"
+      },
+      "decided_reason": "Confirmed by David: BeSafe capsules are not sold in Australia; uppababy.com.au lists BeSafe as compatible"
+    },
+    {
+      "ext_key": "fact:ridge-what-fits",
+      "topic": "Ridge V2 support",
+      "models": [
+        "Ridge V2"
+      ],
+      "question": "What fits",
+      "answer": "Here is what attaches to the Ridge V2. Mesa capsule: needs the Ridge Mesa/Bassinet adapters ($44.95), and the pram still folds with them fitted. Other capsules: only Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm, with the Ridge car seat adapter ($64.95). Bassinet: uses the same Ridge Mesa/Bassinet adapters. RumbleSeat: not compatible. PiggyBack: yes, the Ridge PiggyBack ride-along board ($249.00), sold separately.",
+      "link": "/collections/uppababy-ridge-pram-jogger",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": {
+        "topic": "Ridge V2 support",
+        "q": "What fits"
+      },
+      "decided_reason": "Confirmed by David: BeSafe capsules are not sold in Australia; uppababy.com.au lists BeSafe as compatible"
+    },
+    {
+      "ext_key": "fact:minu-what-fits",
+      "topic": "Minu V3 support",
+      "models": [
+        "Minu V3"
+      ],
+      "question": "What fits",
+      "answer": "Here is what attaches to the Minu V3. Mesa capsule: needs the Minu V3 Mesa adapter ($49.95). Other capsules: no other brand of capsule fits any Minu. Bassinet: the UPPAbaby bassinet does not fit the Minu V3. It does not need one, as the Minu V3 is from birth as sold with its included infant insert. RumbleSeat: not compatible. PiggyBack: not offered.",
+      "link": "/collections/uppababy-minu-v3-travel-stroller",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": {
+        "topic": "Minu V3 support",
+        "q": "What fits"
+      },
+      "decided_reason": "Confirmed by David: the bassinet does not fit the Minu V3; uppababy.com.au says it fits with the Minu bassinet adapters"
+    },
+    {
+      "ext_key": "fact:minu-only-pram",
+      "topic": "Minu V3",
+      "models": [
+        "Minu V3"
+      ],
+      "question": "Is the Minu V3 suitable as an only pram?",
+      "answer": "For a lot of families, yes. It is from birth as sold, it takes the Mesa capsule with the Minu V3 Mesa adapter, and it carries a child up to 22.7 kg. It is worth thinking twice if you walk long distances every day on rough ground, where a larger wheel earns its keep.",
+      "link": "/collections/uppababy-minu-v3-travel-stroller",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": {
+        "topic": "Minu V3",
+        "q": "Is the Minu V3 suitable as an only pram?"
+      },
+      "decided_reason": "Confirmed by David: the Minu V3 limit is 22.7 kg; uppababy.com.au says 22 kg"
+    },
+    {
+      "ext_key": "fact:weight-limits-all-prams",
+      "topic": "Answers",
+      "models": [
+        "Vista V3",
+        "Cruz V3",
+        "Kona",
+        "Minu V3",
+        "Minu Duo"
+      ],
+      "question": "How long will my child fit in the pram?",
+      "answer": "Vista V3, Cruz V3, Kona and Minu V3 all take a child to 22.7 kg. Minu Duo takes 22.7 kg per seat. In practice most children are out of a pram before they reach the weight limit, so seat height and legroom tend to matter more than the number.",
+      "link": "/pages/product-comparison",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": {
+        "topic": "Answers",
+        "q": "How long will my child fit in the pram?"
+      },
+      "decided_reason": "Confirmed by David: the Minu V3 limit is 22.7 kg; uppababy.com.au says 22 kg"
+    },
+    {
+      "ext_key": "fact:minu-specifications",
+      "topic": "Minu V3 support",
+      "models": [
+        "Minu V3"
+      ],
+      "question": "Specifications",
+      "answer": "Minu V3 specifications. Suits: birth to 22.7 kg, one child. Weight: 7.6 kg. Unfolded: 88 x 45 x 104 cm. Folded: 25 x 45 x 55 cm. Basket: 9.1 kg. Seat: faces forward only, not reversible. From birth: yes, as sold, with the included infant insert.",
+      "link": "/collections/uppababy-minu-v3-travel-stroller",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": {
+        "topic": "Minu V3 support",
+        "q": "Specifications"
+      },
+      "decided_reason": "Confirmed by David: the Minu V3 limit is 22.7 kg; uppababy.com.au says 22 kg"
+    },
+    {
+      "ext_key": "fact:pram-car-accident",
+      "topic": "Answers",
+      "models": [],
+      "question": "My pram was in a car accident. What should I do?",
+      "answer": "The Crash Exchange Program covers only the Mesa capsule and Mesa base, never prams or strollers. If your Mesa capsule or base was in the vehicle, stop using it and claim within 30 days of the accident on the [Crash Exchange Program](/pages/crash-exchange-program) page. If your pram was damaged, or anything on it no longer locks, stop using it and lodge a request through our [support page](/pages/support) with photographs of the damage and one of the whole pram. The team will tell you what happens next.",
+      "link": "/pages/crash-exchange-program",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": {
+        "topic": "Answers",
+        "q": "My pram was in a car accident. What should I do?"
+      },
+      "decided_reason": "Confirmed by David: Crash Exchange covers only the Mesa capsule and Mesa base; uppababy.com.au sends accident-damaged prams to Crash Exchange"
+    },
+    {
+      "ext_key": "fact:returns-faulty-product",
+      "topic": "Returns",
+      "models": [],
+      "question": "If something is wrong with your product",
+      "answer": "Lodge a request through our [support page](/pages/support) with your proof of purchase, the serial number and photographs of the fault. We assess it and tell you which outcome applies and why: repair, replacement or refund. If we are repairing, we tell you what and how long it will take before you send anything, and we pay the freight on a product returned for a fault. A pram damaged in a car accident is not a returns question, and it is not covered by Crash Exchange, which is only for the Mesa capsule and Mesa base. Lodge a request with photographs instead.",
+      "link": "/pages/order-returns",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": {
+        "topic": "Returns",
+        "q": "If something is wrong with your product"
+      },
+      "decided_reason": "Confirmed by David: Crash Exchange covers only the Mesa capsule and Mesa base; uppababy.com.au sends accident-damaged prams to Crash Exchange"
+    },
+    {
+      "ext_key": "fact:which-programme",
+      "topic": "Make a warranty claim",
+      "models": [],
+      "question": "Is this actually a warranty claim?",
+      "answer": "Three other programmes cover things the warranty does not. Mesa capsule or base in a vehicle accident: stop using it and claim under the [Crash Exchange Program](/pages/crash-exchange-program) within 30 days. It covers only the Mesa capsule and base, never prams. A pram damaged in an accident: lodge a request through our [support page](/pages/support) with photographs. Damaged by an airline: the [TravelSafe Program](/pages/travelsafe-program) covers it if you registered an UPPAbaby travel bag before you flew. Needs a service, not a repair: a stiff fold, a squeak or a brake adjustment is a job for a free Tune-Up Day.",
+      "link": "/pages/register-warranty",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": {
+        "topic": "Make a warranty claim",
+        "q": "Is this actually a warranty claim?"
+      },
+      "decided_reason": "Confirmed by David: Crash Exchange covers only the Mesa capsule and Mesa base; uppababy.com.au sends accident-damaged prams to Crash Exchange"
+    },
+    {
+      "ext_key": "fact:mesa-accidents-warranty",
+      "topic": "Australian Car Seat Centre",
+      "models": [
+        "Mesa"
+      ],
+      "question": "Accidents, travel and the things a warranty does not cover",
+      "answer": "Crash Exchange Program: if your Mesa capsule or base was in a vehicle during an accident, stop using it and lodge a claim within 30 days for a replacement. It covers the Mesa capsule and base only, never prams. TravelSafe: register an UPPAbaby travel bag and your pram before you fly, and airline damage to the pram is covered. Register the Mesa: two minutes, and it makes any claim, exchange or recall notice quicker. Warranty: the Mesa capsule has a lifetime warranty against manufacturing defects for the original purchaser, on top of your consumer guarantees.",
+      "link": "/pages/crash-exchange-program",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": {
+        "topic": "Australian Car Seat Centre",
+        "q": "Accidents, travel and the things a warranty does not cover"
+      },
+      "decided_reason": "Confirmed by David: the Mesa capsule has a lifetime warranty and Crash Exchange never covers prams; uppababy.com.au gives the Mesa three years"
+    },
+    {
+      "ext_key": "fact:vista-how-to-guides",
+      "topic": "Vista V3 support",
+      "models": [
+        "Vista V3"
+      ],
+      "question": "How-to guides",
+      "answer": "Guides for the Vista V3 are in our [Journal](/blogs/news): how to fold the Vista V3, with the seat facing forward in the second most upright position; the Vista V3 age and weight limits; Cruz V3 vs Vista V3; packing the Vista or Cruz in the travel bag, and how TravelSafe covers airline damage; and cleaning and caring for your pram. On cleaning, the fabrics are spot clean or hand wash only, in cold water with a mild detergent, dried flat out of the sun. Do not machine wash them, and no bleach, ironing or dry cleaning. The harness is wipe only.",
+      "link": "/blogs/news",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": {
+        "topic": "Vista V3 support",
+        "q": "How-to guides"
+      },
+      "decided_reason": "Confirmed by David: fabrics are spot clean or hand wash only; uppababy.com.au says some go in the washing machine"
+    },
+    {
+      "ext_key": "fact:cruz-how-to-guides",
+      "topic": "Cruz V3 support",
+      "models": [
+        "Cruz V3"
+      ],
+      "question": "How-to guides",
+      "answer": "Guides for the Cruz V3 are in our [Journal](/blogs/news): Cruz V3 vs Vista V3, the numbers side by side; packing the Vista or Cruz in the travel bag, and how TravelSafe covers airline damage; cleaning and caring for your pram; and buying a second-hand UPPAbaby. On cleaning, the fabrics are spot clean or hand wash only, in cold water with a mild detergent, dried flat out of the sun. Do not machine wash them, and no bleach, ironing or dry cleaning. The harness is wipe only.",
+      "link": "/blogs/news",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": {
+        "topic": "Cruz V3 support",
+        "q": "How-to guides"
+      },
+      "decided_reason": "Confirmed by David: fabrics are spot clean or hand wash only; uppababy.com.au says some go in the washing machine"
+    },
+    {
+      "ext_key": "fact:minu-how-to-guides",
+      "topic": "Minu V3 support",
+      "models": [
+        "Minu V3"
+      ],
+      "question": "How-to guides",
+      "answer": "Guides are in our [Journal](/blogs/news), including how to clean and care for an UPPAbaby pram, and buying a second-hand UPPAbaby: the checks to make before you pay, and what the warranty does and does not do for a second owner. On cleaning, the fabrics are spot clean or hand wash only, in cold water with a mild detergent, dried flat out of the sun. Do not machine wash them, and no bleach, ironing or dry cleaning. The harness is wipe only.",
+      "link": "/blogs/news",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": {
+        "topic": "Minu V3 support",
+        "q": "How-to guides"
+      },
+      "decided_reason": "Confirmed by David: fabrics are spot clean or hand wash only; uppababy.com.au says some go in the washing machine"
+    },
+    {
+      "ext_key": "fact:minu-duo-how-to-guides",
+      "topic": "Minu Duo support",
+      "models": [
+        "Minu Duo"
+      ],
+      "question": "How-to guides",
+      "answer": "Guides are in our [Journal](/blogs/news), including how to clean and care for an UPPAbaby pram, and buying a second-hand UPPAbaby: the checks to make before you pay, and what the warranty does and does not do for a second owner. On cleaning, the fabrics are spot clean or hand wash only, in cold water with a mild detergent, dried flat out of the sun. Do not machine wash them, and no bleach, ironing or dry cleaning. The harness is wipe only.",
+      "link": "/blogs/news",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": {
+        "topic": "Minu Duo support",
+        "q": "How-to guides"
+      },
+      "decided_reason": "Confirmed by David: fabrics are spot clean or hand wash only; uppababy.com.au says some go in the washing machine"
+    },
+    {
+      "ext_key": "fact:ridge-how-to-guides",
+      "topic": "Ridge V2 support",
+      "models": [
+        "Ridge V2"
+      ],
+      "question": "How-to guides",
+      "answer": "Guides are in our [Journal](/blogs/news), including how to clean and care for an UPPAbaby pram, and buying a second-hand UPPAbaby: the checks to make before you pay, and what the warranty does and does not do for a second owner. On cleaning, the fabrics are spot clean or hand wash only, in cold water with a mild detergent, dried flat out of the sun. Do not machine wash them, and no bleach, ironing or dry cleaning. The harness is wipe only.",
+      "link": "/blogs/news",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": {
+        "topic": "Ridge V2 support",
+        "q": "How-to guides"
+      },
+      "decided_reason": "Confirmed by David: fabrics are spot clean or hand wash only; uppababy.com.au says some go in the washing machine"
+    },
+    {
+      "ext_key": "fact:vista-fold-seat-forward",
+      "topic": "Vista V3",
+      "models": [
+        "Vista V3"
+      ],
+      "question": "Can I fold the Vista V3 with the toddler seat on?",
+      "answer": "Yes, as long as the seat faces forward, away from you, reclined to the second most upright position. It will not fold with the seat facing you. Take off the bassinet, a RumbleSeat or a Mesa first.",
+      "link": null,
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": null,
+      "decided_reason": "Confirmed by David; no uppababy.com.au answer covers this"
+    },
+    {
+      "ext_key": "fact:cruz-fold-seat-forward",
+      "topic": "Cruz V3",
+      "models": [
+        "Cruz V3"
+      ],
+      "question": "Can I fold the Cruz V3 with the seat on?",
+      "answer": "Yes, with the seat facing forward, away from you, reclined to the second most upright position. It will not fold with the seat facing you. Take off a bassinet or a Mesa capsule first. For a smaller fold, lower the bumper bar and tuck the footrest away.",
+      "link": null,
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": null,
+      "decided_reason": "Confirmed by David; no uppababy.com.au answer covers this"
+    },
+    {
+      "ext_key": "fact:kona-fold-either-way",
+      "topic": "Kona",
+      "models": [
+        "Kona",
+        "Vista V3",
+        "Cruz V3"
+      ],
+      "question": "Which UPPAbaby pram folds with the seat facing either way?",
+      "answer": "Only the Kona. Its seat can face you or face out when you fold it. The Vista V3 and Cruz V3 fold with the seat on only when it faces forward, away from you, in the second most upright position.",
+      "link": null,
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": null,
+      "decided_reason": "Confirmed by David; no uppababy.com.au answer covers this"
+    },
+    {
+      "ext_key": "fact:fabric-cleaning",
+      "topic": "Every pram",
+      "models": [],
+      "question": "How do I wash the pram fabrics?",
+      "answer": "Spot clean, or hand wash in cold water with a mild detergent. Dry the fabric flat in the shade, out of direct sun, and let it dry fully before it goes back on. Do not machine wash, bleach, iron or dry clean the fabrics, and never tumble dry. The harness is wipe only: a damp cloth and mild soap, no soaking. Between washes, a damp cloth and a drop of dish soap handles most marks.",
+      "link": null,
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": null,
+      "decided_reason": "Confirmed by David; no uppababy.com.au answer covers this"
+    },
+    {
+      "ext_key": "fact:toddler-seat-age",
+      "topic": "Every pram",
+      "models": [
+        "Vista V3",
+        "Ridge V2",
+        "Cruz V3",
+        "Minu V3",
+        "Kona",
+        "Minu Duo"
+      ],
+      "question": "When can my baby use the toddler seat?",
+      "answer": "On the Vista V3 and Ridge V2 the toddler seat is from 6 months. Before that, use the bassinet, which comes with the Vista V3, or the Mesa capsule. The Ridge V2 needs the Ridge Mesa/Bassinet adapters for either. The Cruz V3, Minu V3 and Kona are from birth as sold, and the Minu Duo is from birth on both seats.",
+      "link": null,
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": null,
+      "decided_reason": "Confirmed by David; uppababy.com.au also says about three months for the Vista seat"
+    },
+    {
+      "ext_key": "fact:rumbleseat-age",
+      "topic": "Vista V3",
+      "models": [
+        "RumbleSeat V3",
+        "Vista V3"
+      ],
+      "question": "What age is the RumbleSeat for?",
+      "answer": "The RumbleSeat V3 is from 6 months, up to 15.9 kg. It fits the Vista V3 and brings its own adapters in the box. Put the bigger child in the main toddler seat, which takes up to 22.7 kg, and the smaller child in the RumbleSeat. The Cruz V3, Minu V3 and Ridge V2 do not take a RumbleSeat.",
+      "link": "/collections/uppababy-rumbleseats-bassinets",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": null,
+      "decided_reason": "Confirmed by David; uppababy.com.au elsewhere says from about three months"
+    },
+    {
+      "ext_key": "fact:minu-weight-limit",
+      "topic": "Minu V3",
+      "models": [
+        "Minu V3",
+        "Minu Duo"
+      ],
+      "question": "What is the weight limit on the Minu V3?",
+      "answer": "The Minu V3 takes a child from birth to 22.7 kg. It is from birth as sold, with the included infant insert. The Minu Duo takes 22.7 kg per seat.",
+      "link": "/collections/uppababy-minu-v3-travel-stroller",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": null,
+      "decided_reason": "Confirmed by David; uppababy.com.au says 22 kg in places"
+    },
+    {
+      "ext_key": "fact:besafe-not-sold",
+      "topic": "Mesa",
+      "models": [
+        "Mesa"
+      ],
+      "question": "Does a BeSafe capsule fit my UPPAbaby pram?",
+      "answer": "BeSafe capsules are not sold in Australia, so they are not on the approved list for any UPPAbaby pram. The Mesa clicks straight onto the Vista V3, Cruz V3 and Kona, and fits the Minu V3, Minu Duo and Ridge V2 with an adapter. The other capsules that fit, with the matching UPPAbaby adapter, are Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm. No Minu takes another brand's capsule.",
+      "link": "/collections/mesa-car-capsule",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": null,
+      "decided_reason": "Confirmed by David: BeSafe is not sold in Australia and must never be listed as compatible"
+    },
+    {
+      "ext_key": "fact:floor-display-warranty",
+      "topic": "Warranty",
+      "models": [],
+      "question": "What warranty does a floor display pram have?",
+      "answer": "A floor display pram bought from a retailer has a 12 month warranty against manufacturing defects, from the date of purchase. An ex-display pram bought from UPPAbaby Australia has the full three year warranty, the same as a new pram. Either way, keep your receipt: we need proof of purchase showing the retailer and the date for any claim.",
+      "link": "/pages/warranty",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": null,
+      "decided_reason": "Confirmed by David; no uppababy.com.au answer covers this"
+    },
+    {
+      "ext_key": "fact:crash-exchange-scope",
+      "topic": "Crash Exchange Program",
+      "models": [
+        "Mesa"
+      ],
+      "question": "Does the Crash Exchange Program cover my pram?",
+      "answer": "No. The Crash Exchange Program covers only the Mesa capsule and the Mesa base. If either was in the vehicle during an accident, stop using it and lodge a claim within 30 days on the [Crash Exchange Program](/pages/crash-exchange-program) page. Prams and strollers are never covered by Crash Exchange. If your pram was damaged, lodge a request through our [support page](/pages/support) with photographs of the damage and one of the whole pram.",
+      "link": "/pages/crash-exchange-program",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": null,
+      "decided_reason": "Confirmed by David: Crash Exchange covers only the Mesa capsule and Mesa base; uppababy.com.au sends accident-damaged prams to Crash Exchange"
+    },
+    {
+      "ext_key": "fact:kona-mesa-direct",
+      "topic": "Kona",
+      "models": [
+        "Kona",
+        "Mesa"
+      ],
+      "question": "Do I need adapters to fit the Mesa to the Kona?",
+      "answer": "No. The Mesa clicks straight onto the Kona frame with no adapters, the same as on the Vista V3 and Cruz V3, so a sleeping baby can go from the car to the pram without being unbuckled.",
+      "link": "/collections/mesa-car-capsule",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": null,
+      "decided_reason": "Confirmed by David; uppababy.com.au has also said the Kona needs a matching adapter set"
+    },
+    {
+      "ext_key": "fact:minu-bassinet",
+      "topic": "Minu V3",
+      "models": [
+        "Minu V3",
+        "Bassinet V3"
+      ],
+      "question": "Does the bassinet fit the Minu V3?",
+      "answer": "No, the UPPAbaby bassinet does not fit the Minu V3. The Minu V3 is from birth as sold, with its included infant insert and a from-birth recline, and the Mesa capsule fits it with the Minu V3 Mesa adapter. The bassinet fits the Vista V3 and Cruz V3 directly, and the Ridge V2 with the Ridge Mesa/Bassinet adapters.",
+      "link": "/collections/uppababy-minu-v3-travel-stroller",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": null,
+      "decided_reason": "Confirmed by David; no uppababy.com.au answer covers this"
+    },
+    {
+      "ext_key": "fact:tune-up-days-anyone",
+      "topic": "Every pram",
+      "models": [],
+      "question": "Who can come to a Tune-Up Day?",
+      "answer": "Anyone with an UPPAbaby pram. You do not need to have bought it from us or registered it. The team checks, cleans and adjusts the brakes, wheels, harness, fold and canopy in about fifteen minutes, and it is free. Replacement parts and major repairs are not included. Spots are limited, so book ahead. You will find Tune-Up Days on our [support page](/pages/support).",
+      "link": "/pages/support",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": null,
+      "decided_reason": "Confirmed by David; no uppababy.com.au answer covers this"
+    },
+    {
+      "ext_key": "fact:vista-lower-capsule-adapters",
+      "topic": "Vista V3",
+      "models": [
+        "Vista V3",
+        "Mesa"
+      ],
+      "question": "What do I need to carry a capsule under the toddler seat on a Vista V3?",
+      "answer": "The UPPAbaby Vista Lower Capsule Adapters. They hold a Mesa capsule, or an approved capsule from another brand, in the lower position with the toddler seat on top. Never put a toddler seat on the lower adapters: the lower position is only for a bassinet, a capsule or a RumbleSeat.",
+      "link": null,
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": null,
+      "decided_reason": "Confirmed by David; no uppababy.com.au answer covers this"
+    },
+    {
+      "ext_key": "fact:from-birth-kit",
+      "topic": "Every pram",
+      "models": [],
+      "question": "Is the UPPAbaby From Birth Kit available in Australia?",
+      "answer": "No, the From Birth Kit is not sold in Australia. You do not need it here: the Cruz V3 and Minu V3 are from birth as sold with their included infant inserts, the Vista V3 comes with the bassinet in the box, and the Kona seat lies flat from birth.",
+      "link": null,
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": null,
+      "decided_reason": "Confirmed by David; no uppababy.com.au answer covers this"
+    },
+    {
+      "ext_key": "fact:mesa-lifetime-warranty",
+      "topic": "Mesa",
+      "models": [
+        "Mesa"
+      ],
+      "question": "What is the warranty on the Mesa capsule?",
+      "answer": "The Mesa capsule has a lifetime warranty against manufacturing defects for the original purchaser. Keep your receipt, as we need proof of purchase for any claim, and [register the capsule](/pages/product-registration) so a claim or recall notice reaches you quickly. If the Mesa was in a vehicle accident, that is not a warranty claim: stop using it and use the [Crash Exchange Program](/pages/crash-exchange-program) within 30 days.",
+      "link": "/collections/mesa-car-capsule",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": null,
+      "decided_reason": "Confirmed by David; uppababy.com.au gives three years"
+    },
+    {
+      "ext_key": "fact:designed-made",
+      "topic": "About UPPAbaby",
+      "models": [],
+      "question": "Where are UPPAbaby prams made?",
+      "answer": "UPPAbaby prams are designed at the company's headquarters in Massachusetts, in the United States, and made in China under strict quality control. Every pram sold in Australia complies with the mandatory Australian standard, AS/NZS 2088:2000.",
+      "link": "/pages/safety",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": null,
+      "decided_reason": "Confirmed by David; no uppababy.com.au answer covers this"
+    },
+    {
+      "ext_key": "fact:no-registration-card",
+      "topic": "Product registration",
+      "models": [],
+      "question": "Is there a registration card in the box?",
+      "answer": "No, UPPAbaby boxes in Australia do not include a registration card, and the serial number is not on the box. It is on the product itself: on a pram, a white label under the frame near the rear axle. Register online on the [product registration page](/pages/product-registration), with your receipt attached.",
+      "link": "/pages/product-registration",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": null,
+      "decided_reason": "Confirmed by David; no uppababy.com.au answer covers this"
+    }
+  ]
+}
