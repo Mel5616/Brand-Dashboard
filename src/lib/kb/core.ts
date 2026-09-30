@@ -54,8 +54,11 @@ export function chooseEntriesForChat(entries: KbEntry[]): KbEntry[] {
 // Returns a plain reason when text looks like it holds customer details, else null.
 export function customerDetailProblem(text: string): string | null {
   if (/[^\s@]+@[^\s@]+\.[a-z]{2,}/i.test(text)) return "It contains an email address.";
-  if (/(\+?61[\s-]?\d|\b0[2-478])[\d\s-]{7,11}\d\b/.test(text)) return "It contains a phone number.";
-  if (/\b\d{1,5}\s+[A-Z][a-z]+(\s[A-Z][a-z]+)?\s(Street|St|Road|Rd|Avenue|Ave|Drive|Dr|Court|Ct|Lane|Ln|Place|Pl|Crescent|Cres|Parade|Pde|Way|Boulevard|Blvd)\b/.test(text)) return "It contains a street address.";
-  if (/\border\s*(number|no\.?|#)?\s*#?\s*\d{4,}/i.test(text) || /#\d{4,}\b/.test(text)) return "It contains an order number.";
+  // Phone: +61, 0[2-478], (0X), 1300, 1800, 13xx with flexible separators (space, dash, dot, parens)
+  if (/(\+?61[\s-]?\d|\b0[2-478])[\d\s.-]{7,11}\d\b|\(\s?0\d\)\s?\d{4}\s?\d{4}|\b1[38]00[\s-]?\d{3}[\s-]?\d{3}|\b13[\s-]?\d{2}[\s-]?\d{2}|\b0\d{3}\.\d{3}\.\d{3}\b/.test(text)) return "It contains a phone number.";
+  // Address: street names (case-insensitive), PO Box
+  if (/\b\d{1,5}\s+[a-zA-Z][a-zA-Z]+(\s[a-zA-Z][a-zA-Z]+)?\s(street|st|road|rd|avenue|ave|drive|dr|court|ct|lane|ln|place|pl|crescent|cres|parade|pde|way|boulevard|blvd)\b/i.test(text) || /\bPO\s*Box\s+\d+\b/i.test(text)) return "It contains a street address.";
+  // Order: #XXXX, order #XXXX, SO-XXXX, PO#XXXX, INV-XXXX, etc.
+  if (/\border\s*(number|no\.?|#)?\s*#?\s*\d{4,}/i.test(text) || /#\d{4,}\b/.test(text) || /\b[A-Z]{2,}[\-#]+\d{4,}\b/.test(text)) return "It contains an order number.";
   return null;
 }

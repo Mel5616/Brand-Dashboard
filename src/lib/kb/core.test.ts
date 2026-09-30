@@ -83,12 +83,26 @@ test("new entries without corrects go after the website entries", () => {
 });
 
 test("customerDetailProblem catches emails, phones, addresses and order numbers", () => {
+  // Positive cases - should detect PII
   assert.equal(customerDetailProblem("Fold the pram with the seat facing forward."), null);
   assert.match(customerDetailProblem("email jane@example.com")!, /email/);
   assert.match(customerDetailProblem("call 0412 345 678")!, /phone/);
+  assert.match(customerDetailProblem("call (03) 9587 1234")!, /phone/);
+  assert.match(customerDetailProblem("0412.345.678")!, /phone/);
   assert.match(customerDetailProblem("ring +61 3 9587 1234")!, /phone/);
+  assert.match(customerDetailProblem("call 1300 654 321")!, /phone/);
+  assert.match(customerDetailProblem("call 1800 123 456")!, /phone/);
+  assert.match(customerDetailProblem("ring 13 22 11")!, /phone/);
   assert.match(customerDetailProblem("I live at 12 Smith Street")!, /address/);
+  assert.match(customerDetailProblem("12 smith street")!, /address/);
+  assert.match(customerDetailProblem("PO Box 123")!, /address/);
   assert.match(customerDetailProblem("order #58213")!, /order/);
+  assert.match(customerDetailProblem("SO-58213 was late")!, /order/);
+  assert.match(customerDetailProblem("PO#-12345")!, /order/);
+  assert.match(customerDetailProblem("INV-4321")!, /order/);
+  // Negative cases - should NOT detect PII
   assert.equal(customerDetailProblem("Suits children up to 22.7 kg, 3 years warranty."), null);
   assert.equal(customerDetailProblem("The serial looks like 0000VISXXXXX123456789."), null);
+  assert.equal(customerDetailProblem("The Vista V3 weighs 12.1 kg and folds to 86 x 64 x 36 cm."), null);
+  assert.equal(customerDetailProblem("Up to 20 MB per upload."), null);
 });

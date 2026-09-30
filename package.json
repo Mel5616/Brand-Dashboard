@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test \"src/lib/kb/*.test.ts\""
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"src/lib/kb/*.test.ts\""
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
