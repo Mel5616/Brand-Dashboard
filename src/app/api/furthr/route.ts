@@ -45,7 +45,10 @@ export async function GET(req: Request) {
   const orderIds = [...new Set(transactions.map(t => t.order_id).filter(Boolean))] as string[];
   const overlapMap = new Map<string, { affiliate: string | null; status: string; sale_value: number; commission: number }>();
   if (orderIds.length) {
-    const orFilter = orderIds.map(o => `"${o.replace(/"/g, '\\"')}"`).join(",");
+    // Order ids like "UB#33749" contain '#', which truncates a URL at the
+    // fragment if left unencoded — every id must be percent-encoded (the
+    // literal quotes stay unencoded, they're PostgREST's own list syntax).
+    const orFilter = orderIds.map(o => `"${encodeURIComponent(o)}"`).join(",");
     const cfRes = await fetch(`${sbUrl}/rest/v1/commission_factory_transactions?select=order_id,affiliate,status,sale_value,commission&order_id=in.(${orFilter})`, { headers: H(), cache: "no-store" });
     if (cfRes.ok) {
       const cfRows = JSON.parse((await cfRes.text()) || "[]") as { order_id: string; affiliate: string | null; status: string; sale_value: number; commission: number }[];

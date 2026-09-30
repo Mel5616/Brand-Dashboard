@@ -163,12 +163,12 @@ export function FurthrPanel({ brands, admin }: { brands: { id: number; name: str
       {kpi && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {[
-            { label: "Revenue", value: `$${fmt(kpi.revenue)}`, cls: "border-emerald-200 bg-emerald-50 text-emerald-700" },
-            { label: "Campaign Spend", value: `$${fmt(kpi.spend)}`, cls: "border-rose-200 bg-rose-50 text-rose-700" },
+            { label: "Revenue", value: fmt(kpi.revenue), cls: "border-emerald-200 bg-emerald-50 text-emerald-700" },
+            { label: "Campaign Spend", value: fmt(kpi.spend), cls: "border-rose-200 bg-rose-50 text-rose-700" },
             { label: "Transactions", value: kpi.transactions.toLocaleString(), cls: "border-sky-200 bg-sky-50 text-sky-700" },
             { label: "Customers", value: kpi.customers.toLocaleString(), cls: "border-purple-200 bg-purple-50 text-purple-700" },
-            { label: "Avg Order Value", value: `$${fmt(kpi.aov)}`, cls: "border-amber-200 bg-amber-50 text-amber-700" },
-            { label: "Double-counted", value: kpi.overlapCount.toLocaleString(), sub: kpi.overlapCount ? `$${fmt(kpi.overlapCost)} at risk` : "none found", cls: kpi.overlapCount ? "border-red-300 bg-red-50 text-red-700" : "border-gray-200 bg-gray-50 text-gray-500" },
+            { label: "Avg Order Value", value: fmt(kpi.aov), cls: "border-amber-200 bg-amber-50 text-amber-700" },
+            { label: "Double-counted", value: kpi.overlapCount.toLocaleString(), sub: kpi.overlapCount ? `${fmt(kpi.overlapCost)} at risk` : "none found", cls: kpi.overlapCount ? "border-red-300 bg-red-50 text-red-700" : "border-gray-200 bg-gray-50 text-gray-500" },
           ].map(c => (
             <div key={c.label} className={`rounded-xl border p-3.5 ${c.cls}`}>
               <p className="text-[11px] font-semibold uppercase tracking-wide opacity-70">{c.label}</p>
@@ -181,7 +181,7 @@ export function FurthrPanel({ brands, admin }: { brands: { id: number; name: str
 
       {kpi && kpi.overlapCount > 0 && (
         <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
-          <p className="text-sm text-red-700"><span className="font-semibold">{kpi.overlapCount} order{kpi.overlapCount !== 1 ? "s" : ""}</span> also tracked in Commission Factory — risk of paying commission twice (~${fmt(kpi.overlapCost)} in CF commission on these orders).</p>
+          <p className="text-sm text-red-700"><span className="font-semibold">{kpi.overlapCount} order{kpi.overlapCount !== 1 ? "s" : ""}</span> also tracked in Commission Factory — risk of paying commission twice (~{fmt(kpi.overlapCost)} in CF commission on these orders).</p>
           <button onClick={() => setShowOverlapsOnly(p => !p)} className="text-xs font-semibold text-red-700 border border-red-300 rounded-lg px-3 py-1.5 hover:bg-red-100 whitespace-nowrap">
             {showOverlapsOnly ? "Show all transactions" : "Show only overlaps"}
           </button>
@@ -230,7 +230,10 @@ export function FurthrPanel({ brands, admin }: { brands: { id: number; name: str
       </div>
 
       <div className="bg-white rounded-xl border border-gray-100 p-4">
-        <p className="text-sm font-semibold text-slate-700 mb-3">Transactions {showOverlapsOnly && <span className="text-red-500 font-normal">(overlaps only)</span>}</p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm font-semibold text-slate-700">Transactions {showOverlapsOnly && <span className="text-red-500 font-normal">(overlaps only)</span>}</p>
+          <p className="text-[11px] text-gray-400">Furthr&apos;s export doesn&apos;t say which bank each transaction came from — that&apos;s only in the campaign list above.</p>
+        </div>
         {displayRows.length === 0 ? (
           <p className="text-sm text-gray-400">{rows.length === 0 ? "No transactions uploaded yet." : "No overlaps found."}</p>
         ) : (
@@ -244,12 +247,12 @@ export function FurthrPanel({ brands, admin }: { brands: { id: number; name: str
                   <tr key={r.id} className={`border-b border-gray-50 ${r.overlap ? "bg-red-50/50" : ""}`}>
                     <td className="py-2 pr-3 text-gray-500 text-xs whitespace-nowrap">{new Date(r.transaction_date).toLocaleDateString("en-AU", { day: "numeric", month: "short" })}</td>
                     <td className="py-2 pr-3 font-medium text-slate-700">{r.order_id ?? "—"}</td>
-                    <td className="py-2 pr-3">${fmtFull(r.amount)}</td>
-                    <td className="py-2 pr-3">${fmtFull(r.cashback)}</td>
+                    <td className="py-2 pr-3">{fmtFull(r.amount)}</td>
+                    <td className="py-2 pr-3">{fmtFull(r.cashback)}</td>
                     <td className="py-2 pr-3 text-xs text-gray-500">{r.status ?? "—"}</td>
                     <td className="py-2">
                       {r.overlap ? (
-                        <span className="text-[11px] font-semibold text-red-700 bg-red-100 rounded-full px-2 py-0.5" title={`${r.overlap.affiliate ?? "Unknown affiliate"} — ${r.overlap.status} — $${fmtFull(r.overlap.commission)} commission`}>
+                        <span className="text-[11px] font-semibold text-red-700 bg-red-100 rounded-full px-2 py-0.5" title={`${r.overlap.affiliate ?? "Unknown affiliate"} — ${r.overlap.status} — ${fmtFull(r.overlap.commission)} commission`}>
                           ⚠ {r.overlap.affiliate ?? "CF"}
                         </span>
                       ) : <span className="text-gray-300 text-xs">—</span>}
