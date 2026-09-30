@@ -97,6 +97,14 @@ test("customerDetailProblem catches emails, phones, addresses and order numbers"
   assert.match(customerDetailProblem("12 smith street")!, /address/);
   assert.match(customerDetailProblem("12 Smith St, Braeside VIC 3195")!, /address/);
   assert.match(customerDetailProblem("PO Box 123")!, /address/);
+  assert.match(customerDetailProblem("12 Anderson Street")!, /address/);
+  assert.match(customerDetailProblem("7 Albert Road")!, /address/);
+  assert.match(customerDetailProblem("45 Avoca Street")!, /address/);
+  assert.match(customerDetailProblem("3 Alexander Avenue")!, /address/);
+  assert.match(customerDetailProblem("22 Andrew Court")!, /address/);
+  assert.match(customerDetailProblem("15 Mint Lane")!, /address/);
+  assert.match(customerDetailProblem("9 Theodore Place")!, /address/);
+  assert.match(customerDetailProblem("10 Anzac Parade")!, /address/);
   assert.match(customerDetailProblem("order #58213")!, /order/);
   assert.match(customerDetailProblem("SO-58213 was late")!, /order/);
   assert.match(customerDetailProblem("PO#-12345")!, /order/);
