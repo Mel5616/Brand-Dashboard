@@ -101,6 +101,7 @@ import { DatabaseSizeCard } from "./DatabaseSizeCard";
 import { StaffCalendar } from "./StaffCalendar";
 import { EdmPlanner } from "./EdmPlanner";
 import { CredentialsPanel } from "./CredentialsPanel";
+import { FurthrPanel } from "./FurthrPanel";
 import { ADMIN_ONLY_TABS } from "@/lib/tabs";
 import { MediaReleases } from "./MediaReleases";
 import { VouchersCard } from "./VouchersCard";
@@ -134,7 +135,7 @@ import { StockReport } from "./StockReport";
 import { fmt, fmtFull } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "today" | "assistants" | "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "cross-site-discounts" | "create-codes" | "abandoned" | "registry" | "zazu-wheel" | "reviews" | "website-requests" | "utm-tracking" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "edm-planner" | "seo" | "social" | "social-writing" | "youtube" | "tradeshows" | "show-insights" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "credentials" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "campaign-briefs" | "nanit" | "affiliates" | "commission-factory" | "email-writing" | "lifecycle-flows" | "pa-budget" | "pa-tracker" | "pa-revenue" | "documents" | "team" | "brand-packs" | "price-lists" | "hub-fact-sheets" | "brand-overview" | "stock-availability" | "order-forms" | "customers" | "customer-forms" | "blog-pipeline" | "staff" | "giveaways" | "product-requests";
+type TabId = "today" | "assistants" | "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "cross-site-discounts" | "create-codes" | "abandoned" | "registry" | "zazu-wheel" | "reviews" | "website-requests" | "utm-tracking" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "edm-planner" | "seo" | "social" | "social-writing" | "youtube" | "tradeshows" | "show-insights" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "credentials" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "campaign-briefs" | "nanit" | "affiliates" | "commission-factory" | "furthr" | "email-writing" | "lifecycle-flows" | "pa-budget" | "pa-tracker" | "pa-revenue" | "documents" | "team" | "brand-packs" | "price-lists" | "hub-fact-sheets" | "brand-overview" | "stock-availability" | "order-forms" | "customers" | "customer-forms" | "blog-pipeline" | "staff" | "giveaways" | "product-requests";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -426,6 +427,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3v-6m-3 6v-2M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
   },
   {
+    id: "furthr", label: "Furthr",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>,
+  },
+  {
     id: "pa-budget", label: "Budget",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 1v8m0 0v1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   },
@@ -498,7 +503,7 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Paid", ids: ["google-ads", "meta-ads", "pinterest-ads", "amazon-ads"] },
   { label: "Owned & Earned", ids: ["social", "social-writing", "youtube"] },
   { label: "Influencers", ids: ["influencer", "gifting", "influencer-agreements", "campaign-briefs", "nanit", "releases"] },
-  { label: "Partnerships & Affiliates", ids: ["affiliates", "commission-factory", "pa-budget", "pa-tracker", "pa-revenue", "documents"] },
+  { label: "Partnerships & Affiliates", ids: ["affiliates", "commission-factory", "furthr", "pa-budget", "pa-tracker", "pa-revenue", "documents"] },
   { label: "Sales Hub", ids: ["sales-hub"] },
 ];
 // Tabs merged into another tab's page: still routable (old links, saved
@@ -2933,6 +2938,14 @@ export function DashboardTabs({
               </>
             );
           })()}
+
+          {/* ── Furthr ── */}
+          {active === "furthr" && (
+            <>
+              <SectionBar title="Furthr — card-linked cashback" />
+              <FurthrPanel brands={brands} admin={role === "admin"} />
+            </>
+          )}
 
           {/* ── Partnerships & Affiliates ── */}
           {active === "pa-budget" && (
