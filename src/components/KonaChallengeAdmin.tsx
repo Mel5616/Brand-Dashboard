@@ -8,8 +8,12 @@ type Entry = {
 };
 const STORE_NAMES: Record<string, string> = {
   "baby-village": "Baby Village", "baby-kingdom": "Baby Kingdom", "babyroad": "BabyRoad",
-  "whole-bubs": "Whole Bubs", "coolkidz-hq": "Coolkidz Head Office",
+  "whole-bubs": "Whole Bubs", "coolkidz-hq": "Coolkidz Head Office", "tradeshow": "Tradeshow",
 };
+// One QR per store, each pointing at the same entry page with its own
+// ?store= slug baked in (public/kona-qr/<slug>.png) — generated once, not
+// regenerated here, since the sign artwork is designed around these files.
+const QR_BASE = "https://marketing.coolkidz.com.au/kona-challenge";
 
 export function KonaChallengeAdmin() {
   const [items, setItems] = useState<Entry[]>([]);
@@ -52,7 +56,21 @@ export function KonaChallengeAdmin() {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+      <details className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+        <summary className="text-sm font-bold text-slate-700 cursor-pointer">QR codes — one per store, ready to print</summary>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mt-4">
+          {Object.entries(STORE_NAMES).map(([slug, name]) => (
+            <div key={slug} className="text-center">
+              <img src={`/kona-qr/${slug}.png`} alt={`QR code for ${name}`} className="w-full aspect-square rounded-lg border border-gray-100" />
+              <div className="text-[12px] font-bold text-slate-700 mt-1.5">{name}</div>
+              <a href={`/kona-qr/${slug}.png`} download={`kona-challenge-${slug}.png`} className="text-[11px] font-semibold text-[#6B54D6] hover:underline">Download</a>
+            </div>
+          ))}
+        </div>
+        <p className="text-[11px] text-gray-400 mt-3">Each code scans to {QR_BASE}?store=&lt;slug&gt; — the store is read off the link, nobody fills it in.</p>
+      </details>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
         {Object.entries(STORE_NAMES).map(([slug, name]) => (
           <button key={slug} onClick={() => setStoreF(storeF === slug ? "" : slug)} className={`text-left rounded-xl border p-3 transition ${storeF === slug ? "bg-[#F3F0FB] border-[#9D8DF1]" : "bg-white border-gray-100 hover:border-gray-200"}`}>
             <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">{name}</div>

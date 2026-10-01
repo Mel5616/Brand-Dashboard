@@ -13,6 +13,7 @@ const STORES: Record<string, string> = {
   "babyroad": "BabyRoad",
   "whole-bubs": "Whole Bubs",
   "coolkidz-hq": "Coolkidz Head Office",
+  "tradeshow": "Tradeshow",
 };
 
 const inp = "w-full text-base border border-gray-200 rounded-xl px-4 py-3.5 min-h-[52px] focus:outline-none focus:ring-2 focus:ring-[#9D8DF1] focus:border-[#9D8DF1]";

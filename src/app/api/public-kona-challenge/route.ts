@@ -16,6 +16,7 @@ export const STORES = [
   { slug: "babyroad", name: "BabyRoad" },
   { slug: "whole-bubs", name: "Whole Bubs" },
   { slug: "coolkidz-hq", name: "Coolkidz Head Office" },
+  { slug: "tradeshow", name: "Tradeshow" },
 ];
 
 export async function POST(req: Request) {
