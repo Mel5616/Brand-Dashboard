@@ -73,4 +73,4 @@ Blank or cut off: one question about Vista V2 double adapters gets an empty repl
 - Confirmed as already written: ex-display from UPPAbaby Australia carries three years; Tune-Up Days need no registration.
 - Rechecked on the preview in db mode: all four changed answers correct.
 - Still in the website build (uppababy-site, not this repo): adapters._meta.minuThirdParty and the Minu note in the adapters data still say no Minu takes another brand's capsule. They need the same correction so the prompt does not disagree with the knowledge base.
-- Separate from this change: raise max_tokens in the chat route so long answers are not cut off or blank.
+- max_tokens raised from 700 to 2000 in the chat route. Live logs since 21 September 2026: 7 of 328 replies empty and about 10 cut off. On the preview, a conversation that came back blank 2 times in 4 then answered 6 times in 6, and the four real questions that were blank or cut off all answered in full.
