@@ -1047,6 +1047,19 @@
       "status": "approved",
       "decided_by": "david@coolkidz.com.au",
       "decided_reason": "Answers from David, 2 Oct 2026 (Word document)"
+    },
+    {
+      "ext_key": "fact:rewards-points-value",
+      "topic": "Orders and buying",
+      "models": [],
+      "question": "How much are UPPside Rewards points worth?",
+      "answer": "Every 100 UPPside Rewards points is worth $2 off your order, applied as a discount at checkout on our website. Points are earned on purchases made directly with UPPAbaby Australia, not from retailers.",
+      "link": "/pages/loyalty",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 2 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "decided_reason": "Answers from David, 2 Oct 2026 (Word document)"
     }
   ]
 }
