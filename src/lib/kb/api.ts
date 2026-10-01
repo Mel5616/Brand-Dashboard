@@ -61,3 +61,13 @@ export function restoreFromHistory(
   const { id, created_at, updated_at, ...restore } = h.before;
   return { ok: true, id: Number(id), patch: { ...restore, decided_by: email, decided_reason: `Undo of change ${h.id}` } };
 }
+
+// Free-text search as a PostgREST `or=` parameter. PostgREST URL-decodes before parsing, so each
+// operand value is double-quoted (backslash and double quote escaped inside) to keep , ( ) . : * in
+// the search text from changing the filter, then the whole thing is URL-encoded.
+export function buildSearchFilter(q: string): string | null {
+  const v = q.trim();
+  if (!v) return null;
+  const quoted = `"*${v.replace(/[\\"]/g, c => `\\${c}`)}*"`;
+  return `or=${encodeURIComponent(`(question.ilike.${quoted},answer.ilike.${quoted})`)}`;
+}

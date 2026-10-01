@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { buildPatch, buildNewRow, restoreFromHistory } from "./api.ts";
+import { buildPatch, buildNewRow, restoreFromHistory, buildSearchFilter } from "./api.ts";
 
 const EMAIL = "david@coolkidz.com.au";
 
@@ -135,5 +135,44 @@ test("restoreFromHistory restores the before row with the right patch", () => {
   if (r.ok) {
     assert.equal(r.id, 42);
     assert.deepEqual(r.patch, { answer: "Old.", status: "approved", topic: "T", decided_by: EMAIL, decided_reason: "Undo of change 11" });
+  }
+});
+
+// Decode the way PostgREST sees it: URL-decode the parameter value first.
+const decoded = (f: string | null) => decodeURIComponent(String(f).replace(/^or=/, ""));
+
+test("buildSearchFilter returns null for empty or whitespace queries", () => {
+  assert.equal(buildSearchFilter(""), null);
+  assert.equal(buildSearchFilter("   \n "), null);
+});
+
+test("buildSearchFilter wraps a plain word in quoted ilike operands", () => {
+  const f = buildSearchFilter("bassinet");
+  assert.ok(f && f.startsWith("or="));
+  assert.equal(decoded(f), `(question.ilike."*bassinet*",answer.ilike."*bassinet*")`);
+});
+
+test("buildSearchFilter keeps a value with a comma as one operand", () => {
+  const f = buildSearchFilter("bassinet, stand");
+  assert.equal(decoded(f), `(question.ilike."*bassinet, stand*",answer.ilike."*bassinet, stand*")`);
+});
+
+test("buildSearchFilter keeps ) and * inside the quotes", () => {
+  const f = buildSearchFilter("a) b*c");
+  assert.equal(decoded(f), `(question.ilike."*a) b*c*",answer.ilike."*a) b*c*")`);
+});
+
+test("buildSearchFilter escapes double quote and backslash", () => {
+  const f = buildSearchFilter(`say "hi" \\ there`);
+  assert.equal(decoded(f), `(question.ilike."*say \\"hi\\" \\\\ there*",answer.ilike."*say \\"hi\\" \\\\ there*")`);
+});
+
+test("buildSearchFilter cannot be used to inject an extra filter", () => {
+  for (const evil of ["x*,id.gt.0", `x"),id.gt.0,(a.eq."`, "x),or(id.gt.0", `x\\",id.gt.0`]) {
+    const d = decoded(buildSearchFilter(evil));
+    assert.equal(d.match(/\.ilike\./g)?.length, 2);
+    // Remove quoted strings (honouring backslash escapes): only the fixed structure may remain.
+    const structure = d.replace(/"(?:[^"\\]|\\.)*"/g, '""');
+    assert.equal(structure, `(question.ilike.""` + `,answer.ilike."")`);
   }
 });

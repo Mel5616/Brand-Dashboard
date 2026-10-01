@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
 import { isApprover } from "@/lib/kb/approvers";
-import { buildPatch, buildNewRow, restoreFromHistory } from "@/lib/kb/api";
+import { buildPatch, buildNewRow, restoreFromHistory, buildSearchFilter } from "@/lib/kb/api";
 import type { KbEntry } from "@/lib/kb/core";
 
 const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL, sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -23,8 +23,8 @@ export async function GET(req: Request) {
   const brand = sp.get("brand") || "uppababy";
   const parts = [`select=*`, `brand=eq.${encodeURIComponent(brand)}`, `order=sort_order.asc,id.asc`, `limit=5000`];
   for (const f of ["status", "source", "topic"]) { const v = sp.get(f); if (v) parts.push(`${f}=eq.${encodeURIComponent(v)}`); }
-  const q = (sp.get("q") || "").trim();
-  if (q) parts.push(`or=(question.ilike.*${encodeURIComponent(q)}*,answer.ilike.*${encodeURIComponent(q)}*)`);
+  const search = buildSearchFilter(sp.get("q") || "");
+  if (search) parts.push(search);
   const r = await fetch(`${sbUrl}/rest/v1/kb_entries?${parts.join("&")}`, { headers: H(), cache: "no-store" });
   if (!r.ok) return NextResponse.json({ ok: false, rows: [], fixes: [] });
   const rows: KbEntry[] = await r.json();
