@@ -86,13 +86,13 @@
   "intro": "Mesa is the UPPAbaby infant car capsule. It clicks straight onto a Vista, Cruz or Kona frame with no adapters, and onto Minu, Minu Duo and Ridge with the matching adapter set. That means a sleeping baby moves from car to pram without being unbuckled.",
   "direct_fit": [
    "vista",
-   "cruz"
+   "cruz",
+   "kona"
   ],
   "adapter_fit": [
    "minu",
    "minuduo",
-   "ridge",
-   "kona"
+   "ridge"
   ],
   "approval": "Type A2/0. Low birthweight tested and approved. CASA approved for aircraft use."
  },
