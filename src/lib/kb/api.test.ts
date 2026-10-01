@@ -176,3 +176,38 @@ test("buildSearchFilter cannot be used to inject an extra filter", () => {
     assert.equal(structure, `(question.ilike.""` + `,answer.ilike."")`);
   }
 });
+
+const STORED = { question: "How do I contact Coolkidz?", answer: "Call us on 1300 722 302 or visit 1 Beyer Road Braeside." };
+
+test("buildPatch allows an edit that keeps business details already in the stored entry", () => {
+  const r = buildPatch({ answer: "Ring us on 1300 722 302 any weekday, or visit 1 Beyer Road Braeside." }, EMAIL, STORED);
+  assert.equal(r.ok, true);
+  const q = buildPatch({ question: "How can I reach Coolkidz?" }, EMAIL, STORED);
+  assert.equal(q.ok, true);
+});
+
+test("buildPatch rejects a phone number or email the edit newly adds", () => {
+  const p = buildPatch({ answer: "Call us on 1300 722 302 or 0412 345 678." }, EMAIL, STORED);
+  assert.equal(p.ok, false);
+  if (!p.ok) assert.match(p.error, /phone number/);
+  const e = buildPatch({ answer: "Call us on 1300 722 302 or email jane@example.com." }, EMAIL, STORED);
+  assert.equal(e.ok, false);
+  if (!e.ok) assert.match(e.error, /email address/);
+  const q = buildPatch({ question: "Is jane@example.com right?" }, EMAIL, STORED);
+  assert.equal(q.ok, false);
+});
+
+test("buildPatch rejects a blank question or answer", () => {
+  for (const p of [{ question: "   " }, { answer: "" }, { answer: " \n\t" }]) {
+    const r = buildPatch(p, EMAIL, STORED);
+    assert.deepEqual(r, { ok: false, error: "Not saved. The question and the answer cannot be blank." });
+  }
+});
+
+test("buildNewRow for a correction allows details already in the entry it corrects", () => {
+  const body = { ...good, question: STORED.question, answer: "Call 1300 722 302, Monday to Friday.", corrects: 7 };
+  assert.equal(buildNewRow(body, EMAIL, STORED).ok, true);
+  assert.equal(buildNewRow(body, EMAIL).ok, false);
+  const added = buildNewRow({ ...body, answer: "Call 1300 722 302 or 0412 345 678." }, EMAIL, STORED);
+  assert.equal(added.ok, false);
+});

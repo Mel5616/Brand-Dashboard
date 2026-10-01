@@ -51,16 +51,53 @@ export function chooseEntriesForChat(entries: KbEntry[]): KbEntry[] {
   return out.sort((a, b) => a.pos - b.pos || a.e.id - b.e.id).map(o => o.e);
 }
 
+// Words that are never part of a street name (counts and units: "3 steps", "10 minute drive").
+const NOT_NAME = String.raw`(?!(?:minute|minutes?|min|hour|hours?|step|steps|and|the|a|km|kg|cm)\b)`;
+const AFTER_TYPE = String.raw`(?=[,.\s]|$|\b[A-Z]{2}\b|\b\d{4}\b)`;
+// Street types that are rarely ordinary words: the name may be in any case ("12 smith street").
+const ROAD_TYPES = "street|st|road|rd|avenue|ave|crescent|cres|parade|pde|boulevard|blvd";
+// Street types that are also everyday words ("lock the 4 wheels in place", "10 seconds one way"):
+// only an address when the name is capitalised ("9 Theodore Place", "4 Wattle Way").
+const WORD_TYPES = "drive|dr|court|ct|lane|ln|place|pl|way";
+
+// Each kind of customer detail, in the order customerDetailProblem reports them.
+const DETAIL_CHECKS: { reason: string; patterns: RegExp[] }[] = [
+  { reason: "It contains an email address.", patterns: [/[^\s@]+@[^\s@]+\.[a-z]{2,}/i] },
+  // Phone: +61, 0[2-478], (0X), 1300, 1800, 13xx with flexible separators (space, dash, dot, parens).
+  // 13xx has a word boundary at the end so dates like "13-10-2026" and model numbers like "1312345" do not match.
+  { reason: "It contains a phone number.", patterns: [/(\+?61[\s-]?\d|\b0[2-478])[\d\s.-]{7,11}\d\b|\(\s?0\d\)\s?\d{4}\s?\d{4}|\b1[38]00[\s-]?\d{3}[\s-]?\d{3}|\b13[\s-]?\d{2}[\s-]?\d{2}\b|\b0\d{3}\.\d{3}\.\d{3}\b/] },
+  { reason: "It contains a street address.", patterns: [
+    new RegExp(String.raw`\b\d{1,5}\s+${NOT_NAME}\w+(\s${NOT_NAME}\w+)?\s(${ROAD_TYPES})${AFTER_TYPE}`, "i"),
+    new RegExp(String.raw`\b\d{1,5}\s+[A-Z]\w*(\s[A-Z]\w*)?\s(${WORD_TYPES.split("|").map(t => `[${t[0].toUpperCase()}${t[0]}]${t.slice(1)}`).join("|")})${AFTER_TYPE}`),
+    /\bPO\s*Box\s+\d+\b/i,
+  ] },
+  // Order: order keyword with 4+ digits; #XXXX; or known prefixes (SO, PO, INV, ORD, ORDER, RMA) then a separator and 4+ digits.
+  { reason: "It contains an order number.", patterns: [/\border\s*(number|no\.?|#)?\s*#?\s*\d{4,}/i, /#\d{4,}\b/, /\b(SO|PO|INV|ORD|ORDER|RMA)[\s\-#]+\d{4,}\b/i] },
+];
+
+// Every customer detail found in the text, with its reason, in DETAIL_CHECKS order.
+export function customerDetailMatches(text: string): { reason: string; match: string }[] {
+  const out: { reason: string; match: string }[] = [];
+  for (const c of DETAIL_CHECKS) {
+    for (const p of c.patterns) {
+      for (const m of text.matchAll(new RegExp(p.source, p.flags + "g"))) out.push({ reason: c.reason, match: m[0] });
+    }
+  }
+  return out;
+}
+
 // Returns a plain reason when text looks like it holds customer details, else null.
 export function customerDetailProblem(text: string): string | null {
-  if (/[^\s@]+@[^\s@]+\.[a-z]{2,}/i.test(text)) return "It contains an email address.";
-  // Phone: +61, 0[2-478], (0X), 1300, 1800, 13xx with flexible separators (space, dash, dot, parens)
-  // 13xx now has word boundary at end to avoid matching dates like "13-10-2026" or model numbers "1312345"
-  if (/(\+?61[\s-]?\d|\b0[2-478])[\d\s.-]{7,11}\d\b|\(\s?0\d\)\s?\d{4}\s?\d{4}|\b1[38]00[\s-]?\d{3}[\s-]?\d{3}|\b13[\s-]?\d{2}[\s-]?\d{2}\b|\b0\d{3}\.\d{3}\.\d{3}\b/.test(text)) return "It contains a phone number.";
-  // Address: street names (case-insensitive), PO Box. Exclude complete words (minute, hour, step, and, the, a, km, kg, cm) via word boundary.
-  // Street type suffix must be followed by punctuation, end of text, or capitalized word/state/postcode.
-  if (/\b\d{1,5}\s+(?!(?:minute|minutes?|min|hour|hours?|step|steps|and|the|a|km|kg|cm)\b)\w+(\s(?!(?:minute|minutes?|min|hour|hours?|step|steps|and|the|a|km|kg|cm)\b)\w+)?\s(street|st|road|rd|avenue|ave|drive|dr|court|ct|lane|ln|place|pl|crescent|cres|parade|pde|way|boulevard|blvd)(?=[,.\s]|$|\b[A-Z]{2}\b|\b\d{4}\b)/i.test(text) || /\bPO\s*Box\s+\d+\b/i.test(text)) return "It contains a street address.";
-  // Order: known prefixes (SO, PO, INV, ORD, ORDER, RMA) followed by separator and 4+ digits; or #XXXX; or order keyword
-  if (/\border\s*(number|no\.?|#)?\s*#?\s*\d{4,}/i.test(text) || /#\d{4,}\b/.test(text) || /\b(SO|PO|INV|ORD|ORDER|RMA)[\s\-#]+\d{4,}\b/i.test(text)) return "It contains an order number.";
-  return null;
+  return customerDetailMatches(text)[0]?.reason ?? null;
+}
+
+// Like customerDetailProblem, but ignores details that are already in `before` (the stored text).
+// Used when an approver edits an existing answer: 104 website answers hold Coolkidz's own phone
+// number, showroom address or stockist numbers, and keeping those must not block a save. A detail
+// counts as already there when the same matched text (case, spacing and edge punctuation ignored)
+// is found in `before`. Anything the edit newly brings in is still rejected.
+export function newCustomerDetailProblem(after: string, before: string): string | null {
+  const key = (s: string) => s.toLowerCase().replace(/\s+/g, " ").replace(/^[^\w+(]+|[^\w)]+$/g, "").trim();
+  const had = new Set(customerDetailMatches(before).map(m => key(m.match)));
+  return customerDetailMatches(after).find(m => !had.has(key(m.match)))?.reason ?? null;
 }

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { websiteKey, formatWrittenAnswers, fileWrittenAnswers, chooseEntriesForChat, customerDetailProblem, type KbEntry } from "./core.ts";
+import { websiteKey, formatWrittenAnswers, fileWrittenAnswers, chooseEntriesForChat, customerDetailProblem, customerDetailMatches, type KbEntry, type FaqItem } from "./core.ts";
 
 const entry = (over: Partial<KbEntry>): KbEntry => ({
   id: 1, brand: "uppababy", topic: "Vista V3", models: [], question: "Q?", answer: "A.", link: null,
@@ -16,14 +16,14 @@ test("websiteKey is stable, 16 hex chars, and ignores case and spacing", () => {
 });
 
 test("fileWrittenAnswers matches the chat route's current format exactly", () => {
-  const faq = [
+  const faq: FaqItem[] = [
     { topic: "Vista V3", q: "Q1?", a: "A1.", link: "/products/x" },
     { topic: "Warranty", q: "Q2?", a: "A2." },
     { topic: "Warranty", q: "Q3?", a: "A3.", link: "" },
     { topic: "Warranty", q: "Q4?", a: "A4.", link: null },
   ];
   // Same expression as src/app/api/uppababy-chat/route.ts today
-  const today = `WRITTEN ANSWERS\n${faq.map((f: any) => `[${f.topic}] Q: ${f.q}\nA: ${f.a}${f.link ? `\nMore: ${f.link}` : ""}`).join("\n\n")}`;
+  const today = `WRITTEN ANSWERS\n${faq.map(f => `[${f.topic}] Q: ${f.q}\nA: ${f.a}${f.link ? `\nMore: ${f.link}` : ""}`).join("\n\n")}`;
   assert.equal(fileWrittenAnswers(faq), today);
 });
 
@@ -121,4 +121,21 @@ test("customerDetailProblem catches emails, phones, addresses and order numbers"
   assert.equal(customerDetailProblem("Complies with EN-1888 and ISO-9001."), null);
   assert.equal(customerDetailProblem("Ordered 13-10-2026 delivered."), null);
   assert.equal(customerDetailProblem("Year 2026 model 1312345."), null);
+});
+
+test("customerDetailProblem: everyday instructions that end in place or way are not addresses", () => {
+  assert.equal(customerDetailProblem("Lock the 4 wheels in place."), null);
+  assert.equal(customerDetailProblem("Click both 2 adapters into place."), null);
+  assert.equal(customerDetailProblem("Takes 10 seconds one way."), null);
+  assert.match(customerDetailProblem("1 Beyer Road Braeside")!, /address/);
+  assert.match(customerDetailProblem("9 Theodore Place")!, /address/);
+  assert.match(customerDetailProblem("4 Wattle Way, Braeside")!, /address/);
+});
+
+test("customerDetailMatches lists each detail with its reason", () => {
+  assert.deepEqual(customerDetailMatches("Fold the pram."), []);
+  const m = customerDetailMatches("Call 1300 722 302 or email info@example.com.au, or visit 1 Beyer Road Braeside.");
+  assert.deepEqual(m.map(x => x.reason), ["It contains an email address.", "It contains a phone number.", "It contains a street address."]);
+  assert.ok(m.some(x => x.match.includes("1300 722 302")));
+  assert.ok(m.some(x => x.match.includes("info@example.com.au")));
 });

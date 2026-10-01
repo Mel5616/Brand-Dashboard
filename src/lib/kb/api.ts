@@ -1,5 +1,5 @@
 // Pure request validation and row building for /api/kb. No Next or app imports.
-import { customerDetailProblem } from "./core.ts";
+import { customerDetailProblem, newCustomerDetailProblem } from "./core.ts";
 
 export const SOURCES = new Set(["website", "confirmed", "help_centre", "helpdesk", "team_reply"]);
 export const STATUSES = new Set(["approved", "draft", "needs_review", "retired"]);
@@ -7,8 +7,20 @@ export const STATUSES = new Set(["approved", "draft", "needs_review", "retired"]
 type Rec = Record<string, unknown>;
 const asRec = (v: unknown): Rec => (v && typeof v === "object" ? (v as Rec) : {});
 const noDetails = (reason: string) => `Not saved. ${reason} Answers must not hold customer details.`;
+const BLANK = "Not saved. The question and the answer cannot be blank.";
 
-export function buildPatch(p: unknown, email: string): { ok: true; patch: Rec } | { ok: false; error: string } {
+// The stored question and answer of the entry being edited (or corrected).
+export type StoredText = { question: string; answer: string };
+// Customer-detail check for an edit. Without the stored text, every detail counts (full check).
+// With it, only details the edit newly brings in count: keeping Coolkidz's own phone number or a
+// stockist address that is already in the entry is fine (see newCustomerDetailProblem in core.ts).
+function detailProblem(question: string, answer: string, stored?: StoredText): string | null {
+  const after = `${question}\n${answer}`;
+  return stored ? newCustomerDetailProblem(after, `${stored.question}\n${stored.answer}`) : customerDetailProblem(after);
+}
+
+// `stored` is the entry as it is in the database; the route fetches it before saving.
+export function buildPatch(p: unknown, email: string, stored?: StoredText): { ok: true; patch: Rec } | { ok: false; error: string } {
   const src = asRec(p);
   const patch: Rec = {
     decided_by: email,
@@ -18,17 +30,21 @@ export function buildPatch(p: unknown, email: string): { ok: true; patch: Rec } 
     const v = src[f];
     if (typeof v === "string") patch[f] = v.slice(0, 4000);
   }
+  for (const f of ["question", "answer"]) if (typeof patch[f] === "string" && !String(patch[f]).trim()) return { ok: false, error: BLANK };
   if (typeof src.status === "string") {
     if (!STATUSES.has(src.status)) return { ok: false, error: "Unknown status" };
     patch.status = src.status;
   }
-  const bad = customerDetailProblem(`${patch.question ?? ""}\n${patch.answer ?? ""}`);
+  // Fields the patch leaves out keep their stored text, so the check covers the entry as it will be saved.
+  const bad = detailProblem(String(patch.question ?? stored?.question ?? ""), String(patch.answer ?? stored?.answer ?? ""), stored);
   if (bad) return { ok: false, error: noDetails(bad) };
   patch.checked_at = new Date().toISOString();
   return { ok: true, patch };
 }
 
-export function buildNewRow(b: unknown, email: string): { ok: true; row: Rec } | { ok: false; error: string } {
+// `corrected` is the stored text of the entry this row corrects (when `corrects` is set): a correction
+// of a website answer may keep the business details that answer already holds. Other new rows get the full check.
+export function buildNewRow(b: unknown, email: string, corrected?: StoredText): { ok: true; row: Rec } | { ok: false; error: string } {
   const s = asRec(b);
   const row = {
     brand: String(s.brand || "uppababy").slice(0, 20),
@@ -47,7 +63,8 @@ export function buildNewRow(b: unknown, email: string): { ok: true; row: Rec } |
   if (!row.topic || !row.question || !row.answer || !SOURCES.has(row.source)) {
     return { ok: false, error: "topic, question, answer and source are required" };
   }
-  const bad = customerDetailProblem(`${row.question}\n${row.answer}`);
+  if (!row.question.trim() || !row.answer.trim()) return { ok: false, error: BLANK };
+  const bad = detailProblem(row.question, row.answer, row.corrects ? corrected : undefined);
   if (bad) return { ok: false, error: noDetails(bad) };
   return { ok: true, row };
 }

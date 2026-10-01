@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAccess } from "@/lib/access";
 import { isApprover } from "@/lib/kb/approvers";
-import { buildPatch, buildNewRow, restoreFromHistory, buildSearchFilter } from "@/lib/kb/api";
+import { buildPatch, buildNewRow, restoreFromHistory, buildSearchFilter, type StoredText } from "@/lib/kb/api";
 import type { KbEntry } from "@/lib/kb/core";
 
 const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL, sbKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -10,6 +10,14 @@ const H = () => ({ apikey: sbKey!, Authorization: `Bearer ${sbKey!}`, "Content-T
 async function who() { const a = await getAccess(); return isApprover(a.user?.email) ? a.user!.email! : null; }
 const forbidden = () => NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
 const badRequest = (error: string) => NextResponse.json({ ok: false, error }, { status: 400 });
+
+// The stored question and answer of one entry: undefined when it does not exist, null when the read failed.
+async function storedText(id: number): Promise<StoredText | undefined | null> {
+  const r = await fetch(`${sbUrl}/rest/v1/kb_entries?select=question,answer&id=eq.${id}`, { headers: H(), cache: "no-store" });
+  if (!r.ok) return null;
+  const [row] = await r.json();
+  return row;
+}
 
 // Approvers only. List/search entries (?brand, ?q, ?status, ?source, ?topic) or one entry's history (?history=<id>).
 export async function GET(req: Request) {
@@ -35,22 +43,27 @@ export async function GET(req: Request) {
 }
 
 // Edit one entry. The audit trigger records history from decided_by / decided_reason, which buildPatch always sets.
+// The stored text is read first so only customer details the edit newly adds are refused.
 export async function PATCH(req: Request) {
   const email = await who(); if (!email) return forbidden();
   let b: { id?: unknown; patch?: unknown } | null;
   try { b = await req.json(); } catch { return badRequest("Bad request"); }
   const id = Number(b?.id);
   if (!id) return badRequest("id required");
-  const built = buildPatch(b?.patch, email);
+  const stored = await storedText(id);
+  if (stored === null) return NextResponse.json({ ok: false, error: "Not saved. Try again." }, { status: 500 });
+  if (!stored) return NextResponse.json({ ok: false, error: "Not saved. That answer no longer exists." }, { status: 404 });
+  const built = buildPatch(b?.patch, email, stored);
   if (!built.ok) return badRequest(built.error);
   const r = await fetch(`${sbUrl}/rest/v1/kb_entries?id=eq.${id}`, { method: "PATCH", headers: { ...H(), Prefer: "return=minimal" }, body: JSON.stringify(built.patch) });
   return NextResponse.json({ ok: r.ok });
 }
 
-// Add an entry, or undo a change ({ undo: <historyId> }).
+// Add an entry, or undo a change ({ undo: <historyId> }). A correction ({ corrects: <id> }) is checked
+// against the entry it corrects, so it may keep business details that entry already holds.
 export async function POST(req: Request) {
   const email = await who(); if (!email) return forbidden();
-  let b: { undo?: unknown } | null;
+  let b: { undo?: unknown; corrects?: unknown } | null;
   try { b = await req.json(); } catch { return badRequest("Bad request"); }
   if (b?.undo) {
     const hr = await fetch(`${sbUrl}/rest/v1/kb_history?select=*&id=eq.${Number(b.undo)}`, { headers: H(), cache: "no-store" });
@@ -60,7 +73,16 @@ export async function POST(req: Request) {
     const r = await fetch(`${sbUrl}/rest/v1/kb_entries?id=eq.${restored.id}`, { method: "PATCH", headers: { ...H(), Prefer: "return=minimal" }, body: JSON.stringify(restored.patch) });
     return NextResponse.json({ ok: r.ok });
   }
-  const built = buildNewRow(b, email);
+  let corrected: StoredText | undefined;
+  if (b?.corrects) {
+    const cid = Number(b.corrects);
+    if (!Number.isInteger(cid) || cid <= 0) return badRequest("Bad request");
+    const s = await storedText(cid);
+    if (s === null) return NextResponse.json({ ok: false, error: "Not saved. Try again." }, { status: 500 });
+    if (!s) return badRequest("Not saved. The answer being corrected no longer exists.");
+    corrected = s;
+  }
+  const built = buildNewRow(b, email, corrected);
   if (!built.ok) return badRequest(built.error);
   const r = await fetch(`${sbUrl}/rest/v1/kb_entries`, { method: "POST", headers: { ...H(), Prefer: "return=representation" }, body: JSON.stringify(built.row) });
   if (!r.ok) return NextResponse.json({ ok: false, error: "Not saved" }, { status: 500 });
