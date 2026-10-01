@@ -87,7 +87,7 @@
         "Vista V3"
       ],
       "question": "What fits",
-      "answer": "Here is what attaches to the Vista V3. Mesa capsule: fits directly, nothing to buy. Other capsules: only Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm, with the Vista / Alta / Cruz car seat upper adapter ($76.95). Bassinet: included, fits directly. RumbleSeat: brings its own adapters in the box, from 6 months. PiggyBack: yes, the Vista PiggyBack ride-along board ($249.00), sold separately. A Mesa carried under the toddler seat needs the UPPAbaby Vista Lower Capsule Adapters.",
+      "answer": "Here is what attaches to the Vista V3. Mesa capsule: fits directly, nothing to buy. Other capsules: only Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm, with the Vista / Alta / Cruz car seat upper adapter ($76.95). Bassinet: included, fits directly. RumbleSeat: brings its own adapters in the box, from 6 months, and the seat on top then goes on the Vista upper adapters. Vista upper adapters: used in any double setup, or to raise a single seat or bassinet for extra height. PiggyBack: yes, the Vista PiggyBack ride-along board ($249.00), sold separately. A Mesa carried under the toddler seat needs the UPPAbaby Vista Lower Capsule Adapters.",
       "link": "/collections/uppababy-vista-v3-pram",
       "source": "confirmed",
       "source_ref": "David Kingsford, 1 Oct 2026",
@@ -97,7 +97,7 @@
         "topic": "Vista V3 support",
         "q": "What fits"
       },
-      "decided_reason": "Confirmed by David: BeSafe capsules are not sold in Australia; uppababy.com.au lists BeSafe as compatible"
+      "decided_reason": "Vista upper adapters: used in any double setup, or to raise a single seat or bassinet; not for another brand's capsule (David, 1 Oct 2026)"
     },
     {
       "ext_key": "fact:cruz-what-fits",
@@ -475,14 +475,14 @@
         "Vista V3"
       ],
       "question": "What age is the RumbleSeat for?",
-      "answer": "The RumbleSeat V3 is from 6 months, up to 15.9 kg. It fits the Vista V3 and brings its own adapters in the box. Put the bigger child in the main toddler seat, which takes up to 22.7 kg, and the smaller child in the RumbleSeat. The Cruz V3, Minu V3 and Ridge V2 do not take a RumbleSeat.",
+      "answer": "The RumbleSeat V3 is from 6 months, up to 15.9 kg. It fits the Vista V3 and brings its own adapters in the box. The main toddler seat on top then goes on the Vista upper adapters, as in any double setup. Put the bigger child in the main toddler seat, which takes up to 22.7 kg, and the smaller child in the RumbleSeat. The Cruz V3, Minu V3 and Ridge V2 do not take a RumbleSeat.",
       "link": "/collections/uppababy-rumbleseats-bassinets",
       "source": "confirmed",
       "source_ref": "David Kingsford, 1 Oct 2026",
       "status": "approved",
       "decided_by": "david@coolkidz.com.au",
       "corrects_question": null,
-      "decided_reason": "Confirmed by David; uppababy.com.au elsewhere says from about three months"
+      "decided_reason": "Vista upper adapters: used in any double setup, or to raise a single seat or bassinet; not for another brand's capsule (David, 1 Oct 2026)"
     },
     {
       "ext_key": "fact:minu-weight-limit",
@@ -754,6 +754,22 @@
       "status": "approved",
       "decided_by": "david@coolkidz.com.au",
       "decided_reason": "Minu V2 takes the Mesa and Maxi-Cosi (David, 1 Oct 2026); capsule list from the Minu V2 Car Seat Adapter listing on uppababy.com.au"
+    },
+    {
+      "ext_key": "fact:vista-upper-adapters",
+      "topic": "Vista V3",
+      "models": [
+        "Vista V3"
+      ],
+      "question": "What are the Vista upper adapters for?",
+      "answer": "The [Vista Upper Adapters](/products/uppababy-vista-upper-adapter) raise whatever sits in the top position, by up to 16 cm. Use them in any double setup, whenever something is in the lower position as well as on top, or on their own if you simply want the seat or bassinet a little higher. A single bassinet, toddler seat or Mesa clicks straight onto the frame without them. Another brand's capsule on top does not use them: it goes on the Vista / Alta / Cruz car seat upper adapter instead.",
+      "link": "/products/uppababy-vista-upper-adapter",
+      "corrects_question": null,
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "decided_reason": "Vista upper adapters: used in any double setup, or to raise a single seat or bassinet; not for another brand's capsule (David, 1 Oct 2026)"
     }
   ]
 }

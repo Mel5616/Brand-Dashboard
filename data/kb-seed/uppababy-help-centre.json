@@ -265,14 +265,14 @@
         "RumbleSeat V3"
       ],
       "question": "How do I set up my Vista for two toddlers?",
-      "answer": "Put the Vista toddler seat on top and a RumbleSeat underneath. The RumbleSeat brings its own adapters in the box. The main seat takes up to 22.7 kg and the RumbleSeat V3 is from 6 months to 15.9 kg, with limited recline while forward-facing, so put the bigger child in the main seat. For a third child, add the PiggyBack board, which takes a standing child up to 25 kg.",
+      "answer": "Put the Vista toddler seat on top and a RumbleSeat underneath. The RumbleSeat brings its own adapters in the box, and the toddler seat on top goes on the Vista upper adapters. The main seat takes up to 22.7 kg and the RumbleSeat V3 is from 6 months to 15.9 kg, with limited recline while forward-facing, so put the bigger child in the main seat. For a third child, add the PiggyBack board, which takes a standing child up to 25 kg.",
       "link": "/collections/uppababy-rumbleseats-bassinets",
       "source": "help_centre",
       "source_ref": "help.uppababy.com.au/support/solutions/articles/9000116873",
       "corrects_question": null,
       "status": "approved",
-      "decided_by": "claude",
-      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+      "decided_by": "david@coolkidz.com.au",
+      "decided_reason": "Vista upper adapters: used in any double setup, or to raise a single seat or bassinet; not for another brand's capsule (David, 1 Oct 2026)"
     },
     {
       "ext_key": "article:9000116875",
@@ -417,14 +417,14 @@
         "Vista V3"
       ],
       "question": "What do I need to carry a second or third child on my Vista?",
-      "answer": "A RumbleSeat or a second bassinet for a second child, and a PiggyBack board for a third. The RumbleSeat brings its own adapters in the box. A second bassinet needs the Vista upper and lower adapters. A Mesa capsule under the toddler seat needs the UPPAbaby Vista Lower Capsule Adapters, and an approved capsule from another brand needs a Vista car seat adapter. The PiggyBack clips to the rear axle and takes a standing child to 25 kg. The Cruz does not take a second seat or bassinet, but it does take the Cruz PiggyBack board.",
+      "answer": "A RumbleSeat or a second bassinet for a second child, and a PiggyBack board for a third. The RumbleSeat brings its own adapters in the box, and the seat on top goes on the Vista upper adapters, as in every double setup. A second bassinet needs the Vista upper and lower adapters. A Mesa capsule under the toddler seat needs the UPPAbaby Vista Lower Capsule Adapters, and an approved capsule from another brand needs a Vista car seat adapter. The PiggyBack clips to the rear axle and takes a standing child to 25 kg. The Cruz does not take a second seat or bassinet, but it does take the Cruz PiggyBack board.",
       "link": "/collections/uppababy-vista-v3-pram",
       "source": "help_centre",
       "source_ref": "help.uppababy.com.au/support/solutions/articles/9000199418",
       "corrects_question": null,
       "status": "approved",
-      "decided_by": "claude",
-      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+      "decided_by": "david@coolkidz.com.au",
+      "decided_reason": "Vista upper adapters: used in any double setup, or to raise a single seat or bassinet; not for another brand's capsule (David, 1 Oct 2026)"
     },
     {
       "ext_key": "article:9000199420",
