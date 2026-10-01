@@ -43,6 +43,7 @@ export const TAB_SECTIONS: TabSection[] = [
   ] },
   { label: "Websites", tabs: [
     { id: "assistants", label: "AI Assistants" },
+    { id: "knowledge", label: "Knowledge (UPPAbaby)" },
     { id: "discount-codes", label: "Discount Codes (incl. cross-site vouchers + create codes)" },
     { id: "cross-site-discounts", label: "Cross Site Discounts (now inside Discount Codes)" },
     { id: "create-codes", label: "Create Website Codes (now inside Discount Codes)" },
