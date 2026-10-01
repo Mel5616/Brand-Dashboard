@@ -675,14 +675,14 @@
       "topic": "Shipping and delivery",
       "models": [],
       "question": "Can I collect my online order?",
-      "answer": "Yes. You can collect an online order from the UPPAbaby Showroom in Braeside, Melbourne, open Monday to Friday, 9am to 2:30pm. To arrange a collection, call our customer service team. You can also see the range and buy in person at the showroom or at any of our [authorised stockists](/pages/store-locator).",
+      "answer": "Yes. You can collect an online order from the UPPAbaby Showroom in Braeside, Melbourne, open Monday to Friday, 9am to 2:30pm. Collections must be arranged in advance: call our customer service team to arrange it before you come in. You can also see the range and buy in person at the showroom or at any of our [authorised stockists](/pages/store-locator).",
       "link": "/pages/store-locator",
       "source": "confirmed",
       "source_ref": "David Kingsford, 1 Oct 2026",
       "status": "approved",
       "decided_by": "david@coolkidz.com.au",
       "corrects_question": null,
-      "decided_reason": "Confirmed by David after the October replay: collect from Braeside, arranged by phone with customer service"
+      "decided_reason": "Confirmed by David: collect from Braeside, arranged in advance by phone with customer service"
     },
     {
       "ext_key": "fact:replacement-rumbleseat-adapters",
