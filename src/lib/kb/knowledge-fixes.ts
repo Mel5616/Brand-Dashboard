@@ -52,7 +52,7 @@ export const EXTRA_CAPSULES = ["Britax B-Pod (Vista, Cruz and Ridge; not the Kon
 // Site answers that leave out what matters most. The plane answer never named the Minu V3, the pram to fly with
 // (David, 2 Oct 2026); facts from the help centre article "Can I take the Minu V3 on board the plane?".
 const FAQ_ANSWERS: Record<string, string> = {
-  "Can I take an UPPAbaby pram on a plane?": "Yes. The Minu V3 is the pram to fly with: it weighs 7.6 kg and folds to 25 x 45 x 55 cm, which meets the IATA overhead standard. Whether it can go in the cabin is up to your airline, so check before you book, as some cap carry-on at 7 kg. Other prams are normally checked at the gate or in the hold. Pack yours in an UPPAbaby travel bag and register it under the TravelSafe Program before you fly, because airline damage is otherwise excluded from the warranty. The Mesa capsule is CASA approved for aircraft use on airlines that permit child restraints.",
+  "Can I take an UPPAbaby pram on a plane?": "Yes. The Minu V3 is the pram to fly with: it weighs 7.6 kg and folds to 25 x 45 x 55 cm, which meets the IATA overhead standard. Whether it can go in the cabin is up to your airline, so check before you book. Other prams are normally checked at the gate or in the hold. Pack yours in an UPPAbaby travel bag and register it under the TravelSafe Program before you fly, because airline damage is otherwise excluded from the warranty. The Mesa capsule is CASA approved for aircraft use on airlines that permit child restraints.",
 };
 
 type ThirdParty = { name?: string; models?: string[]; note?: string };
