@@ -47,23 +47,30 @@ The latest 100 unique first questions from assistant_logs (26 September to 1 Oct
 | Result | Count |
 |---|---|
 | Same facts and links, similar tone | 70 |
-| Better: a confirmed fact or help centre detail the live answer lacked or got wrong | 24 |
-| Worse | 2 |
+| Better: a confirmed fact or help centre detail the live answer lacked or got wrong | 23 |
+| Worse | 3 |
 | Blank or cut off, in both modes | 4 |
 
-Better, paraphrased: toddler seat and RumbleSeat from 6 months, Mesa lifetime warranty in the warranty summary, no Minu takes another brand's capsule (the live answer recommended a Minu V2 adapter for a Maxi-Cosi, which Melanie ruled out on 10 September 2026), Mesa on Vista V2, bassinet not on Minu V3, the approved capsule list, returns within 30 days, the bassinet stand product, the warranty not transferring to a second owner.
+Better, paraphrased: toddler seat and RumbleSeat from 6 months, Mesa lifetime warranty in the warranty summary, Mesa on Vista V2, bassinet not on Minu V3, the approved capsule list, returns within 30 days, the bassinet stand product, the warranty not transferring to a second owner.
 
-Worse, paraphrased. Neither topic has a knowledge base entry, so both are model variation rather than the knowledge base:
+Worse, paraphrased:
 
 - Replacement RumbleSeat adapters: db mode said they are not the adapters that fit the RumbleSeat to the Vista. The live answer was right.
-- Collecting an online order: db mode said orders can be collected from the Braeside showroom. The live answer said there is no click and collect. Nothing in the knowledge says either.
+- Collecting an online order: db mode said orders can be collected from the Braeside showroom. The live answer said there is no click and collect. Nothing in the knowledge said either; David confirmed collection is available, so db mode was right by chance.
+- Maxi-Cosi on a Minu V2: db mode said no Minu takes another brand's capsule. The live answer recommended the Minu V2 Car Seat Adapter, which was right: David confirmed on 1 October 2026 that the Minu V2 takes the Mesa and Maxi-Cosi. The "no Minu" rule (Melanie, 10 September 2026) applies to the Minu V3 and Minu Duo only.
 
 Blank or cut off: one question about Vista V2 double adapters gets an empty reply in both modes, and three answers stop mid-sentence (three live answers did too). The chat allows 700 output tokens; some replies run out. This is separate from the knowledge base.
 
 ## Findings
 
-- No answer got worse because of the knowledge base. Every confirmed fact is right in db mode.
-- Two wrong answers come from gaps, fixed by adding entries once David confirms the facts: click and collect, and replacement RumbleSeat adapters.
-- Open with David: ex-display warranty from UPPAbaby Australia, Tune-Up Days without registration, and whether a bassinet on top with a RumbleSeat underneath is supported on the Vista V3 (help centre article 9000116871 says yes; the website's adapter guide does not list it).
-- Website fix: the Minu V2 Car Seat Adapter listing says it takes Maxi-Cosi capsules, which conflicts with the confirmed rule that no Minu takes another brand's capsule.
+- Every confirmed fact is right in db mode. The one answer made worse by the knowledge base (Maxi-Cosi on a Minu V2) came from a rule that was too broad, now corrected.
+
+## Changes after David's answers (1 October 2026)
+
+- Added: click and collect from the Braeside showroom; what the Replacement RumbleSeat Adapters are for; which capsules fit the Minu V2 (list from the Minu V2 Car Seat Adapter listing).
+- Corrected: the "no Minu takes another brand's capsule" wording now applies to the Minu V3 and Minu Duo only, in five entries and two new corrections of website answers (Minu Duo "What fits" and "Do I need adapters for the pram?").
+- Corrected: bassinet on top with a RumbleSeat underneath, facing backwards, fits but is very tight and is not a recommended setup (article 9000116871).
+- Confirmed as already written: ex-display from UPPAbaby Australia carries three years; Tune-Up Days need no registration.
+- Rechecked on the preview in db mode: all four changed answers correct.
+- Still in the website build (uppababy-site, not this repo): adapters._meta.minuThirdParty and the Minu note in the adapters data still say no Minu takes another brand's capsule. They need the same correction so the prompt does not disagree with the knowledge base.
 - Separate from this change: raise max_tokens in the chat route so long answers are not cut off or blank.

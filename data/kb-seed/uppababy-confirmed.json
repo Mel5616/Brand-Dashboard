@@ -144,7 +144,7 @@
         "Minu V3"
       ],
       "question": "What fits",
-      "answer": "Here is what attaches to the Minu V3. Mesa capsule: needs the Minu V3 Mesa adapter ($49.95). Other capsules: no other brand of capsule fits any Minu. Bassinet: the UPPAbaby bassinet does not fit the Minu V3. It does not need one, as the Minu V3 is from birth as sold with its included infant insert. RumbleSeat: not compatible. PiggyBack: not offered.",
+      "answer": "Here is what attaches to the Minu V3. Mesa capsule: needs the Minu V3 Mesa adapter ($49.95). Other capsules: no other brand of capsule fits the Minu V3. Bassinet: the UPPAbaby bassinet does not fit the Minu V3. It does not need one, as the Minu V3 is from birth as sold with its included infant insert. RumbleSeat: not compatible. PiggyBack: not offered.",
       "link": "/collections/uppababy-minu-v3-travel-stroller",
       "source": "confirmed",
       "source_ref": "David Kingsford, 1 Oct 2026",
@@ -154,7 +154,7 @@
         "topic": "Minu V3 support",
         "q": "What fits"
       },
-      "decided_reason": "Confirmed by David: the bassinet does not fit the Minu V3; uppababy.com.au says it fits with the Minu bassinet adapters"
+      "decided_reason": "Minu V2 takes the Mesa and Maxi-Cosi (David, 1 Oct 2026); capsule list from the Minu V2 Car Seat Adapter listing on uppababy.com.au"
     },
     {
       "ext_key": "fact:minu-only-pram",
@@ -508,14 +508,14 @@
         "Mesa"
       ],
       "question": "Does a BeSafe capsule fit my UPPAbaby pram?",
-      "answer": "BeSafe capsules are not sold in Australia, so they are not on the approved list for any UPPAbaby pram. The Mesa clicks straight onto the Vista V3, Cruz V3 and Kona, and fits the Minu V3, Minu Duo and Ridge V2 with an adapter. The other capsules that fit, with the matching UPPAbaby adapter, are Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm. No Minu takes another brand's capsule.",
+      "answer": "BeSafe capsules are not sold in Australia, so they are not on the approved list for any UPPAbaby pram. The Mesa clicks straight onto the Vista V3, Cruz V3 and Kona, and fits the Minu V3, Minu Duo and Ridge V2 with an adapter. The other capsules that fit, with the matching UPPAbaby adapter, are Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm. The Minu V3 and Minu Duo take only the Mesa. The older Minu V2 also takes select Maxi-Cosi, Nuna and Joie capsules with the Minu V2 Car Seat Adapter.",
       "link": "/collections/mesa-car-capsule",
       "source": "confirmed",
       "source_ref": "David Kingsford, 1 Oct 2026",
       "status": "approved",
       "decided_by": "david@coolkidz.com.au",
       "corrects_question": null,
-      "decided_reason": "Confirmed by David: BeSafe is not sold in Australia and must never be listed as compatible"
+      "decided_reason": "Minu V2 takes the Mesa and Maxi-Cosi (David, 1 Oct 2026); capsule list from the Minu V2 Car Seat Adapter listing on uppababy.com.au"
     },
     {
       "ext_key": "fact:floor-display-warranty",
@@ -669,6 +669,91 @@
       "decided_by": "david@coolkidz.com.au",
       "corrects_question": null,
       "decided_reason": "Confirmed by David; no uppababy.com.au answer covers this"
+    },
+    {
+      "ext_key": "fact:click-and-collect",
+      "topic": "Shipping and delivery",
+      "models": [],
+      "question": "Can I collect my online order?",
+      "answer": "Yes. You can collect an online order from the UPPAbaby Showroom in Braeside, Melbourne, open Monday to Friday, 9am to 2:30pm. You can also see the range and buy in person at the showroom or at any of our [authorised stockists](/pages/store-locator).",
+      "link": "/pages/store-locator",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": null,
+      "decided_reason": "Confirmed by David after the October replay; no uppababy.com.au answer covers this"
+    },
+    {
+      "ext_key": "fact:replacement-rumbleseat-adapters",
+      "topic": "Spare parts",
+      "models": [
+        "Vista V3"
+      ],
+      "question": "What are the Replacement RumbleSeat Adapters for?",
+      "answer": "They are the adapters that fit the RumbleSeat to the Vista frame, the same ones that come in the RumbleSeat box. Buy them if yours are lost or broken: [Replacement RumbleSeat Adapters](/products/uppababy-replacement-rumbleseat-adapters). Parts are version specific, so for an older Vista or RumbleSeat, send a photo of the white label near the rear axle through our [support page](/pages/support) first.",
+      "link": "/products/uppababy-replacement-rumbleseat-adapters",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": null,
+      "decided_reason": "Confirmed by David after the October replay; no uppababy.com.au answer covers this"
+    },
+    {
+      "ext_key": "fact:minu-v2-capsules",
+      "topic": "Mesa",
+      "models": [
+        "Minu V2",
+        "Mesa"
+      ],
+      "question": "Which car capsules fit the Minu V2?",
+      "answer": "With the [Minu V2 Car Seat Adapter](/products/uppababy-minu-v2-car-seat-adapter), the Minu V2 takes these capsules only: Maxi-Cosi Mico AP / Mico Plus, Mico 6 and Mico 12, Maxi-Cosi Mico 12 LX made from 20 April 2022, Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm. CYBEX capsules are not supported. The Mesa fits the Minu V2 too: send a photo of the white label near the rear axle through our [support page](/pages/support) and we will confirm the right adapter for your frame. The newer Minu V3 and the Minu Duo take only the Mesa.",
+      "link": "/products/uppababy-minu-v2-car-seat-adapter",
+      "corrects_question": null,
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "decided_reason": "Minu V2 takes the Mesa and Maxi-Cosi (David, 1 Oct 2026); capsule list from the Minu V2 Car Seat Adapter listing on uppababy.com.au"
+    },
+    {
+      "ext_key": "fact:minuduo-what-fits",
+      "topic": "Minu Duo support",
+      "models": [
+        "Minu Duo"
+      ],
+      "question": "What fits",
+      "answer": "Here is what attaches to the Minu Duo. Mesa capsule: needs the Minu Duo Mesa adapters ($64.95). It holds one capsule, on the parent's left. The canopy must come off, and the adapters must be removed before folding. Other capsules: no other brand of capsule fits the Minu Duo. Bassinet: not offered. Second seat: two equal seats are included, nothing to add. PiggyBack: not offered.",
+      "link": "/pages/minu-duo-support",
+      "corrects_question": {
+        "topic": "Minu Duo support",
+        "q": "What fits"
+      },
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "decided_reason": "Minu V2 takes the Mesa and Maxi-Cosi (David, 1 Oct 2026); capsule list from the Minu V2 Car Seat Adapter listing on uppababy.com.au"
+    },
+    {
+      "ext_key": "fact:mesa-pram-adapters",
+      "topic": "Australian Car Seat Centre",
+      "models": [
+        "Mesa"
+      ],
+      "question": "Do I need adapters for the pram?",
+      "answer": "On a Vista, Cruz or Kona the Mesa clicks straight onto the frame. The Minu V3, Minu Duo and Ridge each have a matching adapter set. Capsules from Maxi-Cosi, Nuna and Joie fit some frames with the car seat adapter. The Minu V3 and Minu Duo take only the Mesa; the older Minu V2 takes select Maxi-Cosi, Nuna and Joie capsules with the Minu V2 Car Seat Adapter.",
+      "link": null,
+      "corrects_question": {
+        "topic": "Australian Car Seat Centre",
+        "q": "Do I need adapters for the pram?"
+      },
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "decided_reason": "Minu V2 takes the Mesa and Maxi-Cosi (David, 1 Oct 2026); capsule list from the Minu V2 Car Seat Adapter listing on uppababy.com.au"
     }
   ]
 }

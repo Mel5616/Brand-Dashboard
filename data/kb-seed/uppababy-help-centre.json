@@ -247,14 +247,14 @@
         "Vista V2"
       ],
       "question": "How do I set up my Vista for a baby and a toddler?",
-      "answer": "There are two ways. Toddler seat on top with the bassinet or a Mesa capsule underneath: a bassinet in the lower position needs the Vista upper and lower adapters, and a Mesa underneath needs the UPPAbaby Vista Lower Capsule Adapters. Or bassinet on top with your toddler in a RumbleSeat underneath: the RumbleSeat brings its own adapters and carries a child from 6 months to 15.9 kg. Never put the toddler seat on the lower adapters. The lower position is only for a bassinet, a capsule or a RumbleSeat.",
+      "answer": "The recommended way is the toddler seat on top with the bassinet or a Mesa capsule underneath. A bassinet in the lower position needs the Vista upper and lower adapters, and a Mesa underneath needs the UPPAbaby Vista Lower Capsule Adapters. A bassinet on top with a RumbleSeat underneath, facing backwards, does fit, but it is very tight and is not a recommended setup. Never put the toddler seat on the lower adapters. The lower position is only for a bassinet, a capsule or a RumbleSeat.",
       "link": "/collections/uppababy-rumbleseats-bassinets",
       "source": "help_centre",
       "source_ref": "help.uppababy.com.au/support/solutions/articles/9000116871",
       "corrects_question": null,
       "status": "approved",
-      "decided_by": "claude",
-      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+      "decided_by": "david@coolkidz.com.au",
+      "decided_reason": "Bassinet on top with a RumbleSeat underneath: fits facing backwards but very tight and not recommended (David, 1 Oct 2026)"
     },
     {
       "ext_key": "article:9000116873",
@@ -433,14 +433,14 @@
         "Minu V3"
       ],
       "question": "What is the Minu V3?",
-      "answer": "The Minu V3 is UPPAbaby's compact stroller. It weighs 7.6 kg, folds one-handed to 25 x 45 x 55 cm, about carry-on size, and stands on its own. It suits one child from birth to 22.7 kg, ready from birth with the included infant insert. The seat faces forward only. It has front and independent rear suspension and a 9.1 kg basket. The Mesa fits with the Minu V3 Mesa adapter, and no other brand of capsule fits any Minu. The Minu travel bag is covered by [TravelSafe](/pages/travelsafe-program) once registered, and has a hidden pocket for a tracking device.",
+      "answer": "The Minu V3 is UPPAbaby's compact stroller. It weighs 7.6 kg, folds one-handed to 25 x 45 x 55 cm, about carry-on size, and stands on its own. It suits one child from birth to 22.7 kg, ready from birth with the included infant insert. The seat faces forward only. It has front and independent rear suspension and a 9.1 kg basket. The Mesa fits with the Minu V3 Mesa adapter, and no other brand of capsule fits the Minu V3. The Minu travel bag is covered by [TravelSafe](/pages/travelsafe-program) once registered, and has a hidden pocket for a tracking device.",
       "link": "/collections/uppababy-minu-v3-travel-stroller",
       "source": "help_centre",
       "source_ref": "help.uppababy.com.au/support/solutions/articles/9000199420",
       "corrects_question": null,
       "status": "approved",
-      "decided_by": "claude",
-      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+      "decided_by": "david@coolkidz.com.au",
+      "decided_reason": "Minu V2 takes the Mesa and Maxi-Cosi (David, 1 Oct 2026); capsule list from the Minu V2 Car Seat Adapter listing on uppababy.com.au"
     },
     {
       "ext_key": "article:9000199422",
@@ -500,14 +500,14 @@
         "Minu Duo"
       ],
       "question": "Can I use the Minu V3 for my newborn?",
-      "answer": "Yes. The Minu V3 is suitable from birth as sold. The infant insert is included, and the seat has a from-birth recline. The bassinet does not fit the Minu V3, and it does not need one. The Mesa capsule fits with the Minu V3 Mesa adapter, and no other brand of capsule fits any Minu. The Minu Duo is also suitable from birth, on both seats.",
+      "answer": "Yes. The Minu V3 is suitable from birth as sold. The infant insert is included, and the seat has a from-birth recline. The bassinet does not fit the Minu V3, and it does not need one. The Mesa capsule fits with the Minu V3 Mesa adapter, and no other brand of capsule fits the Minu V3. The Minu Duo is also suitable from birth, on both seats.",
       "link": "/collections/uppababy-minu-v3-travel-stroller",
       "source": "help_centre",
       "source_ref": "help.uppababy.com.au/support/solutions/articles/9000199427",
       "corrects_question": null,
       "status": "approved",
-      "decided_by": "claude",
-      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+      "decided_by": "david@coolkidz.com.au",
+      "decided_reason": "Minu V2 takes the Mesa and Maxi-Cosi (David, 1 Oct 2026); capsule list from the Minu V2 Car Seat Adapter listing on uppababy.com.au"
     },
     {
       "ext_key": "article:9000199429",
@@ -522,14 +522,14 @@
         "Mesa"
       ],
       "question": "Which car capsules fit my UPPAbaby pram?",
-      "answer": "The Mesa clicks straight onto the Vista V3, Cruz V3 and Kona with no adapter. It fits the Minu V3 with the Minu V3 Mesa adapter, the Minu Duo with the Minu Duo Mesa adapters (one capsule, on the parent's left), and the Ridge V2 with the Ridge Mesa/Bassinet adapters. Only the Vista V3, Cruz V3, Ridge V2 and Kona take another brand's capsule, and only these: Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm, with the matching UPPAbaby adapter. No Minu takes another brand's capsule, and CYBEX is not supported.",
+      "answer": "The Mesa clicks straight onto the Vista V3, Cruz V3 and Kona with no adapter. It fits the Minu V3 with the Minu V3 Mesa adapter, the Minu Duo with the Minu Duo Mesa adapters (one capsule, on the parent's left), and the Ridge V2 with the Ridge Mesa/Bassinet adapters. In the current range, the Vista V3, Cruz V3, Ridge V2 and Kona take another brand's capsule, and only these: Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm, with the matching UPPAbaby adapter. The Minu V3 and Minu Duo take only the Mesa. The older Minu V2 takes Maxi-Cosi Mico AP / Mico Plus, Mico 6 and Mico 12, Maxi-Cosi Mico 12 LX made from 20 April 2022, Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm with the Minu V2 Car Seat Adapter. CYBEX is not supported.",
       "link": "/collections/mesa-car-capsule",
       "source": "help_centre",
       "source_ref": "help.uppababy.com.au/support/solutions/articles/9000199429",
       "corrects_question": null,
       "status": "approved",
-      "decided_by": "claude",
-      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+      "decided_by": "david@coolkidz.com.au",
+      "decided_reason": "Minu V2 takes the Mesa and Maxi-Cosi (David, 1 Oct 2026); capsule list from the Minu V2 Car Seat Adapter listing on uppababy.com.au"
     },
     {
       "ext_key": "article:9000219580",
@@ -543,14 +543,14 @@
         "Minu Duo"
       ],
       "question": "Can I use a non-UPPAbaby adapter to fit a car capsule to my pram?",
-      "answer": "No. Only car capsule adapters made and tested by UPPAbaby are approved for UPPAbaby prams. Another maker's adapter may damage your pram and, in serious cases, injure your child, and third-party modifications void the warranty. The Mesa needs no adapter on the Vista V3, Cruz V3 or Kona, and uses the matching UPPAbaby adapter on the Minu V3, Minu Duo and Ridge V2. A short list of Maxi-Cosi, Nuna and Joie capsules fit the Vista V3, Cruz V3, Ridge V2 and Kona with the matching UPPAbaby adapter. No Minu takes another brand's capsule, and CYBEX capsules are not supported on any UPPAbaby frame.",
+      "answer": "No. Only car capsule adapters made and tested by UPPAbaby are approved for UPPAbaby prams. Another maker's adapter may damage your pram and, in serious cases, injure your child, and third-party modifications void the warranty. The Mesa needs no adapter on the Vista V3, Cruz V3 or Kona, and uses the matching UPPAbaby adapter on the Minu V3, Minu Duo and Ridge V2. A short list of Maxi-Cosi, Nuna and Joie capsules fit the Vista V3, Cruz V3, Ridge V2 and Kona with the matching UPPAbaby adapter. The Minu V3 and Minu Duo take only the Mesa, the older Minu V2 takes select capsules with the Minu V2 Car Seat Adapter, and CYBEX capsules are not supported on any UPPAbaby frame.",
       "link": "/collections/mesa-car-capsule",
       "source": "help_centre",
       "source_ref": "help.uppababy.com.au/support/solutions/articles/9000219580",
       "corrects_question": null,
       "status": "approved",
-      "decided_by": "claude",
-      "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+      "decided_by": "david@coolkidz.com.au",
+      "decided_reason": "Minu V2 takes the Mesa and Maxi-Cosi (David, 1 Oct 2026); capsule list from the Minu V2 Car Seat Adapter listing on uppababy.com.au"
     },
     {
       "ext_key": "review:warranty-registration-1",
