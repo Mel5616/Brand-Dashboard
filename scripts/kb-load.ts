@@ -1,12 +1,17 @@
 // Load the UPPAbaby knowledge base: website answers from src/data/uppababy-knowledge.json, then seeds.
 // Usage: node scripts/kb-load.ts [--dry-run]   (needs NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY)
-import { readFileSync } from "node:fs";
-import { websiteRows, seedRows, type SeedEntry } from "../src/lib/kb/load.ts";
+//        node scripts/kb-load.ts --sql <dir>   (no secrets: writes SQL files to <dir> to apply in name order)
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { websiteRows, seedRows, sqlUpsert, sqlCorrects, type SeedEntry, type Row } from "../src/lib/kb/load.ts";
+import { fileWrittenAnswers } from "../src/lib/kb/core.ts";
 
 const BRAND = "uppababy";
 const dry = process.argv.includes("--dry-run");
+const sqlAt = process.argv.indexOf("--sql"), sqlDir = sqlAt > -1 ? process.argv[sqlAt + 1] : null;
+if (sqlAt > -1 && !sqlDir) { console.error("--sql needs a directory"); process.exit(1); }
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!dry && (!url || !key)) { console.error("Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY"); process.exit(1); }
+if (!dry && !sqlDir && (!url || !key)) { console.error("Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY"); process.exit(1); }
 const H = { apikey: key!, Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
 
 const faq = JSON.parse(readFileSync("src/data/uppababy-knowledge.json", "utf8")).faq;
@@ -22,6 +27,25 @@ problems.forEach(p => console.log("  rejected:", p));
 missing.forEach(k => console.log("  correction target not found:", k));
 if (dupes || missing.length) { console.error("Fix duplicates or correction targets first"); process.exit(1); }
 if (dry) process.exit(0);
+
+if (sqlDir) {
+  mkdirSync(sqlDir, { recursive: true });
+  const files: string[] = [];
+  const batches = (prefix: string, rows: Row[]) => {
+    for (let i = 0, n = 1; i < rows.length; i += 100, n++) {
+      const f = `${sqlDir}/${prefix}-${String(n).padStart(2, "0")}.sql`;
+      writeFileSync(f, sqlUpsert(rows.slice(i, i + 100))); files.push(f);
+    }
+  };
+  batches("01-website", web);
+  batches("02-seeds", seeded.map(({ corrects_key, ...r }) => r));
+  writeFileSync(`${sqlDir}/03-corrects.sql`, sqlCorrects(BRAND, seeded)); files.push(`${sqlDir}/03-corrects.sql`);
+  const md5 = createHash("md5").update(fileWrittenAnswers(faq), "utf8").digest("hex");
+  console.log(`rows: website ${web.length}, seeds ${seeded.length}, corrections ${seeded.filter(r => r.corrects_key).length}`);
+  console.log(`md5 of fileWrittenAnswers(faq): ${md5}`);
+  files.forEach(f => console.log("  wrote", f));
+  process.exit(0);
+}
 
 async function upsert(rows: object[]) {
   for (let i = 0; i < rows.length; i += 200) {

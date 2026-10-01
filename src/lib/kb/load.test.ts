@@ -27,3 +27,28 @@ test("seedRows takes the sort position of the corrected website entry and flags 
   assert.equal(rows.length, 1);
   assert.match(problems[0], /fact:bad.*email/);
 });
+
+test("sqlLiteral keeps quotes, $, newlines and an em dash byte-for-byte between unique dollar tags", async () => {
+  const { sqlLiteral } = await import("./load.ts");
+  const cases = [
+    "It's \"fine\" at $1,799 — really.\n\nLine two\r\n",
+    "Contains $kb$ already, and costs $5",
+    "Ends with $kb",
+    "",
+  ];
+  for (const text of cases) {
+    const lit = sqlLiteral(text);
+    const tag = lit.match(/^\$[A-Za-z0-9_]*\$/)![0];
+    assert.ok(lit.endsWith(tag), "closes with the same tag");
+    assert.equal(lit.slice(tag.length, lit.length - tag.length), text);
+    // Postgres ends the string at the first closing tag after the opening one: it must be the final one.
+    assert.equal(lit.indexOf(tag, tag.length), lit.length - tag.length);
+  }
+  assert.equal(sqlLiteral(null), "NULL");
+});
+
+test("sqlTextArray builds a text[] expression", async () => {
+  const { sqlTextArray } = await import("./load.ts");
+  assert.equal(sqlTextArray([]), "'{}'::text[]");
+  assert.equal(sqlTextArray(["Vista V3", "Mesa"]), "array[$kb$Vista V3$kb$, $kb$Mesa$kb$]::text[]");
+});
