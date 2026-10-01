@@ -522,14 +522,14 @@
         "Mesa"
       ],
       "question": "Which car capsules fit my UPPAbaby pram?",
-      "answer": "The Mesa clicks straight onto the Vista V3, Cruz V3 and Kona with no adapter. It fits the Minu V3 with the Minu V3 Mesa adapter, the Minu Duo with the Minu Duo Mesa adapters (one capsule, on the parent's left), and the Ridge V2 with the Ridge Mesa/Bassinet adapters. In the current range, the Vista V3, Cruz V3, Ridge V2 and Kona take another brand's capsule, and only these: Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm, with the matching UPPAbaby adapter. The Minu V3 and Minu Duo take only the Mesa. The older Minu V2 takes Maxi-Cosi Mico AP / Mico Plus, Mico 6 and Mico 12, Maxi-Cosi Mico 12 LX made from 20 April 2022, Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm with the Minu V2 Car Seat Adapter, and the Mesa with the Minu bassinet adapters. CYBEX is not supported.",
+      "answer": "The Mesa clicks straight onto the Vista V3, Cruz V3 and Kona with no adapter. It fits the Minu V3 with the Minu V3 Mesa adapter, the Minu Duo with the Minu Duo Mesa adapters (one capsule, on the parent's left), and the Ridge V2 with the Ridge Mesa/Bassinet adapters. In the current range, the Vista V3, Cruz V3, Ridge V2 and Kona take another brand's capsule, and only these: Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm, with the matching UPPAbaby adapter. The Britax B-Pod and B-Pod Lite also fit the Vista V3, Cruz V3 and Ridge V2, but not the Kona. The Minu V3 and Minu Duo take only the Mesa. The older Minu V2 takes Maxi-Cosi Mico AP / Mico Plus, Mico 6 and Mico 12, Maxi-Cosi Mico 12 LX made from 20 April 2022, Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm with the Minu V2 Car Seat Adapter, and the Mesa with the Minu bassinet adapters. CYBEX capsules and the Bugaboo Turtle are not supported.",
       "link": "/collections/mesa-car-capsule",
       "source": "help_centre",
       "source_ref": "help.uppababy.com.au/support/solutions/articles/9000199429",
       "corrects_question": null,
       "status": "approved",
       "decided_by": "david@coolkidz.com.au",
-      "decided_reason": "Minu V2 takes the Mesa and Maxi-Cosi (David, 1 Oct 2026); capsule list from the Minu V2 Car Seat Adapter listing on uppababy.com.au"
+      "decided_reason": "Britax B-Pod and B-Pod Lite fit with the UPPAbaby car seat adapters, not on the Kona; the Bugaboo Turtle is not supported (David, 1 Oct 2026)"
     },
     {
       "ext_key": "article:9000219580",
@@ -543,14 +543,14 @@
         "Minu Duo"
       ],
       "question": "Can I use a non-UPPAbaby adapter to fit a car capsule to my pram?",
-      "answer": "No. Only car capsule adapters made and tested by UPPAbaby are approved for UPPAbaby prams. Another maker's adapter may damage your pram and, in serious cases, injure your child, and third-party modifications void the warranty. The Mesa needs no adapter on the Vista V3, Cruz V3 or Kona, and uses the matching UPPAbaby adapter on the Minu V3, Minu Duo and Ridge V2. A short list of Maxi-Cosi, Nuna and Joie capsules fit the Vista V3, Cruz V3, Ridge V2 and Kona with the matching UPPAbaby adapter. The Minu V3 and Minu Duo take only the Mesa, the older Minu V2 takes select capsules with the Minu V2 Car Seat Adapter, and CYBEX capsules are not supported on any UPPAbaby frame.",
+      "answer": "No. Only car capsule adapters made and tested by UPPAbaby are approved for UPPAbaby prams. Another maker's adapter may damage your pram and, in serious cases, injure your child, and third-party modifications void the warranty. The Mesa needs no adapter on the Vista V3, Cruz V3 or Kona, and uses the matching UPPAbaby adapter on the Minu V3, Minu Duo and Ridge V2. A short list of Maxi-Cosi, Nuna and Joie capsules fit the Vista V3, Cruz V3, Ridge V2 and Kona with the matching UPPAbaby adapter. The Britax B-Pod and B-Pod Lite also fit the Vista V3, Cruz V3 and Ridge V2, but not the Kona. The Minu V3 and Minu Duo take only the Mesa, the older Minu V2 takes select capsules with the Minu V2 Car Seat Adapter, and CYBEX capsules and the Bugaboo Turtle are not supported on any UPPAbaby frame.",
       "link": "/collections/mesa-car-capsule",
       "source": "help_centre",
       "source_ref": "help.uppababy.com.au/support/solutions/articles/9000219580",
       "corrects_question": null,
       "status": "approved",
       "decided_by": "david@coolkidz.com.au",
-      "decided_reason": "Minu V2 takes the Mesa and Maxi-Cosi (David, 1 Oct 2026); capsule list from the Minu V2 Car Seat Adapter listing on uppababy.com.au"
+      "decided_reason": "Britax B-Pod and B-Pod Lite fit with the UPPAbaby car seat adapters, not on the Kona; the Bugaboo Turtle is not supported (David, 1 Oct 2026)"
     },
     {
       "ext_key": "review:warranty-registration-1",

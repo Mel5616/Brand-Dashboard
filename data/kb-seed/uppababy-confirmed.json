@@ -8,7 +8,7 @@
         "Mesa"
       ],
       "question": "Does the Mesa capsule fit the Vista V3?",
-      "answer": "Yes, directly. The Mesa clicks onto the frame with no adapters, so a sleeping baby goes from the car to the pram without being unbuckled. A short list of other capsules also fit, with the Vista / Alta / Cruz car seat upper adapter: Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm. If your capsule is not on that list, it is not supported, even if it looks similar.",
+      "answer": "Yes, directly. The Mesa clicks onto the frame with no adapters, so a sleeping baby goes from the car to the pram without being unbuckled. A short list of other capsules also fit, with the Vista / Alta / Cruz car seat upper adapter: Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus, Joie i-Gemm, Britax B-Pod and Britax B-Pod Lite. If your capsule is not on that list, it is not supported, even if it looks similar. The Bugaboo Turtle is not supported.",
       "link": "/collections/uppababy-vista-v3-pram",
       "source": "confirmed",
       "source_ref": "David Kingsford, 1 Oct 2026",
@@ -18,7 +18,7 @@
         "topic": "Vista V3",
         "q": "Does the Mesa capsule fit the Vista V3?"
       },
-      "decided_reason": "Confirmed by David: BeSafe capsules are not sold in Australia; uppababy.com.au lists BeSafe as compatible"
+      "decided_reason": "Britax B-Pod and B-Pod Lite fit with the UPPAbaby car seat adapters, not on the Kona; the Bugaboo Turtle is not supported (David, 1 Oct 2026)"
     },
     {
       "ext_key": "fact:vista-support-mesa-other-capsules",
@@ -28,7 +28,7 @@
         "Mesa"
       ],
       "question": "Does the Mesa capsule fit the Vista V3?",
-      "answer": "Yes, directly. The Mesa clicks onto the frame with no adapters, so a sleeping baby goes from the car to the pram without being unbuckled. A short list of other capsules also fit, with the Vista / Alta / Cruz car seat upper adapter: Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm. If your capsule is not on that list, it is not supported, even if it looks similar.",
+      "answer": "Yes, directly. The Mesa clicks onto the frame with no adapters, so a sleeping baby goes from the car to the pram without being unbuckled. A short list of other capsules also fit, with the Vista / Alta / Cruz car seat upper adapter: Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus, Joie i-Gemm, Britax B-Pod and Britax B-Pod Lite. If your capsule is not on that list, it is not supported, even if it looks similar. The Bugaboo Turtle is not supported.",
       "link": "/collections/uppababy-vista-v3-pram",
       "source": "confirmed",
       "source_ref": "David Kingsford, 1 Oct 2026",
@@ -38,7 +38,7 @@
         "topic": "Vista V3 support",
         "q": "Does the Mesa capsule fit the Vista V3?"
       },
-      "decided_reason": "Confirmed by David: BeSafe capsules are not sold in Australia; uppababy.com.au lists BeSafe as compatible"
+      "decided_reason": "Britax B-Pod and B-Pod Lite fit with the UPPAbaby car seat adapters, not on the Kona; the Bugaboo Turtle is not supported (David, 1 Oct 2026)"
     },
     {
       "ext_key": "fact:cruz-mesa-other-capsules",
@@ -48,7 +48,7 @@
         "Mesa"
       ],
       "question": "Does the Mesa capsule fit the Cruz V3?",
-      "answer": "Yes, directly, with no adapters. A short list of other capsules fit with the Vista / Alta / Cruz car seat upper adapter, the same one that covers the Vista: Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm. If your capsule is not on that list, it is not supported, even if it looks similar.",
+      "answer": "Yes, directly, with no adapters. A short list of other capsules fit with the Vista / Alta / Cruz car seat upper adapter, the same one that covers the Vista: Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus, Joie i-Gemm, Britax B-Pod and Britax B-Pod Lite. If your capsule is not on that list, it is not supported, even if it looks similar. The Bugaboo Turtle is not supported.",
       "link": "/collections/uppababy-cruz-v3-pram",
       "source": "confirmed",
       "source_ref": "David Kingsford, 1 Oct 2026",
@@ -58,7 +58,7 @@
         "topic": "Cruz V3",
         "q": "Does the Mesa capsule fit the Cruz V3?"
       },
-      "decided_reason": "Confirmed by David: BeSafe capsules are not sold in Australia; uppababy.com.au lists BeSafe as compatible"
+      "decided_reason": "Britax B-Pod and B-Pod Lite fit with the UPPAbaby car seat adapters, not on the Kona; the Bugaboo Turtle is not supported (David, 1 Oct 2026)"
     },
     {
       "ext_key": "fact:cruz-support-mesa-other-capsules",
@@ -68,7 +68,7 @@
         "Mesa"
       ],
       "question": "Does the Mesa capsule fit the Cruz V3?",
-      "answer": "Yes, directly, with no adapters. A short list of other capsules fit with the Vista / Alta / Cruz car seat upper adapter, the same one that covers the Vista: Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm. If your capsule is not on that list, it is not supported, even if it looks similar.",
+      "answer": "Yes, directly, with no adapters. A short list of other capsules fit with the Vista / Alta / Cruz car seat upper adapter, the same one that covers the Vista: Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus, Joie i-Gemm, Britax B-Pod and Britax B-Pod Lite. If your capsule is not on that list, it is not supported, even if it looks similar. The Bugaboo Turtle is not supported.",
       "link": "/collections/uppababy-cruz-v3-pram",
       "source": "confirmed",
       "source_ref": "David Kingsford, 1 Oct 2026",
@@ -78,7 +78,7 @@
         "topic": "Cruz V3 support",
         "q": "Does the Mesa capsule fit the Cruz V3?"
       },
-      "decided_reason": "Confirmed by David: BeSafe capsules are not sold in Australia; uppababy.com.au lists BeSafe as compatible"
+      "decided_reason": "Britax B-Pod and B-Pod Lite fit with the UPPAbaby car seat adapters, not on the Kona; the Bugaboo Turtle is not supported (David, 1 Oct 2026)"
     },
     {
       "ext_key": "fact:vista-what-fits",
@@ -87,7 +87,7 @@
         "Vista V3"
       ],
       "question": "What fits",
-      "answer": "Here is what attaches to the Vista V3. Mesa capsule: fits directly, nothing to buy. Other capsules: only Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm, with the Vista / Alta / Cruz car seat upper adapter ($76.95). Bassinet: included, fits directly. RumbleSeat: brings its own adapters in the box, from 6 months, and the seat on top then goes on the Vista upper adapters. Vista upper adapters: used in any double setup, or to raise a single seat or bassinet for extra height. PiggyBack: yes, the Vista PiggyBack ride-along board ($249.00), sold separately. A Mesa carried under the toddler seat needs the UPPAbaby Vista Lower Capsule Adapters.",
+      "answer": "Here is what attaches to the Vista V3. Mesa capsule: fits directly, nothing to buy. Other capsules: only Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus, Joie i-Gemm, Britax B-Pod and Britax B-Pod Lite, with the Vista / Alta / Cruz car seat upper adapter ($76.95). Bassinet: included, fits directly. RumbleSeat: brings its own adapters in the box, from 6 months, and the seat on top then goes on the Vista upper adapters. Vista upper adapters: used in any double setup, or to raise a single seat or bassinet for extra height. PiggyBack: yes, the Vista PiggyBack ride-along board ($249.00), sold separately. A Mesa carried under the toddler seat needs the UPPAbaby Vista Lower Capsule Adapters.",
       "link": "/collections/uppababy-vista-v3-pram",
       "source": "confirmed",
       "source_ref": "David Kingsford, 1 Oct 2026",
@@ -97,7 +97,7 @@
         "topic": "Vista V3 support",
         "q": "What fits"
       },
-      "decided_reason": "Vista upper adapters: used in any double setup, or to raise a single seat or bassinet; not for another brand's capsule (David, 1 Oct 2026)"
+      "decided_reason": "Britax B-Pod and B-Pod Lite fit with the UPPAbaby car seat adapters, not on the Kona; the Bugaboo Turtle is not supported (David, 1 Oct 2026)"
     },
     {
       "ext_key": "fact:cruz-what-fits",
@@ -106,7 +106,7 @@
         "Cruz V3"
       ],
       "question": "What fits",
-      "answer": "Here is what attaches to the Cruz V3. Mesa capsule: fits directly, nothing to buy. Other capsules: only Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm, with the Vista / Alta / Cruz car seat upper adapter ($76.95). Bassinet: fits directly, sold separately. Second seat: the Cruz does not take a RumbleSeat or any second seat. PiggyBack: yes, the Cruz PiggyBack ride-along board ($249.00), sold separately.",
+      "answer": "Here is what attaches to the Cruz V3. Mesa capsule: fits directly, nothing to buy. Other capsules: only Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus, Joie i-Gemm, Britax B-Pod and Britax B-Pod Lite, with the Vista / Alta / Cruz car seat upper adapter ($76.95). Bassinet: fits directly, sold separately. Second seat: the Cruz does not take a RumbleSeat or any second seat. PiggyBack: yes, the Cruz PiggyBack ride-along board ($249.00), sold separately.",
       "link": "/collections/uppababy-cruz-v3-pram",
       "source": "confirmed",
       "source_ref": "David Kingsford, 1 Oct 2026",
@@ -116,7 +116,7 @@
         "topic": "Cruz V3 support",
         "q": "What fits"
       },
-      "decided_reason": "Confirmed by David: BeSafe capsules are not sold in Australia; uppababy.com.au lists BeSafe as compatible"
+      "decided_reason": "Britax B-Pod and B-Pod Lite fit with the UPPAbaby car seat adapters, not on the Kona; the Bugaboo Turtle is not supported (David, 1 Oct 2026)"
     },
     {
       "ext_key": "fact:ridge-what-fits",
@@ -125,7 +125,7 @@
         "Ridge V2"
       ],
       "question": "What fits",
-      "answer": "Here is what attaches to the Ridge V2. Mesa capsule: needs the Ridge Mesa/Bassinet adapters ($44.95), and the pram still folds with them fitted. Other capsules: only Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm, with the Ridge car seat adapter ($64.95). Bassinet: uses the same Ridge Mesa/Bassinet adapters. RumbleSeat: not compatible. PiggyBack: yes, the Ridge PiggyBack ride-along board ($249.00), sold separately.",
+      "answer": "Here is what attaches to the Ridge V2. Mesa capsule: needs the Ridge Mesa/Bassinet adapters ($44.95), and the pram still folds with them fitted. Other capsules: only Maxi-Cosi Mico AP / Mico Plus, Maxi-Cosi Citi, Maxi-Cosi Mico 12 and Mico 12LX (made after 20 April 2022), Nuna PIPA, Nuna KLIK Plus, Joie i-Gemm, Britax B-Pod and Britax B-Pod Lite, with the Ridge car seat adapter ($64.95). Bassinet: uses the same Ridge Mesa/Bassinet adapters. RumbleSeat: not compatible. PiggyBack: yes, the Ridge PiggyBack ride-along board ($249.00), sold separately.",
       "link": "/collections/uppababy-ridge-pram-jogger",
       "source": "confirmed",
       "source_ref": "David Kingsford, 1 Oct 2026",
@@ -135,7 +135,7 @@
         "topic": "Ridge V2 support",
         "q": "What fits"
       },
-      "decided_reason": "Confirmed by David: BeSafe capsules are not sold in Australia; uppababy.com.au lists BeSafe as compatible"
+      "decided_reason": "Britax B-Pod and B-Pod Lite fit with the UPPAbaby car seat adapters, not on the Kona; the Bugaboo Turtle is not supported (David, 1 Oct 2026)"
     },
     {
       "ext_key": "fact:minu-what-fits",
@@ -743,7 +743,7 @@
         "Mesa"
       ],
       "question": "Do I need adapters for the pram?",
-      "answer": "On a Vista, Cruz or Kona the Mesa clicks straight onto the frame. The Minu V3, Minu Duo and Ridge each have a matching adapter set. Capsules from Maxi-Cosi, Nuna and Joie fit some frames with the car seat adapter. The Minu V3 and Minu Duo take only the Mesa; the older Minu V2 takes select Maxi-Cosi, Nuna and Joie capsules with the Minu V2 Car Seat Adapter.",
+      "answer": "On a Vista, Cruz or Kona the Mesa clicks straight onto the frame. The Minu V3, Minu Duo and Ridge each have a matching adapter set. Capsules from Maxi-Cosi, Nuna, Joie and Britax fit some frames with the car seat adapter. The Minu V3 and Minu Duo take only the Mesa; the older Minu V2 takes select Maxi-Cosi, Nuna and Joie capsules with the Minu V2 Car Seat Adapter.",
       "link": null,
       "corrects_question": {
         "topic": "Australian Car Seat Centre",
@@ -753,7 +753,7 @@
       "source_ref": "David Kingsford, 1 Oct 2026",
       "status": "approved",
       "decided_by": "david@coolkidz.com.au",
-      "decided_reason": "Minu V2 takes the Mesa and Maxi-Cosi (David, 1 Oct 2026); capsule list from the Minu V2 Car Seat Adapter listing on uppababy.com.au"
+      "decided_reason": "Britax B-Pod and B-Pod Lite fit with the UPPAbaby car seat adapters, not on the Kona; the Bugaboo Turtle is not supported (David, 1 Oct 2026)"
     },
     {
       "ext_key": "fact:vista-upper-adapters",
