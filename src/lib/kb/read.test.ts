@@ -53,3 +53,41 @@ test("after a failure, a previous good result is reused rather than the file", a
   await get(); t = 100; const r = await get();
   assert.equal(r.from, "db"); assert.match(r.text, /good/);
 });
+
+test("after a failure with no cache, retries are skipped until retryAfterMs passes", async () => {
+  let calls = 0, t = 0, healthy = false;
+  const get = createWrittenAnswers({ mode: "db", faq, brand: "uppababy", url: "https://x", key: "k", ttlMs: 1000, retryAfterMs: 30_000, now: () => t,
+    fetcher: async () => { calls++; return healthy ? new Response(JSON.stringify([row({ answer: "back" })])) : new Response("x", { status: 500 }); } });
+  const first = await get();
+  assert.equal(first.from, "fallback"); assert.equal(calls, 1);
+  t = 29_999; const second = await get();
+  assert.equal(second.from, "fallback"); assert.equal(second.text, fileWrittenAnswers(faq)); assert.equal(calls, 1);
+  healthy = true; t = 30_000; const third = await get();
+  assert.equal(calls, 2); assert.equal(third.from, "db"); assert.match(third.text, /back/);
+});
+
+test("the default retry window is 30 seconds", async () => {
+  let calls = 0, t = 0;
+  const get = createWrittenAnswers({ mode: "db", faq, brand: "uppababy", url: "https://x", key: "k", now: () => t,
+    fetcher: async () => { calls++; return new Response("x", { status: 500 }); } });
+  await get(); t = 29_000; await get(); assert.equal(calls, 1);
+  t = 30_001; await get(); assert.equal(calls, 2);
+});
+
+test("concurrent calls during a slow fetch share one request", async () => {
+  let calls = 0;
+  const get = createWrittenAnswers({ mode: "db", faq, brand: "uppababy", url: "https://x", key: "k",
+    fetcher: async () => { calls++; await new Promise(r => setTimeout(r, 30)); return new Response(JSON.stringify([row({ answer: "shared" })])); } });
+  const [a, b, c] = await Promise.all([get(), get(), get()]);
+  assert.equal(calls, 1);
+  assert.deepEqual(a, b); assert.deepEqual(b, c);
+  assert.equal(a.from, "db"); assert.match(a.text, /shared/);
+});
+
+test("concurrent calls during a failing fetch share one request and all fall back", async () => {
+  let calls = 0;
+  const get = createWrittenAnswers({ mode: "db", faq, brand: "uppababy", url: "https://x", key: "k",
+    fetcher: async () => { calls++; await new Promise(r => setTimeout(r, 20)); return new Response("x", { status: 500 }); } });
+  const rs = await Promise.all([get(), get()]);
+  assert.equal(calls, 1); assert.ok(rs.every(r => r.from === "fallback"));
+});
