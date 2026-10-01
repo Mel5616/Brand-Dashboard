@@ -32,10 +32,10 @@ test("does not add a page twice when the build already lists it", () => {
 
 test("removes every mention of BeSafe", () => {
   const k = fixKnowledge(sample());
-  assert.equal(k.adapters.capsules.thirdparty.name, "Maxi-Cosi, Nuna or Joie");
-  assert.equal(k.adapters.adapters["ridge-carseat"].for, "Maxi-Cosi, Nuna and Joie capsules on Ridge");
+  assert.equal(k.adapters.capsules.thirdparty.name, "Maxi-Cosi, Nuna, Joie or Britax");
+  assert.equal(k.adapters.adapters["ridge-carseat"].for, "Maxi-Cosi, Nuna, Joie and Britax capsules on Ridge");
   assert.ok(!/besafe/i.test(JSON.stringify(k)));
-  assert.equal(fixKnowledge({ pages: {}, t: "Other brands, including Maxi-Cosi, Nuna, Joie and BeSafe, fit using" }).t, "Other brands, including Maxi-Cosi, Nuna and Joie, fit using");
+  assert.equal(fixKnowledge({ pages: {}, t: "Other brands, including Maxi-Cosi, Nuna, Joie and BeSafe, fit using" }).t, "Other brands, including Maxi-Cosi, Nuna, Joie and Britax, fit using");
 });
 
 test("limits the no-other-brand rule to the Minu V3 and Minu Duo", () => {
@@ -53,6 +53,30 @@ test("says the Bugaboo Turtle is not supported, once", () => {
   assert.match(k.adapters.capsules.thirdparty.note, /Bugaboo Turtle is not supported on any UPPAbaby pram or capsule adapter/);
   const twice = fixKnowledge(fixKnowledge(sample()));
   assert.equal((twice.adapters.capsules.thirdparty.note.match(/Bugaboo Turtle/g) || []).length, 1);
+});
+
+test("adds the Britax B-Pod and B-Pod Lite to the approved capsules, once", () => {
+  const s = sample() as any; s.adapters.capsules.thirdparty.models = ["Nuna PIPA", "Joie i-Gemm"];
+  const k = fixKnowledge(fixKnowledge(s)) as any;
+  assert.deepEqual(k.adapters.capsules.thirdparty.models, ["Nuna PIPA", "Joie i-Gemm",
+    "Britax B-Pod (Vista, Cruz and Ridge; not the Kona)", "Britax B-Pod Lite (Vista, Cruz and Ridge; not the Kona)"]);
+  assert.equal(k.adapters.capsules.thirdparty.name, "Maxi-Cosi, Nuna, Joie or Britax");
+});
+
+test("keeps Britax out of anything Kona-specific", () => {
+  const s = sample() as any;
+  s.adapters.frames = { kona: { thirdparty: { note: "Maxi-Cosi, Nuna, Joie and BeSafe, per the Kona fact sheet." } } };
+  s.adapters.adapters["kona-carseat"] = { for: "Maxi-Cosi, Nuna, BeSafe and Joie capsules on Kona" };
+  const k = fixKnowledge(s) as any;
+  assert.equal(k.adapters.frames.kona.thirdparty.note, "Maxi-Cosi, Nuna and Joie, per the Kona fact sheet.");
+  assert.equal(k.adapters.adapters["kona-carseat"].for, "Maxi-Cosi, Nuna and Joie capsules on Kona");
+  assert.match(k.adapters.adapters["ridge-carseat"].for, /Britax/);
+});
+
+test("keeps Britax out of the Minu V2 rule, even when applied twice", () => {
+  const k = fixKnowledge(fixKnowledge(sample()));
+  assert.match(k.adapters.minu.note, /Minu V2 takes selected Maxi-Cosi, Nuna and Joie capsules/);
+  assert.ok(!/Britax/.test(k.adapters.minu.note));
 });
 
 test("leaves the original knowledge object unchanged", () => {
