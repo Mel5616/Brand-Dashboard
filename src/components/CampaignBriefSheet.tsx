@@ -394,7 +394,6 @@ export function CampaignBriefSheet({ c }: { c: any }) {
                 );
               })}
             </ul>
-            {!c.asana_permalink_url && <p className="mt-2 text-[12px]" style={{ color: readinessWarn ? TINT.amber.text : TINT.teal.text }}>Not in Asana yet. The owner pushes it from the campaign card, then each line above becomes a subtask for the person named.</p>}
           </section>
         )}
       </div>
