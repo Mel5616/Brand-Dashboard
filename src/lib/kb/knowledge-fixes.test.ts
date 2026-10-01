@@ -94,3 +94,17 @@ test("drops section links that no longer exist on the page, keeps real ones", ()
 test("points the old Cruz V3 collection address at the current one", () => {
   assert.equal(fixReplyLinks("[Cruz V3](/collections/cruz-v3-pram)"), "[Cruz V3](/collections/uppababy-cruz-v3-pram)");
 });
+
+test("the plane answer names the Minu V3, and only that answer changes", () => {
+  const s = sample();
+  (s.faq as { topic: string; q: string; a: string; link: string | null }[]).push(
+    { topic: "Answers", q: "Can I take an UPPAbaby pram on a plane?", a: "The Mesa capsule is CASA approved for aircraft use. Prams are normally checked at the gate rather than carried on.", link: "/pages/faqs#can-i-take-an-uppababy-pram-on-a-plane" });
+  const k = fixKnowledge(s) as unknown as { faq: { q: string; a: string; link: string | null }[] };
+  const plane = k.faq.find(f => f.q === "Can I take an UPPAbaby pram on a plane?")!;
+  assert.match(plane.a, /Minu V3/);
+  assert.match(plane.a, /25 x 45 x 55 cm/);
+  assert.match(plane.a, /TravelSafe/);
+  assert.match(plane.a, /CASA/);
+  assert.equal(plane.link, "/pages/faqs#can-i-take-an-uppababy-pram-on-a-plane");
+  assert.equal(k.faq.length, 3);
+});
