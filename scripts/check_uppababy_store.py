@@ -42,6 +42,10 @@ CANARY      = "--no-canary" not in sys.argv
 CANARY_VARIANT = "48727947215103"   # Vista V3 With Bassinet, James
 
 FAILS, WARNS, NOTES = [], [], []
+# Warnings urgent enough to interrupt someone. A discount that died in the
+# last couple of days is the Mesa case, which ran dead for ten days precisely
+# because nobody was told. Longstanding warnings stay in the log instead.
+ALERTS = []
 
 
 def load_env():
@@ -57,6 +61,7 @@ load_env()
 CONFIG = json.load(open(CONFIG_PATH))
 sys.path.insert(0, os.path.join(BASE_DIR, "scripts"))
 from shopify_auth import store_token  # noqa: E402
+from sync_status_util import record as record_status  # noqa: E402
 
 BRAND = next(b for b in CONFIG["brands"] if b["name"] == "UPPAbaby")
 TOKEN = store_token(BRAND)
@@ -119,7 +124,10 @@ def check_discounts():
             # The Mesa offer died unnoticed because nothing reported it.
             gone = now - datetime.datetime.fromisoformat(ends.replace("Z", "+00:00"))
             if 0 <= gone.days <= 7:
-                WARNS.append(f"{title}: expired {gone.days}d ago. Is the site still advertising it?")
+                msg = f"{title}: expired {gone.days}d ago. Is the site still advertising it?"
+                WARNS.append(msg)
+                if gone.days <= 2:
+                    ALERTS.append(msg)
     NOTES.append(f"{active} automatic discounts active.")
 
     # A gift the theme cannot resolve is a gift that arrives at full price.
@@ -244,9 +252,17 @@ def main():
     for n in NOTES:
         print(("INFO  " + n) if not n.startswith("   ") else n)
 
+    # The dashboard's own freshness panel is where this belongs: one row per
+    # source, same as every sync script, so the store sits beside the feeds
+    # rather than in a second place nobody thinks to check.
+    summary = "; ".join(FAILS) if FAILS else ("; ".join(ALERTS) if ALERTS else "All clear")
+    record_status("UPPAbaby store", not FAILS, summary)
+
+    if FAILS or ALERTS:
+        subject = (f"UPPAbaby site check: {len(FAILS)} problem(s)" if FAILS
+                   else "UPPAbaby site check: an offer just expired")
+        email(subject, "\n".join(out) + "\n\n" + "\n".join(NOTES))
     if FAILS:
-        email(f"UPPAbaby site check: {len(FAILS)} problem(s)",
-              "\n".join(out) + "\n\n" + "\n".join(NOTES))
         sys.exit(1)
 
 
