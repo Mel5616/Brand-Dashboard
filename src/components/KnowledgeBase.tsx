@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type Entry = { id: number; topic: string; question: string; answer: string; link: string | null; source: string; source_ref: string | null;
   status: string; corrects: number | null; decided_by: string | null; decided_reason: string | null; updated_at: string };
@@ -13,51 +13,89 @@ const when = (s: string) => new Date(s).toLocaleString("en-AU", { dateStyle: "me
 
 export function KnowledgeBase() {
   const [view, setView] = useState<"all" | "needs" | "fixes">("needs");
-  const [rows, setRows] = useState<Entry[]>([]);
+  // Unfiltered dataset: drives the counts, Needs you, Website fixes and the topic list.
+  const [allRows, setAllRows] = useState<Entry[]>([]);
   const [fixes, setFixes] = useState<Fix[]>([]);
+  // Filtered dataset: only used by All answers while a search or filter is active.
+  const [filteredRows, setFilteredRows] = useState<Entry[]>([]);
   const [q, setQ] = useState(""); const [source, setSource] = useState(""); const [status, setStatus] = useState(""); const [topic, setTopic] = useState("");
-  const [topics, setTopics] = useState<string[]>([]);
   const [open, setOpen] = useState<number | null>(null);
+  const openRef = useRef<number | null>(null);
   const [edit, setEdit] = useState<{ question: string; answer: string; link: string } | null>(null);
+  const [editErr, setEditErr] = useState<string | null>(null);
   const [hist, setHist] = useState<Hist[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingAll, setLoadingAll] = useState(true);
+  const [loadingFiltered, setLoadingFiltered] = useState(false);
   const [forbidden, setForbidden] = useState(false);
+  const filterSeq = useRef(0);
 
-  async function load() {
-    setLoading(true);
+  const hasFilter = !!(q || source || status || topic);
+  const topics = useMemo(() => Array.from(new Set<string>(allRows.map(e => e.topic))).sort(), [allRows]);
+
+  async function loadAll() {
+    const res = await fetch("/api/kb?brand=uppababy").catch(() => null);
+    const r = res ? await res.json().catch(() => ({ ok: false })) : { ok: false };
+    setLoadingAll(false);
+    if (res && res.status === 403) { setForbidden(true); setAllRows([]); setFixes([]); return; }
+    setForbidden(false);
+    if (!r.ok) { setMsg("Could not load the knowledge base."); return; }
+    setAllRows(r.rows); setFixes(r.fixes);
+  }
+  async function loadFiltered() {
+    const seq = ++filterSeq.current;
+    setLoadingFiltered(true);
     const qs = new URLSearchParams({ brand: "uppababy" });
     if (q) qs.set("q", q); if (source) qs.set("source", source); if (status) qs.set("status", status); if (topic) qs.set("topic", topic);
     const res = await fetch(`/api/kb?${qs}`).catch(() => null);
     const r = res ? await res.json().catch(() => ({ ok: false })) : { ok: false };
-    setLoading(false);
-    if (res && res.status === 403) { setForbidden(true); setRows([]); setFixes([]); return; }
-    setForbidden(false);
+    if (seq !== filterSeq.current) return; // a newer search has started
+    setLoadingFiltered(false);
+    if (res && res.status === 403) { setForbidden(true); return; }
     if (!r.ok) { setMsg("Could not load the knowledge base."); return; }
-    setRows(r.rows); setFixes(r.fixes); setMsg(null);
-    if (!topic) setTopics(Array.from(new Set<string>(r.rows.map((e: Entry) => e.topic))).sort());
+    setFilteredRows(r.rows);
   }
-  useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [q, source, status, topic]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const needs = useMemo(() => rows.filter(r => r.status === "needs_review" || r.status === "draft"), [rows]);
-  const shown = view === "needs" ? needs : rows;
-
-  async function openEntry(e: Entry) {
-    if (open === e.id) { setOpen(null); return; }
-    setOpen(e.id); setEdit(null);
-    const r = await fetch(`/api/kb?history=${e.id}`).then(x => x.json()).catch(() => ({ history: [] }));
+  async function loadHist(id: number) {
+    const r = await fetch(`/api/kb?history=${id}`).then(x => x.json()).catch(() => ({ history: [] }));
+    if (openRef.current !== id) return; // a different entry is open now
     setHist(r.history || []);
   }
+  function refresh() { loadAll(); if (hasFilter) loadFiltered(); }
+
+  useEffect(() => { const t = setTimeout(loadAll, 0); return () => clearTimeout(t); }, []);
+  useEffect(() => {
+    if (!hasFilter) { filterSeq.current++; return; } // drop any search still in flight
+    const t = setTimeout(loadFiltered, 250);
+    return () => clearTimeout(t);
+  }, [q, source, status, topic]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const needs = useMemo(() => allRows.filter(r => r.status === "needs_review" || r.status === "draft"), [allRows]);
+  const allShown = hasFilter ? filteredRows : allRows;
+  const shown = view === "needs" ? needs : allShown;
+  const loading = view === "all" && hasFilter ? loadingFiltered : loadingAll;
+
+  function pickOpen(id: number | null) { openRef.current = id; setOpen(id); }
+  async function openEntry(e: Entry) {
+    setMsg(null); setEditErr(null); setEdit(null); setHist([]);
+    if (open === e.id) { pickOpen(null); return; }
+    pickOpen(e.id);
+    loadHist(e.id);
+  }
   async function patch(id: number, p: Record<string, unknown>) {
-    const r = await fetch("/api/kb", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, patch: p }) }).then(x => x.json());
-    if (!r.ok) { setMsg(r.error || "Not saved."); return; }
-    setMsg("Saved."); setEdit(null); load();
+    setMsg(null); setEditErr(null);
+    const r = await fetch("/api/kb", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, patch: p }) }).then(x => x.json()).catch(() => ({ ok: false, error: "Not saved. Check your connection and try again." }));
+    if (!r.ok) { const m = r.error || "Not saved."; setMsg(m); setEditErr(m); return; }
+    setMsg("Saved."); setEdit(null); refresh(); loadHist(id);
   }
   async function undo(h: Hist) {
-    const r = await fetch("/api/kb", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ undo: h.id }) }).then(x => x.json());
-    setMsg(r.ok ? "Change undone." : r.error || "Could not undo."); load();
+    setMsg(null); setEditErr(null);
+    const r = await fetch("/api/kb", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ undo: h.id }) }).then(x => x.json()).catch(() => ({ ok: false }));
+    setMsg(r.ok ? "Change undone." : r.error || "Could not undo.");
+    refresh();
+    if (openRef.current != null) loadHist(openRef.current);
   }
   function copyFixes() {
+    setMsg(null);
     const text = fixes.map(f => `Page: ${f.website.source_ref || f.website.topic}\nQuestion: ${f.website.question}\nWebsite says: ${f.website.answer}\nShould say: ${f.correction.answer}`).join("\n\n");
     navigator.clipboard?.writeText(text).then(() => setMsg("Website fixes copied."), () => setMsg("Copy did not work; select the text instead."));
   }
@@ -70,15 +108,15 @@ export function KnowledgeBase() {
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2 items-center">
         {(["needs", "all", "fixes"] as const).map(v => (
-          <button key={v} onClick={() => setView(v)} className={`px-3 py-1.5 rounded-full text-sm border ${view === v ? "bg-gray-900 text-white border-gray-900" : "bg-white border-gray-300"}`}>
-            {v === "needs" ? `Needs you (${needs.length})` : v === "all" ? `All answers (${rows.length})` : `Website fixes (${fixes.length})`}
+          <button key={v} onClick={() => { setMsg(null); setView(v); }} className={`px-3 py-1.5 rounded-full text-sm border ${view === v ? "bg-gray-900 text-white border-gray-900" : "bg-white border-gray-300"}`}>
+            {v === "needs" ? `Needs you (${needs.length})` : v === "all" ? `All answers (${allRows.length})` : `Website fixes (${fixes.length})`}
           </button>
         ))}
         {msg && <span className="text-sm text-gray-600 ml-2">{msg}</span>}
       </div>
 
-      {view !== "fixes" && (
-        <div className="flex flex-wrap gap-2">
+      {view === "all" && (
+        <div className="flex flex-wrap gap-2 items-center">
           <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search questions and answers" className="border rounded-lg px-3 py-2 text-sm w-72 max-w-full" />
           <select value={source} onChange={e => setSource(e.target.value)} className="border rounded-lg px-2 py-2 text-sm">
             <option value="">All sources</option>{Object.entries(SOURCE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -89,6 +127,7 @@ export function KnowledgeBase() {
           <select value={status} onChange={e => setStatus(e.target.value)} className="border rounded-lg px-2 py-2 text-sm">
             <option value="">All statuses</option>{["approved", "needs_review", "draft", "retired"].map(s => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
           </select>
+          {hasFilter && !loadingFiltered && <span className="text-sm text-gray-500">Showing {filteredRows.length} of {allRows.length}</span>}
         </div>
       )}
 
@@ -109,7 +148,7 @@ export function KnowledgeBase() {
         <div className="bg-white border rounded-xl divide-y">
           {loading && <p className="p-4 text-sm text-gray-500">Loading…</p>}
           {!loading && !shown.length && <p className="p-4 text-sm text-gray-500">{view === "needs" ? "Nothing needs you right now." : "No answers match."}</p>}
-          {shown.slice(0, 300).map(e => (
+          {shown.map(e => (
             <div key={e.id} className="p-3 text-sm">
               <button onClick={() => openEntry(e)} className="w-full text-left flex flex-wrap gap-2 items-baseline">
                 <span className={`px-2 py-0.5 rounded-full text-xs ${STATUS_STYLE[e.status] || ""}`}>{e.status.replace("_", " ")}</span>
@@ -125,8 +164,9 @@ export function KnowledgeBase() {
                       <input value={edit.link} onChange={x => setEdit({ ...edit, link: x.target.value })} placeholder="More link (optional), e.g. /pages/warranty" className="border rounded-lg px-3 py-2 w-full" />
                       <div className="flex gap-2">
                         <button onClick={() => patch(e.id, { question: edit.question, answer: edit.answer, link: edit.link, status: "approved" })} className="px-3 py-1.5 rounded-lg bg-gray-900 text-white">Save and approve</button>
-                        <button onClick={() => setEdit(null)} className="px-3 py-1.5 rounded-lg border">Cancel</button>
+                        <button onClick={() => { setEdit(null); setEditErr(null); }} className="px-3 py-1.5 rounded-lg border">Cancel</button>
                       </div>
+                      {editErr && <p role="alert" className="text-sm text-red-700">{editErr}</p>}
                     </div>
                   ) : (
                     <>
@@ -135,7 +175,7 @@ export function KnowledgeBase() {
                       <p className="text-xs text-gray-500">{e.decided_reason} · {e.decided_by} · {when(e.updated_at)}{e.source_ref ? ` · ${e.source_ref}` : ""}</p>
                       <div className="flex flex-wrap gap-2">
                         {e.status !== "approved" && <button onClick={() => patch(e.id, { status: "approved", decided_reason: "Approved in the Knowledge tab" })} className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white">Approve</button>}
-                        <button onClick={() => setEdit({ question: e.question, answer: e.answer, link: e.link || "" })} className="px-3 py-1.5 rounded-lg border">Edit</button>
+                        <button onClick={() => { setMsg(null); setEditErr(null); setEdit({ question: e.question, answer: e.answer, link: e.link || "" }); }} className="px-3 py-1.5 rounded-lg border">Edit</button>
                         {e.status !== "retired" && <button onClick={() => patch(e.id, { status: "retired", decided_reason: "Retired in the Knowledge tab" })} className="px-3 py-1.5 rounded-lg border">Retire</button>}
                       </div>
                     </>
