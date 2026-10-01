@@ -2,6 +2,7 @@ import { NextResponse, after } from "next/server";
 import { storeCreds, mintToken } from "@/lib/shopifyMint";
 import knowledge from "@/data/uppababy-knowledge.json";
 import { logAssistant, humanReplies } from "@/lib/assistantLog";
+import { createWrittenAnswers } from "@/lib/kb/read";
 
 // Public assistant for uppababy.com.au, the same shape as Ask Davy on Zazu.
 // Answers from the knowledge file, which is generated in the uppababy-site repo
@@ -52,7 +53,7 @@ async function products(): Promise<Prod[]> {
 
 /* ---- prompt ---- */
 const K = knowledge as any;
-const STATIC = [
+const STATIC_BASE = [
   `STORE\n${Object.entries(K.store).map(([k, v]) => `${k}: ${v}`).join("\n")}`,
   `PAGES (use these relative links)\n${Object.entries(K.pages).map(([k, v]) => `${k}: ${v}`).join("\n")}`,
   `COLLECTIONS\n${Object.entries(K.collections).map(([k, v]) => `${k}: ${v}`).join("\n")}`,
@@ -60,8 +61,11 @@ const STATIC = [
   `MESA CAR CAPSULE\n${K.capsule.intro}\nDirect fit: ${JSON.stringify(K.capsule.direct_fit)}\nWith adapters: ${JSON.stringify(K.capsule.adapter_fit)}\nApproval: ${JSON.stringify(K.capsule.approval)}`,
   `ADAPTERS AND WHAT FITS WHAT\n${JSON.stringify(K.adapters)}`,
   `STOCKISTS: ${K.stockists.count} shops, listed with addresses and phone numbers at ${K.stockists.page}. By state:\n${Object.entries(K.stockists.by_state).map(([s, v]: any) => `${s}: ${v.join("; ")}`).join("\n")}`,
-  `WRITTEN ANSWERS\n${K.faq.map((f: any) => `[${f.topic}] Q: ${f.q}\nA: ${f.a}${f.link ? `\nMore: ${f.link}` : ""}`).join("\n\n")}`,
-].join("\n\n");
+];
+// Written answers: from the knowledge file (default) or the knowledge base when UPPABABY_KB_MODE=db.
+const writtenAnswers = createWrittenAnswers({ mode: process.env.UPPABABY_KB_MODE, faq: K.faq, brand: "uppababy",
+  url: process.env.NEXT_PUBLIC_SUPABASE_URL, key: process.env.SUPABASE_SERVICE_ROLE_KEY });
+async function staticPrompt() { return [...STATIC_BASE, (await writtenAnswers()).text].join("\n\n"); }
 
 const PERSONA = `You are the UPPAbaby Australia assistant on uppababy.com.au, the official Australian store, distributed, warranted and serviced by Coolkidz Australia in Melbourne. You help parents choose a pram, work out what fits what, and answer questions about ownership: warranty, servicing, spare parts, delivery and returns.
 
@@ -89,7 +93,7 @@ async function ask(messages: { role: "user" | "assistant"; content: string }[], 
       max_tokens: 700,
       system: [
         { type: "text", text: PERSONA },
-        { type: "text", text: STATIC, cache_control: { type: "ephemeral" } },
+        { type: "text", text: await staticPrompt(), cache_control: { type: "ephemeral" } },
         { type: "text", text: live },
       ],
       messages,
@@ -101,9 +105,10 @@ async function ask(messages: { role: "user" | "assistant"; content: string }[], 
 }
 
 export async function POST(req: Request) {
+  const replay = !!process.env.KB_REPLAY_SECRET && req.headers.get("x-kb-replay") === process.env.KB_REPLAY_SECRET;
   const headers = cors(req.headers.get("origin"));
   const ip = (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "anon";
-  if (limited(ip)) return NextResponse.json({ ok: false, error: "Too many messages. Give it a few minutes, or use the support page." }, { status: 429, headers });
+  if (!replay && limited(ip)) return NextResponse.json({ ok: false, error: "Too many messages. Give it a few minutes, or use the support page." }, { status: 429, headers });
   let b: any; try { b = await req.json(); } catch { return NextResponse.json({ ok: false, error: "Bad request" }, { status: 400, headers }); }
   const raw: any[] = Array.isArray(b?.messages) ? b.messages : [];
   const messages = raw.slice(-12).map(m => ({ role: m.role === "assistant" ? "assistant" as const : "user" as const, content: String(m.content || "").slice(0, 1500).trim() })).filter(m => m.content);
@@ -112,7 +117,7 @@ export async function POST(req: Request) {
   try {
     const reply = await ask(messages, await products());
     const q = messages[messages.length - 1].content;
-    after(() => { logAssistant({ brand: "uppababy", session: String(b?.session || "").slice(0, 64) || null, page: String(b?.page || "").slice(0, 200) || null, question: q, answer: reply }); });
+    if (!replay) { after(() => { logAssistant({ brand: "uppababy", session: String(b?.session || "").slice(0, 64) || null, page: String(b?.page || "").slice(0, 200) || null, question: q, answer: reply }); }); }
     return NextResponse.json({ ok: true, reply }, { headers });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: "The assistant is unavailable for a moment. Try again shortly, or see the support page.", detail: process.env.NODE_ENV === "development" ? String(e?.message || e) : undefined }, { status: 502, headers });
