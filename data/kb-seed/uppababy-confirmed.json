@@ -512,10 +512,10 @@
       "link": "/collections/mesa-car-capsule",
       "source": "confirmed",
       "source_ref": "David Kingsford, 1 Oct 2026",
-      "status": "approved",
+      "status": "retired",
       "decided_by": "david@coolkidz.com.au",
       "corrects_question": null,
-      "decided_reason": "Minu V2 takes the Mesa and Maxi-Cosi (David, 1 Oct 2026); capsule list from the Minu V2 Car Seat Adapter listing on uppababy.com.au"
+      "decided_reason": "Retired at David's request (1 Oct 2026): no customer-facing mention of that brand; the approved capsule list lives in the what-fits and capsule entries"
     },
     {
       "ext_key": "fact:floor-display-warranty",
@@ -770,6 +770,48 @@
       "status": "approved",
       "decided_by": "david@coolkidz.com.au",
       "decided_reason": "Vista upper adapters: used in any double setup, or to raise a single seat or bassinet; not for another brand's capsule (David, 1 Oct 2026)"
+    },
+    {
+      "ext_key": "fact:link-adapter-guide",
+      "topic": "Mesa",
+      "models": [],
+      "question": "Which adapter do I need for my pram?",
+      "answer": "The [adapter guide](/pages/adapters) shows which adapter each pram needs for a Mesa capsule, another brand's capsule, a bassinet or a second seat, and in which position on the frame. How to fit the Mesa, and what the Australian standard means for it, is on the [Australian Car Seat Centre](/pages/car-seat-centre) page.",
+      "link": "/pages/adapters",
+      "source": "confirmed",
+      "source_ref": "uppababy.com.au pages checked live, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "claude",
+      "corrects_question": null,
+      "decided_reason": "Link check (David, 1 Oct 2026): the chat linked adapter and Tune-Up questions to the wrong pages because these pages were missing from its page list"
+    },
+    {
+      "ext_key": "fact:link-tune-up-days",
+      "topic": "Every pram",
+      "models": [],
+      "question": "How do I book a Tune-Up Day?",
+      "answer": "Every upcoming Tune-Up Day is on the [Tune-Up Days page](/pages/tune-up-days), by state, with a link to book a spot at each one.",
+      "link": "/pages/tune-up-days",
+      "source": "confirmed",
+      "source_ref": "uppababy.com.au pages checked live, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "claude",
+      "corrects_question": null,
+      "decided_reason": "Link check (David, 1 Oct 2026): the chat linked adapter and Tune-Up questions to the wrong pages because these pages were missing from its page list"
+    },
+    {
+      "ext_key": "fact:link-pram-finder",
+      "topic": "Choosing a pram",
+      "models": [],
+      "question": "Which UPPAbaby pram is right for me?",
+      "answer": "The [Which UPPAbaby pram?](/pages/find-your-perfect-pram) quiz asks four questions: how many children it will carry, whether you need it from birth, where it will be used most, and whether a second child is possible. Then it suggests a model. To see the specs side by side, use [Compare the range](/pages/product-comparison). For which adapter fits what, use the [adapter guide](/pages/adapters).",
+      "link": "/pages/find-your-perfect-pram",
+      "source": "confirmed",
+      "source_ref": "uppababy.com.au pages checked live, 1 Oct 2026",
+      "status": "approved",
+      "decided_by": "claude",
+      "corrects_question": null,
+      "decided_reason": "Link check (David, 1 Oct 2026): the chat linked adapter and Tune-Up questions to the wrong pages because these pages were missing from its page list"
     }
   ]
 }
