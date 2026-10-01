@@ -373,7 +373,7 @@
       "topic": "Every pram",
       "models": [],
       "question": "How do I keep my pram serviced, and what are Tune-Up Days?",
-      "answer": "Give your pram a ten-minute check once a season, and bring it to a free Tune-Up Day for a check, clean and adjust. The team checks the brakes, wheels, harness, fold and canopy in about fifteen minutes, and anyone with an UPPAbaby pram can come. Spots are limited, so book ahead. Inspection and basic adjustment are included, but replacement parts and major repairs are not. Between visits, rinse grit from the wheels and brake, and never oil the pram. If anything does not lock, or the frame is cracked or bent, stop using the pram and lodge a request through our [support page](/pages/support).",
+      "answer": "Give your pram a ten-minute check once a season, and bring it to a free Tune-Up Day. Anyone with an UPPAbaby pram can come, and the team checks, cleans and adjusts the brakes, wheels, harness, fold and canopy in about fifteen minutes. Spots are limited, so book ahead. Lifetime Service Support is a separate service with its own conditions: complimentary maintenance checks for up to ten years from the original purchase date, for prams bought from an authorised Australian retailer. Replacement parts and major repairs are not included. Between visits, rinse grit from the wheels and brake, and never oil the pram. If anything does not lock, or the frame is cracked or bent, stop using it and lodge a request through our [support page](/pages/support).",
       "link": "/pages/support",
       "source": "help_centre",
       "source_ref": "help.uppababy.com.au/support/solutions/articles/9000162791",
@@ -551,6 +551,137 @@
       "status": "approved",
       "decided_by": "claude",
       "decided_reason": "Help centre article checked against uppababy.com.au on 1 Oct 2026"
+    },
+    {
+      "ext_key": "review:warranty-registration-1",
+      "topic": "Vista V3",
+      "models": [
+        "Vista V3"
+      ],
+      "question": "How long is the warranty in Australia?",
+      "answer": "Three years from the date of purchase against manufacturing defects, whether you register or not, plus complimentary maintenance checks for up to ten years under Lifetime Service Support. Registering does not change the warranty, but it keeps your receipt and details on file, so a claim is quicker. You can [register your product](/pages/product-registration) in about two minutes.",
+      "link": "/pages/warranty",
+      "source": "help_centre",
+      "source_ref": "uppababy.com.au/pages/warranty (registered or not); help centre article 9000115790",
+      "corrects_question": {
+        "topic": "Vista V3",
+        "q": "How long is the warranty in Australia?"
+      },
+      "status": "needs_review",
+      "decided_by": "claude",
+      "decided_reason": "Warranty policy wording: needs David or Melanie to approve (spec: warranty decisions go to review)"
+    },
+    {
+      "ext_key": "review:warranty-registration-2",
+      "topic": "Cruz V3",
+      "models": [
+        "Cruz V3"
+      ],
+      "question": "How long is the warranty in Australia?",
+      "answer": "Three years from the date of purchase against manufacturing defects, whether you register or not, plus complimentary maintenance checks for up to ten years under Lifetime Service Support. Registering does not change the warranty, but it keeps your receipt and details on file, so a claim is quicker. You can [register your product](/pages/product-registration) in about two minutes.",
+      "link": "/pages/warranty",
+      "source": "help_centre",
+      "source_ref": "uppababy.com.au/pages/warranty (registered or not); help centre article 9000115790",
+      "corrects_question": {
+        "topic": "Cruz V3",
+        "q": "How long is the warranty in Australia?"
+      },
+      "status": "needs_review",
+      "decided_by": "claude",
+      "decided_reason": "Warranty policy wording: needs David or Melanie to approve (spec: warranty decisions go to review)"
+    },
+    {
+      "ext_key": "review:warranty-registration-3",
+      "topic": "Minu V3",
+      "models": [
+        "Minu V3"
+      ],
+      "question": "How long is the warranty in Australia?",
+      "answer": "Three years from the date of purchase against manufacturing defects, whether you register or not, plus complimentary maintenance checks for up to ten years under Lifetime Service Support. Registering does not change the warranty, but it keeps your receipt and details on file, so a claim is quicker. You can [register your product](/pages/product-registration) in about two minutes.",
+      "link": "/pages/warranty",
+      "source": "help_centre",
+      "source_ref": "uppababy.com.au/pages/warranty (registered or not); help centre article 9000115790",
+      "corrects_question": {
+        "topic": "Minu V3",
+        "q": "How long is the warranty in Australia?"
+      },
+      "status": "needs_review",
+      "decided_by": "claude",
+      "decided_reason": "Warranty policy wording: needs David or Melanie to approve (spec: warranty decisions go to review)"
+    },
+    {
+      "ext_key": "review:warranty-registration-4",
+      "topic": "Minu Duo",
+      "models": [
+        "Minu Duo"
+      ],
+      "question": "How long is the warranty in Australia?",
+      "answer": "Three years from the date of purchase against manufacturing defects, whether you register or not, plus complimentary maintenance checks for up to ten years under Lifetime Service Support. Registering does not change the warranty, but it keeps your receipt and details on file, so a claim is quicker. You can [register your product](/pages/product-registration) in about two minutes.",
+      "link": "/pages/warranty",
+      "source": "help_centre",
+      "source_ref": "uppababy.com.au/pages/warranty (registered or not); help centre article 9000115790",
+      "corrects_question": {
+        "topic": "Minu Duo",
+        "q": "How long is the warranty in Australia?"
+      },
+      "status": "needs_review",
+      "decided_by": "claude",
+      "decided_reason": "Warranty policy wording: needs David or Melanie to approve (spec: warranty decisions go to review)"
+    },
+    {
+      "ext_key": "review:warranty-registration-5",
+      "topic": "Ridge V2",
+      "models": [
+        "Ridge V2"
+      ],
+      "question": "How long is the warranty in Australia?",
+      "answer": "Three years from the date of purchase against manufacturing defects, whether you register or not, plus complimentary maintenance checks for up to ten years under Lifetime Service Support. Registering does not change the warranty, but it keeps your receipt and details on file, so a claim is quicker. You can [register your product](/pages/product-registration) in about two minutes.",
+      "link": "/pages/warranty",
+      "source": "help_centre",
+      "source_ref": "uppababy.com.au/pages/warranty (registered or not); help centre article 9000115790",
+      "corrects_question": {
+        "topic": "Ridge V2",
+        "q": "How long is the warranty in Australia?"
+      },
+      "status": "needs_review",
+      "decided_by": "claude",
+      "decided_reason": "Warranty policy wording: needs David or Melanie to approve (spec: warranty decisions go to review)"
+    },
+    {
+      "ext_key": "review:warranty-registration-6",
+      "topic": "Kona",
+      "models": [
+        "Kona"
+      ],
+      "question": "How long is the warranty in Australia?",
+      "answer": "Three years from the date of purchase against manufacturing defects, whether you register or not, plus complimentary maintenance checks for up to ten years under Lifetime Service Support. Registering does not change the warranty, but it keeps your receipt and details on file, so a claim is quicker. You can [register your product](/pages/product-registration) in about two minutes.",
+      "link": "/pages/warranty",
+      "source": "help_centre",
+      "source_ref": "uppababy.com.au/pages/warranty (registered or not); help centre article 9000115790",
+      "corrects_question": {
+        "topic": "Kona",
+        "q": "How long is the warranty in Australia?"
+      },
+      "status": "needs_review",
+      "decided_by": "claude",
+      "decided_reason": "Warranty policy wording: needs David or Melanie to approve (spec: warranty decisions go to review)"
+    },
+    {
+      "ext_key": "review:warranty-registration-7",
+      "topic": "Every pram",
+      "models": [],
+      "question": "How long is the warranty in Australia?",
+      "answer": "Three years from the date of purchase against manufacturing defects, whether you register or not, plus complimentary maintenance checks for up to ten years under Lifetime Service Support. Registering does not change the warranty, but it keeps your receipt and details on file, so a claim is quicker. You can [register your product](/pages/product-registration) in about two minutes.",
+      "link": "/pages/warranty",
+      "source": "help_centre",
+      "source_ref": "uppababy.com.au/pages/warranty (registered or not); help centre article 9000115790",
+      "corrects_question": {
+        "topic": "Every pram",
+        "q": "How long is the warranty in Australia?"
+      },
+      "status": "needs_review",
+      "decided_by": "claude",
+      "decided_reason": "Warranty policy wording: needs David or Melanie to approve (spec: warranty decisions go to review)"
     }
   ]
 }
