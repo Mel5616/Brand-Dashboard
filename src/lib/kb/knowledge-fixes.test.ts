@@ -48,6 +48,13 @@ test("limits the no-other-brand rule to the Minu V3 and Minu Duo", () => {
   assert.match(k.adapters.minu.note, /Minu V2 takes/);
 });
 
+test("says the Bugaboo Turtle is not supported, once", () => {
+  const k = fixKnowledge(sample());
+  assert.match(k.adapters.capsules.thirdparty.note, /Bugaboo Turtle is not supported on any UPPAbaby pram or capsule adapter/);
+  const twice = fixKnowledge(fixKnowledge(sample()));
+  assert.equal((twice.adapters.capsules.thirdparty.note.match(/Bugaboo Turtle/g) || []).length, 1);
+});
+
 test("leaves the original knowledge object unchanged", () => {
   const s = sample(); fixKnowledge(s);
   assert.match(s.adapters.capsules.thirdparty.name, /BeSafe/);

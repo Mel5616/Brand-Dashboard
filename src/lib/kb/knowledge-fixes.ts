@@ -37,11 +37,16 @@ function walk(v: unknown): unknown {
   return v;
 }
 
+// Capsules people ask about that no UPPAbaby pram or adapter supports (David, 1 Oct 2026).
+export const NOT_SUPPORTED = "The Bugaboo Turtle is not supported on any UPPAbaby pram or capsule adapter.";
+
 export function fixKnowledge<T extends { pages?: Record<string, string> }>(k: T): T {
-  const out = walk(k) as T;
+  const out = walk(k) as T & { adapters?: { capsules?: { thirdparty?: { note?: string } } } };
   const pages = { ...(out.pages || {}) };
   const have = new Set(Object.values(pages));
   for (const [label, path] of Object.entries(EXTRA_PAGES)) if (!have.has(path)) pages[label] = path;
+  const tp = out.adapters?.capsules?.thirdparty;
+  if (tp && !(tp.note || "").includes("Bugaboo Turtle")) tp.note = ((tp.note || "") + " " + NOT_SUPPORTED).trim();
   return { ...out, pages };
 }
 
