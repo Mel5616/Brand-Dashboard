@@ -29,7 +29,7 @@ const TEAM = {
   design: "design@coolkidz.com.au",   // Diep — Design
   retail: "alison@coolkidz.com.au",   // Alison Soulsby — Retail
   website: "mel@coolkidz.com.au",     // Melanie — Website
-  dooh: "mel@coolkidz.com.au",        // Melanie — Digital out-of-home (with BiND Digital)
+  dooh: "anna@coolkidz.com.au",       // Anna Kilmartin — Digital out-of-home (with BiND Digital)
 };
 // Socials assignee depends on who owns the brand — same split as the Social tab (src/lib/socialOwners.ts).
 const SOCIAL_OWNER_EMAIL: Record<string, string> = { Nicky: "nicky@coolkidz.com.au", Alicia: "alicia@coolkidz.com.au" };
