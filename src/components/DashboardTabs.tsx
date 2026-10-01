@@ -129,13 +129,14 @@ import { DiscountCodesTab } from "./DiscountCodesTab";
 import { ReviewsPanel } from "./ReviewsPanel";
 import { WebsiteRequestsPanel } from "./WebsiteRequestsPanel";
 import { ZazuWheelPanel } from "./ZazuWheelPanel";
+import { KonaChallengeAdmin } from "./KonaChallengeAdmin";
 import { UtmTrackingPanel } from "./UtmTrackingPanel";
 import { Notifier } from "./Notifier";
 import { StockReport } from "./StockReport";
 import { fmt, fmtFull } from "@/lib/format";
 import { type FY, FY_LIST, FY_LABEL, fyMonthKeys, fyMonthLabels, fyLatestMonth, fyPrevMonth, currentFY, monthLabel } from "@/lib/fy";
 
-type TabId = "today" | "assistants" | "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "cross-site-discounts" | "create-codes" | "abandoned" | "registry" | "zazu-wheel" | "reviews" | "website-requests" | "utm-tracking" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "edm-planner" | "seo" | "social" | "social-writing" | "youtube" | "tradeshows" | "show-insights" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "credentials" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "campaign-briefs" | "nanit" | "affiliates" | "commission-factory" | "furthr" | "email-writing" | "lifecycle-flows" | "pa-budget" | "pa-tracker" | "pa-revenue" | "documents" | "team" | "brand-packs" | "price-lists" | "hub-fact-sheets" | "brand-overview" | "stock-availability" | "order-forms" | "customers" | "customer-forms" | "blog-pipeline" | "staff" | "giveaways" | "product-requests";
+type TabId = "today" | "assistants" | "summary" | "brands" | "insights" | "campaign-calendar" | "promotions" | "discount-codes" | "cross-site-discounts" | "create-codes" | "abandoned" | "registry" | "zazu-wheel" | "kona-challenge" | "reviews" | "website-requests" | "utm-tracking" | "report" | "snapshot" | "activations" | "social-report" | "d2c-weekly" | "uppababy" | "sales" | "sales-hub" | "sales-budget" | "baby-bunting" | "shopify" | "google-ads" | "meta-ads" | "pinterest-ads" | "amazon-ads" | "email" | "edm-planner" | "seo" | "social" | "social-writing" | "youtube" | "tradeshows" | "show-insights" | "show-deals" | "events" | "tasks" | "design-requests" | "new-products" | "product-info" | "brand-assets" | "stock-report" | "cost-sheet" | "credentials" | "releases" | "event-concepts" | "decks" | "timeline" | "budget" | "expenses" | "team-hub" | "creative" | "weekly-brief" | "calendar" | "content" | "influencer" | "gifting" | "influencer-agreements" | "campaign-briefs" | "nanit" | "affiliates" | "commission-factory" | "furthr" | "email-writing" | "lifecycle-flows" | "pa-budget" | "pa-tracker" | "pa-revenue" | "documents" | "team" | "brand-packs" | "price-lists" | "hub-fact-sheets" | "brand-overview" | "stock-availability" | "order-forms" | "customers" | "customer-forms" | "blog-pipeline" | "staff" | "giveaways" | "product-requests";
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
@@ -189,6 +190,10 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   {
     id: "zazu-wheel", label: "Zazu Spin Wheel",
     icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" strokeWidth={2} /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v9l6.36 6.36M12 3a9 9 0 019 9M3 12a9 9 0 019-9" /></svg>,
+  },
+  {
+    id: "kona-challenge", label: "Kona Challenge",
+    icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
   },
   {
     id: "reviews", label: "Reviews",
@@ -494,7 +499,7 @@ const TAB_GROUPS: { label: string; ids: TabId[] }[] = [
   { label: "Reports", ids: ["report", "snapshot", "social-report", "d2c-weekly", "uppababy"] },
   { label: "Revenue & Channels", ids: ["sales", "sales-budget", "baby-bunting", "shopify", "tradeshows", "show-insights"] },
   { label: "Plan", ids: ["promotions", "calendar", "content", "events", "show-deals", "activations", "giveaways", "product-requests"] },
-  { label: "Websites", ids: ["assistants", "discount-codes", "cross-site-discounts", "create-codes", "website-requests", "utm-tracking", "reviews", "abandoned", "registry", "zazu-wheel", "seo"] },
+  { label: "Websites", ids: ["assistants", "discount-codes", "cross-site-discounts", "create-codes", "website-requests", "utm-tracking", "reviews", "abandoned", "registry", "zazu-wheel", "kona-challenge", "seo"] },
   { label: "Creative", ids: ["campaign-calendar", "design-requests", "creative", "event-concepts", "decks"] },
   { label: "Blogging", ids: ["tasks", "blog-pipeline"] },
   { label: "Email Marketing", ids: ["email", "edm-planner", "lifecycle-flows"] },
@@ -1749,6 +1754,14 @@ export function DashboardTabs({
             <>
               <SectionBar title="Zazu Spin Wheel" />
               <ZazuWheelPanel />
+            </>
+          )}
+
+          {/* ── Kona Challenge: in-store fold-off entries from the 5-store QR competition (Oct 2026) ── */}
+          {active === "kona-challenge" && (
+            <>
+              <SectionBar title="Kona Challenge" />
+              <KonaChallengeAdmin />
             </>
           )}
 
