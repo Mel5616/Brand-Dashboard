@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { websiteRows, seedRows } from "./load.ts";
+import { websiteRows, seedRows, sqlUpsert, sqlCorrects, dbRow } from "./load.ts";
 import { websiteKey } from "./core.ts";
 
 test("websiteRows keeps text byte-for-byte and the file order", () => {
@@ -23,7 +23,7 @@ test("seedRows takes the sort position of the corrected website entry and flags 
     { ext_key: "fact:bad", topic: "T", question: "Q", answer: "Email me at a@b.com", source: "confirmed", source_ref: "x", status: "approved", decided_by: "d", decided_reason: "r" },
   ], new Map([[key, 42]]));
   assert.equal(rows[0].sort_order, 42);
-  assert.equal((rows[0] as any).corrects_key, key);
+  assert.equal(rows[0].corrects_key, key);
   assert.equal(rows.length, 1);
   assert.match(problems[0], /fact:bad.*email/);
 });
@@ -51,4 +51,41 @@ test("sqlTextArray builds a text[] expression", async () => {
   const { sqlTextArray } = await import("./load.ts");
   assert.equal(sqlTextArray([]), "'{}'::text[]");
   assert.equal(sqlTextArray(["Vista V3", "Mesa"]), "array[$kb$Vista V3$kb$, $kb$Mesa$kb$]::text[]");
+});
+
+test("sqlUpsert for website rows only refreshes the text columns on conflict", () => {
+  const rows = websiteRows("uppababy", [{ topic: "T", q: "Q?", a: "A." }]);
+  const sql = sqlUpsert(rows, "website");
+  assert.ok(sql.startsWith("insert into public.kb_entries (brand, topic, models, question, answer, link, source, source_ref, ext_key, sort_order, status, decided_by, decided_reason) values\n"));
+  assert.ok(sql.endsWith(
+    "\non conflict (brand, ext_key) do update set topic = excluded.topic, question = excluded.question, answer = excluded.answer, " +
+    "link = excluded.link, source_ref = excluded.source_ref, sort_order = excluded.sort_order\n" +
+    "where (kb_entries.topic, kb_entries.question, kb_entries.answer, kb_entries.link, kb_entries.source_ref, kb_entries.sort_order) " +
+    "is distinct from (excluded.topic, excluded.question, excluded.answer, excluded.link, excluded.source_ref, excluded.sort_order);\n"));
+  for (const c of ["status =", "decided_by =", "decided_reason =", "corrects ="]) assert.equal(sql.includes(c), false, c);
+});
+
+test("sqlUpsert for seed rows does nothing on conflict", () => {
+  const { rows } = seedRows("uppababy", [{ ext_key: "fact:x", topic: "T", question: "Q", answer: "A", source: "confirmed", source_ref: "r",
+    status: "approved", decided_by: "d", decided_reason: "r" }], new Map());
+  const sql = sqlUpsert(rows, "seed");
+  assert.ok(sql.endsWith("\non conflict (brand, ext_key) do nothing;\n"));
+  assert.equal(sql.includes("do update"), false);
+});
+
+test("sqlCorrects only fills corrects that are still empty", () => {
+  const key = websiteKey("T", "Q");
+  const { rows } = seedRows("uppababy", [{ ext_key: "fact:x", topic: "T", question: "Q", answer: "A", source: "confirmed", source_ref: "r",
+    corrects_question: { topic: "T", q: "Q" }, status: "approved", decided_by: "d", decided_reason: "r" }], new Map([[key, 3]]));
+  const sql = sqlCorrects("uppababy", rows);
+  assert.ok(sql.endsWith("where s.brand = $kb$uppababy$kb$ and s.ext_key = v.seed_key and s.corrects is null;\n"));
+});
+
+test("dbRow drops corrects_key and keeps the other columns", () => {
+  const { rows } = seedRows("uppababy", [{ ext_key: "fact:x", topic: "T", question: "Q", answer: "A", source: "confirmed", source_ref: "r",
+    corrects_question: { topic: "T", q: "Q" }, status: "approved", decided_by: "d", decided_reason: "r" }], new Map());
+  const r = dbRow(rows[0]);
+  assert.equal("corrects_key" in r, false);
+  assert.equal(r.ext_key, "fact:x");
+  assert.equal(rows[0].corrects_key, websiteKey("T", "Q"));
 });

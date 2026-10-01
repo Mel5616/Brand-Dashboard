@@ -49,19 +49,36 @@ export function sqlTextArray(a: string[]): string {
 }
 
 const INSERT_COLS = ["brand", "topic", "models", "question", "answer", "link", "source", "source_ref", "ext_key", "sort_order", "status", "decided_by", "decided_reason"] as const;
-// One upsert statement for a batch of rows (corrects is set separately, by sqlCorrects).
-export function sqlUpsert(rows: Row[]): string {
+// The only columns a re-run may change on an existing website row. Never status, decided_by,
+// decided_reason or corrects, so approvals, retirements and corrections survive a reload. The audit
+// trigger records decided_by / decided_reason from the row, which stay as they were.
+export const WEBSITE_TEXT_COLS = ["topic", "question", "answer", "link", "source_ref", "sort_order"] as const;
+
+// The row as stored: everything but corrects_key (corrects is set separately, by sqlCorrects or the REST loader).
+export function dbRow(r: Row): Omit<Row, "corrects_key"> {
+  const o: Row = { ...r };
+  delete o.corrects_key;
+  return o;
+}
+
+// One insert statement for a batch of rows of one kind. New rows are inserted in full. On conflict:
+// - website: refresh the text columns only, and only when one of them changed (no empty history rows);
+// - seed (confirmed / help_centre): do nothing, so later edits in the Knowledge tab are kept.
+export function sqlUpsert(rows: Row[], kind: "website" | "seed"): string {
   const values = rows.map(r => `(${[sqlLiteral(r.brand), sqlLiteral(r.topic), sqlTextArray(r.models), sqlLiteral(r.question), sqlLiteral(r.answer),
     sqlLiteral(r.link), sqlLiteral(r.source), sqlLiteral(r.source_ref), sqlLiteral(r.ext_key), String(r.sort_order), sqlLiteral(r.status),
     sqlLiteral(r.decided_by), sqlLiteral(r.decided_reason)].join(", ")})`);
-  const updates = INSERT_COLS.filter(c => c !== "brand" && c !== "ext_key").map(c => `${c} = excluded.${c}`).join(", ");
-  return `insert into public.kb_entries (${INSERT_COLS.join(", ")}) values\n${values.join(",\n")}\non conflict (brand, ext_key) do update set ${updates};\n`;
+  const onConflict = kind === "seed" ? "do nothing" :
+    `do update set ${WEBSITE_TEXT_COLS.map(c => `${c} = excluded.${c}`).join(", ")}\n` +
+    `where (${WEBSITE_TEXT_COLS.map(c => `kb_entries.${c}`).join(", ")}) is distinct from (${WEBSITE_TEXT_COLS.map(c => `excluded.${c}`).join(", ")})`;
+  return `insert into public.kb_entries (${INSERT_COLS.join(", ")}) values\n${values.join(",\n")}\non conflict (brand, ext_key) ${onConflict};\n`;
 }
-// Points each correction at the website entry it corrects (decided_by/decided_reason re-set for the audit trigger).
+// Points each new correction at the website entry it corrects (decided_by/decided_reason re-set for the audit trigger).
+// Only fills corrects that are still empty, so a re-run never moves or restores a correction.
 export function sqlCorrects(brand: string, rows: Row[]): string {
   const pairs = rows.filter(r => r.corrects_key).map(r => `(${sqlLiteral(r.ext_key)}, ${sqlLiteral(r.corrects_key!)})`);
   if (!pairs.length) return "";
   return `update public.kb_entries s set corrects = w.id, decided_by = s.decided_by, decided_reason = s.decided_reason\n` +
     `from (values\n${pairs.join(",\n")}\n) as v(seed_key, target_key)\njoin public.kb_entries w on w.brand = ${sqlLiteral(brand)} and w.ext_key = v.target_key\n` +
-    `where s.brand = ${sqlLiteral(brand)} and s.ext_key = v.seed_key;\n`;
+    `where s.brand = ${sqlLiteral(brand)} and s.ext_key = v.seed_key and s.corrects is null;\n`;
 }
