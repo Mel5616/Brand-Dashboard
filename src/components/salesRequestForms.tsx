@@ -76,6 +76,17 @@ export function AckBox({ label, checked, onChange }: { label: string; checked: b
     </label>
   );
 }
+// Required-field checks for a form, as [label, isFilledIn] pairs — lets the
+// Submit button stay clickable and tell a rep exactly what's missing, rather
+// than silently staying disabled (a rep hit this on Marketing Materials:
+// greyed-out button, no indication the live date was the one empty field).
+function fieldsMissing(checks: [string, boolean][]): string[] {
+  return checks.filter(([, ok]) => !ok).map(([label]) => label);
+}
+function MissingNotice({ show, missing }: { show: boolean; missing: string[] }) {
+  if (!show || !missing.length) return null;
+  return <p className="text-[13px] font-semibold text-rose-600 bg-rose-50 border border-rose-100 rounded-xl px-3.5 py-3">Still needed: {missing.join(", ")}.</p>;
+}
 
 // Picks the request type, collects identity (public form only), routes to
 // the right type-specific form, and posts to whichever endpoint the caller
@@ -150,8 +161,14 @@ export function RequestFormPicker({ type, setType, brands, onCreated, onCancel, 
 
 export function ArtworkForm({ brands, f, setF, file, setFile, ack, setAck, onSubmit }: any) {
   const [busy, setBusy] = useState(false);
+  const [attempted, setAttempted] = useState(false);
   const isResize = f.artworkRequestType === "resize";
+  const missing = fieldsMissing([
+    ["Brand", !!f.brand], ["Request type", !!f.artworkRequestType], ["Where it will appear", !!f.whereAppears],
+    ["Does it include a price", f.hasPrice !== undefined], ["Live date", !!f.live_date],
+  ]);
   async function go() {
+    if (missing.length) { setAttempted(true); return; }
     setBusy(true);
     await onSubmit({
       title: `Artwork · ${f.brand ?? "brand TBC"} · ${f.artworkRequestType === "resize" ? "resize" : f.artworkRequestType === "copy_update" ? "copy update" : "new asset"}`,
@@ -197,14 +214,22 @@ export function ArtworkForm({ brands, f, setF, file, setFile, ack, setAck, onSub
       </div>
       <Field label="Retailer spec sheet"><input type="file" onChange={e => setFile(e.target.files?.[0] ?? null)} className="text-sm" /></Field>
       <AckBox label="I have read the Artwork and Image rules." checked={ack} onChange={setAck} />
-      <button id="submit-artwork" disabled={busy || !f.brand || !f.artworkRequestType || !f.whereAppears || f.hasPrice === undefined || !f.live_date} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit request"}</button>
+      <MissingNotice show={attempted} missing={missing} />
+      <button id="submit-artwork" disabled={busy} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit request"}</button>
     </div>
   );
 }
 
 export function SwatchForm({ brands, f, setF, ack, setAck, onSubmit }: any) {
   const [busy, setBusy] = useState(false);
+  const [attempted, setAttempted] = useState(false);
+  const missing = fieldsMissing([
+    ["Brand", !!f.brand], ["Range", !!f.range], ["Colourways required", !!f.colourways], ["Quantity", !!f.quantity],
+    ["Purpose", !!f.purpose], ["Ship to, contact", !!f.shipName], ["Phone", !!f.shipPhone],
+    ["Address", !!f.shipAddress], ["Needed by", !!f.needed_by],
+  ]);
   async function go() {
+    if (missing.length) { setAttempted(true); return; }
     setBusy(true);
     await onSubmit({
       title: `Swatch · ${f.brand ?? "brand TBC"} · ${f.range ?? ""}`, brand: f.brand,
@@ -232,15 +257,24 @@ export function SwatchForm({ brands, f, setF, ack, setAck, onSubmit }: any) {
       </div>
       <Field label="Address" required><input className={inp} value={f.shipAddress ?? ""} onChange={e => setF({ ...f, shipAddress: e.target.value })} /></Field>
       <AckBox label="I have read the Artwork and Image rules." checked={ack} onChange={setAck} />
-      <button id="submit-swatch" disabled={busy || !f.brand || !f.range || !f.colourways || !f.quantity || !f.purpose || !f.shipName || !f.shipPhone || !f.shipAddress || !f.needed_by} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit request"}</button>
+      <MissingNotice show={attempted} missing={missing} />
+      <button id="submit-swatch" disabled={busy} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit request"}</button>
     </div>
   );
 }
 
 export function TuneUpForm({ f, setF, file, setFile, ack, setAck, onSubmit }: any) {
   const [busy, setBusy] = useState(false);
+  const [attempted, setAttempted] = useState(false);
   const months = useMemo(() => Array.from({ length: 6 }, (_, i) => { const d = new Date(); d.setMonth(d.getMonth() + i + 1); return d.toLocaleDateString("en-AU", { month: "long", year: "numeric" }); }), []);
+  const missing = fieldsMissing([
+    ["State", !!f.state], ["Retailer", !!f.retailer], ["Store", !!f.store],
+    ["Store contact name", !!f.storeContact], ["Store contact mobile", !!f.storeMobile], ["Why this store", !!f.whyStore],
+    ["Space availability", f.spaceAvailable !== undefined], ["Preferred month", !!f.preferredMonth],
+    ["Store confirmation", f.storeConfirmed !== undefined],
+  ]);
   async function go() {
+    if (missing.length) { setAttempted(true); return; }
     setBusy(true);
     await onSubmit({
       title: `Tune-Up nomination · ${f.retailer ?? ""} ${f.store ?? ""}`, retailer: f.retailer, store: f.store, state: f.state,
@@ -279,14 +313,22 @@ export function TuneUpForm({ f, setF, file, setFile, ack, setAck, onSubmit }: an
       </div>
       <p className="text-xs text-gray-400">Nominations are reviewed when the next six-month schedule is built (per the manual, the second-half schedule is built toward the end of May), you won't hear back immediately.</p>
       <AckBox label="I have read the Tune-Up Day non-negotiables." checked={ack} onChange={setAck} />
-      <button id="submit-tune_up" disabled={busy || !f.state || !f.retailer || !f.store || !f.storeContact || !f.storeMobile || !f.whyStore || f.spaceAvailable === undefined || !f.preferredMonth || f.storeConfirmed === undefined} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit nomination"}</button>
+      <MissingNotice show={attempted} missing={missing} />
+      <button id="submit-tune_up" disabled={busy} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit nomination"}</button>
     </div>
   );
 }
 
 export function ProductForm({ brands, f, setF, ack, setAck, onSubmit }: any) {
   const [busy, setBusy] = useState(false);
+  const [attempted, setAttempted] = useState(false);
+  const missing = fieldsMissing([
+    ["Brand", !!f.brand], ["SKU or product", !!f.sku], ["Quantity", !!f.quantity], ["Approx. RRP value", !!f.approxRrpValue],
+    ["Purpose", !!f.purpose], ["Who is funding it", !!f.fundedBy], ["What Coolkidz gets in return", !!f.whatWeGet],
+    ["Needed by", !!f.needed_by],
+  ]);
   async function go() {
+    if (missing.length) { setAttempted(true); return; }
     setBusy(true);
     await onSubmit({
       title: `Product/gifting · ${f.brand ?? ""} · ${f.sku ?? ""}`, brand: f.brand,
@@ -313,7 +355,8 @@ export function ProductForm({ brands, f, setF, ack, setAck, onSubmit }: any) {
       <Field label="What Coolkidz gets in return" required><textarea className={inp} rows={2} placeholder="Placement, posts, staff training, sell-through commitment…" value={f.whatWeGet ?? ""} onChange={e => setF({ ...f, whatWeGet: e.target.value })} /></Field>
       <Field label="Needed by" required><input type="date" className={inp} value={f.needed_by ?? ""} onChange={e => setF({ ...f, needed_by: e.target.value })} /></Field>
       <AckBox label="I have read the Free Product, Samples & Gifting rules." checked={ack} onChange={setAck} />
-      <button id="submit-product" disabled={busy || !f.brand || !f.sku || !f.quantity || !f.approxRrpValue || !f.purpose || !f.fundedBy || !f.whatWeGet || !f.needed_by} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit request"}</button>
+      <MissingNotice show={attempted} missing={missing} />
+      <button id="submit-product" disabled={busy} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit request"}</button>
     </div>
   );
 }
@@ -327,8 +370,10 @@ const FILECAMP_REASONS = [
 
 export function FileCampForm({ brands, f, setF, file, setFile, ack, setAck, onSubmit }: any) {
   const [busy, setBusy] = useState(false);
+  const [attempted, setAttempted] = useState(false);
   const reason = f.filecampReason;
   async function go() {
+    if (missing.length) { setAttempted(true); return; }
     setBusy(true);
     const titles: Record<string, string> = {
       pricelist_update: `FileCamp · ${f.brand ?? "brand TBC"} · pricelist update`,
@@ -349,11 +394,13 @@ export function FileCampForm({ brands, f, setF, file, setFile, ack, setAck, onSu
     });
     setBusy(false);
   }
-  const ready =
-    reason === "pricelist_update" ? !!(f.brand && f.effectiveDate) :
-    reason === "missing_assets" ? !!(f.brand && f.sku && f.whatsMissing) :
-    reason === "social_content" ? !!(f.brand && f.contentNeeded && f.format) :
-    reason === "user_access" ? !!(f.fullName && f.email && f.accessReason) : false;
+  const missing = fieldsMissing(
+    reason === "pricelist_update" ? [["Brand", !!f.brand], ["Effective date", !!f.effectiveDate]] :
+    reason === "missing_assets" ? [["Brand", !!f.brand], ["SKU / product", !!f.sku], ["What's missing", !!f.whatsMissing]] :
+    reason === "social_content" ? [["Brand", !!f.brand], ["Content needed", !!f.contentNeeded], ["Format", !!f.format]] :
+    reason === "user_access" ? [["Full name", !!f.fullName], ["Email", !!f.email], ["Reason for access", !!f.accessReason]] :
+    [["What do you need", false]]
+  );
   return (
     <div className="space-y-3">
       <RuleCard>FileCamp is the asset library, and for some brands also holds pricelists and fact sheets. Access requests need a real business reason, unreleased artwork and pricing live in here.</RuleCard>
@@ -405,14 +452,21 @@ export function FileCampForm({ brands, f, setF, file, setFile, ack, setAck, onSu
       </>}
 
       <AckBox label="I have read the FileCamp request rules." checked={ack} onChange={setAck} />
-      <button id="submit-filecamp" disabled={busy || !reason || !ready} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit request"}</button>
+      <MissingNotice show={attempted} missing={missing} />
+      <button id="submit-filecamp" disabled={busy} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit request"}</button>
     </div>
   );
 }
 
 export function CommsForm({ brands, f, setF, ack, setAck, onSubmit }: any) {
   const [busy, setBusy] = useState(false);
+  const [attempted, setAttempted] = useState(false);
+  const missing = fieldsMissing([
+    ["Brand", !!f.brand], ["Channel", !!f.channel], ["Customer name", !!f.customerName],
+    ["Customer email or mobile", !!f.customerEmail], ["How did they opt in", !!f.optInMethod],
+  ]);
   async function go() {
+    if (missing.length) { setAttempted(true); return; }
     setBusy(true);
     await onSubmit({
       title: `Add to comms · ${f.brand ?? ""} · ${f.customerName ?? ""}`, brand: f.brand,
@@ -445,7 +499,8 @@ export function CommsForm({ brands, f, setF, ack, setAck, onSubmit }: any) {
       </Field>
       <Field label="Notes"><textarea className={inp} rows={2} value={f.notes ?? ""} onChange={e => setF({ ...f, notes: e.target.value })} /></Field>
       <AckBox label="I confirm this customer explicitly opted in, and I have read the comms rules." checked={ack} onChange={setAck} />
-      <button id="submit-comms" disabled={busy || !f.brand || !f.channel || !f.customerName || !f.customerEmail || !f.optInMethod} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit request"}</button>
+      <MissingNotice show={attempted} missing={missing} />
+      <button id="submit-comms" disabled={busy} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit request"}</button>
     </div>
   );
 }
@@ -469,11 +524,21 @@ const MATERIAL_REQUEST_TYPES = [
 
 export function MaterialsForm({ brands, f, setF, file, setFile, ack, setAck, onSubmit }: any) {
   const [busy, setBusy] = useState(false);
+  const [attempted, setAttempted] = useState(false);
   const materialType = f.materialType;
   const isScreen = materialType === "tv_screens";
   const isReprint = f.materialRequestType === "reprint";
   const materialLabel = MATERIAL_TYPES.find(m => m.value === materialType)?.label;
+  const missing = fieldsMissing([
+    ["What do you need", !!materialType], ["Brand", !!f.brand], ["Store / location", !!f.store],
+    ["Request type", !!f.materialRequestType], ["What exactly is being requested", !!f.itemName],
+    [isReprint ? "Any changes from the existing version" : "Specs / content details", isReprint || !!f.specs],
+    ["Does it include a price", f.hasPrice !== undefined], ["Live date", !!f.live_date],
+    ["Contact name", !!f.shipName], ["Contact phone", !!f.shipPhone],
+    ...(!isScreen ? ([["Quantity", !!f.quantity], ["Delivery address", !!f.shipAddress]] as [string, boolean][]) : []),
+  ]);
   async function go() {
+    if (missing.length) { setAttempted(true); return; }
     setBusy(true);
     const qtyPart = !isScreen && f.quantity ? ` ×${f.quantity}` : "";
     await onSubmit({
@@ -490,9 +555,6 @@ export function MaterialsForm({ brands, f, setF, file, setFile, ack, setAck, onS
     });
     setBusy(false);
   }
-  const ready = !!(materialType && f.brand && f.store && f.materialRequestType && f.itemName && (isReprint || f.specs)
-    && f.hasPrice !== undefined && f.live_date && f.shipName && f.shipPhone
-    && (isScreen || (f.quantity && f.shipAddress)));
   return (
     <div className="space-y-3">
       <Field label="What do you need" required>
@@ -538,7 +600,8 @@ export function MaterialsForm({ brands, f, setF, file, setFile, ack, setAck, onS
         <Field label="Reference file (spec sheet, image, prior version)"><input type="file" onChange={(e: any) => setFile(e.target.files?.[0] ?? null)} className="text-sm" /></Field>
         <AckBox label={`I have read the ${materialLabel} request notes above.`} checked={ack} onChange={setAck} />
       </>}
-      <button id="submit-materials" disabled={busy || !ready} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit request"}</button>
+      <MissingNotice show={attempted} missing={missing} />
+      <button id="submit-materials" disabled={busy} onClick={go} className="text-[15px] font-bold text-white bg-[#FF6B4A] hover:bg-[#E85536] disabled:opacity-40 rounded-2xl px-6 py-4 mt-2 w-full sm:w-auto shadow-[0_8px_20px_-6px_rgba(255,107,74,0.55)] font-[family-name:var(--font-baloo)]">{busy ? "Submitting…" : "Submit request"}</button>
     </div>
   );
 }

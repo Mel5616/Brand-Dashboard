@@ -4,6 +4,7 @@ import knowledge from "@/data/uppababy-knowledge.json";
 import { logAssistant, humanReplies } from "@/lib/assistantLog";
 import { createWrittenAnswers } from "@/lib/kb/read";
 import { tidyReply } from "@/lib/kb/tidy";
+import { fixKnowledge, fixReplyLinks } from "@/lib/kb/knowledge-fixes";
 
 // Public assistant for uppababy.com.au, the same shape as Ask Davy on Zazu.
 // Answers from the knowledge file, which is generated in the uppababy-site repo
@@ -53,7 +54,7 @@ async function products(): Promise<Prod[]> {
 }
 
 /* ---- prompt ---- */
-const K = knowledge as any;
+const K = fixKnowledge(knowledge as any);  // missing pages, BeSafe, Minu V2, Britax: see knowledge-fixes.ts
 const STATIC_BASE = [
   `STORE\n${Object.entries(K.store).map(([k, v]) => `${k}: ${v}`).join("\n")}`,
   `PAGES (use these relative links)\n${Object.entries(K.pages).map(([k, v]) => `${k}: ${v}`).join("\n")}`,
@@ -116,7 +117,7 @@ export async function POST(req: Request) {
   if (!messages.length || messages[messages.length - 1].role !== "user") return NextResponse.json({ ok: false, error: "Say something first" }, { status: 400, headers });
   if (!process.env.ANTHROPIC_API_KEY) return NextResponse.json({ ok: false, error: "Assistant not configured" }, { status: 503, headers });
   try {
-    const reply = tidyReply(await ask(messages, await products()));
+    const reply = fixReplyLinks(tidyReply(await ask(messages, await products())));
     const q = messages[messages.length - 1].content;
     if (!replay) { after(() => { logAssistant({ brand: "uppababy", session: String(b?.session || "").slice(0, 64) || null, page: String(b?.page || "").slice(0, 200) || null, question: q, answer: reply }); }); }
     return NextResponse.json({ ok: true, reply }, { headers });
