@@ -39,7 +39,7 @@ export async function buildToday(): Promise<Today> {
   const now = Date.now();
   const d1 = new Date(now - 864e5).toISOString(), d7 = new Date(now - 7 * 864e5).toISOString(), d30 = new Date(now - 30 * 864e5).toISOString();
   const thisMonth = monthKey(new Date()), lastMonth = monthKey(new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1));
-  const [reviews, flows, metrics, campaigns, blogs, edms, requests, rewards, dismissals, jobs, socialPosted] = await Promise.all([
+  const [reviews, flows, metrics, campaigns, blogs, edms, requests, rewards, dismissals, jobs, socialPosted, syncStatus] = await Promise.all([
     q<{ id: string; brand_id: number; brand_name: string; rating: number | null; author: string | null; email: string | null; product_name: string | null; product_url: string | null; content: string | null; status: string | null; review_type: string | null; created: string | null; public_reply: string | null }>(`klaviyo_reviews?select=id,brand_id,brand_name,rating,author,email,product_name,product_url,content,status,review_type,created,public_reply&or=(status.eq.pending,created.gte.${d7})&order=created.desc`),
     q<{ brand_id: number; flow_id: string; name: string; status: string | null }>("klaviyo_flows?select=brand_id,flow_id,name,status&status=eq.draft"),
     q<{ brand_id: number; month_key: string; emails_sent: number; revenue: number; bounces: number; spam_complaints: number; unsubscribes: number }>(`klaviyo_metrics?select=brand_id,month_key,emails_sent,revenue,bounces,spam_complaints,unsubscribes&month_key=in.(${thisMonth},${lastMonth})`),
@@ -51,6 +51,7 @@ export async function buildToday(): Promise<Today> {
     q<{ key: string; until: string }>(`today_dismissals?select=key,until&until=gte.${new Date(now).toISOString()}`).catch(() => [] as { key: string; until: string }[]),
     jobHealth(),
     q<{ brand_id: number; posted_at: string }>("social_drafts?select=brand_id,posted_at&status=eq.posted&order=posted_at.desc"),
+    q<{ source: string; ok: boolean; message: string | null; ran_at: string }>("sync_status?select=source,ok,message,ran_at&order=ran_at.desc"),
   ]);
   const items: TodayItem[] = [];
   const push = (i: Omit<TodayItem, "colour"> & { colour?: string | null }) => items.push({ colour: i.brandId != null ? brand(i.brandId)?.colour ?? null : null, ...i });
@@ -134,6 +135,24 @@ export async function buildToday(): Promise<Today> {
       title: days == null ? "No social post ever recorded" : `No social post in ${days} days`,
       detail: `${owner} owns this brand's social. Nothing's been marked posted through Social Writing recently — draft and schedule there to get it off this list.`,
       tab: "social-writing", href: null, at: last || null });
+  }
+
+  // Sync and store checks: every script that records into sync_status lodges
+  // its result here, so a failed sync or a site problem lands in the queue
+  // instead of only in an email. The store check writes ok=true with a message
+  // when it has warnings (an expired offer, a changed discount, a staff edit) —
+  // worth a look, not a fire. Rows beginning "__" are internal bookkeeping.
+  for (const r of syncStatus.filter(r => r && r.source && !r.source.startsWith("__"))) {
+    const note = (r.message || "").trim();
+    if (r.ok && !note) continue;
+    const stem = r.source.replace(/\s+(store|sync).*$/i, "").trim();
+    const bId = stem ? byName(stem)?.id ?? null : null;
+    const version = `${r.ok ? "warn" : "fail"}:${r.ran_at.slice(0, 13)}`;
+    push({ key: `sync:${r.source}:${version}`, severity: r.ok ? "attention" : "urgent", area: "Checks",
+      brand: bId != null ? brand(bId)!.name : null, brandId: bId,
+      title: r.ok ? `${r.source}: ${note.split(/[.\n]/)[0].slice(0, 90)}` : `${r.source} check failed`,
+      detail: note || "The last run failed. Nothing downstream is updating until it is fixed.",
+      tab: "brands", href: null, at: r.ran_at });
   }
 
   // Jobs
