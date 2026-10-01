@@ -675,14 +675,14 @@
       "topic": "Shipping and delivery",
       "models": [],
       "question": "Can I collect my online order?",
-      "answer": "Yes. You can collect an online order from the UPPAbaby Showroom in Braeside, Melbourne, open Monday to Friday, 9am to 2:30pm. You can also see the range and buy in person at the showroom or at any of our [authorised stockists](/pages/store-locator).",
+      "answer": "Yes. You can collect an online order from the UPPAbaby Showroom in Braeside, Melbourne, open Monday to Friday, 9am to 2:30pm. To arrange a collection, call our customer service team. You can also see the range and buy in person at the showroom or at any of our [authorised stockists](/pages/store-locator).",
       "link": "/pages/store-locator",
       "source": "confirmed",
       "source_ref": "David Kingsford, 1 Oct 2026",
       "status": "approved",
       "decided_by": "david@coolkidz.com.au",
       "corrects_question": null,
-      "decided_reason": "Confirmed by David after the October replay; no uppababy.com.au answer covers this"
+      "decided_reason": "Confirmed by David after the October replay: collect from Braeside, arranged by phone with customer service"
     },
     {
       "ext_key": "fact:replacement-rumbleseat-adapters",
@@ -708,7 +708,7 @@
         "Mesa"
       ],
       "question": "Which car capsules fit the Minu V2?",
-      "answer": "With the [Minu V2 Car Seat Adapter](/products/uppababy-minu-v2-car-seat-adapter), the Minu V2 takes these capsules only: Maxi-Cosi Mico AP / Mico Plus, Mico 6 and Mico 12, Maxi-Cosi Mico 12 LX made from 20 April 2022, Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm. CYBEX capsules are not supported. The Mesa fits the Minu V2 too: send a photo of the white label near the rear axle through our [support page](/pages/support) and we will confirm the right adapter for your frame. The newer Minu V3 and the Minu Duo take only the Mesa.",
+      "answer": "With the [Minu V2 Car Seat Adapter](/products/uppababy-minu-v2-car-seat-adapter), the Minu V2 takes these capsules only: Maxi-Cosi Mico AP / Mico Plus, Mico 6 and Mico 12, Maxi-Cosi Mico 12 LX made from 20 April 2022, Nuna PIPA, Nuna KLIK Plus and Joie i-Gemm. CYBEX capsules are not supported. The Mesa fits the Minu V2 with the Minu bassinet adapters. The newer Minu V3 and the Minu Duo take only the Mesa.",
       "link": "/products/uppababy-minu-v2-car-seat-adapter",
       "corrects_question": null,
       "source": "confirmed",
