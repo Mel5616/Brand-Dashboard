@@ -691,14 +691,14 @@
         "Vista V3"
       ],
       "question": "What are the Replacement RumbleSeat Adapters for?",
-      "answer": "They are the adapters that fit the RumbleSeat to the Vista frame, the same ones that come in the RumbleSeat box. Buy them if yours are lost or broken: [Replacement RumbleSeat Adapters](/products/uppababy-replacement-rumbleseat-adapters). Parts are version specific, so for an older Vista or RumbleSeat, send a photo of the white label near the rear axle through our [support page](/pages/support) first.",
+      "answer": "The Replacement RumbleSeat Adapters sold on our website are for the 2015 to 2019 RumbleSeat and the RumbleSeat V2. The RumbleSeat V3 adapters are different, so if your V3 adapters are lost or broken, lodge a request through our [support page](/pages/support) with a photo of the white label near the rear axle and we will help.",
       "link": "/products/uppababy-replacement-rumbleseat-adapters",
       "source": "confirmed",
-      "source_ref": "David Kingsford, 1 Oct 2026",
+      "source_ref": "David Kingsford, 2 Oct 2026",
       "status": "approved",
       "decided_by": "david@coolkidz.com.au",
       "corrects_question": null,
-      "decided_reason": "Confirmed by David after the October replay; no uppababy.com.au answer covers this"
+      "decided_reason": "Answers from David, 2 Oct 2026 (Word document)"
     },
     {
       "ext_key": "fact:minu-v2-capsules",
@@ -899,6 +899,154 @@
       "status": "approved",
       "decided_by": "david@coolkidz.com.au",
       "decided_reason": "Answers from David, 2 Oct 2026"
+    },
+    {
+      "ext_key": "fact:brake-indicator",
+      "topic": "Care and everyday use",
+      "models": [
+        "Vista V3",
+        "Cruz V3",
+        "Minu V3",
+        "Ridge V2"
+      ],
+      "question": "How do I know the brake is on?",
+      "answer": "Look at the foot brake: red means the brake is on, green means it is off. The Ridge V2 also has a hand disc brake. If it feels less responsive or needs more force, slightly rotate the disc brake knob anticlockwise to tighten it, on both sides, then test it and adjust again until it feels right. If a brake still does not hold, stop using the pram and lodge a request through our [support page](/pages/support), or bring it to a free Tune-Up Day.",
+      "link": "/pages/tune-up-days",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 2 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "decided_reason": "Answers from David, 2 Oct 2026 (Word document)"
+    },
+    {
+      "ext_key": "fact:cruz-v3-fold",
+      "topic": "Cruz V3",
+      "models": [
+        "Cruz V3"
+      ],
+      "question": "How do I fold the Cruz V3?",
+      "answer": "Put the brake on and turn the front wheel locks off, set the handlebar to its lowest position, then squeeze the triggers and fold until it locks. The bumper bar goes down by itself as it folds. With the toddler seat on, it must face forward, reclined to the second most upright position, with the canopy closed.",
+      "link": "/pages/cruz-v3-support",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 2 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "decided_reason": "Answers from David, 2 Oct 2026 (Word document)"
+    },
+    {
+      "ext_key": "fact:harness-height",
+      "topic": "Care and everyday use",
+      "models": [
+        "Vista V3",
+        "Cruz V3",
+        "Minu V3",
+        "Ridge V2"
+      ],
+      "question": "How do I adjust the harness height?",
+      "answer": "Set the shoulder straps level with your child's shoulders. No rethreading is needed. Keep the buckle clean by wiping it and drying it, and never oil or spray it.",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 2 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "decided_reason": "Answers from David, 2 Oct 2026 (Word document)"
+    },
+    {
+      "ext_key": "fact:vista-snug-seat-birth",
+      "topic": "Vista V3",
+      "models": [
+        "Vista V3"
+      ],
+      "question": "Can my newborn use the Vista V3 toddler seat?",
+      "answer": "The Vista V3 toddler seat is recommended from 6 months. With the Snug Seat fitted, it can be used from birth. Under 6 months you can also use the bassinet, which comes in the box, or the Mesa capsule.",
+      "link": "/products/uppababy-snug-seat-vista-vista-v2-vista-v3-cruz-cruz-v2",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 2 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "decided_reason": "Answers from David, 2 Oct 2026 (Word document)"
+    },
+    {
+      "ext_key": "fact:minu-duo-doorway",
+      "topic": "Minu Duo",
+      "models": [
+        "Minu Duo"
+      ],
+      "question": "Will the Minu Duo fit through a door?",
+      "answer": "Yes. At 70.6 cm wide, the Minu Duo fits easily through a standard Australian 82 cm doorway.",
+      "link": "/pages/minu-duo-support",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 2 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "decided_reason": "Answers from David, 2 Oct 2026 (Word document)"
+    },
+    {
+      "ext_key": "fact:mamaroo-limits",
+      "topic": "At home",
+      "models": [
+        "MamaRoo"
+      ],
+      "question": "What are the MamaRoo limits?",
+      "answer": "Stop using the MamaRoo at 11.3 kg or when your baby tries to climb out, which is usually around 9 months. Keep the seat fully reclined until at least 4 months, and use the infant insert until about 4 months. The MamaRoo weighs 6.9 kg, and the recline adjusts to any angle between 25 and 45 degrees. It also has Bluetooth music streaming and Wi-Fi, set up through the app.",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 2 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "decided_reason": "Answers from David, 2 Oct 2026 (Word document)"
+    },
+    {
+      "ext_key": "fact:remi-bassinet-weight",
+      "topic": "At home",
+      "models": [
+        "Remi"
+      ],
+      "question": "How long can my baby use the Remi bassinet level, and what does it weigh?",
+      "answer": "In Australia we say the bassinet level suits babies up to around 6 months. The Remi weighs about 10.6 kg without the bassinet level and 11.3 kg with it.",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 2 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "decided_reason": "Answers from David, 2 Oct 2026 (Word document)"
+    },
+    {
+      "ext_key": "fact:soma-waterproof-cover",
+      "topic": "At home",
+      "models": [
+        "Soma"
+      ],
+      "question": "Can I use the Soma Waterproof Mattress Cover while my baby sleeps?",
+      "answer": "Yes. The Soma Waterproof Mattress Cover is safe to use while your baby sleeps.",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 2 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "decided_reason": "Answers from David, 2 Oct 2026 (Word document)"
+    },
+    {
+      "ext_key": "fact:collection-dispatch",
+      "topic": "Orders and buying",
+      "models": [],
+      "question": "When is a collection order ready?",
+      "answer": "Collection from the UPPAbaby Showroom in Braeside is arranged in advance by phoning our customer service team. The order goes through the usual one to two business day dispatch before it is ready to collect.",
+      "link": "/pages/ub-shipping-delivery",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 2 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "decided_reason": "Answers from David, 2 Oct 2026 (Word document)"
+    },
+    {
+      "ext_key": "fact:layby-points",
+      "topic": "Orders and buying",
+      "models": [],
+      "question": "Do lay-by orders earn UPPside Rewards points?",
+      "answer": "Yes, when the lay-by is paid through our website checkout. The lay-by terms, including the minimum order, are on the [lay-by page](/pages/uppababy-lay-by).",
+      "link": "/pages/loyalty",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 2 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "decided_reason": "Answers from David, 2 Oct 2026 (Word document)"
     }
   ]
 }
