@@ -90,7 +90,7 @@ async function ask(messages: { role: "user" | "assistant"; content: string }[], 
     headers: { "x-api-key": process.env.ANTHROPIC_API_KEY || "", "anthropic-version": "2023-06-01", "content-type": "application/json" },
     body: JSON.stringify({
       model: process.env.UPPABABY_CHAT_MODEL || "claude-sonnet-5",
-      max_tokens: 700,
+      max_tokens: 2000,
       system: [
         { type: "text", text: PERSONA },
         { type: "text", text: await staticPrompt(), cache_control: { type: "ephemeral" } },
