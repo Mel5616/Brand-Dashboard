@@ -92,7 +92,7 @@ const BRIEF_FIELDS: { key: string; label: string }[] = [
   { key: "edmBrief", label: "EDM requirements (Pier Ann)" },
   { key: "blogBrief", label: "Blog requirements (TBC)" },
   { key: "paidBrief", label: "Paid Marketing requirements (Anna)" },
-  { key: "doohBrief", label: "Digital out-of-home requirements (Mel — with BiND Digital)" },
+  { key: "doohBrief", label: "Digital out-of-home requirements (Anna — with BiND Digital)" },
   { key: "socialsBrief", label: "Socials requirements (Nicky / Alicia)" },
   { key: "designBrief", label: "Design requirements (Diep)" },
   { key: "retailBrief", label: "Retail requirements (Alison)" },
