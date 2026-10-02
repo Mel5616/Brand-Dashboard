@@ -47,6 +47,10 @@ const HELP_PAGES = new Set(["/support/tickets/new", "/support/tickets", "/suppor
   ...K.articles.map(a => a.url.replace("https://help.coolkidz.com.au", ""))]);
 const HOSTS = new Set(["help.coolkidz.com.au", "coolkidz.com.au", "www.coolkidz.com.au", "help.uppababy.com.au",
   ...Object.values(K.brands).map(b => new URL(b.site).host), ...Object.values(K.brands).map(b => new URL(b.site).host.replace(/^www\./, ""))]);
+// Brand-site links must be a page from the fact sheets (each checked as live when the knowledge is built) or a brand's home page.
+const trim = (u: string) => u.replace(/[.,;:]+$/, "").replace(/\/$/, "");
+const KNOWN_URLS = new Set([...Object.values(K.brands).flatMap(b => [b.site, ...(b.facts.match(/https:\/\/[^\s)\]"'<>]+/g) || [])]).map(trim)]);
+const OUR_HOSTS = new Set(["help.coolkidz.com.au", "coolkidz.com.au", "www.coolkidz.com.au", "help.uppababy.com.au"]);
 function guardLinks(text: string) {
   return text.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (m, label, href) => {
     if (href === "help-article" || href.startsWith("/support/solutions/articles/")) {
@@ -54,7 +58,11 @@ function guardLinks(text: string) {
       return path ? `[${label}](${path})` : label;
     }
     if (href.startsWith("/")) return HELP_PAGES.has(href.split(/[?#]/)[0]) ? m : label;
-    try { return HOSTS.has(new URL(href).host) && href.startsWith("https://") ? m : label; } catch { return label; }
+    try {
+      const u = new URL(href);
+      if (!href.startsWith("https://") || !HOSTS.has(u.host)) return label;
+      return OUR_HOSTS.has(u.host) || KNOWN_URLS.has(trim(href)) ? m : label;
+    } catch { return label; }
   });
 }
 
