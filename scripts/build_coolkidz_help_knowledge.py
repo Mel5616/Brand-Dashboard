@@ -37,6 +37,30 @@ def scrub(text):
     return PHONE.sub("(lodge a request instead)", text)
 
 
+URL = re.compile(r"https://[^\s)\]\"'<>]+")
+
+
+def alive(url, cache={}):
+    """True when a brand-site link still loads (pages move; a dead link in an answer looks broken)."""
+    if url not in cache:
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Macintosh; help-knowledge-build)"})
+            cache[url] = urllib.request.urlopen(req, timeout=20).status < 400
+        except Exception as e:
+            cache[url] = getattr(e, "code", 0) not in (404, 410)  # only drop pages that are really gone
+    return cache[url]
+
+
+def drop_dead_links(text, dead):
+    for url in sorted(set(URL.findall(text))):
+        clean = url.rstrip(".,;:")
+        if not alive(clean):
+            dead.append(clean)
+            text = re.sub(r"\[([^\]]+)\]\(" + re.escape(clean) + r"\)", r"\1", text)  # keep the words, lose the link
+            text = text.replace(clean, "(page no longer on the website)")
+    return text
+
+
 def get(url):
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (help-knowledge-build)"})
     return urllib.request.urlopen(req, timeout=30).read().decode("utf-8", "replace")
@@ -75,12 +99,15 @@ def articles():
 
 def main():
     out = {"brands": {}, "articles": []}
+    dead = []
     for stem, (name, site) in BRANDS.items():
         if stem == "uppababy":
             continue
         k = json.load(open(os.path.join(DATA, f"{stem}-knowledge.json")))
         parts = [f"{key.upper().replace('_', ' ')}\n{absolute(flat(val), site)}" for key, val in k.items() if key not in DROP]
-        text = scrub("\n\n".join(parts))
+        # bare page paths ("Membership: /pages/membership") become full brand-site addresses, so they can be checked and copied exactly
+        parts = [re.sub(r"(?<![\w:/.])(/(?:pages|products|collections|blogs|policies|apps|account)/[^\s,;)\]\"']*)", lambda m: site + m.group(1).rstrip("."), x) for x in parts]
+        text = drop_dead_links(scrub("\n\n".join(parts)), dead)
         if len(text) > LIMIT:
             text = text[:LIMIT].rsplit("\n", 1)[0] + "\n(more detail on the brand's own site)"
         out["brands"][name] = {"site": site, "facts": text}
@@ -89,6 +116,8 @@ def main():
     json.dump(out, open(path, "w"), indent=1, ensure_ascii=False)
     total = sum(len(b["facts"]) for b in out["brands"].values())
     print(f"wrote {path}: {total:,} chars across {len(out['brands'])} brands, {len(out['articles'])} help articles")
+    if dead:
+        print("dead brand-site links left out (fix them in the brand fact sheets too):\n  " + "\n  ".join(dead))
 
 
 if __name__ == "__main__":
