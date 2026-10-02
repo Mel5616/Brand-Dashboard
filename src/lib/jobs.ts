@@ -9,6 +9,7 @@ export const JOBS: Job[] = [
   { file: "review_rewards.yml", label: "Reviews mirror + $5 rewards", every: "hourly", expectHours: 2.5 },
   { file: "today_alerts.yml", label: "Today alerts", every: "hourly", expectHours: 2.5 },
   { file: "today_digest.yml", label: "Morning digest", every: "daily 7am", expectHours: 26 },
+  { file: "store_check.yml", label: "UPPAbaby store check (discounts, gifts, cart)", every: "daily 7:40am", expectHours: 26 },
   { file: "build_context_packs.yml", label: "Weekly Command context packs", every: "daily 3am", expectHours: 26 },
   { file: "sync_semrush.yml", label: "Semrush sync", every: "Mondays", expectHours: 24 * 8 },
   { file: "d2c-report.yml", label: "D2C weekly report", every: "Sundays", expectHours: 24 * 8 },

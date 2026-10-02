@@ -1,0 +1,33 @@
+name: UPPAbaby store check
+
+# Three revenue-affecting faults ran unnoticed on 30 Sep and 1 Oct 2026, every
+# one found by eye. This watches the things that actually broke: discounts that
+# stop combining with gifts, offers that expire while the site still advertises
+# them, and a canary cart that proves a pram still brings its free bag.
+# Mornings, before the day's trading, plus a manual run.
+on:
+  schedule:
+    - cron: "40 20 * * *"   # 7:40am AEDT / 6:40am AEST
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Write stores config
+        env:
+          STORES_CONFIG_JSON: ${{ secrets.STORES_CONFIG_JSON }}
+        run: printf '%s' "$STORES_CONFIG_JSON" > stores.config.json
+      - name: Check the store
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          ALERT_EMAIL: mel@coolkidz.com.au
+          # so the result lands in the dashboard's freshness panel too
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python3 -u scripts/check_uppababy_store.py

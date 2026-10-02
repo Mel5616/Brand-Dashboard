@@ -94,3 +94,29 @@ test("drops section links that no longer exist on the page, keeps real ones", ()
 test("points the old Cruz V3 collection address at the current one", () => {
   assert.equal(fixReplyLinks("[Cruz V3](/collections/cruz-v3-pram)"), "[Cruz V3](/collections/uppababy-cruz-v3-pram)");
 });
+
+test("the plane answer names the Minu V3, and only that answer changes", () => {
+  const s = sample();
+  (s.faq as { topic: string; q: string; a: string; link: string | null }[]).push(
+    { topic: "Answers", q: "Can I take an UPPAbaby pram on a plane?", a: "The Mesa capsule is CASA approved for aircraft use. Prams are normally checked at the gate rather than carried on.", link: "/pages/faqs#can-i-take-an-uppababy-pram-on-a-plane" });
+  const k = fixKnowledge(s) as unknown as { faq: { q: string; a: string; link: string | null }[] };
+  const plane = k.faq.find(f => f.q === "Can I take an UPPAbaby pram on a plane?")!;
+  assert.match(plane.a, /Minu V3/);
+  assert.match(plane.a, /25 x 45 x 55 cm/);
+  assert.match(plane.a, /TravelSafe/);
+  assert.match(plane.a, /CASA/);
+  assert.equal(plane.link, "/pages/faqs#can-i-take-an-uppababy-pram-on-a-plane");
+  assert.equal(k.faq.filter(f => !/4moms|older Vista/.test(f.q)).length, 3);
+});
+
+test("adds written answers the site is missing, once", () => {
+  const k = fixKnowledge(sample()) as unknown as { faq: { q: string; a: string }[] };
+  const fourMoms = k.faq.find(f => /4moms/i.test(f.q))!;
+  assert.match(fourMoms.a, /help\.coolkidz\.com\.au/);
+  assert.match(fourMoms.a, /recall/i);
+  const bar = k.faq.find(f => /bumper bar/i.test(f.q) && /2018/.test(f.q))!;
+  assert.match(bar.a, /Vista V2/);
+  assert.match(bar.a, /quote/);
+  const again = fixKnowledge(k as never) as unknown as { faq: unknown[] };
+  assert.equal(again.faq.length, k.faq.length);
+});

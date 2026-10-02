@@ -49,9 +49,25 @@ export const NOT_SUPPORTED = "The Bugaboo Turtle is not supported on any UPPAbab
 // The site's list is shared by every frame that takes other brands, so the Kona exception is written into each name.
 export const EXTRA_CAPSULES = ["Britax B-Pod (Vista, Cruz and Ridge; not the Kona)", "Britax B-Pod Lite (Vista, Cruz and Ridge; not the Kona)"];
 
+// Site answers that leave out what matters most. The plane answer never named the Minu V3, the pram to fly with
+// (David, 2 Oct 2026); facts from the help centre article "Can I take the Minu V3 on board the plane?".
+const FAQ_ANSWERS: Record<string, string> = {
+  "Can I take an UPPAbaby pram on a plane?": "Yes. The Minu V3 is the pram to fly with: it weighs 7.6 kg and folds to 25 x 45 x 55 cm, which meets the IATA overhead standard. Whether it can go in the cabin is up to your airline, so check before you book. Other prams are normally checked at the gate or in the hold. Pack yours in an UPPAbaby travel bag and register it under the TravelSafe Program before you fly, because airline damage is otherwise excluded from the warranty. The Mesa capsule is CASA approved for aircraft use on airlines that permit child restraints.",
+};
+
+// Written answers the site does not have (David, 2 Oct 2026). Added once, under the site's own "Answers" topic.
+const EXTRA_FAQ = [
+  { topic: "Answers", q: "Is there a recall on the 4moms MamaRoo? Who looks after 4moms?",
+    a: "4moms products, including the 4moms MamaRoo, are looked after by Coolkidz Australia, not UPPAbaby. There was an older voluntary recall on the 4moms MamaRoo. For anything 4moms, including that recall, please lodge a request with the Coolkidz help desk at https://help.coolkidz.com.au and the team will help.", link: null },
+  { topic: "Answers", q: "Can I get a bumper bar for my older Vista (2015 to 2018)?",
+    a: "Yes. The current Vista V2 and V3 bumper bar fits and works on the 2015 to 2018 Vista, so we can quote it for you. Lodge a request with a photo of the white serial label near the rear axle and we will send a quote.", link: "/pages/spare-parts" },
+];
+
 type ThirdParty = { name?: string; models?: string[]; note?: string };
 export function fixKnowledge<T extends { pages?: Record<string, string> }>(k: T): T {
-  const out = walk(k) as T & { adapters?: { capsules?: { thirdparty?: ThirdParty } } };
+  const out = walk(k) as T & { adapters?: { capsules?: { thirdparty?: ThirdParty } }; faq?: { q: string; a: string }[] };
+  if (Array.isArray(out.faq)) out.faq = out.faq.map(f => (FAQ_ANSWERS[f.q] ? { ...f, a: FAQ_ANSWERS[f.q] } : f));
+  if (Array.isArray(out.faq)) { const have = new Set(out.faq.map(f => f.q)); out.faq = [...out.faq, ...EXTRA_FAQ.filter(f => !have.has(f.q))]; }
   const pages = { ...(out.pages || {}) };
   const have = new Set(Object.values(pages));
   for (const [label, path] of Object.entries(EXTRA_PAGES)) if (!have.has(path)) pages[label] = path;
