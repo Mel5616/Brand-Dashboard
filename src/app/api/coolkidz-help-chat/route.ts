@@ -45,7 +45,7 @@ const ARTICLE_BY_TITLE = new Map(K.articles.map(a => [norm(a.title), a.url.repla
 /* ---- link guard: relative links must be a help centre page we know; full links only to our own and the brands' sites ---- */
 const HELP_PAGES = new Set(["/support/tickets/new", "/support/tickets", "/support/solutions", "/support/home",
   ...K.articles.map(a => a.url.replace("https://help.coolkidz.com.au", ""))]);
-const HOSTS = new Set(["help.coolkidz.com.au", "coolkidz.com.au", "www.coolkidz.com.au", "help.uppababy.com.au",
+const HOSTS = new Set(["help.coolkidz.com.au", "coolkidz.com.au", "www.coolkidz.com.au", "help.uppababy.com.au", "www.zazu-kids.com", "zazu-kids.com", // ZAZU manuals live on zazu-kids.com
   ...Object.values(K.brands).map(b => new URL(b.site).host), ...Object.values(K.brands).map(b => new URL(b.site).host.replace(/^www\./, ""))]);
 // Brand-site links must be a page from the fact sheets (each checked as live when the knowledge is built) or a brand's home page.
 const trim = (u: string) => u.replace(/[.,;:]+$/, "").replace(/\/$/, "");
