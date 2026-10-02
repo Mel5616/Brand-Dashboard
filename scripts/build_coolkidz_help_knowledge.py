@@ -34,6 +34,9 @@ PHONE = re.compile(r"(\+?61\s?|\b0)[2-478](\s?\d){8}\b|\b1[38]00(\s?\d){6}\b|\b1
 
 
 def scrub(text):
+    # house style: no en or em dashes (they come through in answers and link labels)
+    text = re.sub(r"(\d)\s?[\u2013\u2014]\s?(\d)", r"\1 to \2", text)
+    text = re.sub(r"\s*[\u2013\u2014]\s*", ", ", text)
     text = EMAIL.sub("(lodge a request instead)", text)
     return PHONE.sub("(lodge a request instead)", text)
 
