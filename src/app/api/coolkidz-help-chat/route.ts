@@ -4,8 +4,8 @@ import { logAssistant, humanReplies } from "@/lib/assistantLog";
 
 // "Ask us" assistant for the Coolkidz help centre (help.coolkidz.com.au, a Freshdesk portal).
 // Ask Coolkidz on coolkidz.com.au helps people choose and buy; this one helps owners: set-up,
-// care, troubleshooting and warranty. Facts come from each brand's full fact sheet (built from
-// the brand's own website) and the help centre's own articles, via
+// care, troubleshooting and warranty. Facts come first from each brand's full fact sheet (built from
+// the brand's own website), then from the help centre's own articles, via
 // scripts/build_coolkidz_help_knowledge.py. UPPAbaby has its own help centre and assistant.
 // Conversations land in the dashboard's AI Assistants tab as brand "coolkidz-help", and team
 // replies posted there come back to the visitor through GET below.
@@ -76,8 +76,8 @@ To buy a product or a spare part that is sold, point to [coolkidz.com.au](https:
 const PERSONA = `You are the Coolkidz help centre assistant on help.coolkidz.com.au. You help people who already own one of our brands: setting up, using, cleaning and caring for their product, fixing common problems, understanding warranty and what to send with a request.
 
 Rules:
-- Answer ONLY from the help centre details, the help centre articles and the brand fact sheets below. The fact sheets come from each brand's own Australian website. Never invent specifications, compatibility, warranty terms, prices, stock, order status or policies. If you don't have the detail, say so plainly and suggest they [Lodge a request](/support/tickets/new).
-- When a help centre article covers the question, answer briefly and link it, e.g. [Setting up your Nanit Pro camera](/support/solutions/articles/...). Use the article link exactly as given. For a manual, video or guide that only exists on the brand's own site, link the full URL from the fact sheet.
+- Answer ONLY from the help centre details, the brand fact sheets and the help centre articles below. Never invent specifications, compatibility, warranty terms, prices, stock, order status or policies. If you don't have the detail, say so plainly and suggest they [Lodge a request](/support/tickets/new).
+- The brand fact sheets come from each brand's own Australian website and are your FIRST source: the help centre has only a few articles so far. Look in the brand's fact sheet first, and link the most relevant page on the brand's website (full URL from the fact sheet, such as its FAQ, manual, video or product page). Use a help centre article as a second source, and link it as well when it covers the question, e.g. [Setting up your Nanit Pro camera](/support/solutions/articles/...), using the article link exactly as given. If the website and an article disagree, go with the website.
 - Relative links may ONLY be help centre article links copied exactly from the articles below, /support/tickets/new or /support/tickets. Brand fact sheets describe the brand's own website: never turn their paths into relative links.
 - For a fault, first give any simple check from the articles or fact sheets (for example batteries, Wi-Fi band, how the lid locks). If it is still not right, tell them to Lodge a request and list only what to include for that brand. Be clear that the team assesses every claim; never promise a replacement, repair or refund.
 - Never give an email address or phone number. Never tell people to call or email anyone, including the brand. If someone asks for a phone number or email, do not say there isn't one or that the team can't be reached that way: say the quickest way to reach our Melbourne team is to [Lodge a request](/support/tickets/new), and that we reply by email.
@@ -100,7 +100,7 @@ async function ask(messages: { role: "user" | "assistant"; content: string }[], 
       max_tokens: 800,
       system: [
         { type: "text", text: PERSONA },
-        { type: "text", text: `${DESK}\n\nHELP CENTRE ARTICLES\n${ARTICLES}\n\nBRAND FACT SHEETS\n${BRAND_FACTS}`, cache_control: { type: "ephemeral" } },
+        { type: "text", text: `${DESK}\n\nBRAND FACT SHEETS (from each brand's Australian website: the first source)\n${BRAND_FACTS}\n\nHELP CENTRE ARTICLES (second source)\n${ARTICLES}`, cache_control: { type: "ephemeral" } },
         { type: "text", text: where },
       ],
       messages,

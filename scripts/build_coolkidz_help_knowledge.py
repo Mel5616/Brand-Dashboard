@@ -27,7 +27,7 @@ DATA = os.path.join(BASE, "src", "data")
 HELP = "https://help.coolkidz.com.au"
 
 DROP = {"store", "offers", "stockists", "retail", "programs", "awards", "colours", "wraps", "travel_minis"}
-LIMIT = 16000  # per brand
+LIMIT = 45000  # per brand: the brand websites are the main source, so keep nearly all of each fact sheet
 EMAIL = re.compile(r"[\w.+-]+@[\w-]+(\.[\w-]+)+")
 PHONE = re.compile(r"(\+?61\s?|\b0)[2-478](\s?\d){8}\b|\b1[38]00(\s?\d){6}\b|\b13\s?\d{2}\s?\d{2}\b")
 
