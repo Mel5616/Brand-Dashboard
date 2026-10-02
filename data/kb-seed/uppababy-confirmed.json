@@ -1060,6 +1060,35 @@
       "status": "approved",
       "decided_by": "david@coolkidz.com.au",
       "decided_reason": "Answers from David, 2 Oct 2026 (Word document)"
+    },
+    {
+      "ext_key": "fact:4moms-coolkidz",
+      "topic": "Warranty and service",
+      "models": [
+        "MamaRoo"
+      ],
+      "question": "Is there a recall on the 4moms MamaRoo? Who looks after 4moms?",
+      "answer": "4moms products, including the 4moms MamaRoo, are looked after by Coolkidz Australia, not UPPAbaby. There was an older voluntary recall on the 4moms MamaRoo. For anything 4moms, including that recall, please lodge a request with the Coolkidz help desk at https://help.coolkidz.com.au and the team will help.",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 2 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "decided_reason": "Answers from David, 2 Oct 2026"
+    },
+    {
+      "ext_key": "fact:older-vista-bumper-bar",
+      "topic": "Spare parts",
+      "models": [
+        "Vista"
+      ],
+      "question": "Can I get a bumper bar for my older Vista (2015 to 2018)?",
+      "answer": "Yes. The current Vista V2 and V3 bumper bar fits and works on the 2015 to 2018 Vista, so we can quote it for you. Lodge a request through our [support page](/pages/support) with a photo of the white serial label near the rear axle and we will send a quote.",
+      "link": "/pages/spare-parts",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 2 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "decided_reason": "Answers from David, 2 Oct 2026"
     }
   ]
 }
