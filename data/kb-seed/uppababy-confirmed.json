@@ -1089,6 +1089,74 @@
       "status": "approved",
       "decided_by": "david@coolkidz.com.au",
       "decided_reason": "Answers from David, 2 Oct 2026"
+    },
+    {
+      "ext_key": "fact:plane-minu",
+      "topic": "Answers",
+      "models": [],
+      "question": "Can I take an UPPAbaby pram on a plane?",
+      "answer": "Yes. The Minu V3 is the pram to fly with: it weighs 7.6 kg and folds to 25 x 45 x 55 cm, which meets the IATA overhead standard. Whether it can go in the cabin is up to your airline, so check before you book. Other prams are normally checked at the gate or go in the hold. Pack yours in an UPPAbaby travel bag and register it under the [TravelSafe Program](/pages/travelsafe-program) before you fly, because airline damage is otherwise excluded from the warranty. The Mesa capsule is CASA approved for aircraft use on airlines that permit child restraints.",
+      "link": "/pages/faqs#can-i-take-an-uppababy-pram-on-a-plane",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 2 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": {
+        "topic": "Answers",
+        "q": "Can I take an UPPAbaby pram on a plane?"
+      },
+      "decided_reason": "Minu V3 for flying; replies within one business day (David, 2 Oct 2026)"
+    },
+    {
+      "ext_key": "fact:support-hours",
+      "topic": "Answers",
+      "models": [],
+      "question": "What are your support hours?",
+      "answer": "Our Melbourne team works Monday to Friday, 8am to 5pm. Warranty claims, spare parts questions and Crash Exchange claims can be lodged online at any hour through our [support page](/pages/support), and we reply within one business day.",
+      "link": "/pages/faqs#what-are-your-support-hours",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 2 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": {
+        "topic": "Answers",
+        "q": "What are your support hours?"
+      },
+      "decided_reason": "Minu V3 for flying; replies within one business day (David, 2 Oct 2026)"
+    },
+    {
+      "ext_key": "fact:warranty-lodge-reply",
+      "topic": "Make a warranty claim",
+      "models": [],
+      "question": "How to lodge it",
+      "answer": "Lodge a request through our [support page](/pages/support) and choose Warranty claim. Attach your proof of purchase, a photo of the serial number label and photos or a short video of the fault, and add a sentence on when it started and what you were doing. We may ask for one more photo from a specific angle, and we reply within one business day. We then repair it, replace the part or replace the product, whichever is appropriate. Some parts are replaced with newer model parts as products are improved.",
+      "link": "/pages/register-warranty#how-to-lodge-it",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 2 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": {
+        "topic": "Make a warranty claim",
+        "q": "How to lodge it"
+      },
+      "decided_reason": "Minu V3 for flying; replies within one business day (David, 2 Oct 2026)"
+    },
+    {
+      "ext_key": "fact:warranty-claim-reply",
+      "topic": "Warranty",
+      "models": [],
+      "question": "How to make a claim",
+      "answer": "Lodge a request through our [support page](/pages/support). Have these ready and most claims are assessed without a second round of questions: proof of purchase from an authorised retailer showing the date (needed on every claim), the serial number from the white label near the rear axle, photos showing the fault plus one of the whole pram, and a sentence on when you first noticed it. We reply within one business day.",
+      "link": "/pages/warranty#how-to-make-a-claim",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 2 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "corrects_question": {
+        "topic": "Warranty",
+        "q": "How to make a claim"
+      },
+      "decided_reason": "Minu V3 for flying; replies within one business day (David, 2 Oct 2026)"
     }
   ]
 }
