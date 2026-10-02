@@ -1157,6 +1157,23 @@
         "q": "How to make a claim"
       },
       "decided_reason": "Minu V3 for flying; replies within one business day (David, 2 Oct 2026)"
+    },
+    {
+      "ext_key": "fact:vista-model-codes",
+      "topic": "Serial numbers and registration",
+      "models": [
+        "Vista",
+        "Vista V2",
+        "Vista V3"
+      ],
+      "question": "Which Vista do I have? What do codes like 0318-VIS-AU mean?",
+      "answer": "The first part of the code on the white label is the model number, not a date. For the Vista: 0318 is the 2018 model Vista (the 2015 to 2018 Vista), 0320 is the Vista V2, and 0303 is the Vista V3. VIS means Vista and AU means the Australian version. The label is on the underside of the frame near the rear axle: fold the pram to see it. If your code is not one of these, lodge a request through our [support page](/pages/support) with a photo of the label and we will tell you which model you have.",
+      "link": "/pages/support",
+      "source": "confirmed",
+      "source_ref": "David Kingsford, 2 Oct 2026",
+      "status": "approved",
+      "decided_by": "david@coolkidz.com.au",
+      "decided_reason": "Vista model numbers confirmed by David, 2 Oct 2026"
     }
   ]
 }
