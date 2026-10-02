@@ -18,6 +18,7 @@ const BRANDS: { id: string; label: string; site: string; color: string }[] = [
   { id: "uppababy", label: "UPPAbaby · Ask UPPAbaby", site: "uppababy.com.au", color: "bg-violet-100 text-violet-800" },
   { id: "wonderfold", label: "WonderFold · Ask WonderFold", site: "wonderfold.com.au", color: "bg-teal-100 text-teal-800" },
   { id: "coolkidz", label: "Coolkidz · Ask Coolkidz", site: "coolkidz.com.au", color: "bg-blue-100 text-blue-800" },
+  { id: "coolkidz-help", label: "Coolkidz help centre · Ask us", site: "help.coolkidz.com.au", color: "bg-slate-200 text-slate-800" },
 ];
 const when = (s: string) => new Date(s).toLocaleString("en-AU", { dateStyle: "medium", timeStyle: "short" });
 const STOP = new Set("the a an and or to of in on for is it my me i do does can how what when where which with your you are be will this that about there from have has not no yes at as if any".split(" "));
