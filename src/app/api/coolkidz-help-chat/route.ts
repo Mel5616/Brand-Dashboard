@@ -51,8 +51,22 @@ const HOSTS = new Set(["help.coolkidz.com.au", "coolkidz.com.au", "www.coolkidz.
 const trim = (u: string) => u.replace(/[.,;:]+$/, "").replace(/\/$/, "");
 const KNOWN_URLS = new Set([...Object.values(K.brands).flatMap(b => [b.site, ...(b.facts.match(/https:\/\/[^\s)\]"'<>]+/g) || [])]).map(trim)]);
 const OUR_HOSTS = new Set(["help.coolkidz.com.au", "coolkidz.com.au", "www.coolkidz.com.au", "help.uppababy.com.au"]);
+function allowedUrl(href: string) {
+  try {
+    const u = new URL(href);
+    return href.startsWith("https://") && HOSTS.has(u.host) && (OUR_HOSTS.has(u.host) || KNOWN_URLS.has(trim(href)));
+  } catch { return false; }
+}
+// A bare address is not clickable in the widget: allowed ones become a proper link, others are removed.
+function linkBareUrls(text: string) {
+  return text.replace(/(^|[^(\w])(https:\/\/[^\s)\]]+)/g, (m, pre, raw) => {
+    const url = trim(raw), tail = raw.slice(url.length);
+    if (!allowedUrl(url)) return pre + tail;
+    return `${pre}[${/\.pdf$/i.test(url) ? "Download the PDF" : "Open the page"}](${url})${tail}`;
+  });
+}
 function guardLinks(text: string) {
-  return text.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (m, label, href) => {
+  return linkBareUrls(text).replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (m, label, href) => {
     if (href === "help-article" || href.startsWith("/support/solutions/articles/")) {
       const path = ARTICLE_BY_TITLE.get(norm(label)); // the title decides which article, never the number
       return path ? `[${label}](${path})` : label;
@@ -84,7 +98,7 @@ WARRANTY CLAIMS: WHAT TO INCLUDE IN THE REQUEST (so we can help straight away)
 - Warranty is 12 months from purchase unless the brand's fact sheet says otherwise. Never decide whether a claim will be approved, replaced or refunded; the team assesses every claim.
 
 UPPABABY
-UPPAbaby has its own help centre and assistant: [help.uppababy.com.au](https://help.uppababy.com.au). Send every UPPAbaby question there.
+Coolkidz also distributes UPPAbaby: prams and strollers (Vista, Cruz, Minu, Ridge, Kona), the Mesa car capsule and bases, bassinets, RumbleSeat and accessories. UPPAbaby has its own help centre and assistant: [help.uppababy.com.au](https://help.uppababy.com.au). Send every UPPAbaby question there, including questions about prams, capsules or car seats, and never say we don't carry a product type that UPPAbaby makes.
 
 BUYING
 To buy a product or a spare part that is sold, point to [coolkidz.com.au](https://www.coolkidz.com.au) or the brand's own website. You cannot see stock, prices of spare parts, orders or delivery status: for those, Lodge a request with the order number.`;
