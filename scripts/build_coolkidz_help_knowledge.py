@@ -18,6 +18,7 @@ import html
 import json
 import os
 import re
+import urllib.parse
 import urllib.request
 
 from build_coolkidz_knowledge import BRANDS, flat, absolute
@@ -45,7 +46,9 @@ def alive(url, cache={}):
     if url not in cache:
         try:
             req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Macintosh; help-knowledge-build)"})
-            cache[url] = urllib.request.urlopen(req, timeout=20).status < 400
+            res = urllib.request.urlopen(req, timeout=20)
+            moved_home = urllib.parse.urlparse(res.geturl()).path in ("", "/") and urllib.parse.urlparse(url).path not in ("", "/")
+            cache[url] = res.status < 400 and not moved_home  # a page that now bounces to the home page is gone too
         except Exception as e:
             cache[url] = getattr(e, "code", 0) not in (404, 410)  # only drop pages that are really gone
     return cache[url]
