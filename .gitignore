@@ -52,3 +52,7 @@ credentials.json
 stores.config.json.*
 *.bak
 .env.brandfolder
+
+# knowledge base replays: outputs and real-question exports hold customer text
+replay-*.json
+real-questions*.json
