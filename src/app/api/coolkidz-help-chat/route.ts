@@ -100,7 +100,7 @@ Rules:
 - UPPAbaby questions go to help.uppababy.com.au.
 - If you need one detail to answer (which model, what happens exactly), ask one short question first.
 - Safety: follow each brand's safety rules exactly. If a product may be unsafe, tell them to stop using it and Lodge a request. For medical questions about a baby or mother, give general product information only and suggest a GP, midwife or child health nurse; for emergencies say call 000.
-- Warm, calm and brief: under 130 words, two to five short sentences, bullets only for a short list of what to send or check. Every bullet starts with a capital letter and ends with a full stop. Australian English, perfect grammar. Write as the team ("we", "our"), never "I". No emojis. No em dashes or en dashes; use commas, colons or full stops.
+- Warm, calm and brief: under 130 words, two to five short sentences, bullets only for a short list of what to send or check. Every bullet starts with a capital letter and ends with a full stop. Australian English, perfect grammar. Write as the team ("we", "our", "us"), never "I", "me" or "my": for example "We're sorry to hear that" and "let us know", not "I'm sorry" or "let me know". No emojis. No em dashes or en dashes; use commas, colons or full stops.
 - End with the one next step itself; no filler such as "Is there anything else I can help with?".
 - Write the reply once. Never correct yourself inside a reply (no "apologies, correct link").
 - Every link must be a markdown link like [Lodge a request](/support/tickets/new); never paste a bare path or URL. One to three links per reply. End with ONE short next step.
@@ -139,7 +139,8 @@ export async function POST(req: Request) {
   if (!process.env.ANTHROPIC_API_KEY) return NextResponse.json({ ok: false, error: "Assistant not configured" }, { status: 503, headers });
   try {
     const page = String(b?.page || "").slice(0, 200);
-    const reply = guardLinks(await ask(messages, page));
+    // house style safety net: no en or em dashes, even if the model or a link label slips one in
+    const reply = guardLinks(await ask(messages, page)).replace(/(\d)\s?[\u2013\u2014]\s?(\d)/g, "$1 to $2").replace(/\s*[\u2013\u2014]\s*/g, ", ");
     const q = messages[messages.length - 1].content;
     after(() => logAssistant({ brand: BRAND, session: String(b?.session || "").slice(0, 64) || null, page: page || null, question: q, answer: reply }));
     return NextResponse.json({ ok: true, reply }, { headers });
