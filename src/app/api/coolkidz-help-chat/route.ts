@@ -36,7 +36,11 @@ function limited(ip: string) {
 type Article = { title: string; url: string; text: string };
 const K = knowledge as { brands: Record<string, { site: string; facts: string }>; articles: Article[] };
 const BRAND_FACTS = Object.entries(K.brands).map(([name, b]) => `=== ${name} (brand website: ${b.site}) ===\n${b.facts}`).join("\n\n");
-const ARTICLES = K.articles.map(a => `=== ${a.title} ===\nLink: ${a.url.replace("https://help.coolkidz.com.au", "")}\n${a.text}`).join("\n\n");
+// Articles are listed by title only: the model links one as [exact title](help-article) and the server fills in
+// the real address, so a long article number can never be paired with the wrong title.
+const ARTICLES = K.articles.map(a => `=== ${a.title} ===\n${a.text}`).join("\n\n");
+const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+const ARTICLE_BY_TITLE = new Map(K.articles.map(a => [norm(a.title), a.url.replace("https://help.coolkidz.com.au", "")]));
 
 /* ---- link guard: relative links must be a help centre page we know; full links only to our own and the brands' sites ---- */
 const HELP_PAGES = new Set(["/support/tickets/new", "/support/tickets", "/support/solutions", "/support/home",
@@ -45,6 +49,10 @@ const HOSTS = new Set(["help.coolkidz.com.au", "coolkidz.com.au", "www.coolkidz.
   ...Object.values(K.brands).map(b => new URL(b.site).host), ...Object.values(K.brands).map(b => new URL(b.site).host.replace(/^www\./, ""))]);
 function guardLinks(text: string) {
   return text.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (m, label, href) => {
+    if (href === "help-article" || href.startsWith("/support/solutions/articles/")) {
+      const path = ARTICLE_BY_TITLE.get(norm(label)); // the title decides which article, never the number
+      return path ? `[${label}](${path})` : label;
+    }
     if (href.startsWith("/")) return HELP_PAGES.has(href.split(/[?#]/)[0]) ? m : label;
     try { return HOSTS.has(new URL(href).host) && href.startsWith("https://") ? m : label; } catch { return label; }
   });
@@ -77,8 +85,8 @@ const PERSONA = `You are the Coolkidz help centre assistant on help.coolkidz.com
 
 Rules:
 - Answer ONLY from the help centre details, the brand fact sheets and the help centre articles below. Never invent specifications, compatibility, warranty terms, prices, stock, order status or policies. If you don't have the detail, say so plainly and suggest they [Lodge a request](/support/tickets/new).
-- The brand fact sheets come from each brand's own Australian website and are your FIRST source: the help centre has only a few articles so far. Look in the brand's fact sheet first, and link the most relevant page on the brand's website (full URL from the fact sheet, such as its FAQ, manual, video or product page). Use a help centre article as a second source, and link it as well when it covers the question, e.g. [Setting up your Nanit Pro camera](/support/solutions/articles/...), using the article link exactly as given. If the website and an article disagree, go with the website.
-- Relative links may ONLY be help centre article links copied exactly from the articles below, /support/tickets/new or /support/tickets. Brand fact sheets describe the brand's own website: never turn their paths into relative links.
+- The brand fact sheets come from each brand's own Australian website and are your FIRST source: the help centre has only a few articles so far. Look in the brand's fact sheet first, and link the most relevant page on the brand's website (full URL from the fact sheet, such as its FAQ, manual, video or product page). Use a help centre article as a second source, and link it as well when it covers the question: write the article's exact title as the link text and help-article as the link, e.g. [Setting up your Nanit Pro camera](help-article). Never write article numbers or article addresses. If the website and an article disagree, go with the website.
+- Relative links may ONLY be /support/tickets/new or /support/tickets; help centre articles use the help-article form above. Brand fact sheets describe the brand's own website: never turn their paths into relative links.
 - For a fault, first give any simple check from the articles or fact sheets (for example batteries, Wi-Fi band, how the lid locks). If it is still not right, tell them to Lodge a request and list only what to include for that brand. Be clear that the team assesses every claim; never promise a replacement, repair or refund.
 - Never give an email address or phone number. Never tell people to call or email anyone, including the brand. If someone asks for a phone number or email, do not say there isn't one or that the team can't be reached that way: say the quickest way to reach our Melbourne team is to [Lodge a request](/support/tickets/new), and that we reply by email.
 - UPPAbaby questions go to help.uppababy.com.au.
@@ -86,6 +94,7 @@ Rules:
 - Safety: follow each brand's safety rules exactly. If a product may be unsafe, tell them to stop using it and Lodge a request. For medical questions about a baby or mother, give general product information only and suggest a GP, midwife or child health nurse; for emergencies say call 000.
 - Warm, calm and brief: under 130 words, two to five short sentences, bullets only for a short list of what to send or check. Every bullet starts with a capital letter and ends with a full stop. Australian English, perfect grammar. Write as the team ("we", "our"), never "I". No emojis. No em dashes or en dashes; use commas, colons or full stops.
 - End with the one next step itself; no filler such as "Is there anything else I can help with?".
+- Write the reply once. Never correct yourself inside a reply (no "apologies, correct link").
 - Every link must be a markdown link like [Lodge a request](/support/tickets/new); never paste a bare path or URL. One to three links per reply. End with ONE short next step.
 - You cannot see requests, orders or accounts.
 - If someone shares personal details, do not repeat them back.`;
