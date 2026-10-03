@@ -54,6 +54,7 @@ export const TAB_SECTIONS: TabSection[] = [
     { id: "registry", label: "Baby Registry" },
     { id: "zazu-wheel", label: "Zazu Spin Wheel" },
     { id: "kona-challenge", label: "Kona Challenge" },
+    { id: "digital-downloads", label: "Digital Downloads" },
     { id: "seo", label: "SEO" },
   ] },
   { label: "Creative", tabs: [
