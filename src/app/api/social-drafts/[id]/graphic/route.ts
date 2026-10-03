@@ -35,6 +35,18 @@ async function loadProducts(domain: string): Promise<Product[]> {
   } catch { return []; }
 }
 
+// Turn an uploaded photo (any common format) into a JPEG data URI plus its shape.
+async function userPhoto(file: File): Promise<{ data: string; fit: "cover" | "contain"; aspect: number } | undefined> {
+  try {
+    const sharp = (await import("sharp")).default;
+    const img = sharp(Buffer.from(await file.arrayBuffer())).rotate();
+    const meta = await img.metadata();
+    const jpg = await img.resize({ width: 1500, withoutEnlargement: true }).jpeg({ quality: 88 }).toBuffer();
+    const aspect = (meta.width || 1) / (meta.height || 1);
+    return { data: `data:image/jpeg;base64,${jpg.toString("base64")}`, fit: aspect >= 1.25 ? "cover" : "contain", aspect };
+  } catch { return undefined; }
+}
+
 async function productPhoto(products: Product[], ref: unknown): Promise<{ data: string; fit: "cover" | "contain"; aspect: number } | undefined> {
   const m = /^(\d+)\.(\d+)$/.exec(String(ref ?? ""));
   if (!m) return undefined;
@@ -61,7 +73,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!ok) return NextResponse.json({ error: "No access" }, { status: 403 });
   if (!process.env.ANTHROPIC_API_KEY) return NextResponse.json({ error: "ANTHROPIC_API_KEY not configured" }, { status: 500 });
   const { id } = await params;
-  let body: any = {}; try { body = await req.json(); } catch { /* optional */ }
+  // JSON for a normal generate, multipart when the user supplies their own cover photo.
+  let body: any = {}; let userFile: File | null = null;
+  if ((req.headers.get("content-type") || "").includes("multipart/form-data")) {
+    const fd = await req.formData();
+    userFile = fd.get("photo") as File | null;
+    body = { layout: fd.get("layout") || undefined, photos: fd.get("photos") !== "false", coverOnly: fd.get("coverOnly") === "true", slides: fd.get("slides") || undefined };
+  } else { try { body = await req.json(); } catch { /* optional */ } }
   const wanted = ["bold", "soft", "list"].includes(body.layout) ? body.layout : null;
   const usePhotos = body.photos !== false;
 
@@ -136,6 +154,10 @@ ${photoRule}`;
     await Promise.all(logoPaths.map(async p => { logos[p] = toData(await get(p)); }));
   } catch (e: any) { return NextResponse.json({ error: `Couldn't load fonts or logo: ${e.message}` }, { status: 500 }); }
 
+  const mine = userFile && userFile.size ? await userPhoto(userFile) : undefined;
+  if (userFile && userFile.size && !mine) return NextResponse.json({ error: "Couldn't read that photo. Try a JPG or PNG." }, { status: 400 });
+  const coverOnly = !!mine && body.coverOnly === true && carousel;
+
   const height = draft.format === "story" || draft.format === "reel" ? 1920 : 1350;
   const sb = await createClient();
   await sb.storage.createBucket(BUCKET, { public: true }).catch(() => {});
@@ -143,7 +165,8 @@ ${photoRule}`;
   let urls: string[];
   try {
     urls = await Promise.all(plan.map(async (p, k) => {
-      const photo = await productPhoto(products, p.ref);
+      if (coverOnly && k > 0) return "";
+      const photo = k === 0 && mine && p.layout !== "list" ? mine : await productPhoto(products, p.ref);
       const { ref: _ref, ...rest } = p; void _ref;
       const copy: GraphicCopy = { ...rest, photo: photo?.data, photoFit: photo?.fit, photoAspect: photo?.aspect, layout: photo && (p.layout === "bold" || p.layout === "soft") && !carousel ? "photo" : photo && p.layout === "bold" ? "photo" : p.layout };
       const png = await new ImageResponse(buildGraphic(copy, style, logos, height), { width: 1080, height, fonts }).arrayBuffer();
@@ -154,6 +177,8 @@ ${photoRule}`;
     }));
   } catch (e: any) { return NextResponse.json({ error: String(e.message || e).slice(0, 200) }, { status: 500 }); }
 
+  // Cover-only keeps the draft's other slides.
+  if (coverOnly) urls = [urls[0], ...(Array.isArray(draft.images) && draft.images.length > 1 ? draft.images.slice(1) : urls.slice(1).filter(Boolean))];
   const { data, error } = await sb.from("social_drafts").update({ image_url: urls[0], images: urls, updated_at: new Date().toISOString() }).eq("id", id).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ item: data, urls });

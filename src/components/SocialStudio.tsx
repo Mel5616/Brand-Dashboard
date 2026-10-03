@@ -134,6 +134,18 @@ export function SocialStudio({ brands, admin, openDraftId, onOpened }: { brands:
     setBusy(false);
   }
 
+  async function coverFromPhoto(id: string, file: File | undefined, carousel: boolean) {
+    if (!file) return;
+    setBusy(true); setMsg("Building the cover from your photo…");
+    try {
+      const fd = new FormData(); fd.append("photo", file); fd.append("photos", String(gfxPhotos)); fd.append("coverOnly", String(carousel));
+      if (gfxStyle !== "auto") fd.append("layout", gfxStyle);
+      const j = await fetch(`/api/social-drafts/${id}/graphic`, { method: "POST", body: fd }).then(r => r.json());
+      if (j.error) setMsg(j.error); else { setMsg(carousel ? "Cover updated, other slides kept." : "Graphic ready."); load(); }
+    } catch { setMsg("Couldn't build the cover."); }
+    setBusy(false);
+  }
+
   const [copiedId, setCopiedId] = useState<string | null>(null);
   async function copyPost(d: Draft) {
     const text = `${edit.caption ?? d.caption}\n\n${edit.hashtags ?? d.hashtags ?? ""}`.trim();
@@ -254,6 +266,10 @@ export function SocialStudio({ brands, admin, openDraftId, onOpened }: { brands:
                           </select>
                           <button onClick={() => generateGraphic(d.id)} disabled={busy} className="text-sm font-semibold text-white bg-pink-500 hover:bg-pink-600 rounded-lg px-3.5 py-2 disabled:opacity-60">{d.format === "carousel" ? (d.image_url ? "Regenerate carousel" : "Generate carousel") : d.image_url ? "Regenerate graphic" : "Generate graphic"}</button>
                         </div>
+                        <label className="inline-block cursor-pointer text-sm font-semibold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3.5 py-2">
+                          {d.format === "carousel" ? "Cover from my photo" : "Graphic from my photo"}
+                          <input type="file" accept="image/*" className="hidden" onChange={e => { coverFromPhoto(d.id, e.target.files?.[0], d.format === "carousel"); e.target.value = ""; }} />
+                        </label>
                         <label className="flex items-center gap-1.5 text-xs text-gray-500"><input type="checkbox" checked={gfxPhotos} onChange={e => setGfxPhotos(e.target.checked)} /> Use product photos from the brand site</label>
                         {d.images && d.images.length > 1 ? <div><a href={`/api/social-drafts/${d.id}/zip`} className="text-sm font-semibold text-pink-700 hover:underline">Download all {d.images.length} slides (zip)</a></div> : null}
                         {d.image_url && <div><a href={d.image_url} download target="_blank" rel="noreferrer" className="text-sm font-semibold text-pink-700 hover:underline">Download image</a></div>}
