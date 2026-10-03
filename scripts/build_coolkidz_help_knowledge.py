@@ -99,7 +99,8 @@ def articles():
             chunk = m.group(1) if m else ""
             chunk = re.split(r'class="[^"]*(fw-article-feedback|fw-feedback|fw-sidebar)', chunk)[0]
             chunk = re.sub(r"<[^>]*$", "", chunk)  # the split leaves half a tag at the end
-            out.append({"title": title, "url": HELP + path, "text": scrub(text_of(chunk))[:6000]})
+            text = scrub(text_of(chunk)).split("\nNeed a hand?\n")[0]  # the help box and brand links at the foot are the same on every article
+            out.append({"title": title, "url": HELP + path, "text": text[:6000]})
     return out
 
 
