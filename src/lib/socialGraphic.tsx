@@ -137,12 +137,20 @@ export function buildGraphic(copy: GraphicCopy, brand: BrandStyle, logos: Record
       )}
     </div>
   );
-  const photoCard = (h: number) => (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 904, height: h, background: "#FFFFFF", borderRadius: 36, overflow: "hidden" }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={copy.photo} style={{ width: 904, height: h, objectFit: copy.photoFit ?? "contain" }} alt="" />
-    </div>
-  );
+  // Landscape photos fill the card; portrait ones keep their own shape (no white
+  // bars), centred on the brand colour with rounded corners.
+  const photoCard = (h: number) => {
+    const shaped = copy.photoFit !== "cover" && copy.photoAspect && copy.photoAspect < 1.6;
+    const w = shaped ? Math.min(904, Math.round(h * (copy.photoAspect as number))) : 904;
+    return (
+      <div style={{ display: "flex", width: 904, height: h, alignItems: "center", justifyContent: "center" }}>
+        <div style={{ display: "flex", width: w, height: h, background: "#FFFFFF", borderRadius: 36, overflow: "hidden" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={copy.photo} style={{ width: w, height: h, objectFit: shaped ? "cover" : copy.photoFit ?? "contain" }} alt="" />
+        </div>
+      </div>
+    );
+  };
 
   if (copy.layout === "list") {
     const l = brand.list;

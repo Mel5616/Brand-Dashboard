@@ -102,12 +102,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const common = `You write the short words that go ON a social media graphic for ${brandName}, an Australian baby-goods brand. Use ONLY ideas and facts already in the caption: no new claims, prices, dates or product features. Australian English. No em dashes or en dashes. No emoji. Short and plain.`;
   const system = carousel
     ? `${common}
-Plan a ${n}-slide Instagram carousel from the caption. Slide 1 is the cover (a hook), the middle slides each make ONE point from the caption, the last slide is the call to action. Reply with JSON only, no fences:
+Plan a ${n}-slide Instagram carousel from the caption. Slide 1 is the cover, the middle slides each make ONE point from the caption, the last slide is the call to action. COVER RULES: "kicker" is a short topic label of 2-3 words (for example "Sleep tracking"), never the start of the headline sentence; "line1" is one complete hook that makes sense on its own, ideally a question or a plain statement from the caption; "line2" is optional and is only a short invitation such as "Swipe to see why", never a promise or claim. Every kicker and headline must read naturally when read top to bottom. Reply with JSON only, no fences:
 {"slides":[{"kind":"cover|point|cta","kicker":"2-4 words","line1":"headline, max 50 chars","line2":"optional, max 36 chars (cover and cta only)","sub":"optional, max 120 chars (point slides)","photo":null}],"cta":"max 28 chars, e.g. Link in bio"}
 ${photoRule}`
     : `${common}
 Reply with JSON only, no fences:
-{"layout":"bold|soft|list","kicker":"2-4 words, label above the headline","line1":"main headline, max 55 chars","line2":"optional second line, max 40 chars (bold/soft only)","sub":"optional, max 110 chars (list only)","items":["2-4 short checklist items, max 28 chars each (list only)"],"cta":"max 28 chars, e.g. Link in bio","photo":null}
+{"layout":"bold|soft|list","kicker":"2-3 word topic label, NOT the start of the headline sentence","line1":"main headline, max 55 chars","line2":"optional second line, max 40 chars (bold/soft only)","sub":"optional, max 110 chars (list only)","items":["2-4 short checklist items, max 28 chars each (list only)"],"cta":"max 28 chars, e.g. Link in bio","photo":null}
 Use "list" only when the post is about a checklist or list. ${wanted ? `Use layout "${wanted}".` : "Otherwise pick bold or soft."}
 ${photoRule}`;
   const r = await fetch("https://api.anthropic.com/v1/messages", {
