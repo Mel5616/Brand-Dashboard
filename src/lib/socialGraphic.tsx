@@ -9,41 +9,108 @@ import type { ReactElement } from "react";
 // from each brand's guide; Outfit stands in for the brand typefaces.
 export type GraphicCopy = { layout: "bold" | "soft" | "list"; kicker: string; line1: string; line2?: string; sub?: string; items?: string[]; cta: string };
 
-type Look = { bg: string; fg: string; dim: string; ctaBg: string; ctaFg: string; logo: string };
-type ListLook = { bar: string; kicker: string; ink: string; box: string; ctaBg: string; ctaFg: string; logo: string };
+type LogoRef = { src: string; w: number; h: number };
+type Look = { bg: string; fg: string; dim: string; ctaBg: string; ctaFg: string; logo: LogoRef };
+type ListLook = { bar: string; kicker: string; ink: string; box: string; ctaBg: string; ctaFg: string; logo: LogoRef };
 type BrandStyle = { bold: Look; soft: Look; list: ListLook };
 
+// Trimmed transparent logos in public/logos/graphic, sized to fit a 340x100 box.
+const L = (name: string, w: number, h: number): LogoRef => ({ src: `/logos/graphic/${name}.png`, w, h });
+const LOGO = {
+  fridaW: L("frida-white", 251, 100), fridaD: L("frida-dark", 252, 100),
+  smartrikeW: L("smartrike-white", 340, 51), smartrikeD: L("smartrike-dark", 340, 51),
+  magicW: L("magic-white", 325, 100), magicD: L("magic-dark", 326, 100),
+  uppababyW: L("uppababy-white", 340, 56), uppababyD: L("uppababy-dark", 340, 56),
+  gaiaW: L("gaia-white", 267, 100), gaiaD: L("gaia-dark", 268, 100),
+  wonderfoldW: L("wonderfold-white", 340, 36), wonderfoldD: L("wonderfold-dark", 340, 36),
+  zazuW: L("zazu-white", 340, 94), zazuD: L("zazu-dark", 100, 100),
+  matchstickW: L("matchstick-white", 310, 100), matchstickD: L("matchstick-dark", 310, 100),
+  miamilyW: L("miamily-white", 340, 82), miamilyD: L("miamily-dark", 340, 83),
+  mamaveW: L("mamave-white", 340, 53), mamaveD: L("mamave-dark", 340, 53),
+  hannieW: L("hannie-white", 340, 82), hannieD: L("hannie-dark", 340, 82),
+  nanitW: L("nanit-white", 288, 100), nanitD: L("nanit-dark", 340, 94),
+};
+
+// Keys match SOCIAL_VOICE in src/app/api/social-drafts/route.ts. Frida, SmarTrike,
+// Magic, ZAZU and WonderFold use palettes from the brand guides and site work.
+// The others are taken from the brand logos / profile images (no guide on file),
+// so check them against the brand book before heavy use.
 export const GRAPHIC_BRANDS: Record<string, BrandStyle> = {
   Frida: {
-    bold: { bg: "#4AC1E0", fg: "#FFFFFF", dim: "rgba(255,255,255,0.55)", ctaBg: "#FFFFFF", ctaFg: "#2FA8C8", logo: "/logos/white/frida.png" },
-    soft: { bg: "#C781B7", fg: "#FFFFFF", dim: "rgba(255,255,255,0.6)", ctaBg: "#FFFFFF", ctaFg: "#A8579A", logo: "/logos/white/frida.png" },
-    list: { bar: "#4AC1E0", kicker: "#4AC1E0", ink: "#5A6063", box: "#C781B7", ctaBg: "#4AC1E0", ctaFg: "#FFFFFF", logo: "/logos/Frida_logo_main.png" },
+    bold: { bg: "#4AC1E0", fg: "#FFFFFF", dim: "rgba(255,255,255,0.55)", ctaBg: "#FFFFFF", ctaFg: "#2FA8C8", logo: LOGO.fridaW },
+    soft: { bg: "#C781B7", fg: "#FFFFFF", dim: "rgba(255,255,255,0.6)", ctaBg: "#FFFFFF", ctaFg: "#A8579A", logo: LOGO.fridaW },
+    list: { bar: "#4AC1E0", kicker: "#4AC1E0", ink: "#5A6063", box: "#C781B7", ctaBg: "#4AC1E0", ctaFg: "#FFFFFF", logo: LOGO.fridaD },
   },
   SmarTrike: {
-    bold: { bg: "#41414E", fg: "#FFFFFF", dim: "rgba(255,255,255,0.55)", ctaBg: "#E5E1E6", ctaFg: "#41414E", logo: "/logos/white/smartrike.png" },
-    soft: { bg: "#C4BC9B", fg: "#41414E", dim: "rgba(65,65,78,0.55)", ctaBg: "#41414E", ctaFg: "#FFFFFF", logo: "/logos/Smartrike Logo.png" },
-    list: { bar: "#C4BC9B", kicker: "#8C8460", ink: "#41414E", box: "#C4BC9B", ctaBg: "#41414E", ctaFg: "#FFFFFF", logo: "/logos/Smartrike Logo.png" },
+    bold: { bg: "#41414E", fg: "#FFFFFF", dim: "rgba(255,255,255,0.55)", ctaBg: "#E5E1E6", ctaFg: "#41414E", logo: LOGO.smartrikeW },
+    soft: { bg: "#C4BC9B", fg: "#41414E", dim: "rgba(65,65,78,0.55)", ctaBg: "#41414E", ctaFg: "#FFFFFF", logo: LOGO.smartrikeD },
+    list: { bar: "#C4BC9B", kicker: "#8C8460", ink: "#41414E", box: "#C4BC9B", ctaBg: "#41414E", ctaFg: "#FFFFFF", logo: LOGO.smartrikeD },
   },
   Magic: {
-    bold: { bg: "#788A8E", fg: "#FFFFFF", dim: "rgba(255,255,255,0.6)", ctaBg: "#E2F1F4", ctaFg: "#4A5A5E", logo: "/logos/white/magic.png" },
-    soft: { bg: "#C1CFD1", fg: "#3F4C4F", dim: "rgba(63,76,79,0.55)", ctaBg: "#3F4C4F", ctaFg: "#FFFFFF", logo: "/logos/MCC_logo_MAGIC_black_c.png" },
-    list: { bar: "#788A8E", kicker: "#788A8E", ink: "#3F4C4F", box: "#788A8E", ctaBg: "#788A8E", ctaFg: "#FFFFFF", logo: "/logos/MCC_logo_MAGIC_black_c.png" },
+    bold: { bg: "#788A8E", fg: "#FFFFFF", dim: "rgba(255,255,255,0.6)", ctaBg: "#E2F1F4", ctaFg: "#4A5A5E", logo: LOGO.magicW },
+    soft: { bg: "#C1CFD1", fg: "#3F4C4F", dim: "rgba(63,76,79,0.55)", ctaBg: "#3F4C4F", ctaFg: "#FFFFFF", logo: LOGO.magicD },
+    list: { bar: "#788A8E", kicker: "#788A8E", ink: "#3F4C4F", box: "#788A8E", ctaBg: "#788A8E", ctaFg: "#FFFFFF", logo: LOGO.magicD },
+  },
+  ZAZU: {
+    bold: { bg: "#EC312F", fg: "#FFFFFF", dim: "rgba(255,255,255,0.6)", ctaBg: "#FFFFFF", ctaFg: "#EC312F", logo: LOGO.zazuW },
+    soft: { bg: "#F4F2EF", fg: "#231F20", dim: "rgba(35,31,32,0.5)", ctaBg: "#EC312F", ctaFg: "#FFFFFF", logo: LOGO.zazuD },
+    list: { bar: "#EC312F", kicker: "#EC312F", ink: "#231F20", box: "#EC312F", ctaBg: "#EC312F", ctaFg: "#FFFFFF", logo: LOGO.zazuD },
+  },
+  WonderFold: {
+    bold: { bg: "#063537", fg: "#FFFFFF", dim: "rgba(255,255,255,0.55)", ctaBg: "#E2EAE6", ctaFg: "#063537", logo: LOGO.wonderfoldW },
+    soft: { bg: "#E2EAE6", fg: "#063537", dim: "rgba(6,53,55,0.5)", ctaBg: "#063537", ctaFg: "#FFFFFF", logo: LOGO.wonderfoldD },
+    list: { bar: "#96603A", kicker: "#96603A", ink: "#063537", box: "#96603A", ctaBg: "#063537", ctaFg: "#FFFFFF", logo: LOGO.wonderfoldD },
+  },
+  "Gaia Baby": {
+    bold: { bg: "#607860", fg: "#FFFFFF", dim: "rgba(255,255,255,0.6)", ctaBg: "#F4F1E8", ctaFg: "#34402A", logo: LOGO.gaiaW },
+    soft: { bg: "#DDE3C8", fg: "#34402A", dim: "rgba(52,64,42,0.5)", ctaBg: "#34402A", ctaFg: "#FFFFFF", logo: LOGO.gaiaD },
+    list: { bar: "#9CA884", kicker: "#607860", ink: "#34402A", box: "#9CA884", ctaBg: "#607860", ctaFg: "#FFFFFF", logo: LOGO.gaiaD },
+  },
+  UPPAbaby: {
+    bold: { bg: "#486078", fg: "#FFFFFF", dim: "rgba(255,255,255,0.55)", ctaBg: "#FFFFFF", ctaFg: "#2E3F50", logo: LOGO.uppababyW },
+    soft: { bg: "#E6EBF0", fg: "#2E3F50", dim: "rgba(46,63,80,0.5)", ctaBg: "#2E3F50", ctaFg: "#FFFFFF", logo: LOGO.uppababyD },
+    list: { bar: "#486078", kicker: "#486078", ink: "#2E3F50", box: "#486078", ctaBg: "#486078", ctaFg: "#FFFFFF", logo: LOGO.uppababyD },
+  },
+  MiaMily: {
+    bold: { bg: "#D80024", fg: "#FFFFFF", dim: "rgba(255,255,255,0.6)", ctaBg: "#FFFFFF", ctaFg: "#D80024", logo: LOGO.miamilyW },
+    soft: { bg: "#F2F2F2", fg: "#181818", dim: "rgba(24,24,24,0.45)", ctaBg: "#D80024", ctaFg: "#FFFFFF", logo: LOGO.miamilyD },
+    list: { bar: "#D80024", kicker: "#D80024", ink: "#181818", box: "#D80024", ctaBg: "#181818", ctaFg: "#FFFFFF", logo: LOGO.miamilyD },
+  },
+  "Matchstick Monkey": {
+    bold: { bg: "#6C7878", fg: "#FFFFFF", dim: "rgba(255,255,255,0.6)", ctaBg: "#F0E4D8", ctaFg: "#4A5555", logo: LOGO.matchstickW },
+    soft: { bg: "#E4D8CC", fg: "#4A5555", dim: "rgba(74,85,85,0.5)", ctaBg: "#4A5555", ctaFg: "#FFFFFF", logo: LOGO.matchstickD },
+    list: { bar: "#6C7878", kicker: "#6C7878", ink: "#4A5555", box: "#6C7878", ctaBg: "#6C7878", ctaFg: "#FFFFFF", logo: LOGO.matchstickD },
+  },
+  Mamave: {
+    bold: { bg: "#D86048", fg: "#FFFFFF", dim: "rgba(255,255,255,0.6)", ctaBg: "#FFFFFF", ctaFg: "#B84A34", logo: LOGO.mamaveW },
+    soft: { bg: "#8A3F2F", fg: "#FFFFFF", dim: "rgba(255,255,255,0.55)", ctaBg: "#F6E6DF", ctaFg: "#8A3F2F", logo: LOGO.mamaveW },
+    list: { bar: "#D86048", kicker: "#B84A34", ink: "#6B3427", box: "#D86048", ctaBg: "#B84A34", ctaFg: "#FFFFFF", logo: LOGO.mamaveD },
+  },
+  Hannie: {
+    bold: { bg: "#181818", fg: "#FFFFFF", dim: "rgba(255,255,255,0.5)", ctaBg: "#FFFFFF", ctaFg: "#181818", logo: LOGO.hannieW },
+    soft: { bg: "#EDEDED", fg: "#181818", dim: "rgba(24,24,24,0.45)", ctaBg: "#181818", ctaFg: "#FFFFFF", logo: LOGO.hannieD },
+    list: { bar: "#181818", kicker: "#6A6A6A", ink: "#181818", box: "#181818", ctaBg: "#181818", ctaFg: "#FFFFFF", logo: LOGO.hannieD },
+  },
+  Nanit: {
+    bold: { bg: "#24486C", fg: "#FFFFFF", dim: "rgba(255,255,255,0.55)", ctaBg: "#FFFFFF", ctaFg: "#24486C", logo: LOGO.nanitW },
+    soft: { bg: "#E4ECF3", fg: "#24486C", dim: "rgba(36,72,108,0.5)", ctaBg: "#24486C", ctaFg: "#FFFFFF", logo: LOGO.nanitD },
+    list: { bar: "#24486C", kicker: "#24486C", ink: "#24486C", box: "#24486C", ctaBg: "#24486C", ctaFg: "#FFFFFF", logo: LOGO.nanitD },
   },
 };
 
 const headSize = (n: number) => (n <= 24 ? 150 : n <= 40 ? 128 : n <= 60 ? 108 : n <= 90 ? 90 : 74);
 
-function Logo({ src, h }: { src: string; h: number }) {
+function Logo({ src, w, h }: { src: string; w: number; h: number }) {
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={src} height={h} style={{ height: h }} alt="" />;
+  return <img src={src} width={w} height={h} style={{ width: w, height: h }} alt="" />;
 }
 
 export function buildGraphic(copy: GraphicCopy, brand: BrandStyle, logos: Record<string, string>, height: number): ReactElement {
   const font = "Outfit";
   const base = { width: 1080, height, display: "flex", flexDirection: "column" as const, padding: "90px 88px", fontFamily: font, position: "relative" as const };
-  const footer = (logo: string, ctaBg: string, ctaFg: string) => (
+  const footer = (logo: LogoRef, ctaBg: string, ctaFg: string) => (
     <div style={{ position: "absolute", left: 88, right: 88, bottom: 84, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-      <Logo src={logo} h={104} />
+      <Logo src={logos[logo.src]} w={logo.w} h={logo.h} />
       <div style={{ display: "flex", background: ctaBg, color: ctaFg, fontWeight: 600, fontSize: 30, padding: "20px 38px", borderRadius: 60 }}>{copy.cta}</div>
     </div>
   );
@@ -65,7 +132,7 @@ export function buildGraphic(copy: GraphicCopy, brand: BrandStyle, logos: Record
             </div>
           ))}
         </div>
-        {footer(logos[l.logo], l.ctaBg, l.ctaFg)}
+        {footer(l.logo, l.ctaBg, l.ctaFg)}
       </div>
     );
   }
@@ -77,7 +144,7 @@ export function buildGraphic(copy: GraphicCopy, brand: BrandStyle, logos: Record
       <div style={{ display: "flex", fontWeight: 600, fontSize: 26, letterSpacing: 5, textTransform: "uppercase", opacity: 0.85 }}>{copy.kicker}</div>
       <div style={{ display: "flex", marginTop: 70, fontWeight: 800, fontSize: size, lineHeight: 1.02, letterSpacing: -2 }}>{copy.line1}</div>
       {copy.line2 ? <div style={{ display: "flex", marginTop: 44, fontWeight: 800, fontSize: size, lineHeight: 1.02, letterSpacing: -2, color: l.dim }}>{copy.line2}</div> : null}
-      {footer(logos[l.logo], l.ctaBg, l.ctaFg)}
+      {footer(l.logo, l.ctaBg, l.ctaFg)}
     </div>
   );
 }

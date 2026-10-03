@@ -31,7 +31,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const bres = await fetch(`${sbUrl}/rest/v1/brands?select=name&id=eq.${draft.brand_id}`, { headers: h, cache: "no-store" });
   const brandName: string = (await bres.json().catch(() => []))[0]?.name ?? "";
   const style = GRAPHIC_BRANDS[brandName];
-  if (!style) return NextResponse.json({ error: `Graphics aren't set up for ${brandName || "this brand"} yet (Frida, SmarTrike and Magic so far).` }, { status: 400 });
+  if (!style) return NextResponse.json({ error: `Graphics aren't set up for ${brandName || "this brand"} yet.` }, { status: 400 });
 
   const system = `You write the short words that go ON a social media graphic for ${brandName}, an Australian baby-goods brand. Use ONLY ideas and facts already in the caption: no new claims, prices, dates or product features. Australian English. No em dashes or en dashes. No emoji. Short and plain.
 Reply with JSON only, no fences:
@@ -58,7 +58,7 @@ Use "list" only when the post is about a checklist or list. ${wanted ? `Use layo
   const origin = new URL(req.url).origin;
   const get = async (p: string) => { const x = await fetch(origin + p.split("/").map(encodeURIComponent).join("/")); if (!x.ok) throw new Error(`asset ${p} ${x.status}`); return x.arrayBuffer(); };
   const toData = (buf: ArrayBuffer) => `data:image/png;base64,${Buffer.from(buf).toString("base64")}`;
-  const logoPaths = [...new Set([style.bold.logo, style.soft.logo, style.list.logo])];
+  const logoPaths = [...new Set([style.bold.logo.src, style.soft.logo.src, style.list.logo.src])];
   let fonts: { name: string; data: ArrayBuffer; weight: 300 | 600 | 800; style: "normal" }[];
   const logos: Record<string, string> = {};
   try {
