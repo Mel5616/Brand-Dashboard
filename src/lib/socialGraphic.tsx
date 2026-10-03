@@ -43,7 +43,7 @@ export function buildGraphic(copy: GraphicCopy, brand: BrandStyle, logos: Record
   const base = { width: 1080, height, display: "flex", flexDirection: "column" as const, padding: "90px 88px", fontFamily: font, position: "relative" as const };
   const footer = (logo: string, ctaBg: string, ctaFg: string) => (
     <div style={{ position: "absolute", left: 88, right: 88, bottom: 84, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-      <Logo src={logo} h={70} />
+      <Logo src={logo} h={104} />
       <div style={{ display: "flex", background: ctaBg, color: ctaFg, fontWeight: 600, fontSize: 30, padding: "20px 38px", borderRadius: 60 }}>{copy.cta}</div>
     </div>
   );
