@@ -123,6 +123,16 @@ export function SocialStudio({ brands, admin, openDraftId, onOpened }: { brands:
     setBusy(false);
   }
 
+  const [gfxStyle, setGfxStyle] = useState("auto");
+  async function generateGraphic(id: string) {
+    setBusy(true); setMsg("Designing the graphic… (about 15 seconds)");
+    try {
+      const j = await fetch(`/api/social-drafts/${id}/graphic`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ layout: gfxStyle === "auto" ? undefined : gfxStyle }) }).then(r => r.json());
+      if (j.error) setMsg(j.error); else { setMsg("Graphic ready."); load(); }
+    } catch { setMsg("Couldn't generate the graphic."); }
+    setBusy(false);
+  }
+
   const [copiedId, setCopiedId] = useState<string | null>(null);
   async function copyPost(d: Draft) {
     const text = `${edit.caption ?? d.caption}\n\n${edit.hashtags ?? d.hashtags ?? ""}`.trim();
@@ -232,6 +242,12 @@ export function SocialStudio({ brands, admin, openDraftId, onOpened }: { brands:
                           {d.image_url ? "Replace image" : "Add image"}
                           <input type="file" accept="image/*" className="hidden" onChange={e => { uploadImage(d.id, e.target.files?.[0]); e.target.value = ""; }} />
                         </label>
+                        <div className="flex items-center gap-2">
+                          <select value={gfxStyle} onChange={e => setGfxStyle(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-2 py-2 text-slate-600">
+                            <option value="auto">Auto style</option><option value="bold">Bold</option><option value="soft">Soft</option><option value="list">Checklist</option>
+                          </select>
+                          <button onClick={() => generateGraphic(d.id)} disabled={busy} className="text-sm font-semibold text-white bg-pink-500 hover:bg-pink-600 rounded-lg px-3.5 py-2 disabled:opacity-60">{d.image_url ? "Regenerate graphic" : "Generate graphic"}</button>
+                        </div>
                         {d.image_url && <div><a href={d.image_url} download target="_blank" rel="noreferrer" className="text-sm font-semibold text-pink-700 hover:underline">Download image</a></div>}
                       </div>
                     </div>
