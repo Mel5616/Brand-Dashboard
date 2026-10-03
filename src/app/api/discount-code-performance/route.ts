@@ -19,11 +19,13 @@ type Row = {
 };
 
 // Batches of single-use codes (UBL-f13ea5a14d95, WF-F3L9B2CQ, UB20-XR7V5H) are
-// one "code" to the marketer, so roll them up by prefix. Named codes
-// (WARRIOR-FATIMA, WELCOME20) stay individual: their suffix has no digit.
+// one "code" to the marketer, so roll them up by prefix. A suffix only counts
+// as random if it mixes digits in and never spells a word (4+ letters in a
+// row), so named codes (UB-WELCOME20, UB-REGISTRATION15, WARRIOR-FATIMA)
+// stay individual.
 function groupKey(code: string): { key: string; batch: boolean } {
   const m = /^([A-Z0-9]{2,6})-([A-Z0-9]{6,})$/.exec(code);
-  if (m && /\d/.test(m[2])) return { key: `${m[1]}-*`, batch: true };
+  if (m && /\d/.test(m[2]) && !/[A-Z]{4,}/.test(m[2])) return { key: `${m[1]}-*`, batch: true };
   return { key: code, batch: false };
 }
 
