@@ -11,7 +11,7 @@ import { useEffect, useMemo, useState } from "react";
 type Draft = {
   id: string; brand_id: number; status: "draft" | "approved" | "posted" | "rejected";
   platform: string; format: string | null; caption: string; hashtags: string | null; visual_direction: string | null;
-  brief: string | null; note: string | null; scheduled_for: string | null;
+  brief: string | null; note: string | null; scheduled_for: string | null; image_url?: string | null;
   campaign_id: string | null; campaign_name: string | null;
   created_by: string | null; approved_by: string | null; posted_at: string | null; created_at: string;
 };
@@ -112,6 +112,17 @@ export function SocialStudio({ brands, admin, openDraftId, onOpened }: { brands:
     if (d?.ok) { setOpenId(null); setShowReject(false); setRejectNote(""); load(); } else setMsg(d?.error || "Couldn't reject.");
   }
 
+  async function uploadImage(id: string, file: File | undefined) {
+    if (!file) return;
+    setBusy(true); setMsg("Uploading…");
+    try {
+      const fd = new FormData(); fd.append("file", file);
+      const j = await fetch(`/api/social-drafts/${id}/image`, { method: "POST", body: fd }).then(r => r.json());
+      if (j.error) setMsg(j.error); else { setMsg("Image saved."); load(); }
+    } catch { setMsg("Image upload failed."); }
+    setBusy(false);
+  }
+
   const [copiedId, setCopiedId] = useState<string | null>(null);
   async function copyPost(d: Draft) {
     const text = `${edit.caption ?? d.caption}\n\n${edit.hashtags ?? d.hashtags ?? ""}`.trim();
@@ -200,7 +211,7 @@ export function SocialStudio({ brands, admin, openDraftId, onOpened }: { brands:
               <div key={d.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <button onClick={() => openDraft(d)} className="w-full text-left px-5 py-4 flex items-center gap-3 hover:bg-gray-50/60">
                   <span className={`text-[10px] font-bold uppercase tracking-wide rounded-full px-2.5 py-1 shrink-0 ${STATUS_META[d.status].cls}`}>{STATUS_META[d.status].label}</span>
-                  <span className="text-base shrink-0" title={pm.label}>{pm.icon}</span>
+                  {d.image_url ? <img src={d.image_url} alt="" className="w-10 h-12 rounded-md object-cover shrink-0 border border-gray-100" /> : <span className="text-base shrink-0" title={pm.label}>{pm.icon}</span>}
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-slate-700 truncate">{d.caption.split("\n")[0]}</p>
                     <p className="text-[12px] text-gray-400 truncate">
@@ -213,6 +224,17 @@ export function SocialStudio({ brands, admin, openDraftId, onOpened }: { brands:
 
                 {isOpen && (
                   <div className="border-t border-gray-100 px-5 py-4 space-y-3">
+                    <div className="flex flex-wrap items-start gap-4">
+                      {d.image_url ? <img src={d.image_url} alt="" className="w-44 rounded-xl border border-gray-100 shadow-sm" /> : <div className="w-44 h-56 rounded-xl border border-dashed border-gray-200 text-xs text-gray-400 flex items-center justify-center text-center px-3">No graphic yet</div>}
+                      <div className="space-y-2">
+                        <div className={lbl}>Graphic</div>
+                        <label className="inline-block cursor-pointer text-sm font-semibold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg px-3.5 py-2">
+                          {d.image_url ? "Replace image" : "Add image"}
+                          <input type="file" accept="image/*" className="hidden" onChange={e => { uploadImage(d.id, e.target.files?.[0]); e.target.value = ""; }} />
+                        </label>
+                        {d.image_url && <div><a href={d.image_url} download target="_blank" rel="noreferrer" className="text-sm font-semibold text-pink-700 hover:underline">Download image</a></div>}
+                      </div>
+                    </div>
                     <div>
                       <div className={lbl}>Caption</div>
                       <textarea value={edit.caption ?? ""} onChange={e => setEdit(p => ({ ...p, caption: e.target.value }))} rows={5} className={inp + " resize-y leading-relaxed"} disabled={!admin && d.status !== "draft"} />
