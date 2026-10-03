@@ -9,7 +9,7 @@ import type { ReactElement } from "react";
 //   point - white, brand bar, headline + body copy, optional photo (carousel slides)
 // To switch on another brand, add its palette and logos below. Palettes come
 // from each brand's guide; Outfit stands in for the brand typefaces.
-export type GraphicCopy = { layout: "bold" | "soft" | "list" | "photo" | "point"; kicker: string; line1: string; line2?: string; sub?: string; items?: string[]; cta: string; photo?: string; progress?: { i: number; n: number } };
+export type GraphicCopy = { layout: "bold" | "soft" | "list" | "photo" | "point"; kicker: string; line1: string; line2?: string; sub?: string; items?: string[]; cta: string; photo?: string; photoFit?: "cover" | "contain"; photoAspect?: number; progress?: { i: number; n: number } };
 
 type LogoRef = { src: string; w: number; h: number };
 type Look = { bg: string; fg: string; dim: string; ctaBg: string; ctaFg: string; logo: LogoRef };
@@ -100,6 +100,16 @@ export const GRAPHIC_BRANDS: Record<string, BrandStyle> = {
   },
 };
 
+// Largest font size (down to a floor) at which the given lines fit the width and
+// height budget, so headlines can never run into the footer.
+function fitSize(lines: string[], width: number, maxH: number, start: number, floor = 44): number {
+  for (let s = start; s >= floor; s -= 4) {
+    const count = lines.reduce((n, l) => n + (l ? Math.max(1, Math.ceil((l.length * s * 0.55) / width)) : 0), 0);
+    if (count * s * 1.08 + (lines.filter(Boolean).length - 1) * 14 <= maxH) return s;
+  }
+  return floor;
+}
+
 const headSize = (n: number) => (n <= 24 ? 150 : n <= 40 ? 128 : n <= 60 ? 108 : n <= 90 ? 90 : 74);
 
 function Logo({ src, w, h }: { src: string; w: number; h: number }) {
@@ -130,7 +140,7 @@ export function buildGraphic(copy: GraphicCopy, brand: BrandStyle, logos: Record
   const photoCard = (h: number) => (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 904, height: h, background: "#FFFFFF", borderRadius: 36, overflow: "hidden" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={copy.photo} style={{ width: 904, height: h, objectFit: "contain" }} alt="" />
+      <img src={copy.photo} style={{ width: 904, height: h, objectFit: copy.photoFit ?? "contain" }} alt="" />
     </div>
   );
 
@@ -174,13 +184,18 @@ export function buildGraphic(copy: GraphicCopy, brand: BrandStyle, logos: Record
   const l = copy.layout === "soft" ? brand.soft : brand.bold;
   const dotOn = l.fg;
   if (copy.layout === "photo" && copy.photo) {
-    const size = headSize(copy.line1.length) * 0.72;
+    const maxH = tall ? 860 : 640;
+    // landscape photos get a card close to their own shape so little is cropped
+    const cardH = copy.photoFit === "cover" && copy.photoAspect ? Math.min(maxH, Math.max(480, Math.round(904 / copy.photoAspect))) : maxH;
+    // space between the photo card and the footer (logo row sits 84px up, 104px tall)
+    const avail = height - 90 - 30 - 36 - cardH - 44 - (84 + 104 + 36);
+    const size = fitSize([copy.line1, copy.line2 ?? ""], 904, avail, 88);
     return (
       <div style={{ ...base, background: l.bg, color: l.fg }}>
         <div style={{ display: "flex", fontWeight: 600, fontSize: 26, letterSpacing: 5, textTransform: "uppercase", opacity: 0.85 }}>{copy.kicker}</div>
-        <div style={{ display: "flex", marginTop: 36 }}>{photoCard(tall ? 860 : 600)}</div>
-        <div style={{ display: "flex", marginTop: 44, fontWeight: 800, fontSize: size, lineHeight: 1.03, letterSpacing: -2 }}>{copy.line1}</div>
-        {copy.line2 ? <div style={{ display: "flex", marginTop: 14, fontWeight: 800, fontSize: size, lineHeight: 1.03, letterSpacing: -2, color: l.dim }}>{copy.line2}</div> : null}
+        <div style={{ display: "flex", marginTop: 36 }}>{photoCard(cardH)}</div>
+        <div style={{ display: "flex", marginTop: 44, fontWeight: 800, fontSize: size, lineHeight: 1.04, letterSpacing: -2 }}>{copy.line1}</div>
+        {copy.line2 ? <div style={{ display: "flex", marginTop: 14, fontWeight: 800, fontSize: size, lineHeight: 1.04, letterSpacing: -2, color: l.dim }}>{copy.line2}</div> : null}
         {footer(l.logo, l.ctaBg, l.ctaFg, dotOn, l.dim)}
       </div>
     );

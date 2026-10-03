@@ -19,7 +19,7 @@ const SITES: Record<string, string> = {
   MiaMily: "miamily.com.au", "Matchstick Monkey": "www.matchstickmonkey.com.au", Mamave: "mamave.com.au",
   Hannie: "hannie.com.au", Nanit: "nanit.com.au",
 };
-type Product = { title: string; images: string[] };
+type Product = { title: string; images: string[]; dims: { w: number; h: number }[] };
 
 const clean = (s: unknown, max: number) => String(s ?? "").replace(/[–—]/g, ",").replace(/\s+/g, " ").trim().slice(0, max);
 
@@ -30,12 +30,12 @@ async function loadProducts(domain: string): Promise<Product[]> {
     const j = await r.json();
     return (j.products ?? [])
       .filter((p: any) => p.images?.length && !/gift ?card|e-?gift|voucher|sample|% off|\u{1F381}/iu.test(p.title))
-      .map((p: any) => ({ title: String(p.title), images: p.images.slice(0, 6).map((i: any) => String(i.src)) }))
+      .map((p: any) => ({ title: String(p.title), images: p.images.slice(0, 6).map((i: any) => String(i.src)), dims: p.images.slice(0, 6).map((i: any) => ({ w: Number(i.width) || 1, h: Number(i.height) || 1 })) }))
       .slice(0, 120);
   } catch { return []; }
 }
 
-async function productPhoto(products: Product[], ref: unknown): Promise<string | undefined> {
+async function productPhoto(products: Product[], ref: unknown): Promise<{ data: string; fit: "cover" | "contain"; aspect: number } | undefined> {
   const m = /^(\d+)\.(\d+)$/.exec(String(ref ?? ""));
   if (!m) return undefined;
   const src = products[Number(m[1])]?.images[Number(m[2])];
@@ -46,7 +46,8 @@ async function productPhoto(products: Product[], ref: unknown): Promise<string |
     if (!r.ok) return undefined;
     const buf = await r.arrayBuffer();
     if (buf.byteLength > 2_500_000) return undefined;
-    return `data:image/jpeg;base64,${Buffer.from(buf).toString("base64")}`;
+    const d = products[Number(m[1])].dims[Number(m[2])];
+    return { data: `data:image/jpeg;base64,${Buffer.from(buf).toString("base64")}`, fit: d.w / d.h >= 1.25 ? "cover" : "contain", aspect: d.w / d.h };
   } catch { return undefined; }
 }
 
@@ -144,7 +145,7 @@ ${photoRule}`;
     urls = await Promise.all(plan.map(async (p, k) => {
       const photo = await productPhoto(products, p.ref);
       const { ref: _ref, ...rest } = p; void _ref;
-      const copy: GraphicCopy = { ...rest, photo, layout: photo && (p.layout === "bold" || p.layout === "soft") && !carousel ? "photo" : photo && p.layout === "bold" ? "photo" : p.layout };
+      const copy: GraphicCopy = { ...rest, photo: photo?.data, photoFit: photo?.fit, photoAspect: photo?.aspect, layout: photo && (p.layout === "bold" || p.layout === "soft") && !carousel ? "photo" : photo && p.layout === "bold" ? "photo" : p.layout };
       const png = await new ImageResponse(buildGraphic(copy, style, logos, height), { width: 1080, height, fonts }).arrayBuffer();
       const path = `${id}/${stamp}-${k + 1}.png`;
       const { error: upErr } = await sb.storage.from(BUCKET).upload(path, new Uint8Array(png), { contentType: "image/png", upsert: true });

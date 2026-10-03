@@ -25,7 +25,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
 
   const url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
-  const { data, error } = await sb.from("social_drafts").update({ image_url: url, images: [url], updated_at: new Date().toISOString() }).eq("id", id).select().single();
+  // On a carousel, "Replace image" swaps the cover only and keeps the other slides.
+  const { data: cur } = await sb.from("social_drafts").select("images").eq("id", id).single();
+  const rest: string[] = Array.isArray(cur?.images) && cur.images.length > 1 ? cur.images.slice(1) : [];
+  const { data, error } = await sb.from("social_drafts").update({ image_url: url, images: [url, ...rest], updated_at: new Date().toISOString() }).eq("id", id).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ item: data, url });
 }
