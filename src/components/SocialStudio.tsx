@@ -11,7 +11,7 @@ import { useEffect, useMemo, useState } from "react";
 type Draft = {
   id: string; brand_id: number; status: "draft" | "approved" | "posted" | "rejected";
   platform: string; format: string | null; caption: string; hashtags: string | null; visual_direction: string | null;
-  brief: string | null; note: string | null; scheduled_for: string | null; image_url?: string | null;
+  brief: string | null; note: string | null; scheduled_for: string | null; image_url?: string | null; images?: string[] | null;
   campaign_id: string | null; campaign_name: string | null;
   created_by: string | null; approved_by: string | null; posted_at: string | null; created_at: string;
 };
@@ -124,10 +124,11 @@ export function SocialStudio({ brands, admin, openDraftId, onOpened }: { brands:
   }
 
   const [gfxStyle, setGfxStyle] = useState("auto");
+  const [gfxPhotos, setGfxPhotos] = useState(true);
   async function generateGraphic(id: string) {
-    setBusy(true); setMsg("Designing the graphic… (about 15 seconds)");
+    setBusy(true); setMsg("Designing… a carousel takes up to about 40 seconds.");
     try {
-      const j = await fetch(`/api/social-drafts/${id}/graphic`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ layout: gfxStyle === "auto" ? undefined : gfxStyle }) }).then(r => r.json());
+      const j = await fetch(`/api/social-drafts/${id}/graphic`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ layout: gfxStyle === "auto" ? undefined : gfxStyle, photos: gfxPhotos }) }).then(r => r.json());
       if (j.error) setMsg(j.error); else { setMsg("Graphic ready."); load(); }
     } catch { setMsg("Couldn't generate the graphic."); }
     setBusy(false);
@@ -234,6 +235,11 @@ export function SocialStudio({ brands, admin, openDraftId, onOpened }: { brands:
 
                 {isOpen && (
                   <div className="border-t border-gray-100 px-5 py-4 space-y-3">
+                    {d.images && d.images.length > 1 ? (
+                      <div className="flex gap-3 overflow-x-auto pb-1">
+                        {d.images.map((u, k) => <a key={u} href={u} target="_blank" rel="noreferrer" className="shrink-0"><img src={u} alt={`Slide ${k + 1}`} className="w-36 rounded-xl border border-gray-100 shadow-sm" /></a>)}
+                      </div>
+                    ) : null}
                     <div className="flex flex-wrap items-start gap-4">
                       {d.image_url ? <img src={d.image_url} alt="" className="w-44 rounded-xl border border-gray-100 shadow-sm" /> : <div className="w-44 h-56 rounded-xl border border-dashed border-gray-200 text-xs text-gray-400 flex items-center justify-center text-center px-3">No graphic yet</div>}
                       <div className="space-y-2">
@@ -246,8 +252,10 @@ export function SocialStudio({ brands, admin, openDraftId, onOpened }: { brands:
                           <select value={gfxStyle} onChange={e => setGfxStyle(e.target.value)} className="text-sm border border-gray-200 rounded-lg px-2 py-2 text-slate-600">
                             <option value="auto">Auto style</option><option value="bold">Bold</option><option value="soft">Soft</option><option value="list">Checklist</option>
                           </select>
-                          <button onClick={() => generateGraphic(d.id)} disabled={busy} className="text-sm font-semibold text-white bg-pink-500 hover:bg-pink-600 rounded-lg px-3.5 py-2 disabled:opacity-60">{d.image_url ? "Regenerate graphic" : "Generate graphic"}</button>
+                          <button onClick={() => generateGraphic(d.id)} disabled={busy} className="text-sm font-semibold text-white bg-pink-500 hover:bg-pink-600 rounded-lg px-3.5 py-2 disabled:opacity-60">{d.format === "carousel" ? (d.image_url ? "Regenerate carousel" : "Generate carousel") : d.image_url ? "Regenerate graphic" : "Generate graphic"}</button>
                         </div>
+                        <label className="flex items-center gap-1.5 text-xs text-gray-500"><input type="checkbox" checked={gfxPhotos} onChange={e => setGfxPhotos(e.target.checked)} /> Use product photos from the brand site</label>
+                        {d.images && d.images.length > 1 ? <div><a href={`/api/social-drafts/${d.id}/zip`} className="text-sm font-semibold text-pink-700 hover:underline">Download all {d.images.length} slides (zip)</a></div> : null}
                         {d.image_url && <div><a href={d.image_url} download target="_blank" rel="noreferrer" className="text-sm font-semibold text-pink-700 hover:underline">Download image</a></div>}
                       </div>
                     </div>

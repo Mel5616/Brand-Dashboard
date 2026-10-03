@@ -25,7 +25,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (upErr) return NextResponse.json({ error: upErr.message }, { status: 500 });
 
   const url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
-  const { data, error } = await sb.from("social_drafts").update({ image_url: url, updated_at: new Date().toISOString() }).eq("id", id).select().single();
+  const { data, error } = await sb.from("social_drafts").update({ image_url: url, images: [url], updated_at: new Date().toISOString() }).eq("id", id).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ item: data, url });
 }

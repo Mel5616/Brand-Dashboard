@@ -5,9 +5,11 @@ import type { ReactElement } from "react";
 //   bold  - solid brand colour, big two-tone statement
 //   soft  - second brand colour, big two-tone statement
 //   list  - white, brand bar, headline + checkbox list
+//   photo - brand colour, product photo on a white card, headline below
+//   point - white, brand bar, headline + body copy, optional photo (carousel slides)
 // To switch on another brand, add its palette and logos below. Palettes come
 // from each brand's guide; Outfit stands in for the brand typefaces.
-export type GraphicCopy = { layout: "bold" | "soft" | "list"; kicker: string; line1: string; line2?: string; sub?: string; items?: string[]; cta: string };
+export type GraphicCopy = { layout: "bold" | "soft" | "list" | "photo" | "point"; kicker: string; line1: string; line2?: string; sub?: string; items?: string[]; cta: string; photo?: string; progress?: { i: number; n: number } };
 
 type LogoRef = { src: string; w: number; h: number };
 type Look = { bg: string; fg: string; dim: string; ctaBg: string; ctaFg: string; logo: LogoRef };
@@ -107,11 +109,28 @@ function Logo({ src, w, h }: { src: string; w: number; h: number }) {
 
 export function buildGraphic(copy: GraphicCopy, brand: BrandStyle, logos: Record<string, string>, height: number): ReactElement {
   const font = "Outfit";
+  const tall = height > 1500;
   const base = { width: 1080, height, display: "flex", flexDirection: "column" as const, padding: "90px 88px", fontFamily: font, position: "relative" as const };
-  const footer = (logo: LogoRef, ctaBg: string, ctaFg: string) => (
+  // Carousel slides show progress dots on the right; the last slide (and any
+  // single post) shows the call-to-action button instead.
+  const footer = (logo: LogoRef, ctaBg: string, ctaFg: string, dotOn: string, dotOff: string) => (
     <div style={{ position: "absolute", left: 88, right: 88, bottom: 84, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
       <Logo src={logos[logo.src]} w={logo.w} h={logo.h} />
-      <div style={{ display: "flex", background: ctaBg, color: ctaFg, fontWeight: 600, fontSize: 30, padding: "20px 38px", borderRadius: 60 }}>{copy.cta}</div>
+      {copy.progress && copy.progress.i < copy.progress.n - 1 ? (
+        <div style={{ display: "flex", alignItems: "center" }}>
+          {Array.from({ length: copy.progress.n }).map((_, k) => (
+            <div key={k} style={{ display: "flex", width: k === copy.progress!.i ? 34 : 14, height: 14, borderRadius: 7, marginLeft: 10, background: k === copy.progress!.i ? dotOn : dotOff }} />
+          ))}
+        </div>
+      ) : (
+        <div style={{ display: "flex", background: ctaBg, color: ctaFg, fontWeight: 600, fontSize: 30, padding: "20px 38px", borderRadius: 60 }}>{copy.cta}</div>
+      )}
+    </div>
+  );
+  const photoCard = (h: number) => (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 904, height: h, background: "#FFFFFF", borderRadius: 36, overflow: "hidden" }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={copy.photo} style={{ width: 904, height: h, objectFit: "contain" }} alt="" />
     </div>
   );
 
@@ -132,19 +151,47 @@ export function buildGraphic(copy: GraphicCopy, brand: BrandStyle, logos: Record
             </div>
           ))}
         </div>
-        {footer(l.logo, l.ctaBg, l.ctaFg)}
+        {footer(l.logo, l.ctaBg, l.ctaFg, l.bar, "#DDE0E2")}
+      </div>
+    );
+  }
+
+  if (copy.layout === "point") {
+    const l = brand.list;
+    const hasPhoto = !!copy.photo;
+    return (
+      <div style={{ ...base, background: "#FFFFFF", color: l.ink }}>
+        <div style={{ position: "absolute", left: 0, top: 0, width: 1080, height: 26, background: l.bar, display: "flex" }} />
+        <div style={{ display: "flex", marginTop: 20, fontWeight: 600, fontSize: 26, letterSpacing: 5, textTransform: "uppercase", color: l.kicker }}>{copy.kicker}</div>
+        <div style={{ display: "flex", marginTop: 36, fontWeight: 800, fontSize: headSize(copy.line1.length) * (hasPhoto ? 0.62 : 0.85), lineHeight: 1.04, letterSpacing: -2 }}>{copy.line1}</div>
+        {copy.sub ? <div style={{ display: "flex", marginTop: 32, fontWeight: 300, fontSize: hasPhoto ? 36 : 46, lineHeight: 1.35, maxWidth: 880 }}>{copy.sub}</div> : null}
+        {hasPhoto ? <div style={{ display: "flex", marginTop: 44 }}>{photoCard(tall ? 760 : 520)}</div> : null}
+        {footer(l.logo, l.ctaBg, l.ctaFg, l.bar, "#DDE0E2")}
       </div>
     );
   }
 
   const l = copy.layout === "soft" ? brand.soft : brand.bold;
+  const dotOn = l.fg;
+  if (copy.layout === "photo" && copy.photo) {
+    const size = headSize(copy.line1.length) * 0.72;
+    return (
+      <div style={{ ...base, background: l.bg, color: l.fg }}>
+        <div style={{ display: "flex", fontWeight: 600, fontSize: 26, letterSpacing: 5, textTransform: "uppercase", opacity: 0.85 }}>{copy.kicker}</div>
+        <div style={{ display: "flex", marginTop: 36 }}>{photoCard(tall ? 860 : 600)}</div>
+        <div style={{ display: "flex", marginTop: 44, fontWeight: 800, fontSize: size, lineHeight: 1.03, letterSpacing: -2 }}>{copy.line1}</div>
+        {copy.line2 ? <div style={{ display: "flex", marginTop: 14, fontWeight: 800, fontSize: size, lineHeight: 1.03, letterSpacing: -2, color: l.dim }}>{copy.line2}</div> : null}
+        {footer(l.logo, l.ctaBg, l.ctaFg, dotOn, l.dim)}
+      </div>
+    );
+  }
   const size = headSize(copy.line1.length + (copy.line2?.length ?? 0) / 1.5);
   return (
     <div style={{ ...base, background: l.bg, color: l.fg }}>
       <div style={{ display: "flex", fontWeight: 600, fontSize: 26, letterSpacing: 5, textTransform: "uppercase", opacity: 0.85 }}>{copy.kicker}</div>
       <div style={{ display: "flex", marginTop: 70, fontWeight: 800, fontSize: size, lineHeight: 1.02, letterSpacing: -2 }}>{copy.line1}</div>
       {copy.line2 ? <div style={{ display: "flex", marginTop: 44, fontWeight: 800, fontSize: size, lineHeight: 1.02, letterSpacing: -2, color: l.dim }}>{copy.line2}</div> : null}
-      {footer(l.logo, l.ctaBg, l.ctaFg)}
+      {footer(l.logo, l.ctaBg, l.ctaFg, dotOn, l.dim)}
     </div>
   );
 }
