@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { fmtFull } from "@/lib/format";
+import { DiscountCodePerformance } from "./DiscountCodePerformance";
 
 type Code = {
   brand_id: number; code: string; usage_count: number; value_type: string | null; value: number | null;
@@ -55,6 +56,7 @@ export function DiscountCodesTab({ brands }: { brands: Brand[] }) {
 
   return (
     <div className="space-y-4">
+      <DiscountCodePerformance brands={brands} />
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>

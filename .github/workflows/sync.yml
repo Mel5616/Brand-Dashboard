@@ -130,6 +130,12 @@ jobs:
     uses: ./.github/workflows/sync-one.yml
     with: { script: "scripts/sync_shopify_extras.py" }
     secrets: inherit
+  # Reads cost_sheet_items for its estimated margin, so it waits for that sync.
+  code_performance:
+    needs: [cost_sheet]
+    uses: ./.github/workflows/sync-one.yml
+    with: { script: "scripts/sync_code_performance.py" }
+    secrets: inherit
   cost_sheet:
     uses: ./.github/workflows/sync-one.yml
     with: { script: "scripts/sync_cost_sheet.py" }
@@ -165,7 +171,7 @@ jobs:
     needs: [asana, connecteam, main, tradeshow_breakdown, cin7_costs, partnership_cin7_sales,
             asana_restock_eta, promo_calendar, shopify_sources, meta_ads, pinterest, youtube,
             commission_factory, instagram, instagram_media, ga4, eventbrite, klaviyo,
-            search_console, blog_hub, shopify_extras, cost_sheet, influencer_sales,
+            search_console, blog_hub, shopify_extras, cost_sheet, code_performance, influencer_sales,
             metric_alerts, ai_insights]
     if: ${{ always() }}
     uses: ./.github/workflows/sync-one.yml
